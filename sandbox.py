@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -10,7 +9,6 @@ from config import CODE_TIMEOUT_SECONDS, MAX_STDOUT_CHARS
 
 SANDBOX_PREAMBLE = r'''
 import builtins
-import json
 from pathlib import Path
 
 ALLOWED_IMPORTS = {"json", "math", "random", "statistics", "itertools", "collections", "pathlib", "time"}
@@ -28,6 +26,7 @@ builtins.__import__ = limited_import
 
 def run_python(code: str, working_dir: Path) -> dict:
     working_dir.mkdir(parents=True, exist_ok=True)
+    script_path = None
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, dir=working_dir) as f:
         script_path = Path(f.name)
         f.write(SANDBOX_PREAMBLE)
@@ -36,7 +35,7 @@ def run_python(code: str, working_dir: Path) -> dict:
 
     try:
         proc = subprocess.run(
-            ["python", str(script_path)],
+            ["python3", str(script_path)],
             cwd=str(working_dir),
             capture_output=True,
             text=True,
@@ -57,3 +56,9 @@ def run_python(code: str, working_dir: Path) -> dict:
             "stderr": ((e.stderr or "") + "\nTIMEOUT")[:MAX_STDOUT_CHARS],
             "script": str(script_path),
         }
+    finally:
+        if script_path is not None:
+            try:
+                script_path.unlink(missing_ok=True)
+            except OSError:
+                pass

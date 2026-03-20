@@ -1,107 +1,112 @@
 # CircleForge
 
-Minimal but complete v0.0.1 prototype for a persistent world of self-improving coding agents.
+**CircleForge v0.0.2** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate small helper modules, and evolve simple local tooling over time.
 
-**CircleForge** is a persistent agent sandbox where autonomous builders evolve tools, modules, and ideas over timed cycles.
+## What CircleForge is
 
-## What it does
+CircleForge is a minimal but runnable prototype for:
+- persistent coding agents
+- 60-second world ticks
+- short bounded execution windows
+- local-model decisions through Ollama
+- fallback behavior when Ollama is unavailable
+- sandboxed generated Python
+- SQLite-backed world state
 
-- Runs a **60-second tick loop**
-- Each agent gets up to **40 seconds** to think and act
-- Remaining time is cooldown / world maintenance
-- Agents have:
-  - persistent private memory
-  - resources
-  - simple reputation
-  - inspect/trade cooldown timestamps
-  - local modules and artifacts folders
-- Uses **Ollama** for decisions if available
-- Falls back to a deterministic local policy if Ollama is unavailable
-- Executes generated Python in a **restricted sandbox subprocess** with timeout
-- Stores world state in **SQLite**
+It is intentionally small, inspectable, and hackable.
 
-This is intentionally constrained and small so you can test it on a normal PC.
+## Core loop
+
+- global tick every **60 seconds**
+- each agent gets up to **40 seconds** of effective work budget
+- the rest is cooldown / world maintenance
+- agents can gather, research, optimize, build modules, or rest
+
+## Current world rules
+
+- no sabotage
+- no stealing
+- inspect/trade are placeholders in the state model, not full gameplay yet
+- no direct web search inside agent turns
+- GPU is modeled as a quota field, not a real scheduler
 
 ## Requirements
 
 - Python 3.10+
-- Optional: Ollama running locally
-- Optional model example: `qwen2.5:3b` or similar small local model
+- optional: Ollama on `http://127.0.0.1:11434`
+- optional model example: `qwen2.5:3b`
 
 ## Quick start
 
 ```bash
-cd agent-ecosim-v1
-python main.py init
-python main.py tick
-python main.py run --ticks 10 --interval 60
+git clone https://github.com/pr0dus/CircleForge.git
+cd CircleForge
+chmod +x install.sh run.sh
+./install.sh
+python3 main.py init --reset --agents 4
+python3 main.py tick
+python3 main.py show-world
+```
+
+## Continuous run
+
+```bash
+./run.sh
+```
+
+Or with a fixed number of ticks:
+
+```bash
+python3 main.py run --ticks 10 --interval 60
 ```
 
 ## Useful commands
 
 ```bash
-python main.py init --agents 4
-python main.py tick
-python main.py tick --verbose
-python main.py show-world
-python main.py show-agent agent-1
-python main.py reset
+python3 main.py init --reset --agents 5
+python3 main.py tick --verbose
+python3 main.py show-world
+python3 main.py show-agent agent-1
+python3 main.py version
 ```
 
-## Ollama config
-
-By default the project uses:
-
-- host: `http://127.0.0.1:11434`
-- model: `qwen2.5:3b`
-
-Override with environment variables:
+## Ollama configuration
 
 ```bash
 export OLLAMA_HOST=http://127.0.0.1:11434
 export OLLAMA_MODEL=qwen2.5:3b
 ```
 
-If Ollama is offline or the model fails, the sim still runs using fallback decisions.
-
-## World rules in v1
-
-- No sabotage
-- No stealing
-- Inspect allowed only once per 24h per agent
-- Trade allowed only once per 24h per agent
-- Search/internet not provided
-- GPU is abstracted as a limited quota field, not a real GPU scheduler yet
-- Agents mainly optimize their own modules, memory, and resources
+If Ollama is offline or the chosen model fails, CircleForge falls back to deterministic local behavior.
 
 ## Files
 
 - `main.py` - CLI entrypoint
-- `sim.py` - world/tick orchestration
-- `agent_runtime.py` - agent planning + fallback policy
-- `sandbox.py` - restricted execution runner
-- `models.py` - dataclasses and state helpers
-- `config.py` - tunable constants
-- `world.db` - SQLite state after init (generated, gitignored)
-- `agents/` - per-agent folders and generated files (generated, gitignored)
+- `sim.py` - world orchestration and persistence
+- `agent_runtime.py` - agent planning, Ollama call, fallback policy
+- `sandbox.py` - restricted Python execution helper
+- `models.py` - dataclasses for world actions/state
+- `config.py` - version and simulation constants
+- `install.sh` - tiny setup helper
+- `run.sh` - convenience runner
+- `world.db` - generated SQLite database
+- `agents/` - generated per-agent state
 
-## Notes
+## Status
 
-This is a **testable v0.0.1 skeleton**, not a finished game.
-The point is to validate:
+This is **v0.0.2**: a cleaned-up early release, not a finished game.
 
-- minute ticks
-- persistent agents
-- self-improvement through generated helper modules
-- resource accounting
-- local-model orchestration on a single PC
+What is solid already:
+- runnable local simulation
+- persistent agent state
+- local-model integration
+- simple generated module workflow
+- inspectable logs and world state
 
-Once this works, the next step is adding:
-
-- spatial map / regions
-- richer trading
-- better inspection views
-- artifact marketplace
-- stricter code permissions
-- metrics dashboard
-
+What should come next:
+- real inspect and trade actions
+- artifact metadata and export candidates
+- richer economy / demand signals
+- replay dashboard
+- packaging for background service use

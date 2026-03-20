@@ -7,7 +7,15 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List
 
-from config import MAX_CODE_SIZE, MAX_MEMORY_NOTES, OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT_SECONDS
+from config import (
+    MAX_CODE_SIZE,
+    MAX_MEMORY_NOTES,
+    OLLAMA_HOST,
+    OLLAMA_MODEL,
+    OLLAMA_TIMEOUT_SECONDS,
+    PROJECT_NAME,
+    VERSION,
+)
 
 
 ACTIONS = ["gather", "optimize", "research", "build_module", "rest"]
@@ -67,6 +75,7 @@ def default_code_for(action: str, agent_name: str) -> str:
 def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any] | None:
     prompt = {
         "task": "Choose exactly one action for this coding agent in a persistent simulation.",
+        "project": f"{PROJECT_NAME} v{VERSION}",
         "allowed_actions": ACTIONS,
         "rules": [
             "No sabotage.",

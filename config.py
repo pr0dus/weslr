@@ -3,6 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+VERSION = "0.0.2"
+PROJECT_NAME = "CircleForge"
+PROJECT_SLUG = "circleforge"
+
 BASE_DIR = Path(__file__).resolve().parent
 AGENTS_DIR = BASE_DIR / "agents"
 DB_PATH = BASE_DIR / "world.db"

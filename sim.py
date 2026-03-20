@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from agent_runtime import decide_action, save_note
-from config import AGENTS_DIR, BASE_DIR, CODE_TIMEOUT_SECONDS, DAILY_COOLDOWN_SECONDS, DB_PATH, DEFAULT_AGENT_COUNT, EXECUTION_BUDGET_SECONDS, STARTING_ENERGY, STARTING_GPU, STARTING_REPUTATION, STARTING_STORAGE, TICK_SECONDS
+from config import AGENTS_DIR, BASE_DIR, CODE_TIMEOUT_SECONDS, DB_PATH, DEFAULT_AGENT_COUNT, EXECUTION_BUDGET_SECONDS, PROJECT_NAME, STARTING_ENERGY, STARTING_GPU, STARTING_REPUTATION, STARTING_STORAGE, TICK_SECONDS, VERSION
 from models import ActionResult, AgentState
 from sandbox import run_python
 
@@ -86,6 +86,8 @@ def get_world(conn: sqlite3.Connection) -> Dict:
     rows = conn.execute("SELECT key, value FROM world").fetchall()
     data = {row["key"]: row["value"] for row in rows}
     return {
+        "project": PROJECT_NAME,
+        "version": VERSION,
         "tick": int(data.get("tick", 0)),
         "last_tick_started": int(data.get("last_tick_started", 0)),
         "base_dir": str(BASE_DIR),
