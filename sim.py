@@ -171,6 +171,28 @@ def normalize_category_for_artifact(action: str, category: str | None) -> str:
     return mapping.get(action, "uncategorized")
 
 
+def choose_family(action: str, artifact_type: str, category: str) -> str:
+    if artifact_type == "export_candidate":
+        return "packaging"
+    if artifact_type == "market_hypothesis":
+        return "evaluation"
+    if action == "optimize":
+        return "local-ai-ops"
+    if action == "inspect":
+        return "observability"
+    if action == "research":
+        return "evaluation"
+    if category in {"debugging", "replay", "observability"}:
+        return "observability"
+    if category in {"exports", "interfaces"}:
+        return "status-pages"
+    if category in {"modules", "packaging"}:
+        return "packaging"
+    if category in {"research", "benchmarks", "evaluation"}:
+        return "evaluation"
+    return "dashboards"
+
+
 def maybe_generate_category_proposal(agents: list[dict], categories: list[str], proposals: list[dict], now_ts: int) -> tuple[list[dict], list[dict]]:
     if len(categories) >= MAX_CATEGORIES:
         return agents, proposals
@@ -288,6 +310,7 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "title": meta.get("title"),
         "artifact_type": meta.get("artifact_type"),
         "category": meta.get("category"),
+        "family": meta.get("family"),
         "lifecycle_stage": meta.get("lifecycle_stage"),
         "idea": meta.get("idea"),
         "explanation": meta.get("explanation"),
@@ -406,6 +429,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "id": meta.get("id"),
             "title": meta.get("title"),
             "artifact_type": meta.get("artifact_type"),
+            "family": meta.get("family"),
             "lifecycle_stage": meta.get("lifecycle_stage"),
             "export_path": meta.get("export_path"),
             "human_proposed_score": meta.get("human_proposed_score"),
@@ -444,6 +468,17 @@ def build_uncategorized_groups(artifact_meta: list[dict]) -> list[dict]:
             "artifacts": sorted(items, key=lambda x: x["human_proposed_score"], reverse=True),
         })
     return result
+
+
+def build_family_signals(artifact_meta: list[dict]) -> dict:
+    family_counts: Dict[str, int] = {}
+    for meta in artifact_meta:
+        family = meta.get("family", "unknown")
+        family_counts[family] = family_counts.get(family, 0) + 1
+    return {
+        "family_counts": family_counts,
+        "active_families": [k for k, _ in sorted(family_counts.items(), key=lambda kv: kv[1], reverse=True)[:6]],
+    }
 
 
 def build_market_signals(artifact_meta: list[dict], packs: list[dict], categories: list[str]) -> dict:
@@ -525,9 +560,12 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
 
     packs = build_artifact_packs(artifact_meta)
     emergent_groups = build_uncategorized_groups(artifact_meta)
+    family_signals = build_family_signals(artifact_meta)
     market_signals = build_market_signals(artifact_meta, packs, categories)
     if emergent_groups:
         demand_board.append({"kind": "emergence", "title": "Uncategorized emergent groups detected", "reason": f"There are {len(emergent_groups)} promising uncategorized group(s) worth inspecting."})
+    if family_signals["active_families"]:
+        demand_board.append({"kind": "family", "title": "Active artifact families detected", "reason": f"Current artifact work is clustering around: {', '.join(family_signals['active_families'])}."})
     if market_signals["rising_categories"]:
         demand_board.append({"kind": "market", "title": "Rising categories detected", "reason": f"Current activity is clustering around: {', '.join(market_signals['rising_categories'])}."})
     if market_signals["saturated_categories"]:
@@ -540,7 +578,7 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
     write_json_file(REVIEW_QUEUE_PATH, review_queue)
     write_json_file(CATEGORIES_PATH, categories)
     write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
-    return demand_board, export_queue, review_queue, categories, packs, market_signals, emergent_groups
+    return demand_board, export_queue, review_queue, categories, packs, market_signals, emergent_groups, family_signals
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
@@ -595,6 +633,7 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "title": artifact_slug.replace("_", " ").title(),
         "artifact_type": artifact_type,
         "category": category,
+        "family": choose_family(lineage.get("action", ""), artifact_type, category),
         "idea": idea,
         "explanation": explanation,
         "purpose": purpose,
@@ -758,6 +797,14 @@ def show_world() -> Dict:
         "dormant_categories": [c for c in categories if c not in {p.get("category") for p in artifact_packs} and c not in BASE_CATEGORIES[:0]],
         "export_pressure_categories": [item["category"] for item in export_queue[:3] if item.get("review_status") == "export_ready"],
     }
+    family_counts = {}
+    for meta in all_meta:
+        family = meta.get('family', 'unknown')
+        family_counts[family] = family_counts.get(family, 0) + 1
+    family_signals = {
+        "family_counts": family_counts,
+        "active_families": [k for k, _ in sorted(family_counts.items(), key=lambda kv: kv[1], reverse=True)[:6]],
+    }
     return {
         "world": world,
         "agents": agents,
@@ -765,6 +812,7 @@ def show_world() -> Dict:
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
         "artifact_packs": artifact_packs,
         "emergent_groups": emergent_groups,
+        "family_signals": family_signals,
         "market_signals": market_signals,
         "demand_board": read_json_file(DEMAND_BOARD_PATH, []),
         "export_queue": export_queue,
