@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import init_world, perform_tick, show_agent, show_world
+from sim import init_world, perform_tick, review_artifact, show_agent, show_world
 
 
 def emit(data):
@@ -48,6 +48,10 @@ def cmd_version(_args):
     print(f"{PROJECT_NAME} v{VERSION}")
 
 
+def cmd_review(args):
+    emit(review_artifact(args.id, args.action, note=args.note))
+
+
 def main():
     parser = argparse.ArgumentParser(description=f"{PROJECT_NAME} v{VERSION} - minimal coding-agent ecosystem sim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -73,6 +77,12 @@ def main():
     p = sub.add_parser("show-agent", help="show one agent state")
     p.add_argument("name")
     p.set_defaults(func=cmd_show_agent)
+
+    p = sub.add_parser("review", help="manually review an artifact by id")
+    p.add_argument("id")
+    p.add_argument("action", choices=["approve", "reject", "export", "note"])
+    p.add_argument("--note", default="")
+    p.set_defaults(func=cmd_review)
 
     p = sub.add_parser("reset", help="reset the world")
     p.add_argument("--agents", type=int, default=DEFAULT_AGENT_COUNT)

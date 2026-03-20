@@ -105,8 +105,8 @@ When an artifact crosses the export threshold, CircleForge can mark it `export_r
 
 ## What should come next
 
-- manual review overrides from CLI
 - artifact packs by theme or market
+- richer export packaging beyond JSON snapshots
 - richer demand signals from failures and repetition
 - replay dashboard
 - packaging for background service use
