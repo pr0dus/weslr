@@ -116,7 +116,38 @@ def list_agents(conn: sqlite3.Connection) -> List[Dict]:
     return [dict(row) for row in conn.execute("SELECT * FROM agents ORDER BY name").fetchall()]
 
 
-def inspect_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
+def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, artifact_type: str, idea: str, explanation: str, purpose: str, destination: str, future_directions: List[str], combinable_with: List[str], lineage: Dict) -> str:
+    artifacts_dir = agent_dir / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    artifact_id = f"{agent['name']}-{artifact_slug}-{int(time.time())}"
+    meta_path = artifacts_dir / f"{artifact_slug}.meta.json"
+    payload = {
+        "id": artifact_id,
+        "title": artifact_slug.replace("_", " ").title(),
+        "artifact_type": artifact_type,
+        "idea": idea,
+        "explanation": explanation,
+        "purpose": purpose,
+        "destination": destination,
+        "audience": ["local AI tinkerers", "agent-sim builders"],
+        "depends_on": ["persistent memory", "timed ticks"],
+        "combinable_with": combinable_with,
+        "why_now": "CircleForge agents benefit from reusable, inspectable outputs instead of opaque internal work.",
+        "future_directions": future_directions,
+        "if_interest_exists": [
+            "package as a standalone module",
+            "export to a GitHub subproject",
+            "bundle into a premium add-on pack"
+        ],
+        "lineage": lineage,
+        "status": "prototype",
+        "market_value_score": 0.35,
+    }
+    meta_path.write_text(json.dumps(payload, indent=2))
+    return meta_path.name
+
+
+def inspect_target(actor: Dict, target: Dict, now_ts: int) -> ActionResult:
     elapsed = now_ts - int(actor.get("last_inspect_at", 0))
     if elapsed < DAILY_COOLDOWN_SECONDS:
         remaining = DAILY_COOLDOWN_SECONDS - elapsed
@@ -202,7 +233,7 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
     if action == "inspect":
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
             return ActionResult(action=action, status="skipped", summary="inspect skipped: no valid target")
-        return inspect_target(agent, agents_by_name[target_name], now_ts, conn)
+        return inspect_target(agent, agents_by_name[target_name], now_ts)
 
     if action == "trade":
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
@@ -215,14 +246,56 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
 
     if action == "gather":
         return ActionResult(action=action, status=status, summary=f"gathered resources; {reason}", energy_delta=4, storage_delta=2, raw_output=raw)
+
     if action == "research":
-        return ActionResult(action=action, status=status, summary=f"researched local improvements; {reason}", reputation_delta=0.02, raw_output=raw)
+        artifact = write_artifact_metadata(
+            agent,
+            agent_dir,
+            "research_note",
+            "market_hypothesis",
+            "Short-cycle agents should compress observations into exportable research notes.",
+            "This artifact captures a compact research note produced during a simulation tick.",
+            "Make research outputs legible to humans and other agents.",
+            "internal_review",
+            ["turn into benchmark criteria", "package as an insight feed"],
+            ["dashboard", "artifact marketplace", "export queue"],
+            {"action": action, "reason": reason, "tick_context": "research"},
+        )
+        return ActionResult(action=action, status=status, summary=f"researched local improvements; {reason}", reputation_delta=0.02, raw_output=raw, artifact=artifact)
+
     if action == "optimize":
-        return ActionResult(action=action, status=status, summary=f"optimized workflow; {reason}", energy_delta=2, raw_output=raw)
+        artifact = write_artifact_metadata(
+            agent,
+            agent_dir,
+            "optimization_bundle",
+            "tradable_component",
+            "Bundle workflow optimizations into something reusable.",
+            "This artifact describes an optimization bundle created from a local agent workflow pass.",
+            "Turn internal efficiency gains into components others can inspect, trade, or export.",
+            "shared_with_agents",
+            ["convert to installable module", "attach metrics and benchmarks"],
+            ["trade action", "export candidate queue"],
+            {"action": action, "reason": reason, "tick_context": "optimize"},
+        )
+        return ActionResult(action=action, status=status, summary=f"optimized workflow; {reason}", energy_delta=2, raw_output=raw, artifact=artifact)
+
     if action == "build_module":
         modules = sorted((agent_dir / "modules").glob("*.py"))
         module_name = modules[-1].name if modules else None
-        return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw)
+        artifact = write_artifact_metadata(
+            agent,
+            agent_dir,
+            "module_export_candidate",
+            "export_candidate",
+            "A helper module created inside the sim may become useful outside it.",
+            "This artifact documents a generated helper module and where it could go next.",
+            "Bridge internal agent tooling to external reusable software.",
+            "github_module",
+            ["package as a pip snippet", "bundle with tests", "publish as add-on"],
+            ["marketplace", "plugin pack", "dashboard"],
+            {"action": action, "reason": reason, "module": module_name},
+        )
+        return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw, artifact=artifact)
 
     return ActionResult(action=action, status=status, summary=f"unknown action: {reason}", raw_output=raw)
 
@@ -277,6 +350,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 "action": result.action,
                 "status": result.status,
                 "summary": result.summary,
+                "artifact": result.artifact,
                 "target": result.target,
                 "energy": agent["energy"],
                 "storage": agent["storage"],
@@ -313,10 +387,17 @@ def show_agent(name: str) -> Dict:
         memory = json.loads(memory_path.read_text())
     modules = [p.name for p in sorted((agent_dir / "modules").glob("*.py"))]
     artifacts = [p.name for p in sorted((agent_dir / "artifacts").glob("*")) if p.is_file()]
+    artifact_meta = {}
+    for meta_file in sorted((agent_dir / "artifacts").glob("*.meta.json"))[-5:]:
+        try:
+            artifact_meta[meta_file.name] = json.loads(meta_file.read_text())
+        except Exception:
+            artifact_meta[meta_file.name] = {"error": "failed to parse"}
     return {
         "agent": dict(row),
         "memory": memory,
         "modules": modules,
         "artifacts": artifacts,
+        "artifact_metadata": artifact_meta,
         "logs": logs,
     }

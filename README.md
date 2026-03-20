@@ -71,6 +71,8 @@ python3 main.py show-agent agent-1
 python3 main.py version
 ```
 
+`show-agent` now includes recent artifact metadata, not just raw files.
+
 ## Ollama configuration
 
 ```bash
@@ -110,3 +112,7 @@ What should come next:
 - richer economy / demand signals
 - replay dashboard
 - packaging for background service use
+oard that rewards timely artifacts
+- an export queue for promising modules/components
+- human review scoring for utility and sellability
+- artifact packs grouped by theme, market, or agent lineage
