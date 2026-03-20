@@ -18,7 +18,6 @@ from config import (
     VERSION,
 )
 
-
 ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "rest"]
 
 
@@ -60,15 +59,12 @@ def choose_target(agent: Dict[str, Any], world: Dict[str, Any]) -> str | None:
 def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any]:
     now_ts = int(world.get("now_ts", 0))
     target = choose_target(agent, world)
-    open_proposals = world.get("open_category_proposals", [])
     categories = world.get("categories", [])
 
     if agent["energy"] < 30:
         action = "rest"
     elif not list((Path(world["base_dir"]) / "agents" / agent["name"] / "modules").glob("*.py")):
         action = "build_module"
-    elif open_proposals and random.random() < 0.2:
-        action = random.choice(["research", "optimize"])
     elif target and can_inspect(agent, now_ts) and random.random() < 0.15:
         action = "inspect"
     elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.12:
@@ -80,7 +76,11 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
             k=1,
         )[0]
 
-    category = random.choice(categories) if categories else None
+    if random.random() < 0.18:
+        category = "uncategorized"
+    else:
+        category = random.choice(categories) if categories else "uncategorized"
+
     return {
         "action": action,
         "reason": f"fallback policy selected {action}",
@@ -123,7 +123,7 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
             "action": "one of allowed_actions",
             "reason": "short string",
             "target": "another agent name for inspect/trade, otherwise null",
-            "category": "one existing category if relevant, otherwise null",
+            "category": "one existing category or uncategorized",
             "code": "short python script, optional but preferred"
         },
     }
@@ -150,10 +150,11 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
         code = str(data.get("code", ""))[:MAX_CODE_SIZE]
         target = data.get("target")
         category = data.get("category")
+        valid_categories = set(world.get("categories", [])) | {"uncategorized"}
         if action in {"inspect", "trade"} and target not in world.get("agent_names", []):
             target = choose_target(agent, world)
-        if category not in world.get("categories", []):
-            category = random.choice(world.get("categories", [])) if world.get("categories") else None
+        if category not in valid_categories:
+            category = "uncategorized"
         return {
             "action": action,
             "reason": str(data.get("reason", "ollama")),

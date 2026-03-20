@@ -20,6 +20,7 @@ from config import (
     DB_PATH,
     DEFAULT_AGENT_COUNT,
     DEMAND_BOARD_PATH,
+    DORMANT_CATEGORY_MIN_ARTIFACTS,
     EXECUTION_BUDGET_SECONDS,
     EXPORT_QUEUE_PATH,
     EXPORT_READY_THRESHOLD,
@@ -119,7 +120,7 @@ def normalize_category_for_artifact(action: str, category: str | None) -> str:
         "trade": "exports",
         "gather": "memory",
     }
-    return mapping.get(action, "exports")
+    return mapping.get(action, "uncategorized")
 
 
 def maybe_generate_category_proposal(agents: list[dict], categories: list[str], proposals: list[dict], now_ts: int) -> tuple[list[dict], list[dict]]:
@@ -176,8 +177,12 @@ def resolve_category_proposals(agents: list[dict], categories: list[str], propos
         for agent in agents:
             if agent["name"] in proposal["votes_for"] or agent["name"] in proposal["votes_against"]:
                 continue
-            if category in {"observability", "evaluation", "replay", "forecasting"} and agent["name"].endswith(("1", "3", "5", "7", "9")):
+            energy_factor = agent["energy"] > 60
+            name_bias = sum(ord(ch) for ch in agent["name"] + category) % 3
+            if category in {"observability", "evaluation", "replay", "forecasting"} and energy_factor and name_bias != 0:
                 proposal["votes_for"].append(agent["name"])
+            elif name_bias == 0:
+                proposal["votes_against"].append(agent["name"])
             else:
                 proposal["votes_for"].append(agent["name"])
 
@@ -238,11 +243,6 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "review_status": meta.get("review_status"),
         "review_notes": meta.get("review_notes", []),
         "source_meta": str(meta_file.relative_to(BASE_DIR)),
-        "readme": {
-            "summary": meta.get("explanation"),
-            "why_it_matters": meta.get("purpose"),
-            "next_steps": meta.get("future_directions", []),
-        },
     }
 
 
@@ -289,13 +289,11 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     meta_file = find_meta_file_by_id(artifact_id)
     if meta_file is None:
         raise SystemExit(f"No artifact found with id: {artifact_id}")
-
     meta = read_json_file(meta_file, {})
     meta = update_artifact_scores(meta)
     meta.setdefault("review_notes", [])
     meta.setdefault("approved_for_export", False)
     meta.setdefault("export_path", None)
-
     if action == "approve":
         meta["review_status"] = "approved"
         meta["approved_for_export"] = True
@@ -318,11 +316,9 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
         if note:
             meta["review_notes"].append(note)
         meta["export_path"] = write_export_snapshot(meta, meta_file)
-
     if action in {"approve", "export"} and meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD:
         meta["review_status"] = "export_ready"
         meta["export_path"] = write_export_snapshot(meta, meta_file)
-
     write_json_file(meta_file, meta)
     refresh_state_files()
     return meta
@@ -333,7 +329,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     for meta in artifact_meta:
         if meta.get("review_status") != "export_ready":
             continue
-        category = meta.get("category", "exports")
+        category = meta.get("category", "uncategorized")
         packs.setdefault(category, []).append({
             "id": meta.get("id"),
             "title": meta.get("title"),
@@ -358,6 +354,7 @@ def refresh_state_files() -> tuple[list, list, list, list, list]:
     proposals = load_category_proposals()
     artifact_meta = []
     type_counts: Dict[str, int] = {}
+    category_counts: Dict[str, int] = {c: 0 for c in categories if c != "uncategorized"}
 
     for meta_file in AGENTS_DIR.glob("*/artifacts/*.meta.json"):
         meta = read_json_file(meta_file, None)
@@ -369,12 +366,22 @@ def refresh_state_files() -> tuple[list, list, list, list, list]:
         meta["path"] = str(meta_file.relative_to(BASE_DIR))
         artifact_meta.append(meta)
         type_counts[meta.get("artifact_type", "unknown")] = type_counts.get(meta.get("artifact_type", "unknown"), 0) + 1
+        cat = meta.get("category", "uncategorized")
+        if cat in category_counts:
+            category_counts[cat] += 1
+
+    dormant_categories = [c for c, count in category_counts.items() if count < DORMANT_CATEGORY_MIN_ARTIFACTS and c not in BASE_CATEGORIES]
+    uncategorized_strong = [m for m in artifact_meta if m.get("category") == "uncategorized" and m.get("human_proposed_score", 0.0) >= 0.75]
 
     demand_board = []
     if any(meta.get("artifact_type") == "market_hypothesis" for meta in artifact_meta):
         demand_board.append({"kind": "demand", "title": "Turn research notes into reusable export artifacts", "reason": "Research notes exist, but they need packaging paths and clearer export destinations."})
     if type_counts.get("export_candidate", 0) > 0:
         demand_board.append({"kind": "demand", "title": "Rank export candidates for human review", "reason": "There are exportable modules/components that should be shortlisted outside the sim."})
+    if uncategorized_strong:
+        demand_board.append({"kind": "emergence", "title": "Strong uncategorized artifacts detected", "reason": "Some high-value artifacts do not fit the current taxonomy and may justify a new category."})
+    if dormant_categories:
+        demand_board.append({"kind": "governance", "title": "Dormant categories detected", "reason": f"These categories are underused and may need retirement or revival: {', '.join(dormant_categories)}."})
     if any(meta.get("review_status") == "proposed" for meta in artifact_meta):
         demand_board.append({"kind": "review", "title": "Human review queue has proposed artifacts", "reason": "Some artifacts crossed the review threshold and should be inspected by a human."})
     if any(meta.get("review_status") == "export_ready" for meta in artifact_meta):
@@ -384,37 +391,13 @@ def refresh_state_files() -> tuple[list, list, list, list, list]:
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
 
     export_queue = sorted([
-        {
-            "id": meta.get("id"),
-            "title": meta.get("title"),
-            "artifact_type": meta.get("artifact_type"),
-            "category": meta.get("category"),
-            "path": meta.get("path"),
-            "destination": meta.get("destination"),
-            "internal_score": meta.get("internal_score", 0.0),
-            "human_proposed_score": meta.get("human_proposed_score", 0.0),
-            "review_status": meta.get("review_status", "unreviewed"),
-            "approved_for_export": meta.get("approved_for_export", False),
-            "export_path": meta.get("export_path"),
-            "status": meta.get("status", "prototype"),
-        }
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "path": meta.get("path"), "destination": meta.get("destination"), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
         for meta in artifact_meta
         if meta.get("human_proposed_score", 0.0) >= 0.45 or meta.get("artifact_type") == "export_candidate"
     ], key=lambda item: (item["human_proposed_score"], item["internal_score"]), reverse=True)[:MAX_EXPORT_QUEUE]
 
     review_queue = sorted([
-        {
-            "id": meta.get("id"),
-            "title": meta.get("title"),
-            "artifact_type": meta.get("artifact_type"),
-            "category": meta.get("category"),
-            "path": meta.get("path"),
-            "review_status": meta.get("review_status", "unreviewed"),
-            "review_notes": meta.get("review_notes", []),
-            "human_proposed_score": meta.get("human_proposed_score", 0.0),
-            "approved_for_export": meta.get("approved_for_export", False),
-            "export_path": meta.get("export_path"),
-        }
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
         for meta in artifact_meta
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
