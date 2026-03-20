@@ -518,6 +518,23 @@ def build_family_signals(artifact_meta: list[dict]) -> dict:
     }
 
 
+def build_failure_signals(conn: sqlite3.Connection) -> dict:
+    rows = [dict(r) for r in conn.execute("SELECT action, status, summary FROM logs ORDER BY id DESC LIMIT 40").fetchall()]
+    errors = [r for r in rows if r.get('status') == 'error']
+    cooldowns = [r for r in rows if r.get('status') == 'cooldown']
+    skipped = [r for r in rows if r.get('status') == 'skipped']
+    hot_actions = {}
+    for row in errors + cooldowns + skipped:
+        action = row.get('action', 'unknown')
+        hot_actions[action] = hot_actions.get(action, 0) + 1
+    return {
+        "error_count": len(errors),
+        "cooldown_count": len(cooldowns),
+        "skipped_count": len(skipped),
+        "friction_actions": [k for k, _ in sorted(hot_actions.items(), key=lambda kv: kv[1], reverse=True)[:5]],
+    }
+
+
 def build_market_signals(artifact_meta: list[dict], packs: list[dict], categories: list[str]) -> dict:
     category_counts: Dict[str, int] = {}
     export_ready_counts: Dict[str, int] = {}
@@ -542,7 +559,7 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
     }
 
 
-def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
+def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, list, list, list, list, dict]:
     categories = load_categories()
     proposals = load_category_proposals()
     artifact_meta = []
@@ -599,6 +616,12 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
     emergent_groups = build_uncategorized_groups(artifact_meta)
     family_signals = build_family_signals(artifact_meta)
     market_signals = build_market_signals(artifact_meta, packs, categories)
+    if conn is None:
+        conn = connect()
+        close_conn = True
+    else:
+        close_conn = False
+    failure_signals = build_failure_signals(conn)
     if emergent_groups:
         demand_board.append({"kind": "emergence", "title": "Uncategorized emergent groups detected", "reason": f"There are {len(emergent_groups)} promising uncategorized group(s) worth inspecting."})
     if family_signals["active_families"]:
@@ -609,13 +632,17 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
         demand_board.append({"kind": "market", "title": "Saturated categories detected", "reason": f"These categories may be getting crowded: {', '.join(market_signals['saturated_categories'])}."})
     if market_signals["export_pressure_categories"]:
         demand_board.append({"kind": "market", "title": "Export pressure building", "reason": f"These categories currently hold export-ready artifacts: {', '.join(market_signals['export_pressure_categories'])}."})
+    if failure_signals["error_count"] or failure_signals["cooldown_count"] or failure_signals["skipped_count"]:
+        demand_board.append({"kind": "failure", "title": "Recent friction detected", "reason": f"Errors={failure_signals['error_count']}, cooldowns={failure_signals['cooldown_count']}, skipped={failure_signals['skipped_count']}; hot actions: {', '.join(failure_signals['friction_actions']) or 'none'}."})
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
     write_json_file(DEMAND_BOARD_PATH, demand_board)
     write_json_file(EXPORT_QUEUE_PATH, export_queue)
     write_json_file(REVIEW_QUEUE_PATH, review_queue)
     write_json_file(CATEGORIES_PATH, categories)
     write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
-    return demand_board, export_queue, review_queue, categories, packs, market_signals, emergent_groups, family_signals
+    if close_conn:
+        conn.close()
+    return demand_board, export_queue, review_queue, categories, packs, market_signals, emergent_groups, family_signals, failure_signals
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
@@ -807,7 +834,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
-    refresh_state_files()
+    refresh_state_files(conn)
     conn.close()
     return summaries
 
@@ -842,6 +869,16 @@ def show_world() -> Dict:
         "family_counts": family_counts,
         "active_families": [k for k, _ in sorted(family_counts.items(), key=lambda kv: kv[1], reverse=True)[:6]],
     }
+    failure_conn = connect()
+    failure_signals = build_failure_signals(failure_conn)
+    failure_conn.close()
+    demand_board = read_json_file(DEMAND_BOARD_PATH, [])
+    if (failure_signals.get('error_count') or failure_signals.get('cooldown_count') or failure_signals.get('skipped_count')) and not any(item.get('kind') == 'failure' for item in demand_board):
+        demand_board.append({
+            'kind': 'failure',
+            'title': 'Recent friction detected',
+            'reason': f"Errors={failure_signals['error_count']}, cooldowns={failure_signals['cooldown_count']}, skipped={failure_signals['skipped_count']}; hot actions: {', '.join(failure_signals['friction_actions']) or 'none'}."
+        })
     return {
         "world": world,
         "agents": agents,
@@ -851,7 +888,8 @@ def show_world() -> Dict:
         "emergent_groups": emergent_groups,
         "family_signals": family_signals,
         "market_signals": market_signals,
-        "demand_board": read_json_file(DEMAND_BOARD_PATH, []),
+        "failure_signals": failure_signals,
+        "demand_board": demand_board,
         "export_queue": export_queue,
         "review_queue": read_json_file(REVIEW_QUEUE_PATH, []),
         "recent_logs": logs,

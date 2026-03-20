@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.34** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now write richer export folders instead of only flat JSON snapshots.
+**CircleForge v0.0.35** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now derive demand signals from recent friction such as errors, skipped actions, and cooldown hits.
 
 ## Current core
 
@@ -23,16 +23,14 @@ CircleForge currently includes:
 - emergent uncategorized groups
 - practical artifact families
 - richer export packaging
+- failure-driven demand signals
 
-## New in v0.0.34
+## New in v0.0.35
 
-- export folders instead of single-file snapshots
-- each export now writes:
-  - `manifest.json`
-  - `README.md`
-  - `notes.md`
-- export paths now point to the folder root
-- exported artifacts are easier to inspect and package later
+- failure-driven demand signals
+- world output now includes `failure_signals`
+- recent errors, skips, and cooldowns can influence the demand board
+- the sim now surfaces friction, not just artifacts
 
 ## Useful commands
 
@@ -51,6 +49,5 @@ python3 main.py version
 
 ## What should come next
 
-- failure-driven demand signals
 - dashboard/status-page export templates
 - replay dashboard
