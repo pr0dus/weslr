@@ -29,6 +29,7 @@ Rules now include:
 
 ## What should come next
 
+- lineage fields and parent/derived tracking
 - manual category governance controls
 - category retirement / revival logic
 - richer failure-driven demand signals

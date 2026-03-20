@@ -199,28 +199,35 @@ def resolve_category_proposals(agents: list[dict], categories: list[str], propos
     return agents, categories, proposals
 
 
+def compute_quality_dimensions(meta: Dict) -> Dict:
+    clarity = 0.25 + (0.25 if meta.get("explanation") else 0.0) + (0.2 if meta.get("purpose") else 0.0) + min(len(meta.get("review_notes", [])) * 0.05, 0.1)
+    reusability = 0.2 + min(len(meta.get("combinable_with", [])) * 0.1, 0.3) + (0.2 if meta.get("destination") in {"shared_with_agents", "github_module"} else 0.05)
+    novelty = 0.2 + (0.2 if meta.get("artifact_type") == "export_candidate" else 0.08) + (0.15 if meta.get("category") == "uncategorized" else 0.0)
+    stability = 0.25 + (0.2 if meta.get("status") in {"prototype", "internal_use", "tradable"} else 0.05) + (0.15 if meta.get("lifecycle_stage") in {"review_proposed", "approved", "export_ready", "packed"} else 0.0)
+    exportability = 0.2 + (0.25 if meta.get("destination") in {"github_module", "shared_with_agents"} else 0.05) + min(len(meta.get("future_directions", [])) * 0.06, 0.18)
+    market_fit = 0.2 + (0.2 if meta.get("why_now") else 0.0) + (0.15 if meta.get("if_interest_exists") else 0.0) + (0.1 if meta.get("artifact_type") in {"export_candidate", "tradable_component"} else 0.0)
+    return {
+        "clarity_score": round(min(clarity, 0.99), 3),
+        "reusability_score": round(min(reusability, 0.99), 3),
+        "novelty_score": round(min(novelty, 0.99), 3),
+        "stability_score": round(min(stability, 0.99), 3),
+        "exportability_score": round(min(exportability, 0.99), 3),
+        "market_fit_score": round(min(market_fit, 0.99), 3),
+    }
+
+
 def compute_internal_score(meta: Dict) -> float:
-    score = 0.2
-    score += min(len(meta.get("combinable_with", [])) * 0.08, 0.24)
-    score += 0.18 if meta.get("destination") in {"shared_with_agents", "internal_review", "github_module"} else 0.08
-    score += 0.14 if meta.get("purpose") else 0.0
-    score += 0.14 if meta.get("explanation") else 0.0
-    score += 0.10 if meta.get("lineage") else 0.0
-    return round(min(score, 0.99), 3)
+    q = compute_quality_dimensions(meta)
+    return round(min((q["clarity_score"] + q["reusability_score"] + q["stability_score"]) / 3, 0.99), 3)
 
 
 def compute_human_proposed_score(meta: Dict) -> float:
-    score = 0.18
-    score += 0.16 if meta.get("artifact_type") == "export_candidate" else 0.08
-    score += 0.16 if meta.get("destination") in {"github_module", "shared_with_agents"} else 0.06
-    score += min(len(meta.get("future_directions", [])) * 0.06, 0.18)
-    score += 0.12 if meta.get("idea") else 0.0
-    score += 0.12 if meta.get("why_now") else 0.0
-    score += 0.10 if meta.get("if_interest_exists") else 0.0
-    return round(min(score, 0.99), 3)
+    q = compute_quality_dimensions(meta)
+    return round(min((q["clarity_score"] + q["novelty_score"] + q["exportability_score"] + q["market_fit_score"]) / 4, 0.99), 3)
 
 
 def update_artifact_scores(meta: Dict) -> Dict:
+    meta.update(compute_quality_dimensions(meta))
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
     return meta
@@ -233,11 +240,18 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "title": meta.get("title"),
         "artifact_type": meta.get("artifact_type"),
         "category": meta.get("category"),
+        "lifecycle_stage": meta.get("lifecycle_stage"),
         "idea": meta.get("idea"),
         "explanation": meta.get("explanation"),
         "purpose": meta.get("purpose"),
         "destination": meta.get("destination"),
         "future_directions": meta.get("future_directions", []),
+        "clarity_score": meta.get("clarity_score"),
+        "reusability_score": meta.get("reusability_score"),
+        "novelty_score": meta.get("novelty_score"),
+        "stability_score": meta.get("stability_score"),
+        "exportability_score": meta.get("exportability_score"),
+        "market_fit_score": meta.get("market_fit_score"),
         "internal_score": meta.get("internal_score"),
         "human_proposed_score": meta.get("human_proposed_score"),
         "review_status": meta.get("review_status"),
@@ -262,12 +276,14 @@ def maybe_promote_for_review(meta: Dict, meta_file: Path) -> Dict:
 
     if meta.get("human_proposed_score", 0.0) >= 0.65 and review_status == "unreviewed":
         meta["review_status"] = "proposed"
+        meta["lifecycle_stage"] = "review_proposed"
         note = "Auto-proposed for human review based on score threshold."
         if note not in meta["review_notes"]:
             meta["review_notes"].append(note)
 
     if meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD and meta.get("review_status") in {"proposed", "approved", "export_ready"}:
         meta["review_status"] = "export_ready"
+        meta["lifecycle_stage"] = "export_ready"
         meta["approved_for_export"] = True
         meta["export_path"] = write_export_snapshot(meta, meta_file)
         note = "Auto-promoted to export_ready by score threshold."
@@ -296,11 +312,13 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     meta.setdefault("export_path", None)
     if action == "approve":
         meta["review_status"] = "approved"
+        meta["lifecycle_stage"] = "approved"
         meta["approved_for_export"] = True
         if note:
             meta["review_notes"].append(note)
     elif action == "reject":
         meta["review_status"] = "rejected"
+        meta["lifecycle_stage"] = "archived"
         meta["approved_for_export"] = False
         meta["export_path"] = None
         if note:
@@ -310,14 +328,17 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
             meta["review_notes"].append(note)
         if meta.get("review_status") == "unreviewed":
             meta["review_status"] = "proposed"
+            meta["lifecycle_stage"] = "review_proposed"
     elif action == "export":
         meta["review_status"] = "export_ready"
+        meta["lifecycle_stage"] = "packed"
         meta["approved_for_export"] = True
         if note:
             meta["review_notes"].append(note)
         meta["export_path"] = write_export_snapshot(meta, meta_file)
     if action in {"approve", "export"} and meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD:
         meta["review_status"] = "export_ready"
+        meta["lifecycle_stage"] = "packed"
         meta["export_path"] = write_export_snapshot(meta, meta_file)
     write_json_file(meta_file, meta)
     refresh_state_files()
@@ -334,6 +355,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "id": meta.get("id"),
             "title": meta.get("title"),
             "artifact_type": meta.get("artifact_type"),
+            "lifecycle_stage": meta.get("lifecycle_stage"),
             "export_path": meta.get("export_path"),
             "human_proposed_score": meta.get("human_proposed_score"),
         })
@@ -391,13 +413,13 @@ def refresh_state_files() -> tuple[list, list, list, list, list]:
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
 
     export_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "path": meta.get("path"), "destination": meta.get("destination"), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "destination": meta.get("destination"), "clarity_score": meta.get("clarity_score", 0.0), "reusability_score": meta.get("reusability_score", 0.0), "novelty_score": meta.get("novelty_score", 0.0), "stability_score": meta.get("stability_score", 0.0), "exportability_score": meta.get("exportability_score", 0.0), "market_fit_score": meta.get("market_fit_score", 0.0), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
         for meta in artifact_meta
         if meta.get("human_proposed_score", 0.0) >= 0.45 or meta.get("artifact_type") == "export_candidate"
     ], key=lambda item: (item["human_proposed_score"], item["internal_score"]), reverse=True)[:MAX_EXPORT_QUEUE]
 
     review_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
         for meta in artifact_meta
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
@@ -475,6 +497,7 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "if_interest_exists": ["package as a standalone module", "export to a GitHub subproject", "bundle into a premium add-on pack"],
         "lineage": lineage,
         "status": "prototype",
+        "lifecycle_stage": "prototype",
         "review_status": "unreviewed",
         "review_notes": [],
         "approved_for_export": False,
