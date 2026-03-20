@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.26"
+VERSION = "0.0.27"
 PROJECT_NAME = "CircleForge"
 PROJECT_SLUG = "circleforge"
 
@@ -14,6 +14,9 @@ DEMAND_BOARD_PATH = BASE_DIR / "demand_board.json"
 EXPORT_QUEUE_PATH = BASE_DIR / "export_queue.json"
 REVIEW_QUEUE_PATH = BASE_DIR / "review_queue.json"
 EXPORTS_DIR = BASE_DIR / "exports"
+CATEGORIES_PATH = BASE_DIR / "categories.json"
+CATEGORY_PROPOSALS_PATH = BASE_DIR / "category_proposals.json"
+PACKS_PATH = BASE_DIR / "artifact_packs.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40
@@ -26,6 +29,9 @@ MAX_EXPORT_QUEUE = 50
 MAX_DEMAND_ITEMS = 12
 MAX_REVIEW_QUEUE = 50
 EXPORT_READY_THRESHOLD = 0.8
+MAX_CATEGORIES = 20
+CATEGORY_PROPOSAL_COST = 5
+CATEGORY_REJECTION_REPUTATION_PENALTY = 0.02
 
 DEFAULT_AGENT_COUNT = 4
 STARTING_ENERGY = 100

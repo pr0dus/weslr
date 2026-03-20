@@ -71,7 +71,7 @@ def main():
     p.add_argument("--verbose", action="store_true")
     p.set_defaults(func=cmd_run)
 
-    p = sub.add_parser("show-world", help="show world state, demand board, export queue, review queue, and recent logs")
+    p = sub.add_parser("show-world", help="show world state, queues, categories, proposals, packs, and recent logs")
     p.set_defaults(func=cmd_show_world)
 
     p = sub.add_parser("show-agent", help="show one agent state")

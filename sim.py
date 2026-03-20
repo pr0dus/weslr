@@ -11,6 +11,10 @@ from agent_runtime import decide_action, save_note
 from config import (
     AGENTS_DIR,
     BASE_DIR,
+    CATEGORIES_PATH,
+    CATEGORY_PROPOSALS_PATH,
+    CATEGORY_PROPOSAL_COST,
+    CATEGORY_REJECTION_REPUTATION_PENALTY,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -20,9 +24,11 @@ from config import (
     EXPORT_QUEUE_PATH,
     EXPORT_READY_THRESHOLD,
     EXPORTS_DIR,
+    MAX_CATEGORIES,
     MAX_DEMAND_ITEMS,
     MAX_EXPORT_QUEUE,
     MAX_REVIEW_QUEUE,
+    PACKS_PATH,
     PROJECT_NAME,
     REVIEW_QUEUE_PATH,
     STARTING_ENERGY,
@@ -35,6 +41,15 @@ from config import (
 from models import ActionResult, AgentState
 from sandbox import run_python
 
+BASE_CATEGORIES = [
+    "modules",
+    "research",
+    "optimization",
+    "debugging",
+    "memory",
+    "exports",
+    "benchmarks",
+]
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS world (
@@ -85,6 +100,100 @@ def write_json_file(path: Path, payload) -> None:
     path.write_text(json.dumps(payload, indent=2))
 
 
+def load_categories() -> list[str]:
+    return read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy())
+
+
+def load_category_proposals() -> list[dict]:
+    return read_json_file(CATEGORY_PROPOSALS_PATH, [])
+
+
+def normalize_category_for_artifact(action: str, category: str | None) -> str:
+    if category:
+        return category
+    mapping = {
+        "build_module": "modules",
+        "research": "research",
+        "optimize": "optimization",
+        "inspect": "debugging",
+        "trade": "exports",
+        "gather": "memory",
+    }
+    return mapping.get(action, "exports")
+
+
+def maybe_generate_category_proposal(agents: list[dict], categories: list[str], proposals: list[dict], now_ts: int) -> tuple[list[dict], list[dict]]:
+    if len(categories) >= MAX_CATEGORIES:
+        return agents, proposals
+    if any(p.get("status") == "pending" for p in proposals):
+        return agents, proposals
+
+    candidate_names = [
+        "observability",
+        "packaging",
+        "interfaces",
+        "forecasting",
+        "market-tools",
+        "replay",
+        "lineage",
+        "automation",
+        "orchestration",
+        "evaluation",
+    ]
+    available = [c for c in candidate_names if c not in categories]
+    if not available:
+        return agents, proposals
+
+    proposer = next((a for a in agents if a["energy"] > CATEGORY_PROPOSAL_COST + 10), None)
+    if proposer is None:
+        return agents, proposals
+
+    category = available[0]
+    proposer["energy"] -= CATEGORY_PROPOSAL_COST
+    proposal = {
+        "id": f"proposal-{category}-{now_ts}",
+        "category": category,
+        "reason": f"Agents see repeated need for {category}-related artifacts.",
+        "suggested_use": f"Group artifacts related to {category} into a coherent pack.",
+        "proposed_by": proposer["name"],
+        "votes_for": [proposer["name"]],
+        "votes_against": [],
+        "status": "pending",
+        "created_at": now_ts,
+    }
+    proposals.append(proposal)
+    return agents, proposals
+
+
+def resolve_category_proposals(agents: list[dict], categories: list[str], proposals: list[dict]) -> tuple[list[dict], list[str], list[dict]]:
+    active_count = max(1, len(agents))
+    threshold = active_count / 2
+
+    for proposal in proposals:
+        if proposal.get("status") != "pending":
+            continue
+        category = proposal["category"]
+        for agent in agents:
+            if agent["name"] in proposal["votes_for"] or agent["name"] in proposal["votes_against"]:
+                continue
+            if category in {"observability", "evaluation", "replay", "forecasting"} and agent["name"].endswith(("1", "3", "5", "7", "9")):
+                proposal["votes_for"].append(agent["name"])
+            else:
+                proposal["votes_for"].append(agent["name"])
+
+        if len(proposal["votes_for"]) > threshold and len(categories) < MAX_CATEGORIES:
+            proposal["status"] = "approved"
+            if category not in categories:
+                categories.append(category)
+        else:
+            proposal["status"] = "rejected"
+            proposer = next((a for a in agents if a["name"] == proposal.get("proposed_by")), None)
+            if proposer is not None:
+                proposer["reputation"] = max(0.0, proposer["reputation"] - CATEGORY_REJECTION_REPUTATION_PENALTY)
+
+    return agents, categories, proposals
+
+
 def compute_internal_score(meta: Dict) -> float:
     score = 0.2
     score += min(len(meta.get("combinable_with", [])) * 0.08, 0.24)
@@ -118,6 +227,7 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "version": VERSION,
         "title": meta.get("title"),
         "artifact_type": meta.get("artifact_type"),
+        "category": meta.get("category"),
         "idea": meta.get("idea"),
         "explanation": meta.get("explanation"),
         "purpose": meta.get("purpose"),
@@ -214,11 +324,38 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
         meta["export_path"] = write_export_snapshot(meta, meta_file)
 
     write_json_file(meta_file, meta)
-    refresh_demand_board_and_export_queue()
+    refresh_state_files()
     return meta
 
 
-def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
+def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
+    packs: dict[str, list[dict]] = {}
+    for meta in artifact_meta:
+        if meta.get("review_status") != "export_ready":
+            continue
+        category = meta.get("category", "exports")
+        packs.setdefault(category, []).append({
+            "id": meta.get("id"),
+            "title": meta.get("title"),
+            "artifact_type": meta.get("artifact_type"),
+            "export_path": meta.get("export_path"),
+            "human_proposed_score": meta.get("human_proposed_score"),
+        })
+    result = []
+    for category, items in sorted(packs.items()):
+        result.append({
+            "category": category,
+            "pack_name": f"{category}-pack",
+            "count": len(items),
+            "artifacts": sorted(items, key=lambda x: x["human_proposed_score"], reverse=True),
+        })
+    write_json_file(PACKS_PATH, result)
+    return result
+
+
+def refresh_state_files() -> tuple[list, list, list, list, list]:
+    categories = load_categories()
+    proposals = load_category_proposals()
     artifact_meta = []
     type_counts: Dict[str, int] = {}
 
@@ -242,8 +379,8 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
         demand_board.append({"kind": "review", "title": "Human review queue has proposed artifacts", "reason": "Some artifacts crossed the review threshold and should be inspected by a human."})
     if any(meta.get("review_status") == "export_ready" for meta in artifact_meta):
         demand_board.append({"kind": "export", "title": "Export-ready artifacts available", "reason": "At least one artifact is ready for human inspection or external packaging."})
-    if len(artifact_meta) >= 3:
-        demand_board.append({"kind": "demand", "title": "Bundle related artifacts into packs", "reason": "The artifact count is high enough that grouping by theme or function now matters."})
+    if proposals and any(p.get("status") == "pending" for p in proposals):
+        demand_board.append({"kind": "governance", "title": "Pending category proposal needs votes", "reason": "A new artifact category has been proposed and awaits majority approval."})
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
 
     export_queue = sorted([
@@ -251,6 +388,7 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
             "id": meta.get("id"),
             "title": meta.get("title"),
             "artifact_type": meta.get("artifact_type"),
+            "category": meta.get("category"),
             "path": meta.get("path"),
             "destination": meta.get("destination"),
             "internal_score": meta.get("internal_score", 0.0),
@@ -269,6 +407,7 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
             "id": meta.get("id"),
             "title": meta.get("title"),
             "artifact_type": meta.get("artifact_type"),
+            "category": meta.get("category"),
             "path": meta.get("path"),
             "review_status": meta.get("review_status", "unreviewed"),
             "review_notes": meta.get("review_notes", []),
@@ -280,24 +419,28 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
 
+    packs = build_artifact_packs(artifact_meta)
     write_json_file(DEMAND_BOARD_PATH, demand_board)
     write_json_file(EXPORT_QUEUE_PATH, export_queue)
     write_json_file(REVIEW_QUEUE_PATH, review_queue)
-    return demand_board, export_queue, review_queue
+    write_json_file(CATEGORIES_PATH, categories)
+    write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
+    return demand_board, export_queue, review_queue, categories, packs
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
     if reset:
-        if DB_PATH.exists():
-            DB_PATH.unlink()
-        if AGENTS_DIR.exists():
-            shutil.rmtree(AGENTS_DIR)
-        for path in [DEMAND_BOARD_PATH, EXPORT_QUEUE_PATH, REVIEW_QUEUE_PATH]:
+        for path in [DB_PATH, DEMAND_BOARD_PATH, EXPORT_QUEUE_PATH, REVIEW_QUEUE_PATH, CATEGORIES_PATH, CATEGORY_PROPOSALS_PATH, PACKS_PATH]:
             if path.exists():
                 path.unlink()
+        if AGENTS_DIR.exists():
+            shutil.rmtree(AGENTS_DIR)
         if EXPORTS_DIR.exists():
             shutil.rmtree(EXPORTS_DIR)
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+    write_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy())
+    write_json_file(CATEGORY_PROPOSALS_PATH, [])
+    write_json_file(PACKS_PATH, [])
     conn = connect()
     with conn:
         conn.execute("DELETE FROM world")
@@ -313,7 +456,7 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
             (agent_dir / "memory.json").write_text("[]")
             state = AgentState(name=name, energy=STARTING_ENERGY, storage=STARTING_STORAGE, gpu_quota=STARTING_GPU, reputation=STARTING_REPUTATION)
             conn.execute("INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks))
-    refresh_demand_board_and_export_queue()
+    refresh_state_files()
     conn.close()
 
 
@@ -327,7 +470,7 @@ def list_agents(conn: sqlite3.Connection) -> List[Dict]:
     return [dict(row) for row in conn.execute("SELECT * FROM agents ORDER BY name").fetchall()]
 
 
-def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, artifact_type: str, idea: str, explanation: str, purpose: str, destination: str, future_directions: List[str], combinable_with: List[str], lineage: Dict) -> str:
+def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, artifact_type: str, idea: str, explanation: str, purpose: str, destination: str, future_directions: List[str], combinable_with: List[str], lineage: Dict, category: str) -> str:
     artifacts_dir = agent_dir / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     artifact_id = f"{agent['name']}-{artifact_slug}-{int(time.time())}"
@@ -336,6 +479,7 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "id": artifact_id,
         "title": artifact_slug.replace("_", " ").title(),
         "artifact_type": artifact_type,
+        "category": category,
         "idea": idea,
         "explanation": explanation,
         "purpose": purpose,
@@ -395,6 +539,7 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
     reason = action_plan.get("reason", "")
     code = action_plan.get("code", "")
     target_name = action_plan.get("target")
+    category = normalize_category_for_artifact(action, action_plan.get("category"))
     if action == "rest":
         return ActionResult(action=action, status="ok", summary=f"rested: {reason}", energy_delta=8)
     if action == "inspect":
@@ -411,15 +556,15 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
     if action == "gather":
         return ActionResult(action=action, status=status, summary=f"gathered resources; {reason}", energy_delta=4, storage_delta=2, raw_output=raw)
     if action == "research":
-        artifact = write_artifact_metadata(agent, agent_dir, "research_note", "market_hypothesis", "Short-cycle agents should compress observations into exportable research notes.", "This artifact captures a compact research note produced during a simulation tick.", "Make research outputs legible to humans and other agents.", "internal_review", ["turn into benchmark criteria", "package as an insight feed"], ["dashboard", "artifact marketplace", "export queue"], {"action": action, "reason": reason, "tick_context": "research"})
+        artifact = write_artifact_metadata(agent, agent_dir, "research_note", "market_hypothesis", "Short-cycle agents should compress observations into exportable research notes.", "This artifact captures a compact research note produced during a simulation tick.", "Make research outputs legible to humans and other agents.", "internal_review", ["turn into benchmark criteria", "package as an insight feed"], ["dashboard", "artifact marketplace", "export queue"], {"action": action, "reason": reason, "tick_context": "research"}, category)
         return ActionResult(action=action, status=status, summary=f"researched local improvements; {reason}", reputation_delta=0.02, raw_output=raw, artifact=artifact)
     if action == "optimize":
-        artifact = write_artifact_metadata(agent, agent_dir, "optimization_bundle", "tradable_component", "Bundle workflow optimizations into something reusable.", "This artifact describes an optimization bundle created from a local agent workflow pass.", "Turn internal efficiency gains into components others can inspect, trade, or export.", "shared_with_agents", ["convert to installable module", "attach metrics and benchmarks"], ["trade action", "export candidate queue"], {"action": action, "reason": reason, "tick_context": "optimize"})
+        artifact = write_artifact_metadata(agent, agent_dir, "optimization_bundle", "tradable_component", "Bundle workflow optimizations into something reusable.", "This artifact describes an optimization bundle created from a local agent workflow pass.", "Turn internal efficiency gains into components others can inspect, trade, or export.", "shared_with_agents", ["convert to installable module", "attach metrics and benchmarks"], ["trade action", "export candidate queue"], {"action": action, "reason": reason, "tick_context": "optimize"}, category)
         return ActionResult(action=action, status=status, summary=f"optimized workflow; {reason}", energy_delta=2, raw_output=raw, artifact=artifact)
     if action == "build_module":
         modules = sorted((agent_dir / "modules").glob("*.py"))
         module_name = modules[-1].name if modules else None
-        artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name})
+        artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name}, category)
         return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw, artifact=artifact)
     return ActionResult(action=action, status=status, summary=f"unknown action: {reason}", raw_output=raw)
 
@@ -442,11 +587,18 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         conn.execute("UPDATE world SET value=? WHERE key='tick'", (str(tick),))
         conn.execute("UPDATE world SET value=? WHERE key='last_tick_started'", (str(started_at),))
         agents = list_agents(conn)
+        categories = load_categories()
+        proposals = load_category_proposals()
+        agents, proposals = maybe_generate_category_proposal(agents, categories, proposals, started_at)
+        agents, categories, proposals = resolve_category_proposals(agents, categories, proposals)
+        write_json_file(CATEGORIES_PATH, categories)
+        write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
         agents_by_name = {agent["name"]: agent for agent in agents}
         agent_names = [agent["name"] for agent in agents]
+        pending = [p for p in proposals if p.get("status") == "pending"]
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names}, agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending}, agent_dir)
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -460,7 +612,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
-    refresh_demand_board_and_export_queue()
+    refresh_state_files()
     conn.close()
     return summaries
 
@@ -471,7 +623,17 @@ def show_world() -> Dict:
     agents = list_agents(conn)
     logs = [dict(row) for row in conn.execute("SELECT tick, agent_name, action, status, summary FROM logs ORDER BY id DESC LIMIT 20").fetchall()]
     conn.close()
-    return {"world": world, "agents": agents, "demand_board": read_json_file(DEMAND_BOARD_PATH, []), "export_queue": read_json_file(EXPORT_QUEUE_PATH, []), "review_queue": read_json_file(REVIEW_QUEUE_PATH, []), "recent_logs": logs}
+    return {
+        "world": world,
+        "agents": agents,
+        "categories": read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy()),
+        "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
+        "artifact_packs": read_json_file(PACKS_PATH, []),
+        "demand_board": read_json_file(DEMAND_BOARD_PATH, []),
+        "export_queue": read_json_file(EXPORT_QUEUE_PATH, []),
+        "review_queue": read_json_file(REVIEW_QUEUE_PATH, []),
+        "recent_logs": logs,
+    }
 
 
 def show_agent(name: str) -> Dict:

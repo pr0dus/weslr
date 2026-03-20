@@ -7,3 +7,6 @@ demand_board.json
 export_queue.json
 review_queue.json
 exports/
+categories.json
+category_proposals.json
+artifact_packs.json

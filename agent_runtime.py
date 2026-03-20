@@ -60,11 +60,15 @@ def choose_target(agent: Dict[str, Any], world: Dict[str, Any]) -> str | None:
 def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any]:
     now_ts = int(world.get("now_ts", 0))
     target = choose_target(agent, world)
+    open_proposals = world.get("open_category_proposals", [])
+    categories = world.get("categories", [])
 
     if agent["energy"] < 30:
         action = "rest"
     elif not list((Path(world["base_dir"]) / "agents" / agent["name"] / "modules").glob("*.py")):
         action = "build_module"
+    elif open_proposals and random.random() < 0.2:
+        action = random.choice(["research", "optimize"])
     elif target and can_inspect(agent, now_ts) and random.random() < 0.15:
         action = "inspect"
     elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.12:
@@ -76,11 +80,13 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
             k=1,
         )[0]
 
+    category = random.choice(categories) if categories else None
     return {
         "action": action,
         "reason": f"fallback policy selected {action}",
         "code": default_code_for(action, agent["name"]),
         "target": target if action in {"inspect", "trade"} else None,
+        "category": category,
     }
 
 
@@ -117,6 +123,7 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
             "action": "one of allowed_actions",
             "reason": "short string",
             "target": "another agent name for inspect/trade, otherwise null",
+            "category": "one existing category if relevant, otherwise null",
             "code": "short python script, optional but preferred"
         },
     }
@@ -142,12 +149,16 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
             return None
         code = str(data.get("code", ""))[:MAX_CODE_SIZE]
         target = data.get("target")
+        category = data.get("category")
         if action in {"inspect", "trade"} and target not in world.get("agent_names", []):
             target = choose_target(agent, world)
+        if category not in world.get("categories", []):
+            category = random.choice(world.get("categories", [])) if world.get("categories") else None
         return {
             "action": action,
             "reason": str(data.get("reason", "ollama")),
             "target": target if action in {"inspect", "trade"} else None,
+            "category": category,
             "code": code or default_code_for(action, agent["name"]),
         }
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):

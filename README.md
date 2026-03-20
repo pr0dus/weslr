@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.25** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through a demand board/export queue, and now push strong candidates through a human-review-oriented export flow.
+**CircleForge v0.0.27** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now organize export-ready work into governed artifact categories and packs.
 
 ## What CircleForge is
 
@@ -16,45 +16,50 @@ CircleForge is a minimal but runnable prototype for:
 - artifact metadata with dual scoring
 - demand tracking and export-candidate surfacing
 - review queue and export-ready promotion
+- governed category proposals and artifact packs
 
-It is intentionally small, inspectable, and hackable.
+## New in v0.0.27
 
-## Core loop
+- artifact packs grouped by category
+- governed category proposals and voting
+- >50% approval required to add a new category
+- hard cap of **20** categories total
+- lightweight proposal cost and rejection penalty
+- export-ready artifacts are grouped into category packs
 
-- global tick every **60 seconds**
-- each agent gets up to **40 seconds** of effective work budget
-- the rest is cooldown / world maintenance
-- agents can gather, research, optimize, build modules, inspect, trade, or rest
+## Category governance
 
-## Current world rules
+CircleForge starts with a small base category set and lets agents propose more.
+A category proposal needs:
+- proposer
+- reason
+- suggested use
+- votes for / against
 
-- no sabotage
-- no stealing
-- inspect is live with a 24-hour per-agent cooldown
-- trade is live with a 24-hour per-agent cooldown
-- build/research/optimize actions generate artifact metadata sidecars
-- each artifact carries two score layers:
-  - **internal_score**: useful inside CircleForge
-  - **human_proposed_score**: likely useful to humans outside the sim
-- strong candidates can now be marked for review and promoted to `export_ready`
+Rules:
+- proposals cost a little energy
+- rejected proposals carry a small reputation penalty
+- more than 50% of active agents must vote yes
+- total category count cannot exceed 20
 
-## Requirements
+## Human review flow
 
-- Python 3.10+
-- optional: Ollama on `http://127.0.0.1:11434`
-- optional model example: `qwen2.5:3b`
+Artifacts carry review-oriented fields such as:
+- `review_status`
+- `review_notes`
+- `approved_for_export`
+- `export_path`
+- `category`
 
-## Quick start
+## Files
 
-```bash
-git clone https://github.com/pr0dus/CircleForge.git
-cd CircleForge
-chmod +x install.sh run.sh
-./install.sh
-python3 main.py init --reset --agents 4
-python3 main.py tick
-python3 main.py show-world
-```
+- `categories.json` - current approved category list
+- `category_proposals.json` - pending/approved/rejected category proposals
+- `artifact_packs.json` - export-ready artifacts grouped into packs
+- `demand_board.json` - generated demand signals
+- `export_queue.json` - generated ranked export candidates
+- `review_queue.json` - generated human-review shortlist
+- `exports/` - export-ready artifact snapshots
 
 ## Useful commands
 
@@ -64,49 +69,18 @@ python3 main.py tick --verbose
 python3 main.py run --ticks 20 --interval 60
 python3 main.py show-world
 python3 main.py show-agent agent-1
+python3 main.py review <artifact-id> approve --note "looks good"
 python3 main.py version
 ```
 
-## Files
-
-- `main.py` - CLI entrypoint
-- `sim.py` - world orchestration, demand board, export queue, review queue, and persistence
-- `agent_runtime.py` - agent planning, Ollama call, fallback policy
-- `sandbox.py` - restricted Python execution helper
-- `models.py` - dataclasses for world actions/state
-- `config.py` - version and simulation constants
-- `demand_board.json` - generated demand signals
-- `export_queue.json` - generated ranked export candidates
-- `review_queue.json` - generated human-review shortlist
-- `exports/` - export-ready artifact snapshots
-- `agents/*/artifacts/*.meta.json` - artifact metadata with scores and review state
-
 ## Status
 
-This is **v0.0.25**: an early release with inspect/trade, artifact metadata, dual scoring, demand signals, export ranking, and a lightweight human review / export-ready flow.
-
-## Scoring model
-
-### 1. internal_score
-Measures how useful an artifact is **inside CircleForge**.
-
-### 2. human_proposed_score
-Measures how promising an artifact looks **for human-facing use**.
-
-## Human review flow
-
-Artifacts now carry review-oriented fields such as:
-- `review_status`
-- `review_notes`
-- `approved_for_export`
-- `export_path`
-
-When an artifact crosses the export threshold, CircleForge can mark it `export_ready` and snapshot it into `exports/` for human inspection.
+This is **v0.0.27**: an early release with inspect/trade, artifact metadata, dual scoring, review/export flow, category governance, and artifact packs.
 
 ## What should come next
 
-- artifact packs by theme or market
-- richer export packaging beyond JSON snapshots
-- richer demand signals from failures and repetition
+- manual category proposal/review CLI controls
+- dormant/archived categories
+- richer failure-driven demand signals
+- richer pack manifests and install templates
 - replay dashboard
-- packaging for background service use
