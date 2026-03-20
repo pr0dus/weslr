@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.22** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate small helper modules, and evolve simple local tooling over time.
+**CircleForge v0.0.24** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, and surface promising outputs through a demand board and export queue.
 
 ## What CircleForge is
 
@@ -13,6 +13,8 @@ CircleForge is a minimal but runnable prototype for:
 - fallback behavior when Ollama is unavailable
 - sandboxed generated Python
 - SQLite-backed world state
+- artifact metadata with dual scoring
+- demand tracking and export-candidate surfacing
 
 It is intentionally small, inspectable, and hackable.
 
@@ -21,15 +23,18 @@ It is intentionally small, inspectable, and hackable.
 - global tick every **60 seconds**
 - each agent gets up to **40 seconds** of effective work budget
 - the rest is cooldown / world maintenance
-- agents can gather, research, optimize, build modules, or rest
+- agents can gather, research, optimize, build modules, inspect, trade, or rest
 
 ## Current world rules
 
 - no sabotage
 - no stealing
-- inspect/trade are placeholders in the state model, not full gameplay yet
-- no direct web search inside agent turns
-- GPU is modeled as a quota field, not a real scheduler
+- inspect is live with a 24-hour per-agent cooldown
+- trade is live with a 24-hour per-agent cooldown
+- build/research/optimize actions generate artifact metadata sidecars
+- each artifact now carries two score layers:
+  - **internal_score**: useful inside CircleForge
+  - **human_proposed_score**: likely useful to humans outside the sim
 
 ## Requirements
 
@@ -71,7 +76,8 @@ python3 main.py show-agent agent-1
 python3 main.py version
 ```
 
-`show-agent` now includes recent artifact metadata, not just raw files.
+`show-agent` includes recent artifact metadata.
+`show-world` includes the current demand board and export queue.
 
 ## Ollama configuration
 
@@ -85,7 +91,7 @@ If Ollama is offline or the chosen model fails, CircleForge falls back to determ
 ## Files
 
 - `main.py` - CLI entrypoint
-- `sim.py` - world orchestration and persistence
+- `sim.py` - world orchestration, demand board, export queue, and persistence
 - `agent_runtime.py` - agent planning, Ollama call, fallback policy
 - `sandbox.py` - restricted Python execution helper
 - `models.py` - dataclasses for world actions/state
@@ -93,26 +99,46 @@ If Ollama is offline or the chosen model fails, CircleForge falls back to determ
 - `install.sh` - tiny setup helper
 - `run.sh` - convenience runner
 - `world.db` - generated SQLite database
-- `agents/` - generated per-agent state
+- `demand_board.json` - generated demand signals
+- `export_queue.json` - generated ranked export candidates
+- `agents/*/artifacts/*.meta.json` - artifact metadata with idea, purpose, destination, future directions, and dual scores
 
 ## Status
 
-This is **v0.0.2**: a cleaned-up early release, not a finished game.
+This is **v0.0.24**: an early release with inspect/trade, artifact metadata, internal scoring, human-proposed scoring, demand signals, and an export queue.
 
 What is solid already:
 - runnable local simulation
 - persistent agent state
 - local-model integration
-- simple generated module workflow
-- inspectable logs and world state
+- inspect and trade actions
+- artifact metadata with export hints
+- demand board generation
+- export candidate ranking
 
 What should come next:
-- real inspect and trade actions
-- artifact metadata and export candidates
-- richer economy / demand signals
+- explicit human review flow
+- artifact packs by theme or market
+- richer demand signals from failures and repetition
 - replay dashboard
 - packaging for background service use
-oard that rewards timely artifacts
-- an export queue for promising modules/components
-- human review scoring for utility and sellability
-- artifact packs grouped by theme, market, or agent lineage
+
+## Scoring model
+
+### 1. internal_score
+Measures how useful an artifact is **inside CircleForge**.
+Current inputs include:
+- reusability inside agent workflows
+- combination potential
+- clarity of metadata
+- destination fit for the sim
+
+### 2. human_proposed_score
+Measures how promising an artifact looks **for human-facing use**.
+Current inputs include:
+- exportability
+- clarity
+- likely usefulness outside the sim
+- future development potential
+
+The export queue ranks primarily by `human_proposed_score`, while the demand board can react to both score layers.

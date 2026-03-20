@@ -3,3 +3,5 @@ __pycache__/
 world.db
 agents/
 .circleforge-repo.json
+demand_board.json
+export_queue.json

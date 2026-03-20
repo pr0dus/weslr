@@ -15,7 +15,11 @@ from config import (
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
     DEFAULT_AGENT_COUNT,
+    DEMAND_BOARD_PATH,
     EXECUTION_BUDGET_SECONDS,
+    EXPORT_QUEUE_PATH,
+    MAX_DEMAND_ITEMS,
+    MAX_EXPORT_QUEUE,
     PROJECT_NAME,
     STARTING_ENERGY,
     STARTING_GPU,
@@ -63,12 +67,123 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+def read_json_file(path: Path, default):
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return default
+
+
+def write_json_file(path: Path, payload) -> None:
+    path.write_text(json.dumps(payload, indent=2))
+
+
+def compute_internal_score(meta: Dict) -> float:
+    score = 0.2
+    score += min(len(meta.get("combinable_with", [])) * 0.08, 0.24)
+    score += 0.18 if meta.get("destination") in {"shared_with_agents", "internal_review", "github_module"} else 0.08
+    score += 0.14 if meta.get("purpose") else 0.0
+    score += 0.14 if meta.get("explanation") else 0.0
+    score += 0.10 if meta.get("lineage") else 0.0
+    return round(min(score, 0.99), 3)
+
+
+def compute_human_proposed_score(meta: Dict) -> float:
+    score = 0.18
+    score += 0.16 if meta.get("artifact_type") == "export_candidate" else 0.08
+    score += 0.16 if meta.get("destination") in {"github_module", "shared_with_agents"} else 0.06
+    score += min(len(meta.get("future_directions", [])) * 0.06, 0.18)
+    score += 0.12 if meta.get("idea") else 0.0
+    score += 0.12 if meta.get("why_now") else 0.0
+    score += 0.10 if meta.get("if_interest_exists") else 0.0
+    return round(min(score, 0.99), 3)
+
+
+def update_artifact_scores(meta: Dict) -> Dict:
+    meta["internal_score"] = compute_internal_score(meta)
+    meta["human_proposed_score"] = compute_human_proposed_score(meta)
+    return meta
+
+
+def refresh_demand_board_and_export_queue() -> tuple[list, list]:
+    artifact_meta = []
+    type_counts: Dict[str, int] = {}
+    destinations: Dict[str, int] = {}
+
+    for meta_file in AGENTS_DIR.glob("*/artifacts/*.meta.json"):
+        try:
+            meta = json.loads(meta_file.read_text())
+        except Exception:
+            continue
+        meta = update_artifact_scores(meta)
+        meta_file.write_text(json.dumps(meta, indent=2))
+        meta["path"] = str(meta_file.relative_to(BASE_DIR))
+        artifact_meta.append(meta)
+        type_counts[meta.get("artifact_type", "unknown")] = type_counts.get(meta.get("artifact_type", "unknown"), 0) + 1
+        destinations[meta.get("destination", "unknown")] = destinations.get(meta.get("destination", "unknown"), 0) + 1
+
+    demand_board = []
+    if any(meta.get("artifact_type") == "market_hypothesis" for meta in artifact_meta):
+        demand_board.append({
+            "kind": "demand",
+            "title": "Turn research notes into reusable export artifacts",
+            "reason": "Research notes exist, but they need packaging paths and clearer export destinations.",
+        })
+    if type_counts.get("export_candidate", 0) > 0:
+        demand_board.append({
+            "kind": "demand",
+            "title": "Rank export candidates for human review",
+            "reason": "There are exportable modules/components that should be shortlisted outside the sim.",
+        })
+    if destinations.get("internal_review", 0) > 0:
+        demand_board.append({
+            "kind": "demand",
+            "title": "Promote internal-review artifacts into shared bundles",
+            "reason": "Some artifacts are still trapped in internal review instead of being packaged for broader use.",
+        })
+    if len(artifact_meta) >= 3:
+        demand_board.append({
+            "kind": "demand",
+            "title": "Bundle related artifacts into packs",
+            "reason": "The artifact count is high enough that grouping by theme or function now matters.",
+        })
+
+    demand_board = demand_board[:MAX_DEMAND_ITEMS]
+    export_queue = sorted(
+        [
+            {
+                "id": meta.get("id"),
+                "title": meta.get("title"),
+                "artifact_type": meta.get("artifact_type"),
+                "path": meta.get("path"),
+                "destination": meta.get("destination"),
+                "internal_score": meta.get("internal_score", 0.0),
+                "human_proposed_score": meta.get("human_proposed_score", 0.0),
+                "status": meta.get("status", "prototype"),
+            }
+            for meta in artifact_meta
+            if meta.get("human_proposed_score", 0.0) >= 0.45 or meta.get("artifact_type") == "export_candidate"
+        ],
+        key=lambda item: (item["human_proposed_score"], item["internal_score"]),
+        reverse=True,
+    )[:MAX_EXPORT_QUEUE]
+
+    write_json_file(DEMAND_BOARD_PATH, demand_board)
+    write_json_file(EXPORT_QUEUE_PATH, export_queue)
+    return demand_board, export_queue
+
+
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
     if reset:
         if DB_PATH.exists():
             DB_PATH.unlink()
         if AGENTS_DIR.exists():
             shutil.rmtree(AGENTS_DIR)
+        for path in [DEMAND_BOARD_PATH, EXPORT_QUEUE_PATH]:
+            if path.exists():
+                path.unlink()
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     conn = connect()
     with conn:
@@ -94,6 +209,7 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
                 "INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks),
             )
+    refresh_demand_board_and_export_queue()
     conn.close()
 
 
@@ -137,12 +253,12 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "if_interest_exists": [
             "package as a standalone module",
             "export to a GitHub subproject",
-            "bundle into a premium add-on pack"
+            "bundle into a premium add-on pack",
         ],
         "lineage": lineage,
         "status": "prototype",
-        "market_value_score": 0.35,
     }
+    payload = update_artifact_scores(payload)
     meta_path.write_text(json.dumps(payload, indent=2))
     return meta_path.name
 
@@ -170,14 +286,7 @@ def inspect_target(actor: Dict, target: Dict, now_ts: int) -> ActionResult:
         indent=2,
     )
     actor["last_inspect_at"] = now_ts
-    return ActionResult(
-        action="inspect",
-        status="ok",
-        summary=f"inspected {target['name']}",
-        reputation_delta=0.01,
-        target=target["name"],
-        raw_output=raw,
-    )
+    return ActionResult(action="inspect", status="ok", summary=f"inspected {target['name']}", reputation_delta=0.01, target=target["name"], raw_output=raw)
 
 
 def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
@@ -212,13 +321,7 @@ def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Conn
         },
         indent=2,
     )
-    return ActionResult(
-        action="trade",
-        status="ok",
-        summary=f"traded with {target['name']}",
-        target=target["name"],
-        raw_output=raw,
-    )
+    return ActionResult(action="trade", status="ok", summary=f"traded with {target['name']}", target=target["name"], raw_output=raw)
 
 
 def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name: Dict[str, Dict], now_ts: int, conn: sqlite3.Connection) -> ActionResult:
@@ -343,8 +446,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 (tick, agent["name"], result.action, result.status, result.summary, result.raw_output, started_at),
             )
 
-            note = f"tick {tick}: {result.summary}"
-            save_note(agent_dir, note)
+            save_note(agent_dir, f"tick {tick}: {result.summary}")
             item = {
                 "agent": agent["name"],
                 "action": result.action,
@@ -360,6 +462,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             if verbose:
                 print(json.dumps(item, indent=2))
 
+    refresh_demand_board_and_export_queue()
     conn.close()
     return summaries
 
@@ -370,7 +473,9 @@ def show_world() -> Dict:
     agents = list_agents(conn)
     logs = [dict(row) for row in conn.execute("SELECT tick, agent_name, action, status, summary FROM logs ORDER BY id DESC LIMIT 20").fetchall()]
     conn.close()
-    return {"world": world, "agents": agents, "recent_logs": logs}
+    demand_board = read_json_file(DEMAND_BOARD_PATH, [])
+    export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
+    return {"world": world, "agents": agents, "demand_board": demand_board, "export_queue": export_queue, "recent_logs": logs}
 
 
 def show_agent(name: str) -> Dict:
@@ -381,23 +486,17 @@ def show_agent(name: str) -> Dict:
     if row is None:
         raise SystemExit(f"No such agent: {name}")
     agent_dir = AGENTS_DIR / name
-    memory = []
-    memory_path = agent_dir / "memory.json"
-    if memory_path.exists():
-        memory = json.loads(memory_path.read_text())
+    memory = read_json_file(agent_dir / "memory.json", [])
     modules = [p.name for p in sorted((agent_dir / "modules").glob("*.py"))]
     artifacts = [p.name for p in sorted((agent_dir / "artifacts").glob("*")) if p.is_file()]
-    artifact_meta = {}
+    artifact_metadata = {}
     for meta_file in sorted((agent_dir / "artifacts").glob("*.meta.json"))[-5:]:
-        try:
-            artifact_meta[meta_file.name] = json.loads(meta_file.read_text())
-        except Exception:
-            artifact_meta[meta_file.name] = {"error": "failed to parse"}
+        artifact_metadata[meta_file.name] = read_json_file(meta_file, {"error": "failed to parse"})
     return {
         "agent": dict(row),
         "memory": memory,
         "modules": modules,
         "artifacts": artifacts,
-        "artifact_metadata": artifact_meta,
+        "artifact_metadata": artifact_metadata,
         "logs": logs,
     }

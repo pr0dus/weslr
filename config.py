@@ -3,13 +3,15 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.23"
+VERSION = "0.0.24"
 PROJECT_NAME = "CircleForge"
 PROJECT_SLUG = "circleforge"
 
 BASE_DIR = Path(__file__).resolve().parent
 AGENTS_DIR = BASE_DIR / "agents"
 DB_PATH = BASE_DIR / "world.db"
+DEMAND_BOARD_PATH = BASE_DIR / "demand_board.json"
+EXPORT_QUEUE_PATH = BASE_DIR / "export_queue.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40
@@ -18,6 +20,8 @@ CODE_TIMEOUT_SECONDS = 35
 MAX_CODE_SIZE = 12_000
 MAX_STDOUT_CHARS = 8_000
 MAX_MEMORY_NOTES = 50
+MAX_EXPORT_QUEUE = 50
+MAX_DEMAND_ITEMS = 12
 
 DEFAULT_AGENT_COUNT = 4
 STARTING_ENERGY = 100
