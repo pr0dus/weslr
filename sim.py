@@ -422,7 +422,31 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     return result
 
 
-def refresh_state_files() -> tuple[list, list, list, list, list]:
+def build_market_signals(artifact_meta: list[dict], packs: list[dict], categories: list[str]) -> dict:
+    category_counts: Dict[str, int] = {}
+    export_ready_counts: Dict[str, int] = {}
+    for meta in artifact_meta:
+        category = meta.get("category", "uncategorized")
+        category_counts[category] = category_counts.get(category, 0) + 1
+        if meta.get("review_status") == "export_ready":
+            export_ready_counts[category] = export_ready_counts.get(category, 0) + 1
+
+    rising_categories = [c for c, n in sorted(category_counts.items(), key=lambda kv: kv[1], reverse=True) if n >= 2][:3]
+    saturated_categories = [c for c, n in sorted(category_counts.items(), key=lambda kv: kv[1], reverse=True) if n >= 4][:3]
+    dormant_categories = [c for c in categories if c not in category_counts and c not in {"uncategorized"}]
+    export_pressure = [c for c, n in sorted(export_ready_counts.items(), key=lambda kv: kv[1], reverse=True) if n >= 1][:3]
+
+    return {
+        "category_counts": category_counts,
+        "rising_categories": rising_categories,
+        "saturated_categories": saturated_categories,
+        "dormant_categories": dormant_categories,
+        "export_pressure_categories": export_pressure,
+        "pack_count": len(packs),
+    }
+
+
+def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
     categories = load_categories()
     proposals = load_category_proposals()
     artifact_meta = []
@@ -476,12 +500,20 @@ def refresh_state_files() -> tuple[list, list, list, list, list]:
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
 
     packs = build_artifact_packs(artifact_meta)
+    market_signals = build_market_signals(artifact_meta, packs, categories)
+    if market_signals["rising_categories"]:
+        demand_board.append({"kind": "market", "title": "Rising categories detected", "reason": f"Current activity is clustering around: {', '.join(market_signals['rising_categories'])}."})
+    if market_signals["saturated_categories"]:
+        demand_board.append({"kind": "market", "title": "Saturated categories detected", "reason": f"These categories may be getting crowded: {', '.join(market_signals['saturated_categories'])}."})
+    if market_signals["export_pressure_categories"]:
+        demand_board.append({"kind": "market", "title": "Export pressure building", "reason": f"These categories currently hold export-ready artifacts: {', '.join(market_signals['export_pressure_categories'])}."})
+    demand_board = demand_board[:MAX_DEMAND_ITEMS]
     write_json_file(DEMAND_BOARD_PATH, demand_board)
     write_json_file(EXPORT_QUEUE_PATH, export_queue)
     write_json_file(REVIEW_QUEUE_PATH, review_queue)
     write_json_file(CATEGORIES_PATH, categories)
     write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
-    return demand_board, export_queue, review_queue, categories, packs
+    return demand_board, export_queue, review_queue, categories, packs, market_signals
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
@@ -683,14 +715,24 @@ def show_world() -> Dict:
     agents = list_agents(conn)
     logs = [dict(row) for row in conn.execute("SELECT tick, agent_name, action, status, summary FROM logs ORDER BY id DESC LIMIT 20").fetchall()]
     conn.close()
+    categories = read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy())
+    artifact_packs = read_json_file(PACKS_PATH, [])
+    export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
+    market_signals = {
+        "rising_categories": [p["category"] for p in artifact_packs[:3] if p.get("count", 0) >= 1],
+        "saturated_categories": [p["category"] for p in artifact_packs if p.get("count", 0) >= 3][:3],
+        "dormant_categories": [c for c in categories if c not in {p.get("category") for p in artifact_packs} and c not in BASE_CATEGORIES[:0]],
+        "export_pressure_categories": [item["category"] for item in export_queue[:3] if item.get("review_status") == "export_ready"],
+    }
     return {
         "world": world,
         "agents": agents,
-        "categories": read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy()),
+        "categories": categories,
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
-        "artifact_packs": read_json_file(PACKS_PATH, []),
+        "artifact_packs": artifact_packs,
+        "market_signals": market_signals,
         "demand_board": read_json_file(DEMAND_BOARD_PATH, []),
-        "export_queue": read_json_file(EXPORT_QUEUE_PATH, []),
+        "export_queue": export_queue,
         "review_queue": read_json_file(REVIEW_QUEUE_PATH, []),
         "recent_logs": logs,
     }
