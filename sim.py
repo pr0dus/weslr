@@ -18,9 +18,13 @@ from config import (
     DEMAND_BOARD_PATH,
     EXECUTION_BUDGET_SECONDS,
     EXPORT_QUEUE_PATH,
+    EXPORT_READY_THRESHOLD,
+    EXPORTS_DIR,
     MAX_DEMAND_ITEMS,
     MAX_EXPORT_QUEUE,
+    MAX_REVIEW_QUEUE,
     PROJECT_NAME,
+    REVIEW_QUEUE_PATH,
     STARTING_ENERGY,
     STARTING_GPU,
     STARTING_REPUTATION,
@@ -107,7 +111,44 @@ def update_artifact_scores(meta: Dict) -> Dict:
     return meta
 
 
-def refresh_demand_board_and_export_queue() -> tuple[list, list]:
+def maybe_promote_for_review(meta: Dict, meta_file: Path) -> Dict:
+    review_status = meta.get("review_status", "unreviewed")
+    meta.setdefault("review_notes", [])
+    meta.setdefault("approved_for_export", False)
+    meta.setdefault("export_path", None)
+
+    if meta.get("human_proposed_score", 0.0) >= 0.65 and review_status == "unreviewed":
+        meta["review_status"] = "proposed"
+        meta["review_notes"].append("Auto-proposed for human review based on score threshold.")
+
+    if meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD and meta.get("review_status") in {"proposed", "approved", "export_ready"}:
+        EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        export_name = f"{meta.get('id', meta_file.stem)}.json"
+        export_path = EXPORTS_DIR / export_name
+        export_payload = {
+            "title": meta.get("title"),
+            "artifact_type": meta.get("artifact_type"),
+            "idea": meta.get("idea"),
+            "explanation": meta.get("explanation"),
+            "purpose": meta.get("purpose"),
+            "destination": meta.get("destination"),
+            "future_directions": meta.get("future_directions", []),
+            "internal_score": meta.get("internal_score"),
+            "human_proposed_score": meta.get("human_proposed_score"),
+            "source_meta": str(meta_file.relative_to(BASE_DIR)),
+        }
+        write_json_file(export_path, export_payload)
+        meta["review_status"] = "export_ready"
+        meta["approved_for_export"] = True
+        meta["export_path"] = str(export_path.relative_to(BASE_DIR))
+        note = "Auto-promoted to export_ready by score threshold."
+        if note not in meta["review_notes"]:
+            meta["review_notes"].append(note)
+
+    return meta
+
+
+def refresh_demand_board_and_export_queue() -> tuple[list, list, list]:
     artifact_meta = []
     type_counts: Dict[str, int] = {}
     destinations: Dict[str, int] = {}
@@ -118,6 +159,7 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list]:
         except Exception:
             continue
         meta = update_artifact_scores(meta)
+        meta = maybe_promote_for_review(meta, meta_file)
         meta_file.write_text(json.dumps(meta, indent=2))
         meta["path"] = str(meta_file.relative_to(BASE_DIR))
         artifact_meta.append(meta)
@@ -137,11 +179,17 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list]:
             "title": "Rank export candidates for human review",
             "reason": "There are exportable modules/components that should be shortlisted outside the sim.",
         })
-    if destinations.get("internal_review", 0) > 0:
+    if any(meta.get("review_status") == "proposed" for meta in artifact_meta):
         demand_board.append({
-            "kind": "demand",
-            "title": "Promote internal-review artifacts into shared bundles",
-            "reason": "Some artifacts are still trapped in internal review instead of being packaged for broader use.",
+            "kind": "review",
+            "title": "Human review queue has proposed artifacts",
+            "reason": "Some artifacts crossed the review threshold and should be inspected by a human.",
+        })
+    if any(meta.get("review_status") == "export_ready" for meta in artifact_meta):
+        demand_board.append({
+            "kind": "export",
+            "title": "Export-ready artifacts available",
+            "reason": "At least one artifact is ready for human inspection or external packaging.",
         })
     if len(artifact_meta) >= 3:
         demand_board.append({
@@ -161,6 +209,9 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list]:
                 "destination": meta.get("destination"),
                 "internal_score": meta.get("internal_score", 0.0),
                 "human_proposed_score": meta.get("human_proposed_score", 0.0),
+                "review_status": meta.get("review_status", "unreviewed"),
+                "approved_for_export": meta.get("approved_for_export", False),
+                "export_path": meta.get("export_path"),
                 "status": meta.get("status", "prototype"),
             }
             for meta in artifact_meta
@@ -170,9 +221,30 @@ def refresh_demand_board_and_export_queue() -> tuple[list, list]:
         reverse=True,
     )[:MAX_EXPORT_QUEUE]
 
+    review_queue = sorted(
+        [
+            {
+                "id": meta.get("id"),
+                "title": meta.get("title"),
+                "artifact_type": meta.get("artifact_type"),
+                "path": meta.get("path"),
+                "review_status": meta.get("review_status", "unreviewed"),
+                "review_notes": meta.get("review_notes", []),
+                "human_proposed_score": meta.get("human_proposed_score", 0.0),
+                "approved_for_export": meta.get("approved_for_export", False),
+                "export_path": meta.get("export_path"),
+            }
+            for meta in artifact_meta
+            if meta.get("review_status") in {"proposed", "approved", "export_ready"}
+        ],
+        key=lambda item: item["human_proposed_score"],
+        reverse=True,
+    )[:MAX_REVIEW_QUEUE]
+
     write_json_file(DEMAND_BOARD_PATH, demand_board)
     write_json_file(EXPORT_QUEUE_PATH, export_queue)
-    return demand_board, export_queue
+    write_json_file(REVIEW_QUEUE_PATH, review_queue)
+    return demand_board, export_queue, review_queue
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
@@ -181,9 +253,11 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
             DB_PATH.unlink()
         if AGENTS_DIR.exists():
             shutil.rmtree(AGENTS_DIR)
-        for path in [DEMAND_BOARD_PATH, EXPORT_QUEUE_PATH]:
+        for path in [DEMAND_BOARD_PATH, EXPORT_QUEUE_PATH, REVIEW_QUEUE_PATH]:
             if path.exists():
                 path.unlink()
+        if EXPORTS_DIR.exists():
+            shutil.rmtree(EXPORTS_DIR)
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     conn = connect()
     with conn:
@@ -257,6 +331,10 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         ],
         "lineage": lineage,
         "status": "prototype",
+        "review_status": "unreviewed",
+        "review_notes": [],
+        "approved_for_export": False,
+        "export_path": None,
     }
     payload = update_artifact_scores(payload)
     meta_path.write_text(json.dumps(payload, indent=2))
@@ -475,7 +553,8 @@ def show_world() -> Dict:
     conn.close()
     demand_board = read_json_file(DEMAND_BOARD_PATH, [])
     export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
-    return {"world": world, "agents": agents, "demand_board": demand_board, "export_queue": export_queue, "recent_logs": logs}
+    review_queue = read_json_file(REVIEW_QUEUE_PATH, [])
+    return {"world": world, "agents": agents, "demand_board": demand_board, "export_queue": export_queue, "review_queue": review_queue, "recent_logs": logs}
 
 
 def show_agent(name: str) -> Dict:

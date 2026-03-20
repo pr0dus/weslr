@@ -5,3 +5,5 @@ agents/
 .circleforge-repo.json
 demand_board.json
 export_queue.json
+review_queue.json
+exports/
