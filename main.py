@@ -43,7 +43,7 @@ def cmd_reset(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Minimal coding-agent ecosystem sim v0.0.1")
+    parser = argparse.ArgumentParser(description="CircleForge v0.0.1 - minimal coding-agent ecosystem sim")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("init")

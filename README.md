@@ -1,6 +1,8 @@
-# agent-ecosim-v1
+# CircleForge
 
-Minimal but complete v1 prototype for a persistent world of self-improving coding agents.
+Minimal but complete v0.0.1 prototype for a persistent world of self-improving coding agents.
+
+**CircleForge** is a persistent agent sandbox where autonomous builders evolve tools, modules, and ideas over timed cycles.
 
 ## What it does
 
