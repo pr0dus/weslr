@@ -29,9 +29,10 @@ Rules now include:
 
 ## What should come next
 
-- lineage fields and parent/derived tracking
-- manual category governance controls
-- category retirement / revival logic
+- richer lineage graphs beyond simple parent fields
+- category merge controls
 - richer failure-driven demand signals
 - richer pack manifests and install templates
+- replay dashboard
+fests and install templates
 - replay dashboard

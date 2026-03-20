@@ -109,6 +109,54 @@ def load_category_proposals() -> list[dict]:
     return read_json_file(CATEGORY_PROPOSALS_PATH, [])
 
 
+def category_action(action: str, name: str) -> dict:
+    categories = load_categories()
+    proposals = load_category_proposals()
+
+    if action == "approve":
+        proposal = next((p for p in proposals if p.get("category") == name and p.get("status") == "pending"), None)
+        if proposal is None:
+            return {"ok": False, "message": f"No pending proposal for category: {name}"}
+        proposal["status"] = "approved"
+        if name not in categories and len(categories) < MAX_CATEGORIES:
+            categories.append(name)
+        write_json_file(CATEGORIES_PATH, categories)
+        write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
+        refresh_state_files()
+        return {"ok": True, "message": f"Approved category: {name}", "categories": categories}
+
+    if action == "reject":
+        proposal = next((p for p in proposals if p.get("category") == name and p.get("status") == "pending"), None)
+        if proposal is None:
+            return {"ok": False, "message": f"No pending proposal for category: {name}"}
+        proposal["status"] = "rejected"
+        write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
+        refresh_state_files()
+        return {"ok": True, "message": f"Rejected category proposal: {name}"}
+
+    if action == "retire":
+        if name in BASE_CATEGORIES:
+            return {"ok": False, "message": f"Cannot retire base category: {name}"}
+        if name not in categories:
+            return {"ok": False, "message": f"Category not found: {name}"}
+        categories = [c for c in categories if c != name]
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Retired category: {name}", "categories": categories}
+
+    if action == "revive":
+        if name in categories:
+            return {"ok": False, "message": f"Category already active: {name}"}
+        if len(categories) >= MAX_CATEGORIES:
+            return {"ok": False, "message": "Cannot revive category: category limit reached"}
+        categories.append(name)
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Revived category: {name}", "categories": categories}
+
+    return {"ok": False, "message": f"Unknown category action: {action}"}
+
+
 def normalize_category_for_artifact(action: str, category: str | None) -> str:
     if category:
         return category
@@ -246,6 +294,9 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "purpose": meta.get("purpose"),
         "destination": meta.get("destination"),
         "future_directions": meta.get("future_directions", []),
+        "parent_ids": meta.get("parent_ids", []),
+        "derived_from": meta.get("derived_from", []),
+        "generation": meta.get("generation"),
         "clarity_score": meta.get("clarity_score"),
         "reusability_score": meta.get("reusability_score"),
         "novelty_score": meta.get("novelty_score"),
@@ -496,6 +547,9 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "future_directions": future_directions,
         "if_interest_exists": ["package as a standalone module", "export to a GitHub subproject", "bundle into a premium add-on pack"],
         "lineage": lineage,
+        "parent_ids": lineage.get("parent_ids", []),
+        "derived_from": lineage.get("derived_from", []),
+        "generation": lineage.get("generation", 1),
         "status": "prototype",
         "lifecycle_stage": "prototype",
         "review_status": "unreviewed",
