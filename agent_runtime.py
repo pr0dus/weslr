@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from config import (
+    DAILY_COOLDOWN_SECONDS,
     MAX_CODE_SIZE,
     MAX_MEMORY_NOTES,
     OLLAMA_HOST,
@@ -18,7 +19,7 @@ from config import (
 )
 
 
-ACTIONS = ["gather", "optimize", "research", "build_module", "rest"]
+ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "rest"]
 
 
 def load_notes(agent_dir: Path) -> List[str]:
@@ -41,14 +42,36 @@ def save_note(agent_dir: Path, note: str) -> None:
     (agent_dir / "memory.json").write_text(json.dumps(notes, indent=2))
 
 
+def can_inspect(agent: Dict[str, Any], now_ts: int) -> bool:
+    return now_ts - int(agent.get("last_inspect_at", 0)) >= DAILY_COOLDOWN_SECONDS
+
+
+def can_trade(agent: Dict[str, Any], now_ts: int) -> bool:
+    return now_ts - int(agent.get("last_trade_at", 0)) >= DAILY_COOLDOWN_SECONDS
+
+
+def choose_target(agent: Dict[str, Any], world: Dict[str, Any]) -> str | None:
+    visible_agents = [name for name in world.get("agent_names", []) if name != agent["name"]]
+    if not visible_agents:
+        return None
+    return random.choice(visible_agents)
+
+
 def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any]:
+    now_ts = int(world.get("now_ts", 0))
+    target = choose_target(agent, world)
+
     if agent["energy"] < 30:
         action = "rest"
     elif not list((Path(world["base_dir"]) / "agents" / agent["name"] / "modules").glob("*.py")):
         action = "build_module"
+    elif target and can_inspect(agent, now_ts) and random.random() < 0.15:
+        action = "inspect"
+    elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.12:
+        action = "trade"
     else:
         action = random.choices(
-            population=ACTIONS,
+            population=["gather", "optimize", "research", "build_module", "rest"],
             weights=[3, 3, 2, 2, 1],
             k=1,
         )[0]
@@ -57,6 +80,7 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         "action": action,
         "reason": f"fallback policy selected {action}",
         "code": default_code_for(action, agent["name"]),
+        "target": target if action in {"inspect", "trade"} else None,
     }
 
 
@@ -69,7 +93,7 @@ def default_code_for(action: str, agent_name: str) -> str:
         return '''from pathlib import Path\nPath("artifacts").mkdir(exist_ok=True)\nPath("artifacts/research.txt").write_text("Observation: shorter loops waste less time.\\n")\nprint("research note saved")\n'''
     if action == "gather":
         return 'print("gathered local resources")\n'
-    return 'print("resting")\n'
+    return 'print("non-code action")\n'
 
 
 def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any] | None:
@@ -80,6 +104,8 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
         "rules": [
             "No sabotage.",
             "No stealing.",
+            "Inspect allowed only once every 24 hours.",
+            "Trade allowed only once every 24 hours.",
             "Act within one short tick.",
             "Prefer resumable progress.",
             "Return strict JSON only.",
@@ -90,6 +116,7 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
         "response_schema": {
             "action": "one of allowed_actions",
             "reason": "short string",
+            "target": "another agent name for inspect/trade, otherwise null",
             "code": "short python script, optional but preferred"
         },
     }
@@ -114,9 +141,13 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
         if action not in ACTIONS:
             return None
         code = str(data.get("code", ""))[:MAX_CODE_SIZE]
+        target = data.get("target")
+        if action in {"inspect", "trade"} and target not in world.get("agent_names", []):
+            target = choose_target(agent, world)
         return {
             "action": action,
             "reason": str(data.get("reason", "ollama")),
+            "target": target if action in {"inspect", "trade"} else None,
             "code": code or default_code_for(action, agent["name"]),
         }
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):

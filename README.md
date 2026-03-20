@@ -1,6 +1,6 @@
 # CircleForge
 
-**CircleForge v0.0.2** is a lightweight persistent agent sandbox for local machines.
+**CircleForge v0.0.22** is a lightweight persistent agent sandbox for local machines.
 Agents act on timed cycles, keep private memory, generate small helper modules, and evolve simple local tooling over time.
 
 ## What CircleForge is

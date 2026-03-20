@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Dict
 
 
@@ -29,4 +29,5 @@ class ActionResult:
     reputation_delta: float = 0.0
     artifact: str | None = None
     module: str | None = None
+    target: str | None = None
     raw_output: str = ""

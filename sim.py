@@ -8,7 +8,22 @@ from pathlib import Path
 from typing import Dict, List
 
 from agent_runtime import decide_action, save_note
-from config import AGENTS_DIR, BASE_DIR, CODE_TIMEOUT_SECONDS, DB_PATH, DEFAULT_AGENT_COUNT, EXECUTION_BUDGET_SECONDS, PROJECT_NAME, STARTING_ENERGY, STARTING_GPU, STARTING_REPUTATION, STARTING_STORAGE, TICK_SECONDS, VERSION
+from config import (
+    AGENTS_DIR,
+    BASE_DIR,
+    CODE_TIMEOUT_SECONDS,
+    DAILY_COOLDOWN_SECONDS,
+    DB_PATH,
+    DEFAULT_AGENT_COUNT,
+    EXECUTION_BUDGET_SECONDS,
+    PROJECT_NAME,
+    STARTING_ENERGY,
+    STARTING_GPU,
+    STARTING_REPUTATION,
+    STARTING_STORAGE,
+    TICK_SECONDS,
+    VERSION,
+)
 from models import ActionResult, AgentState
 from sandbox import run_python
 
@@ -101,13 +116,98 @@ def list_agents(conn: sqlite3.Connection) -> List[Dict]:
     return [dict(row) for row in conn.execute("SELECT * FROM agents ORDER BY name").fetchall()]
 
 
-def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path) -> ActionResult:
+def inspect_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
+    elapsed = now_ts - int(actor.get("last_inspect_at", 0))
+    if elapsed < DAILY_COOLDOWN_SECONDS:
+        remaining = DAILY_COOLDOWN_SECONDS - elapsed
+        return ActionResult(action="inspect", status="cooldown", summary=f"inspect cooldown active ({remaining}s remaining)")
+
+    target_dir = AGENTS_DIR / target["name"]
+    modules = [p.name for p in sorted((target_dir / "modules").glob("*.py"))]
+    artifacts = [p.name for p in sorted((target_dir / "artifacts").glob("*")) if p.is_file()]
+    raw = json.dumps(
+        {
+            "target": target["name"],
+            "reputation": target["reputation"],
+            "storage": target["storage"],
+            "age_ticks": target["age_ticks"],
+            "module_count": len(modules),
+            "artifact_count": len(artifacts),
+            "sample_modules": modules[:3],
+            "sample_artifacts": artifacts[:3],
+        },
+        indent=2,
+    )
+    actor["last_inspect_at"] = now_ts
+    return ActionResult(
+        action="inspect",
+        status="ok",
+        summary=f"inspected {target['name']}",
+        reputation_delta=0.01,
+        target=target["name"],
+        raw_output=raw,
+    )
+
+
+def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
+    elapsed = now_ts - int(actor.get("last_trade_at", 0))
+    if elapsed < DAILY_COOLDOWN_SECONDS:
+        remaining = DAILY_COOLDOWN_SECONDS - elapsed
+        return ActionResult(action="trade", status="cooldown", summary=f"trade cooldown active ({remaining}s remaining)")
+
+    if actor["storage"] < 5:
+        return ActionResult(action="trade", status="skipped", summary="trade skipped: not enough storage to offer")
+
+    actor["storage"] -= 3
+    actor["energy"] += 2
+    actor["reputation"] += 0.02
+    actor["last_trade_at"] = now_ts
+
+    target["storage"] += 2
+    target["reputation"] += 0.01
+    clamp_agent(target)
+    conn.execute(
+        "UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=? WHERE name=?",
+        (target["energy"], target["storage"], target["gpu_quota"], target["reputation"], target["last_inspect_at"], target["last_trade_at"], target["age_ticks"], target["name"]),
+    )
+
+    raw = json.dumps(
+        {
+            "from": actor["name"],
+            "to": target["name"],
+            "offer": {"storage": 3},
+            "received_effect": {"energy": 2, "reputation": 0.02},
+            "target_effect": {"storage": 2, "reputation": 0.01},
+        },
+        indent=2,
+    )
+    return ActionResult(
+        action="trade",
+        status="ok",
+        summary=f"traded with {target['name']}",
+        target=target["name"],
+        raw_output=raw,
+    )
+
+
+def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name: Dict[str, Dict], now_ts: int, conn: sqlite3.Connection) -> ActionResult:
     action = action_plan["action"]
     reason = action_plan.get("reason", "")
     code = action_plan.get("code", "")
+    target_name = action_plan.get("target")
 
     if action == "rest":
         return ActionResult(action=action, status="ok", summary=f"rested: {reason}", energy_delta=8)
+
+    if action == "inspect":
+        if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            return ActionResult(action=action, status="skipped", summary="inspect skipped: no valid target")
+        return inspect_target(agent, agents_by_name[target_name], now_ts, conn)
+
+    if action == "trade":
+        if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            return ActionResult(action=action, status="skipped", summary="trade skipped: no valid target")
+        return trade_with_target(agent, agents_by_name[target_name], now_ts, conn)
 
     run = run_python(code, agent_dir)
     status = "ok" if run["ok"] else "error"
@@ -146,10 +246,14 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         conn.execute("UPDATE world SET value=? WHERE key='tick'", (str(tick),))
         conn.execute("UPDATE world SET value=? WHERE key='last_tick_started'", (str(started_at),))
 
-        for agent in list_agents(conn):
+        agents = list_agents(conn)
+        agents_by_name = {agent["name"]: agent for agent in agents}
+        agent_names = [agent["name"] for agent in agents]
+
+        for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
-            plan = decide_action(agent, {**world, "tick": tick}, agent_dir)
-            result = apply_action(agent, plan, agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names}, agent_dir)
+            result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
 
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -173,6 +277,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 "action": result.action,
                 "status": result.status,
                 "summary": result.summary,
+                "target": result.target,
                 "energy": agent["energy"],
                 "storage": agent["storage"],
                 "reputation": round(agent["reputation"], 3),
