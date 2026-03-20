@@ -336,10 +336,47 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
 
 def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    export_name = f"{meta.get('id', meta_file.stem)}.json"
-    export_path = EXPORTS_DIR / export_name
-    write_json_file(export_path, build_export_payload(meta, meta_file))
-    return str(export_path.relative_to(BASE_DIR))
+    export_dir = EXPORTS_DIR / f"{meta.get('id', meta_file.stem)}"
+    export_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = build_export_payload(meta, meta_file)
+    write_json_file(export_dir / 'manifest.json', payload)
+
+    readme = [
+        f"# {payload.get('title', 'Export Artifact')}",
+        "",
+        f"Artifact type: {payload.get('artifact_type')}",
+        f"Category: {payload.get('category')}",
+        f"Family: {payload.get('family')}",
+        f"Lifecycle: {payload.get('lifecycle_stage')}",
+        "",
+        "## Summary",
+        payload.get('explanation', ''),
+        "",
+        "## Purpose",
+        payload.get('purpose', ''),
+        "",
+        "## Future directions",
+    ]
+    for item in payload.get('future_directions', []):
+        readme.append(f"- {item}")
+    if not payload.get('future_directions'):
+        readme.append("- none yet")
+    (export_dir / 'README.md').write_text("\n".join(readme) + "\n")
+
+    notes = [
+        f"review_status: {payload.get('review_status')}",
+        f"internal_score: {payload.get('internal_score')}",
+        f"human_proposed_score: {payload.get('human_proposed_score')}",
+        "review_notes:",
+    ]
+    for note in payload.get('review_notes', []):
+        notes.append(f"- {note}")
+    if not payload.get('review_notes'):
+        notes.append("- none")
+    (export_dir / 'notes.md').write_text("\n".join(notes) + "\n")
+
+    return str(export_dir.relative_to(BASE_DIR))
 
 
 def maybe_promote_for_review(meta: Dict, meta_file: Path) -> Dict:

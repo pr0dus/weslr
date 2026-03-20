@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.33"
+VERSION = "0.0.34"
 PROJECT_NAME = "CircleForge"
 PROJECT_SLUG = "circleforge"
 

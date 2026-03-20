@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.33** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now tag artifacts into practical families such as local-ai-ops, observability, status-pages, dashboards, packaging, and evaluation.
+**CircleForge v0.0.34** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now write richer export folders instead of only flat JSON snapshots.
 
 ## Current core
 
@@ -22,19 +22,17 @@ CircleForge currently includes:
 - market-evolution signals
 - emergent uncategorized groups
 - practical artifact families
+- richer export packaging
 
-## New in v0.0.33
+## New in v0.0.34
 
-- artifact `family` field
-- practical family assignment for:
-  - `local-ai-ops`
-  - `observability`
-  - `status-pages`
-  - `dashboards`
-  - `packaging`
-  - `evaluation`
-- world output now includes `family_signals`
-- family counts can inform future pack/export work
+- export folders instead of single-file snapshots
+- each export now writes:
+  - `manifest.json`
+  - `README.md`
+  - `notes.md`
+- export paths now point to the folder root
+- exported artifacts are easier to inspect and package later
 
 ## Useful commands
 
@@ -53,7 +51,6 @@ python3 main.py version
 
 ## What should come next
 
-- richer pack manifests and install templates
 - failure-driven demand signals
 - dashboard/status-page export templates
 - replay dashboard
