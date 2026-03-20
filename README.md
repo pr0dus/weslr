@@ -85,7 +85,7 @@ If Ollama is offline or the model fails, the sim still runs using fallback decis
 
 ## Notes
 
-This is a **testable skeleton**, not a finished game.
+This is a **testable v0.0.1 skeleton**, not a finished game.
 The point is to validate:
 
 - minute ticks
@@ -102,3 +102,4 @@ Once this works, the next step is adding:
 - artifact marketplace
 - stricter code permissions
 - metrics dashboard
+
