@@ -422,6 +422,30 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     return result
 
 
+def build_uncategorized_groups(artifact_meta: list[dict]) -> list[dict]:
+    groups: dict[str, list[dict]] = {}
+    for meta in artifact_meta:
+        if meta.get("category") != "uncategorized":
+            continue
+        if meta.get("human_proposed_score", 0.0) < 0.55:
+            continue
+        key = meta.get("artifact_type", "unknown")
+        groups.setdefault(key, []).append({
+            "id": meta.get("id"),
+            "title": meta.get("title"),
+            "human_proposed_score": meta.get("human_proposed_score"),
+            "path": meta.get("path"),
+        })
+    result = []
+    for artifact_type, items in sorted(groups.items()):
+        result.append({
+            "group_type": artifact_type,
+            "count": len(items),
+            "artifacts": sorted(items, key=lambda x: x["human_proposed_score"], reverse=True),
+        })
+    return result
+
+
 def build_market_signals(artifact_meta: list[dict], packs: list[dict], categories: list[str]) -> dict:
     category_counts: Dict[str, int] = {}
     export_ready_counts: Dict[str, int] = {}
@@ -500,7 +524,10 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
 
     packs = build_artifact_packs(artifact_meta)
+    emergent_groups = build_uncategorized_groups(artifact_meta)
     market_signals = build_market_signals(artifact_meta, packs, categories)
+    if emergent_groups:
+        demand_board.append({"kind": "emergence", "title": "Uncategorized emergent groups detected", "reason": f"There are {len(emergent_groups)} promising uncategorized group(s) worth inspecting."})
     if market_signals["rising_categories"]:
         demand_board.append({"kind": "market", "title": "Rising categories detected", "reason": f"Current activity is clustering around: {', '.join(market_signals['rising_categories'])}."})
     if market_signals["saturated_categories"]:
@@ -513,7 +540,7 @@ def refresh_state_files() -> tuple[list, list, list, list, list, dict]:
     write_json_file(REVIEW_QUEUE_PATH, review_queue)
     write_json_file(CATEGORIES_PATH, categories)
     write_json_file(CATEGORY_PROPOSALS_PATH, proposals)
-    return demand_board, export_queue, review_queue, categories, packs, market_signals
+    return demand_board, export_queue, review_queue, categories, packs, market_signals, emergent_groups
 
 
 def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> None:
@@ -718,6 +745,13 @@ def show_world() -> Dict:
     categories = read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy())
     artifact_packs = read_json_file(PACKS_PATH, [])
     export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
+    all_meta = []
+    for meta_file in AGENTS_DIR.glob('*/artifacts/*.meta.json'):
+        meta = read_json_file(meta_file, None)
+        if isinstance(meta, dict):
+            meta['path'] = str(meta_file.relative_to(BASE_DIR))
+            all_meta.append(meta)
+    emergent_groups = build_uncategorized_groups(all_meta)
     market_signals = {
         "rising_categories": [p["category"] for p in artifact_packs[:3] if p.get("count", 0) >= 1],
         "saturated_categories": [p["category"] for p in artifact_packs if p.get("count", 0) >= 3][:3],
@@ -730,6 +764,7 @@ def show_world() -> Dict:
         "categories": categories,
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
         "artifact_packs": artifact_packs,
+        "emergent_groups": emergent_groups,
         "market_signals": market_signals,
         "demand_board": read_json_file(DEMAND_BOARD_PATH, []),
         "export_queue": export_queue,

@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.31** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now expose basic market-evolution signals from category and export activity.
+**CircleForge v0.0.32** is a lightweight persistent agent sandbox for local machines.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now detect simple emergent groups among uncategorized artifacts.
 
 ## Current core
 
@@ -20,13 +20,14 @@ CircleForge currently includes:
 - uncategorized handling
 - dormant-category detection
 - market-evolution signals
+- emergent uncategorized groups
 
-## New in v0.0.31
+## New in v0.0.32
 
-- market-evolution signals in world output
-- category activity summaries
-- rising / saturated / dormant category hints
-- export pressure signals from current queues and packs
+- uncategorized clustering / emergent groups
+- strong uncategorized artifacts can be grouped by artifact type
+- world output now shows `emergent_groups`
+- demand board can point at promising uncategorized clusters
 
 ## Useful commands
 
@@ -45,7 +46,6 @@ python3 main.py version
 
 ## What should come next
 
-- uncategorized clustering and emergent groups
 - category merge controls
 - richer failure-driven demand signals
 - richer pack manifests and install templates
