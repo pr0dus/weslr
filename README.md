@@ -7,6 +7,8 @@ Agents act on timed cycles, keep private memory, generate helper modules, annota
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
 
+**Feedback and testers are welcome.** If you want to give advice, critique the direction, or try the project, see the community drafts and issue templates in [`docs/community`](docs/community) and [`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE).
+
 ## Current core
 
 CircleForge currently includes:
