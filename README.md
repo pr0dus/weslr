@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.39** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, and now generate stronger export bundles and handoff-ready pack wrappers.
+**CircleForge v0.0.40** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, and now attach category-aware publishing templates and delivery-mode recommendations.
 
 ## Current core
 
@@ -30,14 +30,15 @@ CircleForge currently includes:
 - sellability scoring
 - operator browsing and explanations
 - publishable pack wrappers and handoff summaries
+- category-aware templates and delivery modes
 
-## New in v0.0.39
+## New in v0.0.40
 
-- pack wrapper export folders with manifests, README, and handoff files
-- richer artifact export bundles with commercial handoff metadata
-- CLI handoff summaries for top packs and artifacts
-- stronger path from ranked outputs to publishable/project-ready packaging
-- cleaner packaging for shipping or selling curated outputs
+- category-specific wrapper copy for key families like observability, status pages, packaging, and local-ai-ops
+- delivery-mode recommendations for artifacts and packs
+- richer handoff files with buyer problem, install steps, and delivery checklist
+- stronger bridge from ranked outputs to category-shaped offers
+- more practical packaging for client work or small digital products
 
 ## Useful commands
 
@@ -62,5 +63,5 @@ python3 main.py version
 ## What should come next
 
 - replay/dashboard views built around curated artifacts rather than raw simulation state
-- stronger publishing templates for selected pack categories
-- more explicit project/client delivery modes
+- stronger proof signals from real reuse and human approval outcomes
+- category templates for more concrete offer types

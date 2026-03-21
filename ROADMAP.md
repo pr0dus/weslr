@@ -97,6 +97,11 @@ Already implemented:
 - publishable pack wrappers
 - project handoff formats for curated outputs
 
+### v0.0.40
+- category-specific publishing templates
+- delivery-mode recommendations
+- stronger buyer/problem/install framing in wrappers and handoffs
+
 ## Quality model target
 
 ### Internal artifact quality

@@ -403,6 +403,7 @@ def update_artifact_scores(meta: Dict) -> Dict:
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
     meta.update(compute_sellability_signals(meta))
+    meta["delivery_mode"] = recommend_delivery_mode(meta)
     return meta
 
 
@@ -425,6 +426,58 @@ def explain_artifact(meta: Dict) -> list[str]:
 
 def summarize_pack(pack: Dict) -> str:
     return f"rank #{pack.get('rank', '?')} · score {pack.get('pack_score', 0.0)} · sellability {pack.get('sellability_score', 0.0)} · stage {pack.get('lifecycle_stage', 'draft')}"
+
+
+def recommend_delivery_mode(meta: Dict) -> str:
+    family = meta.get("family", "unknown")
+    sellability = float(meta.get("sellability_score", 0.0))
+    proof = float(meta.get("proof_level_score", 0.0))
+    if sellability >= 0.72 and proof >= 0.38 and family in {"observability", "status-pages"}:
+        return "standalone_microproduct"
+    if family in {"packaging", "local-ai-ops"} and sellability >= 0.58:
+        return "consulting_accelerator"
+    if family == "evaluation":
+        return "internal_reusable_component"
+    return "bundle_candidate"
+
+
+def family_template(pack_or_meta: Dict) -> Dict:
+    family = pack_or_meta.get("family")
+    category = pack_or_meta.get("category")
+    if family == "observability" or category == "observability":
+        return {
+            "headline": "Lightweight observability starter pack for self-hosters",
+            "buyer_problem": "Small operators need simple visibility without full enterprise tooling.",
+            "install_steps": ["review included scripts/modules", "set target service names", "run locally or on a small VPS"],
+            "delivery_checklist": ["confirm monitored service list", "add example screenshots/output", "document alert or status workflow"],
+        }
+    if family == "status-pages" or category in {"exports", "interfaces"}:
+        return {
+            "headline": "Simple status-page starter bundle",
+            "buyer_problem": "Small projects need a basic public or internal status view without overbuilding.",
+            "install_steps": ["adapt branding and endpoints", "connect service checks", "publish static or lightweight app output"],
+            "delivery_checklist": ["set service labels", "document deployment target", "include sample maintenance update flow"],
+        }
+    if family == "packaging":
+        return {
+            "headline": "Reusable helper-module bundle for local AI builders",
+            "buyer_problem": "Builders need small reusable modules faster than they can handcraft them each time.",
+            "install_steps": ["review exported module", "rename/package for target project", "add tests or example usage"],
+            "delivery_checklist": ["add usage example", "document assumptions", "bundle with test snippet"],
+        }
+    if family == "local-ai-ops":
+        return {
+            "headline": "Local AI workflow acceleration bundle",
+            "buyer_problem": "Small AI builders need practical workflow speedups without heavy infra work.",
+            "install_steps": ["review optimization notes", "adapt to local stack", "measure improvement after integration"],
+            "delivery_checklist": ["state expected speedup", "document environment assumptions", "include rollback note"],
+        }
+    return {
+        "headline": "Curated reusable artifact bundle",
+        "buyer_problem": "Builders want a smaller head start instead of starting from a blank page.",
+        "install_steps": ["review included outputs", "adapt to project context", "tighten docs before shipping"],
+        "delivery_checklist": ["clarify target user", "add usage example", "document next packaging step"],
+    }
 
 
 def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
@@ -461,6 +514,7 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "commercial_readiness_score": meta.get("commercial_readiness_score"),
         "sellability_score": meta.get("sellability_score"),
         "price_band_guess": meta.get("price_band_guess"),
+        "delivery_mode": meta.get("delivery_mode"),
         "review_status": meta.get("review_status"),
         "review_notes": meta.get("review_notes", []),
         "source_meta": str(meta_file.relative_to(BASE_DIR)),
@@ -518,6 +572,7 @@ def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
         notes.append("- none")
     (export_dir / 'notes.md').write_text("\n".join(notes) + "\n")
 
+    template = family_template(meta)
     handoff = {
         "title": payload.get("title"),
         "target_user": payload.get("target_user"),
@@ -525,6 +580,11 @@ def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
         "why_now": payload.get("idea"),
         "offer_shape": payload.get("artifact_type"),
         "price_band_guess": payload.get("price_band_guess"),
+        "delivery_mode": payload.get("delivery_mode"),
+        "template_headline": template.get("headline"),
+        "buyer_problem": template.get("buyer_problem"),
+        "install_steps": template.get("install_steps", []),
+        "delivery_checklist": template.get("delivery_checklist", []),
         "delivery_notes": payload.get("future_directions", []),
         "export_path": str(export_dir.relative_to(BASE_DIR)),
     }
@@ -730,6 +790,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     result = sorted(result, key=lambda pack: (pack["pack_score"], pack["readiness_score"], pack["coherence_score"], pack["count"]), reverse=True)
     for idx, pack in enumerate(result, start=1):
         pack["rank"] = idx
+        pack["delivery_mode"] = recommend_pack_delivery_mode(pack)
         pack["summary"] = summarize_pack(pack)
         pack["wrapper_path"] = write_pack_wrapper(pack)
     write_json_file(PACKS_PATH, result)
@@ -860,13 +921,13 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
 
     export_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "destination": meta.get("destination"), "clarity_score": meta.get("clarity_score", 0.0), "reusability_score": meta.get("reusability_score", 0.0), "novelty_score": meta.get("novelty_score", 0.0), "stability_score": meta.get("stability_score", 0.0), "exportability_score": meta.get("exportability_score", 0.0), "market_fit_score": meta.get("market_fit_score", 0.0), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "target_user": meta.get("target_user"), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "destination": meta.get("destination"), "clarity_score": meta.get("clarity_score", 0.0), "reusability_score": meta.get("reusability_score", 0.0), "novelty_score": meta.get("novelty_score", 0.0), "stability_score": meta.get("stability_score", 0.0), "exportability_score": meta.get("exportability_score", 0.0), "market_fit_score": meta.get("market_fit_score", 0.0), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "target_user": meta.get("target_user"), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "delivery_mode": meta.get("delivery_mode"), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
         for meta in artifact_meta
         if meta.get("human_proposed_score", 0.0) >= 0.45 or meta.get("artifact_type") == "export_candidate"
     ], key=lambda item: (item["human_proposed_score"], item["internal_score"]), reverse=True)[:MAX_EXPORT_QUEUE]
 
     review_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "delivery_mode": meta.get("delivery_mode"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
         for meta in artifact_meta
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
@@ -1115,6 +1176,7 @@ def write_pack_wrapper(pack: Dict) -> str:
     wrapper_dir = EXPORTS_DIR / pack.get("pack_name", "pack")
     wrapper_dir.mkdir(parents=True, exist_ok=True)
 
+    template = family_template(pack)
     manifest = {
         "project": PROJECT_NAME,
         "version": VERSION,
@@ -1125,6 +1187,9 @@ def write_pack_wrapper(pack: Dict) -> str:
         "sellability_score": pack.get("sellability_score"),
         "commercial_readiness_score": pack.get("commercial_readiness_score"),
         "price_band_guess": pack.get("price_band_guess"),
+        "delivery_mode": pack.get("delivery_mode"),
+        "template_headline": template.get("headline"),
+        "buyer_problem": template.get("buyer_problem"),
         "lifecycle_stage": pack.get("lifecycle_stage"),
         "why_promising": pack.get("why_promising", []),
         "artifact_count": pack.get("artifact_count"),
@@ -1145,11 +1210,17 @@ def write_pack_wrapper(pack: Dict) -> str:
     readme = [
         f"# {pack.get('pack_name')}",
         "",
+        template.get("headline", pack.get('pack_name')),
+        "",
         f"Rank: {pack.get('rank')}",
         f"Pack score: {pack.get('pack_score')}",
         f"Sellability: {pack.get('sellability_score')}",
         f"Commercial readiness: {pack.get('commercial_readiness_score')}",
         f"Price band guess: {pack.get('price_band_guess', 'tbd')}",
+        f"Delivery mode: {pack.get('delivery_mode', 'bundle_candidate')}",
+        "",
+        "## Buyer problem",
+        template.get("buyer_problem", "A reusable artifact bundle needs clearer buyer framing."),
         "",
         "## Why this pack matters",
     ]
@@ -1163,6 +1234,18 @@ def write_pack_wrapper(pack: Dict) -> str:
     ])
     for item in pack.get("artifacts", []):
         readme.append(f"- {item.get('title')} ({item.get('id')}) · sellability {item.get('sellability_score')} · target {item.get('target_user', 'tbd')}")
+    readme.extend([
+        "",
+        "## Install steps",
+    ])
+    for step in template.get("install_steps", []):
+        readme.append(f"- {step}")
+    readme.extend([
+        "",
+        "## Delivery checklist",
+    ])
+    for step in template.get("delivery_checklist", []):
+        readme.append(f"- {step}")
     (wrapper_dir / "README.md").write_text("\n".join(readme) + "\n")
 
     handoff = {
@@ -1171,12 +1254,27 @@ def write_pack_wrapper(pack: Dict) -> str:
         "target_users": sorted({item.get("target_user", "technical builders") for item in pack.get("artifacts", [])}),
         "value_proposition": pack.get("why_promising", []),
         "price_band_guess": pack.get("price_band_guess"),
+        "delivery_mode": pack.get("delivery_mode"),
+        "template_headline": template.get("headline"),
+        "buyer_problem": template.get("buyer_problem"),
+        "install_steps": template.get("install_steps", []),
+        "delivery_checklist": template.get("delivery_checklist", []),
         "recommended_next_step": "review artifacts, tighten packaging, and prepare publishable wrapper",
         "summary": pack.get("summary"),
     }
     write_json_file(wrapper_dir / "pack_handoff.json", handoff)
 
     return str(wrapper_dir.relative_to(BASE_DIR))
+
+
+def recommend_pack_delivery_mode(pack: Dict) -> str:
+    category = pack.get("category")
+    sellability = float(pack.get("sellability_score", 0.0))
+    if category == "observability" and sellability >= 0.68:
+        return "standalone_microproduct"
+    if category in {"modules", "exports", "uncategorized"} and sellability >= 0.55:
+        return "consulting_accelerator"
+    return "bundle_candidate"
 
 
 def build_operator_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> dict:
@@ -1190,6 +1288,7 @@ def build_operator_views(export_queue: list[dict], review_queue: list[dict], art
             "title": item.get("title"),
             "summary": f"sellability {item.get('sellability_score', 0.0)} · human {item.get('human_proposed_score', 0.0)} · target {item.get('target_user', 'tbd')}",
             "price_band_guess": item.get("price_band_guess"),
+            "delivery_mode": item.get("delivery_mode"),
         }
         for item in top_artifacts
     ]
@@ -1199,6 +1298,7 @@ def build_operator_views(export_queue: list[dict], review_queue: list[dict], art
             "summary": pack.get("summary"),
             "why_promising": pack.get("why_promising", []),
             "price_band_guess": pack.get("price_band_guess"),
+            "delivery_mode": pack.get("delivery_mode"),
         }
         for pack in top_packs
     ]
@@ -1311,6 +1411,7 @@ def handoff_summary(limit: int = 5) -> Dict:
                 "pack_name": pack.get("pack_name"),
                 "summary": pack.get("summary"),
                 "price_band_guess": pack.get("price_band_guess"),
+                "delivery_mode": pack.get("delivery_mode"),
                 "wrapper_path": pack.get("wrapper_path"),
             }
             for pack in packs
@@ -1322,6 +1423,7 @@ def handoff_summary(limit: int = 5) -> Dict:
                 "target_user": item.get("target_user"),
                 "sellability_score": item.get("sellability_score"),
                 "price_band_guess": item.get("price_band_guess"),
+                "delivery_mode": item.get("delivery_mode"),
                 "export_path": item.get("export_path"),
             }
             for item in top_artifacts
