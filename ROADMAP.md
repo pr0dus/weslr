@@ -102,6 +102,12 @@ Already implemented:
 - delivery-mode recommendations
 - stronger buyer/problem/install framing in wrappers and handoffs
 
+### v0.0.53
+- artifact substance scoring
+- thin-artifact penalties
+- description-to-artifact mismatch penalties
+- stronger honesty pressure on scored outputs before generator upgrades
+
 ## Quality model target
 
 ### Internal artifact quality

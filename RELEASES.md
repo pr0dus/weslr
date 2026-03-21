@@ -129,3 +129,11 @@ Recommended rollback order:
 - commit: `d1e6739`
 - backup: `CircleForge-backup-20260321-185842.tar.gz`
 - tag: `v0.0.52`
+
+### v0.0.53
+- artifact substance scoring added for generated modules, optimization notes, and research notes
+- thin-artifact and description-mismatch penalties added so weak payloads no longer inherit inflated human/sellability scores
+- explainability now calls out when artifact framing outruns underlying substance
+- intended direction: reward honest emergence and punish hollow packaging before adding richer generators
+- backup: `CircleForge-backup-20260321-235322.tar.gz`
+- tag: `v0.0.53`

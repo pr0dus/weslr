@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.52** is a lightweight persistent local agent research sandbox and artifact incubator.
+**CircleForge v0.0.53** is a lightweight persistent local agent research sandbox and artifact incubator.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -173,6 +173,13 @@ The current direction is state-driven rather than prompt-driven: entities should
 - explain output now separates internal strength, external proof, risks, and next actions
 - pack offer brief generation added with weak-proof pack reporting
 - JSON read/write path hardened for runtime files via blank-file tolerance and atomic writes
+
+## New in v0.0.53
+
+- artifact substance analysis added for generated modules and notes
+- thin artifacts now receive explicit penalties instead of coasting on strong metadata alone
+- description-to-artifact mismatch now reduces human-facing quality, commercial readiness, and sellability
+- explainability now flags artifacts whose framing outruns their underlying payload
 
 ## v0.1 planning
 

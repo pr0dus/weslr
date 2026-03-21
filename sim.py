@@ -423,9 +423,152 @@ def compute_internal_score(meta: Dict) -> float:
     return round(min((q["clarity_score"] + q["reusability_score"] + q["stability_score"]) / 3, 0.99), 3)
 
 
+def artifact_source_path(meta: Dict) -> Path | None:
+    explicit = meta.get("artifact_source_path")
+    if explicit:
+        path = BASE_DIR / str(explicit)
+        return path if path.exists() else None
+    lineage = meta.get("lineage", {}) or {}
+    agent_name = str(meta.get("id", "")).split("-")[0]
+    if not agent_name:
+        return None
+    agent_dir = AGENTS_DIR / agent_name
+    action = lineage.get("action")
+    if action == "build_module":
+        module_name = lineage.get("module")
+        if module_name:
+            path = agent_dir / "modules" / str(module_name)
+            if path.exists():
+                return path
+        modules = sorted((agent_dir / "modules").glob("*.py"))
+        return modules[-1] if modules else None
+    if action == "optimize":
+        path = agent_dir / "artifacts" / "optimization.txt"
+        return path if path.exists() else None
+    if action == "research":
+        path = agent_dir / "artifacts" / "research.txt"
+        return path if path.exists() else None
+    return None
+
+
+def analyze_artifact_substance(meta: Dict) -> Dict:
+    path = artifact_source_path(meta)
+    result = {
+        "artifact_source_path": str(path.relative_to(BASE_DIR)) if path and path.exists() else None,
+        "artifact_source_kind": None,
+        "artifact_line_count": 0,
+        "artifact_nonempty_line_count": 0,
+        "artifact_char_count": 0,
+        "substance_score": 0.05,
+        "thin_artifact_penalty": 0.0,
+        "description_mismatch_penalty": 0.0,
+        "substance_warnings": [],
+    }
+    if path is None or not path.exists():
+        result["thin_artifact_penalty"] = 0.22
+        result["description_mismatch_penalty"] = 0.08
+        result["substance_warnings"] = ["missing source artifact"]
+        return result
+
+    text = path.read_text(errors='ignore')
+    lines = text.splitlines()
+    nonempty = [line for line in lines if line.strip()]
+    lowered = text.lower()
+    suffix = path.suffix.lower()
+    result["artifact_source_kind"] = suffix.lstrip('.') or 'text'
+    result["artifact_line_count"] = len(lines)
+    result["artifact_nonempty_line_count"] = len(nonempty)
+    result["artifact_char_count"] = len(text)
+
+    score = 0.08
+    warnings = []
+    if len(nonempty) >= 3:
+        score += 0.08
+    if len(nonempty) >= 8:
+        score += 0.1
+    if len(nonempty) >= 20:
+        score += 0.12
+    if len(text) >= 80:
+        score += 0.06
+    if len(text) >= 240:
+        score += 0.08
+
+    placeholder_hits = 0
+    placeholder_patterns = [
+        'def score(x):',
+        'return x * 2',
+        'observation:',
+        'shorter loops waste less time',
+        'cache:enabled',
+        'checkpointing:on',
+    ]
+    for pattern in placeholder_patterns:
+        if pattern in lowered:
+            placeholder_hits += 1
+    if placeholder_hits:
+        warnings.append('placeholder-like content detected')
+
+    if suffix == '.py':
+        if 'def ' in lowered:
+            score += 0.08
+        if lowered.count('def ') >= 2:
+            score += 0.08
+        if any(token in lowered for token in ['argparse', '__main__', 'sys.argv', 'input(', 'print(']):
+            score += 0.06
+        if any(token in lowered for token in ['path(', 'open(', 'json.', 'sqlite', 'subprocess', 'os.']):
+            score += 0.08
+        if len(nonempty) <= 2:
+            warnings.append('very small code artifact')
+    else:
+        if len(nonempty) >= 2:
+            score += 0.04
+        if any(token in lowered for token in ['backup', 'restore', 'log', 'config', 'agent', 'tick', 'error', 'export']):
+            score += 0.06
+        if len(nonempty) <= 1:
+            warnings.append('very small text artifact')
+
+    thin_penalty = 0.0
+    if len(nonempty) <= 1:
+        thin_penalty += 0.26
+    elif len(nonempty) <= 2:
+        thin_penalty += 0.18
+    elif len(nonempty) <= 4:
+        thin_penalty += 0.1
+    if placeholder_hits >= 2:
+        thin_penalty += 0.16
+    elif placeholder_hits == 1:
+        thin_penalty += 0.08
+
+    description_penalty = 0.0
+    ambition_text = ' '.join([
+        str(meta.get('idea', '')),
+        str(meta.get('purpose', '')),
+        str(meta.get('artifact_hypothesis', '')),
+        str(meta.get('offer_hypothesis', '')),
+        str(meta.get('delivery_mode_guess', '')),
+        str(meta.get('destination', '')),
+    ]).lower()
+    ambitious = any(token in ambition_text for token in ['reusable', 'standalone', 'microproduct', 'github_module', 'package', 'export', 'sell'])
+    if ambitious and score < 0.28:
+        description_penalty += 0.22
+        warnings.append('artifact claims outrun substance')
+    elif ambitious and score < 0.4:
+        description_penalty += 0.12
+
+    result['substance_score'] = round(max(0.01, min(score, 0.99)), 3)
+    result['thin_artifact_penalty'] = round(min(thin_penalty, 0.45), 3)
+    result['description_mismatch_penalty'] = round(min(description_penalty, 0.35), 3)
+    result['substance_warnings'] = warnings
+    return result
+
+
 def compute_human_proposed_score(meta: Dict) -> float:
     q = compute_quality_dimensions(meta)
-    return round(min((q["clarity_score"] + q["novelty_score"] + q["exportability_score"] + q["market_fit_score"]) / 4, 0.99), 3)
+    base = (q["clarity_score"] + q["novelty_score"] + q["exportability_score"] + q["market_fit_score"]) / 4
+    penalty = float(meta.get("thin_artifact_penalty", 0.0)) + float(meta.get("description_mismatch_penalty", 0.0))
+    substance = float(meta.get("substance_score", 0.05))
+    ceiling = min(0.99, 0.18 + (substance * 0.95))
+    return round(max(0.01, min(base - penalty, ceiling, 0.99)), 3)
 
 
 def infer_target_user(meta: Dict) -> str:
@@ -623,8 +766,12 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         validation_bonus = -0.04
 
     opportunity_score = float(opportunity.get("opportunity_score", 0.0))
+    penalty = float(meta.get("thin_artifact_penalty", 0.0)) + float(meta.get("description_mismatch_penalty", 0.0))
+    substance = float(meta.get("substance_score", 0.05))
     commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.16) + (proof_level * 0.3) + (buyer_clarity * 0.12) + (pain_severity * 0.1) + ((1 - deployment_effort) * 0.08) + (opportunity_score * 0.16) + validation_bonus, 3))
     sellability_score = min(0.99, round((buyer_clarity * 0.18) + (pain_severity * 0.16) + ((1 - deployment_effort) * 0.1) + (proof_level * 0.18) + ((1 - support_burden) * 0.05) + (commercial_readiness * 0.13) + (opportunity_score * 0.16) + validation_bonus, 3))
+    commercial_readiness = max(0.01, round(min(commercial_readiness - (penalty * 0.7), 0.16 + (substance * 0.82), 0.99), 3))
+    sellability_score = max(0.01, round(min(sellability_score - (penalty * 0.82), 0.14 + (substance * 0.78), 0.99), 3))
 
     if sellability_score >= 0.82 and proof_level >= 0.5:
         price_band_guess = "250-1000eur"
@@ -653,6 +800,7 @@ def compute_sellability_signals(meta: Dict) -> Dict:
 
 def update_artifact_scores(meta: Dict, conn: sqlite3.Connection | None = None) -> Dict:
     meta["proof_signals"] = get_artifact_proof(conn, meta.get("id"))
+    meta.update(analyze_artifact_substance(meta))
     meta.update(compute_quality_dimensions(meta))
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
@@ -691,6 +839,11 @@ def build_artifact_explainability(meta: Dict) -> dict:
         risks.append("deployment effort looks relatively high")
     if float(meta.get("buyer_clarity_score", 0.0)) < 0.55:
         next_actions.append("clarify target buyer and problem statement")
+    if float(meta.get("thin_artifact_penalty", 0.0)) > 0.0:
+        risks.append("artifact substance looks thin relative to its framing")
+        next_actions.append("strengthen the underlying artifact before promoting it")
+    if float(meta.get("description_mismatch_penalty", 0.0)) > 0.0:
+        risks.append("description appears stronger than the current artifact payload")
     return {
         "internal_strength": internal_strength or ["early artifact with partial internal signals"],
         "external_proof": external_proof or ["no durable external proof yet"],
