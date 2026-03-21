@@ -126,6 +126,6 @@ Recommended rollback order:
 - pack offer brief generation added with weak-proof pack reporting
 - runtime JSON handling hardened with blank-file tolerance and atomic writes
 - intended direction: tighten operator-to-offer workflow and reduce brittleness before v0.1 synthesis
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `d1e6739`
+- backup: `CircleForge-backup-20260321-185842.tar.gz`
+- tag: `v0.0.52`
