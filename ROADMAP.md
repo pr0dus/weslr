@@ -231,9 +231,12 @@ Focus:
 - begin shifting artifact-family discovery from the human toward the entities themselves
 
 ### v0.0.44
+- clustering of repeated opportunity themes into emerging niche families
+- pack formation around discovered opportunity themes instead of category only
+- version ledger for clearer rollback and recovery points
+
+### v0.0.45
 - pack-level external validation events
 - offer outcome tracking
 - rejection-reason visibility for repeated pack failures
 - stronger buyer/problem/install framing at pack level
-- clustering of repeated opportunity themes into emerging niche families
-- pack formation around discovered opportunity themes instead of category only

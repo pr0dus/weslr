@@ -142,11 +142,48 @@ def load_opportunity_board() -> dict:
     board.setdefault("themes", {})
     for theme, payload in default["themes"].items():
         board["themes"].setdefault(theme, payload.copy())
-    return board
+    return cluster_opportunity_board(board)
 
 
 def save_opportunity_board(board: dict) -> None:
     write_json_file(OPPORTUNITY_BOARD_PATH, board)
+
+
+def canonical_theme_name(theme: str) -> str:
+    theme = (theme or "").strip().lower()
+    replacements = {
+        "backup trust": "backup confidence",
+        "backup validation": "backup confidence",
+        "health visibility": "service visibility",
+        "service health": "service visibility",
+        "config validation": "config sanity checks",
+        "configuration sanity": "config sanity checks",
+        "readable logs": "log readability",
+        "workflow wrappers": "workflow packaging",
+        "helper packaging": "workflow packaging",
+    }
+    return replacements.get(theme, theme)
+
+
+def cluster_opportunity_board(board: dict) -> dict:
+    themes = board.setdefault("themes", {})
+    merged_into: dict[str, list[str]] = {}
+    new_themes: dict[str, dict] = {}
+    for raw_theme, payload in list(themes.items()):
+        canonical = canonical_theme_name(raw_theme)
+        canonical_payload = new_themes.setdefault(canonical, {"pressure": 0.0, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0, "aliases": []})
+        canonical_payload["pressure"] = round(max(canonical_payload["pressure"], float(payload.get("pressure", 0.0))), 3)
+        canonical_payload["evidence"] += int(payload.get("evidence", 0))
+        canonical_payload["acceptances"] += int(payload.get("acceptances", 0))
+        canonical_payload["rejections"] += int(payload.get("rejections", 0))
+        canonical_payload["revisions"] += int(payload.get("revisions", 0))
+        canonical_payload["updated_at"] = max(int(canonical_payload.get("updated_at", 0)), int(payload.get("updated_at", 0)))
+        if raw_theme != canonical:
+            canonical_payload["aliases"].append(raw_theme)
+            merged_into.setdefault(canonical, []).append(raw_theme)
+    board["themes"] = new_themes
+    board["clusters"] = [{"canonical": k, "aliases": v} for k, v in sorted(merged_into.items()) if v]
+    return board
 
 
 def category_action(action: str, name: str) -> dict:
@@ -1030,12 +1067,19 @@ def compute_pack_scores(items: list[dict]) -> dict:
     }
 
 
+def cluster_artifact_theme(meta: dict) -> str | None:
+    theme = meta.get("niche_theme")
+    if not theme:
+        return None
+    return canonical_theme_name(str(theme))
+
+
 def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | None = None) -> list[dict]:
     packs: dict[str, dict] = {}
     for meta in artifact_meta:
         if meta.get("review_status") != "export_ready":
             continue
-        niche_theme = meta.get("niche_theme")
+        niche_theme = cluster_artifact_theme(meta)
         category = meta.get("category", "uncategorized")
         group_kind = "opportunity" if niche_theme else "category"
         group_key = niche_theme or category
@@ -1502,6 +1546,7 @@ def clamp_agent(agent: Dict) -> Dict:
 def apply_opportunity_outcome(theme: str | None, outcome: str, now_ts: int) -> None:
     if not theme:
         return
+    theme = canonical_theme_name(theme)
     board = load_opportunity_board()
     board_state = board.setdefault("themes", {}).setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": now_ts, "acceptances": 0, "rejections": 0, "revisions": 0})
     pressure = float(board_state.get("pressure", 0.4))
@@ -1519,7 +1564,7 @@ def apply_opportunity_outcome(theme: str | None, outcome: str, now_ts: int) -> N
             pressure -= 0.02
     board_state["pressure"] = round(max(0.03, min(pressure, 0.99)), 3)
     board_state["updated_at"] = now_ts
-    save_opportunity_board(board)
+    save_opportunity_board(cluster_opportunity_board(board))
 
 
 def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionResult, now_ts: int, board: Dict) -> None:
@@ -1565,6 +1610,7 @@ def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionR
     board_state["updated_at"] = now_ts
 
     save_opportunity_memory(agent_dir, memory)
+    cluster_opportunity_board(board)
 
 
 def perform_tick(verbose: bool = False) -> List[Dict]:
