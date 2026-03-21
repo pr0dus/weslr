@@ -315,6 +315,8 @@ def compute_human_proposed_score(meta: Dict) -> float:
 
 
 def infer_target_user(meta: Dict) -> str:
+    if meta.get("target_user"):
+        return str(meta.get("target_user"))
     family = meta.get("family")
     category = meta.get("category")
     artifact_type = meta.get("artifact_type")
@@ -325,6 +327,77 @@ def infer_target_user(meta: Dict) -> str:
     if category in {"memory", "research"} or artifact_type == "market_hypothesis":
         return "technical researchers and workflow designers"
     return "technical builders"
+
+
+def compute_opportunity_signals(meta: Dict) -> Dict:
+    niche_theme = str(meta.get("niche_theme", "")).strip()
+    target_user = infer_target_user(meta)
+    problem_statement = str(meta.get("problem_statement", "")).strip()
+    gap_reason = str(meta.get("gap_reason", "")).strip()
+    artifact_hypothesis = str(meta.get("artifact_hypothesis", "")).strip()
+    offer_hypothesis = str(meta.get("offer_hypothesis", "")).strip()
+    delivery_mode_guess = str(meta.get("delivery_mode_guess", meta.get("delivery_mode", "bundle_candidate"))).strip()
+    research_confidence = float(meta.get("research_confidence", 0.45) or 0.45)
+    proof = meta.get("proof_signals", {})
+    family = meta.get("family", "unknown")
+
+    pain_clarity = 0.18
+    if len(problem_statement) >= 40:
+        pain_clarity += 0.22
+    if niche_theme:
+        pain_clarity += 0.1
+    if meta.get("why_now"):
+        pain_clarity += 0.08
+    if meta.get("category") != "uncategorized":
+        pain_clarity += 0.06
+
+    buyer_specificity = 0.16
+    if target_user and target_user not in {"technical builders", "indie builders and local AI tinkerers"}:
+        buyer_specificity += 0.22
+    elif target_user:
+        buyer_specificity += 0.12
+    if delivery_mode_guess in {"standalone_microproduct", "consulting_accelerator"}:
+        buyer_specificity += 0.08
+
+    gap_severity = 0.18
+    if len(gap_reason) >= 40:
+        gap_severity += 0.18
+    if family in {"observability", "status-pages", "local-ai-ops"}:
+        gap_severity += 0.12
+    if "heavy" in gap_reason.lower() or "expensive" in gap_reason.lower() or "annoy" in gap_reason.lower():
+        gap_severity += 0.08
+
+    packaging_ease = 0.2
+    if delivery_mode_guess == "standalone_microproduct":
+        packaging_ease += 0.18
+    elif delivery_mode_guess == "consulting_accelerator":
+        packaging_ease += 0.14
+    elif delivery_mode_guess == "bundle_candidate":
+        packaging_ease += 0.1
+    if artifact_hypothesis:
+        packaging_ease += 0.06
+    if offer_hypothesis:
+        packaging_ease += 0.05
+
+    validation_lift = min(int(proof.get("real_usage_hits", 0)) * 0.08 + int(proof.get("buyer_fit_votes", 0)) * 0.04 + int(proof.get("handoff_acceptances", 0)) * 0.06, 0.2)
+
+    opportunity_score = min(0.99, round((pain_clarity * 0.3) + (buyer_specificity * 0.24) + (gap_severity * 0.2) + (packaging_ease * 0.14) + (research_confidence * 0.08) + validation_lift, 3))
+
+    return {
+        "niche_theme": niche_theme or meta.get("category", "uncategorized"),
+        "target_user": target_user,
+        "problem_statement": problem_statement or meta.get("purpose", ""),
+        "gap_reason": gap_reason or meta.get("why_now", ""),
+        "artifact_hypothesis": artifact_hypothesis or meta.get("idea", ""),
+        "offer_hypothesis": offer_hypothesis or meta.get("explanation", ""),
+        "delivery_mode_guess": delivery_mode_guess or "bundle_candidate",
+        "research_confidence": round(max(0.01, min(research_confidence, 0.99)), 3),
+        "pain_clarity_score": round(min(pain_clarity, 0.99), 3),
+        "buyer_specificity_score": round(min(buyer_specificity, 0.99), 3),
+        "gap_severity_score": round(min(gap_severity, 0.99), 3),
+        "packaging_ease_score": round(min(packaging_ease, 0.99), 3),
+        "opportunity_score": opportunity_score,
+    }
 
 
 def get_artifact_proof(conn: sqlite3.Connection | None, artifact_id: str | None) -> Dict:
@@ -353,7 +426,8 @@ def compute_sellability_signals(meta: Dict) -> Dict:
     artifact_type = meta.get("artifact_type", "unknown")
     destination = meta.get("destination", "internal_review")
     review_status = meta.get("review_status", "unreviewed")
-    target_user = infer_target_user(meta)
+    opportunity = compute_opportunity_signals(meta)
+    target_user = opportunity.get("target_user")
     proof = meta.get("proof_signals", {})
 
     buyer_clarity = 0.34
@@ -434,8 +508,9 @@ def compute_sellability_signals(meta: Dict) -> Dict:
     elif external_state == "needs_revision":
         validation_bonus = -0.04
 
-    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.2) + (proof_level * 0.34) + (buyer_clarity * 0.14) + (pain_severity * 0.12) + ((1 - deployment_effort) * 0.1) + validation_bonus, 3))
-    sellability_score = min(0.99, round((buyer_clarity * 0.22) + (pain_severity * 0.2) + ((1 - deployment_effort) * 0.12) + (proof_level * 0.2) + ((1 - support_burden) * 0.06) + (commercial_readiness * 0.14) + validation_bonus, 3))
+    opportunity_score = float(opportunity.get("opportunity_score", 0.0))
+    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.16) + (proof_level * 0.3) + (buyer_clarity * 0.12) + (pain_severity * 0.1) + ((1 - deployment_effort) * 0.08) + (opportunity_score * 0.16) + validation_bonus, 3))
+    sellability_score = min(0.99, round((buyer_clarity * 0.18) + (pain_severity * 0.16) + ((1 - deployment_effort) * 0.1) + (proof_level * 0.18) + ((1 - support_burden) * 0.05) + (commercial_readiness * 0.13) + (opportunity_score * 0.16) + validation_bonus, 3))
 
     if sellability_score >= 0.82 and proof_level >= 0.5:
         price_band_guess = "250-1000eur"
@@ -467,6 +542,7 @@ def update_artifact_scores(meta: Dict, conn: sqlite3.Connection | None = None) -
     meta.update(compute_quality_dimensions(meta))
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
+    meta.update(compute_opportunity_signals(meta))
     meta.update(compute_sellability_signals(meta))
     meta["external_validation_state"] = meta.get("proof_signals", {}).get("external_validation_state", "unvalidated")
     meta["delivery_mode"] = recommend_delivery_mode(meta)
@@ -479,6 +555,10 @@ def explain_artifact(meta: Dict) -> list[str]:
         reasons.append("artifact is export-ready and already passed into human-facing flow")
     if float(meta.get("sellability_score", 0.0)) >= SELLABILITY_SIGNAL_THRESHOLD:
         reasons.append(f"sellability score is strong at {meta.get('sellability_score')}")
+    if float(meta.get("opportunity_score", 0.0)) >= 0.65:
+        reasons.append(f"opportunity score suggests a credible niche at {meta.get('opportunity_score')}")
+    if meta.get("niche_theme"):
+        reasons.append(f"artifact is tied to the niche theme '{meta.get('niche_theme')}'")
     if float(meta.get("buyer_clarity_score", 0.0)) >= 0.75:
         reasons.append("target buyer is relatively clear")
     if float(meta.get("deployment_effort_score", 0.0)) <= 0.4:
@@ -573,6 +653,14 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "purpose": meta.get("purpose"),
         "destination": meta.get("destination"),
         "future_directions": meta.get("future_directions", []),
+        "niche_theme": meta.get("niche_theme"),
+        "target_user": meta.get("target_user"),
+        "problem_statement": meta.get("problem_statement"),
+        "gap_reason": meta.get("gap_reason"),
+        "artifact_hypothesis": meta.get("artifact_hypothesis"),
+        "offer_hypothesis": meta.get("offer_hypothesis"),
+        "opportunity_score": meta.get("opportunity_score"),
+        "research_confidence": meta.get("research_confidence"),
         "parent_ids": meta.get("parent_ids", []),
         "derived_from": meta.get("derived_from", []),
         "generation": meta.get("generation"),
@@ -1222,11 +1310,12 @@ def list_agents(conn: sqlite3.Connection) -> List[Dict]:
     return [dict(row) for row in conn.execute("SELECT * FROM agents ORDER BY name").fetchall()]
 
 
-def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, artifact_type: str, idea: str, explanation: str, purpose: str, destination: str, future_directions: List[str], combinable_with: List[str], lineage: Dict, category: str) -> str:
+def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, artifact_type: str, idea: str, explanation: str, purpose: str, destination: str, future_directions: List[str], combinable_with: List[str], lineage: Dict, category: str, opportunity: Dict | None = None) -> str:
     artifacts_dir = agent_dir / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     artifact_id = f"{agent['name']}-{artifact_slug}-{int(time.time())}"
     meta_path = artifacts_dir / f"{artifact_slug}.meta.json"
+    opportunity = opportunity or {}
     payload = {
         "id": artifact_id,
         "title": artifact_slug.replace("_", " ").title(),
@@ -1237,6 +1326,15 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "explanation": explanation,
         "purpose": purpose,
         "destination": destination,
+        "niche_theme": opportunity.get("niche_theme"),
+        "target_user": opportunity.get("target_user"),
+        "problem_statement": opportunity.get("problem_statement"),
+        "gap_reason": opportunity.get("gap_reason"),
+        "existing_solution_friction": opportunity.get("existing_solution_friction"),
+        "artifact_hypothesis": opportunity.get("artifact_hypothesis"),
+        "offer_hypothesis": opportunity.get("offer_hypothesis"),
+        "delivery_mode_guess": opportunity.get("delivery_mode_guess"),
+        "research_confidence": opportunity.get("research_confidence", 0.45),
         "audience": ["local AI tinkerers", "agent-sim builders"],
         "depends_on": ["persistent memory", "timed ticks"],
         "combinable_with": combinable_with,
@@ -1297,6 +1395,18 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
     code = action_plan.get("code", "")
     target_name = action_plan.get("target")
     category = normalize_category_for_artifact(action, action_plan.get("category"))
+    opportunity = {
+        "niche_theme": action_plan.get("niche_theme"),
+        "target_user": action_plan.get("target_user"),
+        "problem_statement": action_plan.get("problem_statement"),
+        "gap_reason": action_plan.get("gap_reason"),
+        "existing_solution_friction": action_plan.get("existing_solution_friction"),
+        "artifact_hypothesis": action_plan.get("artifact_hypothesis"),
+        "offer_hypothesis": action_plan.get("offer_hypothesis"),
+        "delivery_mode_guess": action_plan.get("delivery_mode_guess"),
+        "research_confidence": action_plan.get("research_confidence", 0.45),
+        "price_band_guess": action_plan.get("price_band_guess"),
+    }
     if action == "rest":
         return ActionResult(action=action, status="ok", summary=f"rested: {reason}", energy_delta=8)
     if action == "inspect":
@@ -1313,15 +1423,15 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
     if action == "gather":
         return ActionResult(action=action, status=status, summary=f"gathered resources; {reason}", energy_delta=4, storage_delta=2, raw_output=raw)
     if action == "research":
-        artifact = write_artifact_metadata(agent, agent_dir, "research_note", "market_hypothesis", "Short-cycle agents should compress observations into exportable research notes.", "This artifact captures a compact research note produced during a simulation tick.", "Make research outputs legible to humans and other agents.", "internal_review", ["turn into benchmark criteria", "package as an insight feed"], ["dashboard", "artifact marketplace", "export queue"], {"action": action, "reason": reason, "tick_context": "research"}, category)
+        artifact = write_artifact_metadata(agent, agent_dir, "research_note", "market_hypothesis", "Short-cycle agents should compress observations into exportable research notes.", "This artifact captures a compact research note produced during a simulation tick.", "Make research outputs legible to humans and other agents.", "internal_review", ["turn into benchmark criteria", "package as an insight feed"], ["dashboard", "artifact marketplace", "export queue"], {"action": action, "reason": reason, "tick_context": "research"}, category, opportunity=opportunity)
         return ActionResult(action=action, status=status, summary=f"researched local improvements; {reason}", reputation_delta=0.02, raw_output=raw, artifact=artifact)
     if action == "optimize":
-        artifact = write_artifact_metadata(agent, agent_dir, "optimization_bundle", "tradable_component", "Bundle workflow optimizations into something reusable.", "This artifact describes an optimization bundle created from a local agent workflow pass.", "Turn internal efficiency gains into components others can inspect, trade, or export.", "shared_with_agents", ["convert to installable module", "attach metrics and benchmarks"], ["trade action", "export candidate queue"], {"action": action, "reason": reason, "tick_context": "optimize"}, category)
+        artifact = write_artifact_metadata(agent, agent_dir, "optimization_bundle", "tradable_component", "Bundle workflow optimizations into something reusable.", "This artifact describes an optimization bundle created from a local agent workflow pass.", "Turn internal efficiency gains into components others can inspect, trade, or export.", "shared_with_agents", ["convert to installable module", "attach metrics and benchmarks"], ["trade action", "export candidate queue"], {"action": action, "reason": reason, "tick_context": "optimize"}, category, opportunity=opportunity)
         return ActionResult(action=action, status=status, summary=f"optimized workflow; {reason}", energy_delta=2, raw_output=raw, artifact=artifact)
     if action == "build_module":
         modules = sorted((agent_dir / "modules").glob("*.py"))
         module_name = modules[-1].name if modules else None
-        artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name}, category)
+        artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name}, category, opportunity=opportunity)
         return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw, artifact=artifact)
     return ActionResult(action=action, status=status, summary=f"unknown action: {reason}", raw_output=raw)
 
@@ -1646,10 +1756,13 @@ def explain_item(item_id: str) -> Dict:
                 "id": item_id,
                 "title": enriched.get("title"),
                 "target_user": enriched.get("target_user"),
+                "niche_theme": enriched.get("niche_theme"),
+                "problem_statement": enriched.get("problem_statement"),
                 "family": enriched.get("family"),
                 "scores": {
                     "human_proposed_score": enriched.get("human_proposed_score"),
                     "internal_score": enriched.get("internal_score"),
+                    "opportunity_score": enriched.get("opportunity_score"),
                     "sellability_score": enriched.get("sellability_score"),
                     "commercial_readiness_score": enriched.get("commercial_readiness_score"),
                 },

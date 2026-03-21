@@ -2,10 +2,10 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.42** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, and now track external validation outcomes.
+**CircleForge v0.0.43** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, and now begin attaching niche/opportunity hypotheses to artifacts.
 
-CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts.
+CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
 
 ## Current core
 
@@ -80,10 +80,23 @@ It defines a 100-point scoring framework based on:
 
 It also defines hard penalties for sandbox-only artifacts, vague buyers, setup pain, fake sophistication, and internal jargon.
 
+## Opportunity model
+
+The first niche-discovery layer now lives in [`OPPORTUNITY.md`](OPPORTUNITY.md).
+It defines how entities should begin attaching:
+- niche themes
+- target users
+- problem statements
+- gap reasons
+- packaging hypotheses
+- opportunity scores
+
+to the artifacts they generate.
+
 ## What should come next
 
-- v0.0.43: pack-level validation and offer outcome tracking
+- stronger entity-driven niche discovery and opportunity clustering
+- pack-level validation and offer outcome tracking
 - explain output that separates internal strength from external proof
 - reports for high-scoring packs with weak real-world evidence
 - replay/dashboard views built around curated artifacts rather than raw simulation state
-- category templates for more concrete offer types

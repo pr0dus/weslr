@@ -221,11 +221,18 @@ Focus:
 
 ### v0.0.43
 - explicit sellability model for artifacts and packs
-- pack-level external validation events
-- offer outcome tracking
-- clearer separation between internal score and external proof
-- rejection-reason visibility for repeated pack failures
-- stronger buyer/problem/install framing at pack level
+- first opportunity model for entity-defined niches and buyer/problem hypotheses
+- artifact-level niche themes, gap reasons, and packaging hypotheses
+- clearer separation between internal score, opportunity score, and external proof
+- initial explain support for why an artifact may fit a real niche
 
 Focus:
 - move from internally interesting artifacts toward small reusable tools that humans can test, package, and potentially sell
+- begin shifting artifact-family discovery from the human toward the entities themselves
+
+### v0.0.44
+- pack-level external validation events
+- offer outcome tracking
+- rejection-reason visibility for repeated pack failures
+- stronger buyer/problem/install framing at pack level
+- clustering of repeated opportunity themes into emerging niche families

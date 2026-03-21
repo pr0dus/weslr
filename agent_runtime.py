@@ -21,6 +21,50 @@ from config import (
 ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "rest"]
 
 
+NICHES = [
+    {
+        "theme": "backup confidence",
+        "target_user": "self-hosters and small operators",
+        "problem": "people do not trust their backups until restore day",
+        "gap": "existing backup tooling is often too noisy or too heavyweight for simple sanity checks",
+        "delivery_mode": "standalone_microproduct",
+        "price_band": "20-100eur",
+    },
+    {
+        "theme": "service visibility",
+        "target_user": "self-hosters and small operators",
+        "problem": "small operators lack a dead-simple health and status view",
+        "gap": "full observability stacks are too heavy for tiny installations",
+        "delivery_mode": "standalone_microproduct",
+        "price_band": "50-200eur",
+    },
+    {
+        "theme": "config sanity checks",
+        "target_user": "indie builders and local AI tinkerers",
+        "problem": "people lose time to avoidable configuration mistakes",
+        "gap": "many validators are generic but not tuned to practical local workflows",
+        "delivery_mode": "consulting_accelerator",
+        "price_band": "20-100eur",
+    },
+    {
+        "theme": "log readability",
+        "target_user": "technical builders",
+        "problem": "raw logs are hard to scan during small incidents",
+        "gap": "existing tooling is often overbuilt when all people need is a readable local summary",
+        "delivery_mode": "bundle_candidate",
+        "price_band": "20-100eur",
+    },
+    {
+        "theme": "workflow packaging",
+        "target_user": "indie builders and local AI tinkerers",
+        "problem": "useful helper code stays trapped inside one project or experiment",
+        "gap": "many teams lack small packaging wrappers that make internal helpers reusable",
+        "delivery_mode": "consulting_accelerator",
+        "price_band": "50-200eur",
+    },
+]
+
+
 def load_notes(agent_dir: Path) -> List[str]:
     memory_path = agent_dir / "memory.json"
     if not memory_path.exists():
@@ -56,6 +100,32 @@ def choose_target(agent: Dict[str, Any], world: Dict[str, Any]) -> str | None:
     return random.choice(visible_agents)
 
 
+def choose_niche(action: str, category: str) -> Dict[str, Any]:
+    niche = random.choice(NICHES).copy()
+    if action == "inspect":
+        niche["theme"] = "service visibility"
+        niche["problem"] = "small operators cannot quickly inspect service state and drift"
+    elif action == "optimize":
+        niche["theme"] = "workflow packaging"
+        niche["problem"] = "repeated local workflow pain should become a reusable helper"
+    elif action == "research":
+        niche["theme"] = random.choice(["backup confidence", "config sanity checks", "log readability"])
+    if category == "research":
+        niche["delivery_mode"] = "internal_reusable_component"
+    return {
+        "niche_theme": niche["theme"],
+        "target_user": niche["target_user"],
+        "problem_statement": niche["problem"],
+        "gap_reason": niche["gap"],
+        "delivery_mode_guess": niche["delivery_mode"],
+        "price_band_guess": niche["price_band"],
+        "research_confidence": round(random.uniform(0.42, 0.78), 3),
+        "existing_solution_friction": niche["gap"],
+        "artifact_hypothesis": f"Build a small {category if category != 'uncategorized' else 'utility'} artifact around {niche['theme']}",
+        "offer_hypothesis": f"A narrow {niche['theme']} helper could be packaged for {niche['target_user']}",
+    }
+
+
 def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -> Dict[str, Any]:
     now_ts = int(world.get("now_ts", 0))
     target = choose_target(agent, world)
@@ -80,6 +150,7 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         category = "uncategorized"
     else:
         category = random.choice(categories) if categories else "uncategorized"
+    niche = choose_niche(action, category)
 
     return {
         "action": action,
@@ -87,6 +158,7 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         "code": default_code_for(action, agent["name"]),
         "target": target if action in {"inspect", "trade"} else None,
         "category": category,
+        **niche,
     }
 
 
@@ -124,6 +196,15 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
             "reason": "short string",
             "target": "another agent name for inspect/trade, otherwise null",
             "category": "one existing category or uncategorized",
+            "niche_theme": "short niche or opportunity label",
+            "target_user": "specific likely user",
+            "problem_statement": "specific repeated pain",
+            "gap_reason": "why existing options are too annoying, expensive, broad, or heavyweight",
+            "delivery_mode_guess": "standalone_microproduct|consulting_accelerator|bundle_candidate|internal_reusable_component",
+            "price_band_guess": "small plausible price band",
+            "research_confidence": "0-1 confidence",
+            "artifact_hypothesis": "small tool or artifact concept tied to the niche",
+            "offer_hypothesis": "how it could be packaged or sold",
             "code": "short python script, optional but preferred"
         },
     }
@@ -155,12 +236,25 @@ def ask_ollama(agent: Dict[str, Any], world: Dict[str, Any], notes: List[str]) -
             target = choose_target(agent, world)
         if category not in valid_categories:
             category = "uncategorized"
+        niche = {
+            "niche_theme": str(data.get("niche_theme", "local workflow gap"))[:120],
+            "target_user": str(data.get("target_user", "technical builders"))[:160],
+            "problem_statement": str(data.get("problem_statement", "A repeated local workflow problem should be reduced."))[:240],
+            "gap_reason": str(data.get("gap_reason", "Existing options look heavier than the actual need."))[:240],
+            "delivery_mode_guess": str(data.get("delivery_mode_guess", "bundle_candidate"))[:80],
+            "price_band_guess": str(data.get("price_band_guess", "20-100eur"))[:80],
+            "research_confidence": max(0.01, min(float(data.get("research_confidence", 0.55)), 0.99)),
+            "artifact_hypothesis": str(data.get("artifact_hypothesis", "Build a small reusable local helper."))[:240],
+            "offer_hypothesis": str(data.get("offer_hypothesis", "Package the helper into a small reusable offer."))[:240],
+            "existing_solution_friction": str(data.get("gap_reason", "Existing options look heavier than the actual need."))[:240],
+        }
         return {
             "action": action,
             "reason": str(data.get("reason", "ollama")),
             "target": target if action in {"inspect", "trade"} else None,
             "category": category,
             "code": code or default_code_for(action, agent["name"]),
+            **niche,
         }
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):
         return None
