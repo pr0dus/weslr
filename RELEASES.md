@@ -95,3 +95,11 @@ Recommended rollback order:
 - commit: `8217af9`
 - backup: `CircleForge-backup-20260321-155808.tar.gz`
 - tag: `v0.0.48`
+
+### v0.0.49
+- dashboard drill-downs for top themes and top packs
+- event feed for lifecycle changes and pack outcome changes
+- safe-resume memory notes updated for future large-context sessions
+- commit: pending
+- backup: pending
+- tag: pending

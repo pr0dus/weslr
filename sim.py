@@ -2031,12 +2031,40 @@ def update_dashboard_history(payload: dict) -> list[dict]:
         "tick": payload.get("world", {}).get("tick", 0),
         "version": payload.get("version"),
         "theme_pressure": {k: v.get("pressure", 0.0) for k, v in (payload.get("opportunity_board", {}).get("themes") or {}).items()},
+        "theme_lifecycle": {k: v.get("lifecycle", "stable") for k, v in (payload.get("opportunity_board", {}).get("themes") or {}).items()},
         "pack_counts": {p.get("pack_name"): {"offers": p.get("offer_count", 0), "accepts": p.get("accept_count", 0), "rejects": p.get("reject_count", 0)} for p in payload.get("artifact_packs", [])[:10]},
     }
     history.append(point)
     history = history[-40:]
     write_json_file(DASHBOARD_HISTORY_PATH, history)
     return history
+
+
+def build_dashboard_event_feed(payload: dict) -> list[dict]:
+    history = payload.get("history", [])
+    events = []
+    if len(history) >= 2:
+        prev = history[-2]
+        curr = history[-1]
+        prev_pressure = prev.get("theme_pressure", {})
+        curr_pressure = curr.get("theme_pressure", {})
+        prev_lifecycle = prev.get("theme_lifecycle", {})
+        curr_lifecycle = curr.get("theme_lifecycle", {})
+        for theme, pressure in curr_pressure.items():
+            before = float(prev_pressure.get(theme, pressure))
+            delta = round(float(pressure) - before, 3)
+            if abs(delta) >= 0.05:
+                events.append({"kind": "theme-shift", "theme": theme, "message": f"{theme} pressure changed by {delta:+.3f}"})
+            if prev_lifecycle.get(theme) and prev_lifecycle.get(theme) != curr_lifecycle.get(theme):
+                events.append({"kind": "lifecycle-change", "theme": theme, "message": f"{theme} moved from {prev_lifecycle.get(theme)} to {curr_lifecycle.get(theme)}"})
+        prev_packs = prev.get("pack_counts", {})
+        curr_packs = curr.get("pack_counts", {})
+        for pack_name, counts in curr_packs.items():
+            old = prev_packs.get(pack_name, {})
+            for key in ("offers", "accepts", "rejects"):
+                if int(counts.get(key, 0)) != int(old.get(key, 0)):
+                    events.append({"kind": "pack-outcome", "pack": pack_name, "message": f"{pack_name} {key} changed from {old.get(key, 0)} to {counts.get(key, 0)}"})
+    return events[:20]
 
 
 def render_dashboard() -> dict:
@@ -2059,7 +2087,10 @@ def render_dashboard() -> dict:
         "release_ledger": release_ledger,
     }
     payload["history"] = update_dashboard_history(payload)
+    payload["event_feed"] = build_dashboard_event_feed(payload)
     write_json_file(payload_path, payload)
+    top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:3]
+    top_packs = data.get('artifact_packs', [])[:3]
     html = f"""<!doctype html>
 <html>
 <head>
@@ -2126,7 +2157,7 @@ def render_dashboard() -> dict:
       <section class=\"card\">
         <h2>Agent Opportunity Memory</h2>
         <ul>
-          {''.join(f"<li><strong>{a.get('agent')}</strong> · last {a.get('last_theme') or '—'}<br><span class='muted'>{'; '.join(f'{t.get('theme')} ({t.get('strength')})' for t in a.get('top_themes', []))}</span></li>" for a in payload.get('agent_memory', []))}
+          {''.join("<li><strong>{}</strong> · last {}<br><span class='muted'>{}</span></li>".format(a.get('agent'), a.get('last_theme') or '—', '; '.join(['{} ({})'.format(t.get('theme'), t.get('strength')) for t in a.get('top_themes', [])])) for a in payload.get('agent_memory', []))}
         </ul>
       </section>
 
@@ -2141,6 +2172,27 @@ def render_dashboard() -> dict:
         <h2>Review Queue</h2>
         <ul>
           {''.join(f"<li>{i.get('title')} — sellability {i.get('sellability_score',0)} · {i.get('review_status')}</li>" for i in data.get('review_queue', [])[:10])}
+        </ul>
+      </section>
+    </div>
+
+    <div class=\"grid\" style=\"margin-top:16px;\">
+      <section class=\"card\">
+        <h2>Theme Drill-Down</h2>
+        <ul>
+          {''.join(f"<li><strong>{name}</strong> · lifecycle {theme.get('lifecycle','stable')} · pressure {theme.get('pressure',0)} · evidence {theme.get('evidence',0)} · accepts {theme.get('acceptances',0)} · rejects {theme.get('rejections',0)}</li>" for name, theme in top_themes)}
+        </ul>
+      </section>
+      <section class=\"card\">
+        <h2>Pack Drill-Down</h2>
+        <ul>
+          {''.join(f"<li><strong>{p.get('pack_name')}</strong><br><span class='muted'>theme {p.get('niche_theme') or p.get('category')} · score {p.get('pack_score')} · sellability {p.get('sellability_score')}</span><br>{', '.join([a.get('title','artifact') for a in p.get('artifacts', [])[:4]])}</li>" for p in top_packs)}
+        </ul>
+      </section>
+      <section class=\"card\">
+        <h2>Event Feed</h2>
+        <ul>
+          {''.join(f"<li>{e.get('message')}</li>" for e in payload.get('event_feed', [])[:15]) or '<li class="muted">No notable changes yet.</li>'}
         </ul>
       </section>
     </div>

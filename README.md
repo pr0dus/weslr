@@ -95,16 +95,15 @@ to the artifacts they generate.
 
 The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, decay, and theme clustering.
 
-## New in v0.0.48
+## New in v0.0.49
 
-- richer operator dashboard
-- agent opportunity-memory panels
-- dashboard history snapshots for lightweight trend tracking
-- pack outcome and lifecycle visibility improved
+- dashboard drill-down sections for top themes and packs
+- simple event feed for lifecycle and pack-outcome changes
+- dashboard becomes more navigable for human operators
 
 ## What should come next
 
 - explain output that separates internal strength from external proof
 - reports for high-scoring packs with weak real-world evidence
-- clickable drill-downs from dashboard items into artifacts/packs
+- clickable links from dashboard into artifacts/packs/explain actions
 - replay/dashboard views built around curated artifacts rather than raw simulation state

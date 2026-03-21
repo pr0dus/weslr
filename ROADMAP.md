@@ -257,3 +257,8 @@ Focus:
 - richer dashboard with agent memory panels and lightweight trend history
 - better visibility into pack outcomes and opportunity lifecycle changes
 - stronger operator monitoring before drill-down interactions
+
+### v0.0.49
+- dashboard drill-downs for top themes and top packs
+- event feed for lifecycle changes and pack outcome changes
+- safer operator resumption via stronger memory notes and release tracking
