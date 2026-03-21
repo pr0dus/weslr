@@ -88,6 +88,11 @@ CREATE TABLE IF NOT EXISTS artifact_proof (
     top_pack_hits INTEGER NOT NULL,
     review_exports INTEGER NOT NULL,
     human_approvals INTEGER NOT NULL,
+    real_usage_hits INTEGER NOT NULL DEFAULT 0,
+    buyer_fit_votes INTEGER NOT NULL DEFAULT 0,
+    handoff_acceptances INTEGER NOT NULL DEFAULT 0,
+    handoff_rejections INTEGER NOT NULL DEFAULT 0,
+    external_validation_state TEXT NOT NULL DEFAULT 'unvalidated',
     last_status TEXT NOT NULL
 );
 '''
@@ -330,6 +335,11 @@ def get_artifact_proof(conn: sqlite3.Connection | None, artifact_id: str | None)
         "top_pack_hits": 0,
         "review_exports": 0,
         "human_approvals": 0,
+        "real_usage_hits": 0,
+        "buyer_fit_votes": 0,
+        "handoff_acceptances": 0,
+        "handoff_rejections": 0,
+        "external_validation_state": "unvalidated",
         "last_status": "unseen",
     }
     if conn is None or not artifact_id:
@@ -395,6 +405,9 @@ def compute_sellability_signals(meta: Dict) -> Dict:
     proof_level += min(int(proof.get("top_pack_hits", 0)) * 0.04, 0.12)
     proof_level += min(int(proof.get("review_exports", 0)) * 0.06, 0.12)
     proof_level += min(int(proof.get("human_approvals", 0)) * 0.06, 0.12)
+    proof_level += min(int(proof.get("real_usage_hits", 0)) * 0.08, 0.16)
+    proof_level += min(int(proof.get("handoff_acceptances", 0)) * 0.08, 0.16)
+    proof_level -= min(int(proof.get("handoff_rejections", 0)) * 0.05, 0.15)
 
     support_burden = 0.56
     if family in {"packaging", "evaluation"}:
@@ -405,9 +418,24 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         support_burden -= 0.04
     if int(proof.get("human_approvals", 0)) >= 1:
         support_burden -= 0.03
+    if int(proof.get("handoff_acceptances", 0)) >= 1:
+        support_burden -= 0.04
+    if int(proof.get("handoff_rejections", 0)) >= 1:
+        support_burden += 0.05
 
-    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.22) + (proof_level * 0.36) + (buyer_clarity * 0.16) + (pain_severity * 0.14) + ((1 - deployment_effort) * 0.12), 3))
-    sellability_score = min(0.99, round((buyer_clarity * 0.24) + (pain_severity * 0.22) + ((1 - deployment_effort) * 0.14) + (proof_level * 0.18) + ((1 - support_burden) * 0.06) + (commercial_readiness * 0.16), 3))
+    external_state = proof.get("external_validation_state", "unvalidated")
+    validation_bonus = 0.0
+    if external_state == "validated":
+        validation_bonus = 0.08
+    elif external_state == "accepted_for_delivery":
+        validation_bonus = 0.14
+    elif external_state == "rejected_after_review":
+        validation_bonus = -0.1
+    elif external_state == "needs_revision":
+        validation_bonus = -0.04
+
+    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.2) + (proof_level * 0.34) + (buyer_clarity * 0.14) + (pain_severity * 0.12) + ((1 - deployment_effort) * 0.1) + validation_bonus, 3))
+    sellability_score = min(0.99, round((buyer_clarity * 0.22) + (pain_severity * 0.2) + ((1 - deployment_effort) * 0.12) + (proof_level * 0.2) + ((1 - support_burden) * 0.06) + (commercial_readiness * 0.14) + validation_bonus, 3))
 
     if sellability_score >= 0.82 and proof_level >= 0.5:
         price_band_guess = "250-1000eur"
@@ -440,6 +468,7 @@ def update_artifact_scores(meta: Dict, conn: sqlite3.Connection | None = None) -
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
     meta.update(compute_sellability_signals(meta))
+    meta["external_validation_state"] = meta.get("proof_signals", {}).get("external_validation_state", "unvalidated")
     meta["delivery_mode"] = recommend_delivery_mode(meta)
     return meta
 
@@ -463,6 +492,12 @@ def explain_artifact(meta: Dict) -> list[str]:
         reasons.append("artifact has appeared inside a top-ranked pack")
     if int(proof.get("human_approvals", 0)) >= 1:
         reasons.append("artifact has direct human approval evidence")
+    if int(proof.get("real_usage_hits", 0)) >= 1:
+        reasons.append("artifact has real usage evidence outside the internal scoring loop")
+    if int(proof.get("handoff_acceptances", 0)) >= 1:
+        reasons.append("artifact has a positive delivery or handoff outcome")
+    if proof.get("external_validation_state") == "rejected_after_review":
+        reasons.append("artifact has external rejection evidence and needs rework")
     if meta.get("family"):
         reasons.append(f"artifact fits the {meta.get('family')} family")
     return reasons[:5] or ["early artifact with limited explanation signals so far"]
@@ -670,6 +705,59 @@ def find_meta_file_by_id(artifact_id: str) -> Path | None:
     return None
 
 
+def validate_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
+    meta_file = find_meta_file_by_id(artifact_id)
+    if meta_file is None:
+        raise SystemExit(f"No artifact found with id: {artifact_id}")
+    conn = connect()
+    meta = read_json_file(meta_file, {})
+    proof = get_artifact_proof(conn, meta.get("id"))
+
+    if action == "use":
+        proof["real_usage_hits"] = int(proof.get("real_usage_hits", 0)) + 1
+        proof["external_validation_state"] = "validated"
+    elif action == "buyer-fit":
+        proof["buyer_fit_votes"] = int(proof.get("buyer_fit_votes", 0)) + 1
+        proof["external_validation_state"] = "validated"
+    elif action == "accept":
+        proof["handoff_acceptances"] = int(proof.get("handoff_acceptances", 0)) + 1
+        proof["external_validation_state"] = "accepted_for_delivery"
+    elif action == "reject":
+        proof["handoff_rejections"] = int(proof.get("handoff_rejections", 0)) + 1
+        proof["external_validation_state"] = "rejected_after_review"
+    elif action == "revise":
+        proof["external_validation_state"] = "needs_revision"
+    else:
+        conn.close()
+        raise SystemExit(f"Unknown validation action: {action}")
+
+    if note:
+        meta.setdefault("review_notes", []).append(f"validation:{action}: {note}")
+
+    proof["last_status"] = meta.get("review_status", "unreviewed")
+    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+        meta.get("id"),
+        int(proof.get("first_seen_tick", 0)),
+        int(proof.get("last_seen_tick", 0)),
+        int(proof.get("appearances", 0)),
+        int(proof.get("top_pack_hits", 0)),
+        int(proof.get("review_exports", 0)),
+        int(proof.get("human_approvals", 0)),
+        int(proof.get("real_usage_hits", 0)),
+        int(proof.get("buyer_fit_votes", 0)),
+        int(proof.get("handoff_acceptances", 0)),
+        int(proof.get("handoff_rejections", 0)),
+        proof.get("external_validation_state", "unvalidated"),
+        proof.get("last_status", "unreviewed"),
+    ))
+    conn.commit()
+    meta = update_artifact_scores(meta, conn)
+    write_json_file(meta_file, meta)
+    refresh_state_files(conn)
+    conn.close()
+    return meta
+
+
 def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     meta_file = find_meta_file_by_id(artifact_id)
     if meta_file is None:
@@ -716,7 +804,7 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
         meta["lifecycle_stage"] = "packed"
         meta["export_path"] = write_export_snapshot(meta, meta_file)
     proof["last_status"] = meta.get("review_status", "unreviewed")
-    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
         meta.get("id"),
         int(proof.get("first_seen_tick", 0)),
         int(proof.get("last_seen_tick", 0)),
@@ -724,6 +812,11 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
         int(proof.get("top_pack_hits", 0)),
         int(proof.get("review_exports", 0)),
         int(proof.get("human_approvals", 0)),
+        int(proof.get("real_usage_hits", 0)),
+        int(proof.get("buyer_fit_votes", 0)),
+        int(proof.get("handoff_acceptances", 0)),
+        int(proof.get("handoff_rejections", 0)),
+        proof.get("external_validation_state", "unvalidated"),
         proof.get("last_status", "unreviewed"),
     ))
     meta = update_artifact_scores(meta, conn)
@@ -856,7 +949,7 @@ def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | N
     for artifact_id in top_ids:
         proof = get_artifact_proof(proof_conn, artifact_id)
         proof["top_pack_hits"] = int(proof.get("top_pack_hits", 0)) + 1
-        proof_conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+        proof_conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
             artifact_id,
             int(proof.get("first_seen_tick", 0)),
             int(proof.get("last_seen_tick", 0)),
@@ -864,6 +957,11 @@ def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | N
             int(proof.get("top_pack_hits", 0)),
             int(proof.get("review_exports", 0)),
             int(proof.get("human_approvals", 0)),
+            int(proof.get("real_usage_hits", 0)),
+            int(proof.get("buyer_fit_votes", 0)),
+            int(proof.get("handoff_acceptances", 0)),
+            int(proof.get("handoff_rejections", 0)),
+            proof.get("external_validation_state", "unvalidated"),
             proof.get("last_status", "unreviewed"),
         ))
     proof_conn.commit()
@@ -981,7 +1079,7 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
         proof["last_seen_tick"] = current_tick
         proof["appearances"] = int(proof.get("appearances", 0)) + 1
         proof["last_status"] = meta.get("review_status", "unreviewed")
-        conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+        conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
             meta.get("id"),
             int(proof.get("first_seen_tick", 0)),
             int(proof.get("last_seen_tick", 0)),
@@ -989,6 +1087,11 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
             int(proof.get("top_pack_hits", 0)),
             int(proof.get("review_exports", 0)),
             int(proof.get("human_approvals", 0)),
+            int(proof.get("real_usage_hits", 0)),
+            int(proof.get("buyer_fit_votes", 0)),
+            int(proof.get("handoff_acceptances", 0)),
+            int(proof.get("handoff_rejections", 0)),
+            proof.get("external_validation_state", "unvalidated"),
             proof.get("last_status", "unreviewed"),
         ))
         conn.commit()

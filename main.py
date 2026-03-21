@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, review_artifact, show_agent, show_world
+from sim import browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -68,6 +68,10 @@ def cmd_category(args):
     emit(category_action(args.action, args.name))
 
 
+def cmd_validate(args):
+    emit(validate_artifact(args.id, args.action, note=args.note))
+
+
 def main():
     parser = argparse.ArgumentParser(description=f"{PROJECT_NAME} v{VERSION} - minimal coding-agent ecosystem sim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -117,6 +121,12 @@ def main():
     p.add_argument("action", choices=["approve", "reject", "retire", "revive"])
     p.add_argument("name")
     p.set_defaults(func=cmd_category)
+
+    p = sub.add_parser("validate", help="record external validation outcomes for an artifact")
+    p.add_argument("id")
+    p.add_argument("action", choices=["use", "buyer-fit", "accept", "reject", "revise"])
+    p.add_argument("--note", default="")
+    p.set_defaults(func=cmd_validate)
 
     p = sub.add_parser("reset", help="reset the world")
     p.add_argument("--agents", type=int, default=DEFAULT_AGENT_COUNT)
