@@ -9,6 +9,9 @@ CircleForge is aimed at producing small reusable tools that humans can inspect, 
 
 **Feedback and testers are welcome.** If you want to give advice, critique the direction, or try the project, see the community drafts and issue templates in [`docs/community`](docs/community) and [`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE).
 
+Live GitHub discussion:
+- <https://github.com/pr0dus/CircleForge/discussions/2>
+
 ## Current core
 
 CircleForge currently includes:

@@ -13,6 +13,9 @@ GitHub Discussions is enabled in the repository settings on GitHub.
 
 After that, a **Discussions** tab should appear in the repo.
 
+Current live discussion:
+- <https://github.com/pr0dus/CircleForge/discussions/2>
+
 ## Suggested first use
 
 Create one discussion like:
