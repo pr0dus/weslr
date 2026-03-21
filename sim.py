@@ -176,20 +176,56 @@ def canonical_theme_name(theme: str) -> str:
 
 def cluster_opportunity_board(board: dict) -> dict:
     themes = board.setdefault("themes", {})
+    board.setdefault("emergent_candidates", [])
     merged_into: dict[str, list[str]] = {}
     new_themes: dict[str, dict] = {}
     for raw_theme, payload in list(themes.items()):
         canonical = canonical_theme_name(raw_theme)
-        canonical_payload = new_themes.setdefault(canonical, {"pressure": 0.0, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0, "aliases": []})
+        canonical_payload = new_themes.setdefault(canonical, {"pressure": 0.0, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0, "aliases": [], "lifecycle": "stable", "split_from": None})
         canonical_payload["pressure"] = round(max(canonical_payload["pressure"], float(payload.get("pressure", 0.0))), 3)
         canonical_payload["evidence"] += int(payload.get("evidence", 0))
         canonical_payload["acceptances"] += int(payload.get("acceptances", 0))
         canonical_payload["rejections"] += int(payload.get("rejections", 0))
         canonical_payload["revisions"] += int(payload.get("revisions", 0))
         canonical_payload["updated_at"] = max(int(canonical_payload.get("updated_at", 0)), int(payload.get("updated_at", 0)))
+        canonical_payload["split_from"] = canonical_payload.get("split_from") or payload.get("split_from")
+        canonical_payload["lifecycle"] = payload.get("lifecycle", canonical_payload.get("lifecycle", "stable"))
         if raw_theme != canonical:
             canonical_payload["aliases"].append(raw_theme)
             merged_into.setdefault(canonical, []).append(raw_theme)
+
+    now_ts = max([int(v.get("updated_at", 0)) for v in new_themes.values()] + [0])
+    for theme, payload in new_themes.items():
+        age = max(0, now_ts - int(payload.get("updated_at", 0)))
+        if payload.get("pressure", 0.0) < 0.12:
+            payload["lifecycle"] = "dormant"
+        elif payload.get("rejections", 0) >= 3 and payload.get("acceptances", 0) == 0:
+            payload["lifecycle"] = "declining"
+        elif payload.get("split_from"):
+            payload["lifecycle"] = "emergent"
+        elif age > 0 and payload.get("pressure", 0.0) < 0.2:
+            payload["lifecycle"] = "cooling"
+        else:
+            payload["lifecycle"] = payload.get("lifecycle", "stable") or "stable"
+
+    candidates = board.get("emergent_candidates", [])
+    promoted = []
+    for candidate in candidates:
+        if candidate.get("signal_count", 0) >= 3 and candidate.get("confidence", 0.0) >= 0.45:
+            theme = canonical_theme_name(candidate["theme"])
+            parent_theme = canonical_theme_name(candidate.get("parent_theme") or "") if candidate.get("parent_theme") else None
+            if parent_theme and theme == parent_theme:
+                existing = new_themes.setdefault(theme, {"pressure": 0.22, "evidence": 0, "updated_at": candidate.get("updated_at", 0), "acceptances": 0, "rejections": 0, "revisions": 0, "aliases": [], "lifecycle": "stable", "split_from": None})
+                existing.setdefault("aliases", []).append(candidate["theme"])
+                existing["pressure"] = max(existing.get("pressure", 0.0), 0.22)
+                promoted.append(candidate)
+                continue
+            existing = new_themes.setdefault(theme, {"pressure": 0.22, "evidence": 0, "updated_at": candidate.get("updated_at", 0), "acceptances": 0, "rejections": 0, "revisions": 0, "aliases": [], "lifecycle": "emergent", "split_from": candidate.get("parent_theme")})
+            existing["pressure"] = max(existing.get("pressure", 0.0), 0.22)
+            existing["lifecycle"] = "emergent"
+            existing["split_from"] = existing.get("split_from") or candidate.get("parent_theme")
+            promoted.append(candidate)
+    board["emergent_candidates"] = [c for c in candidates if c not in promoted and c.get("confidence", 0.0) >= 0.12]
     board["themes"] = new_themes
     board["clusters"] = [{"canonical": k, "aliases": v} for k, v in sorted(merged_into.items()) if v]
     return board
@@ -1566,6 +1602,33 @@ def clamp_agent(agent: Dict) -> Dict:
     return agent
 
 
+def maybe_register_emergent_candidate(board: dict, parent_theme: str | None, source_text: str, now_ts: int) -> None:
+    source = (source_text or "").lower()
+    candidate_map = {
+        "backup": "backup validation",
+        "health": "service health",
+        "status": "service health",
+        "config": "config validation",
+        "log": "readable logs",
+        "package": "workflow wrappers",
+    }
+    theme = None
+    for token, label in candidate_map.items():
+        if token in source:
+            theme = label
+            break
+    if not theme:
+        return
+    candidates = board.setdefault("emergent_candidates", [])
+    current = next((c for c in candidates if c.get("theme") == theme), None)
+    if current is None:
+        candidates.append({"theme": theme, "parent_theme": parent_theme, "signal_count": 1, "confidence": 0.22, "updated_at": now_ts})
+    else:
+        current["signal_count"] = int(current.get("signal_count", 0)) + 1
+        current["confidence"] = round(min(float(current.get("confidence", 0.22)) + 0.12, 0.95), 3)
+        current["updated_at"] = now_ts
+
+
 def apply_pack_outcome(pack_name: str, action: str, note: str = "", buyer: str = "", price_band: str = "", mode: str = "") -> dict:
     packs = read_json_file(PACKS_PATH, [])
     pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
@@ -1588,6 +1651,7 @@ def apply_pack_outcome(pack_name: str, action: str, note: str = "", buyer: str =
     outcomes.append(event)
     save_pack_outcomes(outcomes)
 
+    board = load_opportunity_board()
     if action in {"offer", "accept", "reject", "revise", "test", "export"}:
         mapped = {
             "offer": "export",
@@ -1598,6 +1662,9 @@ def apply_pack_outcome(pack_name: str, action: str, note: str = "", buyer: str =
             "export": "export",
         }[action]
         apply_opportunity_outcome(pack.get("niche_theme"), mapped, now_ts)
+        if action in {"reject", "revise"}:
+            maybe_register_emergent_candidate(board, pack.get("niche_theme"), note or pack_name, now_ts)
+            save_opportunity_board(cluster_opportunity_board(board))
 
     pack.update(summarize_pack_outcomes(pack_name))
     write_json_file(PACKS_PATH, packs)
@@ -1629,6 +1696,47 @@ def apply_opportunity_outcome(theme: str | None, outcome: str, now_ts: int) -> N
     board_state["pressure"] = round(max(0.03, min(pressure, 0.99)), 3)
     board_state["updated_at"] = now_ts
     save_opportunity_board(cluster_opportunity_board(board))
+
+
+def decay_and_evolve_themes(board: Dict, now_ts: int) -> Dict:
+    themes = board.setdefault("themes", {})
+    candidates = board.setdefault("emergent_candidates", [])
+    for theme, payload in list(themes.items()):
+        age = max(0, now_ts - int(payload.get("updated_at", 0)))
+        pressure = float(payload.get("pressure", 0.4))
+        if age > 0:
+            pressure *= 0.995
+        if payload.get("rejections", 0) >= 4 and payload.get("acceptances", 0) == 0:
+            pressure *= 0.92
+            payload["lifecycle"] = "declining"
+        elif pressure < 0.1:
+            payload["lifecycle"] = "dormant"
+        elif payload.get("split_from"):
+            payload["lifecycle"] = "emergent"
+        elif pressure < 0.2:
+            payload["lifecycle"] = "cooling"
+        else:
+            payload["lifecycle"] = payload.get("lifecycle", "stable") or "stable"
+        payload["pressure"] = round(max(0.03, min(pressure, 0.99)), 3)
+
+        if payload.get("pressure", 0.0) >= 0.88 and payload.get("evidence", 0) >= 6 and not payload.get("split_from"):
+            split_theme = canonical_theme_name(f"{theme} validation")
+            if split_theme not in themes:
+                themes[split_theme] = {
+                    "pressure": round(max(0.22, payload["pressure"] * 0.45), 3),
+                    "evidence": 0,
+                    "updated_at": now_ts,
+                    "acceptances": 0,
+                    "rejections": 0,
+                    "revisions": 0,
+                    "aliases": [],
+                    "lifecycle": "emergent",
+                    "split_from": theme,
+                }
+    for candidate in candidates:
+        candidate["confidence"] = round(max(0.05, min(float(candidate.get("confidence", 0.2)) * 0.985, 0.95)), 3)
+    board["emergent_candidates"] = [c for c in candidates if c.get("confidence", 0.0) >= 0.1]
+    return cluster_opportunity_board(board)
 
 
 def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionResult, now_ts: int, board: Dict) -> None:
@@ -1674,6 +1782,7 @@ def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionR
     board_state["updated_at"] = now_ts
 
     save_opportunity_memory(agent_dir, memory)
+    maybe_register_emergent_candidate(board, theme, result.summary, now_ts)
     cluster_opportunity_board(board)
 
 
@@ -1714,6 +1823,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
+    opportunity_board = decay_and_evolve_themes(opportunity_board, started_at)
     save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
     conn.close()

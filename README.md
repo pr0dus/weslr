@@ -95,16 +95,16 @@ to the artifacts they generate.
 
 The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, decay, and theme clustering.
 
-## New in v0.0.45
+## New in v0.0.46
 
-- pack-level offer/test/outcome tracking
-- pack events feed back into clustered opportunity themes
-- packs now carry offer/accept/reject/revision counts
-- `pack` CLI command for recording pack-level outcomes
+- theme lifecycle states: stable, emergent, cooling, declining, dormant
+- overloaded themes can split into emergent subthemes
+- repeated friction/rejection can register emergent theme candidates
+- dormant and declining themes decay more explicitly over time
 
 ## What should come next
 
-- stronger entity-driven niche discovery and opportunity clustering
 - explain output that separates internal strength from external proof
 - reports for high-scoring packs with weak real-world evidence
+- operator dashboard / UI for human visibility into themes, agents, artifacts, and rollback points
 - replay/dashboard views built around curated artifacts rather than raw simulation state

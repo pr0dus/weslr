@@ -134,19 +134,34 @@ def save_opportunity_memory(agent_dir: Path, payload: Dict[str, Any]) -> None:
 
 
 def load_opportunity_board() -> Dict[str, Any]:
-    default = {"themes": {theme: {"pressure": 0.4, "evidence": 0, "updated_at": 0} for theme in SEED_OPPORTUNITIES}}
+    default = {"themes": {theme: {"pressure": 0.4, "evidence": 0, "updated_at": 0, "lifecycle": "stable"} for theme in SEED_OPPORTUNITIES}, "emergent_candidates": []}
     data = read_json(OPPORTUNITY_BOARD_PATH, default)
     data.setdefault("themes", {})
+    data.setdefault("emergent_candidates", [])
     for theme in SEED_OPPORTUNITIES:
-        data["themes"].setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": 0})
+        data["themes"].setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": 0, "lifecycle": "stable"})
     return data
+
+
+def profile_for_theme(theme: str) -> Dict[str, Any]:
+    return SEED_OPPORTUNITIES.get(theme, {
+        "target_user": "technical builders",
+        "problem": f"repeated friction appears around {theme}",
+        "gap": f"existing options around {theme} look too broad or awkward",
+        "delivery_mode": "bundle_candidate",
+        "price_band": "needs-packaging",
+        "categories": ["uncategorized", "research"],
+        "actions": ["research", "build_module", "optimize"],
+    })
 
 
 def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: Dict[str, Any]) -> str:
     memory = load_opportunity_memory(agent_dir)
     board = world.get("opportunity_board") or load_opportunity_board()
     themes = []
-    for theme, profile in SEED_OPPORTUNITIES.items():
+    theme_names = sorted(set(list(SEED_OPPORTUNITIES.keys()) + list((board.get("themes") or {}).keys())))
+    for theme in theme_names:
+        profile = profile_for_theme(theme)
         local = memory["themes"].get(theme, {})
         board_theme = board.get("themes", {}).get(theme, {})
         score = float(local.get("strength", 0.3)) * 0.55 + float(board_theme.get("pressure", 0.4)) * 0.35
@@ -156,6 +171,13 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
             score += 0.1
         if memory.get("last_theme") == theme:
             score += 0.04
+        lifecycle = str(board_theme.get("lifecycle", "stable"))
+        if lifecycle == "emergent":
+            score += 0.03
+        elif lifecycle == "dormant":
+            score -= 0.08
+        elif lifecycle == "declining":
+            score -= 0.04
         score += random.uniform(0.0, 0.06)
         themes.append((score, theme))
     themes.sort(reverse=True)
@@ -164,7 +186,7 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
 
 def choose_niche(agent_dir: Path, action: str, category: str, world: Dict[str, Any]) -> Dict[str, Any]:
     theme = choose_theme_for_action(agent_dir, action, category, world)
-    niche = SEED_OPPORTUNITIES[theme]
+    niche = profile_for_theme(theme)
     delivery_mode = niche["delivery_mode"] if category != "research" else "internal_reusable_component"
     confidence = 0.35 + min(load_opportunity_memory(agent_dir)["themes"].get(theme, {}).get("strength", 0.3) * 0.4, 0.35)
     return {

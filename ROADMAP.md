@@ -241,3 +241,9 @@ Focus:
 - pack outcome feedback tied back into clustered opportunity themes
 - rejection-reason visibility for repeated pack failures
 - stronger buyer/problem/install framing at pack level
+
+### v0.0.46
+- theme lifecycle states with explicit dormancy and decay
+- overloaded themes can split into emergent subthemes
+- repeated unexplained signals can register emergent candidates
+- groundwork for a human dashboard built on more stable opportunity dynamics

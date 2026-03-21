@@ -68,3 +68,13 @@ Recommended rollback order:
 - commit: `9f81fdc`
 - backup: `CircleForge-backup-20260321-152717.tar.gz`
 - tag: `v0.0.45`
+
+### v0.0.46
+- theme lifecycle states introduced
+- dormancy / decay / decline behavior added
+- overloaded themes can split into emergent subthemes
+- repeated signals can register emergent theme candidates
+- intended direction: stabilize the opportunity ecology before building the operator dashboard
+- commit: pending
+- backup: pending
+- tag: pending
