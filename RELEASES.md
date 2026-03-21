@@ -92,6 +92,6 @@ Recommended rollback order:
 - dashboard history snapshots added for lightweight trend tracking
 - pack outcome visibility improved in the operator view
 - intended direction: make the dashboard useful for monitoring, not just inspection
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `8217af9`
+- backup: `CircleForge-backup-20260321-155808.tar.gz`
+- tag: `v0.0.48`
