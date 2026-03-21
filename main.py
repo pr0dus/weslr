@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -86,6 +86,10 @@ def cmd_dashboard(args):
         time.sleep(max(1, args.refresh or args.interval))
 
 
+def cmd_offer(args):
+    emit(prepare_pack_offer(args.name, note=args.note, buyer=args.buyer, price_band=args.price_band, mode=args.mode))
+
+
 def main():
     parser = argparse.ArgumentParser(description=f"{PROJECT_NAME} v{VERSION} - minimal coding-agent ecosystem sim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -150,6 +154,14 @@ def main():
     p.add_argument("--price-band", default="")
     p.add_argument("--mode", default="")
     p.set_defaults(func=cmd_pack)
+
+    p = sub.add_parser("offer", help="prepare an offer brief for a pack")
+    p.add_argument("name")
+    p.add_argument("--note", default="")
+    p.add_argument("--buyer", default="")
+    p.add_argument("--price-band", default="")
+    p.add_argument("--mode", default="")
+    p.set_defaults(func=cmd_offer)
 
     p = sub.add_parser("dashboard", help="render local operator dashboard files")
     p.add_argument("--refresh", type=int, default=0, help="embed browser auto-refresh seconds into dashboard html")

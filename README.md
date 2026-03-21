@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.44** is a lightweight persistent local agent research sandbox and artifact incubator.
+**CircleForge v0.0.52** is a lightweight persistent local agent research sandbox and artifact incubator.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -37,6 +37,11 @@ CircleForge currently includes:
 - category-aware templates and delivery modes
 - proof-weighted monetization signals
 - external validation outcomes
+- clickable dashboard drill-down navigation
+- persistent dashboard event log
+- lightweight dashboard auto-refresh/watch loop
+- explainability split between internal strength and external proof
+- pack offer brief generation and weak-proof pack reporting
 
 ## New in v0.0.42
 
@@ -64,6 +69,10 @@ python3 main.py validate <artifact-id> accept --note "used in a real client flow
 python3 main.py category approve <name>
 python3 main.py category retire <name>
 python3 main.py category revive <name>
+python3 main.py dashboard
+python3 main.py dashboard --refresh 5
+python3 main.py dashboard --watch --interval 10
+python3 main.py offer <pack-name>
 python3 main.py version
 ```
 
@@ -95,15 +104,16 @@ to the artifacts they generate.
 
 The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, decay, and theme clustering.
 
-## New in v0.0.49
+## New in v0.0.52
 
-- dashboard drill-down sections for top themes and packs
-- simple event feed for lifecycle and pack-outcome changes
-- dashboard becomes more navigable for human operators
+- clickable dashboard navigation and artifact detail views
+- persistent event log plus lightweight live dashboard refresh/watch mode
+- explain output now separates internal strength, external proof, risks, and next actions
+- pack offer brief generation added with weak-proof pack reporting
+- JSON read/write path hardened for runtime files via blank-file tolerance and atomic writes
 
 ## What should come next
 
-- explain output that separates internal strength from external proof
-- reports for high-scoring packs with weak real-world evidence
-- clickable links from dashboard into artifacts/packs/explain actions
-- replay/dashboard views built around curated artifacts rather than raw simulation state
+- move from static dashboard guidance toward operator-triggered workflows and replay views
+- deepen artifact/pack detail pages with proof timelines and offer histories
+- tighten the path from validated packs into stronger v0.1-ready product candidates

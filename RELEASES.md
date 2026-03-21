@@ -117,6 +117,15 @@ Recommended rollback order:
 - dashboard auto-refresh/watch loop added for lightweight live monitoring
 - clearer operator action commands surfaced directly in the dashboard
 - theme trend snapshots now render short history sparklines for monitoring drift over time
-- commit: `a85105b`
+- commit: `a389256`
 - backup: `CircleForge-backup-20260321-164815.tar.gz`
 - tag: `v0.0.51`
+
+### v0.0.52
+- explainability split added for artifacts and packs: internal strength, external proof, risks, and next actions
+- pack offer brief generation added with weak-proof pack reporting
+- runtime JSON handling hardened with blank-file tolerance and atomic writes
+- intended direction: tighten operator-to-offer workflow and reduce brittleness before v0.1 synthesis
+- commit: pending
+- backup: pending
+- tag: pending

@@ -10,6 +10,7 @@ exports/
 dashboard/
 dashboard_history.json
 event_log.json
+offers/
 categories.json
 category_proposals.json
 artifact_packs.json

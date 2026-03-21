@@ -23,6 +23,7 @@ from config import (
     DASHBOARD_DIR,
     DASHBOARD_HISTORY_PATH,
     EVENT_LOG_PATH,
+    OFFERS_DIR,
     DEMAND_BOARD_PATH,
     DORMANT_CATEGORY_MIN_ARTIFACTS,
     EXECUTION_BUDGET_SECONDS,
@@ -115,14 +116,19 @@ def read_json_file(path: Path, default):
     if not path.exists():
         return default
     try:
-        return json.loads(path.read_text())
+        raw = path.read_text().strip()
+        if not raw:
+            return default
+        return json.loads(raw)
     except Exception:
         return default
 
 
 def write_json_file(path: Path, payload) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2))
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2))
+    tmp_path.replace(path)
 
 
 def load_categories() -> list[str]:
@@ -655,6 +661,122 @@ def update_artifact_scores(meta: Dict, conn: sqlite3.Connection | None = None) -
     meta["external_validation_state"] = meta.get("proof_signals", {}).get("external_validation_state", "unvalidated")
     meta["delivery_mode"] = recommend_delivery_mode(meta)
     return meta
+
+
+def build_artifact_explainability(meta: Dict) -> dict:
+    proof = meta.get("proof_signals", {})
+    internal_strength = []
+    external_proof = []
+    risks = []
+    next_actions = []
+    if float(meta.get("human_proposed_score", 0.0)) >= 0.65:
+        internal_strength.append(f"human-facing quality {meta.get('human_proposed_score')}")
+    if float(meta.get("internal_score", 0.0)) >= 0.65:
+        internal_strength.append(f"internal quality {meta.get('internal_score')}")
+    if float(meta.get("opportunity_score", 0.0)) >= 0.65:
+        internal_strength.append(f"opportunity fit {meta.get('opportunity_score')}")
+    if int(proof.get("human_approvals", 0)) >= 1:
+        external_proof.append("human approval recorded")
+    if int(proof.get("real_usage_hits", 0)) >= 1:
+        external_proof.append("real usage recorded")
+    if int(proof.get("handoff_acceptances", 0)) >= 1:
+        external_proof.append("handoff acceptance recorded")
+    if not external_proof:
+        risks.append("strong internal score but weak external proof")
+        next_actions.append("run validate/use or validate/accept on a real artifact trial")
+    if proof.get("external_validation_state") == "rejected_after_review":
+        risks.append("artifact was rejected after external review")
+        next_actions.append("tighten buyer framing and revise before re-offering")
+    if float(meta.get("deployment_effort_score", 0.0)) > 0.6:
+        risks.append("deployment effort looks relatively high")
+    if float(meta.get("buyer_clarity_score", 0.0)) < 0.55:
+        next_actions.append("clarify target buyer and problem statement")
+    return {
+        "internal_strength": internal_strength or ["early artifact with partial internal signals"],
+        "external_proof": external_proof or ["no durable external proof yet"],
+        "risks": risks or ["no major explainability risks flagged"],
+        "next_actions": next_actions or ["continue validation and packaging work"],
+    }
+
+
+def pack_offer_readiness(pack: Dict) -> dict:
+    proof = (float(pack.get("accept_count", 0)) * 0.45) + (float(pack.get("offer_count", 0)) * 0.15) + (float(pack.get("test_count", 0)) * 0.1) + (float(pack.get("export_count", 0)) * 0.15) - (float(pack.get("reject_count", 0)) * 0.18) - (float(pack.get("revision_count", 0)) * 0.08)
+    score = max(0.0, min(0.99, round((float(pack.get("sellability_score", 0.0)) * 0.5) + (float(pack.get("commercial_readiness_score", 0.0)) * 0.25) + proof, 3)))
+    gaps = []
+    if int(pack.get("offer_count", 0)) == 0:
+        gaps.append("no offer attempts recorded")
+    if int(pack.get("accept_count", 0)) == 0:
+        gaps.append("no acceptance evidence yet")
+    if float(pack.get("sellability_score", 0.0)) >= 0.7 and int(pack.get("accept_count", 0)) == 0 and int(pack.get("test_count", 0)) == 0:
+        gaps.append("high promise but weak external proof")
+    return {"offer_readiness_score": score, "gaps": gaps or ["no major offer blockers flagged"]}
+
+
+def build_weak_proof_pack_report(artifact_packs: list[dict]) -> list[dict]:
+    result = []
+    for pack in artifact_packs:
+        readiness = pack_offer_readiness(pack)
+        if float(pack.get("sellability_score", 0.0)) >= 0.68 and (int(pack.get("accept_count", 0)) + int(pack.get("test_count", 0))) == 0:
+            result.append({
+                "pack_name": pack.get("pack_name"),
+                "sellability_score": pack.get("sellability_score"),
+                "commercial_readiness_score": pack.get("commercial_readiness_score"),
+                "offer_readiness_score": readiness.get("offer_readiness_score"),
+                "gaps": readiness.get("gaps", []),
+            })
+    return result[:8]
+
+
+def prepare_pack_offer(pack_name: str, note: str = "", buyer: str = "", price_band: str = "", mode: str = "") -> dict:
+    packs = read_json_file(PACKS_PATH, [])
+    pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
+    if pack is None:
+        raise SystemExit(f"No pack found: {pack_name}")
+    pack.update(summarize_pack_outcomes(pack_name))
+    readiness = pack_offer_readiness(pack)
+    now_ts = int(time.time())
+    buyer = buyer or pack.get("niche_theme") or pack.get("category") or "target operator"
+    price_band = price_band or pack.get("price_band_guess") or "tbd"
+    mode = mode or pack.get("delivery_mode") or "bundle_candidate"
+    OFFERS_DIR.mkdir(parents=True, exist_ok=True)
+    offer_dir = OFFERS_DIR / pack_name
+    offer_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "generated_at": now_ts,
+        "pack_name": pack_name,
+        "buyer": buyer,
+        "price_band": price_band,
+        "mode": mode,
+        "note": note,
+        "summary": pack.get("summary"),
+        "why_promising": pack.get("why_promising", []),
+        "offer_readiness": readiness,
+        "artifacts": [{"id": a.get("id"), "title": a.get("title"), "target_user": a.get("target_user"), "price_band_guess": a.get("price_band_guess")} for a in pack.get("artifacts", [])],
+        "next_steps": [
+            "review buyer/problem framing",
+            "run a real outreach or internal pilot",
+            "record outcome with the pack command",
+        ],
+    }
+    write_json_file(offer_dir / "latest_offer.json", payload)
+    (offer_dir / "README.md").write_text("\n".join([
+        f"# Offer brief for {pack_name}",
+        "",
+        f"Buyer: {buyer}",
+        f"Price band: {price_band}",
+        f"Mode: {mode}",
+        f"Offer readiness: {readiness.get('offer_readiness_score')}",
+        "",
+        "## Why this pack",
+        *[f"- {line}" for line in pack.get("why_promising", [])],
+        "",
+        "## Gaps",
+        *[f"- {line}" for line in readiness.get("gaps", [])],
+        "",
+        "## Suggested next step",
+        f"python3 main.py pack {pack_name} offer --buyer '{buyer}' --price-band '{price_band}' --mode '{mode}' --note 'first outreach'",
+    ]) + "\n")
+    return {"ok": True, "offer_dir": str(offer_dir.relative_to(BASE_DIR)), "offer": payload}
 
 
 def explain_artifact(meta: Dict) -> list[str]:
@@ -2196,6 +2318,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
     payload["operator_actions"] = build_operator_actions(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
     payload["theme_trends"] = build_theme_trends(payload["history"])
+    payload["weak_proof_packs"] = build_weak_proof_pack_report(payload["artifact_packs"])
     write_json_file(payload_path, payload)
     top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:6]
     top_packs = data.get('artifact_packs', [])[:8]
@@ -2269,6 +2392,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <section class="card">
         <h2>Theme Trends</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('theme'))}</strong> {escape(item.get('sparkline'))} <span class='muted'>Δ {item.get('delta'):+.3f}</span></li>" for item in payload.get('theme_trends', [])) or '<li class="muted">Not enough history yet.</li>'}</ul>
+      </section>
+      <section class="card">
+        <h2>Weak-Proof Packs</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('pack_name'))}</strong> · sellability {item.get('sellability_score')} · offer readiness {item.get('offer_readiness_score')}<br><span class='muted'>{escape('; '.join(item.get('gaps', [])))}</span></li>" for item in payload.get('weak_proof_packs', [])) or '<li class="muted">No high-promise / low-proof packs right now.</li>'}</ul>
       </section>
     </div>
 
@@ -2460,6 +2587,7 @@ def explain_item(item_id: str) -> Dict:
                 },
                 "price_band_guess": enriched.get("price_band_guess"),
                 "proof_signals": enriched.get("proof_signals", {}),
+                "explainability": build_artifact_explainability(enriched),
                 "reasons": explain_artifact(enriched),
             }
 
@@ -2482,6 +2610,7 @@ def explain_item(item_id: str) -> Dict:
             },
             "price_band_guess": pack.get("price_band_guess"),
             "outcomes": summarize_pack_outcomes(pack.get("pack_name")),
+            "offer_readiness": pack_offer_readiness(pack),
             "reasons": pack.get("why_promising", []),
         }
 
