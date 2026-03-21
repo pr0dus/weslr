@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.35"
+VERSION = "0.0.36"
+PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
+PACK_MIN_RELEASE_ARTIFACTS = 2
 PROJECT_NAME = "CircleForge"
 PROJECT_SLUG = "circleforge"
 

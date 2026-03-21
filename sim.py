@@ -30,6 +30,8 @@ from config import (
     MAX_EXPORT_QUEUE,
     MAX_REVIEW_QUEUE,
     PACKS_PATH,
+    PACK_MIN_RELEASE_ARTIFACTS,
+    PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
     REVIEW_QUEUE_PATH,
     STARTING_ENERGY,
@@ -456,6 +458,65 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     return meta
 
 
+def compute_pack_scores(items: list[dict]) -> dict:
+    count = len(items)
+    if count == 0:
+        return {
+            "pack_score": 0.0,
+            "coherence_score": 0.0,
+            "readiness_score": 0.0,
+            "novelty_score": 0.0,
+            "coverage_score": 0.0,
+            "lineage_score": 0.0,
+            "artifact_count": 0,
+            "release_candidate": False,
+            "lifecycle_stage": "draft",
+            "why_promising": [],
+        }
+
+    avg_human = sum(float(item.get("human_proposed_score", 0.0)) for item in items) / count
+    avg_internal = sum(float(item.get("internal_score", 0.0)) for item in items) / count
+    avg_novelty = sum(float(item.get("novelty_score", 0.0)) for item in items) / count
+    families = [item.get("family", "unknown") for item in items]
+    family_diversity = len(set(families))
+    dominant_family_share = max(families.count(f) for f in set(families)) / count if families else 0.0
+    coherence_score = min(0.99, round((dominant_family_share * 0.65) + (min(avg_internal, 0.99) * 0.35), 3))
+    readiness_score = min(0.99, round((sum(1 for item in items if item.get("review_status") == "export_ready") / count) * 0.65 + avg_human * 0.35, 3))
+    novelty_score = round(min(avg_novelty, 0.99), 3)
+    coverage_score = min(0.99, round(min(count / 4, 1.0) * 0.7 + min(family_diversity / 3, 1.0) * 0.3, 3))
+    lineage_depths = [int(item.get("generation", 1) or 1) for item in items]
+    lineage_score = min(0.99, round(min(sum(lineage_depths) / count / 3, 1.0), 3))
+    pack_score = min(0.99, round((avg_human * 0.35) + (avg_internal * 0.2) + (coherence_score * 0.2) + (readiness_score * 0.15) + (coverage_score * 0.07) + (lineage_score * 0.03), 3))
+
+    release_candidate = count >= PACK_MIN_RELEASE_ARTIFACTS and readiness_score >= 0.75 and coherence_score >= 0.72 and pack_score >= PACK_RELEASE_CANDIDATE_THRESHOLD
+    lifecycle_stage = "release_candidate" if release_candidate else ("reviewed" if count >= 2 and pack_score >= 0.68 else "coherent")
+
+    why_promising = []
+    if release_candidate:
+        why_promising.append("multiple export-ready artifacts form a coherent bundle")
+    if avg_human >= 0.78:
+        why_promising.append("strong human-facing artifact scores")
+    if coherence_score >= 0.76:
+        why_promising.append("artifacts cluster around a clear family direction")
+    if lineage_score >= 0.45:
+        why_promising.append("artifacts show meaningful derivation depth")
+    if not why_promising:
+        why_promising.append("emerging pack with early curation potential")
+
+    return {
+        "pack_score": pack_score,
+        "coherence_score": coherence_score,
+        "readiness_score": readiness_score,
+        "novelty_score": novelty_score,
+        "coverage_score": coverage_score,
+        "lineage_score": lineage_score,
+        "artifact_count": count,
+        "release_candidate": release_candidate,
+        "lifecycle_stage": lifecycle_stage,
+        "why_promising": why_promising[:3],
+    }
+
+
 def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     packs: dict[str, list[dict]] = {}
     for meta in artifact_meta:
@@ -470,15 +531,25 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "lifecycle_stage": meta.get("lifecycle_stage"),
             "export_path": meta.get("export_path"),
             "human_proposed_score": meta.get("human_proposed_score"),
+            "internal_score": meta.get("internal_score"),
+            "novelty_score": meta.get("novelty_score"),
+            "review_status": meta.get("review_status"),
+            "generation": meta.get("generation", 1),
         })
     result = []
     for category, items in sorted(packs.items()):
+        ranked_items = sorted(items, key=lambda x: x["human_proposed_score"], reverse=True)
+        scores = compute_pack_scores(ranked_items)
         result.append({
             "category": category,
             "pack_name": f"{category}-pack",
-            "count": len(items),
-            "artifacts": sorted(items, key=lambda x: x["human_proposed_score"], reverse=True),
+            "count": len(ranked_items),
+            **scores,
+            "artifacts": ranked_items,
         })
+    result = sorted(result, key=lambda pack: (pack["pack_score"], pack["readiness_score"], pack["coherence_score"], pack["count"]), reverse=True)
+    for idx, pack in enumerate(result, start=1):
+        pack["rank"] = idx
     write_json_file(PACKS_PATH, result)
     return result
 
@@ -549,6 +620,8 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
     dormant_categories = [c for c in categories if c not in category_counts and c not in {"uncategorized"}]
     export_pressure = [c for c, n in sorted(export_ready_counts.items(), key=lambda kv: kv[1], reverse=True) if n >= 1][:3]
 
+    release_candidate_packs = [p["pack_name"] for p in packs if p.get("release_candidate")]
+    top_ranked_packs = [p["pack_name"] for p in packs[:3]]
     return {
         "category_counts": category_counts,
         "rising_categories": rising_categories,
@@ -556,6 +629,8 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
         "dormant_categories": dormant_categories,
         "export_pressure_categories": export_pressure,
         "pack_count": len(packs),
+        "release_candidate_packs": release_candidate_packs,
+        "top_ranked_packs": top_ranked_packs,
     }
 
 
@@ -632,6 +707,12 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
         demand_board.append({"kind": "market", "title": "Saturated categories detected", "reason": f"These categories may be getting crowded: {', '.join(market_signals['saturated_categories'])}."})
     if market_signals["export_pressure_categories"]:
         demand_board.append({"kind": "market", "title": "Export pressure building", "reason": f"These categories currently hold export-ready artifacts: {', '.join(market_signals['export_pressure_categories'])}."})
+    release_candidate_packs = [p for p in packs if p.get("release_candidate")]
+    if release_candidate_packs:
+        demand_board.append({"kind": "pack", "title": "Release-candidate pack available", "reason": f"Top pack: {release_candidate_packs[0]['pack_name']} (score {release_candidate_packs[0]['pack_score']})."})
+    near_rc_packs = [p for p in packs if not p.get("release_candidate") and p.get("pack_score", 0.0) >= 0.7]
+    if near_rc_packs:
+        demand_board.append({"kind": "pack", "title": "Pack nearing release-candidate threshold", "reason": f"{near_rc_packs[0]['pack_name']} is close with score {near_rc_packs[0]['pack_score']} and readiness {near_rc_packs[0]['readiness_score']}."})
     if failure_signals["error_count"] or failure_signals["cooldown_count"] or failure_signals["skipped_count"]:
         demand_board.append({"kind": "failure", "title": "Recent friction detected", "reason": f"Errors={failure_signals['error_count']}, cooldowns={failure_signals['cooldown_count']}, skipped={failure_signals['skipped_count']}; hot actions: {', '.join(failure_signals['friction_actions']) or 'none'}."})
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
@@ -860,6 +941,8 @@ def show_world() -> Dict:
         "saturated_categories": [p["category"] for p in artifact_packs if p.get("count", 0) >= 3][:3],
         "dormant_categories": [c for c in categories if c not in {p.get("category") for p in artifact_packs} and c not in BASE_CATEGORIES[:0]],
         "export_pressure_categories": [item["category"] for item in export_queue[:3] if item.get("review_status") == "export_ready"],
+        "release_candidate_packs": [p["pack_name"] for p in artifact_packs if p.get("release_candidate")],
+        "top_ranked_packs": [p["pack_name"] for p in artifact_packs[:3]],
     }
     family_counts = {}
     for meta in all_meta:

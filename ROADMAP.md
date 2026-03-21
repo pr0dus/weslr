@@ -1,12 +1,12 @@
 # CircleForge Roadmap
 
-This file captures the planned path from the current prototype into a more complete artifact-incubation ecosystem.
+This file captures the planned path from the current prototype into a more complete local agent research sandbox and artifact-incubation system.
 
 ## Project direction
 
 CircleForge is evolving toward:
 
-> A persistent local agent ecosystem that creates, evaluates, organizes, and curates reusable artifacts under evolving demand and category governance.
+> A persistent local agent research sandbox that turns recurring agent work into inspectable artifacts, then helps humans review, rank, and curate the promising ones into reusable packs.
 
 ## Current foundation
 
@@ -66,31 +66,35 @@ Already implemented:
 - README / manifest / notes per export
 - pack-level export bundles
 
-## Phase 4 — Human curation and productization
+## Phase 4 — Human curation and pack incubation
 
 ### v0.0.35
-- review dashboard / TUI
-- queue browsing and action UI
+- failure-driven demand signals
+- recent errors, skips, and cooldowns influence the demand board
+- friction becomes part of artifact demand discovery
 
 ### v0.0.36
 - pack quality scoring
 - release-candidate packs
 - top-pack ranking
+- pack-level demand signals for human curation
 
-## Phase 5 — Long-range intelligence
+## Phase 5 — Human review ergonomics and artifact shaping
 
 ### v0.0.37
-- future-needs signals
-- adjacent opportunity detection
-- likely-next-tool logic
+- queue and pack browsing ergonomics
+- ranking explanations and curation reasons
+- better operator views for promising artifacts
 
 ### v0.0.38
-- capability tree
-- agent specialization tracks
+- stronger artifact relationship intelligence
+- pack cohesion hints
+- cluster-to-pack suggestions
 
 ### v0.0.39
-- agent family lines
-- cultural / lineage success tracking
+- better export bundles
+- publishable pack wrappers
+- project handoff formats for curated outputs
 
 ## Quality model target
 
@@ -192,15 +196,16 @@ Focus:
 - v0.0.36
 
 Focus:
-- review UI
+- friction-aware demand
 - pack quality
 - release-candidate logic
+- ranked curation targets
 
 ### Upload Group E
 - v0.0.37
 - v0.0.39
 
 Focus:
-- future-needs engine
-- capability tree
-- lineage / family evolution
+- human review ergonomics
+- artifact shaping
+- curated output packaging

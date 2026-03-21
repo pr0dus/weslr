@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.35** is a lightweight persistent agent sandbox for local machines.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, and now derive demand signals from recent friction such as errors, skipped actions, and cooldown hits.
+**CircleForge v0.0.36** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, and now score, rank, and promote coherent artifact packs for human curation.
 
 ## Current core
 
@@ -24,13 +24,16 @@ CircleForge currently includes:
 - practical artifact families
 - richer export packaging
 - failure-driven demand signals
+- pack scoring and ranking
+- release-candidate packs
 
-## New in v0.0.35
+## New in v0.0.36
 
-- failure-driven demand signals
-- world output now includes `failure_signals`
-- recent errors, skips, and cooldowns can influence the demand board
-- the sim now surfaces friction, not just artifacts
+- pack quality scoring
+- release-candidate pack promotion
+- top-pack ranking in world state
+- demand board signals for strong and near-release packs
+- stronger human curation layer above export-ready artifacts
 
 ## Useful commands
 
@@ -49,5 +52,6 @@ python3 main.py version
 
 ## What should come next
 
-- dashboard/status-page export templates
-- replay dashboard
+- human review ergonomics for queue and pack browsing
+- reasoning/explanation views for why packs rank highly
+- replay/dashboard views built around curated artifacts rather than raw simulation state
