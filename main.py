@@ -76,8 +76,14 @@ def cmd_pack(args):
     emit(apply_pack_outcome(args.name, args.action, note=args.note, buyer=args.buyer, price_band=args.price_band, mode=args.mode))
 
 
-def cmd_dashboard(_args):
-    emit(render_dashboard())
+def cmd_dashboard(args):
+    runs = 0
+    while True:
+        emit(render_dashboard(auto_refresh_seconds=args.refresh))
+        runs += 1
+        if not args.watch or (args.iterations > 0 and runs >= args.iterations):
+            break
+        time.sleep(max(1, args.refresh or args.interval))
 
 
 def main():
@@ -146,6 +152,10 @@ def main():
     p.set_defaults(func=cmd_pack)
 
     p = sub.add_parser("dashboard", help="render local operator dashboard files")
+    p.add_argument("--refresh", type=int, default=0, help="embed browser auto-refresh seconds into dashboard html")
+    p.add_argument("--watch", action="store_true", help="rerender dashboard repeatedly")
+    p.add_argument("--interval", type=int, default=10, help="watch loop interval seconds")
+    p.add_argument("--iterations", type=int, default=0, help="0 = keep watching until interrupted")
     p.set_defaults(func=cmd_dashboard)
 
     p = sub.add_parser("reset", help="reset the world")

@@ -109,6 +109,14 @@ Recommended rollback order:
 - artifact detail views added to the dashboard surface for top queued/packed artifacts
 - persistent event log added outside transient dashboard history to keep operator-visible change memory
 - runtime dashboard history / event log files excluded from commits for cleaner rollback hygiene
-- commit: `d2b8917`
+- commit: `04f1ad9`
 - backup: `CircleForge-backup-20260321-164535.tar.gz`
 - tag: `v0.0.50`
+
+### v0.0.51
+- dashboard auto-refresh/watch loop added for lightweight live monitoring
+- clearer operator action commands surfaced directly in the dashboard
+- theme trend snapshots now render short history sparklines for monitoring drift over time
+- commit: `a85105b`
+- backup: `CircleForge-backup-20260321-164815.tar.gz`
+- tag: `v0.0.51`

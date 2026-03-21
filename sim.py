@@ -2097,6 +2097,46 @@ def persist_event_log(event_feed: list[dict], generated_at: int) -> list[dict]:
     return existing
 
 
+def build_operator_actions(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> list[dict]:
+    actions = []
+    for item in export_queue[:3]:
+        if item.get('id'):
+            actions.append({
+                'label': f"Explain artifact {item.get('id')}",
+                'command': f"python3 main.py explain {item.get('id')}"
+            })
+            actions.append({
+                'label': f"Approve artifact {item.get('id')}",
+                'command': f"python3 main.py review {item.get('id')} approve --note 'operator-approved from dashboard'"
+            })
+    for pack in artifact_packs[:3]:
+        if pack.get('pack_name'):
+            actions.append({
+                'label': f"Explain pack {pack.get('pack_name')}",
+                'command': f"python3 main.py explain {pack.get('pack_name')}"
+            })
+            actions.append({
+                'label': f"Record pack offer for {pack.get('pack_name')}",
+                'command': f"python3 main.py pack {pack.get('pack_name')} offer --note 'operator outreach'"
+            })
+    return actions[:10]
+
+
+def build_theme_trends(history: list[dict]) -> list[dict]:
+    if not history:
+        return []
+    names = {}
+    for point in history[-8:]:
+        for theme, pressure in point.get('theme_pressure', {}).items():
+            names.setdefault(theme, []).append(round(float(pressure), 3))
+    result = []
+    for theme, series in names.items():
+        delta = round(series[-1] - series[0], 3) if len(series) > 1 else 0.0
+        bars = ''.join('▁▂▃▄▅▆▇█'[min(7, max(0, int(v * 8) - 1))] for v in series) or '▁'
+        result.append({'theme': theme, 'series': series, 'delta': delta, 'sparkline': bars})
+    return sorted(result, key=lambda item: (item['series'][-1], item['delta']), reverse=True)[:8]
+
+
 def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> list[dict]:
     by_id = {}
     for item in export_queue + review_queue:
@@ -2131,7 +2171,7 @@ def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dic
     return details
 
 
-def render_dashboard() -> dict:
+def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     data = show_world()
     release_ledger = load_release_ledger()
     DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
@@ -2154,16 +2194,20 @@ def render_dashboard() -> dict:
     payload["event_feed"] = build_dashboard_event_feed(payload)
     payload["persistent_event_log"] = persist_event_log(payload["event_feed"], payload["generated_at"])
     payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
+    payload["operator_actions"] = build_operator_actions(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
+    payload["theme_trends"] = build_theme_trends(payload["history"])
     write_json_file(payload_path, payload)
     top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:6]
     top_packs = data.get('artifact_packs', [])[:8]
     artifact_details = payload.get('artifact_details', [])
+    meta_refresh = f'<meta http-equiv="refresh" content="{int(auto_refresh_seconds)}" />' if auto_refresh_seconds else ''
     html = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CircleForge Dashboard</title>
+  {meta_refresh}
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
     .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
@@ -2214,6 +2258,17 @@ def render_dashboard() -> dict:
       <section class="card">
         <h2>Pack Links</h2>
         <ul>{''.join(f"<li><a href='#pack-{slugify(pack.get('pack_name'))}'>{escape(pack.get('pack_name'))}</a></li>" for pack in top_packs) or '<li class="muted">No packs yet.</li>'}</ul>
+      </section>
+    </div>
+
+    <div class="grid" style="margin-top:16px;">
+      <section class="card">
+        <h2>Operator Actions</h2>
+        <ul>{''.join(f"<li><strong>{escape(action.get('label'))}</strong><br><code>{escape(action.get('command'))}</code></li>" for action in payload.get('operator_actions', []))}</ul>
+      </section>
+      <section class="card">
+        <h2>Theme Trends</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('theme'))}</strong> {escape(item.get('sparkline'))} <span class='muted'>Δ {item.get('delta'):+.3f}</span></li>" for item in payload.get('theme_trends', [])) or '<li class="muted">Not enough history yet.</li>'}</ul>
       </section>
     </div>
 
