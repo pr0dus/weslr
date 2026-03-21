@@ -104,3 +104,19 @@ Later versions should:
 - track rejected niches
 - compare internal opportunity claims against external evidence
 - rank emerging micro-product categories discovered by the entities themselves
+
+## Rejection learning
+
+Opportunity themes should not only strengthen when they seem promising.
+They should also weaken when reality pushes back.
+
+That means repeated outcomes like:
+- human rejection
+- handoff rejection
+- repeated revision requests
+- persistent low-value artifacts
+
+should reduce a theme's influence over time.
+
+A good system does not just remember success.
+It also learns what to stop believing.

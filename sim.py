@@ -131,11 +131,11 @@ def load_category_proposals() -> list[dict]:
 def load_opportunity_board() -> dict:
     default = {
         "themes": {
-            "backup confidence": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
-            "service visibility": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
-            "config sanity checks": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
-            "log readability": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
-            "workflow packaging": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+            "backup confidence": {"pressure": 0.4, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0},
+            "service visibility": {"pressure": 0.4, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0},
+            "config sanity checks": {"pressure": 0.4, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0},
+            "log readability": {"pressure": 0.4, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0},
+            "workflow packaging": {"pressure": 0.4, "evidence": 0, "updated_at": 0, "acceptances": 0, "rejections": 0, "revisions": 0},
         }
     }
     board = read_json_file(OPPORTUNITY_BOARD_PATH, default)
@@ -845,6 +845,16 @@ def validate_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     if note:
         meta.setdefault("review_notes", []).append(f"validation:{action}: {note}")
 
+    theme = meta.get("niche_theme")
+    outcome = {
+        "use": "use",
+        "buyer-fit": "buyer-fit",
+        "accept": "accept",
+        "reject": "reject",
+        "revise": "needs_revision",
+    }[action]
+    apply_opportunity_outcome(theme, outcome, int(time.time()))
+
     proof["last_status"] = meta.get("review_status", "unreviewed")
     conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
         meta.get("id"),
@@ -908,8 +918,12 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     proof = get_artifact_proof(conn, meta.get("id"))
     if action == "approve":
         proof["human_approvals"] = int(proof.get("human_approvals", 0)) + 1
+        apply_opportunity_outcome(meta.get("niche_theme"), "approve", int(time.time()))
     if action == "export":
         proof["review_exports"] = int(proof.get("review_exports", 0)) + 1
+        apply_opportunity_outcome(meta.get("niche_theme"), "export", int(time.time()))
+    if action == "reject":
+        apply_opportunity_outcome(meta.get("niche_theme"), "reject", int(time.time()))
     if action in {"approve", "export"} and meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD:
         meta["review_status"] = "export_ready"
         meta["lifecycle_stage"] = "packed"
@@ -1485,13 +1499,36 @@ def clamp_agent(agent: Dict) -> Dict:
     return agent
 
 
+def apply_opportunity_outcome(theme: str | None, outcome: str, now_ts: int) -> None:
+    if not theme:
+        return
+    board = load_opportunity_board()
+    board_state = board.setdefault("themes", {}).setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": now_ts, "acceptances": 0, "rejections": 0, "revisions": 0})
+    pressure = float(board_state.get("pressure", 0.4))
+    if outcome in {"approve", "use", "buyer-fit", "accept", "export"}:
+        board_state["evidence"] = int(board_state.get("evidence", 0)) + 1
+        pressure += 0.04
+        if outcome == "accept":
+            board_state["acceptances"] = int(board_state.get("acceptances", 0)) + 1
+            pressure += 0.05
+    elif outcome in {"reject", "needs_revision", "revise"}:
+        board_state["rejections"] = int(board_state.get("rejections", 0)) + 1
+        pressure -= 0.08
+        if outcome in {"needs_revision", "revise"}:
+            board_state["revisions"] = int(board_state.get("revisions", 0)) + 1
+            pressure -= 0.02
+    board_state["pressure"] = round(max(0.03, min(pressure, 0.99)), 3)
+    board_state["updated_at"] = now_ts
+    save_opportunity_board(board)
+
+
 def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionResult, now_ts: int, board: Dict) -> None:
     theme = action_plan.get("niche_theme")
     if not theme:
         return
     memory = load_opportunity_memory(agent_dir)
-    theme_state = memory.setdefault("themes", {}).setdefault(theme, {"strength": 0.3, "wins": 0, "failures": 0, "last_action": None, "last_category": None})
-    board_state = board.setdefault("themes", {}).setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": now_ts})
+    theme_state = memory.setdefault("themes", {}).setdefault(theme, {"strength": 0.3, "wins": 0, "failures": 0, "rejections": 0, "last_action": None, "last_category": None})
+    board_state = board.setdefault("themes", {}).setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": now_ts, "acceptances": 0, "rejections": 0, "revisions": 0})
 
     strength = float(theme_state.get("strength", 0.3)) * 0.96
     pressure = float(board_state.get("pressure", 0.4)) * 0.985
@@ -1507,6 +1544,11 @@ def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionR
         strength -= 0.04
         pressure += 0.02
         theme_state["failures"] = int(theme_state.get("failures", 0)) + 1
+
+    rejection_weight = int(board_state.get("rejections", 0)) * 0.025
+    acceptance_lift = int(board_state.get("acceptances", 0)) * 0.015
+    revision_drag = int(board_state.get("revisions", 0)) * 0.01
+    strength = strength - rejection_weight + acceptance_lift - revision_drag
 
     if result.action == "research":
         pressure += 0.05
