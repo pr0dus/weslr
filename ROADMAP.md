@@ -236,3 +236,4 @@ Focus:
 - rejection-reason visibility for repeated pack failures
 - stronger buyer/problem/install framing at pack level
 - clustering of repeated opportunity themes into emerging niche families
+- pack formation around discovered opportunity themes instead of category only

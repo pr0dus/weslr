@@ -606,7 +606,8 @@ def explain_artifact(meta: Dict) -> list[str]:
 
 
 def summarize_pack(pack: Dict) -> str:
-    return f"rank #{pack.get('rank', '?')} · score {pack.get('pack_score', 0.0)} · sellability {pack.get('sellability_score', 0.0)} · stage {pack.get('lifecycle_stage', 'draft')}"
+    scope = pack.get("niche_theme") or pack.get("category") or pack.get("group_key") or "mixed"
+    return f"rank #{pack.get('rank', '?')} · {scope} · score {pack.get('pack_score', 0.0)} · sellability {pack.get('sellability_score', 0.0)} · stage {pack.get('lifecycle_stage', 'draft')}"
 
 
 def recommend_delivery_mode(meta: Dict) -> str:
@@ -1016,12 +1017,24 @@ def compute_pack_scores(items: list[dict]) -> dict:
 
 
 def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | None = None) -> list[dict]:
-    packs: dict[str, list[dict]] = {}
+    packs: dict[str, dict] = {}
     for meta in artifact_meta:
         if meta.get("review_status") != "export_ready":
             continue
+        niche_theme = meta.get("niche_theme")
         category = meta.get("category", "uncategorized")
-        packs.setdefault(category, []).append({
+        group_kind = "opportunity" if niche_theme else "category"
+        group_key = niche_theme or category
+        pack_name = f"{group_key.replace(' ', '-')}-{group_kind}-pack"
+        pack = packs.setdefault(group_key, {
+            "group_key": group_key,
+            "group_kind": group_kind,
+            "niche_theme": niche_theme,
+            "category": category,
+            "pack_name": pack_name,
+            "items": [],
+        })
+        pack["items"].append({
             "id": meta.get("id"),
             "title": meta.get("title"),
             "artifact_type": meta.get("artifact_type"),
@@ -1036,18 +1049,24 @@ def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | N
             "review_status": meta.get("review_status"),
             "generation": meta.get("generation", 1),
             "target_user": meta.get("target_user"),
+            "niche_theme": meta.get("niche_theme"),
+            "problem_statement": meta.get("problem_statement"),
+            "opportunity_score": meta.get("opportunity_score"),
             "buyer_clarity_score": meta.get("buyer_clarity_score"),
             "sellability_score": meta.get("sellability_score"),
             "price_band_guess": meta.get("price_band_guess"),
             "explanation_reasons": explain_artifact(meta),
         })
     result = []
-    for category, items in sorted(packs.items()):
-        ranked_items = sorted(items, key=lambda x: x["human_proposed_score"], reverse=True)
+    for _, pack in sorted(packs.items()):
+        ranked_items = sorted(pack["items"], key=lambda x: ((x.get("opportunity_score") or 0.0), x["human_proposed_score"]), reverse=True)
         scores = compute_pack_scores(ranked_items)
         result.append({
-            "category": category,
-            "pack_name": f"{category}-pack",
+            "category": pack["category"],
+            "group_kind": pack["group_kind"],
+            "group_key": pack["group_key"],
+            "niche_theme": pack.get("niche_theme"),
+            "pack_name": pack["pack_name"],
             "count": len(ranked_items),
             **scores,
             "summary": summarize_pack({"rank": None, "pack_score": scores.get("pack_score"), "sellability_score": scores.get("sellability_score"), "lifecycle_stage": scores.get("lifecycle_stage")}),
@@ -1560,6 +1579,8 @@ def write_pack_wrapper(pack: Dict) -> str:
         "version": VERSION,
         "pack_name": pack.get("pack_name"),
         "category": pack.get("category"),
+        "group_kind": pack.get("group_kind"),
+        "niche_theme": pack.get("niche_theme"),
         "rank": pack.get("rank"),
         "pack_score": pack.get("pack_score"),
         "sellability_score": pack.get("sellability_score"),
@@ -1629,6 +1650,8 @@ def write_pack_wrapper(pack: Dict) -> str:
     handoff = {
         "pack_name": pack.get("pack_name"),
         "category": pack.get("category"),
+        "group_kind": pack.get("group_kind"),
+        "niche_theme": pack.get("niche_theme"),
         "target_users": sorted({item.get("target_user", "technical builders") for item in pack.get("artifacts", [])}),
         "value_proposition": pack.get("why_promising", []),
         "price_band_guess": pack.get("price_band_guess"),
@@ -1845,6 +1868,9 @@ def explain_item(item_id: str) -> Dict:
             "type": "pack",
             "id": item_id,
             "summary": pack.get("summary"),
+            "group_kind": pack.get("group_kind"),
+            "niche_theme": pack.get("niche_theme"),
+            "category": pack.get("category"),
             "scores": {
                 "pack_score": pack.get("pack_score"),
                 "sellability_score": pack.get("sellability_score"),

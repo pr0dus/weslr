@@ -98,6 +98,7 @@ The current direction is state-driven rather than prompt-driven: entities should
 ## What should come next
 
 - stronger entity-driven niche discovery and opportunity clustering
+- pack formation around discovered opportunity themes, not just categories
 - pack-level validation and offer outcome tracking
 - explain output that separates internal strength from external proof
 - reports for high-scoring packs with weak real-world evidence
