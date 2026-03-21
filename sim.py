@@ -429,10 +429,16 @@ def artifact_source_path(meta: Dict) -> Path | None:
         path = BASE_DIR / str(explicit)
         return path if path.exists() else None
     lineage = meta.get("lineage", {}) or {}
-    agent_name = str(meta.get("id", "")).split("-")[0]
+    agent_name = meta.get("agent_name")
+    if not agent_name:
+        artifact_id = str(meta.get("id", ""))
+        if artifact_id.startswith("agent-"):
+            parts = artifact_id.split("-")
+            if len(parts) >= 2:
+                agent_name = "-".join(parts[:2])
     if not agent_name:
         return None
-    agent_dir = AGENTS_DIR / agent_name
+    agent_dir = AGENTS_DIR / str(agent_name)
     action = lineage.get("action")
     if action == "build_module":
         module_name = lineage.get("module")
@@ -1755,6 +1761,7 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
     opportunity = opportunity or {}
     payload = {
         "id": artifact_id,
+        "agent_name": agent["name"],
         "title": artifact_slug.replace("_", " ").title(),
         "artifact_type": artifact_type,
         "category": category,
