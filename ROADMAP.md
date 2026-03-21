@@ -238,5 +238,6 @@ Focus:
 ### v0.0.45
 - pack-level external validation events
 - offer outcome tracking
+- pack outcome feedback tied back into clustered opportunity themes
 - rejection-reason visibility for repeated pack failures
 - stronger buyer/problem/install framing at pack level

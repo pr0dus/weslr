@@ -30,6 +30,7 @@ from config import (
     MAX_EXPORT_QUEUE,
     MAX_REVIEW_QUEUE,
     OPPORTUNITY_BOARD_PATH,
+    PACK_OUTCOMES_PATH,
     PACKS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
@@ -147,6 +148,14 @@ def load_opportunity_board() -> dict:
 
 def save_opportunity_board(board: dict) -> None:
     write_json_file(OPPORTUNITY_BOARD_PATH, board)
+
+
+def load_pack_outcomes() -> list[dict]:
+    return read_json_file(PACK_OUTCOMES_PATH, [])
+
+
+def save_pack_outcomes(items: list[dict]) -> None:
+    write_json_file(PACK_OUTCOMES_PATH, items)
 
 
 def canonical_theme_name(theme: str) -> str:
@@ -988,6 +997,19 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     return meta
 
 
+def summarize_pack_outcomes(pack_name: str) -> dict:
+    events = [e for e in load_pack_outcomes() if e.get("pack_name") == pack_name]
+    return {
+        "offer_count": sum(1 for e in events if e.get("action") == "offer"),
+        "accept_count": sum(1 for e in events if e.get("action") == "accept"),
+        "reject_count": sum(1 for e in events if e.get("action") == "reject"),
+        "revision_count": sum(1 for e in events if e.get("action") == "revise"),
+        "test_count": sum(1 for e in events if e.get("action") == "test"),
+        "export_count": sum(1 for e in events if e.get("action") == "export"),
+        "recent_events": events[-5:],
+    }
+
+
 def compute_pack_scores(items: list[dict]) -> dict:
     count = len(items)
     if count == 0:
@@ -1157,6 +1179,7 @@ def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | N
     for idx, pack in enumerate(result, start=1):
         pack["rank"] = idx
         pack["delivery_mode"] = recommend_pack_delivery_mode(pack)
+        pack.update(summarize_pack_outcomes(pack["pack_name"]))
         pack["summary"] = summarize_pack(pack)
         pack["wrapper_path"] = write_pack_wrapper(pack)
     write_json_file(PACKS_PATH, result)
@@ -1246,6 +1269,11 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
 
 
 def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, list, list, list, list, dict]:
+    if conn is None:
+        conn = connect()
+        close_conn = True
+    else:
+        close_conn = False
     categories = load_categories()
     proposals = load_category_proposals()
     artifact_meta = []
@@ -1326,11 +1354,6 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
     emergent_groups = build_uncategorized_groups(artifact_meta)
     family_signals = build_family_signals(artifact_meta)
     market_signals = build_market_signals(artifact_meta, packs, categories)
-    if conn is None:
-        conn = connect()
-        close_conn = True
-    else:
-        close_conn = False
     failure_signals = build_failure_signals(conn)
     if emergent_groups:
         demand_board.append({"kind": "emergence", "title": "Uncategorized emergent groups detected", "reason": f"There are {len(emergent_groups)} promising uncategorized group(s) worth inspecting."})
@@ -1543,6 +1566,47 @@ def clamp_agent(agent: Dict) -> Dict:
     return agent
 
 
+def apply_pack_outcome(pack_name: str, action: str, note: str = "", buyer: str = "", price_band: str = "", mode: str = "") -> dict:
+    packs = read_json_file(PACKS_PATH, [])
+    pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
+    if pack is None:
+        raise SystemExit(f"No pack found: {pack_name}")
+    now_ts = int(time.time())
+    outcomes = load_pack_outcomes()
+    event = {
+        "pack_name": pack_name,
+        "action": action,
+        "note": note,
+        "buyer": buyer,
+        "price_band": price_band,
+        "mode": mode,
+        "group_kind": pack.get("group_kind"),
+        "niche_theme": pack.get("niche_theme"),
+        "category": pack.get("category"),
+        "created_at": now_ts,
+    }
+    outcomes.append(event)
+    save_pack_outcomes(outcomes)
+
+    if action in {"offer", "accept", "reject", "revise", "test", "export"}:
+        mapped = {
+            "offer": "export",
+            "accept": "accept",
+            "reject": "reject",
+            "revise": "needs_revision",
+            "test": "use",
+            "export": "export",
+        }[action]
+        apply_opportunity_outcome(pack.get("niche_theme"), mapped, now_ts)
+
+    pack.update(summarize_pack_outcomes(pack_name))
+    write_json_file(PACKS_PATH, packs)
+    return {
+        "ok": True,
+        "event": event,
+    }
+
+
 def apply_opportunity_outcome(theme: str | None, outcome: str, now_ts: int) -> None:
     if not theme:
         return
@@ -1675,6 +1739,10 @@ def write_pack_wrapper(pack: Dict) -> str:
         "commercial_readiness_score": pack.get("commercial_readiness_score"),
         "price_band_guess": pack.get("price_band_guess"),
         "delivery_mode": pack.get("delivery_mode"),
+        "offer_count": pack.get("offer_count", 0),
+        "accept_count": pack.get("accept_count", 0),
+        "reject_count": pack.get("reject_count", 0),
+        "revision_count": pack.get("revision_count", 0),
         "template_headline": template.get("headline"),
         "buyer_problem": template.get("buyer_problem"),
         "lifecycle_stage": pack.get("lifecycle_stage"),
@@ -1705,6 +1773,7 @@ def write_pack_wrapper(pack: Dict) -> str:
         f"Commercial readiness: {pack.get('commercial_readiness_score')}",
         f"Price band guess: {pack.get('price_band_guess', 'tbd')}",
         f"Delivery mode: {pack.get('delivery_mode', 'bundle_candidate')}",
+        f"Offers / accepts / rejects: {pack.get('offer_count', 0)} / {pack.get('accept_count', 0)} / {pack.get('reject_count', 0)}",
         "",
         "## Buyer problem",
         template.get("buyer_problem", "A reusable artifact bundle needs clearer buyer framing."),
@@ -1744,6 +1813,10 @@ def write_pack_wrapper(pack: Dict) -> str:
         "value_proposition": pack.get("why_promising", []),
         "price_band_guess": pack.get("price_band_guess"),
         "delivery_mode": pack.get("delivery_mode"),
+        "offer_count": pack.get("offer_count", 0),
+        "accept_count": pack.get("accept_count", 0),
+        "reject_count": pack.get("reject_count", 0),
+        "revision_count": pack.get("revision_count", 0),
         "template_headline": template.get("headline"),
         "buyer_problem": template.get("buyer_problem"),
         "install_steps": template.get("install_steps", []),
@@ -1881,6 +1954,8 @@ def browse_queue(queue_name: str, limit: int = 10) -> Dict:
     elif queue_name == "packs":
         items = read_json_file(PACKS_PATH, [])
         items = sorted(items, key=lambda item: (item.get("rank", 999), -item.get("pack_score", 0.0)))
+        for item in items:
+            item.update(summarize_pack_outcomes(item.get("pack_name")))
     else:
         raise SystemExit(f"Unknown queue: {queue_name}")
 
@@ -1902,6 +1977,9 @@ def handoff_summary(limit: int = 5) -> Dict:
                 "summary": pack.get("summary"),
                 "price_band_guess": pack.get("price_band_guess"),
                 "delivery_mode": pack.get("delivery_mode"),
+                "offer_count": pack.get("offer_count", 0),
+                "accept_count": pack.get("accept_count", 0),
+                "reject_count": pack.get("reject_count", 0),
                 "wrapper_path": pack.get("wrapper_path"),
             }
             for pack in packs
@@ -1966,6 +2044,7 @@ def explain_item(item_id: str) -> Dict:
                 "coherence_score": pack.get("coherence_score"),
             },
             "price_band_guess": pack.get("price_band_guess"),
+            "outcomes": summarize_pack_outcomes(pack.get("pack_name")),
             "reasons": pack.get("why_promising", []),
         }
 

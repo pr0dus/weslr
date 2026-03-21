@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.44"
+VERSION = "0.0.45"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
@@ -20,6 +20,7 @@ EXPORTS_DIR = BASE_DIR / "exports"
 CATEGORIES_PATH = BASE_DIR / "categories.json"
 CATEGORY_PROPOSALS_PATH = BASE_DIR / "category_proposals.json"
 PACKS_PATH = BASE_DIR / "artifact_packs.json"
+PACK_OUTCOMES_PATH = BASE_DIR / "pack_outcomes.json"
 OPPORTUNITY_BOARD_PATH = BASE_DIR / "opportunity_board.json"
 
 TICK_SECONDS = 60

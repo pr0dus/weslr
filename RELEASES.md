@@ -59,3 +59,12 @@ Recommended rollback order:
 - commit: `9c544d3`
 - backup: `CircleForge-backup-20260321-152102.tar.gz`
 - tag: `v0.0.44`
+
+### v0.0.45
+- pack-level offer/test/outcome tracking introduced
+- pack outcomes now feed back into clustered opportunity themes
+- packs carry offer / accept / reject / revision counters
+- `pack` CLI command added for recording pack-level outcomes
+- commit: pending
+- backup: pending
+- tag: pending
