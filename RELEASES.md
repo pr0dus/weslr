@@ -83,6 +83,6 @@ Recommended rollback order:
 - operator dashboard renderer introduced
 - local HTML/JSON visibility layer added for themes, packs, queues, logs, and release ledger
 - intended direction: make CircleForge legible to human operators without requiring JSON spelunking
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `c15abf1`
+- backup: `CircleForge-backup-20260321-154938.tar.gz`
+- tag: `v0.0.47`
