@@ -34,6 +34,7 @@ from config import (
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
     REVIEW_QUEUE_PATH,
+    SELLABILITY_SIGNAL_THRESHOLD,
     STARTING_ENERGY,
     STARTING_GPU,
     STARTING_REPUTATION,
@@ -298,10 +299,93 @@ def compute_human_proposed_score(meta: Dict) -> float:
     return round(min((q["clarity_score"] + q["novelty_score"] + q["exportability_score"] + q["market_fit_score"]) / 4, 0.99), 3)
 
 
+def infer_target_user(meta: Dict) -> str:
+    family = meta.get("family")
+    category = meta.get("category")
+    artifact_type = meta.get("artifact_type")
+    if family in {"observability", "status-pages"}:
+        return "self-hosters and small operators"
+    if family in {"packaging", "evaluation"}:
+        return "indie builders and local AI tinkerers"
+    if category in {"memory", "research"} or artifact_type == "market_hypothesis":
+        return "technical researchers and workflow designers"
+    return "technical builders"
+
+
+def compute_sellability_signals(meta: Dict) -> Dict:
+    family = meta.get("family", "unknown")
+    artifact_type = meta.get("artifact_type", "unknown")
+    destination = meta.get("destination", "internal_review")
+    review_status = meta.get("review_status", "unreviewed")
+
+    buyer_clarity = 0.45
+    if family in {"observability", "status-pages", "packaging"}:
+        buyer_clarity += 0.2
+    if artifact_type == "export_candidate":
+        buyer_clarity += 0.1
+    if destination in {"github_module", "shared_with_agents"}:
+        buyer_clarity += 0.08
+
+    pain_severity = 0.4
+    if family in {"observability", "local-ai-ops", "packaging"}:
+        pain_severity += 0.22
+    if meta.get("why_now"):
+        pain_severity += 0.08
+
+    deployment_effort = 0.55
+    if artifact_type == "export_candidate":
+        deployment_effort -= 0.12
+    if destination == "github_module":
+        deployment_effort -= 0.1
+    if family == "evaluation":
+        deployment_effort += 0.05
+
+    proof_level = 0.25
+    if review_status in {"approved", "export_ready"}:
+        proof_level += 0.25
+    if meta.get("export_path"):
+        proof_level += 0.2
+    if meta.get("review_notes"):
+        proof_level += min(len(meta.get("review_notes", [])) * 0.04, 0.12)
+
+    support_burden = 0.5
+    if family in {"packaging", "evaluation"}:
+        support_burden -= 0.08
+    if family in {"status-pages", "observability"}:
+        support_burden += 0.08
+    if destination == "github_module":
+        support_burden -= 0.05
+
+    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.35) + (proof_level * 0.25) + (buyer_clarity * 0.2) + (pain_severity * 0.2), 3))
+    sellability_score = min(0.99, round((buyer_clarity * 0.2) + (pain_severity * 0.22) + ((1 - deployment_effort) * 0.16) + (proof_level * 0.18) + ((1 - support_burden) * 0.08) + (commercial_readiness * 0.16), 3))
+
+    if sellability_score >= 0.78:
+        price_band_guess = "100-500eur"
+    elif sellability_score >= 0.68:
+        price_band_guess = "50-200eur"
+    elif sellability_score >= 0.58:
+        price_band_guess = "20-100eur"
+    else:
+        price_band_guess = "needs packaging"
+
+    return {
+        "target_user": infer_target_user(meta),
+        "buyer_clarity_score": round(min(buyer_clarity, 0.99), 3),
+        "pain_severity_score": round(min(pain_severity, 0.99), 3),
+        "deployment_effort_score": round(max(0.01, min(deployment_effort, 0.99)), 3),
+        "proof_level_score": round(min(proof_level, 0.99), 3),
+        "support_burden_score": round(max(0.01, min(support_burden, 0.99)), 3),
+        "commercial_readiness_score": commercial_readiness,
+        "sellability_score": sellability_score,
+        "price_band_guess": price_band_guess,
+    }
+
+
 def update_artifact_scores(meta: Dict) -> Dict:
     meta.update(compute_quality_dimensions(meta))
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
+    meta.update(compute_sellability_signals(meta))
     return meta
 
 
@@ -330,6 +414,15 @@ def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
         "market_fit_score": meta.get("market_fit_score"),
         "internal_score": meta.get("internal_score"),
         "human_proposed_score": meta.get("human_proposed_score"),
+        "target_user": meta.get("target_user"),
+        "buyer_clarity_score": meta.get("buyer_clarity_score"),
+        "pain_severity_score": meta.get("pain_severity_score"),
+        "deployment_effort_score": meta.get("deployment_effort_score"),
+        "proof_level_score": meta.get("proof_level_score"),
+        "support_burden_score": meta.get("support_burden_score"),
+        "commercial_readiness_score": meta.get("commercial_readiness_score"),
+        "sellability_score": meta.get("sellability_score"),
+        "price_band_guess": meta.get("price_band_guess"),
         "review_status": meta.get("review_status"),
         "review_notes": meta.get("review_notes", []),
         "source_meta": str(meta_file.relative_to(BASE_DIR)),
@@ -477,6 +570,8 @@ def compute_pack_scores(items: list[dict]) -> dict:
     avg_human = sum(float(item.get("human_proposed_score", 0.0)) for item in items) / count
     avg_internal = sum(float(item.get("internal_score", 0.0)) for item in items) / count
     avg_novelty = sum(float(item.get("novelty_score", 0.0)) for item in items) / count
+    avg_sellability = sum(float(item.get("sellability_score", 0.0)) for item in items) / count
+    avg_buyer_clarity = sum(float(item.get("buyer_clarity_score", 0.0)) for item in items) / count
     families = [item.get("family", "unknown") for item in items]
     family_diversity = len(set(families))
     dominant_family_share = max(families.count(f) for f in set(families)) / count if families else 0.0
@@ -486,7 +581,17 @@ def compute_pack_scores(items: list[dict]) -> dict:
     coverage_score = min(0.99, round(min(count / 4, 1.0) * 0.7 + min(family_diversity / 3, 1.0) * 0.3, 3))
     lineage_depths = [int(item.get("generation", 1) or 1) for item in items]
     lineage_score = min(0.99, round(min(sum(lineage_depths) / count / 3, 1.0), 3))
-    pack_score = min(0.99, round((avg_human * 0.35) + (avg_internal * 0.2) + (coherence_score * 0.2) + (readiness_score * 0.15) + (coverage_score * 0.07) + (lineage_score * 0.03), 3))
+    commercial_readiness_score = min(0.99, round((avg_sellability * 0.5) + (avg_buyer_clarity * 0.25) + (readiness_score * 0.25), 3))
+    pack_score = min(0.99, round((avg_human * 0.28) + (avg_internal * 0.16) + (coherence_score * 0.18) + (readiness_score * 0.12) + (coverage_score * 0.06) + (lineage_score * 0.03) + (avg_sellability * 0.17), 3))
+
+    if avg_sellability >= 0.82:
+        price_band_guess = "250-1000eur"
+    elif avg_sellability >= 0.72:
+        price_band_guess = "100-500eur"
+    elif avg_sellability >= 0.62:
+        price_band_guess = "50-200eur"
+    else:
+        price_band_guess = "needs packaging"
 
     release_candidate = count >= PACK_MIN_RELEASE_ARTIFACTS and readiness_score >= 0.75 and coherence_score >= 0.72 and pack_score >= PACK_RELEASE_CANDIDATE_THRESHOLD
     lifecycle_stage = "release_candidate" if release_candidate else ("reviewed" if count >= 2 and pack_score >= 0.68 else "coherent")
@@ -496,6 +601,8 @@ def compute_pack_scores(items: list[dict]) -> dict:
         why_promising.append("multiple export-ready artifacts form a coherent bundle")
     if avg_human >= 0.78:
         why_promising.append("strong human-facing artifact scores")
+    if avg_sellability >= 0.7:
+        why_promising.append("artifacts show credible buyer-facing potential")
     if coherence_score >= 0.76:
         why_promising.append("artifacts cluster around a clear family direction")
     if lineage_score >= 0.45:
@@ -510,6 +617,10 @@ def compute_pack_scores(items: list[dict]) -> dict:
         "novelty_score": novelty_score,
         "coverage_score": coverage_score,
         "lineage_score": lineage_score,
+        "commercial_readiness_score": commercial_readiness_score,
+        "sellability_score": round(min(avg_sellability, 0.99), 3),
+        "buyer_clarity_score": round(min(avg_buyer_clarity, 0.99), 3),
+        "price_band_guess": price_band_guess,
         "artifact_count": count,
         "release_candidate": release_candidate,
         "lifecycle_stage": lifecycle_stage,
@@ -535,6 +646,10 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "novelty_score": meta.get("novelty_score"),
             "review_status": meta.get("review_status"),
             "generation": meta.get("generation", 1),
+            "target_user": meta.get("target_user"),
+            "buyer_clarity_score": meta.get("buyer_clarity_score"),
+            "sellability_score": meta.get("sellability_score"),
+            "price_band_guess": meta.get("price_band_guess"),
         })
     result = []
     for category, items in sorted(packs.items()):
@@ -622,6 +737,7 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
 
     release_candidate_packs = [p["pack_name"] for p in packs if p.get("release_candidate")]
     top_ranked_packs = [p["pack_name"] for p in packs[:3]]
+    sellable_packs = [p["pack_name"] for p in packs if p.get("sellability_score", 0.0) >= SELLABILITY_SIGNAL_THRESHOLD]
     return {
         "category_counts": category_counts,
         "rising_categories": rising_categories,
@@ -631,6 +747,7 @@ def build_market_signals(artifact_meta: list[dict], packs: list[dict], categorie
         "pack_count": len(packs),
         "release_candidate_packs": release_candidate_packs,
         "top_ranked_packs": top_ranked_packs,
+        "sellable_packs": sellable_packs,
     }
 
 
@@ -676,13 +793,13 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
 
     export_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "destination": meta.get("destination"), "clarity_score": meta.get("clarity_score", 0.0), "reusability_score": meta.get("reusability_score", 0.0), "novelty_score": meta.get("novelty_score", 0.0), "stability_score": meta.get("stability_score", 0.0), "exportability_score": meta.get("exportability_score", 0.0), "market_fit_score": meta.get("market_fit_score", 0.0), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "destination": meta.get("destination"), "clarity_score": meta.get("clarity_score", 0.0), "reusability_score": meta.get("reusability_score", 0.0), "novelty_score": meta.get("novelty_score", 0.0), "stability_score": meta.get("stability_score", 0.0), "exportability_score": meta.get("exportability_score", 0.0), "market_fit_score": meta.get("market_fit_score", 0.0), "internal_score": meta.get("internal_score", 0.0), "human_proposed_score": meta.get("human_proposed_score", 0.0), "target_user": meta.get("target_user"), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "review_status": meta.get("review_status", "unreviewed"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path"), "status": meta.get("status", "prototype")}
         for meta in artifact_meta
         if meta.get("human_proposed_score", 0.0) >= 0.45 or meta.get("artifact_type") == "export_candidate"
     ], key=lambda item: (item["human_proposed_score"], item["internal_score"]), reverse=True)[:MAX_EXPORT_QUEUE]
 
     review_queue = sorted([
-        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
+        {"id": meta.get("id"), "title": meta.get("title"), "artifact_type": meta.get("artifact_type"), "category": meta.get("category"), "lifecycle_stage": meta.get("lifecycle_stage"), "path": meta.get("path"), "review_status": meta.get("review_status", "unreviewed"), "review_notes": meta.get("review_notes", []), "human_proposed_score": meta.get("human_proposed_score", 0.0), "commercial_readiness_score": meta.get("commercial_readiness_score", 0.0), "sellability_score": meta.get("sellability_score", 0.0), "price_band_guess": meta.get("price_band_guess"), "approved_for_export": meta.get("approved_for_export", False), "export_path": meta.get("export_path")}
         for meta in artifact_meta
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
@@ -707,12 +824,18 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
         demand_board.append({"kind": "market", "title": "Saturated categories detected", "reason": f"These categories may be getting crowded: {', '.join(market_signals['saturated_categories'])}."})
     if market_signals["export_pressure_categories"]:
         demand_board.append({"kind": "market", "title": "Export pressure building", "reason": f"These categories currently hold export-ready artifacts: {', '.join(market_signals['export_pressure_categories'])}."})
+    sellable_artifacts = [m for m in artifact_meta if m.get("sellability_score", 0.0) >= SELLABILITY_SIGNAL_THRESHOLD]
+    if sellable_artifacts:
+        demand_board.append({"kind": "commercial", "title": "Promising sellable artifacts detected", "reason": f"{len(sellable_artifacts)} artifact(s) crossed the sellability threshold; top target users include {', '.join(sorted({m.get('target_user', 'technical builders') for m in sellable_artifacts})[:3])}."})
     release_candidate_packs = [p for p in packs if p.get("release_candidate")]
     if release_candidate_packs:
         demand_board.append({"kind": "pack", "title": "Release-candidate pack available", "reason": f"Top pack: {release_candidate_packs[0]['pack_name']} (score {release_candidate_packs[0]['pack_score']})."})
     near_rc_packs = [p for p in packs if not p.get("release_candidate") and p.get("pack_score", 0.0) >= 0.7]
     if near_rc_packs:
         demand_board.append({"kind": "pack", "title": "Pack nearing release-candidate threshold", "reason": f"{near_rc_packs[0]['pack_name']} is close with score {near_rc_packs[0]['pack_score']} and readiness {near_rc_packs[0]['readiness_score']}."})
+    sellable_packs = [p for p in packs if p.get("sellability_score", 0.0) >= SELLABILITY_SIGNAL_THRESHOLD]
+    if sellable_packs:
+        demand_board.append({"kind": "commercial", "title": "Pack with buyer-facing potential detected", "reason": f"{sellable_packs[0]['pack_name']} looks commercially promising (sellability {sellable_packs[0]['sellability_score']}, price band {sellable_packs[0].get('price_band_guess', 'tbd')})."})
     if failure_signals["error_count"] or failure_signals["cooldown_count"] or failure_signals["skipped_count"]:
         demand_board.append({"kind": "failure", "title": "Recent friction detected", "reason": f"Errors={failure_signals['error_count']}, cooldowns={failure_signals['cooldown_count']}, skipped={failure_signals['skipped_count']}; hot actions: {', '.join(failure_signals['friction_actions']) or 'none'}."})
     demand_board = demand_board[:MAX_DEMAND_ITEMS]
@@ -943,6 +1066,7 @@ def show_world() -> Dict:
         "export_pressure_categories": [item["category"] for item in export_queue[:3] if item.get("review_status") == "export_ready"],
         "release_candidate_packs": [p["pack_name"] for p in artifact_packs if p.get("release_candidate")],
         "top_ranked_packs": [p["pack_name"] for p in artifact_packs[:3]],
+        "sellable_packs": [p["pack_name"] for p in artifact_packs if p.get("sellability_score", 0.0) >= SELLABILITY_SIGNAL_THRESHOLD],
     }
     family_counts = {}
     for meta in all_meta:

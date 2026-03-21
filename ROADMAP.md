@@ -79,17 +79,18 @@ Already implemented:
 - top-pack ranking
 - pack-level demand signals for human curation
 
-## Phase 5 — Human review ergonomics and artifact shaping
+## Phase 5 — Commercial qualification and artifact shaping
 
 ### v0.0.37
+- artifact-level commercial qualification
+- sellability scoring
+- target-user and price-band guesses
+- pack-level commercial readiness signals
+
+### v0.0.38
 - queue and pack browsing ergonomics
 - ranking explanations and curation reasons
 - better operator views for promising artifacts
-
-### v0.0.38
-- stronger artifact relationship intelligence
-- pack cohesion hints
-- cluster-to-pack suggestions
 
 ### v0.0.39
 - better export bundles
@@ -206,6 +207,7 @@ Focus:
 - v0.0.39
 
 Focus:
+- commercial qualification
 - human review ergonomics
 - artifact shaping
 - curated output packaging

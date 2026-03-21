@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.36** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, and now score, rank, and promote coherent artifact packs for human curation.
+**CircleForge v0.0.37** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, and now estimate commercial readiness and sellability.
 
 ## Current core
 
@@ -26,14 +26,16 @@ CircleForge currently includes:
 - failure-driven demand signals
 - pack scoring and ranking
 - release-candidate packs
+- commercial qualification signals
+- sellability scoring
 
-## New in v0.0.36
+## New in v0.0.37
 
-- pack quality scoring
-- release-candidate pack promotion
-- top-pack ranking in world state
-- demand board signals for strong and near-release packs
-- stronger human curation layer above export-ready artifacts
+- artifact-level commercial qualification and sellability scores
+- pack-level commercial readiness and buyer-facing signals
+- target-user and price-band guesses for artifacts and packs
+- demand-board signals for promising sellable outputs
+- stronger bridge from internal curation to monetizable packaging
 
 ## Useful commands
 
@@ -53,5 +55,5 @@ python3 main.py version
 ## What should come next
 
 - human review ergonomics for queue and pack browsing
-- reasoning/explanation views for why packs rank highly
+- reasoning/explanation views for why artifacts and packs look sellable
 - replay/dashboard views built around curated artifacts rather than raw simulation state
