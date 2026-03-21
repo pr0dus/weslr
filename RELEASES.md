@@ -75,6 +75,6 @@ Recommended rollback order:
 - overloaded themes can split into emergent subthemes
 - repeated signals can register emergent theme candidates
 - intended direction: stabilize the opportunity ecology before building the operator dashboard
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `f45876a`
+- backup: `CircleForge-backup-20260321-154511.tar.gz`
+- tag: `v0.0.46`
