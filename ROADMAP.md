@@ -247,3 +247,8 @@ Focus:
 - overloaded themes can split into emergent subthemes
 - repeated unexplained signals can register emergent candidates
 - groundwork for a human dashboard built on more stable opportunity dynamics
+
+### v0.0.47
+- operator dashboard renderer
+- local HTML/JSON visibility layer for themes, packs, queues, logs, and rollback state
+- first human-facing monitoring surface for CircleForge

@@ -95,16 +95,16 @@ to the artifacts they generate.
 
 The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, decay, and theme clustering.
 
-## New in v0.0.46
+## New in v0.0.47
 
-- theme lifecycle states: stable, emergent, cooling, declining, dormant
-- overloaded themes can split into emergent subthemes
-- repeated friction/rejection can register emergent theme candidates
-- dormant and declining themes decay more explicitly over time
+- local operator dashboard renderer
+- static HTML + JSON dashboard output under `dashboard/`
+- visibility into themes, lifecycle state, packs, queues, logs, and release ledger
+- `dashboard` CLI command for regenerating the view
 
 ## What should come next
 
 - explain output that separates internal strength from external proof
 - reports for high-scoring packs with weak real-world evidence
-- operator dashboard / UI for human visibility into themes, agents, artifacts, and rollback points
+- richer agent-memory views in the dashboard
 - replay/dashboard views built around curated artifacts rather than raw simulation state

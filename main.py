@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -76,6 +76,10 @@ def cmd_pack(args):
     emit(apply_pack_outcome(args.name, args.action, note=args.note, buyer=args.buyer, price_band=args.price_band, mode=args.mode))
 
 
+def cmd_dashboard(_args):
+    emit(render_dashboard())
+
+
 def main():
     parser = argparse.ArgumentParser(description=f"{PROJECT_NAME} v{VERSION} - minimal coding-agent ecosystem sim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -140,6 +144,9 @@ def main():
     p.add_argument("--price-band", default="")
     p.add_argument("--mode", default="")
     p.set_defaults(func=cmd_pack)
+
+    p = sub.add_parser("dashboard", help="render local operator dashboard files")
+    p.set_defaults(func=cmd_dashboard)
 
     p = sub.add_parser("reset", help="reset the world")
     p.add_argument("--agents", type=int, default=DEFAULT_AGENT_COUNT)

@@ -19,6 +19,7 @@ from config import (
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
     DEFAULT_AGENT_COUNT,
+    DASHBOARD_DIR,
     DEMAND_BOARD_PATH,
     DORMANT_CATEGORY_MIN_ARTIFACTS,
     EXECUTION_BUDGET_SECONDS,
@@ -1988,6 +1989,126 @@ def build_operator_views(export_queue: list[dict], review_queue: list[dict], art
         "top_packs": pack_brief,
         "review_candidates": review_brief,
     }
+
+
+def load_release_ledger() -> str:
+    path = BASE_DIR / "RELEASES.md"
+    if not path.exists():
+        return ""
+    return path.read_text()
+
+
+def render_dashboard() -> dict:
+    data = show_world()
+    release_ledger = load_release_ledger()
+    DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
+    payload_path = DASHBOARD_DIR / "dashboard.json"
+    html_path = DASHBOARD_DIR / "index.html"
+    payload = {
+        "generated_at": int(time.time()),
+        "version": VERSION,
+        "world": data.get("world"),
+        "opportunity_board": data.get("opportunity_board"),
+        "operator_views": data.get("operator_views"),
+        "artifact_packs": data.get("artifact_packs"),
+        "review_queue": data.get("review_queue"),
+        "export_queue": data.get("export_queue"),
+        "recent_logs": data.get("recent_logs"),
+        "release_ledger": release_ledger,
+    }
+    write_json_file(payload_path, payload)
+    html = f"""<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>CircleForge Dashboard</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
+    .wrap {{ max-width: 1200px; margin: 0 auto; padding: 24px; }}
+    h1,h2,h3 {{ margin: 0 0 12px; }}
+    .muted {{ color: #9aa6b2; }}
+    .grid {{ display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }}
+    .card {{ background: #171b22; border: 1px solid #28303a; border-radius: 14px; padding: 16px; }}
+    .pill {{ display:inline-block; padding: 2px 8px; border-radius:999px; background:#273142; margin-right:6px; font-size:12px; }}
+    pre {{ white-space: pre-wrap; word-break: break-word; background:#0c0f14; padding:12px; border-radius:10px; overflow:auto; }}
+    ul {{ margin: 8px 0 0 18px; padding: 0; }}
+    li {{ margin: 4px 0; }}
+    table {{ width:100%; border-collapse: collapse; font-size: 14px; }}
+    td,th {{ border-bottom: 1px solid #28303a; padding: 8px 6px; text-align:left; vertical-align: top; }}
+  </style>
+</head>
+<body>
+  <div class=\"wrap\">
+    <h1>CircleForge Dashboard</h1>
+    <p class=\"muted\">Version {VERSION} · local operator view · generated from current simulation state</p>
+
+    <div class=\"grid\">
+      <section class=\"card\">
+        <h2>World</h2>
+        <p>Tick: <strong>{data.get('world', {}).get('tick', 0)}</strong></p>
+        <p>Agents: <strong>{len(data.get('agents', []))}</strong></p>
+        <p>Packs: <strong>{len(data.get('artifact_packs', []))}</strong></p>
+        <p>Export queue: <strong>{len(data.get('export_queue', []))}</strong></p>
+        <p>Review queue: <strong>{len(data.get('review_queue', []))}</strong></p>
+      </section>
+
+      <section class=\"card\">
+        <h2>Rollback</h2>
+        <p>Current version: <strong>{VERSION}</strong></p>
+        <p>See <code>RELEASES.md</code> for backup/tag history.</p>
+      </section>
+    </div>
+
+    <section class=\"card\" style=\"margin-top:16px;\">
+      <h2>Opportunity Themes</h2>
+      <table>
+        <tr><th>Theme</th><th>Lifecycle</th><th>Pressure</th><th>Evidence</th><th>Accept</th><th>Reject</th></tr>
+        {''.join(f"<tr><td>{k}</td><td><span class='pill'>{v.get('lifecycle','stable')}</span></td><td>{v.get('pressure',0)}</td><td>{v.get('evidence',0)}</td><td>{v.get('acceptances',0)}</td><td>{v.get('rejections',0)}</td></tr>" for k,v in sorted((data.get('opportunity_board',{}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure',0), reverse=True))}
+      </table>
+    </section>
+
+    <div class=\"grid\" style=\"margin-top:16px;\">
+      <section class=\"card\">
+        <h2>Top Packs</h2>
+        <ul>
+          {''.join(f"<li><strong>{p.get('pack_name')}</strong> — {p.get('summary')}<br><span class='muted'>offers {p.get('offer_count',0)} · accepts {p.get('accept_count',0)} · rejects {p.get('reject_count',0)}</span></li>" for p in data.get('artifact_packs', [])[:8])}
+        </ul>
+      </section>
+
+      <section class=\"card\">
+        <h2>Review Queue</h2>
+        <ul>
+          {''.join(f"<li>{i.get('title')} — sellability {i.get('sellability_score',0)} · {i.get('review_status')}</li>" for i in data.get('review_queue', [])[:10])}
+        </ul>
+      </section>
+    </div>
+
+    <div class=\"grid\" style=\"margin-top:16px;\">
+      <section class=\"card\">
+        <h2>Recent Logs</h2>
+        <ul>
+          {''.join(f"<li>tick {l.get('tick')} · {l.get('agent_name')} · {l.get('action')} · {l.get('status')} — {l.get('summary')}</li>" for l in data.get('recent_logs', [])[:12])}
+        </ul>
+      </section>
+      <section class=\"card\">
+        <h2>Emergent Candidates</h2>
+        <ul>
+          {''.join(f"<li>{c.get('theme')} · parent {c.get('parent_theme')} · confidence {c.get('confidence')} · signals {c.get('signal_count')}</li>" for c in data.get('opportunity_board',{}).get('emergent_candidates', [])[:12])}
+        </ul>
+      </section>
+    </div>
+
+    <section class=\"card\" style=\"margin-top:16px;\">
+      <h2>Release Ledger</h2>
+      <pre>{release_ledger}</pre>
+    </section>
+  </div>
+</body>
+</html>
+"""
+    html_path.write_text(html)
+    return {"ok": True, "dashboard_dir": str(DASHBOARD_DIR.relative_to(BASE_DIR)), "html": str(html_path.relative_to(BASE_DIR)), "json": str(payload_path.relative_to(BASE_DIR))}
 
 
 def show_world() -> Dict:
