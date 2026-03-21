@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.37** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, and now estimate commercial readiness and sellability.
+**CircleForge v0.0.38** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, and now provide more operator-friendly browsing and explanations.
 
 ## Current core
 
@@ -28,14 +28,15 @@ CircleForge currently includes:
 - release-candidate packs
 - commercial qualification signals
 - sellability scoring
+- operator browsing and explanations
 
-## New in v0.0.37
+## New in v0.0.38
 
-- artifact-level commercial qualification and sellability scores
-- pack-level commercial readiness and buyer-facing signals
-- target-user and price-band guesses for artifacts and packs
-- demand-board signals for promising sellable outputs
-- stronger bridge from internal curation to monetizable packaging
+- ranked browsing for export, review, and pack queues
+- explanation views for why artifacts and packs rank highly
+- operator-focused summaries in world output
+- faster review ergonomics for commercially promising outputs
+- cleaner handoff from scoring to human decision-making
 
 ## Useful commands
 
@@ -45,6 +46,10 @@ python3 main.py tick --verbose
 python3 main.py run --ticks 20 --interval 60
 python3 main.py show-world
 python3 main.py show-agent agent-1
+python3 main.py browse export --limit 5
+python3 main.py browse review --limit 5
+python3 main.py browse packs --limit 5
+python3 main.py explain <artifact-id-or-pack-name>
 python3 main.py review <artifact-id> approve --note "looks good"
 python3 main.py category approve <name>
 python3 main.py category retire <name>
@@ -54,6 +59,6 @@ python3 main.py version
 
 ## What should come next
 
-- human review ergonomics for queue and pack browsing
-- reasoning/explanation views for why artifacts and packs look sellable
+- richer export bundles and publishable pack wrappers
+- project handoff views for curated outputs
 - replay/dashboard views built around curated artifacts rather than raw simulation state

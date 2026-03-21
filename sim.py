@@ -389,6 +389,27 @@ def update_artifact_scores(meta: Dict) -> Dict:
     return meta
 
 
+def explain_artifact(meta: Dict) -> list[str]:
+    reasons = []
+    if meta.get("review_status") == "export_ready":
+        reasons.append("artifact is export-ready and already passed into human-facing flow")
+    if float(meta.get("sellability_score", 0.0)) >= SELLABILITY_SIGNAL_THRESHOLD:
+        reasons.append(f"sellability score is strong at {meta.get('sellability_score')}")
+    if float(meta.get("buyer_clarity_score", 0.0)) >= 0.75:
+        reasons.append("target buyer is relatively clear")
+    if float(meta.get("deployment_effort_score", 0.0)) <= 0.4:
+        reasons.append("deployment effort looks relatively low")
+    if float(meta.get("human_proposed_score", 0.0)) >= 0.65:
+        reasons.append("human-facing quality score is above review threshold")
+    if meta.get("family"):
+        reasons.append(f"artifact fits the {meta.get('family')} family")
+    return reasons[:5] or ["early artifact with limited explanation signals so far"]
+
+
+def summarize_pack(pack: Dict) -> str:
+    return f"rank #{pack.get('rank', '?')} · score {pack.get('pack_score', 0.0)} · sellability {pack.get('sellability_score', 0.0)} · stage {pack.get('lifecycle_stage', 'draft')}"
+
+
 def build_export_payload(meta: Dict, meta_file: Path) -> Dict:
     return {
         "project": PROJECT_NAME,
@@ -650,6 +671,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "buyer_clarity_score": meta.get("buyer_clarity_score"),
             "sellability_score": meta.get("sellability_score"),
             "price_band_guess": meta.get("price_band_guess"),
+            "explanation_reasons": explain_artifact(meta),
         })
     result = []
     for category, items in sorted(packs.items()):
@@ -660,11 +682,13 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "pack_name": f"{category}-pack",
             "count": len(ranked_items),
             **scores,
+            "summary": summarize_pack({"rank": None, "pack_score": scores.get("pack_score"), "sellability_score": scores.get("sellability_score"), "lifecycle_stage": scores.get("lifecycle_stage")}),
             "artifacts": ranked_items,
         })
     result = sorted(result, key=lambda pack: (pack["pack_score"], pack["readiness_score"], pack["coherence_score"], pack["count"]), reverse=True)
     for idx, pack in enumerate(result, start=1):
         pack["rank"] = idx
+        pack["summary"] = summarize_pack(pack)
     write_json_file(PACKS_PATH, result)
     return result
 
@@ -1043,6 +1067,45 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     return summaries
 
 
+def build_operator_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> dict:
+    top_artifacts = sorted(export_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("human_proposed_score", 0.0), item.get("internal_score", 0.0)), reverse=True)[:5]
+    top_packs = artifact_packs[:5]
+    review_candidates = sorted(review_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("human_proposed_score", 0.0)), reverse=True)[:5]
+
+    artifact_brief = [
+        {
+            "id": item.get("id"),
+            "title": item.get("title"),
+            "summary": f"sellability {item.get('sellability_score', 0.0)} · human {item.get('human_proposed_score', 0.0)} · target {item.get('target_user', 'tbd')}",
+            "price_band_guess": item.get("price_band_guess"),
+        }
+        for item in top_artifacts
+    ]
+    pack_brief = [
+        {
+            "pack_name": pack.get("pack_name"),
+            "summary": pack.get("summary"),
+            "why_promising": pack.get("why_promising", []),
+            "price_band_guess": pack.get("price_band_guess"),
+        }
+        for pack in top_packs
+    ]
+    review_brief = [
+        {
+            "id": item.get("id"),
+            "title": item.get("title"),
+            "review_status": item.get("review_status"),
+            "summary": f"sellability {item.get('sellability_score', 0.0)} · readiness {item.get('commercial_readiness_score', 0.0)}",
+        }
+        for item in review_candidates
+    ]
+    return {
+        "top_artifacts": artifact_brief,
+        "top_packs": pack_brief,
+        "review_candidates": review_brief,
+    }
+
+
 def show_world() -> Dict:
     conn = connect()
     world = get_world(conn)
@@ -1086,6 +1149,8 @@ def show_world() -> Dict:
             'title': 'Recent friction detected',
             'reason': f"Errors={failure_signals['error_count']}, cooldowns={failure_signals['cooldown_count']}, skipped={failure_signals['skipped_count']}; hot actions: {', '.join(failure_signals['friction_actions']) or 'none'}."
         })
+    review_queue = read_json_file(REVIEW_QUEUE_PATH, [])
+    operator_views = build_operator_views(export_queue, review_queue, artifact_packs)
     return {
         "world": world,
         "agents": agents,
@@ -1097,10 +1162,72 @@ def show_world() -> Dict:
         "market_signals": market_signals,
         "failure_signals": failure_signals,
         "demand_board": demand_board,
+        "operator_views": operator_views,
         "export_queue": export_queue,
-        "review_queue": read_json_file(REVIEW_QUEUE_PATH, []),
+        "review_queue": review_queue,
         "recent_logs": logs,
     }
+
+
+def browse_queue(queue_name: str, limit: int = 10) -> Dict:
+    if queue_name == "export":
+        items = read_json_file(EXPORT_QUEUE_PATH, [])
+        items = sorted(items, key=lambda item: (item.get("sellability_score", 0.0), item.get("human_proposed_score", 0.0)), reverse=True)
+    elif queue_name == "review":
+        items = read_json_file(REVIEW_QUEUE_PATH, [])
+        items = sorted(items, key=lambda item: (item.get("sellability_score", 0.0), item.get("commercial_readiness_score", 0.0)), reverse=True)
+    elif queue_name == "packs":
+        items = read_json_file(PACKS_PATH, [])
+        items = sorted(items, key=lambda item: (item.get("rank", 999), -item.get("pack_score", 0.0)))
+    else:
+        raise SystemExit(f"Unknown queue: {queue_name}")
+
+    return {
+        "queue": queue_name,
+        "count": len(items),
+        "items": items[:max(1, limit)],
+    }
+
+
+def explain_item(item_id: str) -> Dict:
+    for meta_file in AGENTS_DIR.glob("*/artifacts/*.meta.json"):
+        meta = read_json_file(meta_file, None)
+        if isinstance(meta, dict) and meta.get("id") == item_id:
+            enriched = update_artifact_scores(meta)
+            return {
+                "type": "artifact",
+                "id": item_id,
+                "title": enriched.get("title"),
+                "target_user": enriched.get("target_user"),
+                "family": enriched.get("family"),
+                "scores": {
+                    "human_proposed_score": enriched.get("human_proposed_score"),
+                    "internal_score": enriched.get("internal_score"),
+                    "sellability_score": enriched.get("sellability_score"),
+                    "commercial_readiness_score": enriched.get("commercial_readiness_score"),
+                },
+                "price_band_guess": enriched.get("price_band_guess"),
+                "reasons": explain_artifact(enriched),
+            }
+
+    packs = read_json_file(PACKS_PATH, [])
+    pack = next((p for p in packs if p.get("pack_name") == item_id), None)
+    if pack is not None:
+        return {
+            "type": "pack",
+            "id": item_id,
+            "summary": pack.get("summary"),
+            "scores": {
+                "pack_score": pack.get("pack_score"),
+                "sellability_score": pack.get("sellability_score"),
+                "commercial_readiness_score": pack.get("commercial_readiness_score"),
+                "coherence_score": pack.get("coherence_score"),
+            },
+            "price_band_guess": pack.get("price_band_guess"),
+            "reasons": pack.get("why_promising", []),
+        }
+
+    raise SystemExit(f"No artifact or pack found: {item_id}")
 
 
 def show_agent(name: str) -> Dict:

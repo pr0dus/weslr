@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import category_action, init_world, perform_tick, review_artifact, show_agent, show_world
+from sim import browse_queue, category_action, explain_item, init_world, perform_tick, review_artifact, show_agent, show_world
 
 
 def emit(data):
@@ -37,6 +37,14 @@ def cmd_show_world(_args):
 
 def cmd_show_agent(args):
     emit(show_agent(args.name))
+
+
+def cmd_browse(args):
+    emit(browse_queue(args.queue, limit=args.limit))
+
+
+def cmd_explain(args):
+    emit(explain_item(args.id))
 
 
 def cmd_reset(args):
@@ -81,6 +89,15 @@ def main():
     p = sub.add_parser("show-agent", help="show one agent state")
     p.add_argument("name")
     p.set_defaults(func=cmd_show_agent)
+
+    p = sub.add_parser("browse", help="browse ranked export/review/packs queues")
+    p.add_argument("queue", choices=["export", "review", "packs"])
+    p.add_argument("--limit", type=int, default=10)
+    p.set_defaults(func=cmd_browse)
+
+    p = sub.add_parser("explain", help="explain why an artifact or pack ranks highly")
+    p.add_argument("id")
+    p.set_defaults(func=cmd_explain)
 
     p = sub.add_parser("review", help="manually review an artifact by id")
     p.add_argument("id")
