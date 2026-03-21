@@ -56,6 +56,6 @@ Recommended rollback order:
 - opportunity theme clustering / merge support introduced
 - version ledger added for rollback clarity
 - intended direction: fewer isolated labels, more emerging niche families with explicit revert points
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `9c544d3`
+- backup: `CircleForge-backup-20260321-152102.tar.gz`
+- tag: `v0.0.44`
