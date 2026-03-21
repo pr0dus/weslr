@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.38** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, and now provide more operator-friendly browsing and explanations.
+**CircleForge v0.0.39** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, and now generate stronger export bundles and handoff-ready pack wrappers.
 
 ## Current core
 
@@ -29,14 +29,15 @@ CircleForge currently includes:
 - commercial qualification signals
 - sellability scoring
 - operator browsing and explanations
+- publishable pack wrappers and handoff summaries
 
-## New in v0.0.38
+## New in v0.0.39
 
-- ranked browsing for export, review, and pack queues
-- explanation views for why artifacts and packs rank highly
-- operator-focused summaries in world output
-- faster review ergonomics for commercially promising outputs
-- cleaner handoff from scoring to human decision-making
+- pack wrapper export folders with manifests, README, and handoff files
+- richer artifact export bundles with commercial handoff metadata
+- CLI handoff summaries for top packs and artifacts
+- stronger path from ranked outputs to publishable/project-ready packaging
+- cleaner packaging for shipping or selling curated outputs
 
 ## Useful commands
 
@@ -50,6 +51,7 @@ python3 main.py browse export --limit 5
 python3 main.py browse review --limit 5
 python3 main.py browse packs --limit 5
 python3 main.py explain <artifact-id-or-pack-name>
+python3 main.py handoff --limit 5
 python3 main.py review <artifact-id> approve --note "looks good"
 python3 main.py category approve <name>
 python3 main.py category retire <name>
@@ -59,6 +61,6 @@ python3 main.py version
 
 ## What should come next
 
-- richer export bundles and publishable pack wrappers
-- project handoff views for curated outputs
 - replay/dashboard views built around curated artifacts rather than raw simulation state
+- stronger publishing templates for selected pack categories
+- more explicit project/client delivery modes

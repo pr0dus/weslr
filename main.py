@@ -5,7 +5,7 @@ import json
 import time
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import browse_queue, category_action, explain_item, init_world, perform_tick, review_artifact, show_agent, show_world
+from sim import browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, review_artifact, show_agent, show_world
 
 
 def emit(data):
@@ -45,6 +45,10 @@ def cmd_browse(args):
 
 def cmd_explain(args):
     emit(explain_item(args.id))
+
+
+def cmd_handoff(args):
+    emit(handoff_summary(limit=args.limit))
 
 
 def cmd_reset(args):
@@ -98,6 +102,10 @@ def main():
     p = sub.add_parser("explain", help="explain why an artifact or pack ranks highly")
     p.add_argument("id")
     p.set_defaults(func=cmd_explain)
+
+    p = sub.add_parser("handoff", help="show handoff-ready summaries for top packs and artifacts")
+    p.add_argument("--limit", type=int, default=5)
+    p.set_defaults(func=cmd_handoff)
 
     p = sub.add_parser("review", help="manually review an artifact by id")
     p.add_argument("id")

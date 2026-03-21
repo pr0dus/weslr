@@ -465,12 +465,19 @@ def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
         f"Category: {payload.get('category')}",
         f"Family: {payload.get('family')}",
         f"Lifecycle: {payload.get('lifecycle_stage')}",
+        f"Target user: {payload.get('target_user', 'tbd')}",
+        f"Price band guess: {payload.get('price_band_guess', 'tbd')}",
         "",
         "## Summary",
         payload.get('explanation', ''),
         "",
         "## Purpose",
         payload.get('purpose', ''),
+        "",
+        "## Commercial view",
+        f"- Buyer clarity: {payload.get('buyer_clarity_score')}",
+        f"- Commercial readiness: {payload.get('commercial_readiness_score')}",
+        f"- Sellability: {payload.get('sellability_score')}",
         "",
         "## Future directions",
     ]
@@ -484,6 +491,8 @@ def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
         f"review_status: {payload.get('review_status')}",
         f"internal_score: {payload.get('internal_score')}",
         f"human_proposed_score: {payload.get('human_proposed_score')}",
+        f"commercial_readiness_score: {payload.get('commercial_readiness_score')}",
+        f"sellability_score: {payload.get('sellability_score')}",
         "review_notes:",
     ]
     for note in payload.get('review_notes', []):
@@ -491,6 +500,18 @@ def write_export_snapshot(meta: Dict, meta_file: Path) -> str:
     if not payload.get('review_notes'):
         notes.append("- none")
     (export_dir / 'notes.md').write_text("\n".join(notes) + "\n")
+
+    handoff = {
+        "title": payload.get("title"),
+        "target_user": payload.get("target_user"),
+        "problem": payload.get("purpose"),
+        "why_now": payload.get("idea"),
+        "offer_shape": payload.get("artifact_type"),
+        "price_band_guess": payload.get("price_band_guess"),
+        "delivery_notes": payload.get("future_directions", []),
+        "export_path": str(export_dir.relative_to(BASE_DIR)),
+    }
+    write_json_file(export_dir / 'handoff.json', handoff)
 
     return str(export_dir.relative_to(BASE_DIR))
 
@@ -689,6 +710,7 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
     for idx, pack in enumerate(result, start=1):
         pack["rank"] = idx
         pack["summary"] = summarize_pack(pack)
+        pack["wrapper_path"] = write_pack_wrapper(pack)
     write_json_file(PACKS_PATH, result)
     return result
 
@@ -1067,6 +1089,75 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     return summaries
 
 
+def write_pack_wrapper(pack: Dict) -> str:
+    EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    wrapper_dir = EXPORTS_DIR / pack.get("pack_name", "pack")
+    wrapper_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = {
+        "project": PROJECT_NAME,
+        "version": VERSION,
+        "pack_name": pack.get("pack_name"),
+        "category": pack.get("category"),
+        "rank": pack.get("rank"),
+        "pack_score": pack.get("pack_score"),
+        "sellability_score": pack.get("sellability_score"),
+        "commercial_readiness_score": pack.get("commercial_readiness_score"),
+        "price_band_guess": pack.get("price_band_guess"),
+        "lifecycle_stage": pack.get("lifecycle_stage"),
+        "why_promising": pack.get("why_promising", []),
+        "artifact_count": pack.get("artifact_count"),
+        "artifacts": [
+            {
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "export_path": item.get("export_path"),
+                "sellability_score": item.get("sellability_score"),
+                "price_band_guess": item.get("price_band_guess"),
+                "target_user": item.get("target_user"),
+            }
+            for item in pack.get("artifacts", [])
+        ],
+    }
+    write_json_file(wrapper_dir / "pack_manifest.json", manifest)
+
+    readme = [
+        f"# {pack.get('pack_name')}",
+        "",
+        f"Rank: {pack.get('rank')}",
+        f"Pack score: {pack.get('pack_score')}",
+        f"Sellability: {pack.get('sellability_score')}",
+        f"Commercial readiness: {pack.get('commercial_readiness_score')}",
+        f"Price band guess: {pack.get('price_band_guess', 'tbd')}",
+        "",
+        "## Why this pack matters",
+    ]
+    for reason in pack.get("why_promising", []):
+        readme.append(f"- {reason}")
+    if not pack.get("why_promising"):
+        readme.append("- early pack with limited reasoning")
+    readme.extend([
+        "",
+        "## Included artifacts",
+    ])
+    for item in pack.get("artifacts", []):
+        readme.append(f"- {item.get('title')} ({item.get('id')}) · sellability {item.get('sellability_score')} · target {item.get('target_user', 'tbd')}")
+    (wrapper_dir / "README.md").write_text("\n".join(readme) + "\n")
+
+    handoff = {
+        "pack_name": pack.get("pack_name"),
+        "category": pack.get("category"),
+        "target_users": sorted({item.get("target_user", "technical builders") for item in pack.get("artifacts", [])}),
+        "value_proposition": pack.get("why_promising", []),
+        "price_band_guess": pack.get("price_band_guess"),
+        "recommended_next_step": "review artifacts, tighten packaging, and prepare publishable wrapper",
+        "summary": pack.get("summary"),
+    }
+    write_json_file(wrapper_dir / "pack_handoff.json", handoff)
+
+    return str(wrapper_dir.relative_to(BASE_DIR))
+
+
 def build_operator_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> dict:
     top_artifacts = sorted(export_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("human_proposed_score", 0.0), item.get("internal_score", 0.0)), reverse=True)[:5]
     top_packs = artifact_packs[:5]
@@ -1186,6 +1277,34 @@ def browse_queue(queue_name: str, limit: int = 10) -> Dict:
         "queue": queue_name,
         "count": len(items),
         "items": items[:max(1, limit)],
+    }
+
+
+def handoff_summary(limit: int = 5) -> Dict:
+    packs = read_json_file(PACKS_PATH, [])[:max(1, limit)]
+    export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
+    top_artifacts = sorted(export_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("commercial_readiness_score", 0.0)), reverse=True)[:max(1, limit)]
+    return {
+        "top_packs": [
+            {
+                "pack_name": pack.get("pack_name"),
+                "summary": pack.get("summary"),
+                "price_band_guess": pack.get("price_band_guess"),
+                "wrapper_path": pack.get("wrapper_path"),
+            }
+            for pack in packs
+        ],
+        "top_artifacts": [
+            {
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "target_user": item.get("target_user"),
+                "sellability_score": item.get("sellability_score"),
+                "price_band_guess": item.get("price_band_guess"),
+                "export_path": item.get("export_path"),
+            }
+            for item in top_artifacts
+        ],
     }
 
 
