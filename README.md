@@ -93,6 +93,8 @@ It defines how entities should begin attaching:
 
 to the artifacts they generate.
 
+The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, and decay.
+
 ## What should come next
 
 - stronger entity-driven niche discovery and opportunity clustering

@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Dict, List
 
-from agent_runtime import decide_action, save_note
+from agent_runtime import decide_action, load_opportunity_memory, save_note, save_opportunity_memory
 from config import (
     AGENTS_DIR,
     BASE_DIR,
@@ -29,6 +29,7 @@ from config import (
     MAX_DEMAND_ITEMS,
     MAX_EXPORT_QUEUE,
     MAX_REVIEW_QUEUE,
+    OPPORTUNITY_BOARD_PATH,
     PACKS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
@@ -125,6 +126,27 @@ def load_categories() -> list[str]:
 
 def load_category_proposals() -> list[dict]:
     return read_json_file(CATEGORY_PROPOSALS_PATH, [])
+
+
+def load_opportunity_board() -> dict:
+    default = {
+        "themes": {
+            "backup confidence": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+            "service visibility": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+            "config sanity checks": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+            "log readability": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+            "workflow packaging": {"pressure": 0.4, "evidence": 0, "updated_at": 0},
+        }
+    }
+    board = read_json_file(OPPORTUNITY_BOARD_PATH, default)
+    board.setdefault("themes", {})
+    for theme, payload in default["themes"].items():
+        board["themes"].setdefault(theme, payload.copy())
+    return board
+
+
+def save_opportunity_board(board: dict) -> None:
+    write_json_file(OPPORTUNITY_BOARD_PATH, board)
 
 
 def category_action(action: str, name: str) -> dict:
@@ -1444,6 +1466,46 @@ def clamp_agent(agent: Dict) -> Dict:
     return agent
 
 
+def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionResult, now_ts: int, board: Dict) -> None:
+    theme = action_plan.get("niche_theme")
+    if not theme:
+        return
+    memory = load_opportunity_memory(agent_dir)
+    theme_state = memory.setdefault("themes", {}).setdefault(theme, {"strength": 0.3, "wins": 0, "failures": 0, "last_action": None, "last_category": None})
+    board_state = board.setdefault("themes", {}).setdefault(theme, {"pressure": 0.4, "evidence": 0, "updated_at": now_ts})
+
+    strength = float(theme_state.get("strength", 0.3)) * 0.96
+    pressure = float(board_state.get("pressure", 0.4)) * 0.985
+
+    if result.status == "ok":
+        strength += 0.08
+        board_state["evidence"] = int(board_state.get("evidence", 0)) + 1
+        if result.artifact:
+            strength += 0.05
+            pressure += 0.03
+            theme_state["wins"] = int(theme_state.get("wins", 0)) + 1
+    elif result.status in {"error", "cooldown", "skipped"}:
+        strength -= 0.04
+        pressure += 0.02
+        theme_state["failures"] = int(theme_state.get("failures", 0)) + 1
+
+    if result.action == "research":
+        pressure += 0.05
+    if result.action == "inspect":
+        pressure += 0.04
+    if result.action == "trade":
+        pressure += 0.03
+
+    theme_state["strength"] = round(max(0.05, min(strength, 0.99)), 3)
+    theme_state["last_action"] = result.action
+    theme_state["last_category"] = action_plan.get("category")
+    memory["last_theme"] = theme
+    board_state["pressure"] = round(max(0.05, min(pressure, 0.99)), 3)
+    board_state["updated_at"] = now_ts
+
+    save_opportunity_memory(agent_dir, memory)
+
+
 def perform_tick(verbose: bool = False) -> List[Dict]:
     conn = connect()
     world = get_world(conn)
@@ -1456,6 +1518,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         agents = list_agents(conn)
         categories = load_categories()
         proposals = load_category_proposals()
+        opportunity_board = load_opportunity_board()
         agents, proposals = maybe_generate_category_proposal(agents, categories, proposals, started_at)
         agents, categories, proposals = resolve_category_proposals(agents, categories, proposals)
         write_json_file(CATEGORIES_PATH, categories)
@@ -1465,7 +1528,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         pending = [p for p in proposals if p.get("status") == "pending"]
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending}, agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board}, agent_dir)
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -1475,10 +1538,12 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent["name"]))
             conn.execute("INSERT INTO logs(tick, agent_name, action, status, summary, raw_output, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (tick, agent["name"], result.action, result.status, result.summary, result.raw_output, started_at))
             save_note(agent_dir, f"tick {tick}: {result.summary}")
-            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3)}
+            update_opportunity_state(agent_dir, plan, result, started_at, opportunity_board)
+            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme")}
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
+    save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
     conn.close()
     return summaries
@@ -1686,6 +1751,7 @@ def show_world() -> Dict:
         "family_signals": family_signals,
         "market_signals": market_signals,
         "failure_signals": failure_signals,
+        "opportunity_board": load_opportunity_board(),
         "demand_board": demand_board,
         "operator_views": operator_views,
         "export_queue": export_queue,

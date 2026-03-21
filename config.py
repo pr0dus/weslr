@@ -20,6 +20,7 @@ EXPORTS_DIR = BASE_DIR / "exports"
 CATEGORIES_PATH = BASE_DIR / "categories.json"
 CATEGORY_PROPOSALS_PATH = BASE_DIR / "category_proposals.json"
 PACKS_PATH = BASE_DIR / "artifact_packs.json"
+OPPORTUNITY_BOARD_PATH = BASE_DIR / "opportunity_board.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40

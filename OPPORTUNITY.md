@@ -15,6 +15,8 @@ The more interesting target is that entities can:
 The entities should not just code.
 They should also help decide **what is worth coding**.
 
+This should happen through world state, memory, reinforcement, decay, and accumulated evidence — not hidden prompt steering.
+
 That means each promising artifact should carry an opportunity hypothesis:
 - who it is for
 - what repeated pain it addresses

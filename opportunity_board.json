@@ -1,0 +1,29 @@
+{
+  "themes": {
+    "backup confidence": {
+      "pressure": 0.441,
+      "evidence": 3,
+      "updated_at": 1774102127
+    },
+    "service visibility": {
+      "pressure": 0.424,
+      "evidence": 1,
+      "updated_at": 1774102127
+    },
+    "config sanity checks": {
+      "pressure": 0.4,
+      "evidence": 0,
+      "updated_at": 0
+    },
+    "log readability": {
+      "pressure": 0.4,
+      "evidence": 0,
+      "updated_at": 0
+    },
+    "workflow packaging": {
+      "pressure": 0.434,
+      "evidence": 4,
+      "updated_at": 1774102127
+    }
+  }
+}
