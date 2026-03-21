@@ -65,6 +65,6 @@ Recommended rollback order:
 - pack outcomes now feed back into clustered opportunity themes
 - packs carry offer / accept / reject / revision counters
 - `pack` CLI command added for recording pack-level outcomes
-- commit: pending
-- backup: pending
-- tag: pending
+- commit: `9f81fdc`
+- backup: `CircleForge-backup-20260321-152717.tar.gz`
+- tag: `v0.0.45`
