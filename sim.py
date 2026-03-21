@@ -317,63 +317,80 @@ def compute_sellability_signals(meta: Dict) -> Dict:
     artifact_type = meta.get("artifact_type", "unknown")
     destination = meta.get("destination", "internal_review")
     review_status = meta.get("review_status", "unreviewed")
+    target_user = infer_target_user(meta)
 
-    buyer_clarity = 0.45
+    buyer_clarity = 0.34
     if family in {"observability", "status-pages", "packaging"}:
-        buyer_clarity += 0.2
+        buyer_clarity += 0.18
     if artifact_type == "export_candidate":
-        buyer_clarity += 0.1
-    if destination in {"github_module", "shared_with_agents"}:
         buyer_clarity += 0.08
+    if destination in {"github_module", "shared_with_agents"}:
+        buyer_clarity += 0.06
+    if target_user in {"technical builders", "indie builders and local AI tinkerers"}:
+        buyer_clarity -= 0.03
+    if meta.get("category") == "uncategorized":
+        buyer_clarity -= 0.04
 
-    pain_severity = 0.4
-    if family in {"observability", "local-ai-ops", "packaging"}:
-        pain_severity += 0.22
-    if meta.get("why_now"):
+    pain_severity = 0.34
+    if family in {"observability", "local-ai-ops", "status-pages"}:
+        pain_severity += 0.24
+    elif family == "packaging":
+        pain_severity += 0.14
+    elif family == "evaluation":
         pain_severity += 0.08
+    if meta.get("why_now"):
+        pain_severity += 0.06
 
-    deployment_effort = 0.55
+    deployment_effort = 0.62
     if artifact_type == "export_candidate":
-        deployment_effort -= 0.12
-    if destination == "github_module":
         deployment_effort -= 0.1
+    if destination == "github_module":
+        deployment_effort -= 0.08
     if family == "evaluation":
-        deployment_effort += 0.05
-
-    proof_level = 0.25
-    if review_status in {"approved", "export_ready"}:
-        proof_level += 0.25
+        deployment_effort += 0.08
     if meta.get("export_path"):
-        proof_level += 0.2
-    if meta.get("review_notes"):
-        proof_level += min(len(meta.get("review_notes", [])) * 0.04, 0.12)
+        deployment_effort -= 0.04
 
-    support_burden = 0.5
+    proof_level = 0.12
+    if review_status == "approved":
+        proof_level += 0.12
+    if review_status == "export_ready":
+        proof_level += 0.2
+    if meta.get("export_path"):
+        proof_level += 0.16
+    if meta.get("review_notes"):
+        proof_level += min(len(meta.get("review_notes", [])) * 0.03, 0.09)
+    if meta.get("lifecycle_stage") == "packed":
+        proof_level += 0.05
+
+    support_burden = 0.56
     if family in {"packaging", "evaluation"}:
         support_burden -= 0.08
-    if family in {"status-pages", "observability"}:
-        support_burden += 0.08
+    if family in {"status-pages", "observability", "local-ai-ops"}:
+        support_burden += 0.1
     if destination == "github_module":
-        support_burden -= 0.05
+        support_burden -= 0.04
 
-    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.35) + (proof_level * 0.25) + (buyer_clarity * 0.2) + (pain_severity * 0.2), 3))
-    sellability_score = min(0.99, round((buyer_clarity * 0.2) + (pain_severity * 0.22) + ((1 - deployment_effort) * 0.16) + (proof_level * 0.18) + ((1 - support_burden) * 0.08) + (commercial_readiness * 0.16), 3))
+    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.26) + (proof_level * 0.3) + (buyer_clarity * 0.18) + (pain_severity * 0.14) + ((1 - deployment_effort) * 0.12), 3))
+    sellability_score = min(0.99, round((buyer_clarity * 0.24) + (pain_severity * 0.22) + ((1 - deployment_effort) * 0.14) + (proof_level * 0.18) + ((1 - support_burden) * 0.06) + (commercial_readiness * 0.16), 3))
 
-    if sellability_score >= 0.78:
+    if sellability_score >= 0.82 and proof_level >= 0.5:
+        price_band_guess = "250-1000eur"
+    elif sellability_score >= 0.72 and proof_level >= 0.38:
         price_band_guess = "100-500eur"
-    elif sellability_score >= 0.68:
+    elif sellability_score >= 0.62 and proof_level >= 0.25:
         price_band_guess = "50-200eur"
-    elif sellability_score >= 0.58:
+    elif sellability_score >= 0.52:
         price_band_guess = "20-100eur"
     else:
         price_band_guess = "needs packaging"
 
     return {
-        "target_user": infer_target_user(meta),
-        "buyer_clarity_score": round(min(buyer_clarity, 0.99), 3),
-        "pain_severity_score": round(min(pain_severity, 0.99), 3),
+        "target_user": target_user,
+        "buyer_clarity_score": round(max(0.01, min(buyer_clarity, 0.99)), 3),
+        "pain_severity_score": round(max(0.01, min(pain_severity, 0.99)), 3),
         "deployment_effort_score": round(max(0.01, min(deployment_effort, 0.99)), 3),
-        "proof_level_score": round(min(proof_level, 0.99), 3),
+        "proof_level_score": round(max(0.01, min(proof_level, 0.99)), 3),
         "support_burden_score": round(max(0.01, min(support_burden, 0.99)), 3),
         "commercial_readiness_score": commercial_readiness,
         "sellability_score": sellability_score,
@@ -623,19 +640,21 @@ def compute_pack_scores(items: list[dict]) -> dict:
     coverage_score = min(0.99, round(min(count / 4, 1.0) * 0.7 + min(family_diversity / 3, 1.0) * 0.3, 3))
     lineage_depths = [int(item.get("generation", 1) or 1) for item in items]
     lineage_score = min(0.99, round(min(sum(lineage_depths) / count / 3, 1.0), 3))
-    commercial_readiness_score = min(0.99, round((avg_sellability * 0.5) + (avg_buyer_clarity * 0.25) + (readiness_score * 0.25), 3))
-    pack_score = min(0.99, round((avg_human * 0.28) + (avg_internal * 0.16) + (coherence_score * 0.18) + (readiness_score * 0.12) + (coverage_score * 0.06) + (lineage_score * 0.03) + (avg_sellability * 0.17), 3))
+    avg_proof = sum(float(item.get("proof_level_score", 0.0)) for item in items) / count
+    avg_support_burden = sum(float(item.get("support_burden_score", 0.0)) for item in items) / count
+    commercial_readiness_score = min(0.99, round((avg_sellability * 0.34) + (avg_buyer_clarity * 0.2) + (readiness_score * 0.18) + (avg_proof * 0.18) + ((1 - avg_support_burden) * 0.1), 3))
+    pack_score = min(0.99, round((avg_human * 0.24) + (avg_internal * 0.15) + (coherence_score * 0.18) + (readiness_score * 0.12) + (coverage_score * 0.06) + (lineage_score * 0.03) + (avg_sellability * 0.14) + (avg_proof * 0.08), 3))
 
-    if avg_sellability >= 0.82:
-        price_band_guess = "250-1000eur"
-    elif avg_sellability >= 0.72:
-        price_band_guess = "100-500eur"
-    elif avg_sellability >= 0.62:
-        price_band_guess = "50-200eur"
+    if avg_sellability >= 0.84 and avg_proof >= 0.5 and count >= 3:
+        price_band_guess = "500-1500eur"
+    elif avg_sellability >= 0.75 and avg_proof >= 0.38 and count >= 2:
+        price_band_guess = "150-600eur"
+    elif avg_sellability >= 0.64 and avg_proof >= 0.24:
+        price_band_guess = "50-250eur"
     else:
         price_band_guess = "needs packaging"
 
-    release_candidate = count >= PACK_MIN_RELEASE_ARTIFACTS and readiness_score >= 0.75 and coherence_score >= 0.72 and pack_score >= PACK_RELEASE_CANDIDATE_THRESHOLD
+    release_candidate = count >= PACK_MIN_RELEASE_ARTIFACTS and readiness_score >= 0.75 and coherence_score >= 0.72 and pack_score >= PACK_RELEASE_CANDIDATE_THRESHOLD and avg_proof >= 0.32
     lifecycle_stage = "release_candidate" if release_candidate else ("reviewed" if count >= 2 and pack_score >= 0.68 else "coherent")
 
     why_promising = []
@@ -686,6 +705,8 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "human_proposed_score": meta.get("human_proposed_score"),
             "internal_score": meta.get("internal_score"),
             "novelty_score": meta.get("novelty_score"),
+            "proof_level_score": meta.get("proof_level_score"),
+            "support_burden_score": meta.get("support_burden_score"),
             "review_status": meta.get("review_status"),
             "generation": meta.get("generation", 1),
             "target_user": meta.get("target_user"),
