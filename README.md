@@ -1,7 +1,7 @@
 # CircleForge
 
-**CircleForge v0.0.40** is a lightweight persistent local agent research sandbox and artifact incubator.
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, and now attach category-aware publishing templates and delivery-mode recommendations.
+**CircleForge v0.0.41** is a lightweight persistent local agent research sandbox and artifact incubator.
+Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, and now incorporate proof signals from reuse and review history.
 
 ## Current core
 
@@ -31,14 +31,15 @@ CircleForge currently includes:
 - operator browsing and explanations
 - publishable pack wrappers and handoff summaries
 - category-aware templates and delivery modes
+- proof-weighted monetization signals
 
-## New in v0.0.40
+## New in v0.0.41
 
-- category-specific wrapper copy for key families like observability, status pages, packaging, and local-ai-ops
-- delivery-mode recommendations for artifacts and packs
-- richer handoff files with buyer problem, install steps, and delivery checklist
-- stronger bridge from ranked outputs to category-shaped offers
-- more practical packaging for client work or small digital products
+- artifact proof tracking in the local database
+- proof-aware commercial readiness and sellability scoring
+- explanation views that include reuse, top-pack, and approval evidence
+- stronger evidence-weighting for price band and release confidence
+- more grounded monetization signals over time
 
 ## Useful commands
 
@@ -63,5 +64,5 @@ python3 main.py version
 ## What should come next
 
 - replay/dashboard views built around curated artifacts rather than raw simulation state
-- stronger proof signals from real reuse and human approval outcomes
 - category templates for more concrete offer types
+- stronger external validation signals beyond internal review history

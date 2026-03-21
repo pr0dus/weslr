@@ -80,6 +80,16 @@ CREATE TABLE IF NOT EXISTS logs (
     raw_output TEXT NOT NULL,
     created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS artifact_proof (
+    artifact_id TEXT PRIMARY KEY,
+    first_seen_tick INTEGER NOT NULL,
+    last_seen_tick INTEGER NOT NULL,
+    appearances INTEGER NOT NULL,
+    top_pack_hits INTEGER NOT NULL,
+    review_exports INTEGER NOT NULL,
+    human_approvals INTEGER NOT NULL,
+    last_status TEXT NOT NULL
+);
 '''
 
 
@@ -312,12 +322,29 @@ def infer_target_user(meta: Dict) -> str:
     return "technical builders"
 
 
+def get_artifact_proof(conn: sqlite3.Connection | None, artifact_id: str | None) -> Dict:
+    default = {
+        "first_seen_tick": 0,
+        "last_seen_tick": 0,
+        "appearances": 0,
+        "top_pack_hits": 0,
+        "review_exports": 0,
+        "human_approvals": 0,
+        "last_status": "unseen",
+    }
+    if conn is None or not artifact_id:
+        return default
+    row = conn.execute("SELECT * FROM artifact_proof WHERE artifact_id=?", (artifact_id,)).fetchone()
+    return dict(row) if row is not None else default
+
+
 def compute_sellability_signals(meta: Dict) -> Dict:
     family = meta.get("family", "unknown")
     artifact_type = meta.get("artifact_type", "unknown")
     destination = meta.get("destination", "internal_review")
     review_status = meta.get("review_status", "unreviewed")
     target_user = infer_target_user(meta)
+    proof = meta.get("proof_signals", {})
 
     buyer_clarity = 0.34
     if family in {"observability", "status-pages", "packaging"}:
@@ -350,6 +377,8 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         deployment_effort += 0.08
     if meta.get("export_path"):
         deployment_effort -= 0.04
+    if int(proof.get("appearances", 0)) >= 2:
+        deployment_effort -= 0.02
 
     proof_level = 0.12
     if review_status == "approved":
@@ -362,6 +391,10 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         proof_level += min(len(meta.get("review_notes", [])) * 0.03, 0.09)
     if meta.get("lifecycle_stage") == "packed":
         proof_level += 0.05
+    proof_level += min(int(proof.get("appearances", 0)) * 0.03, 0.09)
+    proof_level += min(int(proof.get("top_pack_hits", 0)) * 0.04, 0.12)
+    proof_level += min(int(proof.get("review_exports", 0)) * 0.06, 0.12)
+    proof_level += min(int(proof.get("human_approvals", 0)) * 0.06, 0.12)
 
     support_burden = 0.56
     if family in {"packaging", "evaluation"}:
@@ -370,8 +403,10 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         support_burden += 0.1
     if destination == "github_module":
         support_burden -= 0.04
+    if int(proof.get("human_approvals", 0)) >= 1:
+        support_burden -= 0.03
 
-    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.26) + (proof_level * 0.3) + (buyer_clarity * 0.18) + (pain_severity * 0.14) + ((1 - deployment_effort) * 0.12), 3))
+    commercial_readiness = min(0.99, round((meta.get("human_proposed_score", 0.0) * 0.22) + (proof_level * 0.36) + (buyer_clarity * 0.16) + (pain_severity * 0.14) + ((1 - deployment_effort) * 0.12), 3))
     sellability_score = min(0.99, round((buyer_clarity * 0.24) + (pain_severity * 0.22) + ((1 - deployment_effort) * 0.14) + (proof_level * 0.18) + ((1 - support_burden) * 0.06) + (commercial_readiness * 0.16), 3))
 
     if sellability_score >= 0.82 and proof_level >= 0.5:
@@ -395,10 +430,12 @@ def compute_sellability_signals(meta: Dict) -> Dict:
         "commercial_readiness_score": commercial_readiness,
         "sellability_score": sellability_score,
         "price_band_guess": price_band_guess,
+        "proof_signals": proof,
     }
 
 
-def update_artifact_scores(meta: Dict) -> Dict:
+def update_artifact_scores(meta: Dict, conn: sqlite3.Connection | None = None) -> Dict:
+    meta["proof_signals"] = get_artifact_proof(conn, meta.get("id"))
     meta.update(compute_quality_dimensions(meta))
     meta["internal_score"] = compute_internal_score(meta)
     meta["human_proposed_score"] = compute_human_proposed_score(meta)
@@ -419,6 +456,13 @@ def explain_artifact(meta: Dict) -> list[str]:
         reasons.append("deployment effort looks relatively low")
     if float(meta.get("human_proposed_score", 0.0)) >= 0.65:
         reasons.append("human-facing quality score is above review threshold")
+    proof = meta.get("proof_signals", {})
+    if int(proof.get("appearances", 0)) >= 2:
+        reasons.append("artifact has persisted across multiple state refreshes")
+    if int(proof.get("top_pack_hits", 0)) >= 1:
+        reasons.append("artifact has appeared inside a top-ranked pack")
+    if int(proof.get("human_approvals", 0)) >= 1:
+        reasons.append("artifact has direct human approval evidence")
     if meta.get("family"):
         reasons.append(f"artifact fits the {meta.get('family')} family")
     return reasons[:5] or ["early artifact with limited explanation signals so far"]
@@ -630,8 +674,9 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
     meta_file = find_meta_file_by_id(artifact_id)
     if meta_file is None:
         raise SystemExit(f"No artifact found with id: {artifact_id}")
+    conn = connect()
     meta = read_json_file(meta_file, {})
-    meta = update_artifact_scores(meta)
+    meta = update_artifact_scores(meta, conn)
     meta.setdefault("review_notes", [])
     meta.setdefault("approved_for_export", False)
     meta.setdefault("export_path", None)
@@ -661,12 +706,30 @@ def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
         if note:
             meta["review_notes"].append(note)
         meta["export_path"] = write_export_snapshot(meta, meta_file)
+    proof = get_artifact_proof(conn, meta.get("id"))
+    if action == "approve":
+        proof["human_approvals"] = int(proof.get("human_approvals", 0)) + 1
+    if action == "export":
+        proof["review_exports"] = int(proof.get("review_exports", 0)) + 1
     if action in {"approve", "export"} and meta.get("human_proposed_score", 0.0) >= EXPORT_READY_THRESHOLD:
         meta["review_status"] = "export_ready"
         meta["lifecycle_stage"] = "packed"
         meta["export_path"] = write_export_snapshot(meta, meta_file)
+    proof["last_status"] = meta.get("review_status", "unreviewed")
+    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+        meta.get("id"),
+        int(proof.get("first_seen_tick", 0)),
+        int(proof.get("last_seen_tick", 0)),
+        int(proof.get("appearances", 0)),
+        int(proof.get("top_pack_hits", 0)),
+        int(proof.get("review_exports", 0)),
+        int(proof.get("human_approvals", 0)),
+        proof.get("last_status", "unreviewed"),
+    ))
+    meta = update_artifact_scores(meta, conn)
     write_json_file(meta_file, meta)
-    refresh_state_files()
+    refresh_state_files(conn)
+    conn.close()
     return meta
 
 
@@ -749,7 +812,7 @@ def compute_pack_scores(items: list[dict]) -> dict:
     }
 
 
-def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
+def build_artifact_packs(artifact_meta: list[dict], conn: sqlite3.Connection | None = None) -> list[dict]:
     packs: dict[str, list[dict]] = {}
     for meta in artifact_meta:
         if meta.get("review_status") != "export_ready":
@@ -788,6 +851,24 @@ def build_artifact_packs(artifact_meta: list[dict]) -> list[dict]:
             "artifacts": ranked_items,
         })
     result = sorted(result, key=lambda pack: (pack["pack_score"], pack["readiness_score"], pack["coherence_score"], pack["count"]), reverse=True)
+    proof_conn = conn or connect()
+    top_ids = {item.get("id") for pack in result[:3] for item in pack.get("artifacts", [])}
+    for artifact_id in top_ids:
+        proof = get_artifact_proof(proof_conn, artifact_id)
+        proof["top_pack_hits"] = int(proof.get("top_pack_hits", 0)) + 1
+        proof_conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+            artifact_id,
+            int(proof.get("first_seen_tick", 0)),
+            int(proof.get("last_seen_tick", 0)),
+            int(proof.get("appearances", 0)),
+            int(proof.get("top_pack_hits", 0)),
+            int(proof.get("review_exports", 0)),
+            int(proof.get("human_approvals", 0)),
+            proof.get("last_status", "unreviewed"),
+        ))
+    proof_conn.commit()
+    if conn is None:
+        proof_conn.close()
     for idx, pack in enumerate(result, start=1):
         pack["rank"] = idx
         pack["delivery_mode"] = recommend_pack_delivery_mode(pack)
@@ -890,9 +971,28 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
         meta = read_json_file(meta_file, None)
         if not isinstance(meta, dict):
             continue
-        meta = update_artifact_scores(meta)
+        meta = update_artifact_scores(meta, conn)
         meta = maybe_promote_for_review(meta, meta_file)
         write_json_file(meta_file, meta)
+        proof = get_artifact_proof(conn, meta.get("id"))
+        current_tick = int(conn.execute("SELECT value FROM world WHERE key='tick'").fetchone()[0]) if conn.execute("SELECT value FROM world WHERE key='tick'").fetchone() else 0
+        if proof.get("first_seen_tick", 0) == 0:
+            proof["first_seen_tick"] = current_tick
+        proof["last_seen_tick"] = current_tick
+        proof["appearances"] = int(proof.get("appearances", 0)) + 1
+        proof["last_status"] = meta.get("review_status", "unreviewed")
+        conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+            meta.get("id"),
+            int(proof.get("first_seen_tick", 0)),
+            int(proof.get("last_seen_tick", 0)),
+            int(proof.get("appearances", 0)),
+            int(proof.get("top_pack_hits", 0)),
+            int(proof.get("review_exports", 0)),
+            int(proof.get("human_approvals", 0)),
+            proof.get("last_status", "unreviewed"),
+        ))
+        conn.commit()
+        meta = update_artifact_scores(meta, conn)
         meta["path"] = str(meta_file.relative_to(BASE_DIR))
         artifact_meta.append(meta)
         type_counts[meta.get("artifact_type", "unknown")] = type_counts.get(meta.get("artifact_type", "unknown"), 0) + 1
@@ -932,7 +1032,7 @@ def refresh_state_files(conn: sqlite3.Connection | None = None) -> tuple[list, l
         if meta.get("review_status") in {"proposed", "approved", "export_ready", "rejected"}
     ], key=lambda item: item["human_proposed_score"], reverse=True)[:MAX_REVIEW_QUEUE]
 
-    packs = build_artifact_packs(artifact_meta)
+    packs = build_artifact_packs(artifact_meta, conn)
     emergent_groups = build_uncategorized_groups(artifact_meta)
     family_signals = build_family_signals(artifact_meta)
     market_signals = build_market_signals(artifact_meta, packs, categories)
@@ -1432,10 +1532,12 @@ def handoff_summary(limit: int = 5) -> Dict:
 
 
 def explain_item(item_id: str) -> Dict:
+    conn = connect()
     for meta_file in AGENTS_DIR.glob("*/artifacts/*.meta.json"):
         meta = read_json_file(meta_file, None)
         if isinstance(meta, dict) and meta.get("id") == item_id:
-            enriched = update_artifact_scores(meta)
+            enriched = update_artifact_scores(meta, conn)
+            conn.close()
             return {
                 "type": "artifact",
                 "id": item_id,
@@ -1449,12 +1551,14 @@ def explain_item(item_id: str) -> Dict:
                     "commercial_readiness_score": enriched.get("commercial_readiness_score"),
                 },
                 "price_band_guess": enriched.get("price_band_guess"),
+                "proof_signals": enriched.get("proof_signals", {}),
                 "reasons": explain_artifact(enriched),
             }
 
     packs = read_json_file(PACKS_PATH, [])
     pack = next((p for p in packs if p.get("pack_name") == item_id), None)
     if pack is not None:
+        conn.close()
         return {
             "type": "pack",
             "id": item_id,
@@ -1469,6 +1573,7 @@ def explain_item(item_id: str) -> Dict:
             "reasons": pack.get("why_promising", []),
         }
 
+    conn.close()
     raise SystemExit(f"No artifact or pack found: {item_id}")
 
 
