@@ -103,3 +103,12 @@ Recommended rollback order:
 - commit: `42d0967`
 - backup: `CircleForge-backup-20260321-161724.tar.gz`
 - tag: `v0.0.49`
+
+### v0.0.50
+- clickable dashboard navigation added with anchor links for world/themes/packs/artifacts/events
+- artifact detail views added to the dashboard surface for top queued/packed artifacts
+- persistent event log added outside transient dashboard history to keep operator-visible change memory
+- runtime dashboard history / event log files excluded from commits for cleaner rollback hygiene
+- commit: `d2b8917`
+- backup: `CircleForge-backup-20260321-164535.tar.gz`
+- tag: `v0.0.50`

@@ -8,6 +8,8 @@ export_queue.json
 review_queue.json
 exports/
 dashboard/
+dashboard_history.json
+event_log.json
 categories.json
 category_proposals.json
 artifact_packs.json

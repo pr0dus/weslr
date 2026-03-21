@@ -4,6 +4,7 @@ import json
 import shutil
 import sqlite3
 import time
+from html import escape
 from pathlib import Path
 from typing import Dict, List
 
@@ -21,6 +22,7 @@ from config import (
     DEFAULT_AGENT_COUNT,
     DASHBOARD_DIR,
     DASHBOARD_HISTORY_PATH,
+    EVENT_LOG_PATH,
     DEMAND_BOARD_PATH,
     DORMANT_CATEGORY_MIN_ARTIFACTS,
     EXECUTION_BUDGET_SECONDS,
@@ -2067,6 +2069,68 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
     return events[:20]
 
 
+def slugify(value: str) -> str:
+    value = (value or "item").strip().lower()
+    safe = ''.join(ch if ch.isalnum() else '-' for ch in value)
+    while '--' in safe:
+        safe = safe.replace('--', '-')
+    return safe.strip('-') or 'item'
+
+
+def persist_event_log(event_feed: list[dict], generated_at: int) -> list[dict]:
+    existing = read_json_file(EVENT_LOG_PATH, [])
+    if not isinstance(existing, list):
+        existing = []
+    seen = {entry.get('event_key') for entry in existing if isinstance(entry, dict)}
+    for event in event_feed:
+        key = f"{event.get('kind')}::{event.get('theme') or event.get('pack') or ''}::{event.get('message')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        existing.append({
+            'event_key': key,
+            'logged_at': generated_at,
+            **event,
+        })
+    existing = existing[-120:]
+    write_json_file(EVENT_LOG_PATH, existing)
+    return existing
+
+
+def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> list[dict]:
+    by_id = {}
+    for item in export_queue + review_queue:
+        if item.get('id') and item.get('id') not in by_id:
+            by_id[item['id']] = item
+    for pack in artifact_packs[:10]:
+        for item in pack.get('artifacts', [])[:6]:
+            if item.get('id') and item.get('id') not in by_id:
+                by_id[item['id']] = item
+    details = []
+    for artifact_id, item in list(by_id.items())[:16]:
+        details.append({
+            'id': artifact_id,
+            'anchor': f"artifact-{slugify(artifact_id)}",
+            'title': item.get('title'),
+            'category': item.get('category'),
+            'family': item.get('family'),
+            'target_user': item.get('target_user'),
+            'niche_theme': item.get('niche_theme'),
+            'summary': item.get('problem_statement') or item.get('summary') or item.get('explanation') or '',
+            'scores': {
+                'sellability': item.get('sellability_score'),
+                'human': item.get('human_proposed_score'),
+                'internal': item.get('internal_score'),
+                'opportunity': item.get('opportunity_score'),
+            },
+            'review_status': item.get('review_status'),
+            'price_band_guess': item.get('price_band_guess'),
+            'delivery_mode': item.get('delivery_mode'),
+            'export_path': item.get('export_path'),
+        })
+    return details
+
+
 def render_dashboard() -> dict:
     data = show_world()
     release_ledger = load_release_ledger()
@@ -2088,19 +2152,22 @@ def render_dashboard() -> dict:
     }
     payload["history"] = update_dashboard_history(payload)
     payload["event_feed"] = build_dashboard_event_feed(payload)
+    payload["persistent_event_log"] = persist_event_log(payload["event_feed"], payload["generated_at"])
+    payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
     write_json_file(payload_path, payload)
-    top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:3]
-    top_packs = data.get('artifact_packs', [])[:3]
+    top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:6]
+    top_packs = data.get('artifact_packs', [])[:8]
+    artifact_details = payload.get('artifact_details', [])
     html = f"""<!doctype html>
 <html>
 <head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CircleForge Dashboard</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
     .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
-    h1,h2,h3 {{ margin: 0 0 12px; }}
+    h1,h2,h3 {{ margin: 0 0 12px; scroll-margin-top: 88px; }}
     .muted {{ color: #9aa6b2; }}
     .grid {{ display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }}
     .card {{ background: #171b22; border: 1px solid #28303a; border-radius: 14px; padding: 16px; }}
@@ -2113,15 +2180,26 @@ def render_dashboard() -> dict:
     table {{ width:100%; border-collapse: collapse; font-size: 14px; }}
     td,th {{ border-bottom: 1px solid #28303a; padding: 8px 6px; text-align:left; vertical-align: top; }}
     code {{ background:#0c0f14; padding:2px 5px; border-radius:6px; }}
+    a {{ color: #8dd3ff; }}
+    nav.sticky {{ position: sticky; top: 0; z-index: 20; background: rgba(15,17,21,0.96); padding: 12px 0; backdrop-filter: blur(8px); }}
   </style>
 </head>
 <body>
-  <div class=\"wrap\">
+  <div class="wrap">
+    <nav class="sticky">
+      <strong>Jump:</strong>
+      <a href="#world">World</a> ·
+      <a href="#themes">Themes</a> ·
+      <a href="#packs">Packs</a> ·
+      <a href="#artifacts">Artifacts</a> ·
+      <a href="#events">Events</a> ·
+      <a href="#ledger">Release Ledger</a>
+    </nav>
     <h1>CircleForge Dashboard</h1>
-    <p class=\"muted\">Version {VERSION} · local operator view · generated from current simulation state</p>
+    <p class="muted">Version {VERSION} · local operator view · generated from current simulation state</p>
 
-    <div class=\"grid\">
-      <section class=\"card\">
+    <div class="grid" id="world">
+      <section class="card">
         <h2>World</h2>
         <p>Tick: <strong>{data.get('world', {}).get('tick', 0)}</strong></p>
         <p>Agents: <strong>{len(data.get('agents', []))}</strong></p>
@@ -2129,106 +2207,60 @@ def render_dashboard() -> dict:
         <p>Export queue: <strong>{len(data.get('export_queue', []))}</strong></p>
         <p>Review queue: <strong>{len(data.get('review_queue', []))}</strong></p>
       </section>
-
-      <section class=\"card\">
-        <h2>Rollback</h2>
-        <p>Current version: <strong>{VERSION}</strong></p>
-        <p>See <code>RELEASES.md</code> for backup/tag history.</p>
+      <section class="card">
+        <h2>Theme Links</h2>
+        <ul>{''.join(f"<li><a href='#theme-{slugify(name)}'>{escape(name)}</a> · pressure {theme.get('pressure', 0)}</li>" for name, theme in top_themes)}</ul>
       </section>
-
-      <section class=\"card\">
-        <h2>Trend Snapshots</h2>
-        <p>Stored dashboard history points: <strong>{len(payload.get('history', []))}</strong></p>
-        <ul>
-          {''.join(f"<li>tick {h.get('tick')} · version {h.get('version')} · {len(h.get('theme_pressure', {}))} tracked themes</li>" for h in payload.get('history', [])[-5:])}
-        </ul>
+      <section class="card">
+        <h2>Pack Links</h2>
+        <ul>{''.join(f"<li><a href='#pack-{slugify(pack.get('pack_name'))}'>{escape(pack.get('pack_name'))}</a></li>" for pack in top_packs) or '<li class="muted">No packs yet.</li>'}</ul>
       </section>
     </div>
 
-    <section class=\"card\" style=\"margin-top:16px;\">
+    <section class="card" style="margin-top:16px;" id="themes">
       <h2>Opportunity Themes</h2>
       <table>
         <tr><th>Theme</th><th>Lifecycle</th><th>Pressure</th><th>Evidence</th><th>Accept</th><th>Reject</th></tr>
-        {''.join(f"<tr><td>{k}<div class='bar'><span style='width:{max(1, int(float(v.get('pressure',0))*100))}%'></span></div></td><td><span class='pill'>{v.get('lifecycle','stable')}</span></td><td>{v.get('pressure',0)}</td><td>{v.get('evidence',0)}</td><td>{v.get('acceptances',0)}</td><td>{v.get('rejections',0)}</td></tr>" for k,v in sorted((data.get('opportunity_board',{}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure',0), reverse=True))}
+        {''.join(f"<tr id='theme-{slugify(k)}'><td><a href='#theme-{slugify(k)}'>{escape(k)}</a><div class='bar'><span style='width:{max(1, int(float(v.get('pressure',0))*100))}%'></span></div></td><td><span class='pill'>{escape(str(v.get('lifecycle','stable')))}</span></td><td>{v.get('pressure',0)}</td><td>{v.get('evidence',0)}</td><td>{v.get('acceptances',0)}</td><td>{v.get('rejections',0)}</td></tr>" for k,v in sorted((data.get('opportunity_board',{}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure',0), reverse=True))}
       </table>
     </section>
 
-    <div class=\"grid\" style=\"margin-top:16px;\">
-      <section class=\"card\">
-        <h2>Agent Opportunity Memory</h2>
-        <ul>
-          {''.join("<li><strong>{}</strong> · last {}<br><span class='muted'>{}</span></li>".format(a.get('agent'), a.get('last_theme') or '—', '; '.join(['{} ({})'.format(t.get('theme'), t.get('strength')) for t in a.get('top_themes', [])])) for a in payload.get('agent_memory', []))}
-        </ul>
-      </section>
-
-      <section class=\"card\">
-        <h2>Top Packs</h2>
-        <ul>
-          {''.join(f"<li><strong>{p.get('pack_name')}</strong> — {p.get('summary')}<br><span class='muted'>offers {p.get('offer_count',0)} · accepts {p.get('accept_count',0)} · rejects {p.get('reject_count',0)}</span></li>" for p in data.get('artifact_packs', [])[:8])}
-        </ul>
-      </section>
-
-      <section class=\"card\">
-        <h2>Review Queue</h2>
-        <ul>
-          {''.join(f"<li>{i.get('title')} — sellability {i.get('sellability_score',0)} · {i.get('review_status')}</li>" for i in data.get('review_queue', [])[:10])}
-        </ul>
-      </section>
+    <div class="grid" style="margin-top:16px;" id="packs">
+      {''.join(f"<section class='card' id='pack-{slugify(p.get('pack_name'))}'><h2>{escape(p.get('pack_name'))}</h2><p>{escape(str(p.get('summary')))}</p><p class='muted'>theme {escape(str(p.get('niche_theme') or p.get('category')))} · score {p.get('pack_score')} · sellability {p.get('sellability_score')}</p><ul>{''.join(f'<li><a href=#artifact-{slugify(a.get("id"))}>{escape(a.get("title") or a.get("id") or "artifact")}</a></li>' for a in p.get('artifacts', [])[:5])}</ul></section>" for p in top_packs) or '<section class="card"><h2>Top Packs</h2><p class="muted">No packs yet.</p></section>'}
     </div>
 
-    <div class=\"grid\" style=\"margin-top:16px;\">
-      <section class=\"card\">
-        <h2>Theme Drill-Down</h2>
-        <ul>
-          {''.join(f"<li><strong>{name}</strong> · lifecycle {theme.get('lifecycle','stable')} · pressure {theme.get('pressure',0)} · evidence {theme.get('evidence',0)} · accepts {theme.get('acceptances',0)} · rejects {theme.get('rejections',0)}</li>" for name, theme in top_themes)}
-        </ul>
-      </section>
-      <section class=\"card\">
-        <h2>Pack Drill-Down</h2>
-        <ul>
-          {''.join(f"<li><strong>{p.get('pack_name')}</strong><br><span class='muted'>theme {p.get('niche_theme') or p.get('category')} · score {p.get('pack_score')} · sellability {p.get('sellability_score')}</span><br>{', '.join([a.get('title','artifact') for a in p.get('artifacts', [])[:4]])}</li>" for p in top_packs)}
-        </ul>
-      </section>
-      <section class=\"card\">
+    <section class="card" style="margin-top:16px;" id="artifacts">
+      <h2>Artifact Detail Views</h2>
+      <div class="grid">
+        {''.join(f"<section class='card' id='{escape(a.get('anchor'))}'><h3>{escape(a.get('title') or a.get('id') or 'artifact')}</h3><p class='muted'><code>{escape(a.get('id') or '')}</code> · {escape(str(a.get('family') or a.get('category') or 'uncategorized'))}</p><p>{escape(str(a.get('summary') or 'No summary yet.'))}</p><ul><li>theme: {escape(str(a.get('niche_theme') or '—'))}</li><li>target: {escape(str(a.get('target_user') or 'tbd'))}</li><li>review: {escape(str(a.get('review_status') or 'unreviewed'))}</li><li>sellability: {a.get('scores',{}).get('sellability')}</li><li>price band: {escape(str(a.get('price_band_guess') or 'tbd'))}</li><li>delivery: {escape(str(a.get('delivery_mode') or 'tbd'))}</li></ul></section>" for a in artifact_details) or '<p class="muted">No artifact details available yet.</p>'}
+      </div>
+    </section>
+
+    <div class="grid" style="margin-top:16px;" id="events">
+      <section class="card">
         <h2>Event Feed</h2>
-        <ul>
-          {''.join(f"<li>{e.get('message')}</li>" for e in payload.get('event_feed', [])[:15]) or '<li class="muted">No notable changes yet.</li>'}
-        </ul>
+        <ul>{''.join(f"<li>{escape(str(e.get('message')))}</li>" for e in payload.get('event_feed', [])[:15]) or '<li class="muted">No notable changes yet.</li>'}</ul>
       </section>
-    </div>
-
-    <div class=\"grid\" style=\"margin-top:16px;\">
-      <section class=\"card\">
+      <section class="card">
+        <h2>Persistent Event Log</h2>
+        <ul>{''.join(f"<li>{entry.get('logged_at')} · {escape(str(entry.get('message')))}</li>" for entry in payload.get('persistent_event_log', [])[-20:]) or '<li class="muted">No logged events yet.</li>'}</ul>
+      </section>
+      <section class="card">
         <h2>Recent Logs</h2>
-        <ul>
-          {''.join(f"<li>tick {l.get('tick')} · {l.get('agent_name')} · {l.get('action')} · {l.get('status')} — {l.get('summary')}</li>" for l in data.get('recent_logs', [])[:12])}
-        </ul>
-      </section>
-      <section class=\"card\">
-        <h2>Emergent Candidates</h2>
-        <ul>
-          {''.join(f"<li>{c.get('theme')} · parent {c.get('parent_theme')} · confidence {c.get('confidence')} · signals {c.get('signal_count')}</li>" for c in data.get('opportunity_board',{}).get('emergent_candidates', [])[:12])}
-        </ul>
-      </section>
-      <section class=\"card\">
-        <h2>Pack Outcome Snapshot</h2>
-        <ul>
-          {''.join(f"<li>{p.get('pack_name')} · offers {p.get('offer_count',0)} · accepts {p.get('accept_count',0)} · rejects {p.get('reject_count',0)} · revisions {p.get('revision_count',0)}</li>" for p in data.get('artifact_packs', [])[:10])}
-        </ul>
+        <ul>{''.join(f"<li>tick {l.get('tick')} · {escape(str(l.get('agent_name')))} · {escape(str(l.get('action')))} · {escape(str(l.get('status')))} — {escape(str(l.get('summary')))}</li>" for l in data.get('recent_logs', [])[:12])}</ul>
       </section>
     </div>
 
-    <section class=\"card\" style=\"margin-top:16px;\">
+    <section class="card" style="margin-top:16px;" id="ledger">
       <h2>Release Ledger</h2>
-      <pre>{release_ledger}</pre>
+      <pre>{escape(release_ledger)}</pre>
     </section>
   </div>
 </body>
 </html>
 """
     html_path.write_text(html)
-    return {"ok": True, "dashboard_dir": str(DASHBOARD_DIR.relative_to(BASE_DIR)), "html": str(html_path.relative_to(BASE_DIR)), "json": str(payload_path.relative_to(BASE_DIR))}
-
+    return {"ok": True, "dashboard_dir": str(DASHBOARD_DIR.relative_to(BASE_DIR)), "html": str(html_path.relative_to(BASE_DIR)), "json": str(payload_path.relative_to(BASE_DIR)), "event_log": str(EVENT_LOG_PATH.relative_to(BASE_DIR))}
 
 def show_world() -> Dict:
     conn = connect()
