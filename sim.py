@@ -20,6 +20,7 @@ from config import (
     DB_PATH,
     DEFAULT_AGENT_COUNT,
     DASHBOARD_DIR,
+    DASHBOARD_HISTORY_PATH,
     DEMAND_BOARD_PATH,
     DORMANT_CATEGORY_MIN_ARTIFACTS,
     EXECUTION_BUDGET_SECONDS,
@@ -1998,6 +1999,46 @@ def load_release_ledger() -> str:
     return path.read_text()
 
 
+def build_agent_memory_summary() -> list[dict]:
+    result = []
+    for agent_dir in sorted(AGENTS_DIR.glob("*")):
+        if not agent_dir.is_dir():
+            continue
+        memory_path = agent_dir / "opportunity_memory.json"
+        mem = read_json_file(memory_path, {"themes": {}, "last_theme": None})
+        themes = mem.get("themes", {}) if isinstance(mem, dict) else {}
+        top = sorted(themes.items(), key=lambda kv: kv[1].get("strength", 0.0), reverse=True)[:4]
+        result.append({
+            "agent": agent_dir.name,
+            "last_theme": mem.get("last_theme") if isinstance(mem, dict) else None,
+            "top_themes": [
+                {
+                    "theme": name,
+                    "strength": payload.get("strength", 0.0),
+                    "wins": payload.get("wins", 0),
+                    "failures": payload.get("failures", 0),
+                }
+                for name, payload in top
+            ],
+        })
+    return result
+
+
+def update_dashboard_history(payload: dict) -> list[dict]:
+    history = read_json_file(DASHBOARD_HISTORY_PATH, [])
+    point = {
+        "generated_at": payload.get("generated_at"),
+        "tick": payload.get("world", {}).get("tick", 0),
+        "version": payload.get("version"),
+        "theme_pressure": {k: v.get("pressure", 0.0) for k, v in (payload.get("opportunity_board", {}).get("themes") or {}).items()},
+        "pack_counts": {p.get("pack_name"): {"offers": p.get("offer_count", 0), "accepts": p.get("accept_count", 0), "rejects": p.get("reject_count", 0)} for p in payload.get("artifact_packs", [])[:10]},
+    }
+    history.append(point)
+    history = history[-40:]
+    write_json_file(DASHBOARD_HISTORY_PATH, history)
+    return history
+
+
 def render_dashboard() -> dict:
     data = show_world()
     release_ledger = load_release_ledger()
@@ -2014,8 +2055,10 @@ def render_dashboard() -> dict:
         "review_queue": data.get("review_queue"),
         "export_queue": data.get("export_queue"),
         "recent_logs": data.get("recent_logs"),
+        "agent_memory": build_agent_memory_summary(),
         "release_ledger": release_ledger,
     }
+    payload["history"] = update_dashboard_history(payload)
     write_json_file(payload_path, payload)
     html = f"""<!doctype html>
 <html>
@@ -2025,17 +2068,20 @@ def render_dashboard() -> dict:
   <title>CircleForge Dashboard</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
-    .wrap {{ max-width: 1200px; margin: 0 auto; padding: 24px; }}
+    .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
     h1,h2,h3 {{ margin: 0 0 12px; }}
     .muted {{ color: #9aa6b2; }}
     .grid {{ display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }}
     .card {{ background: #171b22; border: 1px solid #28303a; border-radius: 14px; padding: 16px; }}
     .pill {{ display:inline-block; padding: 2px 8px; border-radius:999px; background:#273142; margin-right:6px; font-size:12px; }}
+    .bar {{ height: 8px; background:#263241; border-radius: 999px; overflow:hidden; margin-top:6px; }}
+    .bar > span {{ display:block; height:100%; background:#6ee7b7; }}
     pre {{ white-space: pre-wrap; word-break: break-word; background:#0c0f14; padding:12px; border-radius:10px; overflow:auto; }}
     ul {{ margin: 8px 0 0 18px; padding: 0; }}
     li {{ margin: 4px 0; }}
     table {{ width:100%; border-collapse: collapse; font-size: 14px; }}
     td,th {{ border-bottom: 1px solid #28303a; padding: 8px 6px; text-align:left; vertical-align: top; }}
+    code {{ background:#0c0f14; padding:2px 5px; border-radius:6px; }}
   </style>
 </head>
 <body>
@@ -2058,17 +2104,32 @@ def render_dashboard() -> dict:
         <p>Current version: <strong>{VERSION}</strong></p>
         <p>See <code>RELEASES.md</code> for backup/tag history.</p>
       </section>
+
+      <section class=\"card\">
+        <h2>Trend Snapshots</h2>
+        <p>Stored dashboard history points: <strong>{len(payload.get('history', []))}</strong></p>
+        <ul>
+          {''.join(f"<li>tick {h.get('tick')} · version {h.get('version')} · {len(h.get('theme_pressure', {}))} tracked themes</li>" for h in payload.get('history', [])[-5:])}
+        </ul>
+      </section>
     </div>
 
     <section class=\"card\" style=\"margin-top:16px;\">
       <h2>Opportunity Themes</h2>
       <table>
         <tr><th>Theme</th><th>Lifecycle</th><th>Pressure</th><th>Evidence</th><th>Accept</th><th>Reject</th></tr>
-        {''.join(f"<tr><td>{k}</td><td><span class='pill'>{v.get('lifecycle','stable')}</span></td><td>{v.get('pressure',0)}</td><td>{v.get('evidence',0)}</td><td>{v.get('acceptances',0)}</td><td>{v.get('rejections',0)}</td></tr>" for k,v in sorted((data.get('opportunity_board',{}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure',0), reverse=True))}
+        {''.join(f"<tr><td>{k}<div class='bar'><span style='width:{max(1, int(float(v.get('pressure',0))*100))}%'></span></div></td><td><span class='pill'>{v.get('lifecycle','stable')}</span></td><td>{v.get('pressure',0)}</td><td>{v.get('evidence',0)}</td><td>{v.get('acceptances',0)}</td><td>{v.get('rejections',0)}</td></tr>" for k,v in sorted((data.get('opportunity_board',{}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure',0), reverse=True))}
       </table>
     </section>
 
     <div class=\"grid\" style=\"margin-top:16px;\">
+      <section class=\"card\">
+        <h2>Agent Opportunity Memory</h2>
+        <ul>
+          {''.join(f"<li><strong>{a.get('agent')}</strong> · last {a.get('last_theme') or '—'}<br><span class='muted'>{'; '.join(f'{t.get('theme')} ({t.get('strength')})' for t in a.get('top_themes', []))}</span></li>" for a in payload.get('agent_memory', []))}
+        </ul>
+      </section>
+
       <section class=\"card\">
         <h2>Top Packs</h2>
         <ul>
@@ -2095,6 +2156,12 @@ def render_dashboard() -> dict:
         <h2>Emergent Candidates</h2>
         <ul>
           {''.join(f"<li>{c.get('theme')} · parent {c.get('parent_theme')} · confidence {c.get('confidence')} · signals {c.get('signal_count')}</li>" for c in data.get('opportunity_board',{}).get('emergent_candidates', [])[:12])}
+        </ul>
+      </section>
+      <section class=\"card\">
+        <h2>Pack Outcome Snapshot</h2>
+        <ul>
+          {''.join(f"<li>{p.get('pack_name')} · offers {p.get('offer_count',0)} · accepts {p.get('accept_count',0)} · rejects {p.get('reject_count',0)} · revisions {p.get('revision_count',0)}</li>" for p in data.get('artifact_packs', [])[:10])}
         </ul>
       </section>
     </div>

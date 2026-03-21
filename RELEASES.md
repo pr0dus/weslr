@@ -86,3 +86,12 @@ Recommended rollback order:
 - commit: `c15abf1`
 - backup: `CircleForge-backup-20260321-154938.tar.gz`
 - tag: `v0.0.47`
+
+### v0.0.48
+- richer dashboard with agent opportunity-memory panels
+- dashboard history snapshots added for lightweight trend tracking
+- pack outcome visibility improved in the operator view
+- intended direction: make the dashboard useful for monitoring, not just inspection
+- commit: pending
+- backup: pending
+- tag: pending

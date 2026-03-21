@@ -252,3 +252,8 @@ Focus:
 - operator dashboard renderer
 - local HTML/JSON visibility layer for themes, packs, queues, logs, and rollback state
 - first human-facing monitoring surface for CircleForge
+
+### v0.0.48
+- richer dashboard with agent memory panels and lightweight trend history
+- better visibility into pack outcomes and opportunity lifecycle changes
+- stronger operator monitoring before drill-down interactions
