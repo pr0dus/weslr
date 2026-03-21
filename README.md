@@ -169,6 +169,16 @@ The current direction is state-driven rather than prompt-driven: entities should
 - pack offer brief generation added with weak-proof pack reporting
 - JSON read/write path hardened for runtime files via blank-file tolerance and atomic writes
 
+## v0.1 planning
+
+The current v0.1 planning document lives in [`V0.1.md`](V0.1.md).
+It covers:
+- the v0.1 checklist
+- what to stop adding
+- what must be fixed before v0.1
+- what can wait until after v0.1
+- what is limiting progress now
+
 ## What should come next
 
 - move from static dashboard guidance toward operator-triggered workflows and replay views
