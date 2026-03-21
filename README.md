@@ -51,6 +51,63 @@ CircleForge currently includes:
 - CLI support for recording external validation events
 - stronger bridge from internal evidence to real-world fit
 
+## Installation
+
+### Requirements
+
+Minimum:
+- Linux, macOS, or another environment with Bash and `python3`
+- Python 3.10+ recommended
+
+Optional but recommended:
+- **Ollama** for local model-backed decisions
+  - default expected endpoint: `http://127.0.0.1:11434`
+  - default model in config: `qwen2.5:3b`
+- Git, if you want versioned local workflows
+
+Current runtime/storage used by CircleForge:
+- SQLite via Python standard library (`sqlite3`)
+- JSON files for queues, dashboard state, event log, offers, and opportunity state
+
+At the moment, CircleForge does **not** depend on a Python package requirements file for the core local flow.
+It mainly uses the Python standard library.
+
+### Quick install
+
+```bash
+git clone https://github.com/pr0dus/CircleForge.git
+cd CircleForge
+python3 main.py version
+```
+
+### Optional local model setup (Ollama)
+
+If you want model-backed local decisions instead of fallback-only behavior:
+
+```bash
+# install Ollama separately first
+ollama pull qwen2.5:3b
+```
+
+If you use a different host or model, set environment variables before running CircleForge:
+
+```bash
+export OLLAMA_HOST=http://127.0.0.1:11434
+export OLLAMA_MODEL=qwen2.5:3b
+```
+
+### First run
+
+```bash
+python3 main.py init --reset --agents 4
+python3 main.py tick
+python3 main.py show-world
+python3 main.py dashboard
+```
+
+Then open:
+- `dashboard/index.html`
+
 ## Useful commands
 
 ```bash
