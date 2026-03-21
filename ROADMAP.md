@@ -216,3 +216,16 @@ Focus:
 - human review ergonomics
 - artifact shaping
 - curated output packaging
+
+## Phase 6 — Sellability pressure and pack reality checks
+
+### v0.0.43
+- explicit sellability model for artifacts and packs
+- pack-level external validation events
+- offer outcome tracking
+- clearer separation between internal score and external proof
+- rejection-reason visibility for repeated pack failures
+- stronger buyer/problem/install framing at pack level
+
+Focus:
+- move from internally interesting artifacts toward small reusable tools that humans can test, package, and potentially sell

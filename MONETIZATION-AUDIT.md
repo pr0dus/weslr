@@ -86,7 +86,27 @@ The best short path to revenue is:
 ## Recommended next build focus
 
 If the goal is funding and real payment, CircleForge should next get:
-- category-specific publishing templates
+- a stricter sellability model for artifacts and packs
 - clearer buyer/problem framing per family
 - stronger proof signals from actual use or review outcomes
+- pack-level offer and rejection tracking
 - more conservative monetization scoring informed by real delivery experience
+
+See also: `SELLABILITY.md`
+
+## Concrete scoring direction
+
+The sellability model should reward:
+- specific user + specific pain + specific outcome
+- plain-language artifact wrappers
+- low setup friction
+- reuse across more than one situation
+- evidence from review, export, reuse, and real-world validation
+- a plausible small-buyer price band
+
+It should penalize:
+- sandbox-only artifacts
+- vague buyers
+- painful setup
+- fake sophistication
+- internal jargon that hides the value
