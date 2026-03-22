@@ -151,10 +151,11 @@ def cmd_setup(args):
     emit(dashboard)
     dashboard_path = Path(__file__).resolve().parent / "dashboard" / "index.html"
     print()
-    print("Open this file in your browser:")
-    print(f"  {dashboard_path}")
-    print("If your browser prefers file URLs, open:")
+    print("Dashboard ready.")
+    print("Copy and paste this exact address into your browser:")
     print(f"  file://{dashboard_path}")
+    print("If that does not work, open this local file directly:")
+    print(f"  {dashboard_path}")
 
 
 def main():
