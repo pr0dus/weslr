@@ -83,7 +83,7 @@ It mainly uses the Python standard library.
 git clone https://github.com/pr0dus/CircleForge.git
 cd CircleForge
 python3 main.py version
-python3 main.py setup
+./run.sh setup
 ```
 
 ### Optional local model setup (Ollama)
@@ -107,8 +107,10 @@ export OLLAMA_MODEL=qwen2.5:3b
 The easiest way to test CircleForge now is the guided setup:
 
 ```bash
-python3 main.py setup
+./run.sh setup
 ```
+
+(`python3 main.py setup` still works too.)
 
 It will ask:
 - how many agents to create
@@ -158,9 +160,10 @@ python3 main.py category revive <name>
 python3 main.py dashboard
 python3 main.py dashboard --refresh 5
 python3 main.py dashboard --watch --interval 10
+./run.sh setup
+./run.sh setup --agents 6 --ticks 20 --interval 0 --refresh 5
+./run.sh setup --agents 4 --ticks 0 --interval 60 --refresh 5
 python3 main.py setup
-python3 main.py setup --agents 6 --ticks 20 --interval 0 --refresh 5
-python3 main.py setup --agents 4 --ticks 0 --interval 60 --refresh 5
 python3 main.py offer <pack-name>
 python3 main.py version
 ```
