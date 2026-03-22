@@ -43,6 +43,7 @@ from config import (
     PACKS_PATH,
     RELATIONSHIPS_PATH,
     SELF_MOD_PROPOSALS_PATH,
+    WORK_ITEMS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
@@ -57,7 +58,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -186,6 +187,20 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             ).to_dict())
     save_relationships(relationships)
     save_self_mod_proposals([])
+    work_items = []
+    for idx, project in enumerate(project_seeds, start=1):
+        work_items.append(WorkItemState(
+            id=f"work-{idx}",
+            title=f"Advance {project['name']}",
+            status="open",
+            priority=0.6,
+            owner=project['owners'][0],
+            created_at=now_ts,
+            project_id=project['id'],
+            need_id="",
+            notes=f"Bootstrap work item for {project['name']}",
+        ).to_dict())
+    save_work_items(work_items)
 
 
 def read_json_file(path: Path, default):
@@ -290,6 +305,14 @@ def load_self_mod_proposals() -> list[dict]:
 
 def save_self_mod_proposals(items: list[dict]) -> None:
     write_json_file(SELF_MOD_PROPOSALS_PATH, items)
+
+
+def load_work_items() -> list[dict]:
+    return read_json_file(WORK_ITEMS_PATH, [])
+
+
+def save_work_items(items: list[dict]) -> None:
+    write_json_file(WORK_ITEMS_PATH, items)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2078,30 +2101,71 @@ def summarize_unresolved_needs(conn: sqlite3.Connection) -> list[str]:
     return needs[:4]
 
 
+def update_work_item_progress(now_ts: int, summaries: list[dict]) -> None:
+    work_items = load_work_items()
+    if not work_items:
+        return
+    for item in work_items:
+        if item.get("status") != "open":
+            continue
+        owner = item.get("owner")
+        owner_events = [s for s in summaries if s.get("agent") == owner and s.get("status") == "ok"]
+        if owner_events:
+            item["priority"] = round(max(0.2, float(item.get("priority", 0.6)) - 0.04), 3)
+            item["notes"] = f"Last progressed at {now_ts} by {owner}"
+            if item["priority"] <= 0.28:
+                item["status"] = "done"
+    save_work_items(work_items)
+
+
 def route_project_ownership(now_ts: int, summaries: list[dict]) -> None:
     projects = load_projects()
+    work_items = load_work_items()
     if not projects:
         return
     for project in projects:
         matching = [s for s in summaries if str(s.get("niche_theme", "")).lower() in f"{project.get('name', '')} {project.get('purpose', '')}".lower() and s.get("status") == "ok"]
-        if not matching:
-            continue
-        best = sorted(matching, key=lambda item: item.get("reputation", 0.0), reverse=True)[0]
-        owners = project.get("owners") or []
-        if best.get("agent") not in owners:
-            owners.append(best.get("agent"))
-            project["owners"] = owners[:3]
-        project["updated_at"] = now_ts
+        if matching:
+            best = sorted(matching, key=lambda item: item.get("reputation", 0.0), reverse=True)[0]
+            owners = project.get("owners") or []
+            if best.get("agent") not in owners:
+                owners.append(best.get("agent"))
+                project["owners"] = owners[:3]
+            project["updated_at"] = now_ts
+        related_items = [item for item in work_items if item.get("project_id") == project.get("id") and item.get("status") == "open"]
+        if not related_items:
+            owner = (project.get("owners") or ["agent-1"])[0]
+            work_items.append(WorkItemState(
+                id=f"work-{project.get('id')}-{now_ts}",
+                title=f"Advance {project.get('name')}",
+                status="open",
+                priority=0.62,
+                owner=owner,
+                created_at=now_ts,
+                project_id=project.get("id"),
+                need_id="",
+                notes=f"Auto-routed follow-up work for {project.get('name')}",
+            ).to_dict())
     save_projects(projects)
+    save_work_items(work_items[-100:])
 
 
 def maybe_propose_self_modifications(now_ts: int, summaries: list[dict]) -> list[dict]:
     proposals = []
     for item in summaries:
         if item.get("status") in {"error", "cooldown", "skipped"}:
-            proposal = register_self_mod_proposal(item.get("agent"), item.get("status"), item.get("summary"), now_ts)
-            if proposal:
-                proposals.append(proposal)
+            rows = []
+            try:
+                conn = connect()
+                rows = conn.execute("SELECT summary FROM logs WHERE agent_name=? ORDER BY id DESC LIMIT 6", (item.get("agent"),)).fetchall()
+                conn.close()
+            except Exception:
+                rows = []
+            repeated = sum(1 for row in rows if str(row["summary"]) == str(item.get("summary")))
+            if repeated >= 2:
+                proposal = register_self_mod_proposal(item.get("agent"), item.get("status"), item.get("summary"), now_ts)
+                if proposal:
+                    proposals.append(proposal)
     return proposals
 
 
@@ -2157,6 +2221,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     save_public_memory(public_memory[-50:])
 
     route_project_ownership(now_ts, summaries)
+    update_work_item_progress(now_ts, summaries)
     maybe_propose_self_modifications(now_ts, summaries)
 
 
@@ -2223,14 +2288,17 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
         return ActionResult(action=action, status="ok", summary=f"rested: {reason}", energy_delta=8)
     if action == "inspect":
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            update_relationship(agent["name"], target_name or "unknown", "inspect", False, now_ts)
             return ActionResult(action=action, status="skipped", summary="inspect skipped: no valid target")
         return inspect_target(agent, agents_by_name[target_name], now_ts)
     if action == "trade":
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            update_relationship(agent["name"], target_name or "unknown", "trade", False, now_ts)
             return ActionResult(action=action, status="skipped", summary="trade skipped: no valid target")
         return trade_with_target(agent, agents_by_name[target_name], now_ts, conn)
     if action == "signal":
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            update_relationship(agent["name"], target_name or "unknown", "signal", False, now_ts)
             return ActionResult(action=action, status="skipped", summary="signal skipped: no valid target")
         need = action_plan.get("need") or action_plan.get("problem_statement") or reason
         return signal_target(agent, agents_by_name[target_name], now_ts, action_plan.get("niche_theme"), need, action_plan.get("category"))
@@ -2456,6 +2524,8 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         conn.execute("UPDATE world SET value=? WHERE key='last_tick_started'", (str(started_at),))
         agents = list_agents(conn)
         categories = load_categories()
+        relationships = load_relationships()
+        work_items = load_work_items()
         proposals = load_category_proposals()
         opportunity_board = load_opportunity_board()
         agents, proposals = maybe_generate_category_proposal(agents, categories, proposals, started_at)
@@ -2480,7 +2550,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 if verbose:
                     print(json.dumps(item, indent=2))
                 continue
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason}, agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items}, agent_dir)
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -2875,6 +2945,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "messages": data.get("messages"),
         "public_memory": data.get("public_memory"),
         "projects": data.get("projects"),
+        "work_items": data.get("work_items"),
         "relationships": data.get("relationships"),
         "self_mod_proposals": data.get("self_mod_proposals"),
         "protected_boundary": data.get("protected_boundary"),
@@ -3242,6 +3313,8 @@ def show_world() -> Dict:
         "messages": load_messages(),
         "public_memory": load_public_memory(),
         "projects": load_projects(),
+        "work_items": load_work_items(),
+        "relationships": load_relationships(),
         "relationships": load_relationships(),
         "self_mod_proposals": load_self_mod_proposals(),
         "protected_boundary": protected_self_edit_boundary(),

@@ -191,3 +191,11 @@ Recommended rollback order:
 - proposal-only self-modification objects added for repeated friction; they target private agent helpers only
 - dashboard and CLI now expose `relationships` and `self-mod-proposals`
 - intended direction: make coordination and capability growth more social while keeping self-editing bounded and reviewable
+
+### v0.0.61
+- relationship-aware target selection added so agents prefer more trusted/useful and lower-friction peers
+- repeated-friction proposal triggering tightened so self-mod proposals emerge from repeated matching issues, not just one-off noise
+- initial `work-items` layer added and seeded from projects
+- agents can now bias action selection toward assigned open work items
+- project routing now replenishes follow-up work and work items can progress toward done status
+- intended direction: make shared work and social memory affect actual behavior instead of just being passive state

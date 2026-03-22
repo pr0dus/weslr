@@ -129,3 +129,19 @@ class SelfModificationProposalState:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class WorkItemState:
+    id: str
+    title: str
+    status: str
+    priority: float
+    owner: str
+    created_at: int
+    project_id: str
+    need_id: str
+    notes: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

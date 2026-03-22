@@ -116,7 +116,18 @@ def choose_target(agent: Dict[str, Any], world: Dict[str, Any]) -> str | None:
     visible_agents = [name for name in world.get("agent_names", []) if name != agent["name"]]
     if not visible_agents:
         return None
-    return random.choice(visible_agents)
+    relationships = world.get("relationships", []) or []
+    ranked = []
+    for name in visible_agents:
+        rel = next((item for item in relationships if item.get("source_agent") == agent["name"] and item.get("target_agent") == name), None)
+        if rel:
+            score = float(rel.get("trust", 0.5)) * 0.5 + float(rel.get("usefulness", 0.5)) * 0.5 - float(rel.get("friction", 0.0)) * 0.6
+        else:
+            score = 0.5
+        score += random.uniform(0.0, 0.08)
+        ranked.append((score, name))
+    ranked.sort(reverse=True)
+    return ranked[0][1]
 
 
 def read_json(path: Path, default: Any):
@@ -241,10 +252,14 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     agent_dir = Path(world["base_dir"]) / "agents" / agent["name"]
     inbox = load_inbox(agent_dir)
     unresolved_needs = world.get("unresolved_needs", []) or []
+    work_items = world.get("work_items", []) or []
+    my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
 
     if agent["energy"] < 30:
         action = "rest"
+    elif my_work and random.random() < 0.45:
+        action = random.choice(["research", "optimize", "build_module"])
     elif inbox and target and random.random() < 0.28:
         action = "signal"
     elif unresolved_needs and random.random() < 0.32:
@@ -273,6 +288,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     if inbox and action == "signal":
         newest = inbox[-1]
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
+    elif my_work and action in {"research", "optimize", "build_module"}:
+        reason = f"advancing assigned work: {my_work[0].get('title', 'project work')}"
     elif unresolved_needs and action in {"inspect", "research", "optimize"}:
         reason = f"responding to unresolved need: {unresolved_needs[0]}"
 
