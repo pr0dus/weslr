@@ -335,3 +335,7 @@ Recommended rollback order:
 ### v0.0.85
 - coordinator signal-effect memory now feeds back into later coordinator signal/inspect choice when prior coordination patterns appeared effective
 - intended direction: make coordinator memory influence coordinator behavior, not just coordinator notes
+
+### v0.0.86
+- memory-keeper objection-cluster memory now feeds back into later memory-keeper continuity/caution behavior
+- intended direction: make memory-keeper cluster memory influence memory-keeper behavior, not just memory-keeper notes

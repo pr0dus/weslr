@@ -270,6 +270,7 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     builder_no = sum(1 for note in notes[-12:] if "builder-usefulness" in note.lower() and "later_activity_detected=no" in note.lower())
     coordinator_yes = sum(1 for note in notes[-12:] if "coordinator-effect" in note.lower() and "follow_on_activity=yes" in note.lower())
     coordinator_no = sum(1 for note in notes[-12:] if "coordinator-effect" in note.lower() and "follow_on_activity=no" in note.lower())
+    memory_cluster_hits = sum(1 for note in notes[-12:] if "memory-keeper objection-cluster" in note.lower())
     experiment_focus = any(item.get("status") == "running" and active_pursuit and active_pursuit in str(item.get("title", "")).lower() for item in experiments)
 
     role = world.get("internal_role") or "specialist"
@@ -282,6 +283,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         action = random.choice(["signal", "inspect"])
     elif role == "coordinator" and (inbox or unresolved_needs or my_work) and target and random.random() < 0.52:
         action = random.choice(["signal", "inspect", "research"])
+    elif role == "memory_keeper" and memory_cluster_hits >= 2 and random.random() < 0.62:
+        action = random.choice(["research", "inspect", "rest"])
     elif role == "memory_keeper" and (unresolved_question or inbox) and random.random() < 0.56:
         action = random.choice(["research", "inspect", "rest"])
     elif "research" in strengths and unresolved_question and random.random() < 0.5:
@@ -333,6 +336,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         reason = f"coordinator following previously effective coordination pattern around {communicator.get('active_pursuit') or 'current pressure'}"
     elif role == "coordinator" and action == "signal":
         reason = f"coordinator forwarding intent/work around {communicator.get('active_pursuit') or 'current pressure'}"
+    elif role == "memory_keeper" and memory_cluster_hits >= 2 and action in {"research", "inspect", "rest"}:
+        reason = f"memory-keeper responding to recurring objection clusters around {communicator.get('unresolved_question')}"
     elif role == "memory_keeper" and action in {"research", "inspect", "rest"}:
         reason = f"memory-keeper preserving question continuity: {communicator.get('unresolved_question')}"
     elif inbox and action == "signal":
