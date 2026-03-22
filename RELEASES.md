@@ -344,3 +344,7 @@ Recommended rollback order:
 - builder/coordinator/memory-keeper role-memory traces now also bias communicator-level proposal weighting
 - communicator decision summaries now expose role-memory bias alongside trust/usefulness
 - intended direction: connect role-specific learning back into top-level communicator judgment
+
+### v0.0.88
+- evaluation metrics for internal differentiation now include role-memory-signal counts and communicator memory-bias usage
+- intended direction: judge internal differentiation by useful cognitive structure, not just by role labels or frequency counts

@@ -209,7 +209,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "persistence": {"intent_history_len": 1, "question_history_len": 1, "ticks_with_state": 0},
         "inquiry_continuity": {"question_lineage_len": 1, "experiment_count": 0, "inspect_research_actions": 0},
         "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
-        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}, "memory_bias_hits": 0, "useful_role_memory_signals": 0},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
     save_communicator_state(CommunicatorState(
@@ -401,7 +401,7 @@ def load_evaluation_metrics() -> dict:
         "persistence": {"intent_history_len": 0, "question_history_len": 0, "ticks_with_state": 0},
         "inquiry_continuity": {"question_lineage_len": 0, "experiment_count": 0, "inspect_research_actions": 0},
         "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
-        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}, "memory_bias_hits": 0, "useful_role_memory_signals": 0},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
 
@@ -2469,6 +2469,18 @@ def update_evaluation_metrics(proposals: list[dict], summaries: list[dict]) -> N
             role_counts[role] = int(role_counts.get(role, 0)) + 1
     metrics["internal_differentiation"]["role_counts"] = role_counts
     metrics["internal_differentiation"]["weighted_voice_count"] = sum(1 for proposal in proposals if proposal.get("epistemic_weight"))
+    metrics["internal_differentiation"]["memory_bias_hits"] = int(metrics["internal_differentiation"].get("memory_bias_hits", 0)) + sum(1 for proposal in proposals if float((proposal.get("epistemic_weight") or {}).get("memory_bias", 0.0)) > 0.0)
+
+    useful_signals = 0
+    for agent_dir in AGENTS_DIR.iterdir():
+        if not agent_dir.is_dir():
+            continue
+        try:
+            notes = json.loads((agent_dir / "memory.json").read_text())
+        except Exception:
+            notes = []
+        useful_signals += sum(1 for note in notes[-20:] if any(token in str(note).lower() for token in ["builder-usefulness", "coordinator-effect", "memory-keeper objection-cluster"]))
+    metrics["internal_differentiation"]["useful_role_memory_signals"] = useful_signals
     save_evaluation_metrics(metrics)
 
 
