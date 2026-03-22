@@ -219,3 +219,10 @@ Recommended rollback order:
 - coordinator role promoted into the active internal integration loop
 - curiosity pressure can now wake observer/critic-style internal minds and bias behavior toward inspect/research
 - intended direction: make the communicator influence ongoing thought, not just describe the last result
+
+### v0.0.65
+- communicator now stores unresolved objections from questioning internal voices
+- internal disagreement can now change decision mode to `inspect-first`, `reconsider`, or `defer` instead of always acting immediately
+- reflective communicator decisions now leave public-memory traces for later learning
+- dashboard communicator panel now shows objection count
+- intended direction: make internal disagreement consequential so the communicator can reflect before acting

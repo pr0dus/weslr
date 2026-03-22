@@ -156,6 +156,7 @@ class CommunicatorState:
     dominant_need: str
     last_decision_summary: str
     intent_history: List[str]
+    unresolved_objections: List[str]
     last_wake_at: int
     updated_at: int
 

@@ -210,6 +210,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         dominant_need="",
         last_decision_summary="bootstrap complete",
         intent_history=["wake, observe, and continue enriching the local world"],
+        unresolved_objections=[],
         last_wake_at=now_ts,
         updated_at=now_ts,
     ).to_dict())
@@ -336,6 +337,7 @@ def load_communicator_state() -> dict:
         dominant_need="",
         last_decision_summary="none yet",
         intent_history=[],
+        unresolved_objections=[],
         last_wake_at=0,
         updated_at=0,
     ).to_dict()
@@ -2339,6 +2341,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     previous_intent = str(communicator.get("current_intent", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
     ranked = []
+    objections = []
     for proposal in proposals:
         score = 0.5
         if proposal.get("stance") in {"support", "prioritize"}:
@@ -2355,15 +2358,29 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.12
         if proposal.get("role") == "critic" and proposal.get("stance") == "question":
             score -= 0.08
+            objections.append(f"critic:{proposal.get('reason')}")
         ranked.append((score, proposal))
     ranked.sort(key=lambda item: item[0], reverse=True)
     chosen = ranked[0][1]
-    intent_text = f"{chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
-    communicator["status"] = "active"
+    disagreement_count = sum(1 for p in proposals if p.get("stance") == "question")
+
+    final_action = chosen.get("proposed_action")
+    decision_mode = "act"
+    if disagreement_count >= 2 and chosen.get("proposed_action") in {"build_module", "trade"}:
+        final_action = "inspect"
+        decision_mode = "inspect-first"
+    elif disagreement_count >= 1 and chosen.get("role") != "coordinator" and chosen.get("proposed_action") in {"build_module", "trade"}:
+        final_action = "research"
+        decision_mode = "reconsider"
+    elif disagreement_count >= 2 and curiosity < 0.7:
+        final_action = None
+        decision_mode = "defer"
+
+    intent_text = f"{final_action or chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
+    communicator["status"] = "active" if final_action else "reflecting"
     communicator["current_intent"] = intent_text
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
-    disagreement_count = sum(1 for p in proposals if p.get("stance") == "question")
-    communicator["last_decision_summary"] = f"intent formed from {chosen.get('agent')} ({chosen.get('role')}) via {chosen.get('stance')} with {disagreement_count} questioning voice(s)"
+    communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s)"
     communicator["last_wake_at"] = now_ts
     communicator["updated_at"] = now_ts
     if unresolved_needs:
@@ -2375,11 +2392,13 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     history = list(communicator.get("intent_history") or [])
     history.append(intent_text)
     communicator["intent_history"] = history[-12:]
+    communicator["unresolved_objections"] = (objections or list(communicator.get("unresolved_objections") or []))[-8:]
     save_communicator_state(communicator)
     return {
         "current_intent": communicator.get("current_intent"),
-        "chosen_action": chosen.get("proposed_action"),
+        "chosen_action": final_action,
         "chosen_theme": chosen.get("niche_theme"),
+        "decision_mode": decision_mode,
         "consensus": proposals,
     }
 
@@ -2708,6 +2727,18 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             if verbose:
                 print(json.dumps(item, indent=2))
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
+    decision_mode = communicator_decision.get("decision_mode")
+    if decision_mode in {"inspect-first", "reconsider", "defer"}:
+        save_public_memory((load_public_memory() + [PublicMemoryState(
+            id=f"pm-communicator-{tick}",
+            title="Communicator reflective decision",
+            kind="lesson",
+            content=f"Decision mode {decision_mode} triggered from internal disagreement around {communicator_decision.get('chosen_theme') or 'current pressure'}.",
+            source="communicator-loop",
+            stability=0.58,
+            created_at=started_at,
+            updated_at=started_at,
+        ).to_dict()])[-50:])
     update_world_objects(conn, tick, started_at, summaries)
     opportunity_board = decay_and_evolve_themes(opportunity_board, started_at)
     save_opportunity_board(opportunity_board)
@@ -3164,6 +3195,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Intent: <strong>{escape(str((payload.get('communicator') or {}).get('current_intent', 'tbd')))}</strong></p>
         <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
         <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
+        <p>Objections: <strong>{len((payload.get('communicator') or {}).get('unresolved_objections', []))}</strong></p>
       </section>
       <section class="card">
         <h2>Theme Links</h2>
@@ -3314,6 +3346,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Intent: <strong>${{esc(communicator.current_intent || 'tbd')}}</strong></p>
           <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
           <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
+          <p>Objections: <strong>${{(communicator.unresolved_objections || []).length}}</strong></p>
         </section>
         <section class="card">
           <h2>Theme Links</h2>
