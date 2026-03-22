@@ -356,3 +356,7 @@ Recommended rollback order:
 ### v0.0.90
 - self-model beliefs now accumulate through confidence thresholds rather than flipping quickly from weak evidence
 - intended direction: strengthen stable self-revision before revisiting the postponed bounded autonomy gate
+
+### v0.0.91
+- self-model now distinguishes short-term signals from longer-term beliefs
+- intended direction: reduce the risk of confusing recent tactical patterns with durable identity

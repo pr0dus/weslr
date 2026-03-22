@@ -230,6 +230,8 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "perceived_weaknesses": ["shallow evidence", "limited self-knowledge"],
             "preferred_modes": ["inspect", "research"],
             "caution_themes": ["reckless action before clarity"],
+            "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
+            "long_term_beliefs": {"strengths": ["continuity", "inquiry", "internal coordination"], "weaknesses": ["shallow evidence", "limited self-knowledge"], "modes": ["inspect", "research"]},
             "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
@@ -373,6 +375,8 @@ def load_communicator_state() -> dict:
             "perceived_weaknesses": [],
             "preferred_modes": [],
             "caution_themes": [],
+            "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
+            "long_term_beliefs": {"strengths": [], "weaknesses": [], "modes": []},
             "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
@@ -2748,16 +2752,28 @@ def update_self_model(communicator: dict) -> None:
     weakness_conf = belief_confidence.setdefault("weaknesses", {})
     mode_conf = belief_confidence.setdefault("modes", {})
 
+    short_strengths = []
+    short_weaknesses = []
+    short_modes = []
+
     for action, payload in actions.items():
         confidence = float(payload.get("confidence", 0.0))
         count = int(payload.get("count", 0))
+        if confidence >= 0.1:
+            short_strengths.append(action)
+        elif confidence <= 0.03 and count >= 2:
+            short_weaknesses.append(action)
         if confidence >= 0.1 and count >= 3:
             strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.08, 0.95), 3)
         elif confidence <= 0.03 and count >= 3:
             weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.05, 0.95), 3)
 
     for mode, payload in (decision_memory.get("modes", {}) or {}).items():
-        if float(payload.get("confidence", 0.0)) >= 0.05 and int(payload.get("count", 0)) >= 2:
+        mode_confidence = float(payload.get("confidence", 0.0))
+        mode_count = int(payload.get("count", 0))
+        if mode_confidence >= 0.05:
+            short_modes.append(mode)
+        if mode_confidence >= 0.05 and mode_count >= 2:
             mode_conf[mode] = round(min(float(mode_conf.get(mode, 0.0)) + 0.06, 0.95), 3)
 
     strengths = [name for name, conf in sorted(strength_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.16]
@@ -2778,6 +2794,8 @@ def update_self_model(communicator: dict) -> None:
     self_model["perceived_strengths"] = strengths[:6]
     self_model["perceived_weaknesses"] = weaknesses[:6]
     self_model["preferred_modes"] = preferred_modes[:6]
+    self_model["short_term_signals"] = {"strengths": sorted(set(short_strengths))[:8], "weaknesses": sorted(set(short_weaknesses))[:8], "modes": sorted(set(short_modes))[:8]}
+    self_model["long_term_beliefs"] = {"strengths": strengths[:8], "weaknesses": weaknesses[:8], "modes": preferred_modes[:8]}
     self_model["caution_themes"] = caution_themes[-6:]
     self_model["belief_confidence"] = belief_confidence
     self_model["self_modeling_note"] = "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate."
