@@ -209,6 +209,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         curiosity=0.66,
         dominant_need="",
         last_decision_summary="bootstrap complete",
+        intent_history=["wake, observe, and continue enriching the local world"],
         last_wake_at=now_ts,
         updated_at=now_ts,
     ).to_dict())
@@ -334,6 +335,7 @@ def load_communicator_state() -> dict:
         curiosity=0.62,
         dominant_need="",
         last_decision_summary="none yet",
+        intent_history=[],
         last_wake_at=0,
         updated_at=0,
     ).to_dict()
@@ -2266,12 +2268,18 @@ def agent_social_context(agent_dir: Path) -> Dict:
 
 
 def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
+    communicator = load_communicator_state()
+    curiosity = float(communicator.get("curiosity", 0.6))
     if tick <= int(agent.get("next_due_tick", 0)):
+        if curiosity > 0.82 and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic"}:
+            return True, "curiosity-pressure"
         return False, "waiting-for-next-due-tick"
     if consumed_count > 0:
         return True, "message-received"
     if unresolved_needs:
         return True, "unresolved-need-pressure"
+    if curiosity > 0.76 and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
+        return True, "curiosity-pressure"
     return True, "scheduled-cadence"
 
 
@@ -2281,24 +2289,31 @@ def classify_internal_role(agent_name: str) -> str:
         1: "observer",
         2: "builder",
         3: "critic",
-        4: "memory_keeper",
-        5: "coordinator",
+        4: "coordinator",
+        5: "memory_keeper",
     }
     return mapping.get(suffix, "specialist")
 
 
-def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str) -> dict:
+def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communicator: dict) -> dict:
     role = classify_internal_role(agent.get("name", "agent"))
     action = plan.get("action")
     stance = "agree"
+    current_intent = str(communicator.get("current_intent", "")).lower()
+    curiosity = float(communicator.get("curiosity", 0.6))
+    theme = str(plan.get("niche_theme") or "")
     if role == "critic" and action in {"build_module", "trade"}:
         stance = "question"
-    elif role == "memory_keeper" and wake_reason == "message-received":
+    elif role == "coordinator":
         stance = "prioritize"
-    elif role == "observer" and action == "inspect":
+    elif role == "observer" and (action == "inspect" or curiosity > 0.72):
         stance = "support"
     elif role == "builder" and action == "build_module":
         stance = "support"
+    elif role == "memory_keeper" and (wake_reason == "message-received" or theme and theme.lower() in current_intent):
+        stance = "prioritize"
+    if curiosity > 0.8 and role in {"observer", "critic"} and action not in {"inspect", "research"}:
+        stance = "question"
     return {
         "agent": agent.get("name"),
         "role": role,
@@ -2307,6 +2322,7 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str) -> dict:
         "reason": plan.get("reason"),
         "wake_reason": wake_reason,
         "stance": stance,
+        "intent_alignment": theme.lower() in current_intent if theme else False,
     }
 
 
@@ -2320,27 +2336,45 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         save_communicator_state(communicator)
         return {"current_intent": communicator.get("current_intent"), "chosen_action": None, "consensus": []}
 
+    previous_intent = str(communicator.get("current_intent", "")).lower()
+    curiosity = float(communicator.get("curiosity", 0.6))
     ranked = []
     for proposal in proposals:
         score = 0.5
         if proposal.get("stance") in {"support", "prioritize"}:
             score += 0.18
+        if proposal.get("role") == "coordinator":
+            score += 0.14
         if proposal.get("wake_reason") == "message-received":
             score += 0.08
+        if proposal.get("intent_alignment"):
+            score += 0.12
         if unresolved_needs and proposal.get("proposed_action") in {"inspect", "research", "optimize"}:
             score += 0.1
+        if curiosity > 0.78 and proposal.get("proposed_action") in {"inspect", "research"}:
+            score += 0.12
         if proposal.get("role") == "critic" and proposal.get("stance") == "question":
             score -= 0.08
         ranked.append((score, proposal))
     ranked.sort(key=lambda item: item[0], reverse=True)
     chosen = ranked[0][1]
+    intent_text = f"{chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
     communicator["status"] = "active"
-    communicator["current_intent"] = f"{chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
+    communicator["current_intent"] = intent_text
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
-    communicator["last_decision_summary"] = f"intent formed from {chosen.get('agent')} ({chosen.get('role')}) via {chosen.get('stance')}"
+    disagreement_count = sum(1 for p in proposals if p.get("stance") == "question")
+    communicator["last_decision_summary"] = f"intent formed from {chosen.get('agent')} ({chosen.get('role')}) via {chosen.get('stance')} with {disagreement_count} questioning voice(s)"
     communicator["last_wake_at"] = now_ts
     communicator["updated_at"] = now_ts
-    communicator["curiosity"] = round(min(max(float(communicator.get("curiosity", 0.6)) + (0.03 if unresolved_needs else 0.01), 0.1), 0.99), 3)
+    if unresolved_needs:
+        communicator["curiosity"] = round(min(max(curiosity + 0.03, 0.1), 0.99), 3)
+    elif intent_text.lower() == previous_intent:
+        communicator["curiosity"] = round(min(max(curiosity + 0.015, 0.1), 0.99), 3)
+    else:
+        communicator["curiosity"] = round(min(max(curiosity - 0.01, 0.1), 0.99), 3)
+    history = list(communicator.get("intent_history") or [])
+    history.append(intent_text)
+    communicator["intent_history"] = history[-12:]
     save_communicator_state(communicator)
     return {
         "current_intent": communicator.get("current_intent"),
@@ -2641,6 +2675,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         agent_names = [agent["name"] for agent in agents]
         pending = [p for p in proposals if p.get("status") == "pending"]
         unresolved_needs = summarize_unresolved_needs(conn)
+        communicator = load_communicator_state()
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
@@ -2656,7 +2691,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                     print(json.dumps(item, indent=2))
                 continue
             plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items}, agent_dir)
-            internal_proposals.append(propose_internal_thought(agent, plan, wake_reason))
+            internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta

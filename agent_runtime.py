@@ -253,11 +253,16 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     inbox = load_inbox(agent_dir)
     unresolved_needs = world.get("unresolved_needs", []) or []
     work_items = world.get("work_items", []) or []
+    communicator = world.get("communicator", {}) or {}
+    current_intent = str(communicator.get("current_intent", "")).lower()
+    curiosity = float(communicator.get("curiosity", 0.6))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
 
     if agent["energy"] < 30:
         action = "rest"
+    elif curiosity > 0.8 and random.random() < 0.4:
+        action = random.choice(["inspect", "research"])
     elif my_work and random.random() < 0.45:
         action = random.choice(["research", "optimize", "build_module"])
     elif inbox and target and random.random() < 0.28:
@@ -288,10 +293,14 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     if inbox and action == "signal":
         newest = inbox[-1]
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
+    elif current_intent and (niche.get("niche_theme", "").lower() in current_intent or action in current_intent):
+        reason = f"following communicator intent: {communicator.get('current_intent')}"
     elif my_work and action in {"research", "optimize", "build_module"}:
         reason = f"advancing assigned work: {my_work[0].get('title', 'project work')}"
     elif unresolved_needs and action in {"inspect", "research", "optimize"}:
         reason = f"responding to unresolved need: {unresolved_needs[0]}"
+    elif curiosity > 0.8 and action in {"inspect", "research"}:
+        reason = f"following curiosity pressure from communicator state"
 
     return {
         "action": action,

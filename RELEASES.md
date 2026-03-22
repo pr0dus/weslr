@@ -212,3 +212,10 @@ Recommended rollback order:
 - first intent integration loop added so the communicator forms a top-level intent from internal proposals rather than exposing only raw agent activity
 - dashboard and CLI now expose the communicator as a first-class visible layer
 - intended direction: shift CircleForge from a many-agent surface toward one communicator with internal minds
+
+### v0.0.64
+- communicator now keeps short intent history for continuity across ticks
+- communicator intent now biases later internal proposals and fallback decisions instead of being only a summary layer
+- coordinator role promoted into the active internal integration loop
+- curiosity pressure can now wake observer/critic-style internal minds and bias behavior toward inspect/research
+- intended direction: make the communicator influence ongoing thought, not just describe the last result
