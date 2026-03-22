@@ -206,6 +206,11 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         name="CircleForge",
         status="alive",
         current_intent="wake, observe, and continue enriching the local world",
+        active_pursuit="enrich the local world",
+        unresolved_question="what part of the world is still under-understood?",
+        curiosity_target="world state and internal signals",
+        attraction_bias="understanding, reuse, and coherent coordination",
+        avoidance_bias="harmful opacity and reckless action",
         curiosity=0.66,
         dominant_need="",
         last_decision_summary="bootstrap complete",
@@ -333,6 +338,11 @@ def load_communicator_state() -> dict:
         name="CircleForge",
         status="waking",
         current_intent="orient to the world and continue internal thought",
+        active_pursuit="world orientation",
+        unresolved_question="what in the local world most deserves attention next?",
+        curiosity_target="emergent pressure",
+        attraction_bias="clarity, coordination, and reusable capability",
+        avoidance_bias="harmful opacity and brittle action",
         curiosity=0.62,
         dominant_need="",
         last_decision_summary="none yet",
@@ -2302,6 +2312,8 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     action = plan.get("action")
     stance = "agree"
     current_intent = str(communicator.get("current_intent", "")).lower()
+    active_pursuit = str(communicator.get("active_pursuit", "")).lower()
+    curiosity_target = str(communicator.get("curiosity_target", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
     theme = str(plan.get("niche_theme") or "")
     if role == "critic" and action in {"build_module", "trade"}:
@@ -2325,6 +2337,8 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
         "wake_reason": wake_reason,
         "stance": stance,
         "intent_alignment": theme.lower() in current_intent if theme else False,
+        "pursuit_alignment": theme.lower() in active_pursuit if theme else False,
+        "curiosity_alignment": theme.lower() in curiosity_target if theme else False,
     }
 
 
@@ -2352,6 +2366,10 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.08
         if proposal.get("intent_alignment"):
             score += 0.12
+        if proposal.get("pursuit_alignment"):
+            score += 0.08
+        if proposal.get("curiosity_alignment"):
+            score += 0.06
         if unresolved_needs and proposal.get("proposed_action") in {"inspect", "research", "optimize"}:
             score += 0.1
         if curiosity > 0.78 and proposal.get("proposed_action") in {"inspect", "research"}:
@@ -2379,7 +2397,16 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     intent_text = f"{final_action or chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
     communicator["status"] = "active" if final_action else "reflecting"
     communicator["current_intent"] = intent_text
+    communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
+    communicator["curiosity_target"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or communicator.get("curiosity_target") or "emergent pressure")
+    communicator["unresolved_question"] = (
+        f"What is still unclear about {chosen.get('niche_theme')}?" if chosen.get("niche_theme")
+        else communicator.get("unresolved_question") or "What remains under-understood?"
+    )
+    communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
+    if disagreement_count > 0:
+        communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
     communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s)"
     communicator["last_wake_at"] = now_ts
     communicator["updated_at"] = now_ts
@@ -3193,6 +3220,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Communicator</h2>
         <p>Status: <strong>{escape(str((payload.get('communicator') or {}).get('status', 'unknown')))}</strong></p>
         <p>Intent: <strong>{escape(str((payload.get('communicator') or {}).get('current_intent', 'tbd')))}</strong></p>
+        <p>Pursuit: <strong>{escape(str((payload.get('communicator') or {}).get('active_pursuit', '')))}</strong></p>
+        <p>Question: <strong>{escape(str((payload.get('communicator') or {}).get('unresolved_question', '')))}</strong></p>
+        <p>Curiosity target: <strong>{escape(str((payload.get('communicator') or {}).get('curiosity_target', '')))}</strong></p>
         <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
         <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
         <p>Objections: <strong>{len((payload.get('communicator') or {}).get('unresolved_objections', []))}</strong></p>
@@ -3344,6 +3374,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <h2>Communicator</h2>
           <p>Status: <strong>${{esc(communicator.status || 'unknown')}}</strong></p>
           <p>Intent: <strong>${{esc(communicator.current_intent || 'tbd')}}</strong></p>
+          <p>Pursuit: <strong>${{esc(communicator.active_pursuit || '')}}</strong></p>
+          <p>Question: <strong>${{esc(communicator.unresolved_question || '')}}</strong></p>
+          <p>Curiosity target: <strong>${{esc(communicator.curiosity_target || '')}}</strong></p>
           <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
           <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
           <p>Objections: <strong>${{(communicator.unresolved_objections || []).length}}</strong></p>

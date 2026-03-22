@@ -152,6 +152,11 @@ class CommunicatorState:
     name: str
     status: str
     current_intent: str
+    active_pursuit: str
+    unresolved_question: str
+    curiosity_target: str
+    attraction_bias: str
+    avoidance_bias: str
     curiosity: float
     dominant_need: str
     last_decision_summary: str

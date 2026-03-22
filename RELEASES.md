@@ -226,3 +226,10 @@ Recommended rollback order:
 - reflective communicator decisions now leave public-memory traces for later learning
 - dashboard communicator panel now shows objection count
 - intended direction: make internal disagreement consequential so the communicator can reflect before acting
+
+### v0.0.66
+- communicator now has explicit intention fields: `active_pursuit`, `unresolved_question`, `curiosity_target`, `attraction_bias`, and `avoidance_bias`
+- internal proposal scoring now considers pursuit and curiosity-target alignment in addition to current intent
+- fallback decisions can now follow active pursuit and curiosity target, not only the latest intent string
+- communicator panel now exposes these intention fields directly
+- intended direction: give the communicator a richer inner orientation than just last-action intent

@@ -255,6 +255,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     work_items = world.get("work_items", []) or []
     communicator = world.get("communicator", {}) or {}
     current_intent = str(communicator.get("current_intent", "")).lower()
+    active_pursuit = str(communicator.get("active_pursuit", "")).lower()
+    curiosity_target = str(communicator.get("curiosity_target", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
@@ -295,6 +297,10 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
     elif current_intent and (niche.get("niche_theme", "").lower() in current_intent or action in current_intent):
         reason = f"following communicator intent: {communicator.get('current_intent')}"
+    elif active_pursuit and niche.get("niche_theme", "").lower() in active_pursuit:
+        reason = f"following active pursuit: {communicator.get('active_pursuit')}"
+    elif curiosity_target and niche.get("niche_theme", "").lower() in curiosity_target and action in {"inspect", "research", "signal"}:
+        reason = f"following curiosity target: {communicator.get('curiosity_target')}"
     elif my_work and action in {"research", "optimize", "build_module"}:
         reason = f"advancing assigned work: {my_work[0].get('title', 'project work')}"
     elif unresolved_needs and action in {"inspect", "research", "optimize"}:
