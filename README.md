@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.62** is evolving from a local agent research sandbox into a local self-evolving communicator entity with internal minds, persistent memory, intention, and world-driven behavior.
+**CircleForge v0.0.63** is evolving from a local agent research sandbox into a local self-evolving communicator entity with internal minds, persistent memory, intention, and world-driven behavior.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -228,6 +228,7 @@ The current direction is state-driven rather than prompt-driven: entities should
 - [`AGENT-TIME.md`](AGENT-TIME.md) — per-agent cadence and wake model
 
 Current early implementation surface:
+- `python3 main.py communicator`
 - `python3 main.py world-objects needs`
 - `python3 main.py world-objects messages`
 - `python3 main.py world-objects public-memory`
@@ -238,6 +239,7 @@ Current early implementation surface:
 - soft per-agent cadence via `next_due_tick`, `wake_reason`, and `cadence_interval`
 - protected self-edit boundary for core files and human-safety rules
 - proposal-only self-modification layer for repeated friction
+- first communicator state with internal proposal/integration loop
 
 ## What should come next
 

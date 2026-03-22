@@ -205,3 +205,10 @@ Recommended rollback order:
 - core framing now explicitly centers one visible communicator over 4–5 internal agent/subprocess perspectives
 - README updated to point future design choices toward communicator identity, intention, curiosity, and self-waking behavior
 - intended direction: stop architectural wobble and make future coding decisions serve a single identity
+
+### v0.0.63
+- first visible communicator state added with status, current intent, curiosity, dominant need, and last decision summary
+- internal agents now generate lightweight internal thought proposals with role-like stances such as support, question, and prioritize
+- first intent integration loop added so the communicator forms a top-level intent from internal proposals rather than exposing only raw agent activity
+- dashboard and CLI now expose the communicator as a first-class visible layer
+- intended direction: shift CircleForge from a many-agent surface toward one communicator with internal minds

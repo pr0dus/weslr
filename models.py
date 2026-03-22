@@ -145,3 +145,18 @@ class WorkItemState:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class CommunicatorState:
+    name: str
+    status: str
+    current_intent: str
+    curiosity: float
+    dominant_need: str
+    last_decision_summary: str
+    last_wake_at: int
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

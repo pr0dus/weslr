@@ -44,6 +44,7 @@ from config import (
     RELATIONSHIPS_PATH,
     SELF_MOD_PROPOSALS_PATH,
     WORK_ITEMS_PATH,
+    COMMUNICATOR_STATE_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
@@ -58,7 +59,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -201,6 +202,16 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             notes=f"Bootstrap work item for {project['name']}",
         ).to_dict())
     save_work_items(work_items)
+    save_communicator_state(CommunicatorState(
+        name="CircleForge",
+        status="alive",
+        current_intent="wake, observe, and continue enriching the local world",
+        curiosity=0.66,
+        dominant_need="",
+        last_decision_summary="bootstrap complete",
+        last_wake_at=now_ts,
+        updated_at=now_ts,
+    ).to_dict())
 
 
 def read_json_file(path: Path, default):
@@ -313,6 +324,24 @@ def load_work_items() -> list[dict]:
 
 def save_work_items(items: list[dict]) -> None:
     write_json_file(WORK_ITEMS_PATH, items)
+
+
+def load_communicator_state() -> dict:
+    default = CommunicatorState(
+        name="CircleForge",
+        status="waking",
+        current_intent="orient to the world and continue internal thought",
+        curiosity=0.62,
+        dominant_need="",
+        last_decision_summary="none yet",
+        last_wake_at=0,
+        updated_at=0,
+    ).to_dict()
+    return read_json_file(COMMUNICATOR_STATE_PATH, default)
+
+
+def save_communicator_state(payload: dict) -> None:
+    write_json_file(COMMUNICATOR_STATE_PATH, payload)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2246,6 +2275,81 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
     return True, "scheduled-cadence"
 
 
+def classify_internal_role(agent_name: str) -> str:
+    suffix = int(str(agent_name).split("-")[-1]) if "-" in str(agent_name) else 0
+    mapping = {
+        1: "observer",
+        2: "builder",
+        3: "critic",
+        4: "memory_keeper",
+        5: "coordinator",
+    }
+    return mapping.get(suffix, "specialist")
+
+
+def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str) -> dict:
+    role = classify_internal_role(agent.get("name", "agent"))
+    action = plan.get("action")
+    stance = "agree"
+    if role == "critic" and action in {"build_module", "trade"}:
+        stance = "question"
+    elif role == "memory_keeper" and wake_reason == "message-received":
+        stance = "prioritize"
+    elif role == "observer" and action == "inspect":
+        stance = "support"
+    elif role == "builder" and action == "build_module":
+        stance = "support"
+    return {
+        "agent": agent.get("name"),
+        "role": role,
+        "proposed_action": action,
+        "niche_theme": plan.get("niche_theme"),
+        "reason": plan.get("reason"),
+        "wake_reason": wake_reason,
+        "stance": stance,
+    }
+
+
+def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
+    communicator = load_communicator_state()
+    if not proposals:
+        communicator["status"] = "idle"
+        communicator["last_wake_at"] = now_ts
+        communicator["updated_at"] = now_ts
+        communicator["last_decision_summary"] = "no internal proposals this cycle"
+        save_communicator_state(communicator)
+        return {"current_intent": communicator.get("current_intent"), "chosen_action": None, "consensus": []}
+
+    ranked = []
+    for proposal in proposals:
+        score = 0.5
+        if proposal.get("stance") in {"support", "prioritize"}:
+            score += 0.18
+        if proposal.get("wake_reason") == "message-received":
+            score += 0.08
+        if unresolved_needs and proposal.get("proposed_action") in {"inspect", "research", "optimize"}:
+            score += 0.1
+        if proposal.get("role") == "critic" and proposal.get("stance") == "question":
+            score -= 0.08
+        ranked.append((score, proposal))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    chosen = ranked[0][1]
+    communicator["status"] = "active"
+    communicator["current_intent"] = f"{chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
+    communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
+    communicator["last_decision_summary"] = f"intent formed from {chosen.get('agent')} ({chosen.get('role')}) via {chosen.get('stance')}"
+    communicator["last_wake_at"] = now_ts
+    communicator["updated_at"] = now_ts
+    communicator["curiosity"] = round(min(max(float(communicator.get("curiosity", 0.6)) + (0.03 if unresolved_needs else 0.01), 0.1), 0.99), 3)
+    save_communicator_state(communicator)
+    return {
+        "current_intent": communicator.get("current_intent"),
+        "chosen_action": chosen.get("proposed_action"),
+        "chosen_theme": chosen.get("niche_theme"),
+        "consensus": proposals,
+    }
+
+
 def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
     elapsed = now_ts - int(actor.get("last_trade_at", 0))
     if elapsed < DAILY_COOLDOWN_SECONDS:
@@ -2519,6 +2623,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     tick = world["tick"] + 1
     started_at = int(time.time())
     summaries: List[Dict] = []
+    internal_proposals: List[Dict] = []
     with conn:
         conn.execute("UPDATE world SET value=? WHERE key='tick'", (str(tick),))
         conn.execute("UPDATE world SET value=? WHERE key='last_tick_started'", (str(started_at),))
@@ -2551,6 +2656,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                     print(json.dumps(item, indent=2))
                 continue
             plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items}, agent_dir)
+            internal_proposals.append(propose_internal_thought(agent, plan, wake_reason))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -2566,12 +2672,13 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
+    communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
     update_world_objects(conn, tick, started_at, summaries)
     opportunity_board = decay_and_evolve_themes(opportunity_board, started_at)
     save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
     conn.close()
-    return summaries
+    return {"summaries": summaries, "communicator": load_communicator_state(), "internal_consensus": communicator_decision}
 
 
 def write_pack_wrapper(pack: Dict) -> str:
@@ -2934,6 +3041,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "generated_at": int(time.time()),
         "version": VERSION,
         "world": data.get("world"),
+        "communicator": data.get("communicator"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
         "artifact_packs": data.get("artifact_packs"),
@@ -3014,6 +3122,13 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Packs: <strong>{len(data.get('artifact_packs', []))}</strong></p>
         <p>Export queue: <strong>{len(data.get('export_queue', []))}</strong></p>
         <p>Review queue: <strong>{len(data.get('review_queue', []))}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Communicator</h2>
+        <p>Status: <strong>{escape(str((payload.get('communicator') or {}).get('status', 'unknown')))}</strong></p>
+        <p>Intent: <strong>{escape(str((payload.get('communicator') or {}).get('current_intent', 'tbd')))}</strong></p>
+        <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
+        <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
       </section>
       <section class="card">
         <h2>Theme Links</h2>
@@ -3116,6 +3231,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
 
     function renderDashboard(payload) {{
       const world = payload.world || {{}};
+      const communicator = payload.communicator || {{}};
       const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
         .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
       const topThemes = themes.slice(0, 6);
@@ -3156,6 +3272,13 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Packs: <strong>${{(payload.artifact_packs || []).length}}</strong></p>
           <p>Export queue: <strong>${{exportQueue.length}}</strong></p>
           <p>Review queue: <strong>${{reviewQueue.length}}</strong></p>
+        </section>
+        <section class="card">
+          <h2>Communicator</h2>
+          <p>Status: <strong>${{esc(communicator.status || 'unknown')}}</strong></p>
+          <p>Intent: <strong>${{esc(communicator.current_intent || 'tbd')}}</strong></p>
+          <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
+          <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
         </section>
         <section class="card">
           <h2>Theme Links</h2>
@@ -3312,9 +3435,9 @@ def show_world() -> Dict:
         "needs": load_needs(),
         "messages": load_messages(),
         "public_memory": load_public_memory(),
+        "communicator": load_communicator_state(),
         "projects": load_projects(),
         "work_items": load_work_items(),
-        "relationships": load_relationships(),
         "relationships": load_relationships(),
         "self_mod_proposals": load_self_mod_proposals(),
         "protected_boundary": protected_self_edit_boundary(),
