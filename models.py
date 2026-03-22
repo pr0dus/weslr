@@ -163,6 +163,7 @@ class CommunicatorState:
     intent_history: List[str]
     question_history: List[str]
     unresolved_objections: List[str]
+    decision_style_memory: Dict[str, Any]
     last_wake_at: int
     updated_at: int
 

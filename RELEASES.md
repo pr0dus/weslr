@@ -276,3 +276,10 @@ Recommended rollback order:
 - critic objections now gain or lose force depending on learned usefulness instead of being treated uniformly
 - communicator decision summaries now expose epistemic weighting for the winning internal voice
 - intended direction: let the communicator become socially-epistemically shaped, not just structurally multi-voiced
+
+### v0.0.74
+- communicator now keeps decision-style memory for actions and modes, not just voice credibility
+- proposal integration now gets a small boost from previously helpful decision styles
+- reflective modes such as `inspect-first` / `reconsider` / `defer` can now accumulate learned confidence
+- communicator panel now exposes decision-style learning count
+- intended direction: let the communicator learn not only who to trust, but how to think

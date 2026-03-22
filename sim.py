@@ -219,6 +219,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         intent_history=["wake, observe, and continue enriching the local world"],
         question_history=["what part of the world is still under-understood?"],
         unresolved_objections=[],
+        decision_style_memory={},
         last_wake_at=now_ts,
         updated_at=now_ts,
     ).to_dict())
@@ -352,6 +353,7 @@ def load_communicator_state() -> dict:
         intent_history=[],
         question_history=["what in the local world most deserves attention next?"],
         unresolved_objections=[],
+        decision_style_memory={},
         last_wake_at=0,
         updated_at=0,
     ).to_dict()
@@ -2525,6 +2527,39 @@ def average_internal_reputation(agent_name: str) -> tuple[float, float, float]:
     return round(trust, 3), round(usefulness, 3), round(friction, 3)
 
 
+def decision_style_weight(communicator: dict, action: str | None, mode: str | None) -> float:
+    memory = communicator.get("decision_style_memory") or {}
+    score = 0.0
+    if action:
+        action_mem = memory.get("actions", {}).get(action, {})
+        score += float(action_mem.get("confidence", 0.0)) * 0.12
+    if mode:
+        mode_mem = memory.get("modes", {}).get(mode, {})
+        score += float(mode_mem.get("confidence", 0.0)) * 0.1
+    return score
+
+
+def update_decision_style_memory(communicator: dict, decision_mode: str, final_action: str | None, chosen: dict, unresolved_needs: list[str]) -> None:
+    memory = communicator.get("decision_style_memory") or {}
+    actions = memory.setdefault("actions", {})
+    modes = memory.setdefault("modes", {})
+    if final_action:
+        entry = actions.setdefault(final_action, {"count": 0, "confidence": 0.0, "last_theme": ""})
+        entry["count"] = int(entry.get("count", 0)) + 1
+        delta = 0.06 if final_action in {"inspect", "research"} else 0.03
+        if unresolved_needs and final_action in {"inspect", "research", "optimize"}:
+            delta += 0.03
+        entry["confidence"] = round(min(float(entry.get("confidence", 0.0)) + delta, 0.95), 3)
+        entry["last_theme"] = chosen.get("niche_theme") or ""
+    mode_entry = modes.setdefault(decision_mode, {"count": 0, "confidence": 0.0})
+    mode_entry["count"] = int(mode_entry.get("count", 0)) + 1
+    mode_delta = 0.05 if decision_mode in {"inspect-first", "reconsider"} else 0.03
+    if decision_mode == "defer":
+        mode_delta = 0.01
+    mode_entry["confidence"] = round(min(float(mode_entry.get("confidence", 0.0)) + mode_delta, 0.95), 3)
+    communicator["decision_style_memory"] = memory
+
+
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
     communicator = load_communicator_state()
     if not proposals:
@@ -2556,6 +2591,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.06
         if proposal.get("question_alignment"):
             score += 0.1
+        score += decision_style_weight(communicator, proposal.get("proposed_action"), None)
         running_experiments = [item for item in load_experiments() if item.get("status") == "running"]
         if any(proposal.get("niche_theme") and proposal.get("niche_theme").lower() in str(item.get("title", "")).lower() for item in running_experiments):
             score += 0.12
@@ -2584,6 +2620,11 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         final_action = None
         decision_mode = "defer"
 
+    mode_boost = decision_style_weight(communicator, None, decision_mode)
+    if mode_boost > 0.08 and final_action is None:
+        final_action = chosen.get("proposed_action")
+        decision_mode = "act"
+
     intent_text = f"{final_action or chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
     communicator["status"] = "active" if final_action else "reflecting"
     experiments = load_experiments()
@@ -2610,6 +2651,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         communicator["curiosity"] = round(min(max(curiosity + 0.015, 0.1), 0.99), 3)
     else:
         communicator["curiosity"] = round(min(max(curiosity - 0.01, 0.1), 0.99), 3)
+    update_decision_style_memory(communicator, decision_mode, final_action, chosen, unresolved_needs)
     history = list(communicator.get("intent_history") or [])
     history.append(intent_text)
     communicator["intent_history"] = history[-12:]
@@ -3426,6 +3468,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Attraction bias: <strong>{escape(str((payload.get('communicator') or {}).get('attraction_bias', '')))}</strong></p>
         <p>Avoidance bias: <strong>{escape(str((payload.get('communicator') or {}).get('avoidance_bias', '')))}</strong></p>
         <p>Question lineage: <strong>{len((payload.get('communicator') or {}).get('question_history', []))}</strong></p>
+        <p>Decision styles learned: <strong>{len(((payload.get('communicator') or {}).get('decision_style_memory', {}) or {}).get('actions', {}))}</strong></p>
         <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
         <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
         <p>Objections: <strong>{len((payload.get('communicator') or {}).get('unresolved_objections', []))}</strong></p>
@@ -3588,6 +3631,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Attraction bias: <strong>${{esc(communicator.attraction_bias || '')}}</strong></p>
           <p>Avoidance bias: <strong>${{esc(communicator.avoidance_bias || '')}}</strong></p>
           <p>Question lineage: <strong>${{(communicator.question_history || []).length}}</strong></p>
+          <p>Decision styles learned: <strong>${{Object.keys((communicator.decision_style_memory || {{}}).actions || {{}}).length}}</strong></p>
           <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
           <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
           <p>Objections: <strong>${{(communicator.unresolved_objections || []).length}}</strong></p>
