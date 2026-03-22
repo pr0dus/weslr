@@ -20,3 +20,5 @@ needs.json
 messages.json
 public_memory.json
 projects.json
+relationships.json
+self_mod_proposals.json

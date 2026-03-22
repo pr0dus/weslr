@@ -41,6 +41,8 @@ from config import (
     PROJECTS_PATH,
     PUBLIC_MEMORY_PATH,
     PACKS_PATH,
+    RELATIONSHIPS_PATH,
+    SELF_MOD_PROPOSALS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
@@ -55,7 +57,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -168,6 +170,22 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
     save_public_memory(memory_items)
     save_needs([])
     save_messages([])
+    relationships = []
+    for i in range(1, agent_count + 1):
+        for j in range(1, agent_count + 1):
+            if i == j:
+                continue
+            relationships.append(RelationshipState(
+                source_agent=f"agent-{i}",
+                target_agent=f"agent-{j}",
+                trust=0.5,
+                usefulness=0.5,
+                friction=0.0,
+                last_event="bootstrap",
+                updated_at=now_ts,
+            ).to_dict())
+    save_relationships(relationships)
+    save_self_mod_proposals([])
 
 
 def read_json_file(path: Path, default):
@@ -256,6 +274,22 @@ def load_projects() -> list[dict]:
 
 def save_projects(items: list[dict]) -> None:
     write_json_file(PROJECTS_PATH, items)
+
+
+def load_relationships() -> list[dict]:
+    return read_json_file(RELATIONSHIPS_PATH, [])
+
+
+def save_relationships(items: list[dict]) -> None:
+    write_json_file(RELATIONSHIPS_PATH, items)
+
+
+def load_self_mod_proposals() -> list[dict]:
+    return read_json_file(SELF_MOD_PROPOSALS_PATH, [])
+
+
+def save_self_mod_proposals(items: list[dict]) -> None:
+    write_json_file(SELF_MOD_PROPOSALS_PATH, items)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -1928,8 +1962,66 @@ def inspect_target(actor: Dict, target: Dict, now_ts: int) -> ActionResult:
         "top_theme": top_theme,
     }, indent=2)
     actor["last_inspect_at"] = now_ts
+    update_relationship(actor["name"], target["name"], "inspect", True, now_ts)
     save_note(AGENTS_DIR / actor["name"], f"inspect learned {target['name']} top_theme={top_theme or 'unknown'} modules={len(modules)} artifacts={len(artifacts)}")
     return ActionResult(action="inspect", status="ok", summary=f"inspected {target['name']}", reputation_delta=0.01, target=target["name"], raw_output=raw)
+
+
+def choose_project_for_theme(theme: str | None, projects: list[dict]) -> dict | None:
+    if not theme:
+        return projects[0] if projects else None
+    theme_lower = str(theme).lower()
+    for project in projects:
+        blob = f"{project.get('name', '')} {project.get('purpose', '')}".lower()
+        if theme_lower in blob:
+            return project
+    return projects[0] if projects else None
+
+
+def update_relationship(source_agent: str, target_agent: str, event_kind: str, success: bool, now_ts: int) -> None:
+    relationships = load_relationships()
+    rel = next((item for item in relationships if item.get("source_agent") == source_agent and item.get("target_agent") == target_agent), None)
+    if rel is None:
+        rel = RelationshipState(source_agent, target_agent, 0.5, 0.5, 0.0, event_kind, now_ts).to_dict()
+        relationships.append(rel)
+    if success:
+        rel["trust"] = round(min(float(rel.get("trust", 0.5)) + 0.04, 0.99), 3)
+        rel["usefulness"] = round(min(float(rel.get("usefulness", 0.5)) + 0.05, 0.99), 3)
+        rel["friction"] = round(max(float(rel.get("friction", 0.0)) - 0.02, 0.0), 3)
+    else:
+        rel["friction"] = round(min(float(rel.get("friction", 0.0)) + 0.07, 0.99), 3)
+        rel["trust"] = round(max(float(rel.get("trust", 0.5)) - 0.03, 0.05), 3)
+    rel["last_event"] = event_kind
+    rel["updated_at"] = now_ts
+    save_relationships(relationships)
+
+
+def register_self_mod_proposal(agent_name: str, pressure_source: str, problem_summary: str, now_ts: int) -> dict | None:
+    proposals = load_self_mod_proposals()
+    duplicate = next((item for item in proposals if item.get("agent_id") == agent_name and item.get("problem_summary") == problem_summary and item.get("status") in {"proposed", "approved"}), None)
+    if duplicate:
+        duplicate["validation_notes"] = f"seen again at {now_ts}"
+        save_self_mod_proposals(proposals)
+        return duplicate
+    target_path = f"agents/{agent_name}/modules/helper_{agent_name}.py"
+    proposal = SelfModificationProposalState(
+        id=f"smp-{agent_name}-{now_ts}",
+        agent_id=agent_name,
+        created_at=now_ts,
+        target_path=target_path,
+        scope="private",
+        pressure_source=pressure_source,
+        problem_summary=problem_summary,
+        proposed_change="Create or refine a private helper/wrapper to reduce repeated local friction.",
+        expected_benefit="Lower repeated failure cost and improve local capability without touching protected core files.",
+        risk_level="low",
+        checkpoint_ref="pending-before-apply",
+        status="proposed",
+        validation_notes="proposal-only; full auto-editing remains future bounded work",
+    ).to_dict()
+    proposals.append(proposal)
+    save_self_mod_proposals(proposals[-100:])
+    return proposal
 
 
 def signal_target(actor: Dict, target: Dict, now_ts: int, theme: str | None, need: str | None, category: str | None) -> ActionResult:
@@ -1942,8 +2034,10 @@ def signal_target(actor: Dict, target: Dict, now_ts: int, theme: str | None, nee
         "sent_at": now_ts,
     }
     push_inbox_message(target_dir, message)
+    projects = load_projects()
+    project = choose_project_for_theme(theme, projects)
     message_log = load_messages()
-    message_log.append(MessageState(
+    message_entry = MessageState(
         id=f"msg-{actor['name']}-{target['name']}-{now_ts}",
         from_agent=actor["name"],
         to_agent=target["name"],
@@ -1951,8 +2045,12 @@ def signal_target(actor: Dict, target: Dict, now_ts: int, theme: str | None, nee
         theme=theme or "shared need",
         content=need or "coordinate around recent friction",
         created_at=now_ts,
-    ).to_dict())
+    ).to_dict()
+    if project:
+        message_entry["project_id"] = project.get("id")
+    message_log.append(message_entry)
     save_messages(message_log[-200:])
+    update_relationship(actor["name"], target["name"], "signal", True, now_ts)
     save_note(AGENTS_DIR / actor["name"], f"signal sent to {target['name']} about {message['theme']}: {message['need']}")
     raw = json.dumps({"from": actor["name"], "to": target["name"], "message": message}, indent=2)
     return ActionResult(action="signal", status="ok", summary=f"signaled {target['name']} about {message['theme']}", reputation_delta=0.015, target=target["name"], raw_output=raw)
@@ -1978,6 +2076,33 @@ def summarize_unresolved_needs(conn: sqlite3.Connection) -> list[str]:
         if summary not in needs:
             needs.append(summary)
     return needs[:4]
+
+
+def route_project_ownership(now_ts: int, summaries: list[dict]) -> None:
+    projects = load_projects()
+    if not projects:
+        return
+    for project in projects:
+        matching = [s for s in summaries if str(s.get("niche_theme", "")).lower() in f"{project.get('name', '')} {project.get('purpose', '')}".lower() and s.get("status") == "ok"]
+        if not matching:
+            continue
+        best = sorted(matching, key=lambda item: item.get("reputation", 0.0), reverse=True)[0]
+        owners = project.get("owners") or []
+        if best.get("agent") not in owners:
+            owners.append(best.get("agent"))
+            project["owners"] = owners[:3]
+        project["updated_at"] = now_ts
+    save_projects(projects)
+
+
+def maybe_propose_self_modifications(now_ts: int, summaries: list[dict]) -> list[dict]:
+    proposals = []
+    for item in summaries:
+        if item.get("status") in {"error", "cooldown", "skipped"}:
+            proposal = register_self_mod_proposal(item.get("agent"), item.get("status"), item.get("summary"), now_ts)
+            if proposal:
+                proposals.append(proposal)
+    return proposals
 
 
 def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summaries: list[dict]) -> None:
@@ -2031,14 +2156,8 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
             ).to_dict())
     save_public_memory(public_memory[-50:])
 
-    projects = load_projects()
-    if projects:
-        for project in projects:
-            matching = [s for s in summaries if str(s.get("niche_theme", "")).lower() in str(project.get("name", "")).lower() or str(project.get("purpose", "")).lower().find(str(s.get("niche_theme", "")).lower()) >= 0]
-            if matching:
-                project["updated_at"] = now_ts
-                project["status"] = "active"
-    save_projects(projects)
+    route_project_ownership(now_ts, summaries)
+    maybe_propose_self_modifications(now_ts, summaries)
 
 
 def agent_social_context(agent_dir: Path) -> Dict:
@@ -2078,6 +2197,7 @@ def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Conn
     clamp_agent(target)
     conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=? WHERE name=?", (target["energy"], target["storage"], target["gpu_quota"], target["reputation"], target["last_inspect_at"], target["last_trade_at"], target["age_ticks"], target["name"]))
     raw = json.dumps({"from": actor["name"], "to": target["name"], "offer": {"storage": 3}, "received_effect": {"energy": 2, "reputation": 0.02}, "target_effect": {"storage": 2, "reputation": 0.01}}, indent=2)
+    update_relationship(actor["name"], target["name"], "trade", True, now_ts)
     return ActionResult(action="trade", status="ok", summary=f"traded with {target['name']}", target=target["name"], raw_output=raw)
 
 
@@ -2755,6 +2875,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "messages": data.get("messages"),
         "public_memory": data.get("public_memory"),
         "projects": data.get("projects"),
+        "relationships": data.get("relationships"),
+        "self_mod_proposals": data.get("self_mod_proposals"),
         "protected_boundary": data.get("protected_boundary"),
         "release_ledger": release_ledger,
     }
@@ -2883,6 +3005,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Protected Boundary</h2>
         <ul>{''.join(f"<li><code>{escape(path)}</code></li>" for path in (payload.get('protected_boundary') or {}).get('protected_paths', [])[:8]) or '<li class="muted">No protected paths listed.</li>'}</ul>
       </section>
+      <section class="card">
+        <h2>Self-Modification Proposals</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('agent_id'))}</strong> → <code>{escape(item.get('target_path'))}</code><br><span class=\'muted\'>{escape(str(item.get('problem_summary')))}</span></li>" for item in (payload.get('self_mod_proposals') or [])[:8]) or '<li class="muted">No proposals yet.</li>'}</ul>
+      </section>
     </div>
 
     <div class="grid" style="margin-top:16px;" id="events">
@@ -2934,7 +3060,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const needs = payload.needs || [];
       const projects = payload.projects || [];
       const publicMemory = payload.public_memory || [];
-      const protectedBoundary = payload.protected_boundary || {};
+      const protectedBoundary = payload.protected_boundary || {{}};
+      const selfModProposals = payload.self_mod_proposals || [];
       const exportQueue = payload.export_queue || [];
       const reviewQueue = payload.review_queue || [];
 
@@ -3013,6 +3140,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       if (worldObjectGrids[1]) worldObjectGrids[1].innerHTML = `<h2>Projects</h2><ul>${{projects.map((item) => `<li><strong>${{esc(item.name)}}</strong> · ${{esc(item.status)}}<br><span class='muted'>${{esc(item.purpose)}}</span></li>`).join('') || '<li class="muted">No projects yet.</li>'}}</ul>`;
       if (worldObjectGrids[2]) worldObjectGrids[2].innerHTML = `<h2>Public Memory</h2><ul>${{publicMemory.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.kind)}}<br><span class='muted'>${{esc(item.content)}}</span></li>`).join('') || '<li class="muted">No public memory yet.</li>'}}</ul>`;
       if (worldObjectGrids[3]) worldObjectGrids[3].innerHTML = `<h2>Protected Boundary</h2><ul>${{(protectedBoundary.protected_paths || []).map((path) => `<li><code>${{esc(path)}}</code></li>`).join('') || '<li class="muted">No protected paths listed.</li>'}}</ul>`;
+      if (worldObjectGrids[4]) worldObjectGrids[4].innerHTML = `<h2>Self-Modification Proposals</h2><ul>${{selfModProposals.map((item) => `<li><strong>${{esc(item.agent_id)}}</strong> → <code>${{esc(item.target_path)}}</code><br><span class='muted'>${{esc(item.problem_summary)}}</span></li>`).join('') || '<li class="muted">No proposals yet.</li>'}}</ul>`;
 
       const eventGrids = document.querySelectorAll('#events section');
       if (eventGrids[0]) eventGrids[0].innerHTML = `<h2>Event Feed</h2><ul>${{eventFeed.map((event) => `<li>${{esc(event.message)}}</li>`).join('') || '<li class="muted">No notable changes yet.</li>'}}</ul>`;
@@ -3114,6 +3242,8 @@ def show_world() -> Dict:
         "messages": load_messages(),
         "public_memory": load_public_memory(),
         "projects": load_projects(),
+        "relationships": load_relationships(),
+        "self_mod_proposals": load_self_mod_proposals(),
         "protected_boundary": protected_self_edit_boundary(),
         "categories": categories,
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),

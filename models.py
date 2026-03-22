@@ -95,3 +95,37 @@ class ProjectState:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class RelationshipState:
+    source_agent: str
+    target_agent: str
+    trust: float
+    usefulness: float
+    friction: float
+    last_event: str
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class SelfModificationProposalState:
+    id: str
+    agent_id: str
+    created_at: int
+    target_path: str
+    scope: str
+    pressure_source: str
+    problem_summary: str
+    proposed_change: str
+    expected_benefit: str
+    risk_level: str
+    checkpoint_ref: str
+    status: str
+    validation_notes: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

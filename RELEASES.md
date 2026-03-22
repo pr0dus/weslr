@@ -183,3 +183,11 @@ Recommended rollback order:
 - protected self-edit boundary added in code/config so core safety files and rules are not self-modifiable by emergence logic
 - self-modification docs extended with an explicit future note for full auto-editing under bounded human-safe conditions
 - intended direction: make the ecology less toy-synchronous while preventing future self-editing from erasing human safety constraints
+
+### v0.0.60
+- relationship memory layer added between agents with trust, usefulness, friction, and last-event tracking
+- successful inspect/trade/signal interactions now update relationship state
+- message routing now attaches lightweight project context when a theme maps onto an active project
+- proposal-only self-modification objects added for repeated friction; they target private agent helpers only
+- dashboard and CLI now expose `relationships` and `self-mod-proposals`
+- intended direction: make coordination and capability growth more social while keeping self-editing bounded and reviewable

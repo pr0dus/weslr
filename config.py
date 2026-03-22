@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.59"
+VERSION = "0.0.60"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
@@ -30,6 +30,8 @@ NEEDS_PATH = BASE_DIR / "needs.json"
 MESSAGES_PATH = BASE_DIR / "messages.json"
 PUBLIC_MEMORY_PATH = BASE_DIR / "public_memory.json"
 PROJECTS_PATH = BASE_DIR / "projects.json"
+RELATIONSHIPS_PATH = BASE_DIR / "relationships.json"
+SELF_MOD_PROPOSALS_PATH = BASE_DIR / "self_mod_proposals.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40
