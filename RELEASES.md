@@ -327,3 +327,7 @@ Recommended rollback order:
 ### v0.0.83
 - memory-keeper now clusters unresolved objections into grouped continuity-oriented memory traces
 - intended direction: begin turning memory-keeper memory into objection/caution-pattern memory rather than only generic continuity notes
+
+### v0.0.84
+- builder usefulness memory now feeds back into later builder action choice when prior build patterns appeared useful
+- intended direction: make builder memory influence builder behavior, not just builder notes

@@ -266,12 +266,16 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     caution_themes = " ".join(str(item).lower() for item in (self_model.get("caution_themes") or []))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
+    builder_yes = sum(1 for note in notes[-12:] if "builder-usefulness" in note.lower() and "later_activity_detected=yes" in note.lower())
+    builder_no = sum(1 for note in notes[-12:] if "builder-usefulness" in note.lower() and "later_activity_detected=no" in note.lower())
     experiment_focus = any(item.get("status") == "running" and active_pursuit and active_pursuit in str(item.get("title", "")).lower() for item in experiments)
 
     role = world.get("internal_role") or "specialist"
 
     if agent["energy"] < 30:
         action = "rest"
+    elif role == "builder" and builder_yes > builder_no and random.random() < 0.52:
+        action = random.choice(["build_module", "optimize"])
     elif role == "coordinator" and (inbox or unresolved_needs or my_work) and target and random.random() < 0.52:
         action = random.choice(["signal", "inspect", "research"])
     elif role == "memory_keeper" and (unresolved_question or inbox) and random.random() < 0.56:
@@ -319,7 +323,9 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         category = random.choice(categories) if categories else "uncategorized"
     niche = choose_niche(agent_dir=agent_dir, action=action, category=category, world=world)
     reason = f"fallback policy selected {action}"
-    if role == "coordinator" and action == "signal":
+    if role == "builder" and action in {"build_module", "optimize"} and builder_yes > builder_no:
+        reason = f"builder following previously useful build pattern around {communicator.get('active_pursuit') or 'current theme'}"
+    elif role == "coordinator" and action == "signal":
         reason = f"coordinator forwarding intent/work around {communicator.get('active_pursuit') or 'current pressure'}"
     elif role == "memory_keeper" and action in {"research", "inspect", "rest"}:
         reason = f"memory-keeper preserving question continuity: {communicator.get('unresolved_question')}"
