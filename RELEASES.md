@@ -137,3 +137,11 @@ Recommended rollback order:
 - intended direction: reward honest emergence and punish hollow packaging before adding richer generators
 - backup: `CircleForge-backup-20260321-235322.tar.gz`
 - tag: `v0.0.53`
+
+### v0.0.54
+- guided `setup` command added for first-run testing
+- setup now asks for agent count, tick count, interval, and dashboard refresh settings
+- infinite mode is now explicit in setup via `0` / `inf` / `infinite` / `forever`
+- setup prints the exact absolute dashboard path and `file://` URL to open in a browser
+- README and install flow updated so testers land in setup instead of a half-finished manual path
+- intended direction: reduce tester confusion and make the first local run self-explanatory

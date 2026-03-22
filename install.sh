@@ -8,7 +8,7 @@ fi
 
 python3 --version
 
-echo "CircleForge v0.0.52 is ready."
+echo "CircleForge is ready."
 echo
 if command -v ollama >/dev/null 2>&1; then
   echo "Ollama detected: $(ollama --version 2>/dev/null | head -1 || echo yes)"
@@ -18,9 +18,12 @@ fi
 
 echo
 echo "Quick start:"
-echo "  python3 main.py init --reset --agents 4"
-echo "  python3 main.py tick"
-echo "  python3 main.py show-world"
-echo "  python3 main.py dashboard"
+echo "  python3 main.py setup"
 echo
-echo "Open dashboard/index.html after rendering the dashboard."
+echo "Guided setup will ask for:"
+echo "  - agent count"
+echo "  - tick count (0 = infinite)"
+echo "  - tick interval seconds"
+echo "  - dashboard auto-refresh seconds"
+echo
+echo "After setup, CircleForge prints the exact dashboard path and file:// URL to open in your browser."

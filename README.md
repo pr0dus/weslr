@@ -83,6 +83,7 @@ It mainly uses the Python standard library.
 git clone https://github.com/pr0dus/CircleForge.git
 cd CircleForge
 python3 main.py version
+python3 main.py setup
 ```
 
 ### Optional local model setup (Ollama)
@@ -103,11 +104,34 @@ export OLLAMA_MODEL=qwen2.5:3b
 
 ### First run
 
+The easiest way to test CircleForge now is the guided setup:
+
+```bash
+python3 main.py setup
+```
+
+It will ask:
+- how many agents to create
+- how many ticks to run
+- tick interval in seconds
+- dashboard auto-refresh seconds
+
+For tick count, you can use:
+- a positive number like `10`
+- `0` for infinite mode
+- `inf`, `infinite`, or `forever` during the interactive prompt
+
+After setup finishes, CircleForge prints the exact dashboard path to open in your browser, for example:
+- `/full/path/to/CircleForge/dashboard/index.html`
+- `file:///full/path/to/CircleForge/dashboard/index.html`
+
+If you prefer the manual flow instead:
+
 ```bash
 python3 main.py init --reset --agents 4
-python3 main.py tick
+python3 main.py run --ticks 10 --interval 0
 python3 main.py show-world
-python3 main.py dashboard
+python3 main.py dashboard --refresh 5
 ```
 
 Then open:
@@ -134,6 +158,9 @@ python3 main.py category revive <name>
 python3 main.py dashboard
 python3 main.py dashboard --refresh 5
 python3 main.py dashboard --watch --interval 10
+python3 main.py setup
+python3 main.py setup --agents 6 --ticks 20 --interval 0 --refresh 5
+python3 main.py setup --agents 4 --ticks 0 --interval 60 --refresh 5
 python3 main.py offer <pack-name>
 python3 main.py version
 ```
