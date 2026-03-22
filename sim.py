@@ -45,6 +45,7 @@ from config import (
     SELF_MOD_PROPOSALS_PATH,
     WORK_ITEMS_PATH,
     COMMUNICATOR_STATE_PATH,
+    EXPERIMENTS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
@@ -59,7 +60,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, ExperimentState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -202,6 +203,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             notes=f"Bootstrap work item for {project['name']}",
         ).to_dict())
     save_work_items(work_items)
+    save_experiments([])
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -358,6 +360,14 @@ def load_communicator_state() -> dict:
 
 def save_communicator_state(payload: dict) -> None:
     write_json_file(COMMUNICATOR_STATE_PATH, payload)
+
+
+def load_experiments() -> list[dict]:
+    return read_json_file(EXPERIMENTS_PATH, [])
+
+
+def save_experiments(items: list[dict]) -> None:
+    write_json_file(EXPERIMENTS_PATH, items)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2281,6 +2291,42 @@ def sync_question_lineage_to_world(now_ts: int, tick: int) -> None:
             save_work_items(work_items[-120:])
 
 
+def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> None:
+    communicator = load_communicator_state()
+    current_question = str(communicator.get("unresolved_question", "")).strip()
+    if not current_question:
+        return
+    experiments = load_experiments()
+    projects = load_projects()
+    needs = load_needs()
+    project = choose_project_for_theme(communicator.get("active_pursuit"), projects)
+    need = next((item for item in needs if item.get("title") == current_question), None)
+
+    existing = next((item for item in experiments if item.get("title") == current_question and item.get("status") in {"proposed", "running"}), None)
+    if existing is None:
+        experiments.append(ExperimentState(
+            id=f"exp-{tick}",
+            title=current_question,
+            hypothesis=f"A short inspect/research loop around {communicator.get('active_pursuit') or 'current pursuit'} will reduce uncertainty.",
+            owner=(project.get("owners") or ["agent-1"])[0] if project else "agent-1",
+            status="proposed",
+            created_at=now_ts,
+            related_need=need.get("id") if need else "",
+            project_id=project.get("id") if project else "",
+            observations="",
+            follow_up="Run inspect or research and compare whether the question changes.",
+        ).to_dict())
+    else:
+        relevant = [s for s in summaries if s.get("niche_theme") and str(s.get("niche_theme")).lower() in current_question.lower() and s.get("action") in {"inspect", "research"}]
+        if relevant:
+            existing["status"] = "running"
+            existing["observations"] = f"Latest relevant action: {relevant[-1].get('action')} by {relevant[-1].get('agent')}"
+            existing["follow_up"] = "Re-check whether the communicator question changed or narrowed after this action."
+            if current_question != existing.get("title"):
+                existing["status"] = "succeeded"
+    save_experiments(experiments[-120:])
+
+
 def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summaries: list[dict]) -> None:
     unresolved = summarize_unresolved_needs(conn)
     needs = load_needs()
@@ -2336,6 +2382,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     update_work_item_progress(now_ts, summaries)
     maybe_propose_self_modifications(now_ts, summaries)
     sync_question_lineage_to_world(now_ts, tick)
+    sync_experiments_to_world(now_ts, tick, summaries)
 
 
 def agent_social_context(agent_dir: Path) -> Dict:
@@ -3241,6 +3288,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "public_memory": data.get("public_memory"),
         "projects": data.get("projects"),
         "work_items": data.get("work_items"),
+        "experiments": data.get("experiments"),
         "relationships": data.get("relationships"),
         "self_mod_proposals": data.get("self_mod_proposals"),
         "protected_boundary": data.get("protected_boundary"),
@@ -3389,6 +3437,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Self-Modification Proposals</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('agent_id'))}</strong> → <code>{escape(item.get('target_path'))}</code><br><span class=\'muted\'>{escape(str(item.get('problem_summary')))}</span></li>" for item in (payload.get('self_mod_proposals') or [])[:8]) or '<li class="muted">No proposals yet.</li>'}</ul>
       </section>
+      <section class="card">
+        <h2>Experiments</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('title'))}</strong> · {escape(str(item.get('status')))}<br><span class=\'muted\'>{escape(str(item.get('hypothesis')))}</span></li>" for item in (payload.get('experiments') or [])[:8]) or '<li class="muted">No experiments yet.</li>'}</ul>
+      </section>
     </div>
 
     <div class="grid" style="margin-top:16px;" id="events">
@@ -3443,6 +3495,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const publicMemory = payload.public_memory || [];
       const protectedBoundary = payload.protected_boundary || {{}};
       const selfModProposals = payload.self_mod_proposals || [];
+      const experiments = payload.experiments || [];
       const exportQueue = payload.export_queue || [];
       const reviewQueue = payload.review_queue || [];
 
@@ -3536,6 +3589,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       if (worldObjectGrids[2]) worldObjectGrids[2].innerHTML = `<h2>Public Memory</h2><ul>${{publicMemory.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.kind)}}<br><span class='muted'>${{esc(item.content)}}</span></li>`).join('') || '<li class="muted">No public memory yet.</li>'}}</ul>`;
       if (worldObjectGrids[3]) worldObjectGrids[3].innerHTML = `<h2>Protected Boundary</h2><ul>${{(protectedBoundary.protected_paths || []).map((path) => `<li><code>${{esc(path)}}</code></li>`).join('') || '<li class="muted">No protected paths listed.</li>'}}</ul>`;
       if (worldObjectGrids[4]) worldObjectGrids[4].innerHTML = `<h2>Self-Modification Proposals</h2><ul>${{selfModProposals.map((item) => `<li><strong>${{esc(item.agent_id)}}</strong> → <code>${{esc(item.target_path)}}</code><br><span class='muted'>${{esc(item.problem_summary)}}</span></li>`).join('') || '<li class="muted">No proposals yet.</li>'}}</ul>`;
+      if (worldObjectGrids[5]) worldObjectGrids[5].innerHTML = `<h2>Experiments</h2><ul>${{experiments.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.status)}}<br><span class='muted'>${{esc(item.hypothesis)}}</span></li>`).join('') || '<li class="muted">No experiments yet.</li>'}}</ul>`;
 
       const eventGrids = document.querySelectorAll('#events section');
       if (eventGrids[0]) eventGrids[0].innerHTML = `<h2>Event Feed</h2><ul>${{eventFeed.map((event) => `<li>${{esc(event.message)}}</li>`).join('') || '<li class="muted">No notable changes yet.</li>'}}</ul>`;
@@ -3639,6 +3693,7 @@ def show_world() -> Dict:
         "communicator": load_communicator_state(),
         "projects": load_projects(),
         "work_items": load_work_items(),
+        "experiments": load_experiments(),
         "relationships": load_relationships(),
         "self_mod_proposals": load_self_mod_proposals(),
         "protected_boundary": protected_self_edit_boundary(),

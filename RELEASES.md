@@ -252,3 +252,9 @@ Recommended rollback order:
 - active communicator questions can now create/update public exploratory needs
 - active communicator questions can now spawn inquiry-flavored work items tied to the active project/pursuit
 - intended direction: connect internal inquiry to the wider world model so questions shape shared history and future work
+
+### v0.0.70
+- experiment objects added as first-class generated world state
+- active communicator questions can now create/update experiments with hypothesis, status, observations, and follow-up
+- CLI/dashboard world-object views now expose experiments
+- intended direction: turn inquiry into bounded attempts instead of only remembered questions and work pressure

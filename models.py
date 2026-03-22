@@ -168,3 +168,20 @@ class CommunicatorState:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class ExperimentState:
+    id: str
+    title: str
+    hypothesis: str
+    owner: str
+    status: str
+    created_at: int
+    related_need: str
+    project_id: str
+    observations: str
+    follow_up: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
