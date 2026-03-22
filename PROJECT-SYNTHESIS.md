@@ -185,7 +185,7 @@ Before declaring v0.1, CircleForge should ideally have:
 ## After v0.1
 
 The best post-v0.1 path is not endless simulation complexity.
-It is stronger reality contact.
+It is stronger reality contact and a better world model.
 
 The highest-value post-v0.1 work would be:
 - better external validation loops
@@ -193,6 +193,12 @@ The highest-value post-v0.1 work would be:
 - richer proof timelines
 - more operator-triggered workflows
 - better pack-to-product transition handling
+- stronger memory layers
+- self-observation and safe self-modification
+- public/shared world objects and conventions
+- per-agent ticks and wake conditions
+
+See `V0.2-GRAND-VISION.md` for the deeper design direction.
 
 ## Research note
 

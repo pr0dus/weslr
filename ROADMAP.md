@@ -8,6 +8,8 @@ CircleForge is evolving toward:
 
 > A persistent local agent research sandbox that turns recurring agent work into inspectable artifacts, then helps humans review, rank, and curate the promising ones into reusable packs.
 
+Longer-term, it may evolve beyond artifact incubation into a richer self-transforming world model. See `V0.2-GRAND-VISION.md` for the post-v0.1 direction centered on memory, self-observation, public world objects, per-agent ticks, and needs-driven enrichment.
+
 ## Current foundation
 
 Already implemented:
