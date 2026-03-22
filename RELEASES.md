@@ -199,3 +199,9 @@ Recommended rollback order:
 - agents can now bias action selection toward assigned open work items
 - project routing now replenishes follow-up work and work items can progress toward done status
 - intended direction: make shared work and social memory affect actual behavior instead of just being passive state
+
+### v0.0.62
+- `CORE-IDENTITY.md` added to freeze project drift and define CircleForge as a local self-evolving communicator entity with internal minds
+- core framing now explicitly centers one visible communicator over 4–5 internal agent/subprocess perspectives
+- README updated to point future design choices toward communicator identity, intention, curiosity, and self-waking behavior
+- intended direction: stop architectural wobble and make future coding decisions serve a single identity

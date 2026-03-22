@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.61** is a lightweight persistent local agent research sandbox and artifact incubator.
+**CircleForge v0.0.62** is evolving from a local agent research sandbox into a local self-evolving communicator entity with internal minds, persistent memory, intention, and world-driven behavior.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -221,6 +221,7 @@ The current direction is state-driven rather than prompt-driven: entities should
 ## Planning docs
 
 - [`V0.1.md`](V0.1.md) — practical pre-v0.1 milestone definition
+- [`CORE-IDENTITY.md`](CORE-IDENTITY.md) — the decisive statement of what CircleForge now is and is not
 - [`V0.2-GRAND-VISION.md`](V0.2-GRAND-VISION.md) — richer long-term direction
 - [`WORLD-MODEL.md`](WORLD-MODEL.md) — canonical world object model
 - [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md) — safe self-inspection and self-change design
@@ -247,5 +248,7 @@ Near-term:
 
 Longer-term:
 - evolve from an artifact incubator toward a richer needs/memory/project world
+- strengthen the visible communicator identity over the internal agent substrate
+- add explicit intention, curiosity, and internal agreement/disagreement loops
 - add self-observation and safe self-modification loops
 - move from one global tick toward per-agent cadence and wake conditions
