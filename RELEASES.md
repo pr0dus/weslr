@@ -145,3 +145,10 @@ Recommended rollback order:
 - setup prints the exact absolute dashboard path and `file://` URL to open in a browser
 - README and install flow updated so testers land in setup instead of a half-finished manual path
 - intended direction: reduce tester confusion and make the first local run self-explanatory
+
+### v0.0.55
+- built-in dashboard HTTP server added via `serve`
+- setup can now start the dashboard on a LAN-accessible port after rendering
+- setup now prints an exact `http://<lan-ip>:<port>/` address for browser use
+- `run.sh serve` and LAN-serving setup examples added to the README
+- intended direction: remove browser/file-URL friction and make dashboard access work like a normal local web app

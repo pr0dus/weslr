@@ -117,13 +117,19 @@ It will ask:
 - how many ticks to run
 - tick interval in seconds
 - dashboard auto-refresh seconds
+- whether to serve the dashboard on your LAN
+- which LAN port to use
 
 For tick count, you can use:
 - a positive number like `10`
 - `0` for infinite mode
 - `inf`, `infinite`, or `forever` during the interactive prompt
 
-After setup finishes, CircleForge prints the exact dashboard path to open in your browser, for example:
+After setup finishes, CircleForge can start a small HTTP server for the dashboard and prints the exact LAN address to open in your browser, for example:
+- `http://192.168.1.50:8008/`
+- `http://127.0.0.1:8008/`
+
+If you choose not to serve it over LAN, it still prints the file-based fallback:
 - `/full/path/to/CircleForge/dashboard/index.html`
 - `file:///full/path/to/CircleForge/dashboard/index.html`
 
@@ -161,8 +167,9 @@ python3 main.py dashboard
 python3 main.py dashboard --refresh 5
 python3 main.py dashboard --watch --interval 10
 ./run.sh setup
-./run.sh setup --agents 6 --ticks 20 --interval 0 --refresh 5
-./run.sh setup --agents 4 --ticks 0 --interval 60 --refresh 5
+./run.sh setup --agents 6 --ticks 20 --interval 0 --refresh 5 --serve --port 8008
+./run.sh setup --agents 4 --ticks 0 --interval 60 --refresh 5 --serve --port 8008
+./run.sh serve --port 8008
 python3 main.py setup
 python3 main.py offer <pack-name>
 python3 main.py version
