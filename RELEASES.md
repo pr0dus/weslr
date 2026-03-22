@@ -175,3 +175,11 @@ Recommended rollback order:
 - unresolved runtime friction now becomes persistent public needs with decay/cooling behavior
 - dashboard and CLI now expose early world-object visibility via `world-objects`
 - intended direction: begin implementing the canonical world model without breaking the current simulation loop
+
+### v0.0.59
+- soft per-agent cadence added via `next_due_tick`, `wake_reason`, and `cadence_interval`
+- agents can now remain idle until due instead of acting in perfect lockstep every tick
+- wake reasons now distinguish scheduled cadence, message-driven wakeups, unresolved-need pressure, and waiting states
+- protected self-edit boundary added in code/config so core safety files and rules are not self-modifiable by emergence logic
+- self-modification docs extended with an explicit future note for full auto-editing under bounded human-safe conditions
+- intended direction: make the ecology less toy-synchronous while preventing future self-editing from erasing human safety constraints

@@ -44,8 +44,10 @@ from config import (
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
+    PROTECTED_SELF_EDIT_PATHS,
     REVIEW_QUEUE_PATH,
     SELLABILITY_SIGNAL_THRESHOLD,
+    HUMAN_SAFETY_RULES,
     STARTING_ENERGY,
     STARTING_GPU,
     STARTING_REPUTATION,
@@ -85,7 +87,10 @@ CREATE TABLE IF NOT EXISTS agents (
     reputation REAL NOT NULL,
     last_inspect_at INTEGER NOT NULL,
     last_trade_at INTEGER NOT NULL,
-    age_ticks INTEGER NOT NULL
+    age_ticks INTEGER NOT NULL,
+    next_due_tick INTEGER NOT NULL DEFAULT 0,
+    wake_reason TEXT NOT NULL DEFAULT 'initial',
+    cadence_interval INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,6 +124,13 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    columns = {row['name'] for row in conn.execute("PRAGMA table_info(agents)").fetchall()}
+    if 'next_due_tick' not in columns:
+        conn.execute("ALTER TABLE agents ADD COLUMN next_due_tick INTEGER NOT NULL DEFAULT 0")
+    if 'wake_reason' not in columns:
+        conn.execute("ALTER TABLE agents ADD COLUMN wake_reason TEXT NOT NULL DEFAULT 'initial'")
+    if 'cadence_interval' not in columns:
+        conn.execute("ALTER TABLE agents ADD COLUMN cadence_interval INTEGER NOT NULL DEFAULT 1")
     return conn
 
 
@@ -244,6 +256,14 @@ def load_projects() -> list[dict]:
 
 def save_projects(items: list[dict]) -> None:
     write_json_file(PROJECTS_PATH, items)
+
+
+def protected_self_edit_boundary() -> dict:
+    return {
+        "protected_paths": PROTECTED_SELF_EDIT_PATHS,
+        "human_safety_rules": HUMAN_SAFETY_RULES,
+        "full_auto_editing_future_note": "Full auto-editing may be added later, but it must remain bounded by protected core files, visible review, rollback, and human safety constraints.",
+    }
 
 
 def canonical_theme_name(theme: str) -> str:
@@ -1817,8 +1837,9 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
                 (agent_dir / sub).mkdir(parents=True, exist_ok=True)
             (agent_dir / "memory.json").write_text("[]")
             (agent_dir / "inbox.json").write_text("[]")
-            state = AgentState(name=name, energy=STARTING_ENERGY, storage=STARTING_STORAGE, gpu_quota=STARTING_GPU, reputation=STARTING_REPUTATION)
-            conn.execute("INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks))
+            cadence_interval = 1 + ((i - 1) % 3)
+            state = AgentState(name=name, energy=STARTING_ENERGY, storage=STARTING_STORAGE, gpu_quota=STARTING_GPU, reputation=STARTING_REPUTATION, next_due_tick=0, wake_reason="initial", cadence_interval=cadence_interval)
+            conn.execute("INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks, next_due_tick, wake_reason, cadence_interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks, state.next_due_tick, state.wake_reason, state.cadence_interval))
     seed_world_objects(agent_count, now_ts)
     refresh_state_files()
     conn.close()
@@ -2029,6 +2050,16 @@ def agent_social_context(agent_dir: Path) -> Dict:
         "recent_messages": inbox[-3:],
         "strongest_themes": [name for name, _payload in strongest],
     }
+
+
+def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
+    if tick <= int(agent.get("next_due_tick", 0)):
+        return False, "waiting-for-next-due-tick"
+    if consumed_count > 0:
+        return True, "message-received"
+    if unresolved_needs:
+        return True, "unresolved-need-pressure"
+    return True, "scheduled-cadence"
 
 
 def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
@@ -2319,18 +2350,29 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
             social = agent_social_context(agent_dir)
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages}, agent_dir)
+            due, wake_reason = compute_agent_due_state(agent, tick, consumed_count, unresolved_needs)
+            agent["wake_reason"] = wake_reason
+            if not due:
+                agent["age_ticks"] += 1
+                conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=?, next_due_tick=?, wake_reason=?, cadence_interval=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent.get("next_due_tick", tick), agent["wake_reason"], agent.get("cadence_interval", 1), agent["name"]))
+                item = {"agent": agent["name"], "action": "idle", "status": "waiting", "summary": f"idle until tick {agent.get('next_due_tick', tick)}", "artifact": None, "target": None, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": None, "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2], "wake_reason": wake_reason, "next_due_tick": agent.get("next_due_tick", tick)}
+                summaries.append(item)
+                if verbose:
+                    print(json.dumps(item, indent=2))
+                continue
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason}, agent_dir)
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
             agent["reputation"] += result.reputation_delta
             agent["age_ticks"] += 1
+            agent["next_due_tick"] = tick + max(1, int(agent.get("cadence_interval", 1)))
             clamp_agent(agent)
-            conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent["name"]))
+            conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=?, next_due_tick=?, wake_reason=?, cadence_interval=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent["next_due_tick"], agent["wake_reason"], agent.get("cadence_interval", 1), agent["name"]))
             conn.execute("INSERT INTO logs(tick, agent_name, action, status, summary, raw_output, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (tick, agent["name"], result.action, result.status, result.summary, result.raw_output, started_at))
             save_note(agent_dir, f"tick {tick}: {result.summary}")
             update_opportunity_state(agent_dir, plan, result, started_at, opportunity_board)
-            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme"), "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2]}
+            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme"), "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2], "wake_reason": wake_reason, "next_due_tick": agent.get("next_due_tick")}
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
@@ -2519,11 +2561,21 @@ def build_agent_memory_summary() -> list[dict]:
         themes = mem.get("themes", {}) if isinstance(mem, dict) else {}
         top = sorted(themes.items(), key=lambda kv: kv[1].get("strength", 0.0), reverse=True)[:4]
         inbox = load_inbox(agent_dir)
+        row = None
+        try:
+            conn = connect()
+            row = conn.execute("SELECT next_due_tick, wake_reason, cadence_interval FROM agents WHERE name=?", (agent_dir.name,)).fetchone()
+            conn.close()
+        except Exception:
+            row = None
         result.append({
             "agent": agent_dir.name,
             "last_theme": mem.get("last_theme") if isinstance(mem, dict) else None,
             "inbox_count": len(inbox),
             "recent_messages": inbox[-2:],
+            "next_due_tick": row["next_due_tick"] if row else 0,
+            "wake_reason": row["wake_reason"] if row else "unknown",
+            "cadence_interval": row["cadence_interval"] if row else 1,
             "top_themes": [
                 {
                     "theme": name,
@@ -2703,6 +2755,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "messages": data.get("messages"),
         "public_memory": data.get("public_memory"),
         "projects": data.get("projects"),
+        "protected_boundary": data.get("protected_boundary"),
         "release_ledger": release_ledger,
     }
     payload["history"] = update_dashboard_history(payload)
@@ -2826,6 +2879,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Public Memory</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('title'))}</strong> · {escape(str(item.get('kind')))}<br><span class=\'muted\'>{escape(str(item.get('content')))}</span></li>" for item in (payload.get('public_memory') or [])[:8]) or '<li class="muted">No public memory yet.</li>'}</ul>
       </section>
+      <section class="card">
+        <h2>Protected Boundary</h2>
+        <ul>{''.join(f"<li><code>{escape(path)}</code></li>" for path in (payload.get('protected_boundary') or {}).get('protected_paths', [])[:8]) or '<li class="muted">No protected paths listed.</li>'}</ul>
+      </section>
     </div>
 
     <div class="grid" style="margin-top:16px;" id="events">
@@ -2877,6 +2934,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const needs = payload.needs || [];
       const projects = payload.projects || [];
       const publicMemory = payload.public_memory || [];
+      const protectedBoundary = payload.protected_boundary || {};
       const exportQueue = payload.export_queue || [];
       const reviewQueue = payload.review_queue || [];
 
@@ -2954,6 +3012,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       if (worldObjectGrids[0]) worldObjectGrids[0].innerHTML = `<h2>Needs</h2><ul>${{needs.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.status)}} · pressure ${{item.pressure}}</li>`).join('') || '<li class="muted">No public needs yet.</li>'}}</ul>`;
       if (worldObjectGrids[1]) worldObjectGrids[1].innerHTML = `<h2>Projects</h2><ul>${{projects.map((item) => `<li><strong>${{esc(item.name)}}</strong> · ${{esc(item.status)}}<br><span class='muted'>${{esc(item.purpose)}}</span></li>`).join('') || '<li class="muted">No projects yet.</li>'}}</ul>`;
       if (worldObjectGrids[2]) worldObjectGrids[2].innerHTML = `<h2>Public Memory</h2><ul>${{publicMemory.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.kind)}}<br><span class='muted'>${{esc(item.content)}}</span></li>`).join('') || '<li class="muted">No public memory yet.</li>'}}</ul>`;
+      if (worldObjectGrids[3]) worldObjectGrids[3].innerHTML = `<h2>Protected Boundary</h2><ul>${{(protectedBoundary.protected_paths || []).map((path) => `<li><code>${{esc(path)}}</code></li>`).join('') || '<li class="muted">No protected paths listed.</li>'}}</ul>`;
 
       const eventGrids = document.querySelectorAll('#events section');
       if (eventGrids[0]) eventGrids[0].innerHTML = `<h2>Event Feed</h2><ul>${{eventFeed.map((event) => `<li>${{esc(event.message)}}</li>`).join('') || '<li class="muted">No notable changes yet.</li>'}}</ul>`;
@@ -3055,6 +3114,7 @@ def show_world() -> Dict:
         "messages": load_messages(),
         "public_memory": load_public_memory(),
         "projects": load_projects(),
+        "protected_boundary": protected_self_edit_boundary(),
         "categories": categories,
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
         "artifact_packs": artifact_packs,

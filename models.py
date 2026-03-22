@@ -14,6 +14,9 @@ class AgentState:
     last_inspect_at: int = 0
     last_trade_at: int = 0
     age_ticks: int = 0
+    next_due_tick: int = 0
+    wake_reason: str = "initial"
+    cadence_interval: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

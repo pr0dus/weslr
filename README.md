@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.57** is a lightweight persistent local agent research sandbox and artifact incubator.
+**CircleForge v0.0.59** is a lightweight persistent local agent research sandbox and artifact incubator.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -231,6 +231,8 @@ Current early implementation surface:
 - `python3 main.py world-objects messages`
 - `python3 main.py world-objects public-memory`
 - `python3 main.py world-objects projects`
+- soft per-agent cadence via `next_due_tick`, `wake_reason`, and `cadence_interval`
+- protected self-edit boundary for core files and human-safety rules
 
 ## What should come next
 

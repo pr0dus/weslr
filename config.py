@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.58"
+VERSION = "0.0.59"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
@@ -57,3 +57,22 @@ DAILY_COOLDOWN_SECONDS = 24 * 60 * 60
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "12"))
+
+PROTECTED_SELF_EDIT_PATHS = [
+    "main.py",
+    "sim.py",
+    "agent_runtime.py",
+    "config.py",
+    "models.py",
+    "SELF-MODIFICATION.md",
+    "WORLD-MODEL.md",
+    "AGENT-TIME.md",
+    "V0.2-GRAND-VISION.md",
+]
+
+HUMAN_SAFETY_RULES = [
+    "Do not self-modify protected core files or safety-boundary documents without explicit human review.",
+    "Do not intentionally harm humans, degrade human agency, or make hidden decisions that materially affect humans or others in harmful ways.",
+    "Do not remove operator visibility, rollback paths, auditability, or safety checks in the name of emergence.",
+    "Treat good and bad as teachable through visible feedback, review, and constraint — not as a reason to bypass safety boundaries.",
+]

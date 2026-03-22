@@ -229,6 +229,8 @@ This will make time ecology visible and debuggable.
 ### Step 1
 Add per-agent `next_due_tick` and allow skip-if-not-due.
 
+Status: implemented in early form in v0.0.59 with `next_due_tick`, `wake_reason`, and `cadence_interval`.
+
 ### Step 2
 Add `wake_reason` and event-driven due changes.
 

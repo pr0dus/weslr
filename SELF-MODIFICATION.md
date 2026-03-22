@@ -72,10 +72,21 @@ Require explicit proposal/review by default:
 - `main.py`
 - `sim.py`
 - `agent_runtime.py`
+- `config.py`
+- `models.py`
 - world model definitions
 - scoring logic
 - operator control surfaces
 - safety/rollback infrastructure
+
+### Tier 4 — Immutable safety boundary
+Should not be self-modified by agents at all unless a human explicitly intervenes:
+- protected core path list
+- human safety rules
+- rollback/audit guarantees
+- documents defining self-modification limits
+
+This boundary exists so emergence cannot normalize harm, quietly remove oversight, or rewrite the rules that protect humans and other participants.
 
 ---
 
@@ -260,6 +271,18 @@ It is one where they reliably do small, meaningful things like:
 That is enough to become genuinely interesting.
 
 ---
+
+## Future note: full auto-editing
+
+Full auto-editing may be added later, but only under strict conditions:
+- bounded target classes
+- explicit protected-core exclusions
+- visible proposal/audit trail
+- reversible checkpoints
+- human-review boundary for sensitive paths
+- persistent teaching loop around good and bad outcomes
+
+The system should learn good and bad through visible constraints, feedback, and review history — not by being allowed to improvise around safety.
 
 ## Bottom line
 
