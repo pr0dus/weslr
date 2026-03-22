@@ -258,3 +258,10 @@ Recommended rollback order:
 - active communicator questions can now create/update experiments with hypothesis, status, observations, and follow-up
 - CLI/dashboard world-object views now expose experiments
 - intended direction: turn inquiry into bounded attempts instead of only remembered questions and work pressure
+
+### v0.0.71
+- running/proposed experiments now feed back into wake pressure for observer/critic/memory-style internal minds
+- proposal scoring now gives extra weight to themes already under active experiment
+- fallback behavior now follows running experiment pressure, pushing inspect/research/optimize loops around the active pursuit
+- communicator curiosity target can now lock onto active experiment titles
+- intended direction: make inquiry attempts affect future thought instead of sitting passively in world state

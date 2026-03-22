@@ -253,6 +253,7 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     inbox = load_inbox(agent_dir)
     unresolved_needs = world.get("unresolved_needs", []) or []
     work_items = world.get("work_items", []) or []
+    experiments = world.get("experiments", []) or []
     communicator = world.get("communicator", {}) or {}
     current_intent = str(communicator.get("current_intent", "")).lower()
     active_pursuit = str(communicator.get("active_pursuit", "")).lower()
@@ -261,9 +262,12 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     curiosity = float(communicator.get("curiosity", 0.6))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
+    experiment_focus = any(item.get("status") == "running" and active_pursuit and active_pursuit in str(item.get("title", "")).lower() for item in experiments)
 
     if agent["energy"] < 30:
         action = "rest"
+    elif experiment_focus and random.random() < 0.55:
+        action = random.choice(["inspect", "research", "optimize"])
     elif unresolved_question and random.random() < 0.42:
         action = random.choice(["inspect", "research"])
     elif curiosity > 0.8 and random.random() < 0.4:
@@ -298,6 +302,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     if inbox and action == "signal":
         newest = inbox[-1]
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
+    elif experiment_focus and action in {"inspect", "research", "optimize"}:
+        reason = f"following running experiment pressure around {communicator.get('active_pursuit')}"
     elif unresolved_question and niche.get("niche_theme", "").lower() in unresolved_question and action in {"inspect", "research"}:
         reason = f"following unresolved question: {communicator.get('unresolved_question')}"
     elif current_intent and (niche.get("niche_theme", "").lower() in current_intent or action in current_intent):

@@ -2400,7 +2400,10 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
     communicator = load_communicator_state()
     curiosity = float(communicator.get("curiosity", 0.6))
     unresolved_question = str(communicator.get("unresolved_question", "")).strip()
+    active_experiments = [item for item in load_experiments() if item.get("status") in {"proposed", "running"}]
     if tick <= int(agent.get("next_due_tick", 0)):
+        if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
+            return True, "experiment-pressure"
         if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
             return True, "question-pressure"
         if curiosity > 0.82 and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic"}:
@@ -2408,6 +2411,8 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
         return False, "waiting-for-next-due-tick"
     if consumed_count > 0:
         return True, "message-received"
+    if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
+        return True, "experiment-pressure"
     if unresolved_needs:
         return True, "unresolved-need-pressure"
     if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
@@ -2439,6 +2444,7 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     curiosity = float(communicator.get("curiosity", 0.6))
     theme = str(plan.get("niche_theme") or "")
     unresolved_question = str(communicator.get("unresolved_question", "")).lower()
+    active_experiments = load_experiments()
     if role == "critic" and action in {"build_module", "trade"}:
         stance = "question"
     elif role == "coordinator":
@@ -2449,6 +2455,9 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
         stance = "support"
     elif role == "memory_keeper" and (wake_reason == "message-received" or theme and theme.lower() in current_intent):
         stance = "prioritize"
+    if any(item.get("status") == "running" and theme and theme.lower() in str(item.get("title", "")).lower() for item in active_experiments):
+        if action in {"inspect", "research"}:
+            stance = "prioritize"
     if curiosity > 0.8 and role in {"observer", "critic"} and action not in {"inspect", "research"}:
         stance = "question"
     return {
@@ -2508,6 +2517,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.06
         if proposal.get("question_alignment"):
             score += 0.1
+        running_experiments = [item for item in load_experiments() if item.get("status") == "running"]
+        if any(proposal.get("niche_theme") and proposal.get("niche_theme").lower() in str(item.get("title", "")).lower() for item in running_experiments):
+            score += 0.12
         if unresolved_needs and proposal.get("proposed_action") in {"inspect", "research", "optimize"}:
             score += 0.1
         if curiosity > 0.78 and proposal.get("proposed_action") in {"inspect", "research"}:
@@ -2534,10 +2546,15 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
 
     intent_text = f"{final_action or chosen.get('proposed_action')} around {chosen.get('niche_theme') or 'current world pressure'}"
     communicator["status"] = "active" if final_action else "reflecting"
+    experiments = load_experiments()
+    running_match = next((item for item in experiments if item.get("status") == "running" and chosen.get("niche_theme") and chosen.get("niche_theme").lower() in str(item.get("title", "")).lower()), None)
     communicator["current_intent"] = intent_text
     communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
     communicator["curiosity_target"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or communicator.get("curiosity_target") or "emergent pressure")
+    if running_match:
+        communicator["curiosity_target"] = running_match.get("title")
+        communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit")
     next_question, previous_resolved = resolve_or_extend_question(communicator, chosen, final_action)
     communicator["unresolved_question"] = next_question
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
