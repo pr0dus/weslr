@@ -348,3 +348,7 @@ Recommended rollback order:
 ### v0.0.88
 - evaluation metrics for internal differentiation now include role-memory-signal counts and communicator memory-bias usage
 - intended direction: judge internal differentiation by useful cognitive structure, not just by role labels or frequency counts
+
+### v0.0.89
+- `run-eval` command added to reset the world, run a bounded evaluation pass, and emit communicator + evaluation metrics in one step
+- intended direction: make longer evaluation passes repeatable before the postponed tiny-model gate is revisited

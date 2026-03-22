@@ -118,6 +118,22 @@ def cmd_eval_metrics(_args):
     emit(load_evaluation_metrics())
 
 
+def cmd_run_eval(args):
+    init_world(agent_count=args.agents, reset=True)
+    last = None
+    for _ in range(args.ticks):
+        last = perform_tick(verbose=args.verbose)
+        if args.interval > 0:
+            time.sleep(args.interval)
+    emit({
+        "ticks": args.ticks,
+        "agents": args.agents,
+        "last_tick": last,
+        "communicator": load_communicator_state(),
+        "evaluation_metrics": load_evaluation_metrics(),
+    })
+
+
 def _prompt_int(prompt_text, default, minimum=0, allow_infinite=False):
     infinite_tokens = {"0", "inf", "infinite", "forever"}
     while True:
@@ -285,6 +301,13 @@ def main():
 
     p = sub.add_parser("eval-metrics", help="show evaluation metrics for the future bounded autonomy gate")
     p.set_defaults(func=cmd_eval_metrics)
+
+    p = sub.add_parser("run-eval", help="reset the world, run a bounded evaluation pass, and emit communicator + metrics")
+    p.add_argument("--ticks", type=int, default=25)
+    p.add_argument("--agents", type=int, default=5)
+    p.add_argument("--interval", type=int, default=0)
+    p.add_argument("--verbose", action="store_true")
+    p.set_defaults(func=cmd_run_eval)
 
     p = sub.add_parser("world-objects", help="inspect persistent world object collections")
     p.add_argument("kind", choices=["needs", "messages", "public-memory", "projects", "relationships", "self-mod-proposals", "work-items", "experiments"])
