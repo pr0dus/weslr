@@ -215,6 +215,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         dominant_need="",
         last_decision_summary="bootstrap complete",
         intent_history=["wake, observe, and continue enriching the local world"],
+        question_history=["what part of the world is still under-understood?"],
         unresolved_objections=[],
         last_wake_at=now_ts,
         updated_at=now_ts,
@@ -347,6 +348,7 @@ def load_communicator_state() -> dict:
         dominant_need="",
         last_decision_summary="none yet",
         intent_history=[],
+        question_history=["what in the local world most deserves attention next?"],
         unresolved_objections=[],
         last_wake_at=0,
         updated_at=0,
@@ -2349,6 +2351,18 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     }
 
 
+def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: str | None) -> tuple[str, bool]:
+    previous_question = str(communicator.get("unresolved_question", "")).strip()
+    theme = chosen.get("niche_theme") or communicator.get("active_pursuit") or "current pressure"
+    if final_action in {"inspect", "research"}:
+        new_question = f"What new uncertainty appeared after {final_action} on {theme}?"
+        return new_question, True
+    if chosen.get("niche_theme"):
+        new_question = f"What is still unclear about {theme}?"
+        return new_question, False
+    return previous_question or "What remains under-understood?", False
+
+
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
     communicator = load_communicator_state()
     if not proposals:
@@ -2409,13 +2423,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
     communicator["curiosity_target"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or communicator.get("curiosity_target") or "emergent pressure")
-    previous_question = str(communicator.get("unresolved_question", "")).strip()
-    if chosen.get("proposed_action") in {"inspect", "research"} and chosen.get("niche_theme"):
-        communicator["unresolved_question"] = f"Did {chosen.get('niche_theme')} become clearer after {chosen.get('proposed_action')}?"
-    elif chosen.get("niche_theme"):
-        communicator["unresolved_question"] = f"What is still unclear about {chosen.get('niche_theme')}?"
-    else:
-        communicator["unresolved_question"] = previous_question or "What remains under-understood?"
+    next_question, previous_resolved = resolve_or_extend_question(communicator, chosen, final_action)
+    communicator["unresolved_question"] = next_question
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
     if disagreement_count > 0:
         communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
@@ -2431,6 +2440,11 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     history = list(communicator.get("intent_history") or [])
     history.append(intent_text)
     communicator["intent_history"] = history[-12:]
+    question_history = list(communicator.get("question_history") or [])
+    if previous_resolved and question_history:
+        question_history[-1] = f"resolved-ish: {question_history[-1]}"
+    question_history.append(next_question)
+    communicator["question_history"] = question_history[-16:]
     communicator["unresolved_objections"] = (objections or list(communicator.get("unresolved_objections") or []))[-8:]
     save_communicator_state(communicator)
     return {
@@ -3237,6 +3251,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Curiosity target: <strong>{escape(str((payload.get('communicator') or {}).get('curiosity_target', '')))}</strong></p>
         <p>Attraction bias: <strong>{escape(str((payload.get('communicator') or {}).get('attraction_bias', '')))}</strong></p>
         <p>Avoidance bias: <strong>{escape(str((payload.get('communicator') or {}).get('avoidance_bias', '')))}</strong></p>
+        <p>Question lineage: <strong>{len((payload.get('communicator') or {}).get('question_history', []))}</strong></p>
         <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
         <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
         <p>Objections: <strong>{len((payload.get('communicator') or {}).get('unresolved_objections', []))}</strong></p>
@@ -3393,6 +3408,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Curiosity target: <strong>${{esc(communicator.curiosity_target || '')}}</strong></p>
           <p>Attraction bias: <strong>${{esc(communicator.attraction_bias || '')}}</strong></p>
           <p>Avoidance bias: <strong>${{esc(communicator.avoidance_bias || '')}}</strong></p>
+          <p>Question lineage: <strong>${{(communicator.question_history || []).length}}</strong></p>
           <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
           <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
           <p>Objections: <strong>${{(communicator.unresolved_objections || []).length}}</strong></p>

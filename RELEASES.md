@@ -240,3 +240,9 @@ Recommended rollback order:
 - communicator unresolved question is now revised over time instead of remaining static text
 - communicator panel now shows attraction/avoidance bias more explicitly alongside question state
 - intended direction: turn question state into an actual ongoing inquiry mechanism
+
+### v0.0.68
+- communicator now keeps `question_history` in addition to current unresolved question
+- simple question resolution / successor-question chaining added after inspect/research-oriented progress
+- question lineage is now visible in the communicator panel via lineage count
+- intended direction: let the communicator carry chains of inquiry instead of isolated question text
