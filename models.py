@@ -160,6 +160,7 @@ class CommunicatorState:
     curiosity: float
     dominant_need: str
     last_decision_summary: str
+    self_model: Dict[str, Any]
     intent_history: List[str]
     question_history: List[str]
     unresolved_objections: List[str]

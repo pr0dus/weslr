@@ -216,6 +216,14 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         curiosity=0.66,
         dominant_need="",
         last_decision_summary="bootstrap complete",
+        self_model={
+            "current_self_description": "a local communicator trying to understand itself through inquiry, coordination, and world interaction",
+            "perceived_strengths": ["continuity", "inquiry", "internal coordination"],
+            "perceived_weaknesses": ["shallow evidence", "limited self-knowledge"],
+            "preferred_modes": ["inspect", "research"],
+            "caution_themes": ["reckless action before clarity"],
+            "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
+        },
         intent_history=["wake, observe, and continue enriching the local world"],
         question_history=["what part of the world is still under-understood?"],
         unresolved_objections=[],
@@ -350,6 +358,14 @@ def load_communicator_state() -> dict:
         curiosity=0.62,
         dominant_need="",
         last_decision_summary="none yet",
+        self_model={
+            "current_self_description": "an emerging local communicator with internal minds and incomplete self-knowledge",
+            "perceived_strengths": [],
+            "perceived_weaknesses": [],
+            "preferred_modes": [],
+            "caution_themes": [],
+            "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
+        },
         intent_history=[],
         question_history=["what in the local world most deserves attention next?"],
         unresolved_objections=[],
@@ -2560,6 +2576,45 @@ def update_decision_style_memory(communicator: dict, decision_mode: str, final_a
     communicator["decision_style_memory"] = memory
 
 
+def update_self_model(communicator: dict) -> None:
+    self_model = communicator.get("self_model") or {}
+    decision_memory = communicator.get("decision_style_memory") or {}
+    actions = decision_memory.get("actions", {})
+    strengths = []
+    weaknesses = []
+    preferred_modes = []
+    caution_themes = list(self_model.get("caution_themes") or [])
+
+    for action, payload in actions.items():
+        confidence = float(payload.get("confidence", 0.0))
+        if confidence >= 0.1 and action not in strengths:
+            strengths.append(action)
+        if confidence <= 0.03 and int(payload.get("count", 0)) >= 2 and action not in weaknesses:
+            weaknesses.append(action)
+
+    for mode, payload in (decision_memory.get("modes", {}) or {}).items():
+        if float(payload.get("confidence", 0.0)) >= 0.05:
+            preferred_modes.append(mode)
+
+    unresolved_objections = list(communicator.get("unresolved_objections") or [])
+    if unresolved_objections:
+        caution_themes.append("internal objections still unresolved")
+
+    current_self_description = "a local communicator learning from inquiry, experiment, and internal disagreement"
+    if strengths:
+        current_self_description += f"; stronger at {', '.join(strengths[:3])}"
+    if weaknesses:
+        current_self_description += f"; weaker at {', '.join(weaknesses[:3])}"
+
+    self_model["current_self_description"] = current_self_description
+    self_model["perceived_strengths"] = strengths[:6]
+    self_model["perceived_weaknesses"] = weaknesses[:6]
+    self_model["preferred_modes"] = preferred_modes[:6]
+    self_model["caution_themes"] = caution_themes[-6:]
+    self_model["self_modeling_note"] = "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate."
+    communicator["self_model"] = self_model
+
+
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
     communicator = load_communicator_state()
     if not proposals:
@@ -2670,6 +2725,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     else:
         communicator["curiosity"] = round(min(max(curiosity - 0.01, 0.1), 0.99), 3)
     update_decision_style_memory(communicator, decision_mode, final_action, chosen, unresolved_needs)
+    update_self_model(communicator)
     history = list(communicator.get("intent_history") or [])
     history.append(intent_text)
     communicator["intent_history"] = history[-12:]
@@ -3480,6 +3536,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Communicator</h2>
         <p>Status: <strong>{escape(str((payload.get('communicator') or {}).get('status', 'unknown')))}</strong></p>
         <p>Intent: <strong>{escape(str((payload.get('communicator') or {}).get('current_intent', 'tbd')))}</strong></p>
+        <p>Self-model: <strong>{escape(str(((payload.get('communicator') or {}).get('self_model', {}) or {}).get('current_self_description', '')))}</strong></p>
         <p>Pursuit: <strong>{escape(str((payload.get('communicator') or {}).get('active_pursuit', '')))}</strong></p>
         <p>Question: <strong>{escape(str((payload.get('communicator') or {}).get('unresolved_question', '')))}</strong></p>
         <p>Curiosity target: <strong>{escape(str((payload.get('communicator') or {}).get('curiosity_target', '')))}</strong></p>
@@ -3643,6 +3700,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <h2>Communicator</h2>
           <p>Status: <strong>${{esc(communicator.status || 'unknown')}}</strong></p>
           <p>Intent: <strong>${{esc(communicator.current_intent || 'tbd')}}</strong></p>
+          <p>Self-model: <strong>${{esc(((communicator.self_model || {{}}).current_self_description) || '')}}</strong></p>
           <p>Pursuit: <strong>${{esc(communicator.active_pursuit || '')}}</strong></p>
           <p>Question: <strong>${{esc(communicator.unresolved_question || '')}}</strong></p>
           <p>Curiosity target: <strong>${{esc(communicator.curiosity_target || '')}}</strong></p>

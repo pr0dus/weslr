@@ -288,3 +288,10 @@ Recommended rollback order:
 - learned confidence in `inspect-first`, `reconsider`, and `defer` now directly affects disagreement resolution
 - ambiguous disagreements can now be pushed toward reflective handling by prior mode experience instead of only fixed thresholds
 - intended direction: let the communicator learn not just decision styles in theory, but when to use them
+
+### v0.0.76
+- communicator now keeps a lightweight self-model with self-description, perceived strengths/weaknesses, preferred modes, and caution themes
+- self-model now updates from accumulated decision-style memory and unresolved objections
+- explicit note added that self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate
+- communicator panel now exposes the current self-model summary
+- intended direction: give the communicator an evolving sense of what it is and how it tends to think

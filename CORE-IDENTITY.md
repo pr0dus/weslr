@@ -389,6 +389,7 @@ To stay aligned with this identity, the next implementation order should be:
 - add curiosity state
 - add unresolved-question state
 - add attraction/avoidance bias
+- add a lightweight self-model that can later deepen as enough history, subprocess evidence, and internal observations accumulate
 
 ### Phase D — deepen self-waking behavior
 - strengthen per-agent ticks
