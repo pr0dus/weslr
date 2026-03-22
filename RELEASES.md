@@ -306,3 +306,8 @@ Recommended rollback order:
 - self-model strengths, weaknesses, and caution themes now bias fallback action selection more directly
 - stronger self-model influence added for research/optimize/build tradeoffs and caution around premature trade/action
 - intended direction: make the communicator’s self-model operational rather than mostly descriptive
+
+### v0.0.79
+- coordinator and memory-keeper now have more distinct action tendencies in fallback behavior
+- internal differentiation metrics now track per-role activity counts over time
+- intended direction: make internal minds more behaviorally differentiated so the future tiny-model gate can be judged more honestly

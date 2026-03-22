@@ -209,7 +209,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "persistence": {"intent_history_len": 1, "question_history_len": 1, "ticks_with_state": 0},
         "inquiry_continuity": {"question_lineage_len": 1, "experiment_count": 0, "inspect_research_actions": 0},
         "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
-        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
     save_communicator_state(CommunicatorState(
@@ -401,7 +401,7 @@ def load_evaluation_metrics() -> dict:
         "persistence": {"intent_history_len": 0, "question_history_len": 0, "ticks_with_state": 0},
         "inquiry_continuity": {"question_lineage_len": 0, "experiment_count": 0, "inspect_research_actions": 0},
         "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
-        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
 
@@ -2389,6 +2389,12 @@ def update_evaluation_metrics(proposals: list[dict], summaries: list[dict]) -> N
     metrics["self_revision"]["strengths_count"] = len(self_model.get("perceived_strengths") or [])
     roles_active = sorted({proposal.get("role") for proposal in proposals if proposal.get("role")})
     metrics["internal_differentiation"]["roles_active"] = roles_active
+    role_counts = metrics["internal_differentiation"].get("role_counts", {}) or {}
+    for proposal in proposals:
+        role = proposal.get("role")
+        if role:
+            role_counts[role] = int(role_counts.get(role, 0)) + 1
+    metrics["internal_differentiation"]["role_counts"] = role_counts
     metrics["internal_differentiation"]["weighted_voice_count"] = sum(1 for proposal in proposals if proposal.get("epistemic_weight"))
     save_evaluation_metrics(metrics)
 
@@ -3092,7 +3098,8 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 if verbose:
                     print(json.dumps(item, indent=2))
                 continue
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items}, agent_dir)
+            role = classify_internal_role(agent.get("name"))
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role}, agent_dir)
             internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
