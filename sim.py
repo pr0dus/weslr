@@ -230,6 +230,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "perceived_weaknesses": ["shallow evidence", "limited self-knowledge"],
             "preferred_modes": ["inspect", "research"],
             "caution_themes": ["reckless action before clarity"],
+            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
         intent_history=["wake, observe, and continue enriching the local world"],
@@ -372,6 +373,7 @@ def load_communicator_state() -> dict:
             "perceived_weaknesses": [],
             "preferred_modes": [],
             "caution_themes": [],
+            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
         intent_history=[],
@@ -2740,24 +2742,30 @@ def update_self_model(communicator: dict) -> None:
     self_model = communicator.get("self_model") or {}
     decision_memory = communicator.get("decision_style_memory") or {}
     actions = decision_memory.get("actions", {})
-    strengths = []
-    weaknesses = []
-    preferred_modes = []
     caution_themes = list(self_model.get("caution_themes") or [])
+    belief_confidence = self_model.get("belief_confidence") or {"strengths": {}, "weaknesses": {}, "modes": {}}
+    strength_conf = belief_confidence.setdefault("strengths", {})
+    weakness_conf = belief_confidence.setdefault("weaknesses", {})
+    mode_conf = belief_confidence.setdefault("modes", {})
 
     for action, payload in actions.items():
         confidence = float(payload.get("confidence", 0.0))
-        if confidence >= 0.1 and action not in strengths:
-            strengths.append(action)
-        if confidence <= 0.03 and int(payload.get("count", 0)) >= 2 and action not in weaknesses:
-            weaknesses.append(action)
+        count = int(payload.get("count", 0))
+        if confidence >= 0.1 and count >= 3:
+            strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.08, 0.95), 3)
+        elif confidence <= 0.03 and count >= 3:
+            weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.05, 0.95), 3)
 
     for mode, payload in (decision_memory.get("modes", {}) or {}).items():
-        if float(payload.get("confidence", 0.0)) >= 0.05:
-            preferred_modes.append(mode)
+        if float(payload.get("confidence", 0.0)) >= 0.05 and int(payload.get("count", 0)) >= 2:
+            mode_conf[mode] = round(min(float(mode_conf.get(mode, 0.0)) + 0.06, 0.95), 3)
+
+    strengths = [name for name, conf in sorted(strength_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.16]
+    weaknesses = [name for name, conf in sorted(weakness_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
+    preferred_modes = [name for name, conf in sorted(mode_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
 
     unresolved_objections = list(communicator.get("unresolved_objections") or [])
-    if unresolved_objections:
+    if unresolved_objections and "internal objections still unresolved" not in caution_themes:
         caution_themes.append("internal objections still unresolved")
 
     current_self_description = "a local communicator learning from inquiry, experiment, and internal disagreement"
@@ -2771,6 +2779,7 @@ def update_self_model(communicator: dict) -> None:
     self_model["perceived_weaknesses"] = weaknesses[:6]
     self_model["preferred_modes"] = preferred_modes[:6]
     self_model["caution_themes"] = caution_themes[-6:]
+    self_model["belief_confidence"] = belief_confidence
     self_model["self_modeling_note"] = "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate."
     communicator["self_model"] = self_model
 

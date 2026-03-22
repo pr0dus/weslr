@@ -352,3 +352,7 @@ Recommended rollback order:
 ### v0.0.89
 - `run-eval` command added to reset the world, run a bounded evaluation pass, and emit communicator + evaluation metrics in one step
 - intended direction: make longer evaluation passes repeatable before the postponed tiny-model gate is revisited
+
+### v0.0.90
+- self-model beliefs now accumulate through confidence thresholds rather than flipping quickly from weak evidence
+- intended direction: strengthen stable self-revision before revisiting the postponed bounded autonomy gate
