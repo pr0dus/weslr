@@ -2483,14 +2483,14 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     top_themes = sorted((data.get('opportunity_board', {}).get('themes') or {}).items(), key=lambda kv: kv[1].get('pressure', 0), reverse=True)[:6]
     top_packs = data.get('artifact_packs', [])[:8]
     artifact_details = payload.get('artifact_details', [])
-    meta_refresh = f'<meta http-equiv="refresh" content="{int(auto_refresh_seconds)}" />' if auto_refresh_seconds else ''
+    refresh_seconds = int(auto_refresh_seconds or 0)
+    payload_json = escape(json.dumps(payload))
     html = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CircleForge Dashboard</title>
-  {meta_refresh}
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
     .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
@@ -2523,7 +2523,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <a href="#ledger">Release Ledger</a>
     </nav>
     <h1>CircleForge Dashboard</h1>
-    <p class="muted">Version {VERSION} · local operator view · generated from current simulation state</p>
+    <p class="muted" id="dashboard-subtitle">Version {VERSION} · local operator view · generated from current simulation state</p>
+    <p class="muted" id="dashboard-refresh-note"></p>
 
     <div class="grid" id="world">
       <section class="card">
@@ -2598,6 +2599,147 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <pre>{escape(release_ledger)}</pre>
     </section>
   </div>
+  <script id="dashboard-payload" type="application/json">{payload_json}</script>
+  <script>
+    const REFRESH_SECONDS = {refresh_seconds};
+
+    function esc(value) {{
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[ch]));
+    }}
+
+    function slugify(value) {{
+      return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }}
+
+    function renderDashboard(payload) {{
+      const world = payload.world || {{}};
+      const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
+        .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
+      const topThemes = themes.slice(0, 6);
+      const topPacks = (payload.artifact_packs || []).slice(0, 8);
+      const artifactDetails = payload.artifact_details || [];
+      const operatorActions = payload.operator_actions || [];
+      const themeTrends = payload.theme_trends || [];
+      const weakProofPacks = payload.weak_proof_packs || [];
+      const recentLogs = payload.recent_logs || [];
+      const eventFeed = payload.event_feed || [];
+      const persistentEventLog = payload.persistent_event_log || [];
+      const releaseLedger = payload.release_ledger || '';
+      const exportQueue = payload.export_queue || [];
+      const reviewQueue = payload.review_queue || [];
+
+      const subtitle = document.getElementById('dashboard-subtitle');
+      if (subtitle) subtitle.textContent = `Version ${{payload.version || 'unknown'}} · local operator view · generated from current simulation state`;
+
+      const refreshNote = document.getElementById('dashboard-refresh-note');
+      if (refreshNote) {{
+        const stamp = payload.generated_at ? new Date(payload.generated_at * 1000).toLocaleTimeString() : 'unknown';
+        refreshNote.textContent = REFRESH_SECONDS > 0
+          ? `Live data refresh every ${{REFRESH_SECONDS}}s · last update ${{stamp}} · current view is preserved.`
+          : `Static snapshot · last update ${{stamp}}.`;
+      }}
+
+      const worldEl = document.getElementById('world');
+      if (worldEl) worldEl.innerHTML = `
+        <section class="card">
+          <h2>World</h2>
+          <p>Tick: <strong>${{world.tick || 0}}</strong></p>
+          <p>Agents: <strong>${{(payload.agent_memory || []).length}}</strong></p>
+          <p>Packs: <strong>${{(payload.artifact_packs || []).length}}</strong></p>
+          <p>Export queue: <strong>${{exportQueue.length}}</strong></p>
+          <p>Review queue: <strong>${{reviewQueue.length}}</strong></p>
+        </section>
+        <section class="card">
+          <h2>Theme Links</h2>
+          <ul>${{topThemes.map(([name, theme]) => `<li><a href="#theme-${{slugify(name)}}">${{esc(name)}}</a> · pressure ${{theme?.pressure ?? 0}}</li>`).join('') || '<li class="muted">No themes yet.</li>'}}</ul>
+        </section>
+        <section class="card">
+          <h2>Pack Links</h2>
+          <ul>${{topPacks.map((pack) => `<li><a href="#pack-${{slugify(pack.pack_name)}}">${{esc(pack.pack_name)}}</a></li>`).join('') || '<li class="muted">No packs yet.</li>'}}</ul>
+        </section>`;
+
+      const grids = document.querySelectorAll('.grid');
+      const operatorGrid = grids[1];
+      if (operatorGrid) operatorGrid.innerHTML = `
+        <section class="card">
+          <h2>Operator Actions</h2>
+          <ul>${{operatorActions.map((action) => `<li><strong>${{esc(action.label)}}</strong><br><code>${{esc(action.command)}}</code></li>`).join('') || '<li class="muted">No operator actions yet.</li>'}}</ul>
+        </section>
+        <section class="card">
+          <h2>Theme Trends</h2>
+          <ul>${{themeTrends.map((item) => `<li><strong>${{esc(item.theme)}}</strong> ${{esc(item.sparkline)}} <span class='muted'>Δ ${{Number(item.delta || 0).toFixed(3)}}</span></li>`).join('') || '<li class="muted">Not enough history yet.</li>'}}</ul>
+        </section>
+        <section class="card">
+          <h2>Weak-Proof Packs</h2>
+          <ul>${{weakProofPacks.map((item) => `<li><strong>${{esc(item.pack_name)}}</strong> · sellability ${{item.sellability_score}} · offer readiness ${{item.offer_readiness_score}}<br><span class='muted'>${{esc((item.gaps || []).join('; '))}}</span></li>`).join('') || '<li class="muted">No high-promise / low-proof packs right now.</li>'}}</ul>
+        </section>`;
+
+      const themesSection = document.getElementById('themes');
+      if (themesSection) themesSection.innerHTML = `
+        <h2>Opportunity Themes</h2>
+        <table>
+          <tr><th>Theme</th><th>Lifecycle</th><th>Pressure</th><th>Evidence</th><th>Accept</th><th>Reject</th></tr>
+          ${{themes.map(([name, value]) => `<tr id="theme-${{slugify(name)}}"><td><a href="#theme-${{slugify(name)}}">${{esc(name)}}</a><div class='bar'><span style='width:${{Math.max(1, Math.floor(Number(value?.pressure || 0) * 100))}}%'></span></div></td><td><span class='pill'>${{esc(value?.lifecycle || 'stable')}}</span></td><td>${{value?.pressure ?? 0}}</td><td>${{value?.evidence ?? 0}}</td><td>${{value?.acceptances ?? 0}}</td><td>${{value?.rejections ?? 0}}</td></tr>`).join('')}}
+        </table>`;
+
+      const packsSection = document.getElementById('packs');
+      if (packsSection) packsSection.innerHTML = topPacks.map((pack) => `
+        <section class='card' id='pack-${{slugify(pack.pack_name)}}'>
+          <h2>${{esc(pack.pack_name)}}</h2>
+          <p>${{esc(pack.summary)}}</p>
+          <p class='muted'>theme ${{esc(pack.niche_theme || pack.category)}} · score ${{pack.pack_score}} · sellability ${{pack.sellability_score}}</p>
+          <ul>${{(pack.artifacts || []).slice(0, 5).map((artifact) => `<li><a href="#artifact-${{slugify(artifact.id)}}">${{esc(artifact.title || artifact.id || 'artifact')}}</a></li>`).join('')}}</ul>
+        </section>`).join('') || '<section class="card"><h2>Top Packs</h2><p class="muted">No packs yet.</p></section>';
+
+      const artifactsSection = document.getElementById('artifacts');
+      if (artifactsSection) artifactsSection.innerHTML = `
+        <h2>Artifact Detail Views</h2>
+        <div class="grid">
+          ${{artifactDetails.map((artifact) => `<section class='card' id='${{esc(artifact.anchor)}}'><h3>${{esc(artifact.title || artifact.id || 'artifact')}}</h3><p class='muted'><code>${{esc(artifact.id || '')}}</code> · ${{esc(artifact.family || artifact.category || 'uncategorized')}}</p><p>${{esc(artifact.summary || 'No summary yet.')}}</p><ul><li>theme: ${{esc(artifact.niche_theme || '—')}}</li><li>target: ${{esc(artifact.target_user || 'tbd')}}</li><li>review: ${{esc(artifact.review_status || 'unreviewed')}}</li><li>sellability: ${{artifact.scores?.sellability ?? ''}}</li><li>price band: ${{esc(artifact.price_band_guess || 'tbd')}}</li><li>delivery: ${{esc(artifact.delivery_mode || 'tbd')}}</li></ul></section>`).join('') || '<p class="muted">No artifact details available yet.</p>'}}
+        </div>`;
+
+      const eventGrids = document.querySelectorAll('#events section');
+      if (eventGrids[0]) eventGrids[0].innerHTML = `<h2>Event Feed</h2><ul>${{eventFeed.map((event) => `<li>${{esc(event.message)}}</li>`).join('') || '<li class="muted">No notable changes yet.</li>'}}</ul>`;
+      if (eventGrids[1]) eventGrids[1].innerHTML = `<h2>Persistent Event Log</h2><ul>${{persistentEventLog.slice(-20).map((entry) => `<li>${{entry.logged_at}} · ${{esc(entry.message)}}</li>`).join('') || '<li class="muted">No logged events yet.</li>'}}</ul>`;
+      if (eventGrids[2]) eventGrids[2].innerHTML = `<h2>Recent Logs</h2><ul>${{recentLogs.map((log) => `<li>tick ${{log.tick}} · ${{esc(log.agent_name)}} · ${{esc(log.action)}} · ${{esc(log.status)}} — ${{esc(log.summary)}}</li>`).join('') || '<li class="muted">No recent logs yet.</li>'}}</ul>`;
+
+      const ledger = document.querySelector('#ledger pre');
+      if (ledger) ledger.textContent = releaseLedger;
+    }}
+
+    let refreshTimer = null;
+
+    async function fetchAndRender() {{
+      try {{
+        const response = await fetch('./dashboard.json?ts=' + Date.now(), {{ cache: 'no-store' }});
+        if (!response.ok) return;
+        const payload = await response.json();
+        const activeHash = window.location.hash;
+        const scrollY = window.scrollY;
+        renderDashboard(payload);
+        if (activeHash) {{
+          const target = document.querySelector(activeHash);
+          if (target) target.scrollIntoView({{ block: 'start' }});
+        }} else {{
+          window.scrollTo(0, scrollY);
+        }}
+      }} catch (_err) {{
+      }}
+    }}
+
+    (function initDashboard() {{
+      const initial = document.getElementById('dashboard-payload');
+      if (initial?.textContent) {{
+        try {{
+          renderDashboard(JSON.parse(initial.textContent));
+        }} catch (_err) {{
+        }}
+      }}
+      if (REFRESH_SECONDS > 0) {{
+        refreshTimer = setInterval(fetchAndRender, REFRESH_SECONDS * 1000);
+      }}
+    }})();
+  </script>
 </body>
 </html>
 """

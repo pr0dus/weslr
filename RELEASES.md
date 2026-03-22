@@ -152,3 +152,10 @@ Recommended rollback order:
 - setup now prints an exact `http://<lan-ip>:<port>/` address for browser use
 - `run.sh serve` and LAN-serving setup examples added to the README
 - intended direction: remove browser/file-URL friction and make dashboard access work like a normal local web app
+
+### v0.0.56
+- dashboard live refresh now polls `dashboard.json` instead of reloading the whole page
+- current hash/section/detail view is preserved during refresh
+- current scroll position is preserved when no anchor/detail target is active
+- refresh note in the UI now explains that live data updates do not reset the current view
+- intended direction: make the operator dashboard behave like a real live console instead of bouncing users back to the top
