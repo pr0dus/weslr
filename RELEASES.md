@@ -311,3 +311,7 @@ Recommended rollback order:
 - coordinator and memory-keeper now have more distinct action tendencies in fallback behavior
 - internal differentiation metrics now track per-role activity counts over time
 - intended direction: make internal minds more behaviorally differentiated so the future tiny-model gate can be judged more honestly
+
+### v0.0.80
+- builder, coordinator, and memory-keeper now leave more role-specific memory traces instead of only generic tick notes
+- intended direction: let internal roles learn differently, not just behave differently

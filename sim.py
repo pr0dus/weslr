@@ -2181,8 +2181,14 @@ def consume_inbox(agent: Dict, agent_dir: Path) -> tuple[list[dict], int]:
     recent = inbox[-3:]
     remaining = inbox[:-3]
     (agent_dir / "inbox.json").write_text(json.dumps(remaining, indent=2))
+    role = classify_internal_role(agent.get("name", agent_dir.name))
     for item in recent:
-        save_note(agent_dir, f"message from {item.get('from', 'unknown')} theme={item.get('theme', 'shared need')} need={item.get('need', '')}")
+        prefix = "message"
+        if role == "coordinator":
+            prefix = "coordination-signal"
+        elif role == "memory_keeper":
+            prefix = "memory-trace"
+        save_note(agent_dir, f"{prefix} from {item.get('from', 'unknown')} theme={item.get('theme', 'shared need')} need={item.get('need', '')}")
     return recent, len(recent)
 
 
@@ -3110,7 +3116,14 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             clamp_agent(agent)
             conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=?, next_due_tick=?, wake_reason=?, cadence_interval=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent["next_due_tick"], agent["wake_reason"], agent.get("cadence_interval", 1), agent["name"]))
             conn.execute("INSERT INTO logs(tick, agent_name, action, status, summary, raw_output, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (tick, agent["name"], result.action, result.status, result.summary, result.raw_output, started_at))
+            role = classify_internal_role(agent.get("name"))
             save_note(agent_dir, f"tick {tick}: {result.summary}")
+            if role == "builder" and result.action in {"build_module", "optimize"} and result.status == "ok":
+                save_note(agent_dir, f"builder-memory theme={plan.get('niche_theme') or 'unknown'} action={result.action} useful_artifact={result.artifact or result.module or 'none'}")
+            elif role == "coordinator" and result.action in {"signal", "inspect"}:
+                save_note(agent_dir, f"coordinator-memory action={result.action} target={result.target or 'none'} wake={wake_reason}")
+            elif role == "memory_keeper" and result.action in {"research", "inspect", "rest"}:
+                save_note(agent_dir, f"memory-keeper continuity question={world.get('communicator', {}).get('unresolved_question', '')} action={result.action}")
             update_opportunity_state(agent_dir, plan, result, started_at, opportunity_board)
             item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme"), "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2], "wake_reason": wake_reason, "next_due_tick": agent.get("next_due_tick")}
             summaries.append(item)
