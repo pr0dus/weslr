@@ -246,3 +246,9 @@ Recommended rollback order:
 - simple question resolution / successor-question chaining added after inspect/research-oriented progress
 - question lineage is now visible in the communicator panel via lineage count
 - intended direction: let the communicator carry chains of inquiry instead of isolated question text
+
+### v0.0.69
+- communicator question lineage now syncs into world state as public-memory question traces
+- active communicator questions can now create/update public exploratory needs
+- active communicator questions can now spawn inquiry-flavored work items tied to the active project/pursuit
+- intended direction: connect internal inquiry to the wider world model so questions shape shared history and future work

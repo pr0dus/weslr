@@ -2214,6 +2214,73 @@ def maybe_propose_self_modifications(now_ts: int, summaries: list[dict]) -> list
     return proposals
 
 
+def sync_question_lineage_to_world(now_ts: int, tick: int) -> None:
+    communicator = load_communicator_state()
+    current_question = str(communicator.get("unresolved_question", "")).strip()
+    if not current_question:
+        return
+
+    public_memory = load_public_memory()
+    title = f"Communicator question: {current_question}"
+    existing_memory = next((item for item in public_memory if item.get("title") == title), None)
+    if existing_memory:
+        existing_memory["updated_at"] = now_ts
+        existing_memory["stability"] = round(min(float(existing_memory.get("stability", 0.45)) + 0.02, 0.9), 3)
+    else:
+        public_memory.append(PublicMemoryState(
+            id=f"pm-question-{tick}",
+            title=title,
+            kind="question",
+            content=f"Active communicator inquiry tied to pursuit {communicator.get('active_pursuit', '')}.",
+            source="communicator-question-lineage",
+            stability=0.48,
+            created_at=now_ts,
+            updated_at=now_ts,
+        ).to_dict())
+    save_public_memory(public_memory[-80:])
+
+    needs = load_needs()
+    existing_need = next((item for item in needs if item.get("title") == current_question), None)
+    if existing_need:
+        existing_need["updated_at"] = now_ts
+        existing_need["pressure"] = round(min(float(existing_need.get("pressure", 0.45)) + 0.04, 0.95), 3)
+        existing_need["status"] = "active"
+    else:
+        needs.append(NeedState(
+            id=f"need-question-{tick}",
+            title=current_question,
+            kind="exploration",
+            description=f"Communicator inquiry currently driving exploration: {current_question}",
+            origin="communicator-question-lineage",
+            scope="public",
+            pressure=0.44,
+            novelty=0.55,
+            status="open",
+            created_at=now_ts,
+            updated_at=now_ts,
+        ).to_dict())
+    save_needs(needs[-80:])
+
+    projects = load_projects()
+    work_items = load_work_items()
+    project = choose_project_for_theme(communicator.get("active_pursuit"), projects)
+    if project:
+        duplicate = next((item for item in work_items if item.get("title") == current_question and item.get("project_id") == project.get("id") and item.get("status") == "open"), None)
+        if duplicate is None:
+            work_items.append(WorkItemState(
+                id=f"work-question-{tick}",
+                title=current_question,
+                status="open",
+                priority=0.58,
+                owner=(project.get("owners") or ["agent-1"])[0],
+                created_at=now_ts,
+                project_id=project.get("id"),
+                need_id=next((item.get("id") for item in needs if item.get("title") == current_question), ""),
+                notes="Inquiry-driven work item spawned from communicator question lineage",
+            ).to_dict())
+            save_work_items(work_items[-120:])
+
+
 def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summaries: list[dict]) -> None:
     unresolved = summarize_unresolved_needs(conn)
     needs = load_needs()
@@ -2268,6 +2335,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     route_project_ownership(now_ts, summaries)
     update_work_item_progress(now_ts, summaries)
     maybe_propose_self_modifications(now_ts, summaries)
+    sync_question_lineage_to_world(now_ts, tick)
 
 
 def agent_social_context(agent_dir: Path) -> Dict:
