@@ -47,6 +47,7 @@ from config import (
     COMMUNICATOR_STATE_PATH,
     EVAL_METRICS_PATH,
     EXPERIMENTS_PATH,
+    SELF_EVIDENCE_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
     PROJECT_NAME,
@@ -212,6 +213,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}, "memory_bias_hits": 0, "useful_role_memory_signals": 0},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
+    save_self_evidence({"actions": {}, "notes": []})
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -414,6 +416,14 @@ def load_evaluation_metrics() -> dict:
 
 def save_evaluation_metrics(payload: dict) -> None:
     write_json_file(EVAL_METRICS_PATH, payload)
+
+
+def load_self_evidence() -> dict:
+    return read_json_file(SELF_EVIDENCE_PATH, {"actions": {}, "notes": []})
+
+
+def save_self_evidence(payload: dict) -> None:
+    write_json_file(SELF_EVIDENCE_PATH, payload)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2453,6 +2463,28 @@ def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> 
     save_experiments(experiments)
 
 
+def update_self_evidence_from_summaries(summaries: list[dict], communicator_decision: dict) -> None:
+    evidence = load_self_evidence()
+    actions = evidence.setdefault("actions", {})
+    for item in summaries:
+        action = item.get("action")
+        if not action or item.get("status") != "ok":
+            continue
+        entry = actions.setdefault(action, {"count": 0, "follow_through": 0, "question_link": 0, "experiment_link": 0})
+        entry["count"] = int(entry.get("count", 0)) + 1
+        if item.get("niche_theme") and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries):
+            entry["follow_through"] = int(entry.get("follow_through", 0)) + 1
+        if communicator_decision.get("chosen_theme") and item.get("niche_theme") == communicator_decision.get("chosen_theme"):
+            entry["question_link"] = int(entry.get("question_link", 0)) + 1
+        if action in {"inspect", "research", "optimize"}:
+            entry["experiment_link"] = int(entry.get("experiment_link", 0)) + 1
+    evidence_notes = evidence.setdefault("notes", [])
+    if communicator_decision.get("decision_mode"):
+        evidence_notes.append(f"decision_mode={communicator_decision.get('decision_mode')} chosen_action={communicator_decision.get('chosen_action')}")
+    evidence["notes"] = evidence_notes[-40:]
+    save_self_evidence(evidence)
+
+
 def update_evaluation_metrics(proposals: list[dict], summaries: list[dict]) -> None:
     communicator = load_communicator_state()
     metrics = load_evaluation_metrics()
@@ -2746,6 +2778,8 @@ def update_self_model(communicator: dict) -> None:
     self_model = communicator.get("self_model") or {}
     decision_memory = communicator.get("decision_style_memory") or {}
     actions = decision_memory.get("actions", {})
+    self_evidence = load_self_evidence()
+    evidence_actions = self_evidence.get("actions", {}) or {}
     caution_themes = list(self_model.get("caution_themes") or [])
     belief_confidence = self_model.get("belief_confidence") or {"strengths": {}, "weaknesses": {}, "modes": {}}
     strength_conf = belief_confidence.setdefault("strengths", {})
@@ -2759,13 +2793,15 @@ def update_self_model(communicator: dict) -> None:
     for action, payload in actions.items():
         confidence = float(payload.get("confidence", 0.0))
         count = int(payload.get("count", 0))
+        ev = evidence_actions.get(action, {})
+        follow_ratio = (float(ev.get("follow_through", 0)) / max(1, int(ev.get("count", 0)))) if ev else 0.0
         if confidence >= 0.1:
             short_strengths.append(action)
         elif confidence <= 0.03 and count >= 2:
             short_weaknesses.append(action)
-        if confidence >= 0.1 and count >= 3:
+        if confidence >= 0.1 and count >= 3 and follow_ratio >= 0.25:
             strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.08, 0.95), 3)
-        elif confidence <= 0.03 and count >= 3:
+        elif confidence <= 0.03 and count >= 3 and follow_ratio < 0.15:
             weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.05, 0.95), 3)
 
     for mode, payload in (decision_memory.get("modes", {}) or {}).items():
@@ -3265,6 +3301,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             if verbose:
                 print(json.dumps(item, indent=2))
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
+    update_self_evidence_from_summaries(summaries, communicator_decision)
     update_evaluation_metrics(communicator_decision.get("consensus") or [], summaries)
     decision_mode = communicator_decision.get("decision_mode")
     if decision_mode in {"inspect-first", "reconsider", "defer"}:

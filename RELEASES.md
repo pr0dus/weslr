@@ -365,3 +365,7 @@ Recommended rollback order:
 - project description refined around the current vision: one visible communicator with internal minds in a local inspectable world
 - core identity wording tightened to emphasize evidence-grounded self-knowledge
 - intended direction: keep future implementation aligned with communicator/world/subprocess reality instead of drifting back toward prompt-shell or artifact-factory framing
+
+### v0.0.93
+- action/outcome self-evidence layer added so some self-model belief updates require actual follow-through evidence, not only internal confidence traces
+- intended direction: ground self-knowledge more in what actually happened in the world/subprocess loop

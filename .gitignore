@@ -26,3 +26,4 @@ work_items.json
 communicator_state.json
 experiments.json
 evaluation_metrics.json
+self_evidence.json

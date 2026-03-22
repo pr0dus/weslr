@@ -267,6 +267,7 @@ Current early implementation surface:
 - communicator now keeps a lightweight self-model that should deepen later as evidence and subprocess history accumulate
 - self-model beliefs now update more slowly via confidence thresholds, making self-revision less jumpy
 - self-model now separates short-term signals from longer-term beliefs
+- self-model now begins grounding some beliefs in action/outcome evidence rather than only internal pattern accumulation
 - evaluation harness now tracks the postponed test gate: persistence, inquiry continuity, self-revision, and internal differentiation
 - differentiation metrics now also consider role-memory signals and communicator memory-bias usage, not just role labels/counts
 - `run-eval` now provides a repeatable longer-pass harness before the postponed tiny-model test gate is revisited
