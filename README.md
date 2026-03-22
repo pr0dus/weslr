@@ -269,6 +269,7 @@ Current early implementation surface:
 - self-model now separates short-term signals from longer-term beliefs
 - self-model now begins grounding some beliefs in action/outcome evidence rather than only internal pattern accumulation
 - self-evidence now distinguishes multiple evidence kinds: follow-through, question narrowing, experiment progress, coordination effect, and reuse-like signals
+- self-model now begins forming theme-specific beliefs instead of only global beliefs
 - evaluation harness now tracks the postponed test gate: persistence, inquiry continuity, self-revision, and internal differentiation
 - differentiation metrics now also consider role-memory signals and communicator memory-bias usage, not just role labels/counts
 - `run-eval` now provides a repeatable longer-pass harness before the postponed tiny-model test gate is revisited

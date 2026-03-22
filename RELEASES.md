@@ -374,3 +374,7 @@ Recommended rollback order:
 - self-evidence now distinguishes multiple evidence kinds, including follow-through, question narrowing, experiment progress, coordination effect, and reuse-like signals
 - self-model belief updates now use these richer evidence ratios instead of only plain follow-through
 - intended direction: make self-knowledge more evidence-specific and less blunt
+
+### v0.0.95
+- self-model now begins forming theme-specific beliefs from richer evidence patterns
+- intended direction: let the communicator learn not only what generally works, but what tends to work in which themes

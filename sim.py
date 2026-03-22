@@ -213,7 +213,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}, "memory_bias_hits": 0, "useful_role_memory_signals": 0},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
-    save_self_evidence({"actions": {}, "notes": [], "evidence_types": {}})
+    save_self_evidence({"actions": {}, "themes": {}, "notes": [], "evidence_types": {}})
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -233,8 +233,8 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "preferred_modes": ["inspect", "research"],
             "caution_themes": ["reckless action before clarity"],
             "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
-            "long_term_beliefs": {"strengths": ["continuity", "inquiry", "internal coordination"], "weaknesses": ["shallow evidence", "limited self-knowledge"], "modes": ["inspect", "research"]},
-            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
+            "long_term_beliefs": {"strengths": ["continuity", "inquiry", "internal coordination"], "weaknesses": ["shallow evidence", "limited self-knowledge"], "modes": ["inspect", "research"], "themes": {}},
+            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}, "themes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
         intent_history=["wake, observe, and continue enriching the local world"],
@@ -378,8 +378,8 @@ def load_communicator_state() -> dict:
             "preferred_modes": [],
             "caution_themes": [],
             "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
-            "long_term_beliefs": {"strengths": [], "weaknesses": [], "modes": []},
-            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}},
+            "long_term_beliefs": {"strengths": [], "weaknesses": [], "modes": [], "themes": {}},
+            "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}, "themes": {}},
             "self_modeling_note": "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate.",
         },
         intent_history=[],
@@ -419,7 +419,7 @@ def save_evaluation_metrics(payload: dict) -> None:
 
 
 def load_self_evidence() -> dict:
-    return read_json_file(SELF_EVIDENCE_PATH, {"actions": {}, "notes": [], "evidence_types": {}})
+    return read_json_file(SELF_EVIDENCE_PATH, {"actions": {}, "themes": {}, "notes": [], "evidence_types": {}})
 
 
 def save_self_evidence(payload: dict) -> None:
@@ -2466,6 +2466,7 @@ def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> 
 def update_self_evidence_from_summaries(summaries: list[dict], communicator_decision: dict) -> None:
     evidence = load_self_evidence()
     actions = evidence.setdefault("actions", {})
+    themes = evidence.setdefault("themes", {})
     evidence_types = evidence.setdefault("evidence_types", {})
     current_question = str(load_communicator_state().get("unresolved_question", "")).lower()
     for item in summaries:
@@ -2481,11 +2482,22 @@ def update_self_evidence_from_summaries(summaries: list[dict], communicator_deci
             "coordination_effect": 0,
             "reuse_signal": 0,
         })
+        theme = item.get("niche_theme") or "unknown"
+        theme_entry = themes.setdefault(theme, {})
+        action_theme_entry = theme_entry.setdefault(action, {
+            "count": 0,
+            "follow_through": 0,
+            "question_narrowing": 0,
+            "coordination_effect": 0,
+            "reuse_signal": 0,
+        })
         entry["count"] = int(entry.get("count", 0)) + 1
+        action_theme_entry["count"] = int(action_theme_entry.get("count", 0)) + 1
 
         follow_through = bool(item.get("niche_theme") and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries))
         if follow_through:
             entry["follow_through"] = int(entry.get("follow_through", 0)) + 1
+            action_theme_entry["follow_through"] = int(action_theme_entry.get("follow_through", 0)) + 1
             evidence_types["follow_through"] = int(evidence_types.get("follow_through", 0)) + 1
 
         if communicator_decision.get("chosen_theme") and item.get("niche_theme") == communicator_decision.get("chosen_theme"):
@@ -2498,14 +2510,17 @@ def update_self_evidence_from_summaries(summaries: list[dict], communicator_deci
 
         if current_question and item.get("niche_theme") and str(item.get("niche_theme")).lower() in current_question and action in {"inspect", "research"}:
             entry["question_narrowing"] = int(entry.get("question_narrowing", 0)) + 1
+            action_theme_entry["question_narrowing"] = int(action_theme_entry.get("question_narrowing", 0)) + 1
             evidence_types["question_narrowing"] = int(evidence_types.get("question_narrowing", 0)) + 1
 
         if action in {"signal", "inspect"} and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries):
             entry["coordination_effect"] = int(entry.get("coordination_effect", 0)) + 1
+            action_theme_entry["coordination_effect"] = int(action_theme_entry.get("coordination_effect", 0)) + 1
             evidence_types["coordination_effect"] = int(evidence_types.get("coordination_effect", 0)) + 1
 
         if action in {"build_module", "optimize"} and follow_through:
             entry["reuse_signal"] = int(entry.get("reuse_signal", 0)) + 1
+            action_theme_entry["reuse_signal"] = int(action_theme_entry.get("reuse_signal", 0)) + 1
             evidence_types["reuse_signal"] = int(evidence_types.get("reuse_signal", 0)) + 1
 
     evidence_notes = evidence.setdefault("notes", [])
@@ -2862,12 +2877,30 @@ def update_self_model(communicator: dict) -> None:
     if weaknesses:
         current_self_description += f"; weaker at {', '.join(weaknesses[:3])}"
 
+    theme_beliefs = {}
+    theme_conf = belief_confidence.setdefault("themes", {})
+    for theme, action_map in (self_evidence.get("themes", {}) or {}).items():
+        theme_actions = []
+        for action, payload in action_map.items():
+            count_t = max(1, int(payload.get("count", 0)))
+            positive = max(
+                float(payload.get("follow_through", 0)) / count_t,
+                float(payload.get("question_narrowing", 0)) / count_t,
+                float(payload.get("coordination_effect", 0)) / count_t,
+                float(payload.get("reuse_signal", 0)) / count_t,
+            )
+            if positive >= 0.25:
+                theme_conf.setdefault(theme, {})[action] = round(min(float(theme_conf.setdefault(theme, {}).get(action, 0.0)) + 0.06, 0.95), 3)
+        theme_actions = [name for name, conf in sorted((theme_conf.get(theme) or {}).items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
+        if theme_actions:
+            theme_beliefs[theme] = theme_actions[:4]
+
     self_model["current_self_description"] = current_self_description
     self_model["perceived_strengths"] = strengths[:6]
     self_model["perceived_weaknesses"] = weaknesses[:6]
     self_model["preferred_modes"] = preferred_modes[:6]
     self_model["short_term_signals"] = {"strengths": sorted(set(short_strengths))[:8], "weaknesses": sorted(set(short_weaknesses))[:8], "modes": sorted(set(short_modes))[:8]}
-    self_model["long_term_beliefs"] = {"strengths": strengths[:8], "weaknesses": weaknesses[:8], "modes": preferred_modes[:8]}
+    self_model["long_term_beliefs"] = {"strengths": strengths[:8], "weaknesses": weaknesses[:8], "modes": preferred_modes[:8], "themes": theme_beliefs}
     self_model["caution_themes"] = caution_themes[-6:]
     self_model["belief_confidence"] = belief_confidence
     self_model["self_modeling_note"] = "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate."
