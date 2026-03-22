@@ -2266,6 +2266,26 @@ def update_coordinator_signal_memory(now_ts: int, summaries: list[dict]) -> None
             save_note(agent_dir, f"coordinator-effect theme={theme} action={item.get('action')} target={target} follow_on_activity=no")
 
 
+def update_memory_keeper_objection_clusters(now_ts: int) -> None:
+    communicator = load_communicator_state()
+    objections = list(communicator.get("unresolved_objections") or [])
+    if not objections:
+        return
+    keepers = [agent_dir for agent_dir in AGENTS_DIR.iterdir() if agent_dir.is_dir() and classify_internal_role(agent_dir.name) == "memory_keeper"]
+    if not keepers:
+        return
+    clusters = {}
+    for objection in objections:
+        if ":" in objection:
+            head, _tail = objection.split(":", 1)
+        else:
+            head = objection
+        clusters[head] = clusters.get(head, 0) + 1
+    cluster_text = "; ".join(f"{name}={count}" for name, count in sorted(clusters.items()))
+    for agent_dir in keepers:
+        save_note(agent_dir, f"memory-keeper objection-cluster {cluster_text} at {now_ts}")
+
+
 def route_project_ownership(now_ts: int, summaries: list[dict]) -> None:
     projects = load_projects()
     work_items = load_work_items()
@@ -2526,6 +2546,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     update_work_item_progress(now_ts, summaries)
     update_builder_usefulness_memory(now_ts, summaries)
     update_coordinator_signal_memory(now_ts, summaries)
+    update_memory_keeper_objection_clusters(now_ts)
     maybe_propose_self_modifications(now_ts, summaries)
     sync_question_lineage_to_world(now_ts, tick)
     sync_experiments_to_world(now_ts, tick, summaries)

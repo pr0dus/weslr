@@ -323,3 +323,7 @@ Recommended rollback order:
 ### v0.0.82
 - coordinator now records whether its signal/inspect actions appeared to trigger follow-on same-theme activity in other agents
 - intended direction: begin turning coordinator memory into effect-sensitive role memory rather than only signal emission memory
+
+### v0.0.83
+- memory-keeper now clusters unresolved objections into grouped continuity-oriented memory traces
+- intended direction: begin turning memory-keeper memory into objection/caution-pattern memory rather than only generic continuity notes
