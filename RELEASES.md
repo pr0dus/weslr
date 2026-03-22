@@ -369,3 +369,8 @@ Recommended rollback order:
 ### v0.0.93
 - action/outcome self-evidence layer added so some self-model belief updates require actual follow-through evidence, not only internal confidence traces
 - intended direction: ground self-knowledge more in what actually happened in the world/subprocess loop
+
+### v0.0.94
+- self-evidence now distinguishes multiple evidence kinds, including follow-through, question narrowing, experiment progress, coordination effect, and reuse-like signals
+- self-model belief updates now use these richer evidence ratios instead of only plain follow-through
+- intended direction: make self-knowledge more evidence-specific and less blunt

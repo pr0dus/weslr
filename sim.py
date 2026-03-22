@@ -213,7 +213,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0, "role_counts": {}, "memory_bias_hits": 0, "useful_role_memory_signals": 0},
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
-    save_self_evidence({"actions": {}, "notes": []})
+    save_self_evidence({"actions": {}, "notes": [], "evidence_types": {}})
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -419,7 +419,7 @@ def save_evaluation_metrics(payload: dict) -> None:
 
 
 def load_self_evidence() -> dict:
-    return read_json_file(SELF_EVIDENCE_PATH, {"actions": {}, "notes": []})
+    return read_json_file(SELF_EVIDENCE_PATH, {"actions": {}, "notes": [], "evidence_types": {}})
 
 
 def save_self_evidence(payload: dict) -> None:
@@ -2466,18 +2466,48 @@ def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> 
 def update_self_evidence_from_summaries(summaries: list[dict], communicator_decision: dict) -> None:
     evidence = load_self_evidence()
     actions = evidence.setdefault("actions", {})
+    evidence_types = evidence.setdefault("evidence_types", {})
+    current_question = str(load_communicator_state().get("unresolved_question", "")).lower()
     for item in summaries:
         action = item.get("action")
         if not action or item.get("status") != "ok":
             continue
-        entry = actions.setdefault(action, {"count": 0, "follow_through": 0, "question_link": 0, "experiment_link": 0})
+        entry = actions.setdefault(action, {
+            "count": 0,
+            "follow_through": 0,
+            "question_link": 0,
+            "experiment_link": 0,
+            "question_narrowing": 0,
+            "coordination_effect": 0,
+            "reuse_signal": 0,
+        })
         entry["count"] = int(entry.get("count", 0)) + 1
-        if item.get("niche_theme") and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries):
+
+        follow_through = bool(item.get("niche_theme") and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries))
+        if follow_through:
             entry["follow_through"] = int(entry.get("follow_through", 0)) + 1
+            evidence_types["follow_through"] = int(evidence_types.get("follow_through", 0)) + 1
+
         if communicator_decision.get("chosen_theme") and item.get("niche_theme") == communicator_decision.get("chosen_theme"):
             entry["question_link"] = int(entry.get("question_link", 0)) + 1
+            evidence_types["question_link"] = int(evidence_types.get("question_link", 0)) + 1
+
         if action in {"inspect", "research", "optimize"}:
             entry["experiment_link"] = int(entry.get("experiment_link", 0)) + 1
+            evidence_types["experiment_progress"] = int(evidence_types.get("experiment_progress", 0)) + 1
+
+        if current_question and item.get("niche_theme") and str(item.get("niche_theme")).lower() in current_question and action in {"inspect", "research"}:
+            entry["question_narrowing"] = int(entry.get("question_narrowing", 0)) + 1
+            evidence_types["question_narrowing"] = int(evidence_types.get("question_narrowing", 0)) + 1
+
+        if action in {"signal", "inspect"} and any(other.get("agent") != item.get("agent") and other.get("status") == "ok" and other.get("niche_theme") == item.get("niche_theme") for other in summaries):
+            entry["coordination_effect"] = int(entry.get("coordination_effect", 0)) + 1
+            evidence_types["coordination_effect"] = int(evidence_types.get("coordination_effect", 0)) + 1
+
+        if action in {"build_module", "optimize"} and follow_through:
+            entry["reuse_signal"] = int(entry.get("reuse_signal", 0)) + 1
+            evidence_types["reuse_signal"] = int(evidence_types.get("reuse_signal", 0)) + 1
+
     evidence_notes = evidence.setdefault("notes", [])
     if communicator_decision.get("decision_mode"):
         evidence_notes.append(f"decision_mode={communicator_decision.get('decision_mode')} chosen_action={communicator_decision.get('chosen_action')}")
@@ -2794,14 +2824,20 @@ def update_self_model(communicator: dict) -> None:
         confidence = float(payload.get("confidence", 0.0))
         count = int(payload.get("count", 0))
         ev = evidence_actions.get(action, {})
-        follow_ratio = (float(ev.get("follow_through", 0)) / max(1, int(ev.get("count", 0)))) if ev else 0.0
+        count_e = max(1, int(ev.get("count", 0)))
+        follow_ratio = (float(ev.get("follow_through", 0)) / count_e) if ev else 0.0
+        question_ratio = (float(ev.get("question_narrowing", 0)) / count_e) if ev else 0.0
+        experiment_ratio = (float(ev.get("experiment_link", 0)) / count_e) if ev else 0.0
+        coord_ratio = (float(ev.get("coordination_effect", 0)) / count_e) if ev else 0.0
+        reuse_ratio = (float(ev.get("reuse_signal", 0)) / count_e) if ev else 0.0
         if confidence >= 0.1:
             short_strengths.append(action)
         elif confidence <= 0.03 and count >= 2:
             short_weaknesses.append(action)
-        if confidence >= 0.1 and count >= 3 and follow_ratio >= 0.25:
+        positive_evidence = max(follow_ratio, question_ratio, experiment_ratio, coord_ratio, reuse_ratio)
+        if confidence >= 0.1 and count >= 3 and positive_evidence >= 0.25:
             strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.08, 0.95), 3)
-        elif confidence <= 0.03 and count >= 3 and follow_ratio < 0.15:
+        elif confidence <= 0.03 and count >= 3 and positive_evidence < 0.15:
             weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.05, 0.95), 3)
 
     for mode, payload in (decision_memory.get("modes", {}) or {}).items():
