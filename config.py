@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.57"
+VERSION = "0.0.58"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
@@ -26,6 +26,10 @@ DASHBOARD_DIR = BASE_DIR / "dashboard"
 DASHBOARD_HISTORY_PATH = BASE_DIR / "dashboard_history.json"
 EVENT_LOG_PATH = BASE_DIR / "event_log.json"
 OFFERS_DIR = BASE_DIR / "offers"
+NEEDS_PATH = BASE_DIR / "needs.json"
+MESSAGES_PATH = BASE_DIR / "messages.json"
+PUBLIC_MEMORY_PATH = BASE_DIR / "public_memory.json"
+PROJECTS_PATH = BASE_DIR / "projects.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -31,3 +31,64 @@ class ActionResult:
     module: str | None = None
     target: str | None = None
     raw_output: str = ""
+
+
+@dataclass
+class NeedState:
+    id: str
+    title: str
+    kind: str
+    description: str
+    origin: str
+    scope: str
+    pressure: float
+    novelty: float
+    status: str
+    created_at: int
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class MessageState:
+    id: str
+    from_agent: str
+    to_agent: str
+    kind: str
+    theme: str
+    content: str
+    created_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class PublicMemoryState:
+    id: str
+    title: str
+    kind: str
+    content: str
+    source: str
+    stability: float
+    created_at: int
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class ProjectState:
+    id: str
+    name: str
+    purpose: str
+    status: str
+    owners: List[str]
+    created_at: int
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

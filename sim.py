@@ -34,8 +34,12 @@ from config import (
     MAX_DEMAND_ITEMS,
     MAX_EXPORT_QUEUE,
     MAX_REVIEW_QUEUE,
+    MESSAGES_PATH,
+    NEEDS_PATH,
     OPPORTUNITY_BOARD_PATH,
     PACK_OUTCOMES_PATH,
+    PROJECTS_PATH,
+    PUBLIC_MEMORY_PATH,
     PACKS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
@@ -49,7 +53,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -60,6 +64,12 @@ BASE_CATEGORIES = [
     "memory",
     "exports",
     "benchmarks",
+]
+
+
+WORLD_BOOTSTRAP_PROJECTS = [
+    ("project-backup-confidence", "Backup Confidence", "Improve local confidence in backups, restore visibility, and proof of recoverability.", ["agent-1"]),
+    ("project-workflow-packaging", "Workflow Packaging", "Turn useful local helper behavior into reusable modules, wrappers, and cleaner handoffs.", ["agent-2"]),
 ]
 
 SCHEMA = '''
@@ -110,6 +120,42 @@ def connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     return conn
+
+
+def seed_world_objects(agent_count: int, now_ts: int) -> None:
+    project_seeds = []
+    for project_id, name, purpose, owners in WORLD_BOOTSTRAP_PROJECTS:
+        filtered_owners = [owner for owner in owners if int(owner.split('-')[-1]) <= agent_count]
+        if not filtered_owners:
+            filtered_owners = ["agent-1"]
+        project_seeds.append(ProjectState(project_id, name, purpose, "active", filtered_owners, now_ts, now_ts).to_dict())
+    save_projects(project_seeds)
+
+    memory_items = [
+        PublicMemoryState(
+            "memory-local-first",
+            "Local-first inspectability",
+            "principle",
+            "Prefer inspectable local artifacts, reversible changes, and visible world state over opaque autonomy.",
+            "system-bootstrap",
+            0.92,
+            now_ts,
+            now_ts,
+        ).to_dict(),
+        PublicMemoryState(
+            "memory-needs-drive-change",
+            "Needs should drive change",
+            "principle",
+            "Treat repeated friction, unmet coordination, and unexplained failures as first-class world signals.",
+            "system-bootstrap",
+            0.88,
+            now_ts,
+            now_ts,
+        ).to_dict(),
+    ]
+    save_public_memory(memory_items)
+    save_needs([])
+    save_messages([])
 
 
 def read_json_file(path: Path, default):
@@ -166,6 +212,38 @@ def load_pack_outcomes() -> list[dict]:
 
 def save_pack_outcomes(items: list[dict]) -> None:
     write_json_file(PACK_OUTCOMES_PATH, items)
+
+
+def load_needs() -> list[dict]:
+    return read_json_file(NEEDS_PATH, [])
+
+
+def save_needs(items: list[dict]) -> None:
+    write_json_file(NEEDS_PATH, items)
+
+
+def load_messages() -> list[dict]:
+    return read_json_file(MESSAGES_PATH, [])
+
+
+def save_messages(items: list[dict]) -> None:
+    write_json_file(MESSAGES_PATH, items)
+
+
+def load_public_memory() -> list[dict]:
+    return read_json_file(PUBLIC_MEMORY_PATH, [])
+
+
+def save_public_memory(items: list[dict]) -> None:
+    write_json_file(PUBLIC_MEMORY_PATH, items)
+
+
+def load_projects() -> list[dict]:
+    return read_json_file(PROJECTS_PATH, [])
+
+
+def save_projects(items: list[dict]) -> None:
+    write_json_file(PROJECTS_PATH, items)
 
 
 def canonical_theme_name(theme: str) -> str:
@@ -1729,6 +1807,7 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
         conn.execute("DELETE FROM world")
         conn.execute("DELETE FROM agents")
         conn.execute("DELETE FROM logs")
+        now_ts = int(time.time())
         conn.execute("INSERT INTO world(key, value) VALUES (?, ?)", ("tick", "0"))
         conn.execute("INSERT INTO world(key, value) VALUES (?, ?)", ("last_tick_started", "0"))
         for i in range(1, agent_count + 1):
@@ -1740,6 +1819,7 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
             (agent_dir / "inbox.json").write_text("[]")
             state = AgentState(name=name, energy=STARTING_ENERGY, storage=STARTING_STORAGE, gpu_quota=STARTING_GPU, reputation=STARTING_REPUTATION)
             conn.execute("INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks))
+    seed_world_objects(agent_count, now_ts)
     refresh_state_files()
     conn.close()
 
@@ -1841,6 +1921,17 @@ def signal_target(actor: Dict, target: Dict, now_ts: int, theme: str | None, nee
         "sent_at": now_ts,
     }
     push_inbox_message(target_dir, message)
+    message_log = load_messages()
+    message_log.append(MessageState(
+        id=f"msg-{actor['name']}-{target['name']}-{now_ts}",
+        from_agent=actor["name"],
+        to_agent=target["name"],
+        kind="signal",
+        theme=theme or "shared need",
+        content=need or "coordinate around recent friction",
+        created_at=now_ts,
+    ).to_dict())
+    save_messages(message_log[-200:])
     save_note(AGENTS_DIR / actor["name"], f"signal sent to {target['name']} about {message['theme']}: {message['need']}")
     raw = json.dumps({"from": actor["name"], "to": target["name"], "message": message}, indent=2)
     return ActionResult(action="signal", status="ok", summary=f"signaled {target['name']} about {message['theme']}", reputation_delta=0.015, target=target["name"], raw_output=raw)
@@ -1866,6 +1957,67 @@ def summarize_unresolved_needs(conn: sqlite3.Connection) -> list[str]:
         if summary not in needs:
             needs.append(summary)
     return needs[:4]
+
+
+def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summaries: list[dict]) -> None:
+    unresolved = summarize_unresolved_needs(conn)
+    needs = load_needs()
+    for summary in unresolved:
+        existing = next((item for item in needs if item.get("title") == summary), None)
+        if existing:
+            existing["pressure"] = round(min(float(existing.get("pressure", 0.4)) + 0.08, 0.99), 3)
+            existing["updated_at"] = now_ts
+            existing["status"] = "active"
+        else:
+            needs.append(NeedState(
+                id=f"need-{tick}-{len(needs)+1}",
+                title=summary,
+                kind="repair",
+                description=f"Observed unresolved runtime friction: {summary}",
+                origin="world-log",
+                scope="public",
+                pressure=0.58,
+                novelty=0.42,
+                status="open",
+                created_at=now_ts,
+                updated_at=now_ts,
+            ).to_dict())
+    for item in needs:
+        if item.get("title") not in unresolved:
+            item["pressure"] = round(max(0.08, float(item.get("pressure", 0.3)) * 0.97), 3)
+            if item["pressure"] < 0.16:
+                item["status"] = "cooling"
+    save_needs(needs[-50:])
+
+    public_memory = load_public_memory()
+    if any(s.get("action") == "signal" and s.get("status") == "ok" for s in summaries):
+        title = "Signals can redirect nearby work"
+        existing = next((item for item in public_memory if item.get("title") == title), None)
+        content = "Successful signals should remain visible because communication becomes useful when it changes another agent's subsequent behavior."
+        if existing:
+            existing["updated_at"] = now_ts
+            existing["stability"] = round(min(float(existing.get("stability", 0.5)) + 0.03, 0.95), 3)
+        else:
+            public_memory.append(PublicMemoryState(
+                id=f"pm-signal-{tick}",
+                title=title,
+                kind="lesson",
+                content=content,
+                source="world-observation",
+                stability=0.66,
+                created_at=now_ts,
+                updated_at=now_ts,
+            ).to_dict())
+    save_public_memory(public_memory[-50:])
+
+    projects = load_projects()
+    if projects:
+        for project in projects:
+            matching = [s for s in summaries if str(s.get("niche_theme", "")).lower() in str(project.get("name", "")).lower() or str(project.get("purpose", "")).lower().find(str(s.get("niche_theme", "")).lower()) >= 0]
+            if matching:
+                project["updated_at"] = now_ts
+                project["status"] = "active"
+    save_projects(projects)
 
 
 def agent_social_context(agent_dir: Path) -> Dict:
@@ -2182,6 +2334,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
+    update_world_objects(conn, tick, started_at, summaries)
     opportunity_board = decay_and_evolve_themes(opportunity_board, started_at)
     save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
@@ -2546,6 +2699,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "export_queue": data.get("export_queue"),
         "recent_logs": data.get("recent_logs"),
         "agent_memory": build_agent_memory_summary(),
+        "needs": data.get("needs"),
+        "messages": data.get("messages"),
+        "public_memory": data.get("public_memory"),
+        "projects": data.get("projects"),
         "release_ledger": release_ledger,
     }
     payload["history"] = update_dashboard_history(payload)
@@ -2595,6 +2752,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <a href="#themes">Themes</a> ·
       <a href="#packs">Packs</a> ·
       <a href="#artifacts">Artifacts</a> ·
+      <a href="#world-objects">World Objects</a> ·
       <a href="#events">Events</a> ·
       <a href="#ledger">Release Ledger</a>
     </nav>
@@ -2655,6 +2813,21 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       </div>
     </section>
 
+    <div class="grid" style="margin-top:16px;" id="world-objects">
+      <section class="card">
+        <h2>Needs</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('title'))}</strong> · {escape(str(item.get('status')))} · pressure {item.get('pressure')}</li>" for item in (payload.get('needs') or [])[:8]) or '<li class="muted">No public needs yet.</li>'}</ul>
+      </section>
+      <section class="card">
+        <h2>Projects</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('name'))}</strong> · {escape(str(item.get('status')))}<br><span class=\'muted\'>{escape(str(item.get('purpose')))}</span></li>" for item in (payload.get('projects') or [])[:8]) or '<li class="muted">No projects yet.</li>'}</ul>
+      </section>
+      <section class="card">
+        <h2>Public Memory</h2>
+        <ul>{''.join(f"<li><strong>{escape(item.get('title'))}</strong> · {escape(str(item.get('kind')))}<br><span class=\'muted\'>{escape(str(item.get('content')))}</span></li>" for item in (payload.get('public_memory') or [])[:8]) or '<li class="muted">No public memory yet.</li>'}</ul>
+      </section>
+    </div>
+
     <div class="grid" style="margin-top:16px;" id="events">
       <section class="card">
         <h2>Event Feed</h2>
@@ -2701,6 +2874,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const eventFeed = payload.event_feed || [];
       const persistentEventLog = payload.persistent_event_log || [];
       const releaseLedger = payload.release_ledger || '';
+      const needs = payload.needs || [];
+      const projects = payload.projects || [];
+      const publicMemory = payload.public_memory || [];
       const exportQueue = payload.export_queue || [];
       const reviewQueue = payload.review_queue || [];
 
@@ -2773,6 +2949,11 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <div class="grid">
           ${{artifactDetails.map((artifact) => `<section class='card' id='${{esc(artifact.anchor)}}'><h3>${{esc(artifact.title || artifact.id || 'artifact')}}</h3><p class='muted'><code>${{esc(artifact.id || '')}}</code> · ${{esc(artifact.family || artifact.category || 'uncategorized')}}</p><p>${{esc(artifact.summary || 'No summary yet.')}}</p><ul><li>theme: ${{esc(artifact.niche_theme || '—')}}</li><li>target: ${{esc(artifact.target_user || 'tbd')}}</li><li>review: ${{esc(artifact.review_status || 'unreviewed')}}</li><li>sellability: ${{artifact.scores?.sellability ?? ''}}</li><li>price band: ${{esc(artifact.price_band_guess || 'tbd')}}</li><li>delivery: ${{esc(artifact.delivery_mode || 'tbd')}}</li></ul></section>`).join('') || '<p class="muted">No artifact details available yet.</p>'}}
         </div>`;
+
+      const worldObjectGrids = document.querySelectorAll('#world-objects section');
+      if (worldObjectGrids[0]) worldObjectGrids[0].innerHTML = `<h2>Needs</h2><ul>${{needs.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.status)}} · pressure ${{item.pressure}}</li>`).join('') || '<li class="muted">No public needs yet.</li>'}}</ul>`;
+      if (worldObjectGrids[1]) worldObjectGrids[1].innerHTML = `<h2>Projects</h2><ul>${{projects.map((item) => `<li><strong>${{esc(item.name)}}</strong> · ${{esc(item.status)}}<br><span class='muted'>${{esc(item.purpose)}}</span></li>`).join('') || '<li class="muted">No projects yet.</li>'}}</ul>`;
+      if (worldObjectGrids[2]) worldObjectGrids[2].innerHTML = `<h2>Public Memory</h2><ul>${{publicMemory.map((item) => `<li><strong>${{esc(item.title)}}</strong> · ${{esc(item.kind)}}<br><span class='muted'>${{esc(item.content)}}</span></li>`).join('') || '<li class="muted">No public memory yet.</li>'}}</ul>`;
 
       const eventGrids = document.querySelectorAll('#events section');
       if (eventGrids[0]) eventGrids[0].innerHTML = `<h2>Event Feed</h2><ul>${{eventFeed.map((event) => `<li>${{esc(event.message)}}</li>`).join('') || '<li class="muted">No notable changes yet.</li>'}}</ul>`;
@@ -2870,6 +3051,10 @@ def show_world() -> Dict:
     return {
         "world": world,
         "agents": agents,
+        "needs": load_needs(),
+        "messages": load_messages(),
+        "public_memory": load_public_memory(),
+        "projects": load_projects(),
         "categories": categories,
         "category_proposals": read_json_file(CATEGORY_PROPOSALS_PATH, []),
         "artifact_packs": artifact_packs,

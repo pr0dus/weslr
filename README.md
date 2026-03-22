@@ -226,6 +226,12 @@ The current direction is state-driven rather than prompt-driven: entities should
 - [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md) — safe self-inspection and self-change design
 - [`AGENT-TIME.md`](AGENT-TIME.md) — per-agent cadence and wake model
 
+Current early implementation surface:
+- `python3 main.py world-objects needs`
+- `python3 main.py world-objects messages`
+- `python3 main.py world-objects public-memory`
+- `python3 main.py world-objects projects`
+
 ## What should come next
 
 Near-term:

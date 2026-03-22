@@ -167,3 +167,11 @@ Recommended rollback order:
 - `SELF-MODIFICATION.md` added to define safe self-inspection and self-change rules
 - `AGENT-TIME.md` added to define per-agent cadence, wake reasons, and future time ecology
 - intended direction: keep the repo clean while turning the grand vision into buildable architecture
+
+### v0.0.58
+- initial world-object substrate added: `needs`, `messages`, `public_memory`, and `projects`
+- world init now seeds a minimal public-memory layer and starter projects
+- successful agent signals are now persisted into the world message log
+- unresolved runtime friction now becomes persistent public needs with decay/cooling behavior
+- dashboard and CLI now expose early world-object visibility via `world-objects`
+- intended direction: begin implementing the canonical world model without breaking the current simulation loop

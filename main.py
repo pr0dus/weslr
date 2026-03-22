@@ -11,7 +11,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, load_messages, load_needs, load_projects, load_public_memory, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -94,6 +94,16 @@ def cmd_dashboard(args):
 
 def cmd_offer(args):
     emit(prepare_pack_offer(args.name, note=args.note, buyer=args.buyer, price_band=args.price_band, mode=args.mode))
+
+
+def cmd_world_objects(args):
+    mapping = {
+        "needs": load_needs,
+        "messages": load_messages,
+        "public-memory": load_public_memory,
+        "projects": load_projects,
+    }
+    emit({"kind": args.kind, "count": len(mapping[args.kind]()), "items": mapping[args.kind]()[: args.limit]})
 
 
 def _prompt_int(prompt_text, default, minimum=0, allow_infinite=False):
@@ -257,6 +267,11 @@ def main():
     p = sub.add_parser("show-agent", help="show one agent state")
     p.add_argument("name")
     p.set_defaults(func=cmd_show_agent)
+
+    p = sub.add_parser("world-objects", help="inspect persistent world object collections")
+    p.add_argument("kind", choices=["needs", "messages", "public-memory", "projects"])
+    p.add_argument("--limit", type=int, default=10)
+    p.set_defaults(func=cmd_world_objects)
 
     p = sub.add_parser("browse", help="browse ranked export/review/packs queues")
     p.add_argument("queue", choices=["export", "review", "packs"])
