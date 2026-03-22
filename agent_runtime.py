@@ -260,12 +260,20 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     curiosity_target = str(communicator.get("curiosity_target", "")).lower()
     unresolved_question = str(communicator.get("unresolved_question", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
+    self_model = communicator.get("self_model", {}) or {}
+    strengths = {str(item).lower() for item in (self_model.get("perceived_strengths") or [])}
+    weaknesses = {str(item).lower() for item in (self_model.get("perceived_weaknesses") or [])}
+    caution_themes = " ".join(str(item).lower() for item in (self_model.get("caution_themes") or []))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
     experiment_focus = any(item.get("status") == "running" and active_pursuit and active_pursuit in str(item.get("title", "")).lower() for item in experiments)
 
     if agent["energy"] < 30:
         action = "rest"
+    elif "research" in strengths and unresolved_question and random.random() < 0.5:
+        action = random.choice(["research", "inspect"])
+    elif "optimize" in strengths and experiment_focus and random.random() < 0.45:
+        action = random.choice(["optimize", "research"])
     elif experiment_focus and random.random() < 0.55:
         action = random.choice(["inspect", "research", "optimize"])
     elif unresolved_question and random.random() < 0.42:
@@ -287,11 +295,17 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.14:
         action = "trade"
     else:
+        build_weight = 2 if "build_module" not in weaknesses else 1
+        trade_allowed = 0 if "reckless action before clarity" in caution_themes else 1
+        pool = ["gather", "optimize", "research", "build_module", "signal", "rest"]
+        weights = [2, 4, 4 + (1 if "research" in strengths else 0), build_weight, 2, 1]
         action = random.choices(
-            population=["gather", "optimize", "research", "build_module", "signal", "rest"],
-            weights=[2, 4, 4, 2, 2, 1],
+            population=pool,
+            weights=weights,
             k=1,
         )[0]
+        if trade_allowed and target and can_trade(agent, now_ts) and random.random() < 0.08:
+            action = "trade"
 
     if random.random() < 0.18:
         category = "uncategorized"

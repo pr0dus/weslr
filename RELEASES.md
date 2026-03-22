@@ -301,3 +301,8 @@ Recommended rollback order:
 - evaluation harness added to track the postponed bounded-test gate: persistence, inquiry continuity, self-revision, and internal differentiation
 - `eval-metrics` CLI command added and dashboard communicator panel now surfaces the test gate note
 - intended direction: operationalize the self-model and make the future tiny-model test measurable instead of vibes-based
+
+### v0.0.78
+- self-model strengths, weaknesses, and caution themes now bias fallback action selection more directly
+- stronger self-model influence added for research/optimize/build tradeoffs and caution around premature trade/action
+- intended direction: make the communicator’s self-model operational rather than mostly descriptive
