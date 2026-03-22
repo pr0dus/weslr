@@ -8,7 +8,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List
 
-from agent_runtime import decide_action, load_opportunity_memory, save_note, save_opportunity_memory
+from agent_runtime import decide_action, load_inbox, load_opportunity_memory, push_inbox_message, save_note, save_opportunity_memory
 from config import (
     AGENTS_DIR,
     BASE_DIR,
@@ -1737,6 +1737,7 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
             for sub in ["modules", "artifacts"]:
                 (agent_dir / sub).mkdir(parents=True, exist_ok=True)
             (agent_dir / "memory.json").write_text("[]")
+            (agent_dir / "inbox.json").write_text("[]")
             state = AgentState(name=name, energy=STARTING_ENERGY, storage=STARTING_STORAGE, gpu_quota=STARTING_GPU, reputation=STARTING_REPUTATION)
             conn.execute("INSERT INTO agents(name, energy, storage, gpu_quota, reputation, last_inspect_at, last_trade_at, age_ticks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (state.name, state.energy, state.storage, state.gpu_quota, state.reputation, state.last_inspect_at, state.last_trade_at, state.age_ticks))
     refresh_state_files()
@@ -1809,9 +1810,73 @@ def inspect_target(actor: Dict, target: Dict, now_ts: int) -> ActionResult:
     target_dir = AGENTS_DIR / target["name"]
     modules = [p.name for p in sorted((target_dir / "modules").glob("*.py"))]
     artifacts = [p.name for p in sorted((target_dir / "artifacts").glob("*")) if p.is_file()]
-    raw = json.dumps({"target": target["name"], "reputation": target["reputation"], "storage": target["storage"], "age_ticks": target["age_ticks"], "module_count": len(modules), "artifact_count": len(artifacts), "sample_modules": modules[:3], "sample_artifacts": artifacts[:3]}, indent=2)
+    target_memory = load_opportunity_memory(target_dir)
+    top_theme = None
+    theme_items = sorted((target_memory.get("themes") or {}).items(), key=lambda kv: kv[1].get("strength", 0.0), reverse=True)
+    if theme_items:
+        top_theme = theme_items[0][0]
+    raw = json.dumps({
+        "target": target["name"],
+        "reputation": target["reputation"],
+        "storage": target["storage"],
+        "age_ticks": target["age_ticks"],
+        "module_count": len(modules),
+        "artifact_count": len(artifacts),
+        "sample_modules": modules[:3],
+        "sample_artifacts": artifacts[:3],
+        "top_theme": top_theme,
+    }, indent=2)
     actor["last_inspect_at"] = now_ts
+    save_note(AGENTS_DIR / actor["name"], f"inspect learned {target['name']} top_theme={top_theme or 'unknown'} modules={len(modules)} artifacts={len(artifacts)}")
     return ActionResult(action="inspect", status="ok", summary=f"inspected {target['name']}", reputation_delta=0.01, target=target["name"], raw_output=raw)
+
+
+def signal_target(actor: Dict, target: Dict, now_ts: int, theme: str | None, need: str | None, category: str | None) -> ActionResult:
+    target_dir = AGENTS_DIR / target["name"]
+    message = {
+        "from": actor["name"],
+        "theme": theme or "shared need",
+        "need": need or "coordinate around recent friction",
+        "category": category or "uncategorized",
+        "sent_at": now_ts,
+    }
+    push_inbox_message(target_dir, message)
+    save_note(AGENTS_DIR / actor["name"], f"signal sent to {target['name']} about {message['theme']}: {message['need']}")
+    raw = json.dumps({"from": actor["name"], "to": target["name"], "message": message}, indent=2)
+    return ActionResult(action="signal", status="ok", summary=f"signaled {target['name']} about {message['theme']}", reputation_delta=0.015, target=target["name"], raw_output=raw)
+
+
+def consume_inbox(agent: Dict, agent_dir: Path) -> tuple[list[dict], int]:
+    inbox = load_inbox(agent_dir)
+    if not inbox:
+        return [], 0
+    recent = inbox[-3:]
+    remaining = inbox[:-3]
+    (agent_dir / "inbox.json").write_text(json.dumps(remaining, indent=2))
+    for item in recent:
+        save_note(agent_dir, f"message from {item.get('from', 'unknown')} theme={item.get('theme', 'shared need')} need={item.get('need', '')}")
+    return recent, len(recent)
+
+
+def summarize_unresolved_needs(conn: sqlite3.Connection) -> list[str]:
+    rows = conn.execute("SELECT summary FROM logs WHERE status IN ('error','cooldown','skipped') ORDER BY id DESC LIMIT 8").fetchall()
+    needs = []
+    for row in rows:
+        summary = str(row["summary"])
+        if summary not in needs:
+            needs.append(summary)
+    return needs[:4]
+
+
+def agent_social_context(agent_dir: Path) -> Dict:
+    inbox = load_inbox(agent_dir)
+    memory = load_opportunity_memory(agent_dir)
+    strongest = sorted((memory.get("themes") or {}).items(), key=lambda kv: kv[1].get("strength", 0.0), reverse=True)[:3]
+    return {
+        "inbox_count": len(inbox),
+        "recent_messages": inbox[-3:],
+        "strongest_themes": [name for name, _payload in strongest],
+    }
 
 
 def trade_with_target(actor: Dict, target: Dict, now_ts: int, conn: sqlite3.Connection) -> ActionResult:
@@ -1861,6 +1926,11 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
         if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
             return ActionResult(action=action, status="skipped", summary="trade skipped: no valid target")
         return trade_with_target(agent, agents_by_name[target_name], now_ts, conn)
+    if action == "signal":
+        if not target_name or target_name == agent["name"] or target_name not in agents_by_name:
+            return ActionResult(action=action, status="skipped", summary="signal skipped: no valid target")
+        need = action_plan.get("need") or action_plan.get("problem_statement") or reason
+        return signal_target(agent, agents_by_name[target_name], now_ts, action_plan.get("niche_theme"), need, action_plan.get("category"))
     run = run_python(code, agent_dir)
     status = "ok" if run["ok"] else "error"
     raw = (run.get("stdout", "") + "\n" + run.get("stderr", "")).strip()
@@ -2092,9 +2162,12 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         agents_by_name = {agent["name"]: agent for agent in agents}
         agent_names = [agent["name"] for agent in agents]
         pending = [p for p in proposals if p.get("status") == "pending"]
+        unresolved_needs = summarize_unresolved_needs(conn)
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board}, agent_dir)
+            consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
+            social = agent_social_context(agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages}, agent_dir)
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
             agent["storage"] += result.storage_delta
@@ -2105,7 +2178,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             conn.execute("INSERT INTO logs(tick, agent_name, action, status, summary, raw_output, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (tick, agent["name"], result.action, result.status, result.summary, result.raw_output, started_at))
             save_note(agent_dir, f"tick {tick}: {result.summary}")
             update_opportunity_state(agent_dir, plan, result, started_at, opportunity_board)
-            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme")}
+            item = {"agent": agent["name"], "action": result.action, "status": result.status, "summary": result.summary, "artifact": result.artifact, "target": result.target, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme"), "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2]}
             summaries.append(item)
             if verbose:
                 print(json.dumps(item, indent=2))
@@ -2292,9 +2365,12 @@ def build_agent_memory_summary() -> list[dict]:
         mem = read_json_file(memory_path, {"themes": {}, "last_theme": None})
         themes = mem.get("themes", {}) if isinstance(mem, dict) else {}
         top = sorted(themes.items(), key=lambda kv: kv[1].get("strength", 0.0), reverse=True)[:4]
+        inbox = load_inbox(agent_dir)
         result.append({
             "agent": agent_dir.name,
             "last_theme": mem.get("last_theme") if isinstance(mem, dict) else None,
+            "inbox_count": len(inbox),
+            "recent_messages": inbox[-2:],
             "top_themes": [
                 {
                     "theme": name,

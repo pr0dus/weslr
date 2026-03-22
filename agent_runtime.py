@@ -11,7 +11,7 @@ from config import (
     OPPORTUNITY_BOARD_PATH,
 )
 
-ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "rest"]
+ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "signal", "rest"]
 
 
 SEED_OPPORTUNITIES = {
@@ -81,6 +81,27 @@ def save_note(agent_dir: Path, note: str) -> None:
     notes.append(note)
     notes = notes[-MAX_MEMORY_NOTES:]
     (agent_dir / "memory.json").write_text(json.dumps(notes, indent=2))
+
+
+def inbox_path(agent_dir: Path) -> Path:
+    return agent_dir / "inbox.json"
+
+
+def load_inbox(agent_dir: Path) -> List[Dict[str, Any]]:
+    data = read_json(inbox_path(agent_dir), [])
+    if isinstance(data, list):
+        return data[-MAX_MEMORY_NOTES:]
+    return []
+
+
+def save_inbox(agent_dir: Path, items: List[Dict[str, Any]]) -> None:
+    write_json(inbox_path(agent_dir), items[-MAX_MEMORY_NOTES:])
+
+
+def push_inbox_message(agent_dir: Path, message: Dict[str, Any]) -> None:
+    inbox = load_inbox(agent_dir)
+    inbox.append(message)
+    save_inbox(agent_dir, inbox)
 
 
 def can_inspect(agent: Dict[str, Any], now_ts: int) -> bool:
@@ -158,6 +179,8 @@ def profile_for_theme(theme: str) -> Dict[str, Any]:
 def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: Dict[str, Any]) -> str:
     memory = load_opportunity_memory(agent_dir)
     board = world.get("opportunity_board") or load_opportunity_board()
+    inbox = load_inbox(agent_dir)
+    recent_notes = [note.lower() for note in load_notes(agent_dir)[-8:]]
     themes = []
     theme_names = sorted(set(list(SEED_OPPORTUNITIES.keys()) + list((board.get("themes") or {}).keys())))
     for theme in theme_names:
@@ -171,6 +194,14 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
             score += 0.1
         if memory.get("last_theme") == theme:
             score += 0.04
+        repeated_mentions = sum(1 for note in recent_notes if theme in note)
+        if repeated_mentions >= 3:
+            score -= 0.08
+        inbox_hits = sum(1 for item in inbox if str(item.get("theme", "")) == theme)
+        score += min(inbox_hits * 0.06, 0.18)
+        unresolved_needs = world.get("unresolved_needs", []) or []
+        if any(theme in str(item).lower() for item in unresolved_needs):
+            score += 0.12
         lifecycle = str(board_theme.get("lifecycle", "stable"))
         if lifecycle == "emergent":
             score += 0.03
@@ -207,19 +238,29 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     now_ts = int(world.get("now_ts", 0))
     target = choose_target(agent, world)
     categories = world.get("categories", [])
+    agent_dir = Path(world["base_dir"]) / "agents" / agent["name"]
+    inbox = load_inbox(agent_dir)
+    unresolved_needs = world.get("unresolved_needs", []) or []
+    repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
 
     if agent["energy"] < 30:
         action = "rest"
-    elif not list((Path(world["base_dir"]) / "agents" / agent["name"] / "modules").glob("*.py")):
+    elif inbox and target and random.random() < 0.28:
+        action = "signal"
+    elif unresolved_needs and random.random() < 0.32:
+        action = random.choice(["inspect", "research", "optimize"])
+    elif not list((agent_dir / "modules").glob("*.py")):
         action = "build_module"
-    elif target and can_inspect(agent, now_ts) and random.random() < 0.15:
+    elif repeated_builds >= 3 and random.random() < 0.55:
+        action = random.choice(["research", "optimize", "inspect"] if target else ["research", "optimize"])
+    elif target and can_inspect(agent, now_ts) and random.random() < 0.18:
         action = "inspect"
-    elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.12:
+    elif target and can_trade(agent, now_ts) and agent.get("storage", 0) > 20 and random.random() < 0.14:
         action = "trade"
     else:
         action = random.choices(
-            population=["gather", "optimize", "research", "build_module", "rest"],
-            weights=[3, 3, 2, 2, 1],
+            population=["gather", "optimize", "research", "build_module", "signal", "rest"],
+            weights=[2, 4, 4, 2, 2, 1],
             k=1,
         )[0]
 
@@ -227,13 +268,19 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         category = "uncategorized"
     else:
         category = random.choice(categories) if categories else "uncategorized"
-    niche = choose_niche(agent_dir=Path(world["base_dir"]) / "agents" / agent["name"], action=action, category=category, world=world)
+    niche = choose_niche(agent_dir=agent_dir, action=action, category=category, world=world)
+    reason = f"fallback policy selected {action}"
+    if inbox and action == "signal":
+        newest = inbox[-1]
+        reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
+    elif unresolved_needs and action in {"inspect", "research", "optimize"}:
+        reason = f"responding to unresolved need: {unresolved_needs[0]}"
 
     return {
         "action": action,
-        "reason": f"fallback policy selected {action}",
+        "reason": reason,
         "code": default_code_for(action, agent["name"]),
-        "target": target if action in {"inspect", "trade"} else None,
+        "target": target if action in {"inspect", "trade", "signal"} else None,
         "category": category,
         **niche,
     }
@@ -248,6 +295,8 @@ def default_code_for(action: str, agent_name: str) -> str:
         return '''from pathlib import Path\nPath("artifacts").mkdir(exist_ok=True)\nPath("artifacts/research.txt").write_text("Observation: shorter loops waste less time.\\n")\nprint("research note saved")\n'''
     if action == "gather":
         return 'print("gathered local resources")\n'
+    if action == "signal":
+        return 'print("shared local signal")\n'
     return 'print("non-code action")\n'
 
 
