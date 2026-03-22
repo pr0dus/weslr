@@ -331,3 +331,7 @@ Recommended rollback order:
 ### v0.0.84
 - builder usefulness memory now feeds back into later builder action choice when prior build patterns appeared useful
 - intended direction: make builder memory influence builder behavior, not just builder notes
+
+### v0.0.85
+- coordinator signal-effect memory now feeds back into later coordinator signal/inspect choice when prior coordination patterns appeared effective
+- intended direction: make coordinator memory influence coordinator behavior, not just coordinator notes

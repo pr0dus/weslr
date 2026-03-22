@@ -268,6 +268,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
     builder_yes = sum(1 for note in notes[-12:] if "builder-usefulness" in note.lower() and "later_activity_detected=yes" in note.lower())
     builder_no = sum(1 for note in notes[-12:] if "builder-usefulness" in note.lower() and "later_activity_detected=no" in note.lower())
+    coordinator_yes = sum(1 for note in notes[-12:] if "coordinator-effect" in note.lower() and "follow_on_activity=yes" in note.lower())
+    coordinator_no = sum(1 for note in notes[-12:] if "coordinator-effect" in note.lower() and "follow_on_activity=no" in note.lower())
     experiment_focus = any(item.get("status") == "running" and active_pursuit and active_pursuit in str(item.get("title", "")).lower() for item in experiments)
 
     role = world.get("internal_role") or "specialist"
@@ -276,6 +278,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         action = "rest"
     elif role == "builder" and builder_yes > builder_no and random.random() < 0.52:
         action = random.choice(["build_module", "optimize"])
+    elif role == "coordinator" and coordinator_yes > coordinator_no and target and random.random() < 0.58:
+        action = random.choice(["signal", "inspect"])
     elif role == "coordinator" and (inbox or unresolved_needs or my_work) and target and random.random() < 0.52:
         action = random.choice(["signal", "inspect", "research"])
     elif role == "memory_keeper" and (unresolved_question or inbox) and random.random() < 0.56:
@@ -325,6 +329,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     reason = f"fallback policy selected {action}"
     if role == "builder" and action in {"build_module", "optimize"} and builder_yes > builder_no:
         reason = f"builder following previously useful build pattern around {communicator.get('active_pursuit') or 'current theme'}"
+    elif role == "coordinator" and action in {"signal", "inspect"} and coordinator_yes > coordinator_no:
+        reason = f"coordinator following previously effective coordination pattern around {communicator.get('active_pursuit') or 'current pressure'}"
     elif role == "coordinator" and action == "signal":
         reason = f"coordinator forwarding intent/work around {communicator.get('active_pursuit') or 'current pressure'}"
     elif role == "memory_keeper" and action in {"research", "inspect", "rest"}:
