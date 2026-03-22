@@ -319,3 +319,7 @@ Recommended rollback order:
 ### v0.0.81
 - builder now records whether its build/optimize outputs appeared to matter later in the same cycle via simple later-activity traces
 - intended direction: begin turning builder memory into usefulness-sensitive role memory rather than only artifact creation memory
+
+### v0.0.82
+- coordinator now records whether its signal/inspect actions appeared to trigger follow-on same-theme activity in other agents
+- intended direction: begin turning coordinator memory into effect-sensitive role memory rather than only signal emission memory

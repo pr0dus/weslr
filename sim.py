@@ -2242,6 +2242,30 @@ def update_builder_usefulness_memory(now_ts: int, summaries: list[dict]) -> None
             save_note(agent_dir, f"builder-usefulness theme={theme} action={item.get('action')} later_activity_detected=no")
 
 
+def update_coordinator_signal_memory(now_ts: int, summaries: list[dict]) -> None:
+    for item in summaries:
+        if item.get("status") != "ok":
+            continue
+        agent_name = item.get("agent")
+        if classify_internal_role(agent_name) != "coordinator":
+            continue
+        if item.get("action") not in {"signal", "inspect"}:
+            continue
+        theme = item.get("niche_theme") or "unknown"
+        target = item.get("target") or "none"
+        changed_others = any(
+            other.get("agent") not in {agent_name, target}
+            and other.get("status") == "ok"
+            and str(other.get("niche_theme") or "") == str(theme)
+            for other in summaries
+        )
+        agent_dir = AGENTS_DIR / agent_name
+        if changed_others:
+            save_note(agent_dir, f"coordinator-effect theme={theme} action={item.get('action')} target={target} follow_on_activity=yes")
+        else:
+            save_note(agent_dir, f"coordinator-effect theme={theme} action={item.get('action')} target={target} follow_on_activity=no")
+
+
 def route_project_ownership(now_ts: int, summaries: list[dict]) -> None:
     projects = load_projects()
     work_items = load_work_items()
@@ -2501,6 +2525,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     route_project_ownership(now_ts, summaries)
     update_work_item_progress(now_ts, summaries)
     update_builder_usefulness_memory(now_ts, summaries)
+    update_coordinator_signal_memory(now_ts, summaries)
     maybe_propose_self_modifications(now_ts, summaries)
     sync_question_lineage_to_world(now_ts, tick)
     sync_experiments_to_world(now_ts, tick, summaries)
