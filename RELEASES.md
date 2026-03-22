@@ -315,3 +315,7 @@ Recommended rollback order:
 ### v0.0.80
 - builder, coordinator, and memory-keeper now leave more role-specific memory traces instead of only generic tick notes
 - intended direction: let internal roles learn differently, not just behave differently
+
+### v0.0.81
+- builder now records whether its build/optimize outputs appeared to matter later in the same cycle via simple later-activity traces
+- intended direction: begin turning builder memory into usefulness-sensitive role memory rather than only artifact creation memory
