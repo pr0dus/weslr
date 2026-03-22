@@ -2514,6 +2514,17 @@ def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: s
     return previous_question or "What remains under-understood?", False
 
 
+def average_internal_reputation(agent_name: str) -> tuple[float, float, float]:
+    relationships = load_relationships()
+    relevant = [item for item in relationships if item.get("target_agent") == agent_name]
+    if not relevant:
+        return 0.5, 0.5, 0.0
+    trust = sum(float(item.get("trust", 0.5)) for item in relevant) / len(relevant)
+    usefulness = sum(float(item.get("usefulness", 0.5)) for item in relevant) / len(relevant)
+    friction = sum(float(item.get("friction", 0.0)) for item in relevant) / len(relevant)
+    return round(trust, 3), round(usefulness, 3), round(friction, 3)
+
+
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
     communicator = load_communicator_state()
     if not proposals:
@@ -2529,7 +2540,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     ranked = []
     objections = []
     for proposal in proposals:
-        score = 0.5
+        trust, usefulness, friction = average_internal_reputation(proposal.get("agent"))
+        score = 0.5 + (trust - 0.5) * 0.25 + (usefulness - 0.5) * 0.35 - friction * 0.25
         if proposal.get("stance") in {"support", "prioritize"}:
             score += 0.18
         if proposal.get("role") == "coordinator":
@@ -2552,8 +2564,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         if curiosity > 0.78 and proposal.get("proposed_action") in {"inspect", "research"}:
             score += 0.12
         if proposal.get("role") == "critic" and proposal.get("stance") == "question":
-            score -= 0.08
+            score -= 0.08 - min(usefulness * 0.06, 0.05)
             objections.append(f"critic:{proposal.get('reason')}")
+        proposal["epistemic_weight"] = {"trust": trust, "usefulness": usefulness, "friction": friction, "score": round(score, 3)}
         ranked.append((score, proposal))
     ranked.sort(key=lambda item: item[0], reverse=True)
     chosen = ranked[0][1]
@@ -2587,7 +2600,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
     if disagreement_count > 0:
         communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
-    communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s)"
+    weight = chosen.get("epistemic_weight", {})
+    communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s); trust={weight.get('trust', 0.5)} usefulness={weight.get('usefulness', 0.5)}"
     communicator["last_wake_at"] = now_ts
     communicator["updated_at"] = now_ts
     if unresolved_needs:

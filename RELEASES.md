@@ -270,3 +270,9 @@ Recommended rollback order:
 - experiment progress now feeds into relationship updates, increasing usefulness/trust around owners linked to active inquiry
 - proposed-but-unresolved experiment state can now sharpen communicator caution/avoidance bias
 - intended direction: let lived inquiry reshape the social/epistemic ecology, not just task flow
+
+### v0.0.73
+- internal proposal integration now weights voices using learned average trust/usefulness/friction from the relationship layer
+- critic objections now gain or lose force depending on learned usefulness instead of being treated uniformly
+- communicator decision summaries now expose epistemic weighting for the winning internal voice
+- intended direction: let the communicator become socially-epistemically shaped, not just structurally multi-voiced
