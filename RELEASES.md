@@ -339,3 +339,8 @@ Recommended rollback order:
 ### v0.0.86
 - memory-keeper objection-cluster memory now feeds back into later memory-keeper continuity/caution behavior
 - intended direction: make memory-keeper cluster memory influence memory-keeper behavior, not just memory-keeper notes
+
+### v0.0.87
+- builder/coordinator/memory-keeper role-memory traces now also bias communicator-level proposal weighting
+- communicator decision summaries now expose role-memory bias alongside trust/usefulness
+- intended direction: connect role-specific learning back into top-level communicator judgment
