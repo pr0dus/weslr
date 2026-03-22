@@ -2319,12 +2319,38 @@ def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> 
     else:
         relevant = [s for s in summaries if s.get("niche_theme") and str(s.get("niche_theme")).lower() in current_question.lower() and s.get("action") in {"inspect", "research"}]
         if relevant:
+            latest = relevant[-1]
             existing["status"] = "running"
-            existing["observations"] = f"Latest relevant action: {relevant[-1].get('action')} by {relevant[-1].get('agent')}"
+            existing["observations"] = f"Latest relevant action: {latest.get('action')} by {latest.get('agent')}"
             existing["follow_up"] = "Re-check whether the communicator question changed or narrowed after this action."
+            owner = existing.get("owner") or latest.get("agent")
+            if owner and latest.get("agent"):
+                update_relationship(owner, latest.get("agent"), "experiment-progress", True, now_ts)
             if current_question != existing.get("title"):
                 existing["status"] = "succeeded"
-    save_experiments(experiments[-120:])
+        else:
+            existing["follow_up"] = "No clarifying action observed yet; caution may be warranted if this keeps stalling."
+    experiments = experiments[-120:]
+    save_experiments(experiments)
+
+
+def apply_experiment_social_feedback(now_ts: int) -> None:
+    experiments = load_experiments()
+    communicator = load_communicator_state()
+    caution_targets = []
+    for experiment in experiments:
+        owner = experiment.get("owner")
+        status = experiment.get("status")
+        title = str(experiment.get("title", ""))
+        if status == "running":
+            related_agents = [name for name in ["agent-1", "agent-2", "agent-3", "agent-4", "agent-5"] if name != owner]
+            for agent_name in related_agents:
+                update_relationship(agent_name, owner, "experiment-progress", True, now_ts)
+        elif status == "proposed" and title == str(communicator.get("unresolved_question", "")):
+            caution_targets.append(title)
+    if caution_targets:
+        communicator["avoidance_bias"] = f"avoid overcommitting before experiment clarity on {caution_targets[-1]}"
+        save_communicator_state(communicator)
 
 
 def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summaries: list[dict]) -> None:
@@ -2383,6 +2409,7 @@ def update_world_objects(conn: sqlite3.Connection, tick: int, now_ts: int, summa
     maybe_propose_self_modifications(now_ts, summaries)
     sync_question_lineage_to_world(now_ts, tick)
     sync_experiments_to_world(now_ts, tick, summaries)
+    apply_experiment_social_feedback(now_ts)
 
 
 def agent_social_context(agent_dir: Path) -> Dict:

@@ -265,3 +265,8 @@ Recommended rollback order:
 - fallback behavior now follows running experiment pressure, pushing inspect/research/optimize loops around the active pursuit
 - communicator curiosity target can now lock onto active experiment titles
 - intended direction: make inquiry attempts affect future thought instead of sitting passively in world state
+
+### v0.0.72
+- experiment progress now feeds into relationship updates, increasing usefulness/trust around owners linked to active inquiry
+- proposed-but-unresolved experiment state can now sharpen communicator caution/avoidance bias
+- intended direction: let lived inquiry reshape the social/epistemic ecology, not just task flow
