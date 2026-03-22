@@ -2610,6 +2610,11 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
 
     final_action = chosen.get("proposed_action")
     decision_mode = "act"
+    inspect_first_boost = decision_style_weight(communicator, None, "inspect-first")
+    reconsider_boost = decision_style_weight(communicator, None, "reconsider")
+    defer_boost = decision_style_weight(communicator, None, "defer")
+    act_boost = decision_style_weight(communicator, None, "act")
+
     if disagreement_count >= 2 and chosen.get("proposed_action") in {"build_module", "trade"}:
         final_action = "inspect"
         decision_mode = "inspect-first"
@@ -2619,6 +2624,19 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     elif disagreement_count >= 2 and curiosity < 0.7:
         final_action = None
         decision_mode = "defer"
+
+    if disagreement_count >= 1 and chosen.get("proposed_action") in {"optimize", "build_module", "trade"} and inspect_first_boost > 0.045:
+        final_action = "inspect"
+        decision_mode = "inspect-first"
+    elif disagreement_count >= 1 and reconsider_boost > 0.045 and chosen.get("proposed_action") not in {"inspect", "research"}:
+        final_action = "research"
+        decision_mode = "reconsider"
+    elif disagreement_count >= 1 and defer_boost > 0.06 and curiosity < 0.78:
+        final_action = None
+        decision_mode = "defer"
+
+    if act_boost > 0.09 and disagreement_count == 0:
+        decision_mode = "act"
 
     mode_boost = decision_style_weight(communicator, None, decision_mode)
     if mode_boost > 0.08 and final_action is None:

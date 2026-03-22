@@ -283,3 +283,8 @@ Recommended rollback order:
 - reflective modes such as `inspect-first` / `reconsider` / `defer` can now accumulate learned confidence
 - communicator panel now exposes decision-style learning count
 - intended direction: let the communicator learn not only who to trust, but how to think
+
+### v0.0.75
+- learned confidence in `inspect-first`, `reconsider`, and `defer` now directly affects disagreement resolution
+- ambiguous disagreements can now be pushed toward reflective handling by prior mode experience instead of only fixed thresholds
+- intended direction: let the communicator learn not just decision styles in theory, but when to use them
