@@ -2282,7 +2282,10 @@ def agent_social_context(agent_dir: Path) -> Dict:
 def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
     communicator = load_communicator_state()
     curiosity = float(communicator.get("curiosity", 0.6))
+    unresolved_question = str(communicator.get("unresolved_question", "")).strip()
     if tick <= int(agent.get("next_due_tick", 0)):
+        if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
+            return True, "question-pressure"
         if curiosity > 0.82 and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic"}:
             return True, "curiosity-pressure"
         return False, "waiting-for-next-due-tick"
@@ -2290,6 +2293,8 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
         return True, "message-received"
     if unresolved_needs:
         return True, "unresolved-need-pressure"
+    if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
+        return True, "question-pressure"
     if curiosity > 0.76 and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
         return True, "curiosity-pressure"
     return True, "scheduled-cadence"
@@ -2316,11 +2321,12 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     curiosity_target = str(communicator.get("curiosity_target", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
     theme = str(plan.get("niche_theme") or "")
+    unresolved_question = str(communicator.get("unresolved_question", "")).lower()
     if role == "critic" and action in {"build_module", "trade"}:
         stance = "question"
     elif role == "coordinator":
         stance = "prioritize"
-    elif role == "observer" and (action == "inspect" or curiosity > 0.72):
+    elif role == "observer" and (action == "inspect" or curiosity > 0.72 or (theme and theme.lower() in unresolved_question)):
         stance = "support"
     elif role == "builder" and action == "build_module":
         stance = "support"
@@ -2339,6 +2345,7 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
         "intent_alignment": theme.lower() in current_intent if theme else False,
         "pursuit_alignment": theme.lower() in active_pursuit if theme else False,
         "curiosity_alignment": theme.lower() in curiosity_target if theme else False,
+        "question_alignment": theme.lower() in unresolved_question if theme else False,
     }
 
 
@@ -2370,6 +2377,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.08
         if proposal.get("curiosity_alignment"):
             score += 0.06
+        if proposal.get("question_alignment"):
+            score += 0.1
         if unresolved_needs and proposal.get("proposed_action") in {"inspect", "research", "optimize"}:
             score += 0.1
         if curiosity > 0.78 and proposal.get("proposed_action") in {"inspect", "research"}:
@@ -2400,10 +2409,13 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
     communicator["curiosity_target"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or communicator.get("curiosity_target") or "emergent pressure")
-    communicator["unresolved_question"] = (
-        f"What is still unclear about {chosen.get('niche_theme')}?" if chosen.get("niche_theme")
-        else communicator.get("unresolved_question") or "What remains under-understood?"
-    )
+    previous_question = str(communicator.get("unresolved_question", "")).strip()
+    if chosen.get("proposed_action") in {"inspect", "research"} and chosen.get("niche_theme"):
+        communicator["unresolved_question"] = f"Did {chosen.get('niche_theme')} become clearer after {chosen.get('proposed_action')}?"
+    elif chosen.get("niche_theme"):
+        communicator["unresolved_question"] = f"What is still unclear about {chosen.get('niche_theme')}?"
+    else:
+        communicator["unresolved_question"] = previous_question or "What remains under-understood?"
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
     if disagreement_count > 0:
         communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
@@ -3223,6 +3235,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Pursuit: <strong>{escape(str((payload.get('communicator') or {}).get('active_pursuit', '')))}</strong></p>
         <p>Question: <strong>{escape(str((payload.get('communicator') or {}).get('unresolved_question', '')))}</strong></p>
         <p>Curiosity target: <strong>{escape(str((payload.get('communicator') or {}).get('curiosity_target', '')))}</strong></p>
+        <p>Attraction bias: <strong>{escape(str((payload.get('communicator') or {}).get('attraction_bias', '')))}</strong></p>
+        <p>Avoidance bias: <strong>{escape(str((payload.get('communicator') or {}).get('avoidance_bias', '')))}</strong></p>
         <p>Curiosity: <strong>{(payload.get('communicator') or {}).get('curiosity', 0)}</strong></p>
         <p>Dominant need: <strong>{escape(str((payload.get('communicator') or {}).get('dominant_need', '')))}</strong></p>
         <p>Objections: <strong>{len((payload.get('communicator') or {}).get('unresolved_objections', []))}</strong></p>
@@ -3377,6 +3391,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Pursuit: <strong>${{esc(communicator.active_pursuit || '')}}</strong></p>
           <p>Question: <strong>${{esc(communicator.unresolved_question || '')}}</strong></p>
           <p>Curiosity target: <strong>${{esc(communicator.curiosity_target || '')}}</strong></p>
+          <p>Attraction bias: <strong>${{esc(communicator.attraction_bias || '')}}</strong></p>
+          <p>Avoidance bias: <strong>${{esc(communicator.avoidance_bias || '')}}</strong></p>
           <p>Curiosity: <strong>${{communicator.curiosity ?? 0}}</strong></p>
           <p>Dominant need: <strong>${{esc(communicator.dominant_need || '')}}</strong></p>
           <p>Objections: <strong>${{(communicator.unresolved_objections || []).length}}</strong></p>

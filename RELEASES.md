@@ -233,3 +233,10 @@ Recommended rollback order:
 - fallback decisions can now follow active pursuit and curiosity target, not only the latest intent string
 - communicator panel now exposes these intention fields directly
 - intended direction: give the communicator a richer inner orientation than just last-action intent
+
+### v0.0.67
+- unresolved-question pressure now wakes observer/critic/memory-oriented internal minds
+- unresolved questions now bias proposal scoring and fallback behavior toward inspect/research continuation
+- communicator unresolved question is now revised over time instead of remaining static text
+- communicator panel now shows attraction/avoidance bias more explicitly alongside question state
+- intended direction: turn question state into an actual ongoing inquiry mechanism

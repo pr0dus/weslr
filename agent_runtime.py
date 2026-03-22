@@ -257,12 +257,15 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     current_intent = str(communicator.get("current_intent", "")).lower()
     active_pursuit = str(communicator.get("active_pursuit", "")).lower()
     curiosity_target = str(communicator.get("curiosity_target", "")).lower()
+    unresolved_question = str(communicator.get("unresolved_question", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
     my_work = [item for item in work_items if item.get("owner") == agent["name"] and item.get("status") == "open"]
     repeated_builds = sum(1 for note in notes[-6:] if "built module" in note.lower())
 
     if agent["energy"] < 30:
         action = "rest"
+    elif unresolved_question and random.random() < 0.42:
+        action = random.choice(["inspect", "research"])
     elif curiosity > 0.8 and random.random() < 0.4:
         action = random.choice(["inspect", "research"])
     elif my_work and random.random() < 0.45:
@@ -295,6 +298,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     if inbox and action == "signal":
         newest = inbox[-1]
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
+    elif unresolved_question and niche.get("niche_theme", "").lower() in unresolved_question and action in {"inspect", "research"}:
+        reason = f"following unresolved question: {communicator.get('unresolved_question')}"
     elif current_intent and (niche.get("niche_theme", "").lower() in current_intent or action in current_intent):
         reason = f"following communicator intent: {communicator.get('current_intent')}"
     elif active_pursuit and niche.get("niche_theme", "").lower() in active_pursuit:
