@@ -14,3 +14,5 @@ offers/
 categories.json
 category_proposals.json
 artifact_packs.json
+pack_outcomes.json
+opportunity_board.json

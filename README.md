@@ -2,7 +2,7 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.53** is a lightweight persistent local agent research sandbox and artifact incubator.
+**CircleForge v0.0.57** is a lightweight persistent local agent research sandbox and artifact incubator.
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -218,18 +218,22 @@ The current direction is state-driven rather than prompt-driven: entities should
 - description-to-artifact mismatch now reduces human-facing quality, commercial readiness, and sellability
 - explainability now flags artifacts whose framing outruns their underlying payload
 
-## v0.1 planning
+## Planning docs
 
-The current v0.1 planning document lives in [`V0.1.md`](V0.1.md).
-It covers:
-- the v0.1 checklist
-- what to stop adding
-- what must be fixed before v0.1
-- what can wait until after v0.1
-- what is limiting progress now
+- [`V0.1.md`](V0.1.md) — practical pre-v0.1 milestone definition
+- [`V0.2-GRAND-VISION.md`](V0.2-GRAND-VISION.md) — richer long-term direction
+- [`WORLD-MODEL.md`](WORLD-MODEL.md) — canonical world object model
+- [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md) — safe self-inspection and self-change design
+- [`AGENT-TIME.md`](AGENT-TIME.md) — per-agent cadence and wake model
 
 ## What should come next
 
+Near-term:
 - move from static dashboard guidance toward operator-triggered workflows and replay views
 - deepen artifact/pack detail pages with proof timelines and offer histories
 - tighten the path from validated packs into stronger v0.1-ready product candidates
+
+Longer-term:
+- evolve from an artifact incubator toward a richer needs/memory/project world
+- add self-observation and safe self-modification loops
+- move from one global tick toward per-agent cadence and wake conditions

@@ -159,3 +159,11 @@ Recommended rollback order:
 - current scroll position is preserved when no anchor/detail target is active
 - refresh note in the UI now explains that live data updates do not reset the current view
 - intended direction: make the operator dashboard behave like a real live console instead of bouncing users back to the top
+
+### v0.0.57
+- runtime `opportunity_board.json` removed from tracked source and fully treated as generated state
+- README cleaned up and linked to the new planning/architecture docs
+- `WORLD-MODEL.md` added to define canonical post-v0.1 world objects
+- `SELF-MODIFICATION.md` added to define safe self-inspection and self-change rules
+- `AGENT-TIME.md` added to define per-agent cadence, wake reasons, and future time ecology
+- intended direction: keep the repo clean while turning the grand vision into buildable architecture
