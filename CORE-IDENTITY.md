@@ -407,7 +407,7 @@ To stay aligned with this identity, the next implementation order should be:
 
 If asked "what are we creating?" the answer should now be:
 
-> We are creating a local self-evolving communicator entity with internal minds, memory, intention, curiosity, and self-waking behavior, living inside an inspectable world and changing through interaction rather than prompt steering.
+> We are creating a local self-evolving communicator entity with internal minds, memory, intention, curiosity, self-waking behavior, and evidence-grounded self-knowledge, living inside an inspectable world and changing through interaction rather than prompt steering.
 
 That is the clearest current answer.
 
@@ -419,8 +419,9 @@ When uncertain, ask:
 
 1. Does this strengthen the communicator as a living persistent entity?
 2. Does this strengthen internal cognition rather than prompt choreography?
-3. Does this strengthen intention, curiosity, or self-waking behavior?
-4. Does this strengthen the world as a real substrate?
-5. Does this preserve inspectability and safety?
+3. Does this strengthen intention, curiosity, inquiry continuity, or self-waking behavior?
+4. Does this strengthen evidence-grounded self-knowledge rather than decorative self-description?
+5. Does this strengthen the world as a real substrate?
+6. Does this preserve inspectability and safety?
 
 If the answer is mostly no, the change is probably not core.

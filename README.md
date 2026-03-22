@@ -2,7 +2,19 @@
 
 > A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
 
-**CircleForge v0.0.91** is evolving from a local agent research sandbox into a local self-evolving communicator entity with internal minds, persistent memory, intention, and world-driven behavior.
+**CircleForge v0.0.91** is evolving into a **local self-evolving communicator entity** with internal minds, persistent memory, intention, inquiry, and world-driven behavior.
+
+CircleForge should be understood primarily as:
+- one visible communicator / one continuing entity
+- several internal minds/subprocess-like agents with distinct perspectives
+- a local world of memory, needs, projects, experiments, relationships, and consequences
+- a system where behavior should emerge from state, interaction, inquiry, and revision rather than prompt-shaped steering
+
+CircleForge is **not primarily**:
+- an OpenClaw-adjacent prompt shell
+- an artifact factory
+- a startup-idea generator
+- a bot that only wakes when a human speaks to it
 Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
 
 CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
@@ -277,8 +289,9 @@ Near-term:
 - tighten the path from validated packs into stronger v0.1-ready product candidates
 
 Longer-term:
-- evolve from an artifact incubator toward a richer needs/memory/project world
 - strengthen the visible communicator identity over the internal agent substrate
-- add explicit intention, curiosity, and internal agreement/disagreement loops
+- deepen evidence-grounded self-knowledge so the self-model is earned, not decorative
+- add explicit intention, curiosity, question lineage, and internal agreement/disagreement loops
+- deepen subprocess/action-outcome learning so the entity knows what actually helps it think and act
 - add self-observation and safe self-modification loops
 - move from one global tick toward per-agent cadence and wake conditions

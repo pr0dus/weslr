@@ -360,3 +360,8 @@ Recommended rollback order:
 ### v0.0.91
 - self-model now distinguishes short-term signals from longer-term beliefs
 - intended direction: reduce the risk of confusing recent tactical patterns with durable identity
+
+### v0.0.92
+- project description refined around the current vision: one visible communicator with internal minds in a local inspectable world
+- core identity wording tightened to emphasize evidence-grounded self-knowledge
+- intended direction: keep future implementation aligned with communicator/world/subprocess reality instead of drifting back toward prompt-shell or artifact-factory framing
