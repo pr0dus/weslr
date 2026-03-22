@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "0.0.76"
+VERSION = "0.0.77"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
@@ -35,6 +35,7 @@ SELF_MOD_PROPOSALS_PATH = BASE_DIR / "self_mod_proposals.json"
 WORK_ITEMS_PATH = BASE_DIR / "work_items.json"
 COMMUNICATOR_STATE_PATH = BASE_DIR / "communicator_state.json"
 EXPERIMENTS_PATH = BASE_DIR / "experiments.json"
+EVAL_METRICS_PATH = BASE_DIR / "evaluation_metrics.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40

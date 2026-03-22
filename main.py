@@ -11,7 +11,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, load_communicator_state, load_experiments, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, load_communicator_state, load_evaluation_metrics, load_experiments, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -112,6 +112,10 @@ def cmd_world_objects(args):
 
 def cmd_communicator(_args):
     emit(load_communicator_state())
+
+
+def cmd_eval_metrics(_args):
+    emit(load_evaluation_metrics())
 
 
 def _prompt_int(prompt_text, default, minimum=0, allow_infinite=False):
@@ -278,6 +282,9 @@ def main():
 
     p = sub.add_parser("communicator", help="show the visible communicator state")
     p.set_defaults(func=cmd_communicator)
+
+    p = sub.add_parser("eval-metrics", help="show evaluation metrics for the future bounded autonomy gate")
+    p.set_defaults(func=cmd_eval_metrics)
 
     p = sub.add_parser("world-objects", help="inspect persistent world object collections")
     p.add_argument("kind", choices=["needs", "messages", "public-memory", "projects", "relationships", "self-mod-proposals", "work-items", "experiments"])

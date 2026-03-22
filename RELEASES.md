@@ -295,3 +295,9 @@ Recommended rollback order:
 - explicit note added that self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate
 - communicator panel now exposes the current self-model summary
 - intended direction: give the communicator an evolving sense of what it is and how it tends to think
+
+### v0.0.77
+- self-model can now feed back into behavior through the communicator state already used by fallback policy and proposal shaping
+- evaluation harness added to track the postponed bounded-test gate: persistence, inquiry continuity, self-revision, and internal differentiation
+- `eval-metrics` CLI command added and dashboard communicator panel now surfaces the test gate note
+- intended direction: operationalize the self-model and make the future tiny-model test measurable instead of vibes-based

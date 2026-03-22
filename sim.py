@@ -45,6 +45,7 @@ from config import (
     SELF_MOD_PROPOSALS_PATH,
     WORK_ITEMS_PATH,
     COMMUNICATOR_STATE_PATH,
+    EVAL_METRICS_PATH,
     EXPERIMENTS_PATH,
     PACK_MIN_RELEASE_ARTIFACTS,
     PACK_RELEASE_CANDIDATE_THRESHOLD,
@@ -204,6 +205,13 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         ).to_dict())
     save_work_items(work_items)
     save_experiments([])
+    save_evaluation_metrics({
+        "persistence": {"intent_history_len": 1, "question_history_len": 1, "ticks_with_state": 0},
+        "inquiry_continuity": {"question_lineage_len": 1, "experiment_count": 0, "inspect_research_actions": 0},
+        "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0},
+        "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
+    })
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -386,6 +394,20 @@ def load_experiments() -> list[dict]:
 
 def save_experiments(items: list[dict]) -> None:
     write_json_file(EXPERIMENTS_PATH, items)
+
+
+def load_evaluation_metrics() -> dict:
+    return read_json_file(EVAL_METRICS_PATH, {
+        "persistence": {"intent_history_len": 0, "question_history_len": 0, "ticks_with_state": 0},
+        "inquiry_continuity": {"question_lineage_len": 0, "experiment_count": 0, "inspect_research_actions": 0},
+        "self_revision": {"self_model_updates": 0, "preferred_modes_count": 0, "strengths_count": 0},
+        "internal_differentiation": {"roles_active": [], "weighted_voice_count": 0},
+        "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
+    })
+
+
+def save_evaluation_metrics(payload: dict) -> None:
+    write_json_file(EVAL_METRICS_PATH, payload)
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2352,6 +2374,25 @@ def sync_experiments_to_world(now_ts: int, tick: int, summaries: list[dict]) -> 
     save_experiments(experiments)
 
 
+def update_evaluation_metrics(proposals: list[dict], summaries: list[dict]) -> None:
+    communicator = load_communicator_state()
+    metrics = load_evaluation_metrics()
+    metrics["persistence"]["intent_history_len"] = len(communicator.get("intent_history") or [])
+    metrics["persistence"]["question_history_len"] = len(communicator.get("question_history") or [])
+    metrics["persistence"]["ticks_with_state"] = int(metrics["persistence"].get("ticks_with_state", 0)) + 1
+    metrics["inquiry_continuity"]["question_lineage_len"] = len(communicator.get("question_history") or [])
+    metrics["inquiry_continuity"]["experiment_count"] = len(load_experiments())
+    metrics["inquiry_continuity"]["inspect_research_actions"] = int(metrics["inquiry_continuity"].get("inspect_research_actions", 0)) + sum(1 for item in summaries if item.get("action") in {"inspect", "research"})
+    self_model = communicator.get("self_model") or {}
+    metrics["self_revision"]["self_model_updates"] = int(metrics["self_revision"].get("self_model_updates", 0)) + 1
+    metrics["self_revision"]["preferred_modes_count"] = len(self_model.get("preferred_modes") or [])
+    metrics["self_revision"]["strengths_count"] = len(self_model.get("perceived_strengths") or [])
+    roles_active = sorted({proposal.get("role") for proposal in proposals if proposal.get("role")})
+    metrics["internal_differentiation"]["roles_active"] = roles_active
+    metrics["internal_differentiation"]["weighted_voice_count"] = sum(1 for proposal in proposals if proposal.get("epistemic_weight"))
+    save_evaluation_metrics(metrics)
+
+
 def apply_experiment_social_feedback(now_ts: int) -> None:
     experiments = load_experiments()
     communicator = load_communicator_state()
@@ -3069,6 +3110,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             if verbose:
                 print(json.dumps(item, indent=2))
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
+    update_evaluation_metrics(communicator_decision.get("consensus") or [], summaries)
     decision_mode = communicator_decision.get("decision_mode")
     if decision_mode in {"inspect-first", "reconsider", "defer"}:
         save_public_memory((load_public_memory() + [PublicMemoryState(
@@ -3450,6 +3492,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "version": VERSION,
         "world": data.get("world"),
         "communicator": data.get("communicator"),
+        "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
         "artifact_packs": data.get("artifact_packs"),
@@ -3539,6 +3582,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Self-model: <strong>{escape(str(((payload.get('communicator') or {}).get('self_model', {}) or {}).get('current_self_description', '')))}</strong></p>
         <p>Pursuit: <strong>{escape(str((payload.get('communicator') or {}).get('active_pursuit', '')))}</strong></p>
         <p>Question: <strong>{escape(str((payload.get('communicator') or {}).get('unresolved_question', '')))}</strong></p>
+        <p>Test gate: <strong>{escape(str(((payload.get('evaluation_metrics') or {}).get('gate_note', ''))))}</strong></p>
         <p>Curiosity target: <strong>{escape(str((payload.get('communicator') or {}).get('curiosity_target', '')))}</strong></p>
         <p>Attraction bias: <strong>{escape(str((payload.get('communicator') or {}).get('attraction_bias', '')))}</strong></p>
         <p>Avoidance bias: <strong>{escape(str((payload.get('communicator') or {}).get('avoidance_bias', '')))}</strong></p>
@@ -3654,6 +3698,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     function renderDashboard(payload) {{
       const world = payload.world || {{}};
       const communicator = payload.communicator || {{}};
+      const evaluationMetrics = payload.evaluation_metrics || {{}};
       const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
         .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
       const topThemes = themes.slice(0, 6);
@@ -3703,6 +3748,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p>Self-model: <strong>${{esc(((communicator.self_model || {{}}).current_self_description) || '')}}</strong></p>
           <p>Pursuit: <strong>${{esc(communicator.active_pursuit || '')}}</strong></p>
           <p>Question: <strong>${{esc(communicator.unresolved_question || '')}}</strong></p>
+          <p>Test gate: <strong>${{esc(evaluationMetrics.gate_note || '')}}</strong></p>
           <p>Curiosity target: <strong>${{esc(communicator.curiosity_target || '')}}</strong></p>
           <p>Attraction bias: <strong>${{esc(communicator.attraction_bias || '')}}</strong></p>
           <p>Avoidance bias: <strong>${{esc(communicator.avoidance_bias || '')}}</strong></p>
@@ -3869,6 +3915,7 @@ def show_world() -> Dict:
         "messages": load_messages(),
         "public_memory": load_public_memory(),
         "communicator": load_communicator_state(),
+        "evaluation_metrics": load_evaluation_metrics(),
         "projects": load_projects(),
         "work_items": load_work_items(),
         "experiments": load_experiments(),
