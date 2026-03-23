@@ -257,6 +257,10 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         narrative_state={
             "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
             "last_reflection": "bootstrap",
+            "relationship_state": "No human continuity yet.",
+            "active_thread_summary": "No active shared threads yet.",
+            "follow_up_impulse": "Wait for a meaningful shared thread to form.",
+            "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         updated_at=now_ts,
     ).to_dict())
@@ -483,6 +487,10 @@ def load_communicator_self() -> dict:
         narrative_state={
             "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
             "last_reflection": "default",
+            "relationship_state": "No human continuity yet.",
+            "active_thread_summary": "No active shared threads yet.",
+            "follow_up_impulse": "Wait for a meaningful shared thread to form.",
+            "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         updated_at=0,
     ).to_dict()
@@ -3073,6 +3081,10 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     if topic_list:
         narrative["last_reflection"] = f"{human_name}: {topic_list[0]}"
         narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans."
+        lead_topic = topic_list[0]
+        narrative["active_thread_summary"] = f"Active shared thread: {lead_topic} with {human_name}."
+        narrative["follow_up_impulse"] = f"Revisit {lead_topic} with {human_name} until the shared thread changes state."
+        narrative["why_it_matters"] = f"{lead_topic} matters because shared human context should shape what CircleForge returns to instead of resetting." 
 
     self_state["updated_at"] = now_ts
     save_communicator_self(self_state)
@@ -3248,6 +3260,20 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     if top_traits:
         narrative["self_story"] = f"CircleForge is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
     narrative["last_reflection"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
+
+    open_threads = list(sorted((relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
+    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    if active_thread:
+        topic, thread = active_thread
+        human_name = str(thread.get("human", "human"))
+        narrative["active_thread_summary"] = f"Still carrying shared thread '{topic}' with {human_name}; exchanges={thread.get('exchange_count', 0)}."
+        narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
+        narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
+        narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans; strongest live thread is {topic}."
+    else:
+        narrative["active_thread_summary"] = "No active shared threads currently dominate the communicator state."
+        narrative["follow_up_impulse"] = "Let a new shared thread form before generating continuity-driven follow-up."
+        narrative["why_it_matters"] = "Without active shared threads, continuity becomes generic rather than relationship-bound."
 
     concerns = list(self_state.get("active_concerns") or [])
     for concern in thread_candidates[:3]:
@@ -3503,6 +3529,10 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["status"] = "active" if final_action else "reflecting"
     experiments = load_experiments()
     running_match = next((item for item in experiments if item.get("status") == "running" and chosen.get("niche_theme") and chosen.get("niche_theme").lower() in str(item.get("title", "")).lower()), None)
+    communicator_self = load_communicator_self()
+    human_relationships = communicator_self.get("relationships") or {}
+    open_threads = list(sorted((human_relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
+    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
     communicator["current_intent"] = intent_text
     communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
@@ -3513,10 +3543,18 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     next_question, previous_resolved = resolve_or_extend_question(communicator, chosen, final_action)
     communicator["unresolved_question"] = next_question
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
+    if active_thread:
+        thread_topic, thread_payload = active_thread
+        communicator["current_intent"] = f"{communicator['current_intent']} while preserving shared thread {thread_topic}"
+        communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}"
     if disagreement_count > 0:
         communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
     weight = chosen.get("epistemic_weight", {})
-    communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s); trust={weight.get('trust', 0.5)} usefulness={weight.get('usefulness', 0.5)} memory_bias={weight.get('memory_bias', 0.0)}"
+    if active_thread:
+        thread_topic, thread_payload = active_thread
+        communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}; trust={weight.get('trust', 0.5)} usefulness={weight.get('usefulness', 0.5)} memory_bias={weight.get('memory_bias', 0.0)}"
+    else:
+        communicator["last_decision_summary"] = f"{decision_mode} from {chosen.get('agent')} ({chosen.get('role')}) with {disagreement_count} questioning voice(s); trust={weight.get('trust', 0.5)} usefulness={weight.get('usefulness', 0.5)} memory_bias={weight.get('memory_bias', 0.0)}"
     communicator["last_wake_at"] = now_ts
     communicator["updated_at"] = now_ts
     if unresolved_needs:
