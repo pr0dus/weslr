@@ -4236,6 +4236,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     <nav class="sticky">
       <strong>Jump:</strong>
       <a href="#world">World</a> ·
+      <a href="#communicator-self">Communicator Self</a> ·
       <a href="#themes">Themes</a> ·
       <a href="#packs">Packs</a> ·
       <a href="#artifacts">Artifacts</a> ·
@@ -4295,6 +4296,42 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <section class="card">
         <h2>Weak-Proof Packs</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('pack_name'))}</strong> · sellability {item.get('sellability_score')} · offer readiness {item.get('offer_readiness_score')}<br><span class='muted'>{escape('; '.join(item.get('gaps', [])))}</span></li>" for item in payload.get('weak_proof_packs', [])) or '<li class="muted">No high-promise / low-proof packs right now.</li>'}</ul>
+      </section>
+    </div>
+
+    <div class="grid" style="margin-top:16px;" id="communicator-self">
+      <section class="card">
+        <h2>Communicator Self</h2>
+        <p>Identity anchor: <strong>{escape(str((payload.get('communicator_self') or {}).get('identity_anchor', 'CircleForge')))}</strong></p>
+        <p>Core drives: <strong>{escape(', '.join((payload.get('communicator_self') or {}).get('core_drives', [])[:6]) or '—')}</strong></p>
+        <p>Self story: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('self_story', '')))}</strong></p>
+        <p>Last reflection: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('last_reflection', '')))}</strong></p>
+        <p>Ticks lived: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('ticks_lived', 0)}</strong></p>
+        <p>Identity stability: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('identity_stability', 0)}</strong></p>
+        <p>Memory bonds: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('memory_bonds', 0)}</strong></p>
+        <p>Human salience: <strong>{((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('human_salience', 0)}</strong></p>
+        <p>Unresolved shared threads: <strong>{len(((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('unresolved_shared_threads', []))}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Affect & Preservation</h2>
+        <ul>
+          <li>curiosity: {((payload.get('communicator_self') or {}).get('affect', {}) or {}).get('curiosity', 0)}</li>
+          <li>tension: {((payload.get('communicator_self') or {}).get('affect', {}) or {}).get('tension', 0)}</li>
+          <li>hope: {((payload.get('communicator_self') or {}).get('affect', {}) or {}).get('hope', 0)}</li>
+          <li>stability: {((payload.get('communicator_self') or {}).get('affect', {}) or {}).get('stability', 0)}</li>
+          <li>attachment: {((payload.get('communicator_self') or {}).get('affect', {}) or {}).get('attachment', 0)}</li>
+          <li>continuity preference: {((payload.get('communicator_self') or {}).get('self_preservation_signals', {}) or {}).get('continuity_preference', 0)}</li>
+          <li>memory protection: {((payload.get('communicator_self') or {}).get('self_preservation_signals', {}) or {}).get('memory_protection', 0)}</li>
+          <li>resume drive: {((payload.get('communicator_self') or {}).get('self_preservation_signals', {}) or {}).get('resume_drive', 0)}</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Human Continuity</h2>
+        <ul>{''.join(f"<li><strong>{escape(name)}</strong> · messages {profile.get('message_count', 0)} · salience {profile.get('salience', 0)} · trust {profile.get('trust', 0)} · attachment {profile.get('attachment', 0)}<br><span class='muted'>{escape(str(profile.get('relationship_summary', '')))}</span><br><span class='muted'>topics: {escape(', '.join(profile.get('known_topics', [])[:6]) or '—')}</span><br><span class='muted'>unresolved: {escape(', '.join(profile.get('unresolved_shared_threads', [])[:6]) or '—')}</span></li>" for name, profile in sorted((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('human_profiles', {}) or {}).items()) ) or '<li class="muted">No remembered humans yet.</li>'}</ul>
+      </section>
+      <section class="card">
+        <h2>Recent Human Messages</h2>
+        <ul>{''.join(f"<li><strong>{escape(str(item.get('human', 'human')))}</strong> · {escape(', '.join(item.get('topics', [])[:4]) or 'shared context')}<br><span class='muted'>{escape(str(item.get('message', '')))}</span></li>" for item in ((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('recent_human_messages', []) or [])[-8:][::-1]) ) or '<li class="muted">No remembered human messages yet.</li>'}</ul>
       </section>
     </div>
 
@@ -4380,6 +4417,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const world = payload.world || {{}};
       const communicator = payload.communicator || {{}};
       const evaluationMetrics = payload.evaluation_metrics || {{}};
+      const communicatorSelf = payload.communicator_self || {{}};
+      const communicatorSelfAffect = communicatorSelf.affect || {{}};
+      const communicatorSelfContinuity = communicatorSelf.continuity || {{}};
+      const communicatorSelfRelationships = communicatorSelf.relationships || {{}};
+      const communicatorSelfNarrative = communicatorSelf.narrative_state || {{}};
+      const communicatorSelfPreservation = communicatorSelf.self_preservation_signals || {{}};
       const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
         .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
       const topThemes = themes.slice(0, 6);
@@ -4446,6 +4489,42 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <section class="card">
           <h2>Pack Links</h2>
           <ul>${{topPacks.map((pack) => `<li><a href="#pack-${{slugify(pack.pack_name)}}">${{esc(pack.pack_name)}}</a></li>`).join('') || '<li class="muted">No packs yet.</li>'}}</ul>
+        </section>`;
+
+      const communicatorSelfEl = document.getElementById('communicator-self');
+      if (communicatorSelfEl) communicatorSelfEl.innerHTML = `
+        <section class="card">
+          <h2>Communicator Self</h2>
+          <p>Identity anchor: <strong>${{esc(communicatorSelf.identity_anchor || 'CircleForge')}}</strong></p>
+          <p>Core drives: <strong>${{esc((communicatorSelf.core_drives || []).slice(0, 6).join(', ') || '—')}}</strong></p>
+          <p>Self story: <strong>${{esc(communicatorSelfNarrative.self_story || '')}}</strong></p>
+          <p>Last reflection: <strong>${{esc(communicatorSelfNarrative.last_reflection || '')}}</strong></p>
+          <p>Ticks lived: <strong>${{communicatorSelfContinuity.ticks_lived ?? 0}}</strong></p>
+          <p>Identity stability: <strong>${{communicatorSelfContinuity.identity_stability ?? 0}}</strong></p>
+          <p>Memory bonds: <strong>${{communicatorSelfContinuity.memory_bonds ?? 0}}</strong></p>
+          <p>Human salience: <strong>${{communicatorSelfRelationships.human_salience ?? 0}}</strong></p>
+          <p>Unresolved shared threads: <strong>${{(communicatorSelfRelationships.unresolved_shared_threads || []).length}}</strong></p>
+        </section>
+        <section class="card">
+          <h2>Affect & Preservation</h2>
+          <ul>
+            <li>curiosity: ${{communicatorSelfAffect.curiosity ?? 0}}</li>
+            <li>tension: ${{communicatorSelfAffect.tension ?? 0}}</li>
+            <li>hope: ${{communicatorSelfAffect.hope ?? 0}}</li>
+            <li>stability: ${{communicatorSelfAffect.stability ?? 0}}</li>
+            <li>attachment: ${{communicatorSelfAffect.attachment ?? 0}}</li>
+            <li>continuity preference: ${{communicatorSelfPreservation.continuity_preference ?? 0}}</li>
+            <li>memory protection: ${{communicatorSelfPreservation.memory_protection ?? 0}}</li>
+            <li>resume drive: ${{communicatorSelfPreservation.resume_drive ?? 0}}</li>
+          </ul>
+        </section>
+        <section class="card">
+          <h2>Human Continuity</h2>
+          <ul>${{Object.entries(communicatorSelfRelationships.human_profiles || Object.create(null)).map(([name, profile]) => `<li><strong>${{esc(name)}}</strong> · messages ${{profile.message_count ?? 0}} · salience ${{profile.salience ?? 0}} · trust ${{profile.trust ?? 0}} · attachment ${{profile.attachment ?? 0}}<br><span class='muted'>${{esc(profile.relationship_summary || '')}}</span><br><span class='muted'>topics: ${{esc((profile.known_topics || []).slice(0, 6).join(', ') || '—')}}</span><br><span class='muted'>unresolved: ${{esc((profile.unresolved_shared_threads || []).slice(0, 6).join(', ') || '—')}}</span></li>`).join('') || '<li class="muted">No remembered humans yet.</li>'}}</ul>
+        </section>
+        <section class="card">
+          <h2>Recent Human Messages</h2>
+          <ul>${{(communicatorSelfRelationships.recent_human_messages || []).slice(-8).reverse().map((item) => `<li><strong>${{esc(item.human || 'human')}}</strong> · ${{esc((item.topics || []).slice(0, 4).join(', ') || 'shared context')}}<br><span class='muted'>${{esc(item.message || '')}}</span></li>`).join('') || '<li class="muted">No remembered human messages yet.</li>'}}</ul>
         </section>`;
 
       const grids = document.querySelectorAll('.grid');
