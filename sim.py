@@ -2795,10 +2795,67 @@ def agent_social_context(agent_dir: Path) -> Dict:
     }
 
 
+def dominant_topic_pressure(topic_pressure: dict, fallback_topic: str = "") -> tuple[str, dict]:
+    if topic_pressure:
+        topic, payload = max(topic_pressure.items(), key=lambda kv: float((kv[1] or {}).get("salience", 0.0)))
+        return str(topic), dict(payload or {})
+    if fallback_topic:
+        return fallback_topic, {
+            "salience": 0.18,
+            "novelty": 0.1,
+            "emotional_weight": 0.12,
+            "unresolvedness": 0.16,
+            "human_relevance": 0.08,
+            "decay": 0.08,
+            "last_touched_at": 0,
+        }
+    return "", {}
+
+
+def update_pressure_fields(self_state: dict, communicator: dict, consumed_count: int, unresolved_needs: list[str], now_ts: int) -> dict:
+    self_state = ensure_internal_role_state(self_state, now_ts=now_ts)
+    relationships = self_state.get("relationships") or {}
+    unresolved_shared_threads = relationships.get("unresolved_shared_threads") or []
+    dynamic = self_state.setdefault("dynamic_mind_state", {})
+    topic_pressure = self_state.setdefault("topic_pressure", {})
+    active_topic = str(communicator.get("active_pursuit") or relationships.get("last_human_topic") or "continuity").strip() or "continuity"
+    payload = dict(topic_pressure.get(active_topic) or {})
+    payload["salience"] = max(0.0, min(1.5, float(payload.get("salience", 0.18)) * 0.94 + (0.25 if consumed_count > 0 else 0.0) + (0.16 if unresolved_shared_threads else 0.0) + (0.08 if unresolved_needs else 0.0)))
+    payload["novelty"] = max(0.0, min(1.0, float(payload.get("novelty", 0.1)) * 0.88 + (0.22 if consumed_count > 0 else 0.0)))
+    payload["emotional_weight"] = max(0.0, min(1.0, float(payload.get("emotional_weight", 0.12)) * 0.95 + (0.12 if unresolved_shared_threads else 0.0)))
+    payload["unresolvedness"] = max(0.0, min(1.0, float(payload.get("unresolvedness", 0.16)) * 0.96 + (0.18 if communicator.get("unresolved_question") else 0.0) + (0.14 if unresolved_shared_threads else 0.0)))
+    payload["human_relevance"] = max(0.0, min(1.0, float(payload.get("human_relevance", 0.08)) * 0.95 + (0.22 if unresolved_shared_threads else 0.0) + (0.28 if consumed_count > 0 else 0.0)))
+    payload["decay"] = float(payload.get("decay", 0.08) or 0.08)
+    payload["last_touched_at"] = now_ts
+    topic_pressure[active_topic] = payload
+    if len(topic_pressure) > 12:
+        trimmed = dict(sorted(topic_pressure.items(), key=lambda kv: float((kv[1] or {}).get("salience", 0.0)), reverse=True)[:12])
+        self_state["topic_pressure"] = trimmed
+        topic_pressure = trimmed
+    uncertainty = 0.24 + (0.18 if communicator.get("unresolved_question") else 0.0) + (0.08 if unresolved_needs else 0.0)
+    attachment = 0.18 + min(0.35, len(unresolved_shared_threads) * 0.08)
+    dynamic["curiosity"] = max(0.0, min(1.0, float(dynamic.get("curiosity", 0.58)) * 0.97 + (0.08 if consumed_count > 0 else 0.0) + (0.06 if communicator.get("unresolved_question") else 0.0)))
+    dynamic["tension"] = max(0.0, min(1.0, float(dynamic.get("tension", 0.18)) * 0.95 + (0.12 if unresolved_needs else 0.0) + (0.1 if unresolved_shared_threads else 0.0)))
+    dynamic["attachment"] = max(0.0, min(1.0, float(dynamic.get("attachment", 0.2)) * 0.97 + attachment * 0.12))
+    dynamic["uncertainty"] = max(0.0, min(1.0, float(dynamic.get("uncertainty", 0.33)) * 0.96 + uncertainty * 0.16))
+    dynamic["sleep_pressure"] = max(0.0, min(1.0, float(dynamic.get("sleep_pressure", 0.12)) * 0.98 + 0.02))
+    dynamic["background_noise"] = max(0.0, min(0.4, 0.04 + random.random() * 0.08))
+    if dynamic["sleep_pressure"] > 0.78 and dynamic["tension"] < 0.24:
+        dynamic["mode"] = "resting"
+    elif dynamic["attachment"] > 0.34 or consumed_count > 0:
+        dynamic["mode"] = "engaged"
+    elif dynamic["curiosity"] > 0.7 and dynamic["tension"] < 0.45:
+        dynamic["mode"] = "focused"
+    else:
+        dynamic["mode"] = "idle"
+    return self_state
+
+
 def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
     communicator = load_communicator_state()
-    communicator_self = ensure_internal_role_state(load_communicator_self())
-    curiosity = float(communicator.get("curiosity", 0.6))
+    communicator_self = update_pressure_fields(ensure_internal_role_state(load_communicator_self()), communicator, consumed_count, unresolved_needs, int(time.time()))
+    save_communicator_self(communicator_self)
+    curiosity = float((communicator_self.get("dynamic_mind_state") or {}).get("curiosity", communicator.get("curiosity", 0.6)))
     unresolved_question = str(communicator.get("unresolved_question", "")).strip()
     human_relationships = (communicator_self.get("relationships") or {})
     unresolved_shared_threads = human_relationships.get("unresolved_shared_threads") or []
@@ -2807,31 +2864,57 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
     role_state = (communicator_self.get("internal_role_state") or {}).get(role, {})
     if tick < int(role_state.get("suppressed_until_tick", 0)):
         return False, "refractory-rest"
-    pressure = float(INTERNAL_ROLE_SPECS.get(role, {}).get("baseline_wake_chance", 0.14))
-    wake_reason = "random-drift"
-    if consumed_count > 0:
-        pressure += 0.5
+    spec = INTERNAL_ROLE_SPECS.get(role, {})
+    dynamic = communicator_self.get("dynamic_mind_state") or {}
+    dominant_topic, topic_state = dominant_topic_pressure(communicator_self.get("topic_pressure") or {}, str(communicator.get("active_pursuit") or "continuity"))
+    fatigue = float(role_state.get("fatigue", 0.0) or 0.0)
+    inhibition = float(role_state.get("inhibition", 0.0) or 0.0)
+    topic_salience = float(topic_state.get("salience", 0.0) or 0.0)
+    unresolvedness = float(topic_state.get("unresolvedness", 0.0) or 0.0)
+    human_relevance = float(topic_state.get("human_relevance", 0.0) or 0.0)
+    novelty = float(topic_state.get("novelty", 0.0) or 0.0)
+    pressure_breakdown = {
+        "baseline": float(spec.get("baseline_wake_chance", 0.14)),
+        "topic_salience": topic_salience * 0.35,
+        "unresolvedness": unresolvedness * 0.22,
+        "human_relevance": human_relevance * float(spec.get("human_weight", 0.08)),
+        "curiosity": float(dynamic.get("curiosity", curiosity)) * float(spec.get("curiosity_weight", 0.1)),
+        "tension": float(dynamic.get("tension", 0.18)) * float(spec.get("tension_weight", 0.1)),
+        "uncertainty": float(dynamic.get("uncertainty", 0.33)) * float(spec.get("uncertainty_weight", 0.1)),
+        "novelty": novelty * 0.12,
+        "message": 0.24 if consumed_count > 0 else 0.0,
+        "shared_thread": 0.18 if unresolved_shared_threads and role in {"observer", "critic", "memory_keeper", "communicator"} else 0.0,
+        "experiments": 0.12 if active_experiments and role in {"observer", "critic", "memory_keeper", "builder"} else 0.0,
+        "needs": 0.1 if unresolved_needs and role in {"observer", "critic", "builder", "communicator"} else 0.0,
+        "question": 0.12 if unresolved_question and role in {"observer", "memory_keeper", "critic"} else 0.0,
+        "scheduled": 0.08 if tick >= int(agent.get("next_due_tick", 0)) else 0.0,
+        "fatigue_penalty": -fatigue * 0.25,
+        "inhibition_penalty": -inhibition * 0.2,
+        "noise": random.uniform(-CIRCLEFORGE_WAKE_RANDOMNESS * 0.5, CIRCLEFORGE_WAKE_RANDOMNESS * 0.5),
+    }
+    pressure = sum(pressure_breakdown.values())
+    pressure = max(0.01, min(1.5, pressure))
+    hazard = max(0.01, float(spec.get("baseline_wake_chance", 0.14)) + pressure * 0.85 - fatigue * 0.2)
+    wake_probability = max(0.01, min(0.98, 1 - pow(2.718281828, -hazard)))
+    wake_reason = "pressure-drift"
+    if pressure_breakdown["message"] > 0:
         wake_reason = "message-received"
-    if unresolved_shared_threads and role in {"observer", "critic", "memory_keeper", "communicator"}:
-        pressure += 0.28
+    elif pressure_breakdown["shared_thread"] > 0:
         wake_reason = "human-continuity-pressure"
-    if active_experiments and role in {"observer", "critic", "memory_keeper", "builder"}:
-        pressure += 0.16
-        wake_reason = "experiment-pressure"
-    if unresolved_needs and role in {"observer", "critic", "builder", "communicator"}:
-        pressure += 0.12
-        wake_reason = "unresolved-need-pressure"
-    if unresolved_question and role in {"observer", "memory_keeper", "critic"}:
-        pressure += 0.15
+    elif pressure_breakdown["question"] > 0:
         wake_reason = "question-pressure"
-    if curiosity > 0.76 and role in {"observer", "memory_keeper", "critic", "communicator"}:
-        pressure += 0.1
-        wake_reason = "curiosity-pressure"
-    if tick >= int(agent.get("next_due_tick", 0)):
-        pressure += 0.12
+    elif pressure_breakdown["experiments"] > 0:
+        wake_reason = "experiment-pressure"
+    elif pressure_breakdown["needs"] > 0:
+        wake_reason = "unresolved-need-pressure"
+    elif pressure_breakdown["scheduled"] > 0:
         wake_reason = "scheduled-cadence"
-    threshold = max(0.08, min(0.95, pressure + random.uniform(-CIRCLEFORGE_WAKE_RANDOMNESS, CIRCLEFORGE_WAKE_RANDOMNESS)))
-    if random.random() <= threshold:
+    role_state["pressure"] = round(pressure, 4)
+    role_state["last_hazard"] = round(hazard, 4)
+    role_state["last_pressure_breakdown"] = {k: round(v, 4) for k, v in pressure_breakdown.items()}
+    role_state["dominant_topic"] = dominant_topic
+    role_state["restlessness"] = round(max(0.0, pressure - fatigue), 4)
+    if random.random() <= wake_probability:
         return True, wake_reason
     return False, "waiting-for-pressure"
 
@@ -2841,26 +2924,46 @@ INTERNAL_ROLE_SPECS = {
         "purpose": "notice novelty, drift, change, and weak signals in the world or self",
         "baseline_wake_chance": 0.22,
         "refractory_ticks": 1,
+        "curiosity_weight": 0.18,
+        "tension_weight": 0.08,
+        "human_weight": 0.08,
+        "uncertainty_weight": 0.16,
     },
     "builder": {
         "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
         "baseline_wake_chance": 0.16,
         "refractory_ticks": 2,
+        "curiosity_weight": 0.08,
+        "tension_weight": 0.12,
+        "human_weight": 0.05,
+        "uncertainty_weight": 0.1,
     },
     "critic": {
         "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
         "baseline_wake_chance": 0.18,
         "refractory_ticks": 1,
+        "curiosity_weight": 0.1,
+        "tension_weight": 0.2,
+        "human_weight": 0.07,
+        "uncertainty_weight": 0.2,
     },
     "communicator": {
         "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
         "baseline_wake_chance": 0.2,
         "refractory_ticks": 1,
+        "curiosity_weight": 0.08,
+        "tension_weight": 0.08,
+        "human_weight": 0.22,
+        "uncertainty_weight": 0.06,
     },
     "memory_keeper": {
         "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
         "baseline_wake_chance": 0.24,
         "refractory_ticks": 1,
+        "curiosity_weight": 0.1,
+        "tension_weight": 0.12,
+        "human_weight": 0.2,
+        "uncertainty_weight": 0.14,
     },
 }
 
@@ -2880,6 +2983,18 @@ def classify_internal_role(agent_name: str) -> str:
 def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
     role_state = self_state.setdefault("internal_role_state", {})
+    dynamic_state = self_state.setdefault("dynamic_mind_state", {
+        "curiosity": 0.58,
+        "tension": 0.18,
+        "stability": 0.62,
+        "attachment": 0.2,
+        "uncertainty": 0.33,
+        "background_noise": 0.08,
+        "sleep_pressure": 0.12,
+        "mode": "engaged",
+        "last_mode_shift_at": now_ts,
+    })
+    topic_pressure = self_state.setdefault("topic_pressure", {})
     for role, spec in INTERNAL_ROLE_SPECS.items():
         role_state.setdefault(role, {
             "purpose": spec["purpose"],
@@ -2891,6 +3006,14 @@ def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> d
             "last_thought_summary": "",
             "wake_count": 0,
             "suppressed_until_tick": 0,
+            "activation": 0.0,
+            "fatigue": 0.0,
+            "pressure": 0.0,
+            "last_hazard": 0.0,
+            "last_pressure_breakdown": {},
+            "dominant_topic": "",
+            "restlessness": 0.0,
+            "inhibition": 0.0,
         })
     self_state.setdefault("inner_thoughts", [])
     current_llm_status = runtime_llm_status()
@@ -2901,6 +3024,14 @@ def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> d
         "last_error": str(current_llm_status.get("last_error", "")),
         "last_success_at": int(current_llm_status.get("last_success_at", 0) or 0),
     })
+    dynamic_state["curiosity"] = max(0.0, min(1.0, float(dynamic_state.get("curiosity", 0.58))))
+    dynamic_state["tension"] = max(0.0, min(1.0, float(dynamic_state.get("tension", 0.18))))
+    dynamic_state["stability"] = max(0.0, min(1.0, float(dynamic_state.get("stability", 0.62))))
+    dynamic_state["attachment"] = max(0.0, min(1.0, float(dynamic_state.get("attachment", 0.2))))
+    dynamic_state["uncertainty"] = max(0.0, min(1.0, float(dynamic_state.get("uncertainty", 0.33))))
+    dynamic_state["background_noise"] = max(0.0, min(0.5, float(dynamic_state.get("background_noise", 0.08))))
+    dynamic_state["sleep_pressure"] = max(0.0, min(1.0, float(dynamic_state.get("sleep_pressure", 0.12))))
+    dynamic_state["mode"] = str(dynamic_state.get("mode", "engaged"))
     self_state["updated_at"] = now_ts
     return self_state
 
@@ -3068,6 +3199,9 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     role_state["last_thought_summary"] = str(thought.get("summary", ""))[:240]
     role_state["wake_count"] = int(role_state.get("wake_count", 0)) + 1
     role_state["suppressed_until_tick"] = tick + int(INTERNAL_ROLE_SPECS.get(role, {}).get("refractory_ticks", 1))
+    role_state["activation"] = round(min(1.5, float(role_state.get("activation", 0.0) or 0.0) * 0.6 + 0.45), 4)
+    role_state["fatigue"] = round(min(1.0, float(role_state.get("fatigue", 0.0) or 0.0) * 0.82 + 0.18), 4)
+    role_state["inhibition"] = round(max(0.0, float(role_state.get("inhibition", 0.0) or 0.0) * 0.72), 4)
     adapter = self_state.setdefault("llm_adapter", {})
     provider = str(thought.get("provider") or thought.get("source") or "fallback")
     adapter["provider"] = provider
@@ -4137,6 +4271,12 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             due, wake_reason = compute_agent_due_state(agent, tick, consumed_count, unresolved_needs)
             agent["wake_reason"] = wake_reason
             if not due:
+                rest_state = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
+                role_state = (rest_state.get("internal_role_state") or {}).get(classify_internal_role(agent.get("name")), {})
+                role_state["fatigue"] = round(max(0.0, float(role_state.get("fatigue", 0.0) or 0.0) * 0.9 - 0.04), 4)
+                role_state["activation"] = round(max(0.0, float(role_state.get("activation", 0.0) or 0.0) * 0.84), 4)
+                role_state["inhibition"] = round(min(1.0, float(role_state.get("inhibition", 0.0) or 0.0) * 0.94 + 0.01), 4)
+                save_communicator_self(rest_state)
                 agent["age_ticks"] += 1
                 conn.execute("UPDATE agents SET energy=?, storage=?, gpu_quota=?, reputation=?, last_inspect_at=?, last_trade_at=?, age_ticks=?, next_due_tick=?, wake_reason=?, cadence_interval=? WHERE name=?", (agent["energy"], agent["storage"], agent["gpu_quota"], agent["reputation"], agent["last_inspect_at"], agent["last_trade_at"], agent["age_ticks"], agent.get("next_due_tick", tick), agent["wake_reason"], agent.get("cadence_interval", 1), agent["name"]))
                 item = {"agent": agent["name"], "action": "idle", "status": "waiting", "summary": f"idle until tick {agent.get('next_due_tick', tick)}", "artifact": None, "target": None, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": None, "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2], "wake_reason": wake_reason, "next_due_tick": agent.get("next_due_tick", tick)}
