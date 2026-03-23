@@ -233,8 +233,17 @@ def _ensure_embedded_server() -> bool:
         )
     for _ in range(30):
         if _can_connect(host, port):
-            return True
+            break
         time.sleep(1)
+    else:
+        return False
+    warm_req = urllib.request.Request(f"{_embedded_server_base()}/models", method="GET")
+    for _ in range(10):
+        try:
+            with urllib.request.urlopen(warm_req, timeout=5):
+                return True
+        except Exception:
+            time.sleep(1)
     return False
 
 
@@ -274,7 +283,7 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    for attempt in range(3):
+    for attempt in range(6):
         try:
             with urllib.request.urlopen(req, timeout=max(30, OLLAMA_TIMEOUT_SECONDS * 4)) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
@@ -282,7 +291,7 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
             parsed = json.loads(content)
             return _normalize(parsed, role, fallback, "embedded")
         except Exception:
-            if attempt == 2:
+            if attempt == 5:
                 return fallback
             time.sleep(2)
     return fallback

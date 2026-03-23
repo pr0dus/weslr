@@ -21,8 +21,10 @@ from config import (
     CATEGORY_PROPOSAL_COST,
     CATEGORY_REJECTION_REPUTATION_PENALTY,
     CIRCLEFORGE_LLM_ENABLED,
+    CIRCLEFORGE_LLM_MODEL,
     CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
     CIRCLEFORGE_WAKE_RANDOMNESS,
+    CIRCLEFORGE_FAILSAFE_STATE_PATH,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -70,6 +72,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
+from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from sandbox import run_python
 
@@ -544,6 +547,24 @@ def protected_self_edit_boundary() -> dict:
         "human_safety_rules": HUMAN_SAFETY_RULES,
         "full_auto_editing_future_note": "Full auto-editing may be added later, but it must remain bounded by protected core files, visible review, rollback, and human safety constraints.",
     }
+
+
+def failsafe_allows(capability: str) -> tuple[bool, dict, str]:
+    status = load_failsafe_status()
+    mode = str(status.get("mode", "SAFE"))
+    if mode == "HALT":
+        return False, status, "failsafe HALT mode is active"
+    capability_modes = {
+        "runtime": {"SAFE", "GUIDED", "UNLOCKED"},
+        "low_risk_review": {"GUIDED", "UNLOCKED"},
+        "self_mod_proposal": {"GUIDED", "UNLOCKED"},
+        "code_execution": {"UNLOCKED"},
+        "protected_apply": {"UNLOCKED"},
+    }
+    allowed_modes = capability_modes.get(capability, {"UNLOCKED"})
+    if mode not in allowed_modes:
+        return False, status, f"failsafe mode {mode} does not allow capability {capability}"
+    return True, status, "allowed"
 
 
 def canonical_theme_name(theme: str) -> str:
@@ -1625,6 +1646,9 @@ def validate_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
 
 
 def review_artifact(artifact_id: str, action: str, note: str = "") -> Dict:
+    allowed, status, reason = failsafe_allows("low_risk_review")
+    if not allowed:
+        raise SystemExit(f"Review blocked: {reason}")
     meta_file = find_meta_file_by_id(artifact_id)
     if meta_file is None:
         raise SystemExit(f"No artifact found with id: {artifact_id}")
@@ -2869,12 +2893,13 @@ def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> d
             "suppressed_until_tick": 0,
         })
     self_state.setdefault("inner_thoughts", [])
+    current_llm_status = runtime_llm_status()
     self_state.setdefault("llm_adapter", {
-        "enabled": CIRCLEFORGE_LLM_ENABLED,
-        "provider": "ollama",
-        "model": "local-small",
-        "last_error": "",
-        "last_success_at": 0,
+        "enabled": bool(current_llm_status.get("enabled", CIRCLEFORGE_LLM_ENABLED)),
+        "provider": str(current_llm_status.get("provider", "fallback")),
+        "model": str(current_llm_status.get("model", "")),
+        "last_error": str(current_llm_status.get("last_error", "")),
+        "last_success_at": int(current_llm_status.get("last_success_at", 0) or 0),
     })
     self_state["updated_at"] = now_ts
     return self_state
@@ -3044,14 +3069,17 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     role_state["wake_count"] = int(role_state.get("wake_count", 0)) + 1
     role_state["suppressed_until_tick"] = tick + int(INTERNAL_ROLE_SPECS.get(role, {}).get("refractory_ticks", 1))
     adapter = self_state.setdefault("llm_adapter", {})
-    if thought.get("source") == "ollama":
+    provider = str(thought.get("provider") or thought.get("source") or "fallback")
+    adapter["provider"] = provider
+    adapter["model"] = CIRCLEFORGE_LLM_MODEL
+    if provider != "fallback":
         adapter["last_success_at"] = now_ts
         adapter["last_error"] = ""
         adapter["enabled"] = True
     else:
         adapter["enabled"] = CIRCLEFORGE_LLM_ENABLED
         if CIRCLEFORGE_LLM_ENABLED:
-            adapter["last_error"] = adapter.get("last_error") or "llm unavailable or fallback used"
+            adapter["last_error"] = "llm unavailable or fallback used"
     save_communicator_self(self_state)
     return thought
 
@@ -3914,6 +3942,9 @@ def maybe_register_emergent_candidate(board: dict, parent_theme: str | None, sou
 
 
 def apply_pack_outcome(pack_name: str, action: str, note: str = "", buyer: str = "", price_band: str = "", mode: str = "") -> dict:
+    allowed, status, reason = failsafe_allows("low_risk_review")
+    if not allowed:
+        raise SystemExit(f"Pack action blocked: {reason}")
     packs = read_json_file(PACKS_PATH, [])
     pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
     if pack is None:
@@ -4071,6 +4102,9 @@ def update_opportunity_state(agent_dir: Path, action_plan: Dict, result: ActionR
 
 
 def perform_tick(verbose: bool = False) -> List[Dict]:
+    allowed, status, reason = failsafe_allows("runtime")
+    if not allowed:
+        return {"summaries": [], "communicator": load_communicator_state(), "internal_consensus": {"halted": True, "reason": reason}, "failsafe": status}
     conn = connect()
     world = get_world(conn)
     tick = world["tick"] + 1
@@ -4880,6 +4914,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
             <li>memory protection: ${{communicatorSelfPreservation.memory_protection ?? 0}}</li>
             <li>resume drive: ${{communicatorSelfPreservation.resume_drive ?? 0}}</li>
           </ul>
+          <p>LLM live: <strong>${{String((payload.llm_status || {{}}).live ?? false)}}</strong></p>
+          <p>LLM reachable: <strong>${{String((payload.llm_status || {{}}).reachable ?? false)}}</strong></p>
+          <p>LLM model: <strong>${{esc((payload.llm_status || {{}}).model || '')}}</strong></p>
+          <p>LLM last error: <strong>${{esc((payload.llm_status || {{}}).last_error || '')}}</strong></p>
         </section>
         <section class="card">
           <h2>Human Continuity</h2>
@@ -4991,6 +5029,35 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     return {"ok": True, "dashboard_dir": str(DASHBOARD_DIR.relative_to(BASE_DIR)), "html": str(html_path.relative_to(BASE_DIR)), "json": str(payload_path.relative_to(BASE_DIR)), "event_log": str(EVENT_LOG_PATH.relative_to(BASE_DIR))}
 
 
+def load_llm_status() -> dict:
+    adapter = (load_communicator_self().get("llm_adapter") or {})
+    status = runtime_llm_status()
+    status["last_error"] = adapter.get("last_error", status.get("last_error", ""))
+    status["last_success_at"] = int(adapter.get("last_success_at", 0) or 0)
+    return status
+
+
+def load_failsafe_status() -> dict:
+    if not CIRCLEFORGE_FAILSAFE_STATE_PATH.exists():
+        return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state not initialized"}
+    try:
+        payload = json.loads(CIRCLEFORGE_FAILSAFE_STATE_PATH.read_text())
+    except Exception:
+        return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state unreadable"}
+    expires = int(payload.get("unlock_expires_at", 0) or 0)
+    mode = str(payload.get("mode", "SAFE"))
+    if mode == "UNLOCKED" and expires and expires <= int(time.time()):
+        mode = "SAFE"
+        expires = 0
+    return {
+        "initialized": bool(payload.get("initialized")),
+        "mode": mode,
+        "unlock_expires_at": expires,
+        "updated_at": int(payload.get("updated_at", 0) or 0),
+        "last_reason": str(payload.get("last_reason", "")),
+    }
+
+
 def build_communicator_message() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
@@ -5088,6 +5155,8 @@ def show_world() -> Dict:
         "communicator": load_communicator_state(),
         "communicator_self": load_communicator_self(),
         "communicator_message": build_communicator_message(),
+        "failsafe": load_failsafe_status(),
+        "llm_status": load_llm_status(),
         "inner_thoughts": (load_communicator_self().get("inner_thoughts") or [])[-12:],
         "evaluation_metrics": load_evaluation_metrics(),
         "projects": load_projects(),
