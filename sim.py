@@ -238,6 +238,8 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "last_human_topic": "",
             "human_profiles": {},
             "recent_human_messages": [],
+            "recent_human_exchanges": [],
+            "conversation_threads": {},
             "unresolved_shared_threads": [],
         },
         active_concerns=[],
@@ -2964,6 +2966,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships.setdefault("known_humans", [])
     relationships.setdefault("human_profiles", {})
     relationships.setdefault("recent_human_messages", [])
+    relationships.setdefault("recent_human_exchanges", [])
+    relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
 
     human_name = (human_name or "human").strip() or "human"
@@ -3008,6 +3012,19 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
     profile["relationship_summary"] = f"{human_name} is a recurring human with {profile['message_count']} remembered exchanges around {', '.join(profile['known_topics'][:3]) or 'shared context'}."
 
+    exchange_nonce = len(relationships.get("recent_human_exchanges", []) or []) + 1
+    exchange = {
+        "id": f"human-exchange-{human_name}-{now_ts}-{exchange_nonce}",
+        "human": human_name,
+        "topics": topic_list,
+        "message": (message or "")[:240],
+        "response": (response or "")[:240],
+        "message_summary": ((message or "")[:96] + ("…" if len(message or "") > 96 else "")),
+        "response_summary": ((response or "")[:96] + ("…" if len(response or "") > 96 else "")),
+        "created_at": now_ts,
+        "unresolved": unresolved,
+        "kind": "human_exchange",
+    }
     relationships["recent_human_messages"].append({
         "human": human_name,
         "topics": topic_list,
@@ -3017,6 +3034,30 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         "unresolved": unresolved,
     })
     relationships["recent_human_messages"] = relationships["recent_human_messages"][-12:]
+    relationships["recent_human_exchanges"].append(exchange)
+    relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
+
+    threads = relationships.setdefault("conversation_threads", {})
+    for topic in topic_list[:6]:
+        thread = threads.setdefault(topic, {
+            "topic": topic,
+            "human": human_name,
+            "exchange_count": 0,
+            "last_message_summary": "",
+            "last_response_summary": "",
+            "last_exchange_at": 0,
+            "status": "open",
+            "recent_exchange_ids": [],
+        })
+        thread["human"] = human_name
+        thread["exchange_count"] = int(thread.get("exchange_count", 0)) + 1
+        thread["last_message_summary"] = exchange["message_summary"]
+        thread["last_response_summary"] = exchange["response_summary"]
+        thread["last_exchange_at"] = now_ts
+        thread["status"] = "open" if unresolved else "resolved"
+        recent_ids = list(thread.get("recent_exchange_ids") or [])
+        recent_ids.append(exchange["id"])
+        thread["recent_exchange_ids"] = recent_ids[-6:]
 
     concerns = list(self_state.get("active_concerns") or [])
     for topic in topic_list[:3]:
@@ -3097,6 +3138,8 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     relationships.setdefault("known_humans", [])
     relationships.setdefault("human_profiles", {})
     relationships.setdefault("recent_human_messages", [])
+    relationships.setdefault("recent_human_exchanges", [])
+    relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
     if "Robert" not in relationships["known_humans"]:
         relationships["known_humans"].append("Robert")
@@ -3128,6 +3171,25 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     robert_profile["unresolved_shared_threads"] = robert_profile.get("unresolved_shared_threads", [])[-8:]
     relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
     robert_profile["relationship_summary"] = f"Robert is the primary human continuity anchor; current shared threads include {', '.join(robert_profile['known_topics'][:3]) or 'ongoing context'}."
+
+    threads = relationships.setdefault("conversation_threads", {})
+    if chosen_theme:
+        thread = threads.setdefault(chosen_theme, {
+            "topic": chosen_theme,
+            "human": "Robert",
+            "exchange_count": 0,
+            "last_message_summary": "",
+            "last_response_summary": "",
+            "last_exchange_at": 0,
+            "status": "open",
+            "recent_exchange_ids": [],
+        })
+        thread["human"] = "Robert"
+        thread["exchange_count"] = max(int(thread.get("exchange_count", 0)), int(robert_profile.get("recurring_topics", {}).get(chosen_theme, 0)))
+        thread["last_message_summary"] = f"simulation stayed with theme: {chosen_theme}"
+        thread["last_response_summary"] = f"current intent: {communicator.get('current_intent', '')}"[:120]
+        thread["last_exchange_at"] = now_ts
+        thread["status"] = "open" if chosen_theme in relationships.get("unresolved_shared_threads", []) else thread.get("status", "open")
 
     action_scores = evidence_profile.setdefault("outcome_weighted_actions", {})
     stable_traits = evidence_profile.setdefault("stable_traits", {})
@@ -4365,6 +4427,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Recent Human Messages</h2>
         <ul>{''.join(f"<li><strong>{escape(str(item.get('human', 'human')))}</strong> · {escape(', '.join(item.get('topics', [])[:4]) or 'shared context')}<br><span class='muted'>{escape(str(item.get('message', '')))}</span></li>" for item in ((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('recent_human_messages', []) or [])[-8:][::-1]) ) or '<li class="muted">No remembered human messages yet.</li>'}</ul>
       </section>
+      <section class="card">
+        <h2>Conversation Threads</h2>
+        <ul>{''.join(f"<li><strong>{escape(topic)}</strong> · {escape(str(thread.get('status', 'open')))} · exchanges {thread.get('exchange_count', 0)}<br><span class='muted'>{escape(str(thread.get('last_message_summary', '')))}</span></li>" for topic, thread in list(sorted((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('conversation_threads', {}) or {}).items(), key=lambda kv: kv[1].get('last_exchange_at', 0), reverse=True))[:8]) or '<li class="muted">No conversation threads yet.</li>'}</ul>
+      </section>
     </div>
 
     <section class="card" style="margin-top:16px;" id="themes">
@@ -4557,6 +4623,10 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <section class="card">
           <h2>Recent Human Messages</h2>
           <ul>${{(communicatorSelfRelationships.recent_human_messages || []).slice(-8).reverse().map((item) => `<li><strong>${{esc(item.human || 'human')}}</strong> · ${{esc((item.topics || []).slice(0, 4).join(', ') || 'shared context')}}<br><span class='muted'>${{esc(item.message || '')}}</span></li>`).join('') || '<li class="muted">No remembered human messages yet.</li>'}}</ul>
+        </section>
+        <section class="card">
+          <h2>Conversation Threads</h2>
+          <ul>${{Object.entries(communicatorSelfRelationships.conversation_threads || Object.create(null)).sort((a, b) => (b[1]?.last_exchange_at || 0) - (a[1]?.last_exchange_at || 0)).slice(0, 8).map(([topic, thread]) => `<li><strong>${{esc(topic)}}</strong> · ${{esc(thread.status || 'open')}} · exchanges ${{thread.exchange_count ?? 0}}<br><span class='muted'>${{esc(thread.last_message_summary || '')}}</span></li>`).join('') || '<li class="muted">No conversation threads yet.</li>'}}</ul>
         </section>`;
 
       const grids = document.querySelectorAll('.grid');
