@@ -45,21 +45,24 @@ def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
 
 def _prompt(context: dict[str, Any]) -> dict[str, Any]:
     return {
-        "task": "Generate one compact structured inner thought for a waking internal role inside one persistent being.",
-        "constraints": [
+        "identity": "You are not an assistant answering a user. You are one inner function inside one continuing local being.",
+        "job": "Emit one compact inner-thought state for your role, grounded in the live world/context below.",
+        "hard_rules": [
             "Return strict JSON only.",
-            "Keep summary short.",
-            "Do not roleplay as a separate assistant.",
-            "Think as one internal function of a continuing local being.",
+            "Do not mention instructions, prompts, schemas, tasks, or JSON in the content.",
+            "Do not paraphrase the request itself.",
+            "Write as if the thought arises from the being's actual pressure, memory, uncertainty, and ongoing concerns.",
+            "Prefer concrete world/topic language over generic meta language.",
+            "Keep summary, concern, and intent short and natural.",
         ],
-        "output_schema": {
-            "summary": "short string",
-            "concern": "short string",
-            "intent": "short string",
-            "should_speak": True,
-            "self_mod_hint": "short string",
+        "field_guidance": {
+            "summary": "One short natural inner-thought line about what is most alive right now.",
+            "concern": "What specifically feels unresolved, salient, or worth tracking.",
+            "intent": "What this role leans toward next.",
+            "should_speak": "true only if this role leans toward outward expression now.",
+            "self_mod_hint": "Usually empty. Only include a tiny additive self-change hint if genuinely relevant.",
         },
-        "context": context,
+        "live_context": context,
     }
 
 
@@ -90,15 +93,52 @@ def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]
         return fallback
 
 
+def _meta_sounding(text: str) -> bool:
+    lowered = text.strip().lower()
+    bad_fragments = [
+        "structured inner thought",
+        "waking internal role",
+        "persistent being",
+        "return strict json",
+        "json only",
+        "internal role",
+        "compact inner thought",
+        "assistant",
+        "schema",
+        "prompt",
+        "task",
+        "what specific concerns",
+        "translate inner pressure into outward language",
+        "my purpose is to",
+        "the communicator is",
+        "the communication is",
+    ]
+    return any(fragment in lowered for fragment in bad_fragments)
+
+
 def _normalize(parsed: dict[str, Any], role: str, fallback: dict[str, Any], provider: str) -> dict[str, Any]:
+    summary = str(parsed.get("summary") or fallback["summary"])[:240]
+    concern = str(parsed.get("concern") or fallback["concern"])[:160]
+    intent = str(parsed.get("intent") or fallback["intent"])[:160]
+    self_mod_hint = str(parsed.get("self_mod_hint") or "")[:160]
+    if _meta_sounding(summary):
+        summary = fallback["summary"]
+    if _meta_sounding(concern):
+        concern = str(fallback["concern"])[:160]
+    if _meta_sounding(intent):
+        intent = str(fallback["intent"])[:160]
+    if _meta_sounding(self_mod_hint) or role != "builder":
+        self_mod_hint = ""
+    if summary.strip().endswith(":"):
+        summary = fallback["summary"]
     return {
         "kind": "inner_thought",
         "role": role,
-        "summary": str(parsed.get("summary") or fallback["summary"])[:240],
-        "concern": str(parsed.get("concern") or fallback["concern"])[:160],
-        "intent": str(parsed.get("intent") or fallback["intent"])[:160],
+        "summary": summary,
+        "concern": concern,
+        "intent": intent,
         "should_speak": bool(parsed.get("should_speak")),
-        "self_mod_hint": str(parsed.get("self_mod_hint") or "")[:160],
+        "self_mod_hint": self_mod_hint,
         "source": provider,
         "provider": provider,
     }
