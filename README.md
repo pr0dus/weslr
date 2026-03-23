@@ -1,8 +1,8 @@
 # CircleForge
 
-> A local agent research sandbox that incubates small, reusable software artifacts and ranks them by usefulness, external legibility, and sellability.
+> A local artificial-life substrate for one persistent communicator with internal minds, memory, intention, curiosity, learning, and world-driven behavior.
 
-**CircleForge v0.0.91** is evolving into a **local self-evolving communicator entity** with internal minds, persistent memory, intention, inquiry, and world-driven behavior.
+**CircleForge v0.0.91** is evolving toward a stronger end objective: a **local living-entity substrate** that a human can speak to over time — not mainly a tool factory, not mainly a prompt shell, and not mainly a marketplace artifact generator.
 
 CircleForge should be understood primarily as:
 - one visible communicator / one continuing entity

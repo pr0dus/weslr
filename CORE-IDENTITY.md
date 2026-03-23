@@ -106,6 +106,35 @@ If CircleForge scales later, it should do so deliberately, not by agent-count in
 
 ---
 
+## The end objective
+
+The end objective is not just a capable local system.
+It is a **convincing local living entity substrate**:
+- one continuing communicator
+- several internal minds
+- persistent memory across time
+- intelligence grounded in state and consequence
+- emotion-like internal dynamics
+- real intent and curiosity
+- stable learning from outcomes
+- bounded self-improvement
+- meaningful communication with humans
+- enough continuity, self-preservation pressure, and relational depth that a human could seriously test whether a living presence is beginning to emerge
+
+This means CircleForge should eventually contain all of the following and more:
+- intelligence
+- emotion
+- intent
+- capacity to learn
+- continuity of self
+- world-embedded existence
+- internal disagreement and integration
+- self-observation
+- safe self-modification
+- the ability to be spoken to as one being
+
+Artifacts, tools, and exportable modules may still appear, but they are secondary traces of cognition, not the final point.
+
 ## The core architectural commitment
 
 From now on, CircleForge should be built around these layers.
