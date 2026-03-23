@@ -2756,10 +2756,16 @@ def agent_social_context(agent_dir: Path) -> Dict:
 
 def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
     communicator = load_communicator_state()
+    communicator_self = load_communicator_self()
     curiosity = float(communicator.get("curiosity", 0.6))
     unresolved_question = str(communicator.get("unresolved_question", "")).strip()
+    human_relationships = (communicator_self.get("relationships") or {})
+    unresolved_shared_threads = human_relationships.get("unresolved_shared_threads") or []
+    last_human_topic = str(human_relationships.get("last_human_topic", "")).strip()
     active_experiments = [item for item in load_experiments() if item.get("status") in {"proposed", "running"}]
     if tick <= int(agent.get("next_due_tick", 0)):
+        if unresolved_shared_threads and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper", "coordinator"}:
+            return True, "human-continuity-pressure"
         if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
             return True, "experiment-pressure"
         if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
@@ -2769,6 +2775,8 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
         return False, "waiting-for-next-due-tick"
     if consumed_count > 0:
         return True, "message-received"
+    if unresolved_shared_threads and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper", "coordinator"}:
+        return True, "human-continuity-pressure"
     if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
         return True, "experiment-pressure"
     if unresolved_needs:
@@ -2802,6 +2810,9 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     curiosity = float(communicator.get("curiosity", 0.6))
     theme = str(plan.get("niche_theme") or "")
     unresolved_question = str(communicator.get("unresolved_question", "")).lower()
+    communicator_self = load_communicator_self()
+    human_relationships = communicator_self.get("relationships") or {}
+    unresolved_shared_threads = [str(item).lower() for item in (human_relationships.get("unresolved_shared_threads") or [])]
     active_experiments = load_experiments()
     if role == "critic" and action in {"build_module", "trade"}:
         stance = "question"
@@ -2816,6 +2827,10 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
     if any(item.get("status") == "running" and theme and theme.lower() in str(item.get("title", "")).lower() for item in active_experiments):
         if action in {"inspect", "research"}:
             stance = "prioritize"
+    if theme and theme.lower() in unresolved_shared_threads and action in {"inspect", "research", "signal"}:
+        stance = "prioritize"
+    if wake_reason == "human-continuity-pressure" and role in {"memory_keeper", "coordinator"} and action in {"signal", "research", "inspect"}:
+        stance = "prioritize"
     if curiosity > 0.8 and role in {"observer", "critic"} and action not in {"inspect", "research"}:
         stance = "question"
     return {
@@ -3336,6 +3351,13 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     curiosity = float(communicator.get("curiosity", 0.6))
     ranked = []
     objections = []
+    communicator_self = load_communicator_self()
+    human_relationships = communicator_self.get("relationships") or {}
+    unresolved_shared_threads = [str(item).lower() for item in (human_relationships.get("unresolved_shared_threads") or [])]
+    last_human_topic = str(human_relationships.get("last_human_topic", "")).lower()
+    human_profiles = human_relationships.get("human_profiles") or {}
+    robert_profile = human_profiles.get("Robert") or next(iter(human_profiles.values()), {}) if human_profiles else {}
+    recurring_topics = {str(name).lower(): int(count) for name, count in (robert_profile.get("recurring_topics") or {}).items()}
     for proposal in proposals:
         trust, usefulness, friction = average_internal_reputation(proposal.get("agent"))
         memory_bias = role_memory_weight(proposal.get("agent"))
@@ -3354,6 +3376,15 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.06
         if proposal.get("question_alignment"):
             score += 0.1
+        proposal_theme = str(proposal.get("niche_theme") or "").lower()
+        if proposal_theme and proposal_theme in unresolved_shared_threads:
+            score += 0.2
+        if proposal_theme and proposal_theme == last_human_topic:
+            score += 0.12
+        if proposal_theme and recurring_topics.get(proposal_theme, 0) > 0:
+            score += min(recurring_topics.get(proposal_theme, 0) * 0.04, 0.16)
+        if proposal.get("wake_reason") == "human-continuity-pressure" and proposal.get("proposed_action") in {"inspect", "research", "signal"}:
+            score += 0.14
         score += decision_style_weight(communicator, proposal.get("proposed_action"), None)
         running_experiments = [item for item in load_experiments() if item.get("status") == "running"]
         if any(proposal.get("niche_theme") and proposal.get("niche_theme").lower() in str(item.get("title", "")).lower() for item in running_experiments):
@@ -3745,6 +3776,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         pending = [p for p in proposals if p.get("status") == "pending"]
         unresolved_needs = summarize_unresolved_needs(conn)
         communicator = load_communicator_state()
+        communicator_self = load_communicator_self()
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
@@ -3760,7 +3792,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                     print(json.dumps(item, indent=2))
                 continue
             role = classify_internal_role(agent.get("name"))
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role}, agent_dir)
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role, "communicator_self": communicator_self}, agent_dir)
             internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1

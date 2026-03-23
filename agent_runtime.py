@@ -192,6 +192,13 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
     board = world.get("opportunity_board") or load_opportunity_board()
     inbox = load_inbox(agent_dir)
     recent_notes = [note.lower() for note in load_notes(agent_dir)[-8:]]
+    communicator_self = world.get("communicator_self") or {}
+    relationships = communicator_self.get("relationships") or {}
+    human_profiles = relationships.get("human_profiles") or {}
+    unresolved_shared_threads = [str(item).lower() for item in (relationships.get("unresolved_shared_threads") or [])]
+    recent_human_messages = relationships.get("recent_human_messages") or []
+    robert_profile = human_profiles.get("Robert") or next(iter(human_profiles.values()), {}) if human_profiles else {}
+    recurring_topics = {str(name).lower(): int(count) for name, count in (robert_profile.get("recurring_topics") or {}).items()}
     themes = []
     theme_names = sorted(set(list(SEED_OPPORTUNITIES.keys()) + list((board.get("themes") or {}).keys())))
     for theme in theme_names:
@@ -213,6 +220,12 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
         unresolved_needs = world.get("unresolved_needs", []) or []
         if any(theme in str(item).lower() for item in unresolved_needs):
             score += 0.12
+        if theme.lower() in unresolved_shared_threads:
+            score += 0.22
+        if recurring_topics.get(theme.lower(), 0) > 0:
+            score += min(recurring_topics.get(theme.lower(), 0) * 0.05, 0.18)
+        recent_human_hits = sum(1 for item in recent_human_messages if theme.lower() in [str(topic).lower() for topic in (item.get("topics") or [])])
+        score += min(recent_human_hits * 0.06, 0.18)
         lifecycle = str(board_theme.get("lifecycle", "stable"))
         if lifecycle == "emergent":
             score += 0.03
@@ -255,11 +268,15 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
     work_items = world.get("work_items", []) or []
     experiments = world.get("experiments", []) or []
     communicator = world.get("communicator", {}) or {}
+    communicator_self = world.get("communicator_self", {}) or {}
     current_intent = str(communicator.get("current_intent", "")).lower()
     active_pursuit = str(communicator.get("active_pursuit", "")).lower()
     curiosity_target = str(communicator.get("curiosity_target", "")).lower()
     unresolved_question = str(communicator.get("unresolved_question", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
+    human_relationships = communicator_self.get("relationships", {}) or {}
+    unresolved_shared_threads = [str(item).lower() for item in (human_relationships.get("unresolved_shared_threads") or [])]
+    last_human_topic = str(human_relationships.get("last_human_topic", "")).lower()
     self_model = communicator.get("self_model", {}) or {}
     strengths = {str(item).lower() for item in (self_model.get("perceived_strengths") or [])}
     weaknesses = {str(item).lower() for item in (self_model.get("perceived_weaknesses") or [])}
@@ -293,6 +310,8 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         action = random.choice(["optimize", "research"])
     elif experiment_focus and random.random() < 0.55:
         action = random.choice(["inspect", "research", "optimize"])
+    elif unresolved_shared_threads and random.random() < 0.58:
+        action = random.choice(["inspect", "research", "signal"] if target else ["inspect", "research"])
     elif unresolved_question and random.random() < 0.42:
         action = random.choice(["inspect", "research"])
     elif curiosity > 0.8 and random.random() < 0.4:
@@ -345,6 +364,10 @@ def fallback_policy(agent: Dict[str, Any], world: Dict[str, Any], notes: List[st
         reason = f"responding to message from {newest.get('from', 'unknown')} about {newest.get('theme', 'shared need')}"
     elif experiment_focus and action in {"inspect", "research", "optimize"}:
         reason = f"following running experiment pressure around {communicator.get('active_pursuit')}"
+    elif unresolved_shared_threads and niche.get("niche_theme", "").lower() in unresolved_shared_threads and action in {"inspect", "research", "signal"}:
+        reason = f"following unresolved human continuity thread: {niche.get('niche_theme')}"
+    elif last_human_topic and niche.get("niche_theme", "").lower() in last_human_topic and action in {"inspect", "research", "signal"}:
+        reason = f"following last human topic: {human_relationships.get('last_human_topic')}"
     elif unresolved_question and niche.get("niche_theme", "").lower() in unresolved_question and action in {"inspect", "research"}:
         reason = f"following unresolved question: {communicator.get('unresolved_question')}"
     elif current_intent and (niche.get("niche_theme", "").lower() in current_intent or action in current_intent):
