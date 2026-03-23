@@ -3,13 +3,16 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import socket
 import subprocess
+import time
 import urllib.request
 from pathlib import Path
 from typing import Any
 
 from config import (
     BASE_DIR,
+    CIRCLEFORGE_FAILSAFE_DIR,
     CIRCLEFORGE_LLM_ENABLED,
     CIRCLEFORGE_LLM_PROVIDER,
     CIRCLEFORGE_LLM_MODEL,
@@ -174,8 +177,71 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     return _normalize(parsed, role, fallback, "embedded")
 
 
+def _embedded_server_base() -> str:
+    return os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_URL", "http://127.0.0.1:18081/v1").rstrip("/")
+
+
+def _embedded_server_host_port() -> tuple[str, int]:
+    base = _embedded_server_base()
+    without_scheme = base.split("://", 1)[-1]
+    host_port = without_scheme.split("/", 1)[0]
+    if ":" in host_port:
+        host, port = host_port.rsplit(":", 1)
+        return host, int(port)
+    return host_port, 80
+
+
+def _can_connect(host: str, port: int, timeout: float = 1.0) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _ensure_embedded_server() -> bool:
+    host, port = _embedded_server_host_port()
+    if _can_connect(host, port):
+        return True
+    llama_server = shutil.which("llama-server")
+    if not llama_server or not CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists():
+        return False
+    state_dir = CIRCLEFORGE_FAILSAFE_DIR
+    state_dir.mkdir(parents=True, exist_ok=True)
+    log_path = state_dir / "embedded-llama-server.log"
+    with open(log_path, "ab") as log_file:
+        subprocess.Popen(
+            [
+                llama_server,
+                "-m",
+                str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "-c",
+                "2048",
+                "-n",
+                str(max(CIRCLEFORGE_LLM_MAX_TOKENS, 128)),
+                "--threads",
+                os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_THREADS", "4"),
+            ],
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    for _ in range(30):
+        if _can_connect(host, port):
+            return True
+        time.sleep(1)
+    return False
+
+
 def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
-    server_base = os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_URL", "http://127.0.0.1:18081/v1").rstrip("/")
+    server_base = _embedded_server_base()
+    if not _ensure_embedded_server():
+        return fallback
     body = json.dumps({
         "model": Path(CIRCLEFORGE_EMBEDDED_MODEL_PATH).name,
         "messages": [
@@ -183,7 +249,7 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
             {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
         ],
         "temperature": CIRCLEFORGE_LLM_TEMPERATURE,
-        "max_tokens": CIRCLEFORGE_LLM_MAX_TOKENS,
+        "max_tokens": max(CIRCLEFORGE_LLM_MAX_TOKENS, 220),
         "response_format": {
             "type": "json_schema",
             "json_schema": {
@@ -208,14 +274,18 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=max(30, OLLAMA_TIMEOUT_SECONDS * 4)) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except Exception:
-        return fallback
-    content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}").strip()
-    parsed = json.loads(content)
-    return _normalize(parsed, role, fallback, "embedded")
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=max(30, OLLAMA_TIMEOUT_SECONDS * 4)) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}").strip()
+            parsed = json.loads(content)
+            return _normalize(parsed, role, fallback, "embedded")
+        except Exception:
+            if attempt == 2:
+                return fallback
+            time.sleep(2)
+    return fallback
 
 
 def _generate_via_embedded_cli(role: str, prompt: str, fallback: dict[str, Any]) -> dict[str, Any]:
@@ -280,6 +350,9 @@ def embedded_self_test() -> dict[str, Any]:
 def status() -> dict[str, Any]:
     provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
     llama_cli = shutil.which("llama-cli")
+    llama_server = shutil.which("llama-server")
+    server_host, server_port = _embedded_server_host_port()
+    server_reachable = _can_connect(server_host, server_port, timeout=0.5)
     llama_cpp_importable = False
     try:
         from llama_cpp import Llama  # type: ignore
@@ -296,12 +369,15 @@ def status() -> dict[str, Any]:
         "embedded_model_exists": CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists(),
         "embedded_llama_cpp_importable": llama_cpp_importable,
         "embedded_llama_cli": llama_cli or "",
+        "embedded_llama_server": llama_server or "",
+        "embedded_server_url": _embedded_server_base(),
+        "embedded_server_reachable": server_reachable,
         "openai_base_url": OPENAI_BASE_URL,
         "openai_configured": bool(OPENAI_API_KEY),
         "ollama_host": OLLAMA_HOST,
     }
     if provider == "embedded":
-        result["live"] = bool(result["embedded_model_exists"] and (llama_cpp_importable or llama_cli))
+        result["live"] = bool(result["embedded_model_exists"] and (llama_cpp_importable or server_reachable or llama_server or llama_cli))
     elif provider in {"openai", "openai_compatible", "oauth"}:
         result["live"] = bool(OPENAI_API_KEY)
     else:
