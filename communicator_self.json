@@ -27,11 +27,51 @@
     ]
   },
   "relationships": {
-    "human_salience": 0.6,
+    "human_salience": 0.65,
     "known_humans": [
       "Robert"
     ],
-    "last_human_topic": "backup confidence"
+    "last_human_topic": "CircleForge",
+    "human_profiles": {
+      "Robert": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "CircleForge",
+          "human continuity"
+        ],
+        "recurring_topics": {
+          "CircleForge": 1,
+          "human continuity": 1
+        },
+        "unresolved_shared_threads": [
+          "CircleForge",
+          "human continuity"
+        ],
+        "last_message_at": 1774265292,
+        "last_message_summary": "Continue CircleForge with the conversation-memory layer and human continuity.",
+        "relationship_summary": "Robert is a recurring human with 1 remembered exchanges around CircleForge, human continuity."
+      }
+    },
+    "recent_human_messages": [
+      {
+        "human": "Robert",
+        "topics": [
+          "CircleForge",
+          "human continuity"
+        ],
+        "message": "Continue CircleForge with the conversation-memory layer and human continuity.",
+        "response": "implemented memory structure",
+        "created_at": 1774265292,
+        "unresolved": true
+      }
+    ],
+    "unresolved_shared_threads": [
+      "CircleForge",
+      "human continuity"
+    ]
   },
   "active_concerns": [
     {
@@ -58,6 +98,16 @@
       "topic": "repeated friction around inspect",
       "weight": 0.4,
       "updated_at": 1774249310
+    },
+    {
+      "topic": "shared thread with Robert: CircleForge",
+      "weight": 0.52,
+      "updated_at": 1774265292
+    },
+    {
+      "topic": "shared thread with Robert: human continuity",
+      "weight": 0.52,
+      "updated_at": 1774265292
     }
   ],
   "evidence_profile": {
@@ -124,7 +174,8 @@
   },
   "narrative_state": {
     "self_story": "CircleForge is trying to remain continuous through practical_change, inquiry, coordination while learning from outcomes rather than self-flattery.",
-    "last_reflection": "backup confidence"
+    "last_reflection": "Robert: CircleForge",
+    "relationship_state": "Currently carrying 2 unresolved shared thread(s) with humans."
   },
-  "updated_at": 1774249310
+  "updated_at": 1774265292
 }

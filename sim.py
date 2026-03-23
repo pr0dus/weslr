@@ -236,6 +236,9 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "human_salience": 0.12,
             "known_humans": [],
             "last_human_topic": "",
+            "human_profiles": {},
+            "recent_human_messages": [],
+            "unresolved_shared_threads": [],
         },
         active_concerns=[],
         evidence_profile={
@@ -459,6 +462,9 @@ def load_communicator_self() -> dict:
             "human_salience": 0.1,
             "known_humans": [],
             "last_human_topic": "",
+            "human_profiles": {},
+            "recent_human_messages": [],
+            "unresolved_shared_threads": [],
         },
         active_concerns=[],
         evidence_profile={
@@ -2912,6 +2918,121 @@ def clamp01(value: float) -> float:
     return round(max(0.0, min(float(value), 0.99)), 3)
 
 
+def infer_human_topics(message: str) -> list[str]:
+    lowered = str(message or "").lower()
+    topics = []
+    keyword_map = {
+        "circleforge": "CircleForge",
+        "backup": "backup confidence",
+        "memory": "memory continuity",
+        "communicator": "communicator self",
+        "dashboard": "dashboard",
+        "agent": "internal minds",
+        "tester": "testers and feedback",
+        "feedback": "testers and feedback",
+        "github": "GitHub positioning",
+    }
+    for token, topic in keyword_map.items():
+        if token in lowered and topic not in topics:
+            topics.append(topic)
+    if not topics:
+        words = [word.strip(" ,.!?:;()[]{}\"'") for word in str(message or "").split()]
+        if words:
+            topics.append(" ".join(words[:4]).strip())
+    return topics[:4]
+
+
+def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = load_communicator_self()
+    relationships = self_state.setdefault("relationships", {})
+    relationships.setdefault("known_humans", [])
+    relationships.setdefault("human_profiles", {})
+    relationships.setdefault("recent_human_messages", [])
+    relationships.setdefault("unresolved_shared_threads", [])
+
+    human_name = (human_name or "human").strip() or "human"
+    if human_name not in relationships["known_humans"]:
+        relationships["known_humans"].append(human_name)
+
+    topic_list = [topic for topic in (topics or infer_human_topics(message)) if topic]
+    relationships["last_human_topic"] = topic_list[0] if topic_list else relationships.get("last_human_topic", "")
+    relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.03 + (0.01 * min(len(topic_list), 2)))
+
+    profile = relationships["human_profiles"].setdefault(human_name, {
+        "message_count": 0,
+        "salience": 0.2,
+        "trust": 0.2,
+        "attachment": 0.12,
+        "known_topics": [],
+        "recurring_topics": {},
+        "unresolved_shared_threads": [],
+        "last_message_at": 0,
+        "last_message_summary": "",
+        "relationship_summary": "",
+    })
+    profile["message_count"] = int(profile.get("message_count", 0)) + 1
+    profile["salience"] = clamp01(float(profile.get("salience", 0.2)) + 0.04)
+    profile["trust"] = clamp01(float(profile.get("trust", 0.2)) + 0.03)
+    profile["attachment"] = clamp01(float(profile.get("attachment", 0.12)) + 0.025)
+    profile["last_message_at"] = now_ts
+    profile["last_message_summary"] = (message or "")[:240]
+
+    for topic in topic_list:
+        if topic not in profile["known_topics"]:
+            profile["known_topics"].append(topic)
+        recurring = profile.setdefault("recurring_topics", {})
+        recurring[topic] = int(recurring.get(topic, 0)) + 1
+        if unresolved and topic not in profile["unresolved_shared_threads"]:
+            profile["unresolved_shared_threads"].append(topic)
+        if unresolved and topic not in relationships["unresolved_shared_threads"]:
+            relationships["unresolved_shared_threads"].append(topic)
+
+    profile["known_topics"] = profile.get("known_topics", [])[-12:]
+    profile["unresolved_shared_threads"] = profile.get("unresolved_shared_threads", [])[-8:]
+    relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
+    profile["relationship_summary"] = f"{human_name} is a recurring human with {profile['message_count']} remembered exchanges around {', '.join(profile['known_topics'][:3]) or 'shared context'}."
+
+    relationships["recent_human_messages"].append({
+        "human": human_name,
+        "topics": topic_list,
+        "message": (message or "")[:240],
+        "response": (response or "")[:240],
+        "created_at": now_ts,
+        "unresolved": unresolved,
+    })
+    relationships["recent_human_messages"] = relationships["recent_human_messages"][-12:]
+
+    concerns = list(self_state.get("active_concerns") or [])
+    for topic in topic_list[:3]:
+        concerns.append({"topic": f"shared thread with {human_name}: {topic}", "weight": 0.52 if unresolved else 0.34, "updated_at": now_ts})
+    deduped = {}
+    for concern in concerns:
+        topic = str(concern.get("topic", "")).strip()
+        if topic and (topic not in deduped or float(concern.get("updated_at", 0)) >= float(deduped[topic].get("updated_at", 0))):
+            deduped[topic] = concern
+    self_state["active_concerns"] = list(deduped.values())[-12:]
+
+    narrative = self_state.setdefault("narrative_state", {})
+    if topic_list:
+        narrative["last_reflection"] = f"{human_name}: {topic_list[0]}"
+        narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans."
+
+    self_state["updated_at"] = now_ts
+    save_communicator_self(self_state)
+
+    communicator = load_communicator_state()
+    if topic_list:
+        communicator["curiosity_target"] = topic_list[0]
+        communicator["active_pursuit"] = topic_list[0]
+        communicator["dominant_need"] = f"maintain continuity with {human_name} around {topic_list[0]}"
+    communicator["current_intent"] = f"maintain conversation continuity with {human_name}"
+    communicator["last_decision_summary"] = f"remembered human exchange with {human_name} about {topic_list[0] if topic_list else 'shared context'}"
+    communicator["updated_at"] = now_ts
+    save_communicator_state(communicator)
+    return self_state
+
+
 def normalize_concern_topic(value: str) -> str:
     text = str(value or "").strip()
     lowered = text.lower()
@@ -2959,9 +3080,39 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
 
     relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.004)
     relationships.setdefault("known_humans", [])
+    relationships.setdefault("human_profiles", {})
+    relationships.setdefault("recent_human_messages", [])
+    relationships.setdefault("unresolved_shared_threads", [])
     if "Robert" not in relationships["known_humans"]:
         relationships["known_humans"].append("Robert")
     relationships["last_human_topic"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
+    robert_profile = relationships["human_profiles"].setdefault("Robert", {
+        "message_count": 0,
+        "salience": 0.24,
+        "trust": 0.24,
+        "attachment": 0.16,
+        "known_topics": [],
+        "recurring_topics": {},
+        "unresolved_shared_threads": [],
+        "last_message_at": 0,
+        "last_message_summary": "",
+        "relationship_summary": "",
+    })
+    if chosen_theme:
+        if chosen_theme not in robert_profile["known_topics"]:
+            robert_profile["known_topics"].append(chosen_theme)
+        recurring = robert_profile.setdefault("recurring_topics", {})
+        recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
+        robert_profile["salience"] = clamp01(float(robert_profile.get("salience", 0.24)) + 0.01)
+        robert_profile["attachment"] = clamp01(float(robert_profile.get("attachment", 0.16)) + 0.008)
+        if chosen_theme not in robert_profile["unresolved_shared_threads"]:
+            robert_profile["unresolved_shared_threads"].append(chosen_theme)
+        if chosen_theme not in relationships["unresolved_shared_threads"]:
+            relationships["unresolved_shared_threads"].append(chosen_theme)
+    robert_profile["known_topics"] = robert_profile.get("known_topics", [])[-12:]
+    robert_profile["unresolved_shared_threads"] = robert_profile.get("unresolved_shared_threads", [])[-8:]
+    relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
+    robert_profile["relationship_summary"] = f"Robert is the primary human continuity anchor; current shared threads include {', '.join(robert_profile['known_topics'][:3]) or 'ongoing context'}."
 
     action_scores = evidence_profile.setdefault("outcome_weighted_actions", {})
     stable_traits = evidence_profile.setdefault("stable_traits", {})
@@ -4021,6 +4172,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "version": VERSION,
         "world": data.get("world"),
         "communicator": data.get("communicator"),
+        "communicator_self": data.get("communicator_self"),
         "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
@@ -4444,6 +4596,7 @@ def show_world() -> Dict:
         "messages": load_messages(),
         "public_memory": load_public_memory(),
         "communicator": load_communicator_state(),
+        "communicator_self": load_communicator_self(),
         "evaluation_metrics": load_evaluation_metrics(),
         "projects": load_projects(),
         "work_items": load_work_items(),

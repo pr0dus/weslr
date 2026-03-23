@@ -11,7 +11,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, load_communicator_state, load_evaluation_metrics, load_experiments, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, perform_tick, prepare_pack_offer, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, browse_queue, category_action, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, perform_tick, prepare_pack_offer, record_human_exchange, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -112,6 +112,14 @@ def cmd_world_objects(args):
 
 def cmd_communicator(_args):
     emit(load_communicator_state())
+
+
+def cmd_communicator_self(_args):
+    emit(load_communicator_self())
+
+
+def cmd_human_exchange(args):
+    emit(record_human_exchange(args.name, args.message, response=args.response, topics=args.topics, unresolved=not args.resolved))
 
 
 def cmd_eval_metrics(_args):
@@ -298,6 +306,17 @@ def main():
 
     p = sub.add_parser("communicator", help="show the visible communicator state")
     p.set_defaults(func=cmd_communicator)
+
+    p = sub.add_parser("communicator-self", help="show the slower communicator self / relationship continuity state")
+    p.set_defaults(func=cmd_communicator_self)
+
+    p = sub.add_parser("human-exchange", help="record a remembered human conversation exchange into communicator self")
+    p.add_argument("name")
+    p.add_argument("message")
+    p.add_argument("--response", default="")
+    p.add_argument("--topics", nargs="*", default=None)
+    p.add_argument("--resolved", action="store_true", help="mark the exchange as resolved instead of an open shared thread")
+    p.set_defaults(func=cmd_human_exchange)
 
     p = sub.add_parser("eval-metrics", help="show evaluation metrics for the future bounded autonomy gate")
     p.set_defaults(func=cmd_eval_metrics)

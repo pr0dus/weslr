@@ -22,6 +22,13 @@ Recommended rollback order:
 
 ## Releases
 
+### v0.0.96
+- communicator self now carries a real human-continuity structure instead of only scalar salience fields
+- remembered human exchanges can now be recorded into `communicator_self` with per-human profiles, recurring topics, recent messages, and unresolved shared threads
+- `communicator-self` and `human-exchange` CLI commands added so human conversation continuity can be inspected and updated explicitly
+- dashboard/world payloads now include `communicator_self` for downstream operator visibility
+
+
 ### v0.0.40
 - category-aware publishing templates
 - delivery-mode recommendations
