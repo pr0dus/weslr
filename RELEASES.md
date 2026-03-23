@@ -22,6 +22,29 @@ Recommended rollback order:
 
 ## Releases
 
+### v0.0.98
+- regulation layer extended with uncertainty brake, inhibition gain, adaptive speech threshold trace, and bounded self-tuning hooks
+- impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure
+- inspect/research-style actions gain weight when uncertainty is high, making the substrate more self-regulating under ambiguity
+- decision summaries now expose foreground role, speech threshold, uncertainty brake, and hazard bias for operator visibility
+- intended direction: let CircleForge regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
+
+### v0.0.97
+- embedded runtime path now works locally via bundled GGUF + Termux `llama.cpp` server flow
+- embedded runtime can auto-start its local model server and survive cold-start warmup
+- tick-time inner thoughts now route through the shared runtime adapter instead of a stale Ollama-only path
+- pressure-driven thought dynamics scaffold added with dynamic mind state, topic pressure, fatigue, activation, and hazard-style waking
+- foreground thought competition scaffold added so recent inner thoughts influence which role/action wins
+- communicator self-model now includes continuity commitments, regulation profile, contradictions, and explicit foreground traces
+- intended direction: move from rigid tick sim toward a guided, inspectable continuity substrate with bounded local cognition and regulation
+- key commits:
+  - `4455da4`
+  - `7767858`
+  - `88b69ff`
+  - `8d399a0`
+  - `95a1c71`
+  - `967cb3c`
+
 ### v0.0.96
 - communicator self now carries a real human-continuity structure instead of only scalar salience fields
 - remembered human exchanges can now be recorded into `communicator_self` with per-human profiles, recurring topics, recent messages, and unresolved shared threads

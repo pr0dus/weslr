@@ -3755,6 +3755,12 @@ def update_self_model(communicator: dict) -> None:
     regulation_profile["uncertainty_tolerance"] = round(min(0.95, max(0.1, 0.28 + float((self_state.get("dynamic_mind_state") or {}).get("uncertainty", 0.0)) * 0.45)), 3)
     regulation_profile["self_revision_readiness"] = round(min(0.95, max(0.1, 0.24 + len(caution_themes) * 0.03 + float((self_state.get("evidence_profile") or {}).get("stable_traits", {}).get("self_revision", 0.0)) * 0.5)), 3)
     regulation_profile["speech_threshold"] = round(min(0.95, max(0.2, 0.5 + (0.05 if unresolved_objections else 0.0) - float((self_state.get("relationships") or {}).get("human_salience", 0.0)) * 0.12)), 3)
+    regulation_profile["uncertainty_brake"] = round(min(0.95, max(0.05, float((self_state.get("dynamic_mind_state") or {}).get("uncertainty", 0.0)) * (1.0 - regulation_profile["impulse_control"] * 0.5))), 3)
+    regulation_profile["inhibition_gain"] = round(min(0.95, max(0.05, 0.22 + len(unresolved_objections) * 0.04 + float((self_state.get("dynamic_mind_state") or {}).get("tension", 0.0)) * 0.18)), 3)
+    regulation_profile["mode"] = str((self_state.get("dynamic_mind_state") or {}).get("mode", "engaged"))
+    self_model.setdefault("self_tuning", {})["hazard_bias"] = round(max(-0.25, min(0.25, 0.08 - regulation_profile["uncertainty_brake"] * 0.12 + regulation_profile["impulse_control"] * 0.06)), 3)
+    self_model.setdefault("self_tuning", {})["speech_threshold_delta"] = round(max(-0.15, min(0.15, (0.55 - regulation_profile["speech_threshold"]) * 0.4)), 3)
+    self_model.setdefault("self_tuning", {})["inhibition_delta"] = round(max(-0.15, min(0.15, regulation_profile["inhibition_gain"] * 0.12 - 0.05)), 3)
     contradictions = [item for item in contradictions if item]
     if strengths and weaknesses and any(item in strengths for item in weaknesses[:2]):
         contradictions.append("same action appears in both strengths and weaknesses; evidence still unstable")
@@ -3798,6 +3804,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
 
     previous_intent = str(communicator.get("current_intent", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
+    self_model = communicator.get("self_model") or {}
+    regulation = self_model.get("regulation_profile") or {}
+    self_tuning = self_model.get("self_tuning") or {}
     ranked = []
     objections = []
     communicator_self = load_communicator_self()
@@ -3871,6 +3880,13 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         if proposal.get("role") == "critic" and proposal.get("stance") == "question":
             score -= 0.08 - min(usefulness * 0.06, 0.05)
             objections.append(f"critic:{proposal.get('reason')}")
+        if proposal.get("role") == "communicator":
+            score -= float(regulation.get("speech_threshold", 0.5)) * 0.16
+        if proposal.get("proposed_action") in {"build_module", "trade", "optimize"}:
+            score -= float(regulation.get("uncertainty_brake", 0.0)) * 0.24
+        if proposal.get("proposed_action") in {"inspect", "research"}:
+            score += float(regulation.get("uncertainty_brake", 0.0)) * 0.08
+        score += float(self_tuning.get("hazard_bias", 0.0)) * 0.12
         proposal["epistemic_weight"] = {"trust": trust, "usefulness": usefulness, "friction": friction, "memory_bias": round(memory_bias, 3), "score": round(score, 3)}
         ranked.append((score, proposal))
     ranked.sort(key=lambda item: item[0], reverse=True)
@@ -3893,6 +3909,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     elif disagreement_count >= 2 and curiosity < 0.7:
         final_action = None
         decision_mode = "defer"
+    if float(regulation.get("uncertainty_brake", 0.0)) >= 0.32 and chosen.get("proposed_action") in {"build_module", "trade", "optimize"}:
+        final_action = "inspect"
+        decision_mode = "uncertainty-brake"
 
     if disagreement_count >= 1 and chosen.get("proposed_action") in {"optimize", "build_module", "trade"} and inspect_first_boost > 0.045:
         final_action = "inspect"
@@ -3964,7 +3983,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["question_history"] = question_history[-16:]
     communicator["unresolved_objections"] = (objections or list(communicator.get("unresolved_objections") or []))[-8:]
     regulation = (communicator.get("self_model") or {}).get("regulation_profile") or {}
-    communicator["last_decision_summary"] = f"{communicator.get('last_decision_summary', '')}; foreground={str((dominant_thought or {}).get('role') or 'none')}:{round(dominant_thought_score, 3)}; speech_threshold={regulation.get('speech_threshold', 'n/a')}"
+    tuning = (communicator.get("self_model") or {}).get("self_tuning") or {}
+    communicator["last_decision_summary"] = f"{communicator.get('last_decision_summary', '')}; foreground={str((dominant_thought or {}).get('role') or 'none')}:{round(dominant_thought_score, 3)}; speech_threshold={regulation.get('speech_threshold', 'n/a')}; uncertainty_brake={regulation.get('uncertainty_brake', 'n/a')}; hazard_bias={tuning.get('hazard_bias', 'n/a')}"
     save_communicator_state(communicator)
     return {
         "current_intent": communicator.get("current_intent"),

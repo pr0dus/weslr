@@ -1,8 +1,8 @@
 # CircleForge
 
-> A local artificial-life substrate for one persistent communicator with internal minds, memory, intention, curiosity, learning, and world-driven behavior.
+> A local artificial-life substrate for one persistent communicator with internal minds, memory, intention, curiosity, learning, self-modeling, regulation, and world-driven behavior.
 
-**CircleForge v0.0.91** is evolving toward a stronger end objective: a **local living-entity substrate** that a human can speak to over time — not mainly a tool factory, not mainly a prompt shell, and not mainly a marketplace artifact generator.
+**CircleForge v0.0.98** is evolving toward a stronger end objective: a **local living-entity substrate** that a human can speak to over time — not mainly a tool factory, not mainly a prompt shell, and not mainly a marketplace artifact generator.
 
 CircleForge should be understood primarily as:
 - one visible communicator / one continuing entity
@@ -27,46 +27,45 @@ Live GitHub discussion:
 ## Current core
 
 CircleForge currently includes:
-- persistent agents
-- 60-second ticks
-- local-model decisions via Ollama fallback flow
-- inspect / trade actions
-- artifact metadata
-- lifecycle stages
-- quality dimensions
+- one visible communicator / one continuing entity
+- five recurring internal functions:
+  - observer
+  - builder
+  - critic
+  - communicator
+  - memory_keeper
+- persistent communicator self + human continuity memory
+- local relationship/thread continuity with shared-topic pressure
+- bounded embedded local cognition via bundled GGUF + local `llama.cpp` server path
+- automatic embedded runtime startup with fallback-safe behavior
+- pressure-driven wake scaffold with irregular hazard-style waking
+- foreground thought competition scaffold
+- early self-model / regulation scaffold
+- inspect / trade / signal / research actions
+- world memory, needs, projects, relationships, and experiments
+- artifact metadata and lineage
 - review + export flow
 - category governance
-- artifact packs
-- simple lineage fields
-- uncategorized handling
-- dormant-category detection
-- market-evolution signals
-- emergent uncategorized groups
-- practical artifact families
-- richer export packaging
-- failure-driven demand signals
-- pack scoring and ranking
-- release-candidate packs
-- commercial qualification signals
-- sellability scoring
-- operator browsing and explanations
-- publishable pack wrappers and handoff summaries
-- category-aware templates and delivery modes
-- proof-weighted monetization signals
-- external validation outcomes
-- clickable dashboard drill-down navigation
-- persistent dashboard event log
-- lightweight dashboard auto-refresh/watch loop
-- explainability split between internal strength and external proof
-- pack offer brief generation and weak-proof pack reporting
+- pack/opportunity/sellability layers
+- operator dashboard and rollback discipline
 
-## New in v0.0.42
+## Recent direction update
 
-- external validation state tracked per artifact
-- real usage, buyer-fit, acceptance, rejection, and revision outcomes
-- validation-aware monetization scoring
-- CLI support for recording external validation events
-- stronger bridge from internal evidence to real-world fit
+Recent work has shifted CircleForge more decisively toward a **continuing local being substrate** rather than a simulation-heavy artifact factory.
+
+The most important recent changes:
+- embedded local cognition now works through a local `llama-server` path with `Qwen2.5-0.5B-Instruct` GGUF
+- embedded runtime can auto-start instead of depending on a manually started model server
+- tick-time inner-thought persistence now routes through the shared runtime adapter correctly
+- pressure/hazard thought dynamics scaffold added
+- foreground thought competition scaffold added
+- communicator self-model now carries early regulation/continuity fields
+- human continuity threads continue to shape wake pressure and ongoing intent
+
+Current safety frame:
+- external failsafe exists outside the editable substrate
+- CircleForge is expected to run under **GUIDED** mode by default
+- deeper self-modification should remain bounded, auditable, and reversible
 
 ## Installation
 
