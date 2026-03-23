@@ -3066,66 +3066,7 @@ def build_role_context(role: str, agent: Dict, plan: Dict, wake_reason: str, com
 
 
 def generate_llm_inner_thought(role: str, context: dict) -> dict:
-    fallback_summary = f"{role} woke on {context.get('wake_reason', 'unknown')} around {context.get('proposed_theme') or context.get('active_pursuit') or 'current continuity pressure'}."
-    fallback = {
-        "kind": "inner_thought",
-        "role": role,
-        "summary": fallback_summary,
-        "concern": context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "continuity",
-        "intent": context.get("proposed_action") or "reflect",
-        "should_speak": role == "communicator",
-        "self_mod_hint": "consider tiny additive change" if role == "builder" else "",
-        "source": "fallback",
-    }
-    if not CIRCLEFORGE_LLM_ENABLED:
-        return fallback
-    prompt = {
-        "task": "Generate one compact structured inner thought for a waking internal role inside one persistent being.",
-        "constraints": [
-            "Return strict JSON only.",
-            "Keep summary short.",
-            "Do not roleplay as a separate assistant.",
-            "Think as one internal function of a continuing local being.",
-        ],
-        "output_schema": {
-            "summary": "short string",
-            "concern": "short string",
-            "intent": "short string",
-            "should_speak": True,
-            "self_mod_hint": "short string"
-        },
-        "context": context,
-    }
-    body = json.dumps({
-        "model": os.getenv("OLLAMA_MODEL", "qwen2.5:3b"),
-        "prompt": json.dumps(prompt, ensure_ascii=False),
-        "stream": False,
-        "format": "json",
-        "options": {"temperature": 0.6, "num_predict": 180},
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        f"{os.getenv('OLLAMA_HOST', 'http://127.0.0.1:11434').rstrip('/')}/api/generate",
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "12"))) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-            raw = payload.get("response", "{}")
-            parsed = json.loads(raw)
-            return {
-                "kind": "inner_thought",
-                "role": role,
-                "summary": str(parsed.get("summary") or fallback["summary"])[:240],
-                "concern": str(parsed.get("concern") or fallback["concern"])[:160],
-                "intent": str(parsed.get("intent") or fallback["intent"])[:160],
-                "should_speak": bool(parsed.get("should_speak")),
-                "self_mod_hint": str(parsed.get("self_mod_hint") or "")[:160],
-                "source": "ollama",
-            }
-    except Exception:
-        return fallback
+    return runtime_generate_inner_thought(role, context)
 
 
 def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communicator: dict) -> dict:
