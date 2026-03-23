@@ -153,10 +153,14 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     model_path = CIRCLEFORGE_EMBEDDED_MODEL_PATH
     if not model_path.exists():
         return fallback
-    prompt = json.dumps(_prompt(build_role_context(context)), ensure_ascii=False)
+    prompt_payload = _prompt(build_role_context(context))
+    prompt = json.dumps(prompt_payload, ensure_ascii=False)
     try:
         from llama_cpp import Llama  # type: ignore
     except Exception:
+        server_result = _generate_via_embedded_server(role, prompt_payload, fallback)
+        if server_result.get("provider") == "embedded":
+            return server_result
         return _generate_via_embedded_cli(role, prompt, fallback)
     llm = Llama(model_path=str(model_path), n_ctx=2048, verbose=False)
     out = llm.create_completion(
@@ -167,6 +171,50 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     )
     text = ((out.get("choices") or [{}])[0].get("text") or "{}").strip()
     parsed = json.loads(text)
+    return _normalize(parsed, role, fallback, "embedded")
+
+
+def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    server_base = os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_URL", "http://127.0.0.1:18081/v1").rstrip("/")
+    body = json.dumps({
+        "model": Path(CIRCLEFORGE_EMBEDDED_MODEL_PATH).name,
+        "messages": [
+            {"role": "system", "content": "Return strict JSON only."},
+            {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
+        ],
+        "temperature": CIRCLEFORGE_LLM_TEMPERATURE,
+        "max_tokens": CIRCLEFORGE_LLM_MAX_TOKENS,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "inner_thought",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "summary": {"type": "string"},
+                        "concern": {"type": "string"},
+                        "intent": {"type": "string"},
+                        "should_speak": {"type": "boolean"},
+                        "self_mod_hint": {"type": "string"},
+                    },
+                    "required": ["summary", "concern", "intent", "should_speak", "self_mod_hint"],
+                },
+            },
+        },
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{server_base}/chat/completions",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=max(30, OLLAMA_TIMEOUT_SECONDS * 4)) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return fallback
+    content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}").strip()
+    parsed = json.loads(content)
     return _normalize(parsed, role, fallback, "embedded")
 
 
