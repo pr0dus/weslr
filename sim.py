@@ -3625,13 +3625,15 @@ def update_self_model(communicator: dict) -> None:
 
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
     communicator = load_communicator_state()
+    communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
+    recent_thoughts = list(communicator_self.get("inner_thoughts") or [])[-12:]
     if not proposals:
         communicator["status"] = "idle"
         communicator["last_wake_at"] = now_ts
         communicator["updated_at"] = now_ts
         communicator["last_decision_summary"] = "no internal proposals this cycle"
         save_communicator_state(communicator)
-        return {"current_intent": communicator.get("current_intent"), "chosen_action": None, "consensus": []}
+        return {"current_intent": communicator.get("current_intent"), "chosen_action": None, "consensus": [], "recent_thoughts_used": len(recent_thoughts)}
 
     previous_intent = str(communicator.get("current_intent", "")).lower()
     curiosity = float(communicator.get("curiosity", 0.6))
@@ -3644,13 +3646,24 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     human_profiles = human_relationships.get("human_profiles") or {}
     robert_profile = human_profiles.get("Robert") or next(iter(human_profiles.values()), {}) if human_profiles else {}
     recurring_topics = {str(name).lower(): int(count) for name, count in (robert_profile.get("recurring_topics") or {}).items()}
+    thought_theme_counts = {}
+    thought_speak_votes = 0
+    thought_self_mod_hints = []
+    for thought in recent_thoughts:
+        theme = str(thought.get("theme") or thought.get("concern") or "").lower().strip()
+        if theme:
+            thought_theme_counts[theme] = thought_theme_counts.get(theme, 0) + 1
+        if thought.get("should_speak"):
+            thought_speak_votes += 1
+        if thought.get("self_mod_hint"):
+            thought_self_mod_hints.append(str(thought.get("self_mod_hint")))
     for proposal in proposals:
         trust, usefulness, friction = average_internal_reputation(proposal.get("agent"))
         memory_bias = role_memory_weight(proposal.get("agent"))
         score = 0.5 + (trust - 0.5) * 0.25 + (usefulness - 0.5) * 0.35 - friction * 0.25 + memory_bias
         if proposal.get("stance") in {"support", "prioritize"}:
             score += 0.18
-        if proposal.get("role") == "coordinator":
+        if proposal.get("role") == "communicator":
             score += 0.14
         if proposal.get("wake_reason") == "message-received":
             score += 0.08
@@ -3669,6 +3682,10 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.12
         if proposal_theme and recurring_topics.get(proposal_theme, 0) > 0:
             score += min(recurring_topics.get(proposal_theme, 0) * 0.04, 0.16)
+        if proposal_theme and thought_theme_counts.get(proposal_theme, 0) > 0:
+            score += min(thought_theme_counts.get(proposal_theme, 0) * 0.05, 0.2)
+        if proposal.get("role") == "communicator" and thought_speak_votes > 0:
+            score += min(thought_speak_votes * 0.03, 0.12)
         if proposal.get("wake_reason") == "human-continuity-pressure" and proposal.get("proposed_action") in {"inspect", "research", "signal"}:
             score += 0.14
         score += decision_style_weight(communicator, proposal.get("proposed_action"), None)
@@ -3731,6 +3748,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     human_relationships = communicator_self.get("relationships") or {}
     open_threads = list(sorted((human_relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
     active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    dominant_thought = next((t for t in reversed(recent_thoughts) if str(t.get("role")) in {"communicator", "memory_keeper", "observer"}), None)
+    if dominant_thought and dominant_thought.get("summary"):
+        intent_text = f"{intent_text} | inner pull: {str(dominant_thought.get('summary'))[:120]}"
     communicator["current_intent"] = intent_text
     communicator["active_pursuit"] = chosen.get("niche_theme") or communicator.get("active_pursuit") or "world enrichment"
     communicator["dominant_need"] = unresolved_needs[0] if unresolved_needs else (chosen.get("niche_theme") or "")
@@ -3779,6 +3799,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         "chosen_theme": chosen.get("niche_theme"),
         "decision_mode": decision_mode,
         "consensus": proposals,
+        "recent_thoughts_used": len(recent_thoughts),
     }
 
 
@@ -4106,6 +4127,10 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             save_note(agent_dir, f"tick {tick}: {result.summary}")
             if role == "builder" and result.action in {"build_module", "optimize"} and result.status == "ok":
                 save_note(agent_dir, f"builder-memory theme={plan.get('niche_theme') or 'unknown'} action={result.action} useful_artifact={result.artifact or result.module or 'none'}")
+                self_state = load_communicator_self()
+                recent_builder_hints = [str(t.get('self_mod_hint', '')) for t in (self_state.get('inner_thoughts') or [])[-8:] if str(t.get('role')) == 'builder' and t.get('self_mod_hint')]
+                if recent_builder_hints:
+                    save_note(agent_dir, f"builder-self-mod-hints: {' | '.join(recent_builder_hints[:3])}")
             elif role == "coordinator" and result.action in {"signal", "inspect"}:
                 save_note(agent_dir, f"coordinator-memory action={result.action} target={result.target or 'none'} wake={wake_reason}")
             elif role == "memory_keeper" and result.action in {"research", "inspect", "rest"}:
@@ -4971,20 +4996,31 @@ def build_communicator_message() -> dict:
     self_state = load_communicator_self()
     narrative = self_state.get("narrative_state") or {}
     relationships = self_state.get("relationships") or {}
+    thoughts = list(self_state.get("inner_thoughts") or [])[-8:]
     threads = relationships.get("conversation_threads") or {}
     open_threads = list(sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
     active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    dominant_comm_thought = next((t for t in reversed(thoughts) if str(t.get("role")) == "communicator"), None)
+    dominant_memory_thought = next((t for t in reversed(thoughts) if str(t.get("role")) == "memory_keeper"), None)
     if active_thread:
         topic, thread = active_thread
         human_name = str(thread.get("human", "human"))
         impulse = narrative.get("follow_up_impulse") or f"follow up on {topic}"
-        message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. Right now my pull is to {impulse}"
+        if dominant_comm_thought and dominant_comm_thought.get("summary"):
+            message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. {str(dominant_comm_thought.get('summary'))[:160]} Right now my pull is to {impulse}"
+            source = "inner_thoughts+communicator_self.narrative_state"
+        else:
+            message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. Right now my pull is to {impulse}"
+            source = "communicator_self.narrative_state"
         tone = "continuity-aware"
         audience = human_name
     else:
         message = f"Current intent: {communicator.get('current_intent') or 'continue the world'}. No active shared human thread is dominating the communicator right now."
+        if dominant_memory_thought and dominant_memory_thought.get("summary"):
+            message += f" Inner note: {str(dominant_memory_thought.get('summary'))[:140]}"
         tone = "status"
         audience = "operator"
+        source = "communicator_state+inner_thoughts"
     return {
         "message": message,
         "audience": audience,
@@ -4992,7 +5028,8 @@ def build_communicator_message() -> dict:
         "active_thread": active_thread[0] if active_thread else None,
         "why_it_matters": narrative.get("why_it_matters", ""),
         "follow_up_impulse": narrative.get("follow_up_impulse", ""),
-        "source": "communicator_self.narrative_state",
+        "thought_fragments": [str(t.get("summary", ""))[:120] for t in thoughts[-3:]],
+        "source": source,
         "generated_at": int(time.time()),
     }
 
