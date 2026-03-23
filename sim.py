@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
+import random
 import shutil
 import sqlite3
 import time
+import urllib.error
+import urllib.request
 from html import escape
 from pathlib import Path
 from typing import Dict, List
@@ -16,6 +20,9 @@ from config import (
     CATEGORY_PROPOSALS_PATH,
     CATEGORY_PROPOSAL_COST,
     CATEGORY_REJECTION_REPUTATION_PENALTY,
+    CIRCLEFORGE_LLM_ENABLED,
+    CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
+    CIRCLEFORGE_WAKE_RANDOMNESS,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -2766,36 +2773,72 @@ def agent_social_context(agent_dir: Path) -> Dict:
 
 def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresolved_needs: list[str]) -> tuple[bool, str]:
     communicator = load_communicator_state()
-    communicator_self = load_communicator_self()
+    communicator_self = ensure_internal_role_state(load_communicator_self())
     curiosity = float(communicator.get("curiosity", 0.6))
     unresolved_question = str(communicator.get("unresolved_question", "")).strip()
     human_relationships = (communicator_self.get("relationships") or {})
     unresolved_shared_threads = human_relationships.get("unresolved_shared_threads") or []
-    last_human_topic = str(human_relationships.get("last_human_topic", "")).strip()
     active_experiments = [item for item in load_experiments() if item.get("status") in {"proposed", "running"}]
-    if tick <= int(agent.get("next_due_tick", 0)):
-        if unresolved_shared_threads and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper", "coordinator"}:
-            return True, "human-continuity-pressure"
-        if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
-            return True, "experiment-pressure"
-        if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
-            return True, "question-pressure"
-        if curiosity > 0.82 and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic"}:
-            return True, "curiosity-pressure"
-        return False, "waiting-for-next-due-tick"
+    role = classify_internal_role(agent.get("name", "agent"))
+    role_state = (communicator_self.get("internal_role_state") or {}).get(role, {})
+    if tick < int(role_state.get("suppressed_until_tick", 0)):
+        return False, "refractory-rest"
+    pressure = float(INTERNAL_ROLE_SPECS.get(role, {}).get("baseline_wake_chance", 0.14))
+    wake_reason = "random-drift"
     if consumed_count > 0:
-        return True, "message-received"
-    if unresolved_shared_threads and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper", "coordinator"}:
-        return True, "human-continuity-pressure"
-    if active_experiments and classify_internal_role(agent.get("name", "agent")) in {"observer", "critic", "memory_keeper"}:
-        return True, "experiment-pressure"
-    if unresolved_needs:
-        return True, "unresolved-need-pressure"
-    if unresolved_question and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
-        return True, "question-pressure"
-    if curiosity > 0.76 and classify_internal_role(agent.get("name", "agent")) in {"observer", "memory_keeper", "critic"}:
-        return True, "curiosity-pressure"
-    return True, "scheduled-cadence"
+        pressure += 0.5
+        wake_reason = "message-received"
+    if unresolved_shared_threads and role in {"observer", "critic", "memory_keeper", "communicator"}:
+        pressure += 0.28
+        wake_reason = "human-continuity-pressure"
+    if active_experiments and role in {"observer", "critic", "memory_keeper", "builder"}:
+        pressure += 0.16
+        wake_reason = "experiment-pressure"
+    if unresolved_needs and role in {"observer", "critic", "builder", "communicator"}:
+        pressure += 0.12
+        wake_reason = "unresolved-need-pressure"
+    if unresolved_question and role in {"observer", "memory_keeper", "critic"}:
+        pressure += 0.15
+        wake_reason = "question-pressure"
+    if curiosity > 0.76 and role in {"observer", "memory_keeper", "critic", "communicator"}:
+        pressure += 0.1
+        wake_reason = "curiosity-pressure"
+    if tick >= int(agent.get("next_due_tick", 0)):
+        pressure += 0.12
+        wake_reason = "scheduled-cadence"
+    threshold = max(0.08, min(0.95, pressure + random.uniform(-CIRCLEFORGE_WAKE_RANDOMNESS, CIRCLEFORGE_WAKE_RANDOMNESS)))
+    if random.random() <= threshold:
+        return True, wake_reason
+    return False, "waiting-for-pressure"
+
+
+INTERNAL_ROLE_SPECS = {
+    "observer": {
+        "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+        "baseline_wake_chance": 0.22,
+        "refractory_ticks": 1,
+    },
+    "builder": {
+        "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+        "baseline_wake_chance": 0.16,
+        "refractory_ticks": 2,
+    },
+    "critic": {
+        "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+        "baseline_wake_chance": 0.18,
+        "refractory_ticks": 1,
+    },
+    "communicator": {
+        "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+        "baseline_wake_chance": 0.2,
+        "refractory_ticks": 1,
+    },
+    "memory_keeper": {
+        "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+        "baseline_wake_chance": 0.24,
+        "refractory_ticks": 1,
+    },
+}
 
 
 def classify_internal_role(agent_name: str) -> str:
@@ -2804,10 +2847,129 @@ def classify_internal_role(agent_name: str) -> str:
         1: "observer",
         2: "builder",
         3: "critic",
-        4: "coordinator",
+        4: "communicator",
         5: "memory_keeper",
     }
     return mapping.get(suffix, "specialist")
+
+
+def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    role_state = self_state.setdefault("internal_role_state", {})
+    for role, spec in INTERNAL_ROLE_SPECS.items():
+        role_state.setdefault(role, {
+            "purpose": spec["purpose"],
+            "baseline_wake_chance": spec["baseline_wake_chance"],
+            "refractory_ticks": spec["refractory_ticks"],
+            "last_wake_tick": 0,
+            "last_wake_at": 0,
+            "last_wake_reason": "bootstrap",
+            "last_thought_summary": "",
+            "wake_count": 0,
+            "suppressed_until_tick": 0,
+        })
+    self_state.setdefault("inner_thoughts", [])
+    self_state.setdefault("llm_adapter", {
+        "enabled": CIRCLEFORGE_LLM_ENABLED,
+        "provider": "ollama",
+        "model": "local-small",
+        "last_error": "",
+        "last_success_at": 0,
+    })
+    self_state["updated_at"] = now_ts
+    return self_state
+
+
+def build_role_context(role: str, agent: Dict, plan: Dict, wake_reason: str, communicator: dict, communicator_self: dict) -> dict:
+    narrative = communicator_self.get("narrative_state") or {}
+    relationships = communicator_self.get("relationships") or {}
+    threads = relationships.get("conversation_threads") or {}
+    open_threads = list(sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))[:3]
+    context = {
+        "role": role,
+        "purpose": INTERNAL_ROLE_SPECS.get(role, {}).get("purpose", "internal function"),
+        "wake_reason": wake_reason,
+        "current_intent": communicator.get("current_intent", ""),
+        "active_pursuit": communicator.get("active_pursuit", ""),
+        "unresolved_question": communicator.get("unresolved_question", ""),
+        "proposed_action": plan.get("action"),
+        "proposed_theme": plan.get("niche_theme"),
+        "proposed_reason": plan.get("reason"),
+        "active_thread_summary": narrative.get("active_thread_summary", ""),
+        "follow_up_impulse": narrative.get("follow_up_impulse", ""),
+        "why_it_matters": narrative.get("why_it_matters", ""),
+        "unresolved_shared_threads": (relationships.get("unresolved_shared_threads") or [])[:6],
+        "recent_thread_topics": [name for name, _payload in open_threads],
+        "agent_name": agent.get("name"),
+    }
+    serialized = json.dumps(context, ensure_ascii=False)
+    if len(serialized) > CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS:
+        context["proposed_reason"] = str(context.get("proposed_reason", ""))[:240]
+        context["why_it_matters"] = str(context.get("why_it_matters", ""))[:240]
+    return context
+
+
+def generate_llm_inner_thought(role: str, context: dict) -> dict:
+    fallback_summary = f"{role} woke on {context.get('wake_reason', 'unknown')} around {context.get('proposed_theme') or context.get('active_pursuit') or 'current continuity pressure'}."
+    fallback = {
+        "kind": "inner_thought",
+        "role": role,
+        "summary": fallback_summary,
+        "concern": context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "continuity",
+        "intent": context.get("proposed_action") or "reflect",
+        "should_speak": role == "communicator",
+        "self_mod_hint": "consider tiny additive change" if role == "builder" else "",
+        "source": "fallback",
+    }
+    if not CIRCLEFORGE_LLM_ENABLED:
+        return fallback
+    prompt = {
+        "task": "Generate one compact structured inner thought for a waking internal role inside one persistent being.",
+        "constraints": [
+            "Return strict JSON only.",
+            "Keep summary short.",
+            "Do not roleplay as a separate assistant.",
+            "Think as one internal function of a continuing local being.",
+        ],
+        "output_schema": {
+            "summary": "short string",
+            "concern": "short string",
+            "intent": "short string",
+            "should_speak": True,
+            "self_mod_hint": "short string"
+        },
+        "context": context,
+    }
+    body = json.dumps({
+        "model": os.getenv("OLLAMA_MODEL", "qwen2.5:3b"),
+        "prompt": json.dumps(prompt, ensure_ascii=False),
+        "stream": False,
+        "format": "json",
+        "options": {"temperature": 0.6, "num_predict": 180},
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{os.getenv('OLLAMA_HOST', 'http://127.0.0.1:11434').rstrip('/')}/api/generate",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "12"))) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+            raw = payload.get("response", "{}")
+            parsed = json.loads(raw)
+            return {
+                "kind": "inner_thought",
+                "role": role,
+                "summary": str(parsed.get("summary") or fallback["summary"])[:240],
+                "concern": str(parsed.get("concern") or fallback["concern"])[:160],
+                "intent": str(parsed.get("intent") or fallback["intent"])[:160],
+                "should_speak": bool(parsed.get("should_speak")),
+                "self_mod_hint": str(parsed.get("self_mod_hint") or "")[:160],
+                "source": "ollama",
+            }
+    except Exception:
+        return fallback
 
 
 def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communicator: dict) -> dict:
@@ -2839,7 +3001,7 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
             stance = "prioritize"
     if theme and theme.lower() in unresolved_shared_threads and action in {"inspect", "research", "signal"}:
         stance = "prioritize"
-    if wake_reason == "human-continuity-pressure" and role in {"memory_keeper", "coordinator"} and action in {"signal", "research", "inspect"}:
+    if wake_reason == "human-continuity-pressure" and role in {"memory_keeper", "communicator"} and action in {"signal", "research", "inspect"}:
         stance = "prioritize"
     if curiosity > 0.8 and role in {"observer", "critic"} and action not in {"inspect", "research"}:
         stance = "question"
@@ -2856,6 +3018,42 @@ def propose_internal_thought(agent: Dict, plan: Dict, wake_reason: str, communic
         "curiosity_alignment": theme.lower() in curiosity_target if theme else False,
         "question_alignment": theme.lower() in unresolved_question if theme else False,
     }
+
+
+def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int, now_ts: int) -> dict:
+    communicator = load_communicator_state()
+    self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
+    role = classify_internal_role(agent.get("name", "agent"))
+    context = build_role_context(role, agent, plan, wake_reason, communicator, self_state)
+    thought = generate_llm_inner_thought(role, context)
+    thought.update({
+        "agent": agent.get("name"),
+        "tick": tick,
+        "created_at": now_ts,
+        "wake_reason": wake_reason,
+        "theme": plan.get("niche_theme") or communicator.get("active_pursuit") or "continuity",
+    })
+    thoughts = list(self_state.get("inner_thoughts") or [])
+    thoughts.append(thought)
+    self_state["inner_thoughts"] = thoughts[-40:]
+    role_state = ensure_internal_role_state(self_state, now_ts=now_ts).get("internal_role_state", {}).get(role, {})
+    role_state["last_wake_tick"] = tick
+    role_state["last_wake_at"] = now_ts
+    role_state["last_wake_reason"] = wake_reason
+    role_state["last_thought_summary"] = str(thought.get("summary", ""))[:240]
+    role_state["wake_count"] = int(role_state.get("wake_count", 0)) + 1
+    role_state["suppressed_until_tick"] = tick + int(INTERNAL_ROLE_SPECS.get(role, {}).get("refractory_ticks", 1))
+    adapter = self_state.setdefault("llm_adapter", {})
+    if thought.get("source") == "ollama":
+        adapter["last_success_at"] = now_ts
+        adapter["last_error"] = ""
+        adapter["enabled"] = True
+    else:
+        adapter["enabled"] = CIRCLEFORGE_LLM_ENABLED
+        if CIRCLEFORGE_LLM_ENABLED:
+            adapter["last_error"] = adapter.get("last_error") or "llm unavailable or fallback used"
+    save_communicator_self(self_state)
+    return thought
 
 
 def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: str | None) -> tuple[str, bool]:
@@ -2969,7 +3167,7 @@ def infer_human_topics(message: str) -> list[str]:
 
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
-    self_state = load_communicator_self()
+    self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
     relationships = self_state.setdefault("relationships", {})
     relationships.setdefault("known_humans", [])
     relationships.setdefault("human_profiles", {})
@@ -3111,7 +3309,7 @@ def normalize_concern_topic(value: str) -> str:
 
 
 def update_communicator_self_from_tick(communicator: dict, summaries: list[dict], communicator_decision: dict, now_ts: int) -> dict:
-    self_state = load_communicator_self()
+    self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
     affect = self_state.setdefault("affect", {})
     continuity = self_state.setdefault("continuity", {})
     relationships = self_state.setdefault("relationships", {})
@@ -3876,7 +4074,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         pending = [p for p in proposals if p.get("status") == "pending"]
         unresolved_needs = summarize_unresolved_needs(conn)
         communicator = load_communicator_state()
-        communicator_self = load_communicator_self()
+        communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
@@ -3893,6 +4091,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 continue
             role = classify_internal_role(agent.get("name"))
             plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role, "communicator_self": communicator_self}, agent_dir)
+            register_inner_thought(agent, plan, wake_reason, tick, started_at)
             internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
             agent["energy"] += result.energy_delta - 1
@@ -4852,6 +5051,7 @@ def show_world() -> Dict:
         "communicator": load_communicator_state(),
         "communicator_self": load_communicator_self(),
         "communicator_message": build_communicator_message(),
+        "inner_thoughts": (load_communicator_self().get("inner_thoughts") or [])[-12:],
         "evaluation_metrics": load_evaluation_metrics(),
         "projects": load_projects(),
         "work_items": load_work_items(),
