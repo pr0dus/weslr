@@ -292,6 +292,9 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "perceived_weaknesses": ["shallow evidence", "limited self-knowledge"],
             "preferred_modes": ["inspect", "research"],
             "caution_themes": ["reckless action before clarity"],
+            "continuity_commitments": ["preserve meaningful unfinished threads", "prefer reversible change over blind rupture"],
+            "regulation_profile": {"impulse_control": 0.42, "uncertainty_tolerance": 0.38, "self_revision_readiness": 0.34, "speech_threshold": 0.52},
+            "contradictions": [],
             "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
             "long_term_beliefs": {"strengths": ["continuity", "inquiry", "internal coordination"], "weaknesses": ["shallow evidence", "limited self-knowledge"], "modes": ["inspect", "research"], "themes": {}},
             "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}, "themes": {}},
@@ -437,6 +440,9 @@ def load_communicator_state() -> dict:
             "perceived_weaknesses": [],
             "preferred_modes": [],
             "caution_themes": [],
+            "continuity_commitments": ["preserve meaningful unfinished threads", "prefer reversible change over blind rupture"],
+            "regulation_profile": {"impulse_control": 0.38, "uncertainty_tolerance": 0.34, "self_revision_readiness": 0.3, "speech_threshold": 0.54},
+            "contradictions": [],
             "short_term_signals": {"strengths": [], "weaknesses": [], "modes": []},
             "long_term_beliefs": {"strengths": [], "weaknesses": [], "modes": [], "themes": {}},
             "belief_confidence": {"strengths": {}, "weaknesses": {}, "modes": {}, "themes": {}},
@@ -3593,6 +3599,39 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     return self_state
 
 
+def thought_foreground_score(thought: dict, communicator: dict, communicator_self: dict) -> float:
+    role = str(thought.get("role") or "")
+    summary = str(thought.get("summary") or "")
+    concern = str(thought.get("concern") or "")
+    theme = str(thought.get("theme") or thought.get("concern") or "").lower().strip()
+    relationships = communicator_self.get("relationships") or {}
+    unresolved_threads = [str(item).lower() for item in (relationships.get("unresolved_shared_threads") or [])]
+    active_pursuit = str(communicator.get("active_pursuit") or "").lower()
+    unresolved_question = str(communicator.get("unresolved_question") or "").lower()
+    score = 0.18
+    if thought.get("provider") != "fallback":
+        score += 0.08
+    if thought.get("should_speak"):
+        score += 0.08
+    if role == "communicator":
+        score += 0.12
+    elif role == "memory_keeper":
+        score += 0.1
+    elif role == "critic":
+        score += 0.06
+    if theme and theme in unresolved_threads:
+        score += 0.18
+    if theme and active_pursuit and theme in active_pursuit:
+        score += 0.1
+    if theme and unresolved_question and theme in unresolved_question:
+        score += 0.08
+    if len(summary) > 24:
+        score += 0.05
+    if len(concern) > 12:
+        score += 0.04
+    return round(score, 4)
+
+
 def update_self_model(communicator: dict) -> None:
     self_model = communicator.get("self_model") or {}
     decision_memory = communicator.get("decision_style_memory") or {}
@@ -3602,6 +3641,9 @@ def update_self_model(communicator: dict) -> None:
     evidence_actions = self_evidence.get("actions", {}) or {}
     caution_themes = list(self_model.get("caution_themes") or [])
     belief_confidence = self_model.get("belief_confidence") or {"strengths": {}, "weaknesses": {}, "modes": {}}
+    regulation_profile = self_model.get("regulation_profile") or {"impulse_control": 0.4, "uncertainty_tolerance": 0.35, "self_revision_readiness": 0.3, "speech_threshold": 0.54}
+    continuity_commitments = list(self_model.get("continuity_commitments") or [])
+    contradictions = list(self_model.get("contradictions") or [])
     strength_conf = belief_confidence.setdefault("strengths", {})
     weakness_conf = belief_confidence.setdefault("weaknesses", {})
     mode_conf = belief_confidence.setdefault("modes", {})
@@ -3682,6 +3724,8 @@ def update_self_model(communicator: dict) -> None:
         current_self_description += "; increasingly protective of continuity"
     if float(affect.get("tension", 0.0)) >= 0.55:
         current_self_description += "; under visible tension"
+    if float((self_state.get("dynamic_mind_state") or {}).get("uncertainty", 0.0)) >= 0.55:
+        current_self_description += "; actively regulating around uncertainty"
 
     theme_beliefs = {}
     theme_conf = belief_confidence.setdefault("themes", {})
@@ -3703,10 +3747,24 @@ def update_self_model(communicator: dict) -> None:
         if theme_actions:
             theme_beliefs[theme] = theme_actions[:4]
 
+    if unresolved_objections and "hold action when inner objections cluster" not in continuity_commitments:
+        continuity_commitments.append("hold action when inner objections cluster")
+    if float(preservation.get("memory_protection", 0.0)) >= 0.24 and "protect continuity-relevant memory traces" not in continuity_commitments:
+        continuity_commitments.append("protect continuity-relevant memory traces")
+    regulation_profile["impulse_control"] = round(min(0.95, max(0.1, 0.32 + len(preferred_modes) * 0.04 + (0.08 if unresolved_objections else 0.0))), 3)
+    regulation_profile["uncertainty_tolerance"] = round(min(0.95, max(0.1, 0.28 + float((self_state.get("dynamic_mind_state") or {}).get("uncertainty", 0.0)) * 0.45)), 3)
+    regulation_profile["self_revision_readiness"] = round(min(0.95, max(0.1, 0.24 + len(caution_themes) * 0.03 + float((self_state.get("evidence_profile") or {}).get("stable_traits", {}).get("self_revision", 0.0)) * 0.5)), 3)
+    regulation_profile["speech_threshold"] = round(min(0.95, max(0.2, 0.5 + (0.05 if unresolved_objections else 0.0) - float((self_state.get("relationships") or {}).get("human_salience", 0.0)) * 0.12)), 3)
+    contradictions = [item for item in contradictions if item]
+    if strengths and weaknesses and any(item in strengths for item in weaknesses[:2]):
+        contradictions.append("same action appears in both strengths and weaknesses; evidence still unstable")
     self_model["current_self_description"] = current_self_description
     self_model["perceived_strengths"] = strengths[:6]
     self_model["perceived_weaknesses"] = weaknesses[:6]
     self_model["preferred_modes"] = preferred_modes[:6]
+    self_model["continuity_commitments"] = continuity_commitments[-8:]
+    self_model["regulation_profile"] = regulation_profile
+    self_model["contradictions"] = contradictions[-8:]
     self_model["short_term_signals"] = {"strengths": sorted(set(short_strengths))[:8], "weaknesses": sorted(set(short_weaknesses))[:8], "modes": sorted(set(short_modes))[:8]}
     self_model["long_term_beliefs"] = {
         "strengths": strengths[:8],
@@ -3752,6 +3810,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     thought_theme_counts = {}
     thought_speak_votes = 0
     thought_self_mod_hints = []
+    thought_role_pressure = {}
+    foreground_candidates = []
     for thought in recent_thoughts:
         theme = str(thought.get("theme") or thought.get("concern") or "").lower().strip()
         if theme:
@@ -3760,6 +3820,12 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             thought_speak_votes += 1
         if thought.get("self_mod_hint"):
             thought_self_mod_hints.append(str(thought.get("self_mod_hint")))
+        role_name = str(thought.get("role") or "")
+        thought_role_pressure[role_name] = max(thought_role_pressure.get(role_name, 0.0), thought_foreground_score(thought, communicator, communicator_self))
+        foreground_candidates.append((thought_foreground_score(thought, communicator, communicator_self), thought))
+    foreground_candidates.sort(key=lambda item: item[0], reverse=True)
+    dominant_thought = foreground_candidates[0][1] if foreground_candidates else None
+    dominant_thought_score = foreground_candidates[0][0] if foreground_candidates else 0.0
     for proposal in proposals:
         trust, usefulness, friction = average_internal_reputation(proposal.get("agent"))
         memory_bias = role_memory_weight(proposal.get("agent"))
@@ -3789,6 +3855,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += min(thought_theme_counts.get(proposal_theme, 0) * 0.05, 0.2)
         if proposal.get("role") == "communicator" and thought_speak_votes > 0:
             score += min(thought_speak_votes * 0.03, 0.12)
+        score += min(thought_role_pressure.get(str(proposal.get("role") or ""), 0.0) * 0.18, 0.22)
+        if dominant_thought and str(dominant_thought.get("role") or "") == str(proposal.get("role") or ""):
+            score += min(dominant_thought_score * 0.16, 0.18)
         if proposal.get("wake_reason") == "human-continuity-pressure" and proposal.get("proposed_action") in {"inspect", "research", "signal"}:
             score += 0.14
         score += decision_style_weight(communicator, proposal.get("proposed_action"), None)
@@ -3851,7 +3920,6 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     human_relationships = communicator_self.get("relationships") or {}
     open_threads = list(sorted((human_relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
     active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
-    dominant_thought = next((t for t in reversed(recent_thoughts) if str(t.get("role")) in {"communicator", "memory_keeper", "observer"}), None)
     if dominant_thought and dominant_thought.get("summary"):
         intent_text = f"{intent_text} | inner pull: {str(dominant_thought.get('summary'))[:120]}"
     communicator["current_intent"] = intent_text
@@ -3895,6 +3963,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     question_history.append(next_question)
     communicator["question_history"] = question_history[-16:]
     communicator["unresolved_objections"] = (objections or list(communicator.get("unresolved_objections") or []))[-8:]
+    regulation = (communicator.get("self_model") or {}).get("regulation_profile") or {}
+    communicator["last_decision_summary"] = f"{communicator.get('last_decision_summary', '')}; foreground={str((dominant_thought or {}).get('role') or 'none')}:{round(dominant_thought_score, 3)}; speech_threshold={regulation.get('speech_threshold', 'n/a')}"
     save_communicator_state(communicator)
     return {
         "current_intent": communicator.get("current_intent"),
@@ -3903,6 +3973,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         "decision_mode": decision_mode,
         "consensus": proposals,
         "recent_thoughts_used": len(recent_thoughts),
+        "foreground_role": (dominant_thought or {}).get("role"),
+        "foreground_score": round(dominant_thought_score, 3),
     }
 
 
