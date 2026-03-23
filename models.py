@@ -187,3 +187,20 @@ class ExperimentState:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class CommunicatorSelfState:
+    identity_anchor: str
+    core_drives: List[str]
+    affect: Dict[str, Any]
+    continuity: Dict[str, Any]
+    relationships: Dict[str, Any]
+    active_concerns: List[Dict[str, Any]]
+    evidence_profile: Dict[str, Any]
+    self_preservation_signals: Dict[str, Any]
+    narrative_state: Dict[str, Any]
+    updated_at: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

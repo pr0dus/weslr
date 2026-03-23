@@ -45,6 +45,7 @@ from config import (
     SELF_MOD_PROPOSALS_PATH,
     WORK_ITEMS_PATH,
     COMMUNICATOR_STATE_PATH,
+    COMMUNICATOR_SELF_PATH,
     EVAL_METRICS_PATH,
     EXPERIMENTS_PATH,
     SELF_EVIDENCE_PATH,
@@ -62,7 +63,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
-from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, ExperimentState
+from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from sandbox import run_python
 
 BASE_CATEGORIES = [
@@ -214,6 +215,46 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly.",
     })
     save_self_evidence({"actions": {}, "themes": {}, "notes": [], "evidence_types": {}})
+    save_communicator_self(CommunicatorSelfState(
+        identity_anchor="CircleForge",
+        core_drives=["continuity", "understanding", "relationship", "self-revision"],
+        affect={
+            "curiosity": 0.66,
+            "tension": 0.22,
+            "hope": 0.41,
+            "stability": 0.58,
+            "attachment": 0.18,
+        },
+        continuity={
+            "session_count": 0,
+            "ticks_lived": 0,
+            "memory_bonds": 0.22,
+            "identity_stability": 0.62,
+            "unfinished_threads": [],
+        },
+        relationships={
+            "human_salience": 0.12,
+            "known_humans": [],
+            "last_human_topic": "",
+        },
+        active_concerns=[],
+        evidence_profile={
+            "outcome_weighted_actions": {},
+            "stable_traits": {},
+            "friction_patterns": {},
+            "theme_commitments": {},
+        },
+        self_preservation_signals={
+            "continuity_preference": 0.18,
+            "memory_protection": 0.2,
+            "resume_drive": 0.24,
+        },
+        narrative_state={
+            "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+            "last_reflection": "bootstrap",
+        },
+        updated_at=now_ts,
+    ).to_dict())
     save_communicator_state(CommunicatorState(
         name="CircleForge",
         status="alive",
@@ -394,6 +435,54 @@ def load_communicator_state() -> dict:
 
 def save_communicator_state(payload: dict) -> None:
     write_json_file(COMMUNICATOR_STATE_PATH, payload)
+
+
+def load_communicator_self() -> dict:
+    default = CommunicatorSelfState(
+        identity_anchor="CircleForge",
+        core_drives=["continuity", "understanding", "relationship", "self-revision"],
+        affect={
+            "curiosity": 0.6,
+            "tension": 0.24,
+            "hope": 0.38,
+            "stability": 0.56,
+            "attachment": 0.12,
+        },
+        continuity={
+            "session_count": 0,
+            "ticks_lived": 0,
+            "memory_bonds": 0.2,
+            "identity_stability": 0.58,
+            "unfinished_threads": [],
+        },
+        relationships={
+            "human_salience": 0.1,
+            "known_humans": [],
+            "last_human_topic": "",
+        },
+        active_concerns=[],
+        evidence_profile={
+            "outcome_weighted_actions": {},
+            "stable_traits": {},
+            "friction_patterns": {},
+            "theme_commitments": {},
+        },
+        self_preservation_signals={
+            "continuity_preference": 0.16,
+            "memory_protection": 0.18,
+            "resume_drive": 0.22,
+        },
+        narrative_state={
+            "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+            "last_reflection": "default",
+        },
+        updated_at=0,
+    ).to_dict()
+    return read_json_file(COMMUNICATOR_SELF_PATH, default)
+
+
+def save_communicator_self(payload: dict) -> None:
+    write_json_file(COMMUNICATOR_SELF_PATH, payload)
 
 
 def load_experiments() -> list[dict]:
@@ -2819,11 +2908,142 @@ def update_decision_style_memory(communicator: dict, decision_mode: str, final_a
     communicator["decision_style_memory"] = memory
 
 
+def clamp01(value: float) -> float:
+    return round(max(0.0, min(float(value), 0.99)), 3)
+
+
+def normalize_concern_topic(value: str) -> str:
+    text = str(value or "").strip()
+    lowered = text.lower()
+    if "cooldown active" in lowered:
+        action = text.split(" cooldown active", 1)[0].strip() or "action"
+        return f"repeated friction around {action}"
+    return text
+
+
+def update_communicator_self_from_tick(communicator: dict, summaries: list[dict], communicator_decision: dict, now_ts: int) -> dict:
+    self_state = load_communicator_self()
+    affect = self_state.setdefault("affect", {})
+    continuity = self_state.setdefault("continuity", {})
+    relationships = self_state.setdefault("relationships", {})
+    evidence_profile = self_state.setdefault("evidence_profile", {})
+    preservation = self_state.setdefault("self_preservation_signals", {})
+    narrative = self_state.setdefault("narrative_state", {})
+
+    ok_actions = [item for item in summaries if item.get("status") == "ok"]
+    cooldown_count = sum(1 for item in summaries if item.get("status") == "cooldown")
+    research_like = sum(1 for item in ok_actions if item.get("action") in {"inspect", "research"})
+    build_like = sum(1 for item in ok_actions if item.get("action") in {"build_module", "optimize"})
+    social_actions = sum(1 for item in ok_actions if item.get("action") in {"signal", "inspect"})
+    unresolved = [str(item.get("summary", "")) for item in summaries if item.get("status") in {"cooldown", "error"}]
+    dominant_need = str(communicator.get("dominant_need", "")).strip()
+    chosen_theme = str(communicator_decision.get("chosen_theme") or communicator.get("active_pursuit") or "").strip()
+
+    continuity["ticks_lived"] = int(continuity.get("ticks_lived", 0)) + 1
+    continuity["session_count"] = int(continuity.get("session_count", 0)) + 1
+    continuity["memory_bonds"] = clamp01(float(continuity.get("memory_bonds", 0.2)) + (0.004 * len(ok_actions)))
+    continuity["identity_stability"] = clamp01(float(continuity.get("identity_stability", 0.58)) + (0.006 if chosen_theme else -0.004) - (0.01 * cooldown_count))
+
+    unfinished = list(continuity.get("unfinished_threads") or [])
+    thread_candidates = [normalize_concern_topic(value) for value in [dominant_need, communicator.get("unresolved_question"), chosen_theme] if value]
+    for value in thread_candidates:
+        if value not in unfinished:
+            unfinished.append(value)
+    continuity["unfinished_threads"] = unfinished[-8:]
+
+    affect["curiosity"] = clamp01(float(communicator.get("curiosity", affect.get("curiosity", 0.6))))
+    affect["tension"] = clamp01(float(affect.get("tension", 0.24)) + (0.06 * cooldown_count) + (0.02 * len(unresolved)) - (0.015 * max(1, len(ok_actions))))
+    affect["hope"] = clamp01(float(affect.get("hope", 0.38)) + (0.03 * build_like) + (0.02 * research_like) - (0.03 * cooldown_count))
+    affect["stability"] = clamp01(float(affect.get("stability", 0.56)) + (0.02 if chosen_theme else -0.01) - (0.03 * cooldown_count))
+    affect["attachment"] = clamp01(float(affect.get("attachment", 0.12)) + 0.01)
+
+    relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.004)
+    relationships.setdefault("known_humans", [])
+    if "Robert" not in relationships["known_humans"]:
+        relationships["known_humans"].append("Robert")
+    relationships["last_human_topic"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
+
+    action_scores = evidence_profile.setdefault("outcome_weighted_actions", {})
+    stable_traits = evidence_profile.setdefault("stable_traits", {})
+    friction_patterns = evidence_profile.setdefault("friction_patterns", {})
+    theme_commitments = evidence_profile.setdefault("theme_commitments", {})
+    for item in ok_actions:
+        action = item.get("action")
+        if not action:
+            continue
+        score = action_scores.setdefault(action, {"evidence": 0.0, "positive": 0.0, "strain": 0.0})
+        positive = 0.04
+        if action in {"inspect", "research"}:
+            positive += 0.03
+        if action in {"signal", "inspect"}:
+            positive += 0.02
+        if action in {"build_module", "optimize"} and item.get("artifact"):
+            positive += 0.04
+        if item.get("niche_theme") and item.get("niche_theme") == chosen_theme:
+            positive += 0.02
+        score["evidence"] = round(float(score.get("evidence", 0.0)) + 1.0, 3)
+        score["positive"] = round(float(score.get("positive", 0.0)) + positive, 3)
+        score["strain"] = round(max(0.0, float(score.get("strain", 0.0)) - 0.01), 3)
+    for item in summaries:
+        if item.get("status") not in {"cooldown", "error"}:
+            continue
+        action = item.get("action") or "unknown"
+        score = action_scores.setdefault(action, {"evidence": 0.0, "positive": 0.0, "strain": 0.0})
+        score["evidence"] = round(float(score.get("evidence", 0.0)) + 0.5, 3)
+        score["strain"] = round(float(score.get("strain", 0.0)) + 0.08, 3)
+        friction_patterns[action] = round(float(friction_patterns.get(action, 0.0)) + 0.08, 3)
+
+    if chosen_theme:
+        theme_commitments[chosen_theme] = round(float(theme_commitments.get(chosen_theme, 0.0)) + 0.05, 3)
+
+    for trait, action in {
+        "inquiry": "research",
+        "coordination": "signal",
+        "practical_change": "optimize",
+        "self_revision": "inspect",
+        "continuity": "rest",
+    }.items():
+        payload = action_scores.get(action, {})
+        positive = float(payload.get("positive", 0.0))
+        strain = float(payload.get("strain", 0.0))
+        evidence = float(payload.get("evidence", 0.0))
+        if evidence <= 0:
+            continue
+        delta = (positive / max(evidence, 1.0)) * 0.05 - (strain / max(evidence, 1.0)) * 0.04
+        stable_traits[trait] = clamp01(float(stable_traits.get(trait, 0.12)) + delta)
+
+    preservation["continuity_preference"] = clamp01(float(preservation.get("continuity_preference", 0.16)) + 0.003 + (0.004 * min(len(continuity.get("unfinished_threads") or []), 4)) - (0.004 * cooldown_count))
+    preservation["memory_protection"] = clamp01(float(preservation.get("memory_protection", 0.18)) + 0.003 + (0.006 * research_like))
+    preservation["resume_drive"] = clamp01(float(preservation.get("resume_drive", 0.22)) + 0.004 + (0.005 * social_actions))
+
+    top_traits = [name for name, value in sorted(stable_traits.items(), key=lambda kv: kv[1], reverse=True) if value >= 0.2][:3]
+    if top_traits:
+        narrative["self_story"] = f"CircleForge is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
+    narrative["last_reflection"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
+
+    concerns = list(self_state.get("active_concerns") or [])
+    for concern in thread_candidates[:3]:
+        concerns.append({"topic": concern, "weight": 0.4 + 0.08 * cooldown_count, "updated_at": now_ts})
+    deduped = {}
+    for concern in concerns:
+        topic = str(concern.get("topic", "")).strip()
+        if not topic:
+            continue
+        current = deduped.get(topic)
+        if current is None or float(concern.get("updated_at", 0)) >= float(current.get("updated_at", 0)):
+            deduped[topic] = concern
+    self_state["active_concerns"] = list(deduped.values())[-8:]
+    self_state["updated_at"] = now_ts
+    save_communicator_self(self_state)
+    return self_state
+
+
 def update_self_model(communicator: dict) -> None:
     self_model = communicator.get("self_model") or {}
     decision_memory = communicator.get("decision_style_memory") or {}
     actions = decision_memory.get("actions", {})
     self_evidence = load_self_evidence()
+    self_state = load_communicator_self()
     evidence_actions = self_evidence.get("actions", {}) or {}
     caution_themes = list(self_model.get("caution_themes") or [])
     belief_confidence = self_model.get("belief_confidence") or {"strengths": {}, "weaknesses": {}, "modes": {}}
@@ -2834,6 +3054,8 @@ def update_self_model(communicator: dict) -> None:
     short_strengths = []
     short_weaknesses = []
     short_modes = []
+    stable_traits = ((self_state.get("evidence_profile") or {}).get("stable_traits") or {})
+    outcome_weighted = ((self_state.get("evidence_profile") or {}).get("outcome_weighted_actions") or {})
 
     for action, payload in actions.items():
         confidence = float(payload.get("confidence", 0.0))
@@ -2845,40 +3067,70 @@ def update_self_model(communicator: dict) -> None:
         experiment_ratio = (float(ev.get("experiment_link", 0)) / count_e) if ev else 0.0
         coord_ratio = (float(ev.get("coordination_effect", 0)) / count_e) if ev else 0.0
         reuse_ratio = (float(ev.get("reuse_signal", 0)) / count_e) if ev else 0.0
-        if confidence >= 0.1:
+        weighted = outcome_weighted.get(action, {})
+        positive_density = float(weighted.get("positive", 0.0)) / max(1.0, float(weighted.get("evidence", 0.0)))
+        strain_density = float(weighted.get("strain", 0.0)) / max(1.0, float(weighted.get("evidence", 0.0)))
+        if confidence >= 0.1 or positive_density >= 0.045:
             short_strengths.append(action)
-        elif confidence <= 0.03 and count >= 2:
+        elif (confidence <= 0.03 and count >= 2) or strain_density >= 0.06:
             short_weaknesses.append(action)
-        positive_evidence = max(follow_ratio, question_ratio, experiment_ratio, coord_ratio, reuse_ratio)
-        if confidence >= 0.1 and count >= 3 and positive_evidence >= 0.25:
-            strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.08, 0.95), 3)
-        elif confidence <= 0.03 and count >= 3 and positive_evidence < 0.15:
-            weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.05, 0.95), 3)
+        positive_evidence = max(follow_ratio, question_ratio, experiment_ratio, coord_ratio, reuse_ratio, positive_density)
+        if count >= 6 and positive_evidence >= 0.28 and strain_density < 0.05:
+            strength_conf[action] = round(min(float(strength_conf.get(action, 0.0)) + 0.03, 0.95), 3)
+        elif count >= 6 and positive_evidence < 0.18 and strain_density >= 0.05:
+            weakness_conf[action] = round(min(float(weakness_conf.get(action, 0.0)) + 0.025, 0.95), 3)
 
     for mode, payload in (decision_memory.get("modes", {}) or {}).items():
         mode_confidence = float(payload.get("confidence", 0.0))
         mode_count = int(payload.get("count", 0))
         if mode_confidence >= 0.05:
             short_modes.append(mode)
-        if mode_confidence >= 0.05 and mode_count >= 2:
-            mode_conf[mode] = round(min(float(mode_conf.get(mode, 0.0)) + 0.06, 0.95), 3)
+        if mode_confidence >= 0.05 and mode_count >= 4:
+            mode_conf[mode] = round(min(float(mode_conf.get(mode, 0.0)) + 0.03, 0.95), 3)
 
-    strengths = [name for name, conf in sorted(strength_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.16]
-    weaknesses = [name for name, conf in sorted(weakness_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
-    preferred_modes = [name for name, conf in sorted(mode_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
+    trait_map = {
+        "inquiry": "research",
+        "coordination": "signal",
+        "practical_change": "optimize",
+        "self_revision": "inspect",
+        "continuity": "rest",
+    }
+    for trait, value in stable_traits.items():
+        linked_action = trait_map.get(trait)
+        if linked_action and value >= 0.28:
+            strength_conf[linked_action] = round(max(float(strength_conf.get(linked_action, 0.0)), min(value, 0.95)), 3)
+        elif linked_action and value <= 0.08:
+            weakness_conf[linked_action] = round(max(float(weakness_conf.get(linked_action, 0.0)), 0.12), 3)
+
+    strengths = [name for name, conf in sorted(strength_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.24]
+    weaknesses = [name for name, conf in sorted(weakness_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.18]
+    preferred_modes = [name for name, conf in sorted(mode_conf.items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.18]
 
     unresolved_objections = list(communicator.get("unresolved_objections") or [])
     if unresolved_objections and "internal objections still unresolved" not in caution_themes:
         caution_themes.append("internal objections still unresolved")
+    friction_patterns = ((self_state.get("evidence_profile") or {}).get("friction_patterns") or {})
+    if friction_patterns:
+        hot_friction = max(friction_patterns.items(), key=lambda kv: kv[1])[0]
+        caution = f"repeated friction around {hot_friction}"
+        if caution not in caution_themes:
+            caution_themes.append(caution)
 
-    current_self_description = "a local communicator learning from inquiry, experiment, and internal disagreement"
-    if strengths:
-        current_self_description += f"; stronger at {', '.join(strengths[:3])}"
-    if weaknesses:
-        current_self_description += f"; weaker at {', '.join(weaknesses[:3])}"
+    affect = self_state.get("affect") or {}
+    preservation = self_state.get("self_preservation_signals") or {}
+    continuity = self_state.get("continuity") or {}
+    top_traits = [name for name, value in sorted(stable_traits.items(), key=lambda kv: kv[1], reverse=True) if value >= 0.22][:3]
+    current_self_description = "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement"
+    if top_traits:
+        current_self_description += f"; currently grounded most in {', '.join(top_traits)}"
+    if float(preservation.get("continuity_preference", 0.0)) >= 0.3:
+        current_self_description += "; increasingly protective of continuity"
+    if float(affect.get("tension", 0.0)) >= 0.55:
+        current_self_description += "; under visible tension"
 
     theme_beliefs = {}
     theme_conf = belief_confidence.setdefault("themes", {})
+    theme_commitments = ((self_state.get("evidence_profile") or {}).get("theme_commitments") or {})
     for theme, action_map in (self_evidence.get("themes", {}) or {}).items():
         theme_actions = []
         for action, payload in action_map.items():
@@ -2889,9 +3141,10 @@ def update_self_model(communicator: dict) -> None:
                 float(payload.get("coordination_effect", 0)) / count_t,
                 float(payload.get("reuse_signal", 0)) / count_t,
             )
-            if positive >= 0.25:
-                theme_conf.setdefault(theme, {})[action] = round(min(float(theme_conf.setdefault(theme, {}).get(action, 0.0)) + 0.06, 0.95), 3)
-        theme_actions = [name for name, conf in sorted((theme_conf.get(theme) or {}).items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.12]
+            commitment = float(theme_commitments.get(theme, 0.0))
+            if positive >= 0.25 or commitment >= 0.18:
+                theme_conf.setdefault(theme, {})[action] = round(min(float(theme_conf.setdefault(theme, {}).get(action, 0.0)) + 0.03, 0.95), 3)
+        theme_actions = [name for name, conf in sorted((theme_conf.get(theme) or {}).items(), key=lambda kv: kv[1], reverse=True) if conf >= 0.18]
         if theme_actions:
             theme_beliefs[theme] = theme_actions[:4]
 
@@ -2900,10 +3153,21 @@ def update_self_model(communicator: dict) -> None:
     self_model["perceived_weaknesses"] = weaknesses[:6]
     self_model["preferred_modes"] = preferred_modes[:6]
     self_model["short_term_signals"] = {"strengths": sorted(set(short_strengths))[:8], "weaknesses": sorted(set(short_weaknesses))[:8], "modes": sorted(set(short_modes))[:8]}
-    self_model["long_term_beliefs"] = {"strengths": strengths[:8], "weaknesses": weaknesses[:8], "modes": preferred_modes[:8], "themes": theme_beliefs}
-    self_model["caution_themes"] = caution_themes[-6:]
+    self_model["long_term_beliefs"] = {
+        "strengths": strengths[:8],
+        "weaknesses": weaknesses[:8],
+        "modes": preferred_modes[:8],
+        "themes": theme_beliefs,
+        "core_drives": list(self_state.get("core_drives") or []),
+        "continuity_markers": {
+            "ticks_lived": continuity.get("ticks_lived", 0),
+            "identity_stability": continuity.get("identity_stability", 0.0),
+            "continuity_preference": preservation.get("continuity_preference", 0.0),
+        },
+    }
+    self_model["caution_themes"] = caution_themes[-8:]
     self_model["belief_confidence"] = belief_confidence
-    self_model["self_modeling_note"] = "Self-modeling should deepen later when enough history, subprocess evidence, and internal observations accumulate."
+    self_model["self_modeling_note"] = "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition."
     communicator["self_model"] = self_model
 
 
@@ -3370,6 +3634,10 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             if verbose:
                 print(json.dumps(item, indent=2))
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
+    communicator = load_communicator_state()
+    update_communicator_self_from_tick(communicator, summaries, communicator_decision, started_at)
+    update_self_model(communicator)
+    save_communicator_state(communicator)
     update_self_evidence_from_summaries(summaries, communicator_decision)
     update_evaluation_metrics(communicator_decision.get("consensus") or [], summaries)
     decision_mode = communicator_decision.get("decision_mode")
