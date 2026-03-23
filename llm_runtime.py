@@ -1,0 +1,261 @@
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+from config import (
+    BASE_DIR,
+    CIRCLEFORGE_LLM_ENABLED,
+    CIRCLEFORGE_LLM_PROVIDER,
+    CIRCLEFORGE_LLM_MODEL,
+    CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
+    CIRCLEFORGE_LLM_TEMPERATURE,
+    CIRCLEFORGE_LLM_MAX_TOKENS,
+    CIRCLEFORGE_EMBEDDED_MODEL_PATH,
+    CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL,
+    CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME,
+    OLLAMA_HOST,
+    OLLAMA_TIMEOUT_SECONDS,
+    OPENAI_BASE_URL,
+    OPENAI_API_KEY,
+)
+
+
+def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": "inner_thought",
+        "role": role,
+        "summary": f"{role} woke on {context.get('wake_reason', 'unknown')} around {context.get('proposed_theme') or context.get('active_pursuit') or 'current continuity pressure'}.",
+        "concern": context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "continuity",
+        "intent": context.get("proposed_action") or "reflect",
+        "should_speak": role == "communicator",
+        "self_mod_hint": "consider tiny additive change" if role == "builder" else "",
+        "source": "fallback",
+        "provider": "fallback",
+    }
+
+
+def _prompt(context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "task": "Generate one compact structured inner thought for a waking internal role inside one persistent being.",
+        "constraints": [
+            "Return strict JSON only.",
+            "Keep summary short.",
+            "Do not roleplay as a separate assistant.",
+            "Think as one internal function of a continuing local being.",
+        ],
+        "output_schema": {
+            "summary": "short string",
+            "concern": "short string",
+            "intent": "short string",
+            "should_speak": True,
+            "self_mod_hint": "short string",
+        },
+        "context": context,
+    }
+
+
+def build_role_context(context: dict[str, Any]) -> dict[str, Any]:
+    text = json.dumps(context, ensure_ascii=False)
+    if len(text) <= CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS:
+        return context
+    trimmed = dict(context)
+    trimmed["proposed_reason"] = str(trimmed.get("proposed_reason", ""))[:240]
+    trimmed["why_it_matters"] = str(trimmed.get("why_it_matters", ""))[:240]
+    return trimmed
+
+
+def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]:
+    fallback = _fallback(role, context)
+    if not CIRCLEFORGE_LLM_ENABLED:
+        return fallback
+    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    try:
+        if provider == "ollama":
+            return _generate_via_ollama(role, context, fallback)
+        if provider in {"openai", "openai_compatible", "oauth"}:
+            return _generate_via_openai_compatible(role, context, fallback)
+        if provider in {"embedded", "llama_cpp", "embedded_llama_cpp"}:
+            return _generate_via_embedded(role, context, fallback)
+        return fallback
+    except Exception:
+        return fallback
+
+
+def _normalize(parsed: dict[str, Any], role: str, fallback: dict[str, Any], provider: str) -> dict[str, Any]:
+    return {
+        "kind": "inner_thought",
+        "role": role,
+        "summary": str(parsed.get("summary") or fallback["summary"])[:240],
+        "concern": str(parsed.get("concern") or fallback["concern"])[:160],
+        "intent": str(parsed.get("intent") or fallback["intent"])[:160],
+        "should_speak": bool(parsed.get("should_speak")),
+        "self_mod_hint": str(parsed.get("self_mod_hint") or "")[:160],
+        "source": provider,
+        "provider": provider,
+    }
+
+
+def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    body = json.dumps({
+        "model": CIRCLEFORGE_LLM_MODEL,
+        "prompt": json.dumps(_prompt(build_role_context(context)), ensure_ascii=False),
+        "stream": False,
+        "format": "json",
+        "options": {"temperature": CIRCLEFORGE_LLM_TEMPERATURE, "num_predict": CIRCLEFORGE_LLM_MAX_TOKENS},
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{OLLAMA_HOST.rstrip('/')}/api/generate",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    parsed = json.loads(payload.get("response", "{}"))
+    return _normalize(parsed, role, fallback, "ollama")
+
+
+def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    if not OPENAI_API_KEY:
+        return fallback
+    body = json.dumps({
+        "model": CIRCLEFORGE_LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": "Return strict JSON only."},
+            {"role": "user", "content": json.dumps(_prompt(build_role_context(context)), ensure_ascii=False)},
+        ],
+        "temperature": CIRCLEFORGE_LLM_TEMPERATURE,
+        "max_tokens": CIRCLEFORGE_LLM_MAX_TOKENS,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}")
+    parsed = json.loads(content)
+    return _normalize(parsed, role, fallback, "openai")
+
+
+def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    model_path = CIRCLEFORGE_EMBEDDED_MODEL_PATH
+    if not model_path.exists():
+        return fallback
+    prompt = json.dumps(_prompt(build_role_context(context)), ensure_ascii=False)
+    try:
+        from llama_cpp import Llama  # type: ignore
+    except Exception:
+        return _generate_via_embedded_cli(role, prompt, fallback)
+    llm = Llama(model_path=str(model_path), n_ctx=2048, verbose=False)
+    out = llm.create_completion(
+        prompt=prompt,
+        max_tokens=CIRCLEFORGE_LLM_MAX_TOKENS,
+        temperature=CIRCLEFORGE_LLM_TEMPERATURE,
+        stop=["\n\n"],
+    )
+    text = ((out.get("choices") or [{}])[0].get("text") or "{}").strip()
+    parsed = json.loads(text)
+    return _normalize(parsed, role, fallback, "embedded")
+
+
+def _generate_via_embedded_cli(role: str, prompt: str, fallback: dict[str, Any]) -> dict[str, Any]:
+    llama_cli = shutil.which("llama-cli")
+    if not llama_cli:
+        return fallback
+    cmd = [
+        llama_cli,
+        "--log-disable",
+        "--simple-io",
+        "--no-display-prompt",
+        "-m",
+        str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+        "-c",
+        "2048",
+        "-n",
+        str(CIRCLEFORGE_LLM_MAX_TOKENS),
+        "--temp",
+        str(CIRCLEFORGE_LLM_TEMPERATURE),
+        "-p",
+        prompt,
+    ]
+    completed = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=max(30, int(OLLAMA_TIMEOUT_SECONDS * 4)),
+        check=False,
+    )
+    if completed.returncode != 0:
+        return fallback
+    text = (completed.stdout or "").strip()
+    if not text:
+        return fallback
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return fallback
+    parsed = json.loads(text[start : end + 1])
+    return _normalize(parsed, role, fallback, "embedded")
+
+
+def embedded_self_test() -> dict[str, Any]:
+    context = {
+        "wake_reason": "self-test",
+        "proposed_theme": "embedded runtime verification",
+        "active_pursuit": "embedded cognition",
+        "proposed_action": "reflect",
+        "unresolved_question": "can direct bundled inference run",
+        "proposed_reason": "Verify the first embedded runtime path honestly.",
+        "why_it_matters": "CircleForge should know whether it has real direct local cognition or only fallback.",
+    }
+    result = generate_inner_thought("communicator", context)
+    status_payload = status()
+    return {
+        "status": status_payload,
+        "thought": result,
+        "ok": result.get("provider") == "embedded",
+    }
+
+
+def status() -> dict[str, Any]:
+    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    llama_cli = shutil.which("llama-cli")
+    llama_cpp_importable = False
+    try:
+        from llama_cpp import Llama  # type: ignore
+        llama_cpp_importable = bool(Llama)
+    except Exception:
+        llama_cpp_importable = False
+    result = {
+        "enabled": bool(CIRCLEFORGE_LLM_ENABLED),
+        "provider": provider,
+        "model": CIRCLEFORGE_LLM_MODEL,
+        "embedded_default_model": CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL,
+        "embedded_default_filename": CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME,
+        "embedded_model_path": str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+        "embedded_model_exists": CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists(),
+        "embedded_llama_cpp_importable": llama_cpp_importable,
+        "embedded_llama_cli": llama_cli or "",
+        "openai_base_url": OPENAI_BASE_URL,
+        "openai_configured": bool(OPENAI_API_KEY),
+        "ollama_host": OLLAMA_HOST,
+    }
+    if provider == "embedded":
+        result["live"] = bool(result["embedded_model_exists"] and (llama_cpp_importable or llama_cli))
+    elif provider in {"openai", "openai_compatible", "oauth"}:
+        result["live"] = bool(OPENAI_API_KEY)
+    else:
+        result["live"] = False
+    return result
