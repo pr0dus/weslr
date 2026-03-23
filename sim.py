@@ -4305,6 +4305,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "world": data.get("world"),
         "communicator": data.get("communicator"),
         "communicator_self": data.get("communicator_self"),
+        "communicator_message": data.get("communicator_message"),
         "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
@@ -4438,6 +4439,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Core drives: <strong>{escape(', '.join((payload.get('communicator_self') or {}).get('core_drives', [])[:6]) or '—')}</strong></p>
         <p>Self story: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('self_story', '')))}</strong></p>
         <p>Last reflection: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('last_reflection', '')))}</strong></p>
+        <p>Operator message: <strong>{escape(str((payload.get('communicator_message') or {}).get('message', '')))}</strong></p>
+        <p>Why it matters: <strong>{escape(str((payload.get('communicator_message') or {}).get('why_it_matters', '')))}</strong></p>
         <p>Ticks lived: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('ticks_lived', 0)}</strong></p>
         <p>Identity stability: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('identity_stability', 0)}</strong></p>
         <p>Memory bonds: <strong>{((payload.get('communicator_self') or {}).get('continuity', {}) or {}).get('memory_bonds', 0)}</strong></p>
@@ -4763,6 +4766,38 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     html_path.write_text(html)
     return {"ok": True, "dashboard_dir": str(DASHBOARD_DIR.relative_to(BASE_DIR)), "html": str(html_path.relative_to(BASE_DIR)), "json": str(payload_path.relative_to(BASE_DIR)), "event_log": str(EVENT_LOG_PATH.relative_to(BASE_DIR))}
 
+
+def build_communicator_message() -> dict:
+    communicator = load_communicator_state()
+    self_state = load_communicator_self()
+    narrative = self_state.get("narrative_state") or {}
+    relationships = self_state.get("relationships") or {}
+    threads = relationships.get("conversation_threads") or {}
+    open_threads = list(sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
+    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    if active_thread:
+        topic, thread = active_thread
+        human_name = str(thread.get("human", "human"))
+        impulse = narrative.get("follow_up_impulse") or f"follow up on {topic}"
+        message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. Right now my pull is to {impulse}"
+        tone = "continuity-aware"
+        audience = human_name
+    else:
+        message = f"Current intent: {communicator.get('current_intent') or 'continue the world'}. No active shared human thread is dominating the communicator right now."
+        tone = "status"
+        audience = "operator"
+    return {
+        "message": message,
+        "audience": audience,
+        "tone": tone,
+        "active_thread": active_thread[0] if active_thread else None,
+        "why_it_matters": narrative.get("why_it_matters", ""),
+        "follow_up_impulse": narrative.get("follow_up_impulse", ""),
+        "source": "communicator_self.narrative_state",
+        "generated_at": int(time.time()),
+    }
+
+
 def show_world() -> Dict:
     conn = connect()
     world = get_world(conn)
@@ -4816,6 +4851,7 @@ def show_world() -> Dict:
         "public_memory": load_public_memory(),
         "communicator": load_communicator_state(),
         "communicator_self": load_communicator_self(),
+        "communicator_message": build_communicator_message(),
         "evaluation_metrics": load_evaluation_metrics(),
         "projects": load_projects(),
         "work_items": load_work_items(),
