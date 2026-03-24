@@ -6301,7 +6301,6 @@ def load_failsafe_status() -> dict:
 
 
 def build_communicator_message() -> dict:
-    _communicator = load_communicator_state()
     self_state = load_communicator_self()
     narrative = self_state.get("narrative_state") or {}
     relationships = self_state.get("relationships") or {}
