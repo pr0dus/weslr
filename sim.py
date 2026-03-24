@@ -358,16 +358,30 @@ def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
         title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.I | re.S)
         if title_match:
             title = unescape(re.sub(r"\s+", " ", title_match.group(1))).strip()
-        text = re.sub(r"<script.*?</script>", " ", text, flags=re.I | re.S)
-        text = re.sub(r"<style.*?</style>", " ", text, flags=re.I | re.S)
+        for pattern in [r"<script.*?</script>", r"<style.*?</style>", r"<noscript.*?</noscript>", r"<svg.*?</svg>"]:
+            text = re.sub(pattern, " ", text, flags=re.I | re.S)
         text = re.sub(r"<[^>]+>", " ", text)
     text = unescape(text)
+    text = re.sub(r"\b(login|sign in|subscribe|cookie policy|privacy policy|all rights reserved|shop now|follow us|menu|skip to main content)\b", " ", text, flags=re.I)
     text = re.sub(r"\s+", " ", text).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    cleaned_sentences = []
+    seen = set()
+    for sentence in sentences:
+        sentence = re.sub(r"\s+", " ", sentence).strip()
+        if len(sentence) < 40:
+            continue
+        lowered = sentence.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        cleaned_sentences.append(sentence)
+    cleaned_text = " ".join(cleaned_sentences)[:max(500, int(max_chars))]
     return {
         "url": str(url),
         "title": title or str(url),
         "content_type": content_type,
-        "text": text[:max(500, int(max_chars))],
+        "text": cleaned_text,
         "insecure_ssl_fallback_used": insecure_ssl_fallback_used,
         "fetched_at": int(time.time()),
     }
@@ -420,28 +434,37 @@ def ingest_web_resource(url: str, title: str = "", max_chars: int = 12000) -> di
 
 
 def score_search_result(query: str, result: dict) -> float:
-    query_terms = [part for part in re.split(r"\W+", str(query or "").lower()) if part]
+    query_terms = [part for part in re.split(r"\W+", str(query or "").lower()) if part and len(part) > 2]
     title = str(result.get("title") or "").lower()
     url = str(result.get("url") or "").lower()
     score = 0.0
     for term in query_terms[:8]:
         if term and term in title:
-            score += 0.18
+            score += 0.22
         if term and term in url:
-            score += 0.08
-    preferred_domains = [
-        "wikipedia.org", "stanford.edu", "mit.edu", "arxiv.org", "nature.com", "scholar.google", "researchgate.net",
-        "github.com", "docs.", "developer.", "mozilla.org", "python.org"
+            score += 0.06
+    strong_domains = [
+        "wikipedia.org", "stanford.edu", "mit.edu", "arxiv.org", "nature.com", "sciencedirect.com",
+        "springer.com", "nih.gov", "ncbi.nlm.nih.gov", "knowablemagazine.org", "mozilla.org",
+        "python.org", "github.com", "docs.", "developer."
     ]
-    weak_domains = ["pinterest.", "facebook.", "instagram.", "tiktok.", "reddit.com/r/"]
-    for domain in preferred_domains:
+    medium_domains = ["researchgate.net", ".edu", ".gov", ".org"]
+    weak_domains = ["pinterest.", "facebook.", "instagram.", "tiktok.", "reddit.com/r/", "autismhelper.com", "silentinnovator.com", "bcbamockexam.com"]
+    for domain in strong_domains:
         if domain in url:
-            score += 0.35
+            score += 0.55
             break
+    else:
+        for domain in medium_domains:
+            if domain in url:
+                score += 0.22
+                break
     for domain in weak_domains:
         if domain in url:
-            score -= 0.2
+            score -= 0.28
             break
+    if any(word in title for word in ["overview", "encyclopedia", "guide", "review", "definition"]):
+        score += 0.08
     if len(title) >= 18:
         score += 0.05
     return round(score, 4)
@@ -450,7 +473,8 @@ def score_search_result(query: str, result: dict) -> float:
 def summarize_research_findings(query: str, fetched_items: list[dict]) -> str:
     if not fetched_items:
         return f"No readable source was fetched yet for {query}."
-    lines = []
+    summary_points = []
+    evidence_lines = []
     seen_sentences = set()
     for item in fetched_items[:2]:
         text = str(item.get("text") or "")
@@ -459,18 +483,30 @@ def summarize_research_findings(query: str, fetched_items: list[dict]) -> str:
         kept = []
         for part in parts:
             cleaned = re.sub(r"\s+", " ", part).strip()
-            if len(cleaned) < 50:
+            if len(cleaned) < 60:
                 continue
             key = cleaned.lower()
             if key in seen_sentences:
+                continue
+            if any(noise in key for noise in ["login", "subscribe", "cookie", "shop now", "follow follow"]):
                 continue
             seen_sentences.add(key)
             kept.append(cleaned)
             if len(kept) >= 2:
                 break
         if kept:
-            lines.append(f"{title}: {' '.join(kept)}")
-    return "\n\n".join(lines)[:2400] or f"Readable sources were fetched for {query}, but no compact synthesis could be formed yet."
+            summary_points.append(kept[0])
+            evidence_lines.append(f"{title}: {' '.join(kept[:2])}")
+    summary_points = summary_points[:3]
+    if not summary_points:
+        return f"Readable sources were fetched for {query}, but no compact synthesis could be formed yet."
+    distilled = " ".join(summary_points)
+    return "\n".join([
+        f"Working summary for {query}: {distilled[:900]}",
+        "",
+        "Evidence:",
+        *evidence_lines[:2],
+    ])[:2600]
 
 
 def load_categories() -> list[str]:
