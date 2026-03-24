@@ -419,6 +419,60 @@ def ingest_web_resource(url: str, title: str = "", max_chars: int = 12000) -> di
     return {"saved": item, "fetched": fetched, "public_memory_count": len(load_public_memory())}
 
 
+def score_search_result(query: str, result: dict) -> float:
+    query_terms = [part for part in re.split(r"\W+", str(query or "").lower()) if part]
+    title = str(result.get("title") or "").lower()
+    url = str(result.get("url") or "").lower()
+    score = 0.0
+    for term in query_terms[:8]:
+        if term and term in title:
+            score += 0.18
+        if term and term in url:
+            score += 0.08
+    preferred_domains = [
+        "wikipedia.org", "stanford.edu", "mit.edu", "arxiv.org", "nature.com", "scholar.google", "researchgate.net",
+        "github.com", "docs.", "developer.", "mozilla.org", "python.org"
+    ]
+    weak_domains = ["pinterest.", "facebook.", "instagram.", "tiktok.", "reddit.com/r/"]
+    for domain in preferred_domains:
+        if domain in url:
+            score += 0.35
+            break
+    for domain in weak_domains:
+        if domain in url:
+            score -= 0.2
+            break
+    if len(title) >= 18:
+        score += 0.05
+    return round(score, 4)
+
+
+def summarize_research_findings(query: str, fetched_items: list[dict]) -> str:
+    if not fetched_items:
+        return f"No readable source was fetched yet for {query}."
+    lines = []
+    seen_sentences = set()
+    for item in fetched_items[:2]:
+        text = str(item.get("text") or "")
+        title = str(item.get("title") or item.get("url") or "source")
+        parts = re.split(r"(?<=[.!?])\s+", text)
+        kept = []
+        for part in parts:
+            cleaned = re.sub(r"\s+", " ", part).strip()
+            if len(cleaned) < 50:
+                continue
+            key = cleaned.lower()
+            if key in seen_sentences:
+                continue
+            seen_sentences.add(key)
+            kept.append(cleaned)
+            if len(kept) >= 2:
+                break
+        if kept:
+            lines.append(f"{title}: {' '.join(kept)}")
+    return "\n\n".join(lines)[:2400] or f"Readable sources were fetched for {query}, but no compact synthesis could be formed yet."
+
+
 def load_categories() -> list[str]:
     return read_json_file(CATEGORIES_PATH, BASE_CATEGORIES.copy())
 
@@ -4444,47 +4498,57 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
         return None
     query = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
     try:
-        result = search_web(query, limit=3)
+        result = search_web(query, limit=5)
     except Exception:
         return None
     if not (result.get("results") or []):
         return None
 
-    public_memory = load_public_memory()
-    compact_lines = [f"{item.get('title', '')} — {item.get('url', '')}" for item in result.get("results", [])[:3]]
-    fetched = None
-    best_url = str((result.get("results") or [{}])[0].get("url") or "").strip()
-    if best_url:
+    ranked = []
+    for item in result.get("results", []):
+        scored = dict(item)
+        scored["score"] = score_search_result(query, item)
+        ranked.append(scored)
+    ranked.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    top_ranked = ranked[:3]
+
+    fetched_items = []
+    for item in top_ranked[:2]:
+        candidate_url = str(item.get("url") or "").strip()
+        if not candidate_url:
+            continue
         try:
-            fetched = fetch_url_text(best_url, max_chars=6000)
+            fetched = fetch_url_text(candidate_url, max_chars=5000)
         except Exception:
-            fetched = None
+            continue
+        fetched_items.append(fetched)
 
-    content_parts = ["Search results:", *compact_lines]
-    if fetched and fetched.get("text"):
-        content_parts.extend([
-            "",
-            f"Read from: {fetched.get('title') or best_url}",
-            fetched.get("text", ""),
-        ])
+    compact_lines = [f"{item.get('title', '')} — {item.get('url', '')} (score {item.get('score', 0.0)})" for item in top_ranked]
+    synthesis = summarize_research_findings(query, fetched_items)
 
+    public_memory = load_public_memory()
     public_memory.append(PublicMemoryState(
         id=f"web-search-{now_ts}",
         title=f"Autonomous research: {query}",
         kind="research",
-        content="\n".join(content_parts),
+        content="\n".join([
+            "Search results:",
+            *compact_lines,
+            "",
+            "Synthesis:",
+            synthesis,
+        ]),
         source=f"search:{query}",
-        stability=0.38 if fetched else 0.34,
+        stability=0.46 if fetched_items else 0.34,
         created_at=now_ts,
         updated_at=now_ts,
     ).to_dict())
     save_public_memory(public_memory[-120:])
     return {
         "query": query,
-        "results": result.get("results", [])[:3],
-        "fetched_title": (fetched or {}).get("title", ""),
-        "fetched_url": (fetched or {}).get("url", ""),
-        "fetched_excerpt": (fetched or {}).get("text", "")[:280],
+        "results": top_ranked,
+        "fetched_titles": [item.get("title", "") for item in fetched_items],
+        "synthesis": synthesis[:400],
     }
 
 
