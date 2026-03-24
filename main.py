@@ -12,7 +12,8 @@ from pathlib import Path
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from llm_runtime import embedded_self_test
-from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, fetch_url_text, handoff_summary, ingest_web_resource, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, search_web, show_agent, show_world, validate_artifact
+from research import fetch_url_text, ingest_web_resource, search_web
+from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -176,15 +177,22 @@ def cmd_human_exchange(args):
 
 
 def cmd_fetch_url(args):
-    emit(fetch_url_text(args.url, max_chars=args.max_chars))
+    emit(fetch_url_text(args.url, max_chars=args.max_chars, project_name=PROJECT_NAME, version=VERSION))
 
 
 def cmd_search_web(args):
-    emit(search_web(args.query, limit=args.limit))
+    emit(search_web(args.query, limit=args.limit, project_name=PROJECT_NAME, version=VERSION))
 
 
 def cmd_ingest_web(args):
-    emit(ingest_web_resource(args.url, title=args.title, max_chars=args.max_chars))
+    emit(ingest_web_resource(
+        args.url,
+        title=args.title,
+        max_chars=args.max_chars,
+        fetch_url_text_func=lambda url, max_chars=12000: fetch_url_text(url, max_chars=max_chars, project_name=PROJECT_NAME, version=VERSION),
+        load_public_memory=load_public_memory,
+        save_public_memory=save_public_memory,
+    ))
 
 
 def cmd_eval_metrics(_args):
