@@ -4448,22 +4448,30 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         narrative["self_story"] = f"CircleForge is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
     narrative["last_reflection"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
 
-    open_threads = list(sorted((relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
-    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    preferred_thread_topic = str(relationships.get("last_human_topic") or "") or chosen_theme
+    active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_thread_topic)
     if active_thread:
         topic, thread = active_thread
         human_name = str(thread.get("human", "human"))
         passive_reinforcement_count = int(thread.get("passive_reinforcement_count", 0) or 0)
         last_human_exchange_at = int(thread.get("last_human_exchange_at", 0) or 0)
         seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
+        last_human_topic_live = str(relationships.get("last_human_topic") or "").strip().lower()
+        topic_matches_live_focus = bool((chosen_theme and str(topic).strip().lower() == str(chosen_theme).strip().lower()) or (last_human_topic_live and str(topic).strip().lower() == last_human_topic_live))
+        stale_thread = ((seconds_since_human > max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
         saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
-        narrative["active_thread_summary"] = f"Still carrying shared thread '{topic}' with {human_name}; exchanges={thread.get('exchange_count', 0)}."
-        if saturated:
-            narrative["follow_up_impulse"] = f"Hold {topic} without inflating it until genuinely new evidence or human input arrives from {human_name}."
-            narrative["why_it_matters"] = f"{topic} still matters, but repeating the same open thread without new evidence would turn continuity into rumination."
+        if stale_thread:
+            narrative["active_thread_summary"] = f"Older shared thread '{topic}' is still present with {human_name}, but it should not dominate current focus."
+            narrative["follow_up_impulse"] = f"Keep {topic} available in memory without letting it overtake fresher context."
+            narrative["why_it_matters"] = f"{topic} is part of continuity, but stale continuity should not override newer meaning."
         else:
-            narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
-            narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
+            narrative["active_thread_summary"] = f"Still carrying shared thread '{topic}' with {human_name}; exchanges={thread.get('exchange_count', 0)}."
+            if saturated:
+                narrative["follow_up_impulse"] = f"Hold {topic} without inflating it until genuinely new evidence or human input arrives from {human_name}."
+                narrative["why_it_matters"] = f"{topic} still matters, but repeating the same open thread without new evidence would turn continuity into rumination."
+            else:
+                narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
+                narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
         narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans; strongest live thread is {topic}."
     else:
         narrative["active_thread_summary"] = "No active shared threads currently dominate the communicator state."
@@ -4709,8 +4717,12 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     communicator["attraction_bias"] = f"move toward {chosen.get('niche_theme') or 'coherent world improvement'}"
     if active_thread:
         thread_topic, thread_payload = active_thread
-        communicator["current_intent"] = f"{communicator['current_intent']} while preserving shared thread {thread_topic}"
-        communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}"
+        thread_last_human_at = int(thread_payload.get("last_human_exchange_at", 0) or 0)
+        thread_seconds_stale = max(0, now_ts - thread_last_human_at) if thread_last_human_at else 999999
+        thread_matches_focus = bool(chosen.get("niche_theme") and str(thread_topic).strip().lower() == str(chosen.get("niche_theme")).strip().lower())
+        if thread_matches_focus or thread_seconds_stale <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+            communicator["current_intent"] = f"{communicator['current_intent']} while preserving shared thread {thread_topic}"
+            communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}"
     if disagreement_count > 0:
         communicator["avoidance_bias"] = f"avoid brittle action around {chosen.get('niche_theme') or 'current pressure'} until objections are understood"
     weight = chosen.get("epistemic_weight", {})

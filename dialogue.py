@@ -95,13 +95,19 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         audience = "current_speaker"
         source = "communicator_state"
 
+    why_it_matters = narrative.get("why_it_matters", "")
+    follow_up_impulse = narrative.get("follow_up_impulse", "")
+    if latest_human and research_context and turn_type == "question":
+        why_it_matters = f"This matters because answering the current human question about {lead_topic} should outweigh stale thread carryover."
+        follow_up_impulse = f"Stay with {lead_topic} long enough to answer clearly before returning to older continuity threads."
+
     return {
         "message": message,
         "audience": audience,
         "tone": "natural",
         "active_thread": active_thread[0] if active_thread else None,
-        "why_it_matters": narrative.get("why_it_matters", ""),
-        "follow_up_impulse": narrative.get("follow_up_impulse", ""),
+        "why_it_matters": why_it_matters,
+        "follow_up_impulse": follow_up_impulse,
         "thought_fragments": [],
         "source": source,
         "generated_at": int(time.time()),
