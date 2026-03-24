@@ -1481,6 +1481,51 @@ def prune_archived_memory(self_state: dict | None = None, now_ts: int | None = N
     }
 
 
+def build_memory_lifecycle_report(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    working = layers.get("working") or {}
+    episodic = layers.get("episodic") or {}
+    semantic = layers.get("semantic") or {}
+    archive = layers.get("archive") or {}
+    relationships = self_state.get("relationships") or {}
+
+    archived_items = list(archive.get("archived_items") or [])
+    unresolved_threads = [str(item) for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()]
+
+    return {
+        "working": {
+            "recent_exchange_count": len(working.get("recent_exchange_ids") or []),
+            "recent_thought_count": len(working.get("recent_thought_ids") or []),
+            "active_concern_topic_count": len(working.get("active_concern_topics") or []),
+            "last_compacted_at": int(working.get("last_compacted_at", 0) or 0),
+        },
+        "episodic": {
+            "episode_count": len(episodic.get("episodes") or []),
+            "last_distilled_at": int(episodic.get("last_distilled_at", 0) or 0),
+            "top_episode_topics": [str(item.get("topic") or "") for item in list(episodic.get("episodes") or [])[:6] if str(item.get("topic") or "").strip()],
+        },
+        "semantic": {
+            "stable_topic_count": len(semantic.get("stable_topics") or []),
+            "continuity_anchor_count": len(semantic.get("continuity_anchors") or []),
+            "relationship_fact_count": len(semantic.get("relationship_facts") or []),
+            "durable_lesson_count": len(semantic.get("durable_lessons") or []),
+        },
+        "archive": {
+            "archived_count": len(archived_items),
+            "last_archived_at": int(archive.get("last_archived_at", 0) or 0),
+            "last_pruned_at": int(archive.get("last_pruned_at", 0) or 0),
+            "recent_archived_topics": [str(item.get("topic") or "") for item in archived_items[:6] if str(item.get("topic") or "").strip()],
+        },
+        "continuity": {
+            "unresolved_thread_count": len(unresolved_threads),
+            "unresolved_threads": unresolved_threads[:8],
+        },
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
