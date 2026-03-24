@@ -196,9 +196,10 @@ python3 main.py llm-status
 python3 main.py failsafe-status
 python3 main.py communicator
 python3 main.py communicator-self
+python3 main.py speak
 python3 main.py communicator-message
 python3 main.py embedded-self-test
-python3 main.py human-exchange Robert "hello" --response "hello"
+python3 main.py human-exchange current-speaker "hello" --response "hello"
 python3 main.py init --reset --agents 5
 python3 main.py tick --verbose
 python3 main.py run --ticks 20 --interval 0

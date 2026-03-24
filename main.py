@@ -123,6 +123,10 @@ def cmd_communicator_message(_args):
     emit(build_communicator_message())
 
 
+def cmd_speak(_args):
+    print(build_communicator_message().get("message", "..."))
+
+
 def cmd_failsafe_status(_args):
     emit(load_failsafe_status())
 
@@ -327,8 +331,11 @@ def main():
     p = sub.add_parser("communicator-self", help="show the slower communicator self / relationship continuity state")
     p.set_defaults(func=cmd_communicator_self)
 
-    p = sub.add_parser("communicator-message", help="generate outward/operator-facing communicator language from current shared-thread state")
+    p = sub.add_parser("communicator-message", help="show natural outward language plus behind-the-curtain metadata")
     p.set_defaults(func=cmd_communicator_message)
+
+    p = sub.add_parser("speak", help="print only the natural outward message")
+    p.set_defaults(func=cmd_speak)
 
     p = sub.add_parser("failsafe-status", help="show public external failsafe mode without exposing any secret")
     p.set_defaults(func=cmd_failsafe_status)

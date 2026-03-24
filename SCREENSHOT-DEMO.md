@@ -15,7 +15,9 @@ python3 main.py communicator-message
 This seeds one human thread first so the answer is more obviously conversational.
 
 ```bash
-python3 main.py human-exchange Robert "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
+python3 main.py human-exchange current-speaker "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
+python3 main.py speak
+# optional behind-the-curtain inspect:
 python3 main.py communicator-message
 ```
 

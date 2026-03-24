@@ -3274,6 +3274,26 @@ def infer_human_topics(message: str) -> list[str]:
     return topics[:4]
 
 
+def canonical_human_slot(label: str) -> str:
+    label = (label or "").strip()
+    if not label:
+        return "interlocutor_001"
+    lowered = label.lower()
+    if lowered in {"human", "unknown", "speaker", "current-speaker", "current_speaker", "operator", "user", "visitor", "someone"}:
+        return "interlocutor_001"
+    return label
+
+
+def display_human_label(slot: str, profile: dict | None = None) -> str:
+    profile = profile or {}
+    discovered_name = str(profile.get("discovered_name") or "").strip()
+    if discovered_name:
+        return discovered_name
+    if str(slot).startswith("interlocutor_"):
+        return "you"
+    return str(slot or "you")
+
+
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
     self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
@@ -3285,7 +3305,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
 
-    human_name = (human_name or "human").strip() or "human"
+    human_name = canonical_human_slot(human_name)
     if human_name not in relationships["known_humans"]:
         relationships["known_humans"].append(human_name)
 
@@ -3304,6 +3324,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         "last_message_at": 0,
         "last_message_summary": "",
         "relationship_summary": "",
+        "discovered_name": "",
+        "identity_confidence": 0.0,
     })
     profile["message_count"] = int(profile.get("message_count", 0)) + 1
     profile["salience"] = clamp01(float(profile.get("salience", 0.2)) + 0.04)
@@ -3325,12 +3347,14 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     profile["known_topics"] = profile.get("known_topics", [])[-12:]
     profile["unresolved_shared_threads"] = profile.get("unresolved_shared_threads", [])[-8:]
     relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
-    profile["relationship_summary"] = f"{human_name} is a recurring human with {profile['message_count']} remembered exchanges around {', '.join(profile['known_topics'][:3]) or 'shared context'}."
+    display_name = display_human_label(human_name, profile)
+    profile["relationship_summary"] = f"{display_name.capitalize()} is a recurring human with {profile['message_count']} remembered exchanges around {', '.join(profile['known_topics'][:3]) or 'shared context'}."
 
     exchange_nonce = len(relationships.get("recent_human_exchanges", []) or []) + 1
     exchange = {
         "id": f"human-exchange-{human_name}-{now_ts}-{exchange_nonce}",
         "human": human_name,
+        "human_label": display_name,
         "topics": topic_list,
         "message": (message or "")[:240],
         "response": (response or "")[:240],
@@ -3342,6 +3366,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     }
     relationships["recent_human_messages"].append({
         "human": human_name,
+        "human_label": display_name,
         "topics": topic_list,
         "message": (message or "")[:240],
         "response": (response or "")[:240],
@@ -3357,6 +3382,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         thread = threads.setdefault(topic, {
             "topic": topic,
             "human": human_name,
+            "human_label": display_name,
             "exchange_count": 0,
             "last_message_summary": "",
             "last_response_summary": "",
@@ -3365,6 +3391,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
             "recent_exchange_ids": [],
         })
         thread["human"] = human_name
+        thread["human_label"] = display_name
         thread["exchange_count"] = int(thread.get("exchange_count", 0)) + 1
         thread["last_message_summary"] = exchange["message_summary"]
         thread["last_response_summary"] = exchange["response_summary"]
@@ -3376,7 +3403,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
 
     concerns = list(self_state.get("active_concerns") or [])
     for topic in topic_list[:3]:
-        concerns.append({"topic": f"shared thread with {human_name}: {topic}", "weight": 0.52 if unresolved else 0.34, "updated_at": now_ts})
+        concerns.append({"topic": f"shared thread with {display_name}: {topic}", "weight": 0.52 if unresolved else 0.34, "updated_at": now_ts})
     deduped = {}
     for concern in concerns:
         topic = str(concern.get("topic", "")).strip()
@@ -3386,11 +3413,11 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
 
     narrative = self_state.setdefault("narrative_state", {})
     if topic_list:
-        narrative["last_reflection"] = f"{human_name}: {topic_list[0]}"
+        narrative["last_reflection"] = f"{display_name}: {topic_list[0]}"
         narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans."
         lead_topic = topic_list[0]
-        narrative["active_thread_summary"] = f"Active shared thread: {lead_topic} with {human_name}."
-        narrative["follow_up_impulse"] = f"Revisit {lead_topic} with {human_name} until the shared thread changes state."
+        narrative["active_thread_summary"] = f"Active shared thread: {lead_topic} with {display_name}."
+        narrative["follow_up_impulse"] = f"Revisit {lead_topic} with {display_name} until the shared thread changes state."
         narrative["why_it_matters"] = f"{lead_topic} matters because shared human context should shape what CircleForge returns to instead of resetting." 
 
     self_state["updated_at"] = now_ts
@@ -3400,9 +3427,9 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     if topic_list:
         communicator["curiosity_target"] = topic_list[0]
         communicator["active_pursuit"] = topic_list[0]
-        communicator["dominant_need"] = f"maintain continuity with {human_name} around {topic_list[0]}"
-    communicator["current_intent"] = f"maintain conversation continuity with {human_name}"
-    communicator["last_decision_summary"] = f"remembered human exchange with {human_name} about {topic_list[0] if topic_list else 'shared context'}"
+        communicator["dominant_need"] = f"maintain continuity with {display_name} around {topic_list[0]}"
+    communicator["current_intent"] = f"maintain conversation continuity with {display_name}"
+    communicator["last_decision_summary"] = f"remembered human exchange with {display_name} about {topic_list[0] if topic_list else 'shared context'}"
     communicator["updated_at"] = now_ts
     save_communicator_state(communicator)
     return self_state
@@ -3460,55 +3487,48 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     relationships.setdefault("recent_human_exchanges", [])
     relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
-    if "Robert" not in relationships["known_humans"]:
-        relationships["known_humans"].append("Robert")
     relationships["last_human_topic"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
-    robert_profile = relationships["human_profiles"].setdefault("Robert", {
-        "message_count": 0,
-        "salience": 0.24,
-        "trust": 0.24,
-        "attachment": 0.16,
-        "known_topics": [],
-        "recurring_topics": {},
-        "unresolved_shared_threads": [],
-        "last_message_at": 0,
-        "last_message_summary": "",
-        "relationship_summary": "",
-    })
-    if chosen_theme:
-        if chosen_theme not in robert_profile["known_topics"]:
-            robert_profile["known_topics"].append(chosen_theme)
-        recurring = robert_profile.setdefault("recurring_topics", {})
-        recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
-        robert_profile["salience"] = clamp01(float(robert_profile.get("salience", 0.24)) + 0.01)
-        robert_profile["attachment"] = clamp01(float(robert_profile.get("attachment", 0.16)) + 0.008)
-        if chosen_theme not in robert_profile["unresolved_shared_threads"]:
-            robert_profile["unresolved_shared_threads"].append(chosen_theme)
-        if chosen_theme not in relationships["unresolved_shared_threads"]:
-            relationships["unresolved_shared_threads"].append(chosen_theme)
-    robert_profile["known_topics"] = robert_profile.get("known_topics", [])[-12:]
-    robert_profile["unresolved_shared_threads"] = robert_profile.get("unresolved_shared_threads", [])[-8:]
-    relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
-    robert_profile["relationship_summary"] = f"Robert is the primary human continuity anchor; current shared threads include {', '.join(robert_profile['known_topics'][:3]) or 'ongoing context'}."
 
-    threads = relationships.setdefault("conversation_threads", {})
-    if chosen_theme:
-        thread = threads.setdefault(chosen_theme, {
-            "topic": chosen_theme,
-            "human": "Robert",
-            "exchange_count": 0,
-            "last_message_summary": "",
-            "last_response_summary": "",
-            "last_exchange_at": 0,
-            "status": "open",
-            "recent_exchange_ids": [],
-        })
-        thread["human"] = "Robert"
-        thread["exchange_count"] = max(int(thread.get("exchange_count", 0)), int(robert_profile.get("recurring_topics", {}).get(chosen_theme, 0)))
-        thread["last_message_summary"] = f"simulation stayed with theme: {chosen_theme}"
-        thread["last_response_summary"] = f"current intent: {communicator.get('current_intent', '')}"[:120]
-        thread["last_exchange_at"] = now_ts
-        thread["status"] = "open" if chosen_theme in relationships.get("unresolved_shared_threads", []) else thread.get("status", "open")
+    human_profiles = relationships.get("human_profiles") or {}
+    anchor_slot, anchor_profile = next(iter(human_profiles.items()), ("interlocutor_001", None))
+    if anchor_profile is not None:
+        if chosen_theme:
+            if chosen_theme not in anchor_profile["known_topics"]:
+                anchor_profile["known_topics"].append(chosen_theme)
+            recurring = anchor_profile.setdefault("recurring_topics", {})
+            recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
+            anchor_profile["salience"] = clamp01(float(anchor_profile.get("salience", 0.24)) + 0.01)
+            anchor_profile["attachment"] = clamp01(float(anchor_profile.get("attachment", 0.16)) + 0.008)
+            if chosen_theme not in anchor_profile["unresolved_shared_threads"]:
+                anchor_profile["unresolved_shared_threads"].append(chosen_theme)
+            if chosen_theme not in relationships["unresolved_shared_threads"]:
+                relationships["unresolved_shared_threads"].append(chosen_theme)
+        anchor_profile["known_topics"] = anchor_profile.get("known_topics", [])[-12:]
+        anchor_profile["unresolved_shared_threads"] = anchor_profile.get("unresolved_shared_threads", [])[-8:]
+        relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
+        display_name = display_human_label(anchor_slot, anchor_profile)
+        anchor_profile["relationship_summary"] = f"{display_name.capitalize()} remains a recurring human anchor; current shared threads include {', '.join(anchor_profile['known_topics'][:3]) or 'ongoing context'}."
+
+        threads = relationships.setdefault("conversation_threads", {})
+        if chosen_theme:
+            thread = threads.setdefault(chosen_theme, {
+                "topic": chosen_theme,
+                "human": anchor_slot,
+                "human_label": display_name,
+                "exchange_count": 0,
+                "last_message_summary": "",
+                "last_response_summary": "",
+                "last_exchange_at": 0,
+                "status": "open",
+                "recent_exchange_ids": [],
+            })
+            thread["human"] = anchor_slot
+            thread["human_label"] = display_name
+            thread["exchange_count"] = max(int(thread.get("exchange_count", 0)), int(anchor_profile.get("recurring_topics", {}).get(chosen_theme, 0)))
+            thread["last_message_summary"] = f"simulation stayed with theme: {chosen_theme}"
+            thread["last_response_summary"] = f"current intent: {communicator.get('current_intent', '')}"[:120]
+            thread["last_exchange_at"] = now_ts
+            thread["status"] = "open" if chosen_theme in relationships.get("unresolved_shared_threads", []) else thread.get("status", "open")
 
     action_scores = evidence_profile.setdefault("outcome_weighted_actions", {})
     stable_traits = evidence_profile.setdefault("stable_traits", {})
@@ -3814,8 +3834,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     unresolved_shared_threads = [str(item).lower() for item in (human_relationships.get("unresolved_shared_threads") or [])]
     last_human_topic = str(human_relationships.get("last_human_topic", "")).lower()
     human_profiles = human_relationships.get("human_profiles") or {}
-    robert_profile = human_profiles.get("Robert") or next(iter(human_profiles.values()), {}) if human_profiles else {}
-    recurring_topics = {str(name).lower(): int(count) for name, count in (robert_profile.get("recurring_topics") or {}).items()}
+    primary_profile = next(iter(human_profiles.values()), {}) if human_profiles else {}
+    recurring_topics = {str(name).lower(): int(count) for name, count in (primary_profile.get("recurring_topics") or {}).items()}
     thought_theme_counts = {}
     thought_speak_votes = 0
     thought_self_mod_hints = []
@@ -5244,23 +5264,31 @@ def build_communicator_message() -> dict:
     dominant_memory_thought = next((t for t in reversed(thoughts) if str(t.get("role")) == "memory_keeper"), None)
     if active_thread:
         topic, thread = active_thread
-        human_name = str(thread.get("human", "human"))
+        human_label = str(thread.get("human_label") or display_human_label(str(thread.get("human", "")), (relationships.get("human_profiles") or {}).get(str(thread.get("human", "")), {}))).strip() or "you"
         impulse = narrative.get("follow_up_impulse") or f"follow up on {topic}"
+        starter = random.choice([
+            f"Hey. Are we still on {topic}?",
+            f"I keep circling back to {topic}.",
+            f"Still thinking about {topic}.",
+        ])
         if dominant_comm_thought and dominant_comm_thought.get("summary"):
-            message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. {str(dominant_comm_thought.get('summary'))[:160]} Right now my pull is to {impulse}"
+            message = f"{starter} {str(dominant_comm_thought.get('summary'))[:120]}"
             source = "inner_thoughts+communicator_self.narrative_state"
         else:
-            message = f"I keep returning to {topic} because it is still an open shared thread with {human_name}. Right now my pull is to {impulse}"
+            message = f"{starter} My pull is to {impulse.lower().rstrip('.')}"
             source = "communicator_self.narrative_state"
-        tone = "continuity-aware"
-        audience = human_name
+        tone = "natural"
+        audience = human_label
     else:
-        message = f"Current intent: {communicator.get('current_intent') or 'continue the world'}. No active shared human thread is dominating the communicator right now."
-        if dominant_memory_thought and dominant_memory_thought.get("summary"):
-            message += f" Inner note: {str(dominant_memory_thought.get('summary'))[:140]}"
-        tone = "status"
-        audience = "operator"
-        source = "communicator_state+inner_thoughts"
+        starter = random.choice([
+            "Hey. What's going on?",
+            "What matters right now?",
+            "Where do you want to start?",
+        ])
+        message = starter
+        tone = "natural"
+        audience = "current_speaker"
+        source = "communicator_state"
     return {
         "message": message,
         "audience": audience,

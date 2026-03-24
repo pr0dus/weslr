@@ -197,8 +197,8 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
     human_profiles = relationships.get("human_profiles") or {}
     unresolved_shared_threads = [str(item).lower() for item in (relationships.get("unresolved_shared_threads") or [])]
     recent_human_messages = relationships.get("recent_human_messages") or []
-    robert_profile = human_profiles.get("Robert") or next(iter(human_profiles.values()), {}) if human_profiles else {}
-    recurring_topics = {str(name).lower(): int(count) for name, count in (robert_profile.get("recurring_topics") or {}).items()}
+    primary_profile = next(iter(human_profiles.values()), {}) if human_profiles else {}
+    recurring_topics = {str(name).lower(): int(count) for name, count in (primary_profile.get("recurring_topics") or {}).items()}
     themes = []
     theme_names = sorted(set(list(SEED_OPPORTUNITIES.keys()) + list((board.get("themes") or {}).keys())))
     for theme in theme_names:
