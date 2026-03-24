@@ -5378,6 +5378,10 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
     communicator = load_communicator_state()
     update_communicator_self_from_tick(communicator, summaries, communicator_decision, started_at)
+    memory_pressure = monitor_memory_pressure(now_ts=started_at)
+    archive_maintenance = None
+    if "prepare-archive" in (memory_pressure.get("recommended_actions") or []):
+        archive_maintenance = archive_memory(now_ts=started_at)
     update_self_model(communicator)
     save_communicator_state(communicator)
     update_self_evidence_from_summaries(summaries, communicator_decision)
@@ -5399,7 +5403,15 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
     conn.close()
-    return {"summaries": summaries, "communicator": load_communicator_state(), "internal_consensus": communicator_decision}
+    return {
+        "summaries": summaries,
+        "communicator": load_communicator_state(),
+        "internal_consensus": communicator_decision,
+        "memory_maintenance": {
+            "pressure": memory_pressure,
+            "archive": archive_maintenance,
+        },
+    }
 
 
 def write_pack_wrapper(pack: Dict) -> str:
