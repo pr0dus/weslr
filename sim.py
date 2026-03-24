@@ -4571,6 +4571,40 @@ def display_human_label(slot: str, profile: dict | None = None) -> str:
     return str(slot or "you")
 
 
+def rewrite_internal_query_for_research(query: str) -> str:
+    original = str(query or "").strip()
+    lowered = original.lower()
+    replacements = {
+        "what new uncertainty appeared after inspect on ": "",
+        "what new uncertainty appeared after research on ": "",
+        "what part of the world is still under-understood": "understanding gaps",
+        "how should ": "how to ",
+        "what is the best way to ": "how to ",
+    }
+    for old, new in replacements.items():
+        lowered = lowered.replace(old, new)
+
+    keyword_map = {
+        "backup confidence": "backup reliability verification",
+        "memory continuity": "memory continuity identity",
+        "continuity of self": "self continuity identity",
+        "continuity": "self continuity",
+        "understanding": "understanding theory of mind communication",
+        "learning": "learning memory adaptation",
+        "emergence": "emergence continuity selfhood",
+        "entity status": "selfhood identity continuity",
+    }
+    for token, replacement in keyword_map.items():
+        if token in lowered:
+            lowered = lowered.replace(token, replacement)
+
+    lowered = re.sub(r"\b(what|why|how|when|where|which|after|before|appeared|inspect|research|current|new|still|part|world|under\-understood|question)\b", " ", lowered)
+    lowered = re.sub(r"\s+", " ", lowered).strip()
+    if not lowered:
+        return original[:120]
+    return lowered[:120]
+
+
 def autonomous_research_cycle(query: str, now_ts: int, source_label: str) -> dict | None:
     query = str(query or "").strip()
     if not query:
@@ -4659,9 +4693,10 @@ def maybe_internal_autonomous_research(communicator: dict, now_ts: int) -> dict 
     unresolved_question = str(communicator.get("unresolved_question") or "").strip()
     curiosity_target = str(communicator.get("curiosity_target") or "").strip()
     active_pursuit = str(communicator.get("active_pursuit") or "").strip()
-    query = unresolved_question or curiosity_target or active_pursuit
-    if curiosity < 0.72 or not query:
+    raw_query = unresolved_question or curiosity_target or active_pursuit
+    if curiosity < 0.72 or not raw_query:
         return None
+    query = rewrite_internal_query_for_research(raw_query)
     public_memory = list(load_public_memory() or [])
     recent_research = [item for item in public_memory[-16:] if str(item.get("kind") or "") == "research"]
     query_key = query.lower()
