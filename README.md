@@ -1,11 +1,15 @@
 # CircleForge
 
-> Local persistent being substrate with memory, inner minds, and world-driven behavior.
+> An experimental local substrate for one persistent communicator with memory, inner minds, and continuity.
 
-**CircleForge v0.0.98** is a local experiment in building one continuing communicator with internal functions, memory, regulation, and relationship continuity.
+**CircleForge v0.0.98** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, and relationship continuity.
 
-The important framing is:
-- **one visible communicator**, not a swarm of unrelated bots
+In plain language, CircleForge is trying to answer this question:
+
+**What happens if one local system keeps going, remembers, develops internal pressure, revisits unfinished threads, and gradually becomes more like a persistent being than a stateless assistant?**
+
+The intended shape is:
+- **one visible communicator**, not a pile of unrelated bots
 - **five recurring internal functions** inside that one being:
   - observer
   - builder
@@ -14,7 +18,13 @@ The important framing is:
   - memory_keeper
 - behavior shaped by **state, memory, pressure, history, and consequences** more than by prompt theater
 
-CircleForge is trying to grow toward a **local developing being substrate** — not mainly a tool factory, not mainly a prompt shell, and not mainly a dashboard toy.
+CircleForge is **not mainly**:
+- a prompt wrapper
+- a tool factory
+- a dashboard gimmick
+- a fake-consciousness roleplay project
+
+It is trying to grow toward a **local developing being substrate** with continuity, internal tension, bounded cognition, and safer long-term self-development.
 
 ## What works today
 
