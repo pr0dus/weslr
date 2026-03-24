@@ -79,12 +79,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif turn_type == "objection":
             message = f"Because I probably over-latched onto {lead_topic}. That's useful as a diagnostic, but it's not the same thing as understanding you well."
         elif turn_type == "question":
-            if any(token in last_message.lower() for token in ["learn", "would you learn", "can you learn"]):
-                message = "A little, yes. I can accumulate continuity inside the run, but the real question is whether I learn appropriately instead of just repeating patterns."
-            elif any(token in last_message.lower() for token in ["understand me", "understand"]):
-                message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
-            elif research_context and research_context.get("summary") and any(token in last_message.lower() for token in ["what is", "what are", "why", "how", "explain", "define"]):
+            has_research_answer = bool(research_context and research_context.get("summary") and any(token in last_message.lower() for token in ["what is", "what are", "why", "how", "explain", "define"]))
+            asks_about_its_own_learning = any(token in last_message.lower() for token in ["learn", "would you learn", "can you learn"]) and any(token in last_message.lower() for token in ["you", "yourself"])
+            asks_about_its_own_understanding = any(token in last_message.lower() for token in ["understand me", "do you understand", "can you understand"])
+
+            if has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
+            elif asks_about_its_own_learning:
+                message = "A little, yes. I can accumulate continuity inside the run, but the real question is whether I learn appropriately instead of just repeating patterns."
+            elif asks_about_its_own_understanding:
+                message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
             else:
                 message = f"My best direct answer is that I'm currently focused on {lead_topic}, but I may be over-weighting that focus instead of responding flexibly."
         else:
