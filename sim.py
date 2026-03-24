@@ -89,6 +89,7 @@ from integration import find_relevant_research_note, integrate_research_into_com
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
+from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
@@ -4149,32 +4150,22 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     profile["relationship_summary"] = f"{display_name.capitalize()} is a recurring human with {profile['message_count']} remembered exchanges around {', '.join(profile['known_topics'][:3]) or 'shared context'}."
 
     exchange_nonce = len(relationships.get("recent_human_exchanges", []) or []) + 1
-    exchange = {
-        "id": f"human-exchange-{human_name}-{now_ts}-{exchange_nonce}",
-        "human": human_name,
-        "human_label": display_name,
-        "topics": topic_list,
-        "message": (message or "")[:240],
-        "response": (response or "")[:240],
-        "message_summary": ((message or "")[:96] + ("…" if len(message or "") > 96 else "")),
-        "response_summary": ((response or "")[:96] + ("…" if len(response or "") > 96 else "")),
-        "created_at": now_ts,
-        "unresolved": unresolved,
-        "kind": "human_exchange",
-    }
-    relationships["recent_human_messages"].append({
-        "human": human_name,
-        "human_label": display_name,
-        "topics": topic_list,
-        "message": (message or "")[:240],
-        "response": (response or "")[:240],
-        "turn_type": interpreted_turn.get("turn_type", "statement"),
-        "intent": interpreted_turn.get("intent", ""),
-        "stance": interpreted_turn.get("stance", "neutral"),
-        "reply_shape": interpreted_turn.get("reply_shape", "answer_directly"),
-        "created_at": now_ts,
-        "unresolved": unresolved,
-    })
+    exchange, recent_message = build_human_exchange_payload(
+        human_name,
+        display_name,
+        message,
+        response,
+        topic_list,
+        interpreted_turn,
+        now_ts,
+    )
+    exchange["id"] = f"human-exchange-{human_name}-{now_ts}-{exchange_nonce}"
+    exchange["message"] = (message or "")[:240]
+    exchange["response"] = (response or "")[:240]
+    exchange["unresolved"] = unresolved
+    exchange["kind"] = "human_exchange"
+    recent_message["unresolved"] = unresolved
+    relationships["recent_human_messages"].append(recent_message)
     relationships["recent_human_messages"] = relationships["recent_human_messages"][-12:]
     relationships["recent_human_exchanges"].append(exchange)
     relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
