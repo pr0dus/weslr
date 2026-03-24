@@ -387,7 +387,16 @@ def search_web(query: str, limit: int = 5) -> dict:
     for href, title_html in matches[:max(1, int(limit))]:
         title = unescape(re.sub(r"<[^>]+>", " ", title_html))
         title = re.sub(r"\s+", " ", title).strip()
-        results.append({"title": title, "url": href})
+        resolved_url = str(href)
+        if "uddg=" in resolved_url:
+            parsed = urllib.parse.urlparse(resolved_url)
+            qs = urllib.parse.parse_qs(parsed.query)
+            uddg = (qs.get("uddg") or [""])[0]
+            if uddg:
+                resolved_url = urllib.parse.unquote(uddg)
+        elif resolved_url.startswith("//"):
+            resolved_url = "https:" + resolved_url
+        results.append({"title": title, "url": resolved_url})
     return {"query": query, "results": results, "fetched_at": int(time.time())}
 
 
@@ -4440,20 +4449,43 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
         return None
     if not (result.get("results") or []):
         return None
-    compact_lines = [f"{item.get('title', '')} — {item.get('url', '')}" for item in result.get("results", [])[:3]]
+
     public_memory = load_public_memory()
+    compact_lines = [f"{item.get('title', '')} — {item.get('url', '')}" for item in result.get("results", [])[:3]]
+    fetched = None
+    best_url = str((result.get("results") or [{}])[0].get("url") or "").strip()
+    if best_url:
+        try:
+            fetched = fetch_url_text(best_url, max_chars=6000)
+        except Exception:
+            fetched = None
+
+    content_parts = ["Search results:", *compact_lines]
+    if fetched and fetched.get("text"):
+        content_parts.extend([
+            "",
+            f"Read from: {fetched.get('title') or best_url}",
+            fetched.get("text", ""),
+        ])
+
     public_memory.append(PublicMemoryState(
         id=f"web-search-{now_ts}",
         title=f"Autonomous research: {query}",
         kind="research",
-        content="\n".join(compact_lines),
+        content="\n".join(content_parts),
         source=f"search:{query}",
-        stability=0.34,
+        stability=0.38 if fetched else 0.34,
         created_at=now_ts,
         updated_at=now_ts,
     ).to_dict())
     save_public_memory(public_memory[-120:])
-    return {"query": query, "results": result.get("results", [])[:3]}
+    return {
+        "query": query,
+        "results": result.get("results", [])[:3],
+        "fetched_title": (fetched or {}).get("title", ""),
+        "fetched_url": (fetched or {}).get("url", ""),
+        "fetched_excerpt": (fetched or {}).get("text", "")[:280],
+    }
 
 
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
