@@ -5765,6 +5765,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "communicator": data.get("communicator"),
         "communicator_self": data.get("communicator_self"),
         "communicator_message": data.get("communicator_message"),
+        "memory_lifecycle": build_memory_lifecycle_report(),
         "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
@@ -5829,6 +5830,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <strong>Jump:</strong>
       <a href="#world">World</a> ·
       <a href="#communicator-self">Communicator Self</a> ·
+      <a href="#memory-lifecycle">Memory Lifecycle</a> ·
       <a href="#themes">Themes</a> ·
       <a href="#packs">Packs</a> ·
       <a href="#artifacts">Artifacts</a> ·
@@ -5933,6 +5935,26 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       </section>
     </div>
 
+    <div class="grid" style="margin-top:16px;" id="memory-lifecycle">
+      <section class="card">
+        <h2>Memory Lifecycle</h2>
+        <p>Working exchanges: <strong>{((payload.get('memory_lifecycle') or {}).get('working', {}) or {}).get('recent_exchange_count', 0)}</strong></p>
+        <p>Working thoughts: <strong>{((payload.get('memory_lifecycle') or {}).get('working', {}) or {}).get('recent_thought_count', 0)}</strong></p>
+        <p>Active concern topics: <strong>{((payload.get('memory_lifecycle') or {}).get('working', {}) or {}).get('active_concern_topic_count', 0)}</strong></p>
+        <p>Episodic memory count: <strong>{((payload.get('memory_lifecycle') or {}).get('episodic', {}) or {}).get('episode_count', 0)}</strong></p>
+        <p>Stable topic count: <strong>{((payload.get('memory_lifecycle') or {}).get('semantic', {}) or {}).get('stable_topic_count', 0)}</strong></p>
+        <p>Continuity anchor count: <strong>{((payload.get('memory_lifecycle') or {}).get('semantic', {}) or {}).get('continuity_anchor_count', 0)}</strong></p>
+        <p>Archived count: <strong>{((payload.get('memory_lifecycle') or {}).get('archive', {}) or {}).get('archived_count', 0)}</strong></p>
+        <p>Unresolved threads: <strong>{((payload.get('memory_lifecycle') or {}).get('continuity', {}) or {}).get('unresolved_thread_count', 0)}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Lifecycle Topics</h2>
+        <p><strong>Top episodes:</strong> {escape(', '.join((((payload.get('memory_lifecycle') or {}).get('episodic', {}) or {}).get('top_episode_topics', [])[:6]) or ['—']))}</p>
+        <p><strong>Recent archived:</strong> {escape(', '.join((((payload.get('memory_lifecycle') or {}).get('archive', {}) or {}).get('recent_archived_topics', [])[:6]) or ['—']))}</p>
+        <p><strong>Unresolved:</strong> {escape(', '.join((((payload.get('memory_lifecycle') or {}).get('continuity', {}) or {}).get('unresolved_threads', [])[:8]) or ['—']))}</p>
+      </section>
+    </div>
+
     <section class="card" style="margin-top:16px;" id="themes">
       <h2>Opportunity Themes</h2>
       <table>
@@ -6021,6 +6043,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const communicatorSelfRelationships = communicatorSelf.relationships || {{}};
       const communicatorSelfNarrative = communicatorSelf.narrative_state || {{}};
       const communicatorSelfPreservation = communicatorSelf.self_preservation_signals || {{}};
+      const memoryLifecycle = payload.memory_lifecycle || {{}};
+      const memoryLifecycleWorking = memoryLifecycle.working || {{}};
+      const memoryLifecycleEpisodic = memoryLifecycle.episodic || {{}};
+      const memoryLifecycleSemantic = memoryLifecycle.semantic || {{}};
+      const memoryLifecycleArchive = memoryLifecycle.archive || {{}};
+      const memoryLifecycleContinuity = memoryLifecycle.continuity || {{}};
       const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
         .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
       const topThemes = themes.slice(0, 6);
@@ -6131,6 +6159,26 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <section class="card">
           <h2>Conversation Threads</h2>
           <ul>${{Object.entries(communicatorSelfRelationships.conversation_threads || Object.create(null)).sort((a, b) => (b[1]?.last_exchange_at || 0) - (a[1]?.last_exchange_at || 0)).slice(0, 8).map(([topic, thread]) => `<li><strong>${{esc(topic)}}</strong> · ${{esc(thread.status || 'open')}} · exchanges ${{thread.exchange_count ?? 0}}<br><span class='muted'>${{esc(thread.last_message_summary || '')}}</span></li>`).join('') || '<li class="muted">No conversation threads yet.</li>'}}</ul>
+        </section>`;
+
+      const memoryLifecycleEl = document.getElementById('memory-lifecycle');
+      if (memoryLifecycleEl) memoryLifecycleEl.innerHTML = `
+        <section class="card">
+          <h2>Memory Lifecycle</h2>
+          <p>Working exchanges: <strong>${{memoryLifecycleWorking.recent_exchange_count ?? 0}}</strong></p>
+          <p>Working thoughts: <strong>${{memoryLifecycleWorking.recent_thought_count ?? 0}}</strong></p>
+          <p>Active concern topics: <strong>${{memoryLifecycleWorking.active_concern_topic_count ?? 0}}</strong></p>
+          <p>Episodic memory count: <strong>${{memoryLifecycleEpisodic.episode_count ?? 0}}</strong></p>
+          <p>Stable topic count: <strong>${{memoryLifecycleSemantic.stable_topic_count ?? 0}}</strong></p>
+          <p>Continuity anchor count: <strong>${{memoryLifecycleSemantic.continuity_anchor_count ?? 0}}</strong></p>
+          <p>Archived count: <strong>${{memoryLifecycleArchive.archived_count ?? 0}}</strong></p>
+          <p>Unresolved threads: <strong>${{memoryLifecycleContinuity.unresolved_thread_count ?? 0}}</strong></p>
+        </section>
+        <section class="card">
+          <h2>Lifecycle Topics</h2>
+          <p><strong>Top episodes:</strong> ${{esc((memoryLifecycleEpisodic.top_episode_topics || []).slice(0, 6).join(', ') || '—')}}</p>
+          <p><strong>Recent archived:</strong> ${{esc((memoryLifecycleArchive.recent_archived_topics || []).slice(0, 6).join(', ') || '—')}}</p>
+          <p><strong>Unresolved:</strong> ${{esc((memoryLifecycleContinuity.unresolved_threads || []).slice(0, 8).join(', ') || '—')}}</p>
         </section>`;
 
       const grids = document.querySelectorAll('.grid');
