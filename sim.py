@@ -1303,7 +1303,7 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
         if source_id and source_id in recent_thought_ids:
             trimmed_thought_ids.append(source_id)
 
-    for item in list(relationships.get("recent_human_exchanges") or [])[:-6]:
+    for item in list(relationships.get("recent_human_exchanges") or [])[:-2]:
         _maybe_archive(
             "exchange",
             item,
@@ -1313,7 +1313,7 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
             int(item.get("created_at", 0) or now_ts),
         )
 
-    for item in list(self_state.get("inner_thoughts") or [])[:-10]:
+    for item in list(self_state.get("inner_thoughts") or [])[:-3]:
         _maybe_archive(
             "thought",
             item,
