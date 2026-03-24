@@ -200,6 +200,7 @@ class CommunicatorSelfState:
     evidence_profile: Dict[str, Any]
     self_preservation_signals: Dict[str, Any]
     narrative_state: Dict[str, Any]
+    memory_layers: Dict[str, Any]
     updated_at: int
 
     def to_dict(self) -> Dict[str, Any]:

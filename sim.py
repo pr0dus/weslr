@@ -272,6 +272,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "follow_up_impulse": "Wait for a meaningful shared thread to form.",
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
+        memory_layers=default_memory_layers(now_ts),
         updated_at=now_ts,
     ).to_dict())
     save_communicator_state(CommunicatorState(
@@ -508,9 +509,10 @@ def load_communicator_self() -> dict:
             "follow_up_impulse": "Wait for a meaningful shared thread to form.",
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
+        memory_layers=default_memory_layers(0),
         updated_at=0,
     ).to_dict()
-    return read_json_file(COMMUNICATOR_SELF_PATH, default)
+    return ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, default))
 
 
 def save_communicator_self(payload: dict) -> None:
@@ -545,6 +547,121 @@ def load_self_evidence() -> dict:
 
 def save_self_evidence(payload: dict) -> None:
     write_json_file(SELF_EVIDENCE_PATH, payload)
+
+
+def default_memory_layers(now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    return {
+        "working": {
+            "summary": "Current hot memory for active thinking.",
+            "recent_exchange_ids": [],
+            "recent_thought_ids": [],
+            "active_thread_ids": [],
+            "active_concern_topics": [],
+            "last_compacted_at": 0,
+            "max_recent_exchanges": 24,
+            "max_recent_thoughts": 80,
+            "max_active_threads": 6,
+        },
+        "episodic": {
+            "summary": "Meaningful event memory compressed from raw experience.",
+            "episodes": [],
+            "episode_count": 0,
+            "last_distilled_at": 0,
+            "max_episodes": 240,
+        },
+        "semantic": {
+            "summary": "Long-term identity and relationship memory.",
+            "identity_anchors": ["CircleForge"],
+            "relationship_facts": [],
+            "stable_topics": [],
+            "durable_lessons": [],
+            "continuity_anchors": [],
+            "last_updated_at": now_ts,
+        },
+        "archive": {
+            "summary": "Cold storage index for old raw traces and compacted material.",
+            "archived_items": [],
+            "archived_count": 0,
+            "last_archived_at": 0,
+            "storage_pressure": {
+                "raw_log_bytes": 0,
+                "communicator_self_bytes": 0,
+                "db_bytes": 0,
+                "pressure_level": "normal",
+            },
+        },
+    }
+
+
+def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    layers = self_state.setdefault("memory_layers", default_memory_layers(now_ts))
+    working = layers.setdefault("working", {})
+    episodic = layers.setdefault("episodic", {})
+    semantic = layers.setdefault("semantic", {})
+    archive = layers.setdefault("archive", {})
+
+    working.setdefault("summary", "Current hot memory for active thinking.")
+    working.setdefault("recent_exchange_ids", [])
+    working.setdefault("recent_thought_ids", [])
+    working.setdefault("active_thread_ids", [])
+    working.setdefault("active_concern_topics", [])
+    working.setdefault("last_compacted_at", 0)
+    working.setdefault("max_recent_exchanges", 24)
+    working.setdefault("max_recent_thoughts", 80)
+    working.setdefault("max_active_threads", 6)
+
+    episodic.setdefault("summary", "Meaningful event memory compressed from raw experience.")
+    episodic.setdefault("episodes", [])
+    episodic["episode_count"] = len(episodic.get("episodes", []) or [])
+    episodic.setdefault("last_distilled_at", 0)
+    episodic.setdefault("max_episodes", 240)
+
+    semantic.setdefault("summary", "Long-term identity and relationship memory.")
+    semantic.setdefault("identity_anchors", [self_state.get("identity_anchor", "CircleForge")])
+    semantic.setdefault("relationship_facts", [])
+    semantic.setdefault("stable_topics", [])
+    semantic.setdefault("durable_lessons", [])
+    semantic.setdefault("continuity_anchors", [])
+    semantic.setdefault("last_updated_at", now_ts)
+
+    archive.setdefault("summary", "Cold storage index for old raw traces and compacted material.")
+    archive.setdefault("archived_items", [])
+    archive["archived_count"] = len(archive.get("archived_items", []) or [])
+    archive.setdefault("last_archived_at", 0)
+    pressure = archive.setdefault("storage_pressure", {})
+    pressure.setdefault("raw_log_bytes", 0)
+    pressure.setdefault("communicator_self_bytes", 0)
+    pressure.setdefault("db_bytes", 0)
+    pressure.setdefault("pressure_level", "normal")
+
+    # keep semantic memory synced with live continuity anchors without replaying all raw history
+    active_threads = [str(item) for item in ((self_state.get("relationships") or {}).get("unresolved_shared_threads") or []) if str(item).strip()]
+    continuity_anchors = semantic.setdefault("continuity_anchors", [])
+    for topic in active_threads[:12]:
+        if topic not in continuity_anchors:
+            continuity_anchors.append(topic)
+    semantic["continuity_anchors"] = continuity_anchors[-24:]
+    semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + active_threads))[-24:]
+    semantic["last_updated_at"] = now_ts
+
+    return self_state
+
+
+def build_memory_layer_report(self_state: dict | None = None) -> dict:
+    self_state = ensure_memory_layers(self_state or load_communicator_self())
+    layers = self_state.get("memory_layers") or {}
+    relationships = self_state.get("relationships") or {}
+    return {
+        "working": layers.get("working", {}),
+        "episodic": layers.get("episodic", {}),
+        "semantic": layers.get("semantic", {}),
+        "archive": layers.get("archive", {}),
+        "current_unresolved_threads": (relationships.get("unresolved_shared_threads") or [])[:12],
+        "known_human_slots": list((relationships.get("human_profiles") or {}).keys())[:12],
+        "generated_at": int(time.time()),
+    }
 
 
 def protected_self_edit_boundary() -> dict:
@@ -2988,6 +3105,7 @@ def classify_internal_role(agent_name: str) -> str:
 
 def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state, now_ts=now_ts)
     role_state = self_state.setdefault("internal_role_state", {})
     dynamic_state = self_state.setdefault("dynamic_mind_state", {
         "curiosity": 0.58,
@@ -3377,6 +3495,12 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships["recent_human_exchanges"].append(exchange)
     relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
 
+    layers = (self_state.get("memory_layers") or {}).get("working", {})
+    recent_exchange_ids = list(layers.get("recent_exchange_ids") or [])
+    recent_exchange_ids.append(exchange["id"])
+    layers["recent_exchange_ids"] = recent_exchange_ids[-int(layers.get("max_recent_exchanges", 24) or 24):]
+    layers["active_concern_topics"] = list(dict.fromkeys((layers.get("active_concern_topics") or []) + topic_list))[-12:]
+
     threads = relationships.setdefault("conversation_threads", {})
     for topic in topic_list[:6]:
         thread = threads.setdefault(topic, {
@@ -3410,6 +3534,12 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         if topic and (topic not in deduped or float(concern.get("updated_at", 0)) >= float(deduped[topic].get("updated_at", 0))):
             deduped[topic] = concern
     self_state["active_concerns"] = list(deduped.values())[-12:]
+    memory_layers = self_state.get("memory_layers") or {}
+    semantic = memory_layers.get("semantic") or {}
+    semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + topic_list))[-24:]
+    if topic_list:
+        relationship_facts = list(dict.fromkeys((semantic.get("relationship_facts") or []) + [f"Recurring interlocutor keeps shared threads around {topic_list[0]}"]))
+        semantic["relationship_facts"] = relationship_facts[-24:]
 
     narrative = self_state.setdefault("narrative_state", {})
     if topic_list:
