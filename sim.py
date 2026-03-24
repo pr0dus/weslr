@@ -352,23 +352,45 @@ def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
         with urllib.request.urlopen(req, timeout=20, context=insecure_context) as resp:
             raw = resp.read(1024 * 1024)
             content_type = str(resp.headers.get("Content-Type", ""))
-    text = raw.decode("utf-8", errors="replace")
+    html_text = raw.decode("utf-8", errors="replace")
+    text = html_text
     title = ""
     if "html" in content_type.lower() or "<html" in text.lower():
-        title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.I | re.S)
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html_text, flags=re.I | re.S)
         if title_match:
             title = unescape(re.sub(r"\s+", " ", title_match.group(1))).strip()
-        body_match = re.search(r"<body[^>]*>(.*?)</body>", text, flags=re.I | re.S)
-        if body_match:
-            text = body_match.group(1)
-        article_match = re.search(r"<(article|main)[^>]*>(.*?)</\1>", text, flags=re.I | re.S)
-        if article_match:
-            text = article_match.group(2)
-        for pattern in [r"<script.*?</script>", r"<style.*?</style>", r"<noscript.*?</noscript>", r"<svg.*?</svg>", r"<nav.*?</nav>", r"<footer.*?</footer>", r"<header.*?</header>", r"<aside.*?</aside>", r"<form.*?</form>"]:
-            text = re.sub(pattern, " ", text, flags=re.I | re.S)
-        text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
-        text = re.sub(r"</p>", "\n", text, flags=re.I)
-        text = re.sub(r"<[^>]+>", " ", text)
+        body_match = re.search(r"<body[^>]*>(.*?)</body>", html_text, flags=re.I | re.S)
+        body_html = body_match.group(1) if body_match else html_text
+        candidate_blocks = []
+        for pattern in [
+            r"<(article|main)[^>]*>(.*?)</\1>",
+            r"<(section|div)[^>]+class=[\"'][^\"']*(content|article|post|entry|main|body|story|markdown)[^\"']*[\"'][^>]*>(.*?)</\1>",
+        ]:
+            for match in re.finditer(pattern, body_html, flags=re.I | re.S):
+                block = match.group(match.lastindex or 1)
+                candidate_blocks.append(block)
+        working_html = max(candidate_blocks, key=len) if candidate_blocks else body_html
+        for pattern in [r"<script.*?</script>", r"<style.*?</style>", r"<noscript.*?</noscript>", r"<svg.*?</svg>", r"<nav.*?</nav>", r"<footer.*?</footer>", r"<header.*?</header>", r"<aside.*?</aside>", r"<form.*?</form>", r"<button.*?</button>"]:
+            working_html = re.sub(pattern, " ", working_html, flags=re.I | re.S)
+        block_parts = re.split(r"</?(p|li|h1|h2|h3|blockquote|section|article|main|div)[^>]*>", working_html, flags=re.I)
+        readability_chunks = []
+        for part in block_parts:
+            plain = unescape(re.sub(r"<[^>]+>", " ", part))
+            plain = re.sub(r"\s+", " ", plain).strip()
+            if len(plain) < 60:
+                continue
+            if plain.count(" ") < 8:
+                continue
+            lowered = plain.lower()
+            if any(noise in lowered for noise in ["cookie policy", "privacy policy", "all rights reserved", "sign in", "subscribe", "follow us", "shop now", "advertisement", "skip to main content", "my account", "contact us login", "journals & books help", "submit cancel"]):
+                continue
+            score = len(plain)
+            score += plain.count('.') * 8 + plain.count('?') * 5
+            if any(token in lowered for token in [" is ", " are ", " was ", " were ", " means ", " defined ", " refers to "]):
+                score += 25
+            readability_chunks.append((score, plain))
+        readability_chunks.sort(key=lambda item: item[0], reverse=True)
+        text = " ".join(chunk for _, chunk in readability_chunks[:12]) or unescape(re.sub(r"<[^>]+>", " ", working_html))
     text = unescape(text)
     text = re.sub(r"\b(login|sign in|subscribe|cookie policy|privacy policy|all rights reserved|shop now|follow us|menu|skip to main content|my account|search close|submit cancel|donate)\b", " ", text, flags=re.I)
     text = re.sub(r"\s+", " ", text).strip()
@@ -385,7 +407,7 @@ def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
             continue
         if sentence.count("|") > 1 or sentence.count("·") > 2:
             continue
-        if any(noise in lowered for noise in ["copyright", "all rights reserved", "follow follow", "shop now", "curriculum access", "contact us login", "submit cancel", "journals & books help"]):
+        if any(noise in lowered for noise in ["copyright", "all rights reserved", "follow follow", "shop now", "curriculum access", "contact us login", "submit cancel", "journals & books help", "layout insert", "position left position right"]):
             continue
         seen.add(lowered)
         cleaned_sentences.append(sentence)
