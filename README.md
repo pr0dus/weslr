@@ -182,7 +182,7 @@ python3 main.py communicator-message
 A more guided public demo flow:
 
 ```bash
-python3 main.py human-exchange Robert "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
+python3 main.py human-exchange human "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
 python3 main.py communicator-message
 ```
 

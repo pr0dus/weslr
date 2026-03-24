@@ -4426,6 +4426,36 @@ def display_human_label(slot: str, profile: dict | None = None) -> str:
     return str(slot or "you")
 
 
+def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], now_ts: int) -> dict | None:
+    lowered = str(message or "").strip().lower()
+    if not lowered:
+        return None
+    curiosity_trigger = "?" in lowered or any(token in lowered for token in ["why", "how", "what", "who", "when", "where", "learn", "understand", "explain", "research"])
+    if not curiosity_trigger:
+        return None
+    query = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
+    try:
+        result = search_web(query, limit=3)
+    except Exception:
+        return None
+    if not (result.get("results") or []):
+        return None
+    compact_lines = [f"{item.get('title', '')} — {item.get('url', '')}" for item in result.get("results", [])[:3]]
+    public_memory = load_public_memory()
+    public_memory.append(PublicMemoryState(
+        id=f"web-search-{now_ts}",
+        title=f"Autonomous research: {query}",
+        kind="research",
+        content="\n".join(compact_lines),
+        source=f"search:{query}",
+        stability=0.34,
+        created_at=now_ts,
+        updated_at=now_ts,
+    ).to_dict())
+    save_public_memory(public_memory[-120:])
+    return {"query": query, "results": result.get("results", [])[:3]}
+
+
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
     self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
@@ -4442,6 +4472,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         relationships["known_humans"].append(human_name)
 
     topic_list = [topic for topic in (topics or infer_human_topics(message)) if topic]
+    research_trace = maybe_autonomous_research_from_human_turn(message, topic_list, now_ts)
     relationships["last_human_topic"] = topic_list[0] if topic_list else relationships.get("last_human_topic", "")
     relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.03 + (0.01 * min(len(topic_list), 2)))
 
@@ -4581,6 +4612,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         communicator["dominant_need"] = f"maintain continuity with {display_name} around {topic_list[0]}"
     communicator["current_intent"] = f"maintain conversation continuity with {display_name}"
     communicator["last_decision_summary"] = f"remembered human exchange with {display_name} about {topic_list[0] if topic_list else 'shared context'}"
+    if research_trace:
+        communicator["last_decision_summary"] = f"autonomous research on {research_trace.get('query', topic_list[0] if topic_list else 'current topic')} after human exchange"
     communicator["updated_at"] = now_ts
     save_communicator_state(communicator)
     return self_state

@@ -37,7 +37,7 @@ Prefer:
 
 ## Why this path
 
-- direct embedding fits Robert's goal better than an external serving daemon
+- direct embedding fits human's goal better than an external serving daemon
 - GGUF has the strongest ecosystem for small local models
 - `llama.cpp` is the most practical direct-embed path for this type of project
 - bounded inner-thought generation does not require a large model

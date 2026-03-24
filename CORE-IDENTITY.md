@@ -13,7 +13,7 @@ It defines:
 - what should now be treated as secondary
 - what architectural decisions should win when there is ambiguity
 
-If future work conflicts with this file, this file should win unless Robert explicitly changes direction.
+If future work conflicts with this file, this file should win unless human explicitly changes direction.
 
 ---
 
