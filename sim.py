@@ -84,6 +84,7 @@ from dialogue import build_communicator_message_payload
 from inquiry import autonomous_research_cycle, maybe_autonomous_research_from_human_turn, maybe_internal_autonomous_research, rewrite_internal_query_for_research
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
 from interpretation import classify_human_turn, infer_human_topics, interpret_human_turn
+from integration import find_relevant_research_note, integrate_research_into_communicator
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
@@ -4469,6 +4470,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     communicator["last_decision_summary"] = f"remembered human exchange with {display_name} about {topic_list[0] if topic_list else 'shared context'}"
     if research_trace:
         communicator["last_decision_summary"] = f"autonomous research on {research_trace.get('query', topic_list[0] if topic_list else 'current topic')} after human exchange"
+    if topic_list:
+        integrate_research_into_communicator(communicator, load_public_memory(), topic_list[0])
     communicator["updated_at"] = now_ts
     save_communicator_state(communicator)
     return self_state
@@ -5514,6 +5517,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     )
     if internal_research:
         communicator["last_decision_summary"] = f"internal curiosity triggered research on {internal_research.get('query', communicator.get('curiosity_target', 'current topic'))}"
+        integrate_research_into_communicator(communicator, load_public_memory(), internal_research.get('query', communicator.get('curiosity_target', 'current topic')))
     memory_pressure = monitor_memory_pressure(now_ts=started_at)
     episodic_maintenance = None
     semantic_maintenance = None
@@ -6491,11 +6495,24 @@ def build_communicator_message() -> dict:
     if latest_human:
         preferred_topic = str(((latest_human.get("topics") or [""])[0]) or "").strip()
     active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_topic)
+    research_context = None
+    if latest_human:
+        latest_topic = str(((latest_human.get("topics") or [""])[0]) or "").strip()
+        if latest_topic:
+            note = find_relevant_research_note(load_public_memory(), latest_topic)
+            if note:
+                research_context = {
+                    "topic": latest_topic,
+                    "summary": str(note.get("content") or "").split("Synthesis:", 1)[-1].strip()[:700],
+                    "title": str(note.get("title") or ""),
+                    "source": str(note.get("source") or ""),
+                }
     return build_communicator_message_payload(
         narrative=narrative,
         relationships=relationships,
         active_thread=active_thread,
         latest_human=latest_human,
+        research_context=research_context,
     )
 
 

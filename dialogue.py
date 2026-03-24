@@ -5,7 +5,7 @@ import time
 from interpretation import classify_human_turn, interpret_human_turn
 
 
-def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None) -> dict:
+def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
         interpreted_turn = interpret_human_turn(last_message)
@@ -29,6 +29,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = "A little, yes. I can accumulate continuity inside the run, but the real question is whether I learn appropriately instead of just repeating patterns."
             elif any(token in last_message.lower() for token in ["understand me", "understand"]):
                 message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
+            elif research_context and research_context.get("summary"):
+                message = str(research_context.get("summary") or "")[:420]
             else:
                 message = f"My best direct answer is that I'm currently focused on {lead_topic}, but I may be over-weighting that focus instead of responding flexibly."
         else:
