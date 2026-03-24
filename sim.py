@@ -3702,12 +3702,22 @@ def update_pressure_fields(self_state: dict, communicator: dict, consumed_count:
     dynamic = self_state.setdefault("dynamic_mind_state", {})
     topic_pressure = self_state.setdefault("topic_pressure", {})
     active_topic = str(communicator.get("active_pursuit") or relationships.get("last_human_topic") or "continuity").strip() or "continuity"
+    threads = relationships.get("conversation_threads") or {}
+    fresh_or_matching_threads = []
+    for topic in unresolved_shared_threads:
+        thread = threads.get(topic) or {}
+        last_human_at = int(thread.get("last_human_exchange_at", 0) or 0)
+        seconds_since = max(0, now_ts - last_human_at) if last_human_at else 999999
+        matches_active = str(topic).strip().lower() == active_topic.strip().lower()
+        if matches_active or seconds_since <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+            fresh_or_matching_threads.append(topic)
+    dynamic_unresolved_threads = fresh_or_matching_threads
     payload = dict(topic_pressure.get(active_topic) or {})
-    payload["salience"] = max(0.0, min(1.5, float(payload.get("salience", 0.18)) * 0.94 + (0.25 if consumed_count > 0 else 0.0) + (0.16 if unresolved_shared_threads else 0.0) + (0.08 if unresolved_needs else 0.0)))
+    payload["salience"] = max(0.0, min(1.5, float(payload.get("salience", 0.18)) * 0.94 + (0.25 if consumed_count > 0 else 0.0) + (0.16 if dynamic_unresolved_threads else 0.0) + (0.08 if unresolved_needs else 0.0)))
     payload["novelty"] = max(0.0, min(1.0, float(payload.get("novelty", 0.1)) * 0.88 + (0.22 if consumed_count > 0 else 0.0)))
-    payload["emotional_weight"] = max(0.0, min(1.0, float(payload.get("emotional_weight", 0.12)) * 0.95 + (0.12 if unresolved_shared_threads else 0.0)))
-    payload["unresolvedness"] = max(0.0, min(1.0, float(payload.get("unresolvedness", 0.16)) * 0.96 + (0.18 if communicator.get("unresolved_question") else 0.0) + (0.14 if unresolved_shared_threads else 0.0)))
-    payload["human_relevance"] = max(0.0, min(1.0, float(payload.get("human_relevance", 0.08)) * 0.95 + (0.22 if unresolved_shared_threads else 0.0) + (0.28 if consumed_count > 0 else 0.0)))
+    payload["emotional_weight"] = max(0.0, min(1.0, float(payload.get("emotional_weight", 0.12)) * 0.95 + (0.12 if dynamic_unresolved_threads else 0.0)))
+    payload["unresolvedness"] = max(0.0, min(1.0, float(payload.get("unresolvedness", 0.16)) * 0.96 + (0.18 if communicator.get("unresolved_question") else 0.0) + (0.14 if dynamic_unresolved_threads else 0.0)))
+    payload["human_relevance"] = max(0.0, min(1.0, float(payload.get("human_relevance", 0.08)) * 0.95 + (0.22 if dynamic_unresolved_threads else 0.0) + (0.28 if consumed_count > 0 else 0.0)))
     payload["decay"] = float(payload.get("decay", 0.08) or 0.08)
     payload["last_touched_at"] = now_ts
     topic_pressure[active_topic] = payload
@@ -3716,9 +3726,9 @@ def update_pressure_fields(self_state: dict, communicator: dict, consumed_count:
         self_state["topic_pressure"] = trimmed
         topic_pressure = trimmed
     uncertainty = 0.24 + (0.18 if communicator.get("unresolved_question") else 0.0) + (0.08 if unresolved_needs else 0.0)
-    attachment = 0.18 + min(0.35, len(unresolved_shared_threads) * 0.08)
+    attachment = 0.18 + min(0.35, len(dynamic_unresolved_threads) * 0.08)
     dynamic["curiosity"] = max(0.0, min(1.0, float(dynamic.get("curiosity", 0.58)) * 0.97 + (0.08 if consumed_count > 0 else 0.0) + (0.06 if communicator.get("unresolved_question") else 0.0)))
-    dynamic["tension"] = max(0.0, min(1.0, float(dynamic.get("tension", 0.18)) * 0.95 + (0.12 if unresolved_needs else 0.0) + (0.1 if unresolved_shared_threads else 0.0)))
+    dynamic["tension"] = max(0.0, min(1.0, float(dynamic.get("tension", 0.18)) * 0.95 + (0.12 if unresolved_needs else 0.0) + (0.1 if dynamic_unresolved_threads else 0.0)))
     dynamic["attachment"] = max(0.0, min(1.0, float(dynamic.get("attachment", 0.2)) * 0.97 + attachment * 0.12))
     dynamic["uncertainty"] = max(0.0, min(1.0, float(dynamic.get("uncertainty", 0.33)) * 0.96 + uncertainty * 0.16))
     dynamic["sleep_pressure"] = max(0.0, min(1.0, float(dynamic.get("sleep_pressure", 0.12)) * 0.98 + 0.02))
@@ -4439,8 +4449,14 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         narrative["self_story"] = f"CircleForge is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
     narrative["last_reflection"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
 
-    preferred_thread_topic = str(relationships.get("last_human_topic") or "") or chosen_theme
+    recent_human_messages = list(relationships.get("recent_human_messages") or [])
+    latest_human_topic = ""
+    if recent_human_messages:
+        latest_human_topic = str((((recent_human_messages[-1].get("topics") or [""])[0]) or "")).strip()
+    preferred_thread_topic = latest_human_topic or str(relationships.get("last_human_topic") or "") or chosen_theme
     active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_thread_topic)
+    if active_thread and preferred_thread_topic and str(active_thread[0]).strip().lower() != str(preferred_thread_topic).strip().lower():
+        active_thread = None
     if active_thread:
         topic, thread = active_thread
         human_name = str(thread.get("human", "human"))
