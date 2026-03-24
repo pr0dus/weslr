@@ -6484,8 +6484,15 @@ def handoff_summary(limit: int = 5) -> Dict:
     packs = read_json_file(PACKS_PATH, [])[:max(1, limit)]
     export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
     top_artifacts = sorted(export_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("commercial_readiness_score", 0.0)), reverse=True)[:max(1, limit)]
+    memory_pressure = monitor_memory_pressure()
+    recent_memory_maintenance = {
+        "pressure_level": memory_pressure.get("pressure_level"),
+        "pressure_score": memory_pressure.get("pressure_score"),
+        "recommended_actions": memory_pressure.get("recommended_actions", []),
+    }
     return {
         "memory_lifecycle": build_memory_lifecycle_report(),
+        "memory_maintenance": recent_memory_maintenance,
         "top_packs": [
             {
                 "pack_name": pack.get("pack_name"),
