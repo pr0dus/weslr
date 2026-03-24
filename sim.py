@@ -4468,9 +4468,10 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         stale_thread = ((seconds_since_human > max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
         saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
         if stale_thread:
-            narrative["active_thread_summary"] = f"Older shared thread '{topic}' is still present with {human_name}, but it should not dominate current focus."
-            narrative["follow_up_impulse"] = f"Keep {topic} available in memory without letting it overtake fresher context."
-            narrative["why_it_matters"] = f"{topic} is part of continuity, but stale continuity should not override newer meaning."
+            display_topic = str(relationships.get("last_human_topic") or chosen_theme or topic or "current context").strip()
+            narrative["active_thread_summary"] = f"A newer human topic is now in focus; older shared context with {human_name} should stay in memory without dominating."
+            narrative["follow_up_impulse"] = f"Stay with {display_topic} until the current line of conversation is actually answered or resolved."
+            narrative["why_it_matters"] = f"Older continuity still matters, but the present conversation about {display_topic} should shape the next response more than stale thread pressure."
         else:
             narrative["active_thread_summary"] = f"Still carrying shared thread '{topic}' with {human_name}; exchanges={thread.get('exchange_count', 0)}."
             if saturated:
