@@ -12,7 +12,7 @@ from pathlib import Path
 
 from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from llm_runtime import embedded_self_test
-from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, fetch_url_text, handoff_summary, ingest_web_resource, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, search_web, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -173,6 +173,18 @@ def cmd_embedded_self_test(_args):
 
 def cmd_human_exchange(args):
     emit(record_human_exchange(args.name, args.message, response=args.response, topics=args.topics, unresolved=not args.resolved))
+
+
+def cmd_fetch_url(args):
+    emit(fetch_url_text(args.url, max_chars=args.max_chars))
+
+
+def cmd_search_web(args):
+    emit(search_web(args.query, limit=args.limit))
+
+
+def cmd_ingest_web(args):
+    emit(ingest_web_resource(args.url, title=args.title, max_chars=args.max_chars))
 
 
 def cmd_eval_metrics(_args):
@@ -409,6 +421,22 @@ def main():
     p.add_argument("--topics", nargs="*", default=None)
     p.add_argument("--resolved", action="store_true", help="mark the exchange as resolved instead of an open shared thread")
     p.set_defaults(func=cmd_human_exchange)
+
+    p = sub.add_parser("fetch-url", help="fetch readable text from a URL for local research / reading")
+    p.add_argument("url")
+    p.add_argument("--max-chars", type=int, default=12000)
+    p.set_defaults(func=cmd_fetch_url)
+
+    p = sub.add_parser("search-web", help="run a lightweight web search for the current topic")
+    p.add_argument("query")
+    p.add_argument("--limit", type=int, default=5)
+    p.set_defaults(func=cmd_search_web)
+
+    p = sub.add_parser("ingest-web", help="fetch a URL and save the readable text into public memory")
+    p.add_argument("url")
+    p.add_argument("--title", default="")
+    p.add_argument("--max-chars", type=int, default=12000)
+    p.set_defaults(func=cmd_ingest_web)
 
     p = sub.add_parser("eval-metrics", help="show evaluation metrics for the future bounded autonomy gate")
     p.set_defaults(func=cmd_eval_metrics)

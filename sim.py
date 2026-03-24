@@ -3,12 +3,15 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 import shutil
 import sqlite3
+import ssl
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
-from html import escape
+from html import escape, unescape
 from pathlib import Path
 from typing import Dict, List
 
@@ -332,6 +335,79 @@ def write_json_file(path: Path, payload) -> None:
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(payload, indent=2))
     tmp_path.replace(path)
+
+
+def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
+    req = urllib.request.Request(str(url), headers={"User-Agent": f"{PROJECT_NAME}/{VERSION}"})
+    insecure_ssl_fallback_used = False
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read(1024 * 1024)
+            content_type = str(resp.headers.get("Content-Type", ""))
+    except urllib.error.URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc):
+            raise
+        insecure_ssl_fallback_used = True
+        insecure_context = ssl._create_unverified_context()
+        with urllib.request.urlopen(req, timeout=20, context=insecure_context) as resp:
+            raw = resp.read(1024 * 1024)
+            content_type = str(resp.headers.get("Content-Type", ""))
+    text = raw.decode("utf-8", errors="replace")
+    title = ""
+    if "html" in content_type.lower() or "<html" in text.lower():
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.I | re.S)
+        if title_match:
+            title = unescape(re.sub(r"\s+", " ", title_match.group(1))).strip()
+        text = re.sub(r"<script.*?</script>", " ", text, flags=re.I | re.S)
+        text = re.sub(r"<style.*?</style>", " ", text, flags=re.I | re.S)
+        text = re.sub(r"<[^>]+>", " ", text)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return {
+        "url": str(url),
+        "title": title or str(url),
+        "content_type": content_type,
+        "text": text[:max(500, int(max_chars))],
+        "insecure_ssl_fallback_used": insecure_ssl_fallback_used,
+        "fetched_at": int(time.time()),
+    }
+
+
+def search_web(query: str, limit: int = 5) -> dict:
+    query = str(query or "").strip()
+    if not query:
+        return {"query": "", "results": []}
+    encoded = urllib.parse.quote_plus(query)
+    url = f"https://html.duckduckgo.com/html/?q={encoded}"
+    req = urllib.request.Request(url, headers={"User-Agent": f"{PROJECT_NAME}/{VERSION}"})
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        html = resp.read(1024 * 1024).decode("utf-8", errors="replace")
+    matches = re.findall(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', html, flags=re.I | re.S)
+    results = []
+    for href, title_html in matches[:max(1, int(limit))]:
+        title = unescape(re.sub(r"<[^>]+>", " ", title_html))
+        title = re.sub(r"\s+", " ", title).strip()
+        results.append({"title": title, "url": href})
+    return {"query": query, "results": results, "fetched_at": int(time.time())}
+
+
+def ingest_web_resource(url: str, title: str = "", max_chars: int = 12000) -> dict:
+    fetched = fetch_url_text(url, max_chars=max_chars)
+    public_memory = load_public_memory()
+    now_ts = int(time.time())
+    item = PublicMemoryState(
+        id=f"web-{now_ts}",
+        title=title or fetched.get("title") or str(url),
+        kind="research",
+        content=fetched.get("text", ""),
+        source=str(url),
+        stability=0.42,
+        created_at=now_ts,
+        updated_at=now_ts,
+    ).to_dict()
+    public_memory.append(item)
+    save_public_memory(public_memory[-120:])
+    return {"saved": item, "fetched": fetched, "public_memory_count": len(load_public_memory())}
 
 
 def load_categories() -> list[str]:
