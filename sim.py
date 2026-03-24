@@ -1004,6 +1004,112 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
     }
 
 
+def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    episodic = layers.get("episodic") or {}
+    semantic = layers.get("semantic") or {}
+    relationships = self_state.get("relationships") or {}
+
+    episodes = list(episodic.get("episodes") or [])
+    stable_topics = list(semantic.get("stable_topics") or [])
+    continuity_anchors = list(semantic.get("continuity_anchors") or [])
+    relationship_facts = list(semantic.get("relationship_facts") or [])
+    durable_lessons = list(semantic.get("durable_lessons") or [])
+    identity_anchors = list(semantic.get("identity_anchors") or [])
+
+    created = {
+        "stable_topics": [],
+        "continuity_anchors": [],
+        "relationship_facts": [],
+        "durable_lessons": [],
+        "identity_anchors": [],
+    }
+
+    unresolved_threads = [str(item).strip() for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()]
+    for topic in unresolved_threads[:16]:
+        if topic not in continuity_anchors:
+            continuity_anchors.append(topic)
+            created["continuity_anchors"].append(topic)
+
+    for episode in episodes[-64:]:
+        topic = str(episode.get("topic") or "").strip()
+        human_label = str(episode.get("human_label") or episode.get("human") or "").strip()
+        status = str(episode.get("status") or "compressed").strip().lower()
+        summary = str(episode.get("summary") or "").strip()
+        exchange_count = int(episode.get("exchange_count", 0) or 0)
+        thread_count = int(episode.get("thread_count", 0) or 0)
+        thought_count = int(episode.get("thought_count", 0) or 0)
+        recurrence = float(episode.get("recurrence", 0.0) or 0.0)
+        relationship_weight = float(episode.get("relationship_weight", 0.0) or 0.0)
+        identity_weight = float(episode.get("identity_weight", 0.0) or 0.0)
+        importance = float(episode.get("importance_score", 0.0) or 0.0)
+
+        if topic and topic not in stable_topics:
+            stable_topics.append(topic)
+            created["stable_topics"].append(topic)
+
+        if topic and (status == "open" or importance >= 0.62 or identity_weight >= 0.75):
+            if topic not in continuity_anchors:
+                continuity_anchors.append(topic)
+                created["continuity_anchors"].append(topic)
+
+        if human_label and topic:
+            if status == "open":
+                fact = f"{human_label} still has an open shared thread with CircleForge around {topic}"
+            elif exchange_count >= 2:
+                fact = f"{human_label} and CircleForge have revisited {topic} across multiple exchanges"
+            else:
+                fact = f"{human_label} and CircleForge hold compressed memory around {topic}"
+            if fact not in relationship_facts:
+                relationship_facts.append(fact)
+                created["relationship_facts"].append(fact)
+
+        if topic:
+            if status == "open" and exchange_count >= 2:
+                lesson = f"When a shared thread around {topic} repeats, preserve it as continuity-bearing memory rather than treating it like disposable chat."
+            elif relationship_weight >= 0.7 and topic:
+                lesson = f"Topics tied to human relationship pressure such as {topic} should stay legible across compression steps."
+            elif identity_weight >= 0.75 and importance >= 0.55:
+                lesson = f"Identity-relevant topics like {topic} should distill into semantic memory before any archival pruning."
+            elif thought_count >= 2 and recurrence >= 0.3:
+                lesson = f"Repeated inner-thought activity around {topic} suggests a durable concern worth semantic tracking."
+            else:
+                lesson = ""
+            if lesson and lesson not in durable_lessons:
+                durable_lessons.append(lesson)
+                created["durable_lessons"].append(lesson)
+
+        if topic and any(token in topic.lower() for token in ["continuity", "memory", "relationship", "self", "identity"]):
+            anchor = f"CircleForge remains oriented around {topic}"
+            if anchor not in identity_anchors:
+                identity_anchors.append(anchor)
+                created["identity_anchors"].append(anchor)
+
+        if summary and "thread still open" in summary.lower() and topic:
+            lesson = f"Open-thread summaries for {topic} must survive compression so continuity pressure is not erased by cleanup."
+            if lesson not in durable_lessons:
+                durable_lessons.append(lesson)
+                created["durable_lessons"].append(lesson)
+
+    semantic["stable_topics"] = stable_topics[-32:]
+    semantic["continuity_anchors"] = continuity_anchors[-32:]
+    semantic["relationship_facts"] = relationship_facts[-32:]
+    semantic["durable_lessons"] = durable_lessons[-32:]
+    semantic["identity_anchors"] = identity_anchors[-16:] or [self_state.get("identity_anchor", "CircleForge")]
+    semantic["last_updated_at"] = now_ts
+
+    self_state["updated_at"] = now_ts
+    save_communicator_self(self_state)
+    return {
+        "created": created,
+        "semantic": semantic,
+        "episode_count": len(episodes),
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
