@@ -4981,6 +4981,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     human_relationships = communicator_self.get("relationships") or {}
     unresolved_shared_threads = [str(item).lower() for item in (human_relationships.get("unresolved_shared_threads") or [])]
     last_human_topic = str(human_relationships.get("last_human_topic", "")).lower()
+    relevant_active_thread = pick_relevant_active_thread(human_relationships, preferred_topic=last_human_topic)
+    active_thread_topic = str((relevant_active_thread or (None, {}))[0] or "").lower()
     human_profiles = human_relationships.get("human_profiles") or {}
     primary_profile = next(iter(human_profiles.values()), {}) if human_profiles else {}
     recurring_topics = {str(name).lower(): int(count) for name, count in (primary_profile.get("recurring_topics") or {}).items()}
@@ -5031,11 +5033,15 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
             score += 0.1
         proposal_theme = str(proposal.get("niche_theme") or "").lower()
         if proposal_theme and proposal_theme in unresolved_shared_threads:
-            score += 0.2
-        if proposal_theme and proposal_theme == last_human_topic:
             score += 0.12
+        if proposal_theme and proposal_theme == last_human_topic:
+            score += 0.24
+        if proposal_theme and proposal_theme == active_thread_topic:
+            score += 0.1
         if proposal_theme and recurring_topics.get(proposal_theme, 0) > 0:
-            score += min(recurring_topics.get(proposal_theme, 0) * 0.04, 0.16)
+            score += min(recurring_topics.get(proposal_theme, 0) * 0.03, 0.12)
+        if proposal_theme and last_human_topic and proposal_theme != last_human_topic and proposal_theme in unresolved_shared_threads:
+            score -= 0.12
         if proposal_theme and thought_theme_counts.get(proposal_theme, 0) > 0:
             score += min(thought_theme_counts.get(proposal_theme, 0) * 0.05, 0.2)
         if proposal.get("role") == "communicator" and thought_speak_votes > 0:
@@ -5113,8 +5119,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     running_match = next((item for item in experiments if item.get("status") == "running" and chosen.get("niche_theme") and chosen.get("niche_theme").lower() in str(item.get("title", "")).lower()), None)
     communicator_self = load_communicator_self()
     human_relationships = communicator_self.get("relationships") or {}
-    open_threads = list(sorted((human_relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
-    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
+    active_thread = pick_relevant_active_thread(human_relationships, preferred_topic=chosen.get("niche_theme") or human_relationships.get("last_human_topic") or "")
     if dominant_thought and dominant_thought.get("summary"):
         intent_text = f"{intent_text} | inner pull: {str(dominant_thought.get('summary'))[:120]}"
     communicator["current_intent"] = intent_text
@@ -6511,16 +6516,32 @@ def classify_human_turn(message: str) -> str:
     return "statement"
 
 
+def pick_relevant_active_thread(relationships: dict, preferred_topic: str = "") -> tuple[str, dict] | None:
+    threads = relationships.get("conversation_threads") or {}
+    open_threads = [item for item in sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True) if str(item[1].get("status", "open")) == "open"]
+    if not open_threads:
+        return None
+    preferred_topic = str(preferred_topic or "").strip().lower()
+    if preferred_topic:
+        exact = next((item for item in open_threads if str(item[0]).strip().lower() == preferred_topic), None)
+        if exact:
+            return exact
+    last_human_exchange_at = max((int(item[1].get("last_human_exchange_at", 0) or 0) for item in open_threads), default=0)
+    fresh = [item for item in open_threads if int(item[1].get("last_human_exchange_at", 0) or 0) >= last_human_exchange_at]
+    return fresh[0] if fresh else open_threads[0]
+
+
 def build_communicator_message() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
     narrative = self_state.get("narrative_state") or {}
     relationships = self_state.get("relationships") or {}
     recent_messages = list(relationships.get("recent_human_messages") or [])
-    threads = relationships.get("conversation_threads") or {}
-    open_threads = list(sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
-    active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
     latest_human = recent_messages[-1] if recent_messages else None
+    preferred_topic = ""
+    if latest_human:
+        preferred_topic = str(((latest_human.get("topics") or [""])[0]) or "").strip()
+    active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_topic)
 
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
