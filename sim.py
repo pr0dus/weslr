@@ -4471,7 +4471,9 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     if research_trace:
         communicator["last_decision_summary"] = f"autonomous research on {research_trace.get('query', topic_list[0] if topic_list else 'current topic')} after human exchange"
     if topic_list:
-        integrate_research_into_communicator(communicator, load_public_memory(), topic_list[0])
+        integrated = integrate_research_into_communicator(communicator, load_public_memory(), topic_list[0])
+        if integrated:
+            relationships["last_human_topic"] = integrated.get("topic", topic_list[0])
     communicator["updated_at"] = now_ts
     save_communicator_state(communicator)
     return self_state
@@ -6497,7 +6499,7 @@ def build_communicator_message() -> dict:
     active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_topic)
     research_context = None
     if latest_human:
-        latest_topic = str(((latest_human.get("topics") or [""])[0]) or "").strip()
+        latest_topic = str(relationships.get("last_human_topic") or ((latest_human.get("topics") or [""])[0]) or "").strip()
         if latest_topic:
             note = find_relevant_research_note(load_public_memory(), latest_topic)
             if note:
