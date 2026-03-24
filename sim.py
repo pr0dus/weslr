@@ -24,6 +24,8 @@ from config import (
     CIRCLEFORGE_LLM_MODEL,
     CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
     CIRCLEFORGE_WAKE_RANDOMNESS,
+    CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+    CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
     CIRCLEFORGE_FAILSAFE_STATE_PATH,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
@@ -1090,7 +1092,26 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
 
     max_episodes = int(episodic.get("max_episodes", 240) or 240)
     episodes.sort(key=lambda item: (int(item.get("last_event_at", 0) or 0), float(item.get("importance_score", 0.0) or 0.0)), reverse=True)
-    episodes = episodes[:max_episodes]
+    deduped_episodes = []
+    seen_episode_keys = {}
+    for episode in episodes:
+        dedupe_key = f"{str(episode.get('human') or '').strip().lower()}::{str(episode.get('topic') or '').strip().lower()}"
+        if dedupe_key not in seen_episode_keys:
+            seen_episode_keys[dedupe_key] = episode
+            deduped_episodes.append(episode)
+            continue
+        existing = seen_episode_keys[dedupe_key]
+        existing["source_ids"] = list(dict.fromkeys((existing.get("source_ids") or []) + (episode.get("source_ids") or [])))[-24:]
+        existing["source_labels"] = list(dict.fromkeys((existing.get("source_labels") or []) + (episode.get("source_labels") or [])))[-10:]
+        existing["exchange_count"] = max(int(existing.get("exchange_count", 0) or 0), int(episode.get("exchange_count", 0) or 0))
+        existing["thought_count"] = max(int(existing.get("thought_count", 0) or 0), int(episode.get("thought_count", 0) or 0))
+        existing["thread_count"] = max(int(existing.get("thread_count", 0) or 0), int(episode.get("thread_count", 0) or 0))
+        existing["importance_score"] = round(max(float(existing.get("importance_score", 0.0) or 0.0), float(episode.get("importance_score", 0.0) or 0.0)), 4)
+        existing["last_event_at"] = max(int(existing.get("last_event_at", 0) or 0), int(episode.get("last_event_at", 0) or 0))
+        existing["updated_at"] = max(int(existing.get("updated_at", 0) or 0), int(episode.get("updated_at", 0) or 0))
+        if str(episode.get("status") or "").lower() == "open":
+            existing["status"] = "open"
+    episodes = deduped_episodes[:max_episodes]
     episodic["episodes"] = episodes
     episodic["episode_count"] = len(episodes)
     episodic["last_distilled_at"] = now_ts if (created or updated) else int(episodic.get("last_distilled_at", 0) or 0)
@@ -4387,6 +4408,9 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         thread["last_message_summary"] = exchange["message_summary"]
         thread["last_response_summary"] = exchange["response_summary"]
         thread["last_exchange_at"] = now_ts
+        thread["last_human_exchange_at"] = now_ts
+        thread["last_passive_reinforced_at"] = int(thread.get("last_passive_reinforced_at", 0) or 0)
+        thread["passive_reinforcement_count"] = 0
         thread["status"] = "open" if unresolved else "resolved"
         recent_ids = list(thread.get("recent_exchange_ids") or [])
         recent_ids.append(exchange["id"])
@@ -4445,6 +4469,22 @@ def normalize_concern_topic(value: str) -> str:
     return text
 
 
+def should_passively_reinforce_thread(thread: dict, now_ts: int) -> bool:
+    last_human_exchange_at = int(thread.get("last_human_exchange_at", 0) or 0)
+    last_passive_reinforced_at = int(thread.get("last_passive_reinforced_at", 0) or 0)
+    passive_reinforcement_count = int(thread.get("passive_reinforcement_count", 0) or 0)
+
+    if passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS:
+        return False
+    if last_passive_reinforced_at > 0 and now_ts - last_passive_reinforced_at < CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS:
+        return False
+    if last_human_exchange_at <= 0:
+        return True
+    if passive_reinforcement_count <= 0:
+        return True
+    return now_ts - last_human_exchange_at >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
+
+
 def update_communicator_self_from_tick(communicator: dict, summaries: list[dict], communicator_decision: dict, now_ts: int) -> dict:
     self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
     affect = self_state.setdefault("affect", {})
@@ -4493,13 +4533,32 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     human_profiles = relationships.get("human_profiles") or {}
     anchor_slot, anchor_profile = next(iter(human_profiles.items()), ("interlocutor_001", None))
     if anchor_profile is not None:
+        threads = relationships.setdefault("conversation_threads", {})
+        thread = None
+        passive_reinforced = False
         if chosen_theme:
+            thread = threads.setdefault(chosen_theme, {
+                "topic": chosen_theme,
+                "human": anchor_slot,
+                "human_label": "",
+                "exchange_count": 0,
+                "last_message_summary": "",
+                "last_response_summary": "",
+                "last_exchange_at": 0,
+                "last_human_exchange_at": 0,
+                "last_passive_reinforced_at": 0,
+                "passive_reinforcement_count": 0,
+                "status": "open",
+                "recent_exchange_ids": [],
+            })
+            passive_reinforced = should_passively_reinforce_thread(thread, now_ts)
             if chosen_theme not in anchor_profile["known_topics"]:
                 anchor_profile["known_topics"].append(chosen_theme)
             recurring = anchor_profile.setdefault("recurring_topics", {})
-            recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
-            anchor_profile["salience"] = clamp01(float(anchor_profile.get("salience", 0.24)) + 0.01)
-            anchor_profile["attachment"] = clamp01(float(anchor_profile.get("attachment", 0.16)) + 0.008)
+            if passive_reinforced or int(recurring.get(chosen_theme, 0) or 0) <= 0:
+                recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
+            anchor_profile["salience"] = clamp01(float(anchor_profile.get("salience", 0.24)) + (0.01 if passive_reinforced else 0.002))
+            anchor_profile["attachment"] = clamp01(float(anchor_profile.get("attachment", 0.16)) + (0.008 if passive_reinforced else 0.001))
             if chosen_theme not in anchor_profile["unresolved_shared_threads"]:
                 anchor_profile["unresolved_shared_threads"].append(chosen_theme)
             if chosen_theme not in relationships["unresolved_shared_threads"]:
@@ -4510,25 +4569,18 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         display_name = display_human_label(anchor_slot, anchor_profile)
         anchor_profile["relationship_summary"] = f"{display_name.capitalize()} remains a recurring human anchor; current shared threads include {', '.join(anchor_profile['known_topics'][:3]) or 'ongoing context'}."
 
-        threads = relationships.setdefault("conversation_threads", {})
-        if chosen_theme:
-            thread = threads.setdefault(chosen_theme, {
-                "topic": chosen_theme,
-                "human": anchor_slot,
-                "human_label": display_name,
-                "exchange_count": 0,
-                "last_message_summary": "",
-                "last_response_summary": "",
-                "last_exchange_at": 0,
-                "status": "open",
-                "recent_exchange_ids": [],
-            })
+        if chosen_theme and thread is not None:
             thread["human"] = anchor_slot
             thread["human_label"] = display_name
-            thread["exchange_count"] = max(int(thread.get("exchange_count", 0)), int(anchor_profile.get("recurring_topics", {}).get(chosen_theme, 0)))
-            thread["last_message_summary"] = f"simulation stayed with theme: {chosen_theme}"
+            if passive_reinforced:
+                thread["exchange_count"] = max(int(thread.get("exchange_count", 0)), int(anchor_profile.get("recurring_topics", {}).get(chosen_theme, 0)))
+                thread["last_message_summary"] = f"simulation stayed with theme: {chosen_theme}"
+                thread["last_exchange_at"] = now_ts
+                thread["last_passive_reinforced_at"] = now_ts
+                thread["passive_reinforcement_count"] = int(thread.get("passive_reinforcement_count", 0) or 0) + 1
+            else:
+                thread["last_message_summary"] = str(thread.get("last_message_summary") or f"holding thread without new evidence: {chosen_theme}")[:120]
             thread["last_response_summary"] = f"current intent: {communicator.get('current_intent', '')}"[:120]
-            thread["last_exchange_at"] = now_ts
             thread["status"] = "open" if chosen_theme in relationships.get("unresolved_shared_threads", []) else thread.get("status", "open")
 
     action_scores = evidence_profile.setdefault("outcome_weighted_actions", {})
@@ -4594,9 +4646,17 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     if active_thread:
         topic, thread = active_thread
         human_name = str(thread.get("human", "human"))
+        passive_reinforcement_count = int(thread.get("passive_reinforcement_count", 0) or 0)
+        last_human_exchange_at = int(thread.get("last_human_exchange_at", 0) or 0)
+        seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
+        saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
         narrative["active_thread_summary"] = f"Still carrying shared thread '{topic}' with {human_name}; exchanges={thread.get('exchange_count', 0)}."
-        narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
-        narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
+        if saturated:
+            narrative["follow_up_impulse"] = f"Hold {topic} without inflating it until genuinely new evidence or human input arrives from {human_name}."
+            narrative["why_it_matters"] = f"{topic} still matters, but repeating the same open thread without new evidence would turn continuity into rumination."
+        else:
+            narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
+            narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
         narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans; strongest live thread is {topic}."
     else:
         narrative["active_thread_summary"] = "No active shared threads currently dominate the communicator state."
