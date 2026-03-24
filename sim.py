@@ -1403,17 +1403,18 @@ def prune_archived_memory(self_state: dict | None = None, now_ts: int | None = N
         archived_entry = archived_by_key.get(archive_key)
         topic = str(derive_memory_topic("exchange", item) or "").strip()
         topic_lower = topic.lower()
+        represented_upstream = bool(archived_entry or (topic_lower and topic_lower in {str(item.get("topic") or "").strip().lower() for item in archived_items}))
         if archived_entry is None:
             kept_exchanges.append(item)
-            skipped.append({"kind": "exchange", "source_id": source_id, "reason": "not-archived", "topic": topic})
+            skipped.append({"kind": "exchange", "source_id": source_id, "reason": "not-archived", "topic": topic, "represented_upstream": represented_upstream})
             continue
         if topic_lower and topic_lower in unresolved_threads:
             kept_exchanges.append(item)
-            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "unresolved-thread", "topic": topic})
+            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "unresolved-thread", "topic": topic, "represented_upstream": represented_upstream})
             continue
         if item.get("unresolved"):
             kept_exchanges.append(item)
-            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "marked-unresolved", "topic": topic})
+            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "marked-unresolved", "topic": topic, "represented_upstream": represented_upstream})
             continue
         pruned_exchanges.append({
             "kind": "exchange",
@@ -1443,13 +1444,14 @@ def prune_archived_memory(self_state: dict | None = None, now_ts: int | None = N
         archived_entry = archived_by_key.get(archive_key)
         topic = str(derive_memory_topic("thought", item) or "").strip()
         topic_lower = topic.lower()
+        represented_upstream = bool(archived_entry or (topic_lower and topic_lower in {str(item.get("topic") or "").strip().lower() for item in archived_items}))
         if archived_entry is None:
             kept_thoughts.append(item)
-            skipped.append({"kind": "thought", "source_id": source_id, "reason": "not-archived", "topic": topic})
+            skipped.append({"kind": "thought", "source_id": source_id, "reason": "not-archived", "topic": topic, "represented_upstream": represented_upstream})
             continue
         if topic_lower and topic_lower in unresolved_threads:
             kept_thoughts.append(item)
-            blocked.append({"kind": "thought", "source_id": source_id, "reason": "unresolved-thread", "topic": topic})
+            blocked.append({"kind": "thought", "source_id": source_id, "reason": "unresolved-thread", "topic": topic, "represented_upstream": represented_upstream})
             continue
         pruned_thoughts.append({
             "kind": "thought",
