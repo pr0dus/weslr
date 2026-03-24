@@ -197,6 +197,7 @@ python3 main.py failsafe-status
 python3 main.py communicator
 python3 main.py communicator-self
 python3 main.py memory-layers
+python3 main.py memory-scores
 python3 main.py speak
 python3 main.py communicator-message
 python3 main.py embedded-self-test

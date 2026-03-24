@@ -649,6 +649,119 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
     return self_state
 
 
+def score_memory_item(kind: str, payload: dict, self_state: dict | None = None) -> dict:
+    self_state = ensure_memory_layers(self_state or load_communicator_self())
+    relationships = self_state.get("relationships") or {}
+    unresolved_threads = [str(item).lower() for item in (relationships.get("unresolved_shared_threads") or [])]
+    semantic = (self_state.get("memory_layers") or {}).get("semantic", {})
+    continuity_anchors = [str(item).lower() for item in (semantic.get("continuity_anchors") or [])]
+    stable_topics = [str(item).lower() for item in (semantic.get("stable_topics") or [])]
+    recent_now = int(time.time())
+    created_at = int(payload.get("created_at", 0) or payload.get("updated_at", 0) or payload.get("last_exchange_at", 0) or 0)
+    age_hours = max(0.0, (recent_now - created_at) / 3600.0) if created_at else 999.0
+    recency = 0.0 if age_hours >= 168 else max(0.0, 1.0 - (age_hours / 168.0))
+    text_parts = [
+        str(payload.get("topic", "")),
+        str(payload.get("theme", "")),
+        str(payload.get("message", "")),
+        str(payload.get("summary", "")),
+        str(payload.get("message_summary", "")),
+        str(payload.get("response_summary", "")),
+    ]
+    joined = " ".join(part for part in text_parts if part).lower()
+    unresolvedness = 1.0 if payload.get("unresolved") or str(payload.get("status", "")).lower() == "open" else 0.0
+    if any(topic and topic in joined for topic in unresolved_threads):
+        unresolvedness = max(unresolvedness, 0.85)
+    recurrence = 0.0
+    recurrence = max(recurrence, min(float(payload.get("exchange_count", 0)) / 6.0, 1.0))
+    recurrence = max(recurrence, min(float(payload.get("message_count", 0)) / 8.0, 1.0))
+    recurrence = max(recurrence, min(float(max((payload.get("recurring_topics") or {}).values(), default=0)) / 6.0, 1.0) if isinstance(payload.get("recurring_topics"), dict) else 0.0)
+    relationship_weight = 0.0
+    if kind in {"exchange", "thread", "human_profile", "relationship_fact"}:
+        relationship_weight = 0.5
+    if payload.get("human") or payload.get("human_label"):
+        relationship_weight += 0.2
+    identity_weight = 0.0
+    if kind in {"semantic_topic", "relationship_fact", "continuity_anchor"}:
+        identity_weight = 0.7
+    if any(topic and topic in joined for topic in continuity_anchors + stable_topics):
+        identity_weight = max(identity_weight, 0.8)
+    replaceability = 0.75
+    if kind in {"semantic_topic", "relationship_fact", "continuity_anchor"}:
+        replaceability = 0.15
+    elif unresolvedness > 0.7 or relationship_weight > 0.6:
+        replaceability = 0.3
+    elif recency > 0.75:
+        replaceability = 0.45
+    score = (
+        recency * 0.22
+        + recurrence * 0.18
+        + unresolvedness * 0.24
+        + relationship_weight * 0.16
+        + identity_weight * 0.2
+    ) * (1.0 - replaceability * 0.35)
+    score = max(0.0, min(1.0, round(score, 4)))
+    if score >= 0.64:
+        tier = "keep-hot"
+    elif score >= 0.42:
+        tier = "episodic-candidate"
+    elif score >= 0.24:
+        tier = "compressible"
+    else:
+        tier = "archive-safe"
+    return {
+        "kind": kind,
+        "score": score,
+        "tier": tier,
+        "factors": {
+            "recency": round(recency, 4),
+            "recurrence": round(recurrence, 4),
+            "unresolvedness": round(unresolvedness, 4),
+            "relationship_weight": round(min(1.0, relationship_weight), 4),
+            "identity_weight": round(min(1.0, identity_weight), 4),
+            "replaceability": round(replaceability, 4),
+        },
+    }
+
+
+def build_memory_score_report(self_state: dict | None = None) -> dict:
+    self_state = ensure_memory_layers(self_state or load_communicator_self())
+    relationships = self_state.get("relationships") or {}
+    layers = self_state.get("memory_layers") or {}
+    sampled = []
+    for item in list(relationships.get("recent_human_exchanges") or [])[-6:]:
+        sampled.append({
+            "label": item.get("message_summary") or item.get("id") or "exchange",
+            **score_memory_item("exchange", item, self_state),
+        })
+    for topic, thread in list(sorted((relationships.get("conversation_threads") or {}).items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))[:6]:
+        sampled.append({
+            "label": topic,
+            **score_memory_item("thread", {**thread, "topic": topic}, self_state),
+        })
+    for thought in list(self_state.get("inner_thoughts") or [])[-6:]:
+        sampled.append({
+            "label": str(thought.get("summary") or thought.get("theme") or "thought")[:80],
+            **score_memory_item("thought", thought, self_state),
+        })
+    semantic = layers.get("semantic") or {}
+    for topic in list(semantic.get("stable_topics") or [])[:6]:
+        sampled.append({
+            "label": topic,
+            **score_memory_item("semantic_topic", {"topic": topic, "created_at": semantic.get("last_updated_at", 0)}, self_state),
+        })
+    sampled.sort(key=lambda item: item.get("score", 0.0), reverse=True)
+    counts = {"keep-hot": 0, "episodic-candidate": 0, "compressible": 0, "archive-safe": 0}
+    for item in sampled:
+        counts[item["tier"]] = counts.get(item["tier"], 0) + 1
+    return {
+        "tier_counts": counts,
+        "scored_items": sampled[:20],
+        "working_caps": (layers.get("working") or {}),
+        "generated_at": int(time.time()),
+    }
+
+
 def build_memory_layer_report(self_state: dict | None = None) -> dict:
     self_state = ensure_memory_layers(self_state or load_communicator_self())
     layers = self_state.get("memory_layers") or {}
@@ -3248,6 +3361,7 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     context = build_role_context(role, agent, plan, wake_reason, communicator, self_state)
     thought = generate_llm_inner_thought(role, context)
     thought.update({
+        "id": f"thought-{role}-{tick}-{now_ts}",
         "agent": agent.get("name"),
         "tick": tick,
         "created_at": now_ts,
@@ -3257,6 +3371,10 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     thoughts = list(self_state.get("inner_thoughts") or [])
     thoughts.append(thought)
     self_state["inner_thoughts"] = thoughts[-40:]
+    working_memory = (self_state.get("memory_layers") or {}).get("working", {})
+    recent_thought_ids = list(working_memory.get("recent_thought_ids") or [])
+    recent_thought_ids.append(thought["id"])
+    working_memory["recent_thought_ids"] = recent_thought_ids[-int(working_memory.get("max_recent_thoughts", 80) or 80):]
     role_state = ensure_internal_role_state(self_state, now_ts=now_ts).get("internal_role_state", {}).get(role, {})
     role_state["last_wake_tick"] = tick
     role_state["last_wake_at"] = now_ts
