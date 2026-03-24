@@ -777,6 +777,233 @@ def build_memory_layer_report(self_state: dict | None = None) -> dict:
     }
 
 
+def derive_memory_topic(kind: str, payload: dict) -> str:
+    for key in ("topic", "theme"):
+        value = str(payload.get(key, "")).strip()
+        if value:
+            return value
+    topics = payload.get("topics") or []
+    if isinstance(topics, list):
+        for item in topics:
+            value = str(item).strip()
+            if value:
+                return value
+    if kind == "thought":
+        summary = str(payload.get("summary", "")).strip()
+        if " around " in summary:
+            return summary.split(" around ", 1)[1].rstrip(".")[:120]
+    return "continuity"
+
+
+def derive_memory_label(kind: str, payload: dict) -> str:
+    for key in ("message_summary", "response_summary", "summary", "message"):
+        value = str(payload.get(key, "")).strip()
+        if value:
+            return value[:160]
+    topic = derive_memory_topic(kind, payload)
+    if kind == "thread":
+        return f"shared thread around {topic}"
+    if kind == "thought":
+        return f"inner thought around {topic}"
+    return topic[:160]
+
+
+def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    working = layers.get("working") or {}
+    episodic = layers.get("episodic") or {}
+    semantic = layers.get("semantic") or {}
+    relationships = self_state.get("relationships") or {}
+    human_profiles = relationships.get("human_profiles") or {}
+
+    candidates = []
+    recent_exchange_ids = set(working.get("recent_exchange_ids") or [])
+    recent_thought_ids = set(working.get("recent_thought_ids") or [])
+
+    for item in list(relationships.get("recent_human_exchanges") or [])[-18:]:
+        scored = score_memory_item("exchange", item, self_state)
+        should_capture = scored.get("tier") in {"keep-hot", "episodic-candidate", "compressible"}
+        should_capture = should_capture and (len(item.get("topics") or []) > 0)
+        if should_capture:
+            candidates.append({
+                "kind": "exchange",
+                "payload": item,
+                "score": scored,
+                "source_id": str(item.get("id") or ""),
+                "topic": derive_memory_topic("exchange", item),
+                "human": str(item.get("human") or item.get("human_label") or ""),
+                "label": derive_memory_label("exchange", item),
+                "created_at": int(item.get("created_at", 0) or now_ts),
+            })
+
+    for topic, thread in list((relationships.get("conversation_threads") or {}).items()):
+        payload = {**thread, "topic": topic}
+        scored = score_memory_item("thread", payload, self_state)
+        should_capture = scored.get("tier") in {"keep-hot", "episodic-candidate", "compressible"}
+        should_capture = should_capture and (int(payload.get("exchange_count", 0) or 0) >= 2 or str(payload.get("status", "")).lower() == "open")
+        if should_capture:
+            candidates.append({
+                "kind": "thread",
+                "payload": payload,
+                "score": scored,
+                "source_id": f"thread::{topic}",
+                "topic": derive_memory_topic("thread", payload),
+                "human": str(payload.get("human") or payload.get("human_label") or ""),
+                "label": derive_memory_label("thread", payload),
+                "created_at": int(payload.get("last_exchange_at", 0) or now_ts),
+            })
+
+    for item in list(self_state.get("inner_thoughts") or [])[-18:]:
+        scored = score_memory_item("thought", item, self_state)
+        if scored.get("tier") in {"episodic-candidate", "compressible"}:
+            candidates.append({
+                "kind": "thought",
+                "payload": item,
+                "score": scored,
+                "source_id": str(item.get("id") or ""),
+                "topic": derive_memory_topic("thought", item),
+                "human": "",
+                "label": derive_memory_label("thought", item),
+                "created_at": int(item.get("created_at", 0) or now_ts),
+            })
+
+    grouped = {}
+    for item in candidates:
+        topic = str(item.get("topic") or "continuity").strip() or "continuity"
+        human = str(item.get("human") or "").strip()
+        group_key = f"{human.lower()}::{topic.lower()}"
+        grouped.setdefault(group_key, []).append(item)
+
+    episodes = list(episodic.get("episodes") or [])
+    created = []
+    updated = []
+    trimmed_exchange_ids = []
+    trimmed_thought_ids = []
+
+    for group_key, items in grouped.items():
+        items.sort(key=lambda item: item.get("created_at", 0))
+        topic = str(items[-1].get("topic") or "continuity")
+        human_slot = str(items[-1].get("human") or "")
+        profile = human_profiles.get(human_slot, {}) if human_slot else {}
+        human_label = display_human_label(human_slot, profile) if human_slot else ""
+        source_ids = [str(item.get("source_id") or "") for item in items if str(item.get("source_id") or "").strip()]
+        source_labels = [str(item.get("label") or "") for item in items if str(item.get("label") or "").strip()]
+        tiers = [item.get("score", {}).get("tier") for item in items]
+        unresolved = any(bool(item.get("payload", {}).get("unresolved")) or str(item.get("payload", {}).get("status", "")).lower() == "open" for item in items)
+        score_values = [float((item.get("score") or {}).get("score", 0.0) or 0.0) for item in items]
+        avg_score = round(sum(score_values) / max(1, len(score_values)), 4)
+        recurrence = max(float(((item.get("score") or {}).get("factors") or {}).get("recurrence", 0.0) or 0.0) for item in items)
+        relationship_weight = max(float(((item.get("score") or {}).get("factors") or {}).get("relationship_weight", 0.0) or 0.0) for item in items)
+        identity_weight = max(float(((item.get("score") or {}).get("factors") or {}).get("identity_weight", 0.0) or 0.0) for item in items)
+        kind_counts = {}
+        for item in items:
+            kind_counts[item["kind"]] = kind_counts.get(item["kind"], 0) + 1
+        summary_prefix = f"{human_label} / {topic}" if human_label else topic
+        summary = f"{summary_prefix}: {len(items)} traces compressed"
+        if unresolved:
+            summary += "; thread still open"
+        top_labels = "; ".join(source_labels[-3:])
+        if top_labels:
+            summary += f"; latest signals: {top_labels}"
+        summary = summary[:320]
+        episode_id = f"episode-{topic.lower().replace(' ', '-')[:48]}-{human_slot.lower().replace(' ', '-')[:24] or 'general'}"
+
+        existing = next((episode for episode in episodes if episode.get("id") == episode_id), None)
+        if existing is None:
+            existing = {
+                "id": episode_id,
+                "topic": topic,
+                "human": human_slot,
+                "human_label": human_label,
+                "summary": summary,
+                "status": "open" if unresolved else "compressed",
+                "source_ids": source_ids[-18:],
+                "source_labels": source_labels[-8:],
+                "kind_counts": kind_counts,
+                "recurrence": recurrence,
+                "relationship_weight": round(relationship_weight, 4),
+                "identity_weight": round(identity_weight, 4),
+                "importance_score": avg_score,
+                "created_at": min(item.get("created_at", now_ts) for item in items),
+                "updated_at": now_ts,
+                "last_event_at": max(item.get("created_at", now_ts) for item in items),
+                "retention_basis": sorted(set(tiers)),
+                "exchange_count": kind_counts.get("exchange", 0),
+                "thought_count": kind_counts.get("thought", 0),
+                "thread_count": kind_counts.get("thread", 0),
+            }
+            episodes.append(existing)
+            created.append(existing["id"])
+        else:
+            merged_ids = list(dict.fromkeys((existing.get("source_ids") or []) + source_ids))[-24:]
+            merged_labels = list(dict.fromkeys((existing.get("source_labels") or []) + source_labels))[-10:]
+            merged_basis = sorted(set((existing.get("retention_basis") or []) + tiers))
+            existing["topic"] = topic
+            existing["human"] = human_slot
+            existing["human_label"] = human_label
+            existing["summary"] = summary
+            existing["status"] = "open" if unresolved else existing.get("status", "compressed")
+            existing["source_ids"] = merged_ids
+            existing["source_labels"] = merged_labels
+            previous_counts = existing.get("kind_counts") or {}
+            for key, value in kind_counts.items():
+                previous_counts[key] = max(int(previous_counts.get(key, 0)), int(value))
+            existing["kind_counts"] = previous_counts
+            existing["recurrence"] = round(max(float(existing.get("recurrence", 0.0) or 0.0), recurrence), 4)
+            existing["relationship_weight"] = round(max(float(existing.get("relationship_weight", 0.0) or 0.0), relationship_weight), 4)
+            existing["identity_weight"] = round(max(float(existing.get("identity_weight", 0.0) or 0.0), identity_weight), 4)
+            existing["importance_score"] = round(max(float(existing.get("importance_score", 0.0) or 0.0), avg_score), 4)
+            existing["updated_at"] = now_ts
+            existing["last_event_at"] = max(int(existing.get("last_event_at", 0) or 0), max(item.get("created_at", now_ts) for item in items))
+            existing["retention_basis"] = merged_basis
+            existing["exchange_count"] = max(int(existing.get("exchange_count", 0) or 0), kind_counts.get("exchange", 0))
+            existing["thought_count"] = max(int(existing.get("thought_count", 0) or 0), kind_counts.get("thought", 0))
+            existing["thread_count"] = max(int(existing.get("thread_count", 0) or 0), kind_counts.get("thread", 0))
+            updated.append(existing["id"])
+
+        trim_allowed = not any(tier == "keep-hot" for tier in tiers)
+        if trim_allowed:
+            for source_id in source_ids:
+                if source_id in recent_exchange_ids:
+                    trimmed_exchange_ids.append(source_id)
+                if source_id in recent_thought_ids:
+                    trimmed_thought_ids.append(source_id)
+
+        if topic and topic not in (semantic.get("stable_topics") or []):
+            semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + [topic]))[-24:]
+        if human_label:
+            fact = f"{human_label} and CircleForge have a compressed episode around {topic}"
+            semantic["relationship_facts"] = list(dict.fromkeys((semantic.get("relationship_facts") or []) + [fact]))[-24:]
+
+    max_episodes = int(episodic.get("max_episodes", 240) or 240)
+    episodes.sort(key=lambda item: (int(item.get("last_event_at", 0) or 0), float(item.get("importance_score", 0.0) or 0.0)), reverse=True)
+    episodes = episodes[:max_episodes]
+    episodic["episodes"] = episodes
+    episodic["episode_count"] = len(episodes)
+    episodic["last_distilled_at"] = now_ts if (created or updated) else int(episodic.get("last_distilled_at", 0) or 0)
+
+    if trimmed_exchange_ids:
+        working["recent_exchange_ids"] = [item for item in (working.get("recent_exchange_ids") or []) if item not in set(trimmed_exchange_ids)]
+    if trimmed_thought_ids:
+        working["recent_thought_ids"] = [item for item in (working.get("recent_thought_ids") or []) if item not in set(trimmed_thought_ids)]
+    working["last_compacted_at"] = now_ts if (created or updated or trimmed_exchange_ids or trimmed_thought_ids) else int(working.get("last_compacted_at", 0) or 0)
+    semantic["last_updated_at"] = now_ts if (created or updated) else int(semantic.get("last_updated_at", now_ts) or now_ts)
+
+    self_state["updated_at"] = now_ts
+    save_communicator_self(self_state)
+    return {
+        "created_episode_ids": created,
+        "updated_episode_ids": updated,
+        "trimmed_recent_exchange_ids": trimmed_exchange_ids,
+        "trimmed_recent_thought_ids": trimmed_thought_ids,
+        "episode_count": episodic.get("episode_count", 0),
+        "episodes": episodes[:12],
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
@@ -3668,8 +3895,12 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         narrative["follow_up_impulse"] = f"Revisit {lead_topic} with {display_name} until the shared thread changes state."
         narrative["why_it_matters"] = f"{lead_topic} matters because shared human context should shape what CircleForge returns to instead of resetting." 
 
-    self_state["updated_at"] = now_ts
-    save_communicator_self(self_state)
+    working = memory_layers.get("working") or {}
+    if len(working.get("recent_exchange_ids") or []) >= max(4, int(working.get("max_recent_exchanges", 24) or 24) // 3):
+        distill_episodic_memory(self_state=self_state, now_ts=now_ts)
+    else:
+        self_state["updated_at"] = now_ts
+        save_communicator_self(self_state)
 
     communicator = load_communicator_state()
     if topic_list:
@@ -3862,8 +4093,15 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         if current is None or float(concern.get("updated_at", 0)) >= float(current.get("updated_at", 0)):
             deduped[topic] = concern
     self_state["active_concerns"] = list(deduped.values())[-8:]
-    self_state["updated_at"] = now_ts
-    save_communicator_self(self_state)
+    working = (self_state.get("memory_layers") or {}).get("working") or {}
+    recent_exchange_count = len(working.get("recent_exchange_ids") or [])
+    recent_thought_count = len(working.get("recent_thought_ids") or [])
+    should_distill = recent_exchange_count >= max(4, int(working.get("max_recent_exchanges", 24) or 24) // 3) or recent_thought_count >= max(10, int(working.get("max_recent_thoughts", 80) or 80) // 3)
+    if should_distill:
+        distill_episodic_memory(self_state=self_state, now_ts=now_ts)
+    else:
+        self_state["updated_at"] = now_ts
+        save_communicator_self(self_state)
     return self_state
 
 
