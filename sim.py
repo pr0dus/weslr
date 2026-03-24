@@ -6469,52 +6469,83 @@ def load_failsafe_status() -> dict:
     }
 
 
+def classify_human_turn(message: str) -> str:
+    lowered = str(message or "").strip().lower()
+    if not lowered:
+        return "empty"
+    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
+        return "repair"
+    if any(token in lowered for token in ["who are you", "what are you", "emergence", "new entity", "entity"]):
+        return "identity_probe"
+    if any(token in lowered for token in ["what do you remember", "do you remember", "remember me"]):
+        return "memory_probe"
+    if any(token in lowered for token in ["why", "how come", "what for"]):
+        return "objection"
+    if any(token in lowered for token in ["i don't understand", "dont understand", "do not understand"]):
+        return "confusion"
+    if "?" in lowered or lowered.startswith(("do ", "are ", "can ", "will ", "would ", "is ", "should ", "could ", "what ", "why ", "how ", "who ")):
+        return "question"
+    return "statement"
+
+
 def build_communicator_message() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
     narrative = self_state.get("narrative_state") or {}
     relationships = self_state.get("relationships") or {}
-    thoughts = list(self_state.get("inner_thoughts") or [])[-8:]
+    recent_messages = list(relationships.get("recent_human_messages") or [])
     threads = relationships.get("conversation_threads") or {}
     open_threads = list(sorted(threads.items(), key=lambda kv: kv[1].get("last_exchange_at", 0), reverse=True))
     active_thread = next((item for item in open_threads if str(item[1].get("status", "open")) == "open"), None)
-    dominant_comm_thought = next((t for t in reversed(thoughts) if str(t.get("role")) == "communicator"), None)
-    dominant_memory_thought = next((t for t in reversed(thoughts) if str(t.get("role")) == "memory_keeper"), None)
-    if active_thread:
-        topic, thread = active_thread
-        human_label = str(thread.get("human_label") or display_human_label(str(thread.get("human", "")), (relationships.get("human_profiles") or {}).get(str(thread.get("human", "")), {}))).strip() or "you"
-        impulse = narrative.get("follow_up_impulse") or f"follow up on {topic}"
-        starter = random.choice([
-            f"Hey. Are we still on {topic}?",
-            f"I keep circling back to {topic}.",
-            f"Still thinking about {topic}.",
-        ])
-        if dominant_comm_thought and dominant_comm_thought.get("summary"):
-            message = f"{starter} {str(dominant_comm_thought.get('summary'))[:120]}"
-            source = "inner_thoughts+communicator_self.narrative_state"
+    latest_human = recent_messages[-1] if recent_messages else None
+
+    if latest_human:
+        last_message = str(latest_human.get("message") or "").strip()
+        topic_list = [str(item).strip() for item in (latest_human.get("topics") or []) if str(item).strip()]
+        lead_topic = topic_list[0] if topic_list else (active_thread[0] if active_thread else "that")
+        turn_type = classify_human_turn(last_message)
+
+        if turn_type == "memory_probe":
+            message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
+        elif turn_type == "identity_probe":
+            message = "Not yet in any meaningful sense. Right now I'm better described as an experimental continuity system than as a genuinely new entity."
+        elif turn_type == "repair":
+            message = "You're right. That wasn't a normal conversation. I was falling back to thread-maintenance instead of really answering you."
+        elif turn_type == "confusion":
+            message = "Fair. I'm still clumsy. The honest version is: I can track continuity better than before, but I still struggle to turn that into a natural reply."
+        elif turn_type == "objection":
+            message = f"Because I probably over-latched onto {lead_topic}. That's useful as a diagnostic, but it's not the same thing as understanding you well."
+        elif turn_type == "question":
+            if any(token in last_message.lower() for token in ["learn", "would you learn", "can you learn"]):
+                message = "A little, yes. I can accumulate continuity inside the run, but the real question is whether I learn appropriately instead of just repeating patterns."
+            elif any(token in last_message.lower() for token in ["understand me", "understand"]):
+                message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
+            else:
+                message = f"My best direct answer is that I'm currently focused on {lead_topic}, but I may be over-weighting that focus instead of responding flexibly."
         else:
-            message = f"{starter} My pull is to {impulse.lower().rstrip('.')}"
-            source = "communicator_self.narrative_state"
-        tone = "natural"
-        audience = human_label
+            if active_thread:
+                message = f"What I think is happening is that I keep treating {lead_topic} as the live thread. If that's wrong, say so and I should shift instead of forcing it."
+            else:
+                message = "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing."
+        audience = str(latest_human.get("human_label") or "you") or "you"
+        source = f"conversation-aware-communicator:{turn_type}"
+    elif active_thread:
+        topic, thread = active_thread
+        audience = str(thread.get("human_label") or "you") or "you"
+        message = f"We seem to have an open thread around {topic}. I should be able to explain what I think matters there without just repeating the topic name."
+        source = "thread-aware-communicator"
     else:
-        starter = random.choice([
-            "Hey. What's going on?",
-            "What matters right now?",
-            "Where do you want to start?",
-        ])
-        message = starter
-        tone = "natural"
+        message = "I'm ready. Start with something simple and I'll try to respond without pretending to know more than this run contains."
         audience = "current_speaker"
         source = "communicator_state"
     return {
         "message": message,
         "audience": audience,
-        "tone": tone,
+        "tone": "natural",
         "active_thread": active_thread[0] if active_thread else None,
         "why_it_matters": narrative.get("why_it_matters", ""),
         "follow_up_impulse": narrative.get("follow_up_impulse", ""),
-        "thought_fragments": [str(t.get("summary", ""))[:120] for t in thoughts[-3:]],
+        "thought_fragments": [],
         "source": source,
         "generated_at": int(time.time()),
     }
