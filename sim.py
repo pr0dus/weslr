@@ -87,6 +87,7 @@ from llm_runtime import generate_inner_thought as runtime_generate_inner_thought
 from interpretation import classify_human_turn, infer_human_topics, interpret_human_turn
 from integration import find_relevant_research_note, integrate_research_into_communicator
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
+from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
@@ -4198,87 +4199,6 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     return thought
 
 
-def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: str | None) -> tuple[str, bool]:
-    previous_question = str(communicator.get("unresolved_question", "")).strip()
-    theme = chosen.get("niche_theme") or communicator.get("active_pursuit") or "current pressure"
-    if final_action in {"inspect", "research"}:
-        new_question = f"What new uncertainty appeared after {final_action} on {theme}?"
-        return new_question, True
-    if chosen.get("niche_theme"):
-        new_question = f"What is still unclear about {theme}?"
-        return new_question, False
-    return previous_question or "What remains under-understood?", False
-
-
-def average_internal_reputation(agent_name: str) -> tuple[float, float, float]:
-    relationships = load_relationships()
-    relevant = [item for item in relationships if item.get("target_agent") == agent_name]
-    if not relevant:
-        return 0.5, 0.5, 0.0
-    trust = sum(float(item.get("trust", 0.5)) for item in relevant) / len(relevant)
-    usefulness = sum(float(item.get("usefulness", 0.5)) for item in relevant) / len(relevant)
-    friction = sum(float(item.get("friction", 0.0)) for item in relevant) / len(relevant)
-    return round(trust, 3), round(usefulness, 3), round(friction, 3)
-
-
-def role_memory_weight(agent_name: str) -> float:
-    agent_dir = AGENTS_DIR / str(agent_name)
-    if not agent_dir.exists():
-        return 0.0
-    notes = []
-    try:
-        notes = json.loads((agent_dir / "memory.json").read_text())
-    except Exception:
-        notes = []
-    role = classify_internal_role(agent_name)
-    score = 0.0
-    if role == "builder":
-        yes = sum(1 for note in notes[-20:] if "builder-usefulness" in str(note).lower() and "later_activity_detected=yes" in str(note).lower())
-        no = sum(1 for note in notes[-20:] if "builder-usefulness" in str(note).lower() and "later_activity_detected=no" in str(note).lower())
-        score += max(0, yes - no) * 0.04
-    elif role == "coordinator":
-        yes = sum(1 for note in notes[-20:] if "coordinator-effect" in str(note).lower() and "follow_on_activity=yes" in str(note).lower())
-        no = sum(1 for note in notes[-20:] if "coordinator-effect" in str(note).lower() and "follow_on_activity=no" in str(note).lower())
-        score += max(0, yes - no) * 0.04
-    elif role == "memory_keeper":
-        clusters = sum(1 for note in notes[-20:] if "memory-keeper objection-cluster" in str(note).lower())
-        score += clusters * 0.02
-    return min(score, 0.18)
-
-
-def decision_style_weight(communicator: dict, action: str | None, mode: str | None) -> float:
-    memory = communicator.get("decision_style_memory") or {}
-    score = 0.0
-    if action:
-        action_mem = memory.get("actions", {}).get(action, {})
-        score += float(action_mem.get("confidence", 0.0)) * 0.12
-    if mode:
-        mode_mem = memory.get("modes", {}).get(mode, {})
-        score += float(mode_mem.get("confidence", 0.0)) * 0.1
-    return score
-
-
-def update_decision_style_memory(communicator: dict, decision_mode: str, final_action: str | None, chosen: dict, unresolved_needs: list[str]) -> None:
-    memory = communicator.get("decision_style_memory") or {}
-    actions = memory.setdefault("actions", {})
-    modes = memory.setdefault("modes", {})
-    if final_action:
-        entry = actions.setdefault(final_action, {"count": 0, "confidence": 0.0, "last_theme": ""})
-        entry["count"] = int(entry.get("count", 0)) + 1
-        delta = 0.06 if final_action in {"inspect", "research"} else 0.03
-        if unresolved_needs and final_action in {"inspect", "research", "optimize"}:
-            delta += 0.03
-        entry["confidence"] = round(min(float(entry.get("confidence", 0.0)) + delta, 0.95), 3)
-        entry["last_theme"] = chosen.get("niche_theme") or ""
-    mode_entry = modes.setdefault(decision_mode, {"count": 0, "confidence": 0.0})
-    mode_entry["count"] = int(mode_entry.get("count", 0)) + 1
-    mode_delta = 0.05 if decision_mode in {"inspect-first", "reconsider"} else 0.03
-    if decision_mode == "defer":
-        mode_delta = 0.01
-    mode_entry["confidence"] = round(min(float(mode_entry.get("confidence", 0.0)) + mode_delta, 0.95), 3)
-    communicator["decision_style_memory"] = memory
-
-
 def clamp01(value: float) -> float:
     return round(max(0.0, min(float(value), 0.99)), 3)
 
@@ -4797,8 +4717,8 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
     dominant_thought = foreground_candidates[0][1] if foreground_candidates else None
     dominant_thought_score = foreground_candidates[0][0] if foreground_candidates else 0.0
     for proposal in proposals:
-        trust, usefulness, friction = average_internal_reputation(proposal.get("agent"))
-        memory_bias = role_memory_weight(proposal.get("agent"))
+        trust, usefulness, friction = average_internal_reputation(proposal.get("agent"), load_relationships_func=load_relationships)
+        memory_bias = role_memory_weight(proposal.get("agent"), agents_dir=AGENTS_DIR, classify_internal_role_func=classify_internal_role)
         score = 0.5 + (trust - 0.5) * 0.25 + (usefulness - 0.5) * 0.35 - friction * 0.25 + memory_bias
         if proposal.get("stance") in {"support", "prioritize"}:
             score += 0.18
