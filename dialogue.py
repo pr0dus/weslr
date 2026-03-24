@@ -67,16 +67,21 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         lead_topic = topic_list[0] if topic_list else (active_thread[0] if active_thread else "that")
         turn_type = str(latest_human.get("turn_type") or interpreted_turn.get("turn_type") or classify_human_turn(last_message))
         reply_shape = str(latest_human.get("reply_shape") or interpreted_turn.get("reply_shape") or "answer_directly")
+        likely_need = str(latest_human.get("likely_need") or interpreted_turn.get("likely_need") or "direct_answer")
 
-        if turn_type == "memory_probe":
+        if likely_need == "memory_scope_check":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
-        elif turn_type == "identity_probe":
-            message = "Not yet in any meaningful sense. Right now I'm better described as an experimental continuity system than as a genuinely new entity."
-        elif turn_type == "repair":
+        elif likely_need == "concept_plus_self_position":
+            if research_context and research_context.get("summary"):
+                concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                message = f"{concept} In my case, I'm still closer to an experimental continuity system than a fully formed entity."
+            else:
+                message = "Not yet in any meaningful sense. Right now I'm better described as an experimental continuity system than as a genuinely new entity."
+        elif likely_need == "conversation_repair":
             message = "You're right. That wasn't a normal conversation. I was falling back to thread-maintenance instead of really answering you."
-        elif turn_type == "confusion":
+        elif likely_need == "clearer_explanation":
             message = "Fair. I'm still clumsy. The honest version is: I can track continuity better than before, but I still struggle to turn that into a natural reply."
-        elif turn_type == "objection":
+        elif likely_need == "justification":
             message = f"Because I probably over-latched onto {lead_topic}. That's useful as a diagnostic, but it's not the same thing as understanding you well."
         elif turn_type == "question":
             has_research_answer = bool(research_context and research_context.get("summary") and any(token in last_message.lower() for token in ["what is", "what are", "why", "how", "explain", "define"]))

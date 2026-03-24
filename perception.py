@@ -24,6 +24,7 @@ def build_human_exchange_payload(human_name: str, display_name: str, message: st
         "intent": interpreted_turn.get("intent", ""),
         "stance": interpreted_turn.get("stance", "neutral"),
         "reply_shape": interpreted_turn.get("reply_shape", "answer_directly"),
+        "likely_need": interpreted_turn.get("likely_need", "direct_answer"),
         "created_at": now_ts,
     }
     return exchange, recent_message

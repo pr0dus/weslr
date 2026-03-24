@@ -106,6 +106,25 @@ def interpret_human_turn(message: str) -> dict:
     elif any(token in lowered for token in ["understand", "learn", "help", "continue"]):
         relational_signal = "engagement"
 
+    likely_need = "direct_answer"
+    if turn_type == "repair":
+        likely_need = "conversation_repair"
+    elif turn_type == "confusion":
+        likely_need = "clearer_explanation"
+    elif turn_type == "memory_probe":
+        likely_need = "memory_scope_check"
+    elif turn_type == "identity_probe":
+        likely_need = "concept_plus_self_position"
+    elif turn_type == "objection":
+        likely_need = "justification"
+    elif turn_type == "question":
+        if any(token in lowered for token in ["what is", "what are", "define", "explain", "how does", "why does"]):
+            likely_need = "concept_explanation"
+        elif any(token in lowered for token in ["do you", "can you", "would you", "are you"]):
+            likely_need = "self_report"
+    elif turn_type == "statement" and relational_signal == "friction":
+        likely_need = "acknowledgment_and_adjustment"
+
     return {
         "message": text,
         "turn_type": turn_type,
@@ -114,6 +133,7 @@ def interpret_human_turn(message: str) -> dict:
         "intent": intent,
         "stance": stance,
         "relational_signal": relational_signal,
+        "likely_need": likely_need,
         "needs_repair": turn_type == "repair",
         "asks_for_clarification": turn_type == "confusion",
         "probes_identity": turn_type == "identity_probe",
