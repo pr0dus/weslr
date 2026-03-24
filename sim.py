@@ -1259,27 +1259,27 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
         score = score_memory_item(kind, payload, self_state)
         archive_key = f"{kind}::{source_id or normalized_lower or label[:48]}"
 
-        if archive_key in archived_keys:
-            skipped.append({"kind": kind, "source_id": source_id, "reason": "already-archived", "tier": score.get("tier")})
-            return
-        if normalized_lower and normalized_lower in unresolved_threads:
-            blocked_by_unresolved_thread.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "tier": score.get("tier")})
-            return
-        if score.get("tier") == "keep-hot":
-            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "keep-hot", "tier": score.get("tier")})
-            return
-
         represented_upstream = False
         if normalized_lower and normalized_lower in stable_topics.union(continuity_anchors):
             represented_upstream = True
         if normalized_lower and normalized_lower in episode_topics:
             represented_upstream = True
 
+        if archive_key in archived_keys:
+            skipped.append({"kind": kind, "source_id": source_id, "reason": "already-archived", "tier": score.get("tier"), "topic": normalized_topic, "represented_upstream": represented_upstream})
+            return
+        if normalized_lower and normalized_lower in unresolved_threads:
+            blocked_by_unresolved_thread.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "tier": score.get("tier"), "represented_upstream": represented_upstream})
+            return
+        if score.get("tier") == "keep-hot":
+            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "keep-hot", "tier": score.get("tier"), "represented_upstream": represented_upstream})
+            return
+
         if score.get("tier") == "compressible" and not represented_upstream:
-            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "not-yet-represented-upstream", "tier": score.get("tier")})
+            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "not-yet-represented-upstream", "tier": score.get("tier"), "represented_upstream": represented_upstream})
             return
         if score.get("tier") not in {"archive-safe", "compressible"}:
-            skipped.append({"kind": kind, "source_id": source_id, "reason": "tier-not-archivable", "tier": score.get("tier")})
+            skipped.append({"kind": kind, "source_id": source_id, "reason": "tier-not-archivable", "tier": score.get("tier"), "topic": normalized_topic, "represented_upstream": represented_upstream})
             return
 
         entry = {
@@ -1316,11 +1316,15 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
             int(item.get("created_at", 0) or now_ts),
         )
     for item in exchange_recent_holdback:
+        topic = derive_memory_topic("exchange", item)
+        topic_lower = str(topic or "").strip().lower()
+        represented_upstream = bool(topic_lower and (topic_lower in stable_topics.union(continuity_anchors) or topic_lower in episode_topics))
         skipped.append({
             "kind": "exchange",
             "source_id": str(item.get("id") or ""),
             "reason": "recent-holdback",
-            "topic": derive_memory_topic("exchange", item),
+            "topic": topic,
+            "represented_upstream": represented_upstream,
         })
 
     thought_items = list(self_state.get("inner_thoughts") or [])
@@ -1336,11 +1340,15 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
             int(item.get("created_at", 0) or now_ts),
         )
     for item in thought_recent_holdback:
+        topic = derive_memory_topic("thought", item)
+        topic_lower = str(topic or "").strip().lower()
+        represented_upstream = bool(topic_lower and (topic_lower in stable_topics.union(continuity_anchors) or topic_lower in episode_topics))
         skipped.append({
             "kind": "thought",
             "source_id": str(item.get("id") or ""),
             "reason": "recent-holdback",
-            "topic": derive_memory_topic("thought", item),
+            "topic": topic,
+            "represented_upstream": represented_upstream,
         })
 
     archived_items.sort(key=lambda item: int(item.get("archived_at", 0) or 0), reverse=True)
