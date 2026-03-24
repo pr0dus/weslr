@@ -90,6 +90,7 @@ from models import ActionResult, AgentState, MessageState, NeedState, ProjectSta
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
+from semantic_memory import apply_topics_to_semantic_memory, ensure_semantic_defaults, sync_semantic_with_active_threads
 
 BASE_CATEGORIES = [
     "modules",
@@ -633,13 +634,7 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
     episodic.setdefault("last_distilled_at", 0)
     episodic.setdefault("max_episodes", 240)
 
-    semantic.setdefault("summary", "Long-term identity and relationship memory.")
-    semantic.setdefault("identity_anchors", [self_state.get("identity_anchor", "CircleForge")])
-    semantic.setdefault("relationship_facts", [])
-    semantic.setdefault("stable_topics", [])
-    semantic.setdefault("durable_lessons", [])
-    semantic.setdefault("continuity_anchors", [])
-    semantic.setdefault("last_updated_at", now_ts)
+    ensure_semantic_defaults(semantic, identity_anchor=str(self_state.get("identity_anchor", "CircleForge")), now_ts=now_ts)
 
     archive.setdefault("summary", "Cold storage index for old raw traces and compacted material.")
     archive.setdefault("archived_items", [])
@@ -653,13 +648,7 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
 
     # keep semantic memory synced with live continuity anchors without replaying all raw history
     active_threads = [str(item) for item in ((self_state.get("relationships") or {}).get("unresolved_shared_threads") or []) if str(item).strip()]
-    continuity_anchors = semantic.setdefault("continuity_anchors", [])
-    for topic in active_threads[:12]:
-        if topic not in continuity_anchors:
-            continuity_anchors.append(topic)
-    semantic["continuity_anchors"] = continuity_anchors[-24:]
-    semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + active_threads))[-24:]
-    semantic["last_updated_at"] = now_ts
+    sync_semantic_with_active_threads(semantic, active_threads, now_ts)
 
     return self_state
 
@@ -4424,10 +4413,12 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     self_state["active_concerns"] = list(deduped.values())[-12:]
     memory_layers = self_state.get("memory_layers") or {}
     semantic = memory_layers.get("semantic") or {}
-    semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + topic_list))[-24:]
-    if topic_list:
-        relationship_facts = list(dict.fromkeys((semantic.get("relationship_facts") or []) + [f"Recurring interlocutor keeps shared threads around {topic_list[0]}"]))
-        semantic["relationship_facts"] = relationship_facts[-24:]
+    apply_topics_to_semantic_memory(
+        semantic,
+        topic_list,
+        relationship_fact=(f"Recurring interlocutor keeps shared threads around {topic_list[0]}" if topic_list else ""),
+        now_ts=now_ts,
+    )
 
     narrative = self_state.setdefault("narrative_state", {})
     if topic_list:
