@@ -1379,6 +1379,106 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
     }
 
 
+def prune_archived_memory(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    archive = layers.get("archive") or {}
+    relationships = self_state.get("relationships") or {}
+    unresolved_threads = {str(item).strip().lower() for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()}
+
+    archived_items = list(archive.get("archived_items") or [])
+    archived_by_key = {str(item.get("archive_key") or ""): item for item in archived_items}
+
+    pruned_exchanges = []
+    pruned_thoughts = []
+    blocked = []
+    skipped = []
+
+    recent_human_exchanges = list(relationships.get("recent_human_exchanges") or [])
+    kept_exchanges = []
+    for item in recent_human_exchanges:
+        source_id = str(item.get("id") or "")
+        archive_key = f"exchange::{source_id}"
+        archived_entry = archived_by_key.get(archive_key)
+        topic = str(derive_memory_topic("exchange", item) or "").strip()
+        topic_lower = topic.lower()
+        if archived_entry is None:
+            kept_exchanges.append(item)
+            skipped.append({"kind": "exchange", "source_id": source_id, "reason": "not-archived", "topic": topic})
+            continue
+        if topic_lower and topic_lower in unresolved_threads:
+            kept_exchanges.append(item)
+            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "unresolved-thread", "topic": topic})
+            continue
+        if item.get("unresolved"):
+            kept_exchanges.append(item)
+            blocked.append({"kind": "exchange", "source_id": source_id, "reason": "marked-unresolved", "topic": topic})
+            continue
+        pruned_exchanges.append({
+            "kind": "exchange",
+            "source_id": source_id,
+            "topic": topic,
+            "archive_key": archive_key,
+            "archived_at": archived_entry.get("archived_at", 0),
+        })
+
+    relationships["recent_human_exchanges"] = kept_exchanges[-24:]
+    if relationships.get("recent_human_messages"):
+        pruned_exchange_ids = {item.get("source_id") for item in pruned_exchanges}
+        filtered_messages = []
+        for msg in list(relationships.get("recent_human_messages") or []):
+            message_summary = str(msg.get("message", "") or "")[:96]
+            matching_exchange = next((ex for ex in pruned_exchanges if ex.get("source_id") and ex.get("source_id") in {str(item.get("id") or "") for item in recent_human_exchanges if str((item.get("message_summary") or "")) == message_summary}), None)
+            if matching_exchange is not None:
+                continue
+            filtered_messages.append(msg)
+        relationships["recent_human_messages"] = filtered_messages[-12:]
+
+    inner_thoughts = list(self_state.get("inner_thoughts") or [])
+    kept_thoughts = []
+    for item in inner_thoughts:
+        source_id = str(item.get("id") or "")
+        archive_key = f"thought::{source_id}"
+        archived_entry = archived_by_key.get(archive_key)
+        topic = str(derive_memory_topic("thought", item) or "").strip()
+        topic_lower = topic.lower()
+        if archived_entry is None:
+            kept_thoughts.append(item)
+            skipped.append({"kind": "thought", "source_id": source_id, "reason": "not-archived", "topic": topic})
+            continue
+        if topic_lower and topic_lower in unresolved_threads:
+            kept_thoughts.append(item)
+            blocked.append({"kind": "thought", "source_id": source_id, "reason": "unresolved-thread", "topic": topic})
+            continue
+        pruned_thoughts.append({
+            "kind": "thought",
+            "source_id": source_id,
+            "topic": topic,
+            "archive_key": archive_key,
+            "archived_at": archived_entry.get("archived_at", 0),
+        })
+    self_state["inner_thoughts"] = kept_thoughts[-40:]
+
+    if pruned_exchanges or pruned_thoughts:
+        archive["last_pruned_at"] = now_ts
+        self_state["updated_at"] = now_ts
+        save_communicator_self(self_state)
+    else:
+        self_state["updated_at"] = now_ts
+        save_communicator_self(self_state)
+
+    return {
+        "pruned_exchanges": pruned_exchanges,
+        "pruned_thoughts": pruned_thoughts,
+        "blocked": blocked[:24],
+        "skipped": skipped[:24],
+        "remaining_recent_human_exchanges": len(relationships.get("recent_human_exchanges") or []),
+        "remaining_inner_thoughts": len(self_state.get("inner_thoughts") or []),
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
