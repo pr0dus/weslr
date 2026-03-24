@@ -5,6 +5,27 @@ import time
 from interpretation import classify_human_turn, interpret_human_turn
 
 
+def synthesize_research_answer(topic: str, summary: str) -> str:
+    text = str(summary or "").strip()
+    if not text:
+        return ""
+    text = text.replace("Working summary for", "")
+    text = text.split("Evidence:", 1)[0].strip()
+    text = text.replace(f"{topic}:", "").strip()
+    sentences = [part.strip() for part in text.replace("\n", " ").split(". ") if part.strip()]
+    if not sentences:
+        return text[:320]
+    first = sentences[0].rstrip(".")
+    second = sentences[1].rstrip(".") if len(sentences) > 1 else ""
+    answer = first
+    if second and second.lower() not in first.lower():
+        answer += ". " + second
+    answer = answer.strip()
+    if not answer.endswith((".", "?", "!")):
+        answer += "."
+    return answer[:360]
+
+
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
@@ -30,7 +51,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             elif any(token in last_message.lower() for token in ["understand me", "understand"]):
                 message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
             elif research_context and research_context.get("summary") and any(token in last_message.lower() for token in ["what is", "what are", "why", "how", "explain", "define"]):
-                message = str(research_context.get("summary") or "")[:420]
+                message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
             else:
                 message = f"My best direct answer is that I'm currently focused on {lead_topic}, but I may be over-weighting that focus instead of responding flexibly."
         else:
