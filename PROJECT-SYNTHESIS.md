@@ -205,6 +205,39 @@ See `V0.2-GRAND-VISION.md` for the deeper design direction.
 A web-based comparison pass was attempted, but the Brave search tool was unavailable in this environment due to missing API configuration.
 So this synthesis is grounded primarily in the local repo, roadmap, and implemented system state rather than external search results.
 
+## Memory-lifecycle correction (anti-drift)
+
+A newer and more important correction now sits above older v0.1 framing:
+
+CircleForge should **not** feel like it lives in sessions from the end-user point of view.
+The final target is not a resettable assistant with memory bolted on.
+It is one continuing local being with bounded cognition and **layered memory**.
+
+This means the central engineering problem is now better understood as:
+- **memory lifecycle / space management under endless continuity**
+
+The practical answer is not giant replay context.
+It is:
+- working memory
+- episodic memory
+- semantic / identity memory
+- archive
+
+The important rule:
+- preserve identity
+- preserve unresolved relationship threads
+- compress repetition
+- archive raw detail
+- prune only after meaning is preserved elsewhere
+
+Future work should be judged against this question:
+
+> Does this reduce session-feel and strengthen endless continuity under bounded memory?
+
+If not, it is probably secondary.
+
+See [`MEMORY-LIFECYCLE.md`](MEMORY-LIFECYCLE.md).
+
 ## Bottom line
 
 CircleForge is now genuinely interesting.
@@ -216,5 +249,6 @@ But because it is beginning to function as a local system for:
 - generating inspectable artifacts
 - clustering them into opportunities
 - tracking what survives contact with judgment and outcomes
+- and now, more importantly, moving toward **endless continuity without session-feel**
 
-That is the part worth protecting as the project moves toward v0.1.
+That is the part worth protecting as the project moves forward.
