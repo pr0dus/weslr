@@ -4571,14 +4571,10 @@ def display_human_label(slot: str, profile: dict | None = None) -> str:
     return str(slot or "you")
 
 
-def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], now_ts: int) -> dict | None:
-    lowered = str(message or "").strip().lower()
-    if not lowered:
+def autonomous_research_cycle(query: str, now_ts: int, source_label: str) -> dict | None:
+    query = str(query or "").strip()
+    if not query:
         return None
-    curiosity_trigger = "?" in lowered or any(token in lowered for token in ["why", "how", "what", "who", "when", "where", "learn", "understand", "explain", "research"])
-    if not curiosity_trigger:
-        return None
-    query = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
     try:
         result = search_web(query, limit=5)
     except Exception:
@@ -4614,6 +4610,7 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
         title=f"Autonomous research: {query}",
         kind="research",
         content="\n".join([
+            f"Source trigger: {source_label}",
             "Search results:",
             *compact_lines,
             "",
@@ -4644,6 +4641,33 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
         "fetched_titles": [item.get("title", "") for item in fetched_items],
         "synthesis": synthesis[:400],
     }
+
+
+def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], now_ts: int) -> dict | None:
+    lowered = str(message or "").strip().lower()
+    if not lowered:
+        return None
+    curiosity_trigger = "?" in lowered or any(token in lowered for token in ["why", "how", "what", "who", "when", "where", "learn", "understand", "explain", "research"])
+    if not curiosity_trigger:
+        return None
+    query = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
+    return autonomous_research_cycle(query, now_ts=now_ts, source_label="human-turn")
+
+
+def maybe_internal_autonomous_research(communicator: dict, now_ts: int) -> dict | None:
+    curiosity = float(communicator.get("curiosity", 0.0) or 0.0)
+    unresolved_question = str(communicator.get("unresolved_question") or "").strip()
+    curiosity_target = str(communicator.get("curiosity_target") or "").strip()
+    active_pursuit = str(communicator.get("active_pursuit") or "").strip()
+    query = unresolved_question or curiosity_target or active_pursuit
+    if curiosity < 0.72 or not query:
+        return None
+    public_memory = list(load_public_memory() or [])
+    recent_research = [item for item in public_memory[-16:] if str(item.get("kind") or "") == "research"]
+    query_key = query.lower()
+    if any(query_key in str(item.get("title") or "").lower() or query_key in str(item.get("source") or "").lower() for item in recent_research):
+        return None
+    return autonomous_research_cycle(query, now_ts=now_ts, source_label="internal-curiosity")
 
 
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
@@ -5830,6 +5854,9 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     communicator_decision = integrate_internal_proposals(started_at, internal_proposals, unresolved_needs)
     communicator = load_communicator_state()
     update_communicator_self_from_tick(communicator, summaries, communicator_decision, started_at)
+    internal_research = maybe_internal_autonomous_research(communicator, started_at)
+    if internal_research:
+        communicator["last_decision_summary"] = f"internal curiosity triggered research on {internal_research.get('query', communicator.get('curiosity_target', 'current topic'))}"
     memory_pressure = monitor_memory_pressure(now_ts=started_at)
     episodic_maintenance = None
     semantic_maintenance = None
