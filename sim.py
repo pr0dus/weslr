@@ -80,6 +80,7 @@ from config import (
     TICK_SECONDS,
     VERSION,
 )
+from continuity import apply_human_exchange_to_threads, should_passively_reinforce_thread
 from dialogue import build_communicator_message_payload
 from inquiry import autonomous_research_cycle, maybe_autonomous_research_from_human_turn, maybe_internal_autonomous_research, rewrite_internal_query_for_research
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
@@ -4402,32 +4403,15 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     layers["recent_exchange_ids"] = recent_exchange_ids[-int(layers.get("max_recent_exchanges", 24) or 24):]
     layers["active_concern_topics"] = list(dict.fromkeys((layers.get("active_concern_topics") or []) + topic_list))[-12:]
 
-    threads = relationships.setdefault("conversation_threads", {})
-    for topic in topic_list[:6]:
-        thread = threads.setdefault(topic, {
-            "topic": topic,
-            "human": human_name,
-            "human_label": display_name,
-            "exchange_count": 0,
-            "last_message_summary": "",
-            "last_response_summary": "",
-            "last_exchange_at": 0,
-            "status": "open",
-            "recent_exchange_ids": [],
-        })
-        thread["human"] = human_name
-        thread["human_label"] = display_name
-        thread["exchange_count"] = int(thread.get("exchange_count", 0)) + 1
-        thread["last_message_summary"] = exchange["message_summary"]
-        thread["last_response_summary"] = exchange["response_summary"]
-        thread["last_exchange_at"] = now_ts
-        thread["last_human_exchange_at"] = now_ts
-        thread["last_passive_reinforced_at"] = int(thread.get("last_passive_reinforced_at", 0) or 0)
-        thread["passive_reinforcement_count"] = 0
-        thread["status"] = "open" if unresolved else "resolved"
-        recent_ids = list(thread.get("recent_exchange_ids") or [])
-        recent_ids.append(exchange["id"])
-        thread["recent_exchange_ids"] = recent_ids[-6:]
+    apply_human_exchange_to_threads(
+        relationships,
+        exchange,
+        human_name,
+        display_name,
+        topic_list,
+        unresolved,
+        now_ts,
+    )
 
     concerns = list(self_state.get("active_concerns") or [])
     for topic in topic_list[:3]:
@@ -4487,22 +4471,6 @@ def normalize_concern_topic(value: str) -> str:
         action = text.split(" cooldown active", 1)[0].strip() or "action"
         return f"repeated friction around {action}"
     return text
-
-
-def should_passively_reinforce_thread(thread: dict, now_ts: int) -> bool:
-    last_human_exchange_at = int(thread.get("last_human_exchange_at", 0) or 0)
-    last_passive_reinforced_at = int(thread.get("last_passive_reinforced_at", 0) or 0)
-    passive_reinforcement_count = int(thread.get("passive_reinforcement_count", 0) or 0)
-
-    if passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS:
-        return False
-    if last_passive_reinforced_at > 0 and now_ts - last_passive_reinforced_at < CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS:
-        return False
-    if last_human_exchange_at <= 0:
-        return True
-    if passive_reinforcement_count <= 0:
-        return True
-    return now_ts - last_human_exchange_at >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
 
 
 def summarize_thought_signature(thought: dict) -> str:
@@ -4601,7 +4569,12 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
                 "status": "open",
                 "recent_exchange_ids": [],
             })
-            passive_reinforced = should_passively_reinforce_thread(thread, now_ts)
+            passive_reinforced = should_passively_reinforce_thread(
+                thread,
+                now_ts,
+                cooldown_seconds=CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+                max_passive_reinforcements=CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+            )
             if chosen_theme not in anchor_profile["known_topics"]:
                 anchor_profile["known_topics"].append(chosen_theme)
             recurring = anchor_profile.setdefault("recurring_topics", {})
