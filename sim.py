@@ -4317,9 +4317,9 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
             query,
             now_ts,
             source_label,
-            search_web=search_web,
+            search_web=lambda q, limit=5: search_web(q, limit=limit, project_name=PROJECT_NAME, version=VERSION),
             score_search_result=score_search_result,
-            fetch_url_text=fetch_url_text,
+            fetch_url_text=lambda url, max_chars=5000: fetch_url_text(url, max_chars=max_chars, project_name=PROJECT_NAME, version=VERSION),
             summarize_research_findings=summarize_research_findings,
             load_public_memory=load_public_memory,
             save_public_memory=save_public_memory,
@@ -4470,10 +4470,11 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     communicator["last_decision_summary"] = f"remembered human exchange with {display_name} about {topic_list[0] if topic_list else 'shared context'}"
     if research_trace:
         communicator["last_decision_summary"] = f"autonomous research on {research_trace.get('query', topic_list[0] if topic_list else 'current topic')} after human exchange"
-    if topic_list:
-        integrated = integrate_research_into_communicator(communicator, load_public_memory(), topic_list[0])
+    integration_topic = (research_trace or {}).get("query") or (topic_list[0] if topic_list else "")
+    if integration_topic:
+        integrated = integrate_research_into_communicator(communicator, load_public_memory(), integration_topic)
         if integrated:
-            relationships["last_human_topic"] = integrated.get("topic", topic_list[0])
+            relationships["last_human_topic"] = integrated.get("topic", integration_topic)
     communicator["updated_at"] = now_ts
     save_communicator_state(communicator)
     return self_state
@@ -5508,9 +5509,9 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             query,
             now_ts,
             source_label,
-            search_web=search_web,
+            search_web=lambda q, limit=5: search_web(q, limit=limit, project_name=PROJECT_NAME, version=VERSION),
             score_search_result=score_search_result,
-            fetch_url_text=fetch_url_text,
+            fetch_url_text=lambda url, max_chars=5000: fetch_url_text(url, max_chars=max_chars, project_name=PROJECT_NAME, version=VERSION),
             summarize_research_findings=summarize_research_findings,
             load_public_memory=load_public_memory,
             save_public_memory=save_public_memory,
@@ -6499,7 +6500,7 @@ def build_communicator_message() -> dict:
     active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_topic)
     research_context = None
     if latest_human:
-        latest_topic = str(relationships.get("last_human_topic") or ((latest_human.get("topics") or [""])[0]) or "").strip()
+        latest_topic = str(((latest_human.get("topics") or [""])[0]) or relationships.get("last_human_topic") or "").strip()
         if latest_topic:
             note = find_relevant_research_note(load_public_memory(), latest_topic)
             if note:

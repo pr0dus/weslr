@@ -118,7 +118,10 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
     curiosity_trigger = "?" in lowered or any(token in lowered for token in ["why", "how", "what", "who", "when", "where", "learn", "understand", "explain", "research"])
     if not curiosity_trigger:
         return None
-    query = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
+    preferred = " ".join([item for item in topics[:2] if str(item).strip()]) or str(message or "")[:120]
+    query = rewrite_internal_query_for_research(preferred)
+    if len(query.split()) < 2:
+        query = rewrite_internal_query_for_research(str(message or "")[:120])
     return autonomous_research_cycle_func(query, now_ts=now_ts, source_label="human-turn")
 
 
