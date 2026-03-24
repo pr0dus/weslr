@@ -5379,7 +5379,13 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     communicator = load_communicator_state()
     update_communicator_self_from_tick(communicator, summaries, communicator_decision, started_at)
     memory_pressure = monitor_memory_pressure(now_ts=started_at)
+    episodic_maintenance = None
+    semantic_maintenance = None
     archive_maintenance = None
+    if "distill-episodic" in (memory_pressure.get("recommended_actions") or []):
+        episodic_maintenance = distill_episodic_memory(now_ts=started_at)
+    if "distill-semantic" in (memory_pressure.get("recommended_actions") or []):
+        semantic_maintenance = distill_semantic_memory(now_ts=started_at)
     if "prepare-archive" in (memory_pressure.get("recommended_actions") or []):
         archive_maintenance = archive_memory(now_ts=started_at)
     update_self_model(communicator)
@@ -5409,6 +5415,8 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         "internal_consensus": communicator_decision,
         "memory_maintenance": {
             "pressure": memory_pressure,
+            "episodic": episodic_maintenance,
+            "semantic": semantic_maintenance,
             "archive": archive_maintenance,
         },
     }
