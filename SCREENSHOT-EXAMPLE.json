@@ -1,0 +1,10 @@
+{
+  "message": "I keep returning to backup confidence because it is still an open shared thread with Robert. Right now my pull is to Revisit backup confidence with Robert until the shared thread changes state.",
+  "audience": "Robert",
+  "tone": "continuity-aware",
+  "active_thread": "backup confidence",
+  "why_it_matters": "backup confidence matters because shared human context should shape what CircleForge returns to instead of resetting.",
+  "follow_up_impulse": "Revisit backup confidence with Robert until the shared thread changes state.",
+  "thought_fragments": [],
+  "source": "communicator_self.narrative_state"
+}

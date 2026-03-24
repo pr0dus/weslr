@@ -1,299 +1,234 @@
 # CircleForge
 
-> A local artificial-life substrate for one persistent communicator with internal minds, memory, intention, curiosity, learning, self-modeling, regulation, and world-driven behavior.
+> Local persistent being substrate with memory, inner minds, and world-driven behavior.
 
-**CircleForge v0.0.98** is evolving toward a stronger end objective: a **local living-entity substrate** that a human can speak to over time — not mainly a tool factory, not mainly a prompt shell, and not mainly a marketplace artifact generator.
+**CircleForge v0.0.98** is a local experiment in building one continuing communicator with internal functions, memory, regulation, and relationship continuity.
 
-CircleForge should be understood primarily as:
-- one visible communicator / one continuing entity
-- several internal minds/subprocess-like agents with distinct perspectives
-- a local world of memory, needs, projects, experiments, relationships, and consequences
-- a system where behavior should emerge from state, interaction, inquiry, and revision rather than prompt-shaped steering
-
-CircleForge is **not primarily**:
-- an OpenClaw-adjacent prompt shell
-- an artifact factory
-- a startup-idea generator
-- a bot that only wakes when a human speaks to it
-Agents act on timed cycles, keep private memory, generate helper modules, annotate artifacts, surface promising outputs through queues and review, derive demand signals from recent friction, score and rank coherent artifact packs for human curation, estimate commercial readiness and sellability, provide operator-friendly browsing and explanations, generate stronger export bundles and handoff-ready pack wrappers, attach category-aware publishing templates and delivery-mode recommendations, incorporate proof signals from reuse and review history, track external validation outcomes, attach niche/opportunity hypotheses to artifacts, and now begin clustering opportunity themes into more stable emerging niche families.
-
-CircleForge is aimed at producing small reusable tools that humans can inspect, package, validate, and potentially sell — not just internally interesting simulation artifacts. The longer-term goal is for entities to help define what is worth building by spotting gaps, proposing niches, and shaping artifacts around them.
-
-**Feedback and testers are welcome.** If you want to give advice, critique the direction, or try the project, see the community drafts and issue templates in [`docs/community`](docs/community) and [`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE).
-
-Live GitHub discussion:
-- <https://github.com/pr0dus/CircleForge/discussions/2>
-
-## Current core
-
-CircleForge currently includes:
-- one visible communicator / one continuing entity
-- five recurring internal functions:
+The important framing is:
+- **one visible communicator**, not a swarm of unrelated bots
+- **five recurring internal functions** inside that one being:
   - observer
   - builder
   - critic
   - communicator
   - memory_keeper
+- behavior shaped by **state, memory, pressure, history, and consequences** more than by prompt theater
+
+CircleForge is trying to grow toward a **local developing being substrate** — not mainly a tool factory, not mainly a prompt shell, and not mainly a dashboard toy.
+
+## What works today
+
+CircleForge already includes:
 - persistent communicator self + human continuity memory
-- local relationship/thread continuity with shared-topic pressure
-- bounded embedded local cognition via bundled GGUF + local `llama.cpp` server path
-- automatic embedded runtime startup with fallback-safe behavior
-- pressure-driven wake scaffold with irregular hazard-style waking
-- foreground thought competition scaffold
-- early self-model / regulation scaffold
-- inspect / trade / signal / research actions
-- world memory, needs, projects, relationships, and experiments
-- artifact metadata and lineage
-- review + export flow
-- category governance
-- pack/opportunity/sellability layers
-- operator dashboard and rollback discipline
+- shared-topic / unresolved-thread pressure
+- early self-model / regulation scaffolding
+- irregular wake / thought-pressure dynamics
+- local dashboard + CLI inspection tools
+- external failsafe visibility (`GUIDED`, `SAFE`, `UNLOCKED`, `HALT`)
+- multiple runtime paths:
+  - `fallback`
+  - `embedded`
+  - `ollama`
+  - `openai` / compatible
 
-## Recent direction update
+## Very important: model files are **not** stored in Git
 
-Recent work has shifted CircleForge more decisively toward a **continuing local being substrate** rather than a simulation-heavy artifact factory.
+The repo is intentionally upload-safe and clone-safe.
 
-The most important recent changes:
-- embedded local cognition now works through a local `llama-server` path with `Qwen2.5-0.5B-Instruct` GGUF
-- embedded runtime can auto-start instead of depending on a manually started model server
-- tick-time inner-thought persistence now routes through the shared runtime adapter correctly
-- pressure/hazard thought dynamics scaffold added
-- foreground thought competition scaffold added
-- communicator self-model now carries early regulation/continuity fields
-- human continuity threads continue to shape wake pressure and ongoing intent
+That means large model binaries such as `.gguf` files are **not tracked in GitHub**.
+This is normal and intentional.
 
-Current safety frame:
-- external failsafe exists outside the editable substrate
-- CircleForge is expected to run under **GUIDED** mode by default
-- deeper self-modification should remain bounded, auditable, and reversible
+So if someone clones CircleForge:
+- the **project code** works
+- the **CLI** works
+- the **dashboard** works
+- the **fallback mode** works
+- but the **embedded local-LLM path** will only work after they add/download a model file separately
 
-## Installation
+Default expected embedded model path:
+- `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
 
-### Requirements
+If that file is missing, CircleForge should still run — it just won’t have the full embedded cognition path yet.
 
-Minimum:
-- Linux, macOS, or another environment with Bash and `python3`
-- Python 3.10+ recommended
+## Two clean ways to make setup work without GitHub trouble
 
-Optional but recommended:
-- **Ollama** for local model-backed decisions
-  - default expected endpoint: `http://127.0.0.1:11434`
-  - default model in config: `qwen2.5:3b`
-- Git, if you want versioned local workflows
+### Option A — recommended: keep models outside Git, document/setup them clearly
 
-Current runtime/storage used by CircleForge:
-- SQLite via Python standard library (`sqlite3`)
-- JSON files for queues, dashboard state, event log, offers, and opportunity state
+This is the cleanest and most normal approach.
 
-At the moment, CircleForge does **not** depend on a Python package requirements file for the core local flow.
-It mainly uses the Python standard library.
+How it works:
+- keep `.gguf` files **out of the repo**
+- document the expected filename/path
+- optionally provide a helper script later to place/download the model automatically
+- let CircleForge fall back safely when the model is absent
 
-### Quick install
+Why this is good:
+- GitHub stays fast and healthy
+- clones stay small
+- no giant binary push failures
+- users still get a clear setup path
+
+### Option B — provide model downloads through Releases or an external host
+
+Instead of committing the model to the repo itself, provide it through:
+- GitHub Releases
+- Hugging Face / another model host
+- a documented manual download step
+
+How it works:
+- README explains where to get the model
+- user downloads it once
+- user places it into `models/` or sets an environment variable
+
+Why this is good:
+- still avoids polluting Git history
+- easier for humans to understand
+- works better for public repos
+
+## Current recommendation
+
+For CircleForge, the best current public setup is:
+1. keep model binaries out of Git
+2. document exactly what works without them
+3. document exactly how to add them
+4. later add a helper/setup command for smoother first-run onboarding
+
+That makes the project:
+- uploadable
+- understandable
+- testable
+- honest
+
+## Quick start
 
 ```bash
 git clone https://github.com/pr0dus/CircleForge.git
 cd CircleForge
 python3 main.py version
-./run.sh setup
+python3 main.py llm-status
+python3 main.py failsafe-status
+python3 main.py communicator-message
 ```
 
-### Optional local model setup (Ollama)
+What you should expect from that:
+- the project should start
+- version should print
+- failsafe status should print
+- communicator output should print
+- if no model is installed, `llm-status` may report `fallback`
 
-If you want model-backed local decisions instead of fallback-only behavior:
+That is **not a broken repo**.
+It simply means the optional embedded model is not present yet.
+
+## Embedded model setup
+
+See [`models/README.md`](models/README.md) for the exact expected path.
+
+The current default embedded target is:
+- **Qwen2.5-0.5B-Instruct**
+- expected filename:
+  - `qwen2.5-0.5b-instruct.gguf`
+
+Expected default path:
+- `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
+
+If you want to use a different file/path, override with environment variables such as:
 
 ```bash
-# install Ollama separately first
-ollama pull qwen2.5:3b
+export CIRCLEFORGE_LLM_PROVIDER=embedded
+export CIRCLEFORGE_EMBEDDED_MODEL_PATH=/full/path/to/model.gguf
+export CIRCLEFORGE_LLM_MODEL=YourModelName
 ```
 
-If you use a different host or model, set environment variables before running CircleForge:
+## Fallback vs embedded: what people should understand
+
+### Fallback mode
+Use this when:
+- you just want to inspect the project
+- you want the CLI and state machinery to run
+- you do not yet have a local model file
+
+### Embedded mode
+Use this when:
+- you want the bounded local cognition path
+- you have a GGUF file available
+- you want CircleForge to use its embedded runtime path
+
+### Ollama / OpenAI-compatible modes
+Use these when:
+- you want an alternate live backend
+- you don’t want to depend on the embedded path yet
+
+## Screenshot / demo commands
+
+If you want a small output example for a screenshot or post:
 
 ```bash
-export OLLAMA_HOST=http://127.0.0.1:11434
-export OLLAMA_MODEL=qwen2.5:3b
+python3 main.py version
+python3 main.py failsafe-status
+python3 main.py communicator-message
 ```
 
-### First run
-
-The easiest way to test CircleForge now is the guided setup:
+A more guided public demo flow:
 
 ```bash
-./run.sh setup
+python3 main.py human-exchange Robert "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
+python3 main.py communicator-message
 ```
 
-(`python3 main.py setup` still works too.)
-
-It will ask:
-- how many agents to create
-- how many ticks to run
-- tick interval in seconds
-- dashboard auto-refresh seconds
-- whether to serve the dashboard on your LAN
-- which LAN port to use
-
-For tick count, you can use:
-- a positive number like `10`
-- `0` for infinite mode
-- `inf`, `infinite`, or `forever` during the interactive prompt
-
-After setup finishes, CircleForge can start a small HTTP server for the dashboard and prints the exact LAN address to open in your browser, for example:
-- `http://192.168.1.50:8008/`
-- `http://127.0.0.1:8008/`
-
-If you choose not to serve it over LAN, it still prints the file-based fallback:
-- `/full/path/to/CircleForge/dashboard/index.html`
-- `file:///full/path/to/CircleForge/dashboard/index.html`
-
-If you prefer the manual flow instead:
-
-```bash
-python3 main.py init --reset --agents 4
-python3 main.py run --ticks 10 --interval 0
-python3 main.py show-world
-python3 main.py dashboard --refresh 5
-```
-
-Then open:
-- `dashboard/index.html`
+That produces a cleaner, more human-readable sample of how the communicator answers.
 
 ## Useful commands
 
 ```bash
+python3 main.py version
+python3 main.py llm-status
+python3 main.py failsafe-status
+python3 main.py communicator
+python3 main.py communicator-self
+python3 main.py communicator-message
+python3 main.py embedded-self-test
+python3 main.py human-exchange Robert "hello" --response "hello"
 python3 main.py init --reset --agents 5
 python3 main.py tick --verbose
-python3 main.py run --ticks 20 --interval 60
+python3 main.py run --ticks 20 --interval 0
 python3 main.py show-world
-python3 main.py show-agent agent-1
-python3 main.py browse export --limit 5
-python3 main.py browse review --limit 5
-python3 main.py browse packs --limit 5
-python3 main.py explain <artifact-id-or-pack-name>
-python3 main.py handoff --limit 5
-python3 main.py review <artifact-id> approve --note "looks good"
-python3 main.py validate <artifact-id> accept --note "used in a real client flow"
-python3 main.py category approve <name>
-python3 main.py category retire <name>
-python3 main.py category revive <name>
 python3 main.py dashboard
-python3 main.py dashboard --refresh 5
-python3 main.py dashboard --watch --interval 10
 ./run.sh setup
-./run.sh setup --agents 6 --ticks 20 --interval 0 --refresh 5 --serve --port 8008
-./run.sh setup --agents 4 --ticks 0 --interval 60 --refresh 5 --serve --port 8008
 ./run.sh serve --port 8008
-python3 main.py setup
-python3 main.py offer <pack-name>
-python3 main.py version
 ```
 
-## Sellability model
+## Current safety frame
 
-A stricter sellability rubric now exists in [`SELLABILITY.md`](SELLABILITY.md).
-It defines a 100-point scoring framework based on:
-- problem clarity
-- external legibility
-- installability
-- reuse potential
-- real utility evidence
-- monetization fit
-
-It also defines hard penalties for sandbox-only artifacts, vague buyers, setup pain, fake sophistication, and internal jargon.
-
-## Opportunity model
-
-The first niche-discovery layer now lives in [`OPPORTUNITY.md`](OPPORTUNITY.md).
-It defines how entities should begin attaching:
-- niche themes
-- target users
-- problem statements
-- gap reasons
-- packaging hypotheses
-- opportunity scores
-
-to the artifacts they generate.
-
-The current direction is state-driven rather than prompt-driven: entities should drift toward niches through internal opportunity memory, world pressure, reinforcement, decay, and theme clustering.
-
-## New in v0.0.52
-
-- clickable dashboard navigation and artifact detail views
-- persistent event log plus lightweight live dashboard refresh/watch mode
-- explain output now separates internal strength, external proof, risks, and next actions
-- pack offer brief generation added with weak-proof pack reporting
-- JSON read/write path hardened for runtime files via blank-file tolerance and atomic writes
-
-## New in v0.0.53
-
-- artifact substance analysis added for generated modules and notes
-- thin artifacts now receive explicit penalties instead of coasting on strong metadata alone
-- description-to-artifact mismatch now reduces human-facing quality, commercial readiness, and sellability
-- explainability now flags artifacts whose framing outruns their underlying payload
+Current intended operating frame:
+- external failsafe exists outside the editable substrate
+- CircleForge should normally run in **GUIDED** mode
+- deeper self-modification should remain bounded, auditable, and reversible
 
 ## Planning docs
 
-- [`V0.1.md`](V0.1.md) — practical pre-v0.1 milestone definition
-- [`CORE-IDENTITY.md`](CORE-IDENTITY.md) — the decisive statement of what CircleForge now is and is not
-- [`V0.2-GRAND-VISION.md`](V0.2-GRAND-VISION.md) — richer long-term direction
-- [`WORLD-MODEL.md`](WORLD-MODEL.md) — canonical world object model
-- [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md) — safe self-inspection and self-change design
-- [`AGENT-TIME.md`](AGENT-TIME.md) — per-agent cadence and wake model
+- [`CORE-IDENTITY.md`](CORE-IDENTITY.md)
+- [`PROJECT-SYNTHESIS.md`](PROJECT-SYNTHESIS.md)
+- [`EMBEDDED-RUNTIME-PLAN.md`](EMBEDDED-RUNTIME-PLAN.md)
+- [`LLM-INTEGRATION.md`](LLM-INTEGRATION.md)
+- [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md)
+- [`WORLD-MODEL.md`](WORLD-MODEL.md)
+- [`AGENT-TIME.md`](AGENT-TIME.md)
+- [`ROADMAP.md`](ROADMAP.md)
 
-Current early implementation surface:
-- `python3 main.py communicator`
-- `python3 main.py eval-metrics`
-- `python3 main.py run-eval --ticks 25 --agents 5`
-- `python3 main.py world-objects needs`
-- `python3 main.py world-objects messages`
-- `python3 main.py world-objects public-memory`
-- `python3 main.py world-objects projects`
-- `python3 main.py world-objects relationships`
-- `python3 main.py world-objects self-mod-proposals`
-- `python3 main.py world-objects work-items`
-- soft per-agent cadence via `next_due_tick`, `wake_reason`, and `cadence_interval`
-- protected self-edit boundary for core files and human-safety rules
-- proposal-only self-modification layer for repeated friction
-- first communicator state with internal proposal/integration loop
-- communicator intent continuity and curiosity-driven wake pressure
-- disagreement-aware communicator decisions with inspect-first / reconsider / defer behavior
-- explicit intention state: pursuit, unresolved question, curiosity target, attraction bias, avoidance bias
-- unresolved-question mechanism now drives waking and inspect/research continuation
-- question lineage with simple resolution / successor-question chaining
-- communicator questions now sync into public memory, needs, inquiry work-items, and experiments
-- running experiments now feed back into waking, proposal scoring, pursuit focus, inspect/research pressure, and social trust/caution
-- internal proposal weighting now uses learned trust/usefulness/friction rather than treating all internal voices as equal
-- communicator now learns decision-style tendencies, not just voice credibility
-- learned confidence in reflective modes now directly changes disagreement handling
-- communicator now keeps a lightweight self-model that should deepen later as evidence and subprocess history accumulate
-- self-model beliefs now update more slowly via confidence thresholds, making self-revision less jumpy
-- self-model now separates short-term signals from longer-term beliefs
-- self-model now begins grounding some beliefs in action/outcome evidence rather than only internal pattern accumulation
-- self-evidence now distinguishes multiple evidence kinds: follow-through, question narrowing, experiment progress, coordination effect, and reuse-like signals
-- self-model now begins forming theme-specific beliefs instead of only global beliefs
-- evaluation harness now tracks the postponed test gate: persistence, inquiry continuity, self-revision, and internal differentiation
-- differentiation metrics now also consider role-memory signals and communicator memory-bias usage, not just role labels/counts
-- `run-eval` now provides a repeatable longer-pass harness before the postponed tiny-model test gate is revisited
-- self-model strengths/weaknesses/caution now bias action selection more directly
-- coordinator and memory-keeper now get more distinct behavior in the internal loop
-- builder/coordinator/memory-keeper now leave more role-specific memory traces for later continuity
-- builder now tracks whether its outputs seem to matter later in the same world cycle
-- coordinator now tracks whether its signal/inspect actions appear to trigger follow-on same-theme activity in others
-- memory-keeper now clusters unresolved objections into continuity-oriented memory traces
-- builder memory now feeds back into later builder action choice when past build patterns seemed useful
-- coordinator memory now feeds back into later coordinator signal/inspect choice when past coordination patterns seemed effective
-- memory-keeper objection clustering now feeds back into later memory-keeper continuity/caution behavior
-- role-specific memory now also biases communicator-level proposal weighting
+## Honest current state
 
-## What should come next
+CircleForge is real, but still early.
 
-Near-term:
-- move from static dashboard guidance toward operator-triggered workflows and replay views
-- deepen artifact/pack detail pages with proof timelines and offer histories
-- tighten the path from validated packs into stronger v0.1-ready product candidates
+What is already true:
+- there is meaningful continuity/state machinery
+- there is communicator/self/thread memory
+- there is a bounded runtime design
+- there is a safety frame
 
-Longer-term:
-- strengthen the visible communicator identity over the internal agent substrate
-- deepen evidence-grounded self-knowledge so the self-model is earned, not decorative
-- add explicit intention, curiosity, question lineage, and internal agreement/disagreement loops
-- deepen subprocess/action-outcome learning so the entity knows what actually helps it think and act
-- add self-observation and safe self-modification loops
-- move from one global tick toward per-agent cadence and wake conditions
+What is not yet true:
+- it is not yet a finished living system
+- embedded setup is not yet one-command effortless for strangers
+- public onboarding still needs refinement
+
+That is exactly why the repo now treats model files as separate local artifacts instead of shoving giant binaries into Git history.
