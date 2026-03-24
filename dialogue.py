@@ -28,6 +28,7 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
 
     chosen = cleaned[:2] or [sentences[0].strip().rstrip(".")]
     base = chosen[0]
+    second_raw = chosen[1] if len(chosen) > 1 else ""
     topic_lower = str(topic or "").lower()
 
     if "continuity" in topic_lower and "self" in topic_lower:
@@ -36,15 +37,25 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
         answer = f"{first}. {second}."
         return answer[:360]
 
+    if any(token in topic_lower for token in ["identity", "selfhood", "entity"]):
+        first = f"My current best answer is that {topic} is about how a being stays recognizably itself rather than dissolving into disconnected moments"
+        second = second_raw[:170].rstrip('.') if second_raw else "That matters because identity needs some stability across memory, change, and action"
+        return f"{first}. {second}."[:360]
+
+    if any(token in topic_lower for token in ["learning", "understanding", "prompt"]):
+        first = f"My current best answer is that {topic} is about how a system turns information into better future behavior rather than just repeating patterns"
+        second = second_raw[:170].rstrip('.') if second_raw else "That matters because learning should change judgment, not only output style"
+        return f"{first}. {second}."[:360]
+
     if topic_lower:
-        first = f"My current best answer is that {topic} is about {base[:220].rstrip('.')}."
+        first = f"My current best answer is that {topic} concerns {base[:180].rstrip('.')}."
     else:
-        first = base
-    if len(chosen) > 1:
-        second = chosen[1][:180].rstrip('.')
+        first = base if base.endswith((".", "?", "!")) else base + "."
+    if second_raw:
+        second = second_raw[:170].rstrip('.')
         answer = f"{first} {second}."
     else:
-        answer = first if first.endswith((".", "?", "!")) else first + "."
+        answer = first
     return answer[:360]
 
 
