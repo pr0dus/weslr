@@ -1221,6 +1221,136 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
     }
 
 
+def archive_memory(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    working = layers.get("working") or {}
+    episodic = layers.get("episodic") or {}
+    semantic = layers.get("semantic") or {}
+    archive = layers.get("archive") or {}
+    relationships = self_state.get("relationships") or {}
+
+    unresolved_threads = {str(item).strip().lower() for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()}
+    stable_topics = {str(item).strip().lower() for item in (semantic.get("stable_topics") or []) if str(item).strip()}
+    continuity_anchors = {str(item).strip().lower() for item in (semantic.get("continuity_anchors") or []) if str(item).strip()}
+    archived_items = list(archive.get("archived_items") or [])
+    archived_keys = {str(item.get("archive_key") or "") for item in archived_items}
+
+    episode_topics = {}
+    for episode in (episodic.get("episodes") or []):
+        topic = str(episode.get("topic") or "").strip().lower()
+        if topic:
+            episode_topics.setdefault(topic, []).append(episode)
+
+    archived = []
+    skipped = []
+    blocked_by_continuity = []
+    blocked_by_unresolved_thread = []
+    trimmed_exchange_ids = []
+    trimmed_thought_ids = []
+
+    recent_exchange_ids = set(working.get("recent_exchange_ids") or [])
+    recent_thought_ids = set(working.get("recent_thought_ids") or [])
+
+    def _maybe_archive(kind: str, payload: dict, source_id: str, label: str, topic: str, created_at: int) -> None:
+        normalized_topic = str(topic or derive_memory_topic(kind, payload) or "").strip()
+        normalized_lower = normalized_topic.lower()
+        score = score_memory_item(kind, payload, self_state)
+        archive_key = f"{kind}::{source_id or normalized_lower or label[:48]}"
+
+        if archive_key in archived_keys:
+            skipped.append({"kind": kind, "source_id": source_id, "reason": "already-archived", "tier": score.get("tier")})
+            return
+        if normalized_lower and normalized_lower in unresolved_threads:
+            blocked_by_unresolved_thread.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "tier": score.get("tier")})
+            return
+        if score.get("tier") == "keep-hot":
+            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "keep-hot", "tier": score.get("tier")})
+            return
+
+        represented_upstream = False
+        if normalized_lower and normalized_lower in stable_topics.union(continuity_anchors):
+            represented_upstream = True
+        if normalized_lower and normalized_lower in episode_topics:
+            represented_upstream = True
+
+        if score.get("tier") == "compressible" and not represented_upstream:
+            blocked_by_continuity.append({"kind": kind, "source_id": source_id, "topic": normalized_topic, "reason": "not-yet-represented-upstream", "tier": score.get("tier")})
+            return
+        if score.get("tier") not in {"archive-safe", "compressible"}:
+            skipped.append({"kind": kind, "source_id": source_id, "reason": "tier-not-archivable", "tier": score.get("tier")})
+            return
+
+        entry = {
+            "archive_key": archive_key,
+            "kind": kind,
+            "source_id": source_id,
+            "topic": normalized_topic,
+            "label": (label or normalized_topic or kind)[:160],
+            "tier": score.get("tier"),
+            "score": score.get("score"),
+            "represented_upstream": represented_upstream,
+            "summary": (str(payload.get("summary") or payload.get("message_summary") or payload.get("response_summary") or payload.get("theme") or payload.get("topic") or label or kind))[:240],
+            "created_at": int(created_at or now_ts),
+            "archived_at": now_ts,
+        }
+        archived_items.append(entry)
+        archived_keys.add(archive_key)
+        archived.append(entry)
+        if source_id and source_id in recent_exchange_ids:
+            trimmed_exchange_ids.append(source_id)
+        if source_id and source_id in recent_thought_ids:
+            trimmed_thought_ids.append(source_id)
+
+    for item in list(relationships.get("recent_human_exchanges") or [])[:-6]:
+        _maybe_archive(
+            "exchange",
+            item,
+            str(item.get("id") or ""),
+            derive_memory_label("exchange", item),
+            derive_memory_topic("exchange", item),
+            int(item.get("created_at", 0) or now_ts),
+        )
+
+    for item in list(self_state.get("inner_thoughts") or [])[:-10]:
+        _maybe_archive(
+            "thought",
+            item,
+            str(item.get("id") or ""),
+            derive_memory_label("thought", item),
+            derive_memory_topic("thought", item),
+            int(item.get("created_at", 0) or now_ts),
+        )
+
+    archived_items.sort(key=lambda item: int(item.get("archived_at", 0) or 0), reverse=True)
+    archive["archived_items"] = archived_items[-240:]
+    archive["archived_count"] = len(archive.get("archived_items") or [])
+    archive["last_archived_at"] = now_ts if archived else int(archive.get("last_archived_at", 0) or 0)
+
+    if trimmed_exchange_ids:
+        trimmed_exchange_set = set(trimmed_exchange_ids)
+        working["recent_exchange_ids"] = [item for item in (working.get("recent_exchange_ids") or []) if item not in trimmed_exchange_set]
+    if trimmed_thought_ids:
+        trimmed_thought_set = set(trimmed_thought_ids)
+        working["recent_thought_ids"] = [item for item in (working.get("recent_thought_ids") or []) if item not in trimmed_thought_set]
+    if archived or trimmed_exchange_ids or trimmed_thought_ids:
+        working["last_compacted_at"] = now_ts
+
+    self_state["updated_at"] = now_ts
+    save_communicator_self(self_state)
+    return {
+        "archived": archived,
+        "skipped": skipped[:24],
+        "blocked_by_continuity": blocked_by_continuity[:24],
+        "blocked_by_unresolved_thread": blocked_by_unresolved_thread[:24],
+        "trimmed_recent_exchange_ids": trimmed_exchange_ids,
+        "trimmed_recent_thought_ids": trimmed_thought_ids,
+        "archive_count": archive.get("archived_count", 0),
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
