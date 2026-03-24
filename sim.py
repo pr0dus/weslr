@@ -358,21 +358,34 @@ def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
         title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.I | re.S)
         if title_match:
             title = unescape(re.sub(r"\s+", " ", title_match.group(1))).strip()
-        for pattern in [r"<script.*?</script>", r"<style.*?</style>", r"<noscript.*?</noscript>", r"<svg.*?</svg>"]:
+        body_match = re.search(r"<body[^>]*>(.*?)</body>", text, flags=re.I | re.S)
+        if body_match:
+            text = body_match.group(1)
+        article_match = re.search(r"<(article|main)[^>]*>(.*?)</\1>", text, flags=re.I | re.S)
+        if article_match:
+            text = article_match.group(2)
+        for pattern in [r"<script.*?</script>", r"<style.*?</style>", r"<noscript.*?</noscript>", r"<svg.*?</svg>", r"<nav.*?</nav>", r"<footer.*?</footer>", r"<header.*?</header>", r"<aside.*?</aside>", r"<form.*?</form>"]:
             text = re.sub(pattern, " ", text, flags=re.I | re.S)
+        text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
+        text = re.sub(r"</p>", "\n", text, flags=re.I)
         text = re.sub(r"<[^>]+>", " ", text)
     text = unescape(text)
-    text = re.sub(r"\b(login|sign in|subscribe|cookie policy|privacy policy|all rights reserved|shop now|follow us|menu|skip to main content)\b", " ", text, flags=re.I)
+    text = re.sub(r"\b(login|sign in|subscribe|cookie policy|privacy policy|all rights reserved|shop now|follow us|menu|skip to main content|my account|search close|submit cancel|donate)\b", " ", text, flags=re.I)
     text = re.sub(r"\s+", " ", text).strip()
+    raw_excerpt = text[:max(500, int(max_chars))]
     sentences = re.split(r"(?<=[.!?])\s+", text)
     cleaned_sentences = []
     seen = set()
     for sentence in sentences:
         sentence = re.sub(r"\s+", " ", sentence).strip()
-        if len(sentence) < 40:
+        if len(sentence) < 50:
             continue
         lowered = sentence.lower()
         if lowered in seen:
+            continue
+        if sentence.count("|") > 1 or sentence.count("·") > 2:
+            continue
+        if any(noise in lowered for noise in ["copyright", "all rights reserved", "follow follow", "shop now", "curriculum access", "contact us login", "submit cancel", "journals & books help"]):
             continue
         seen.add(lowered)
         cleaned_sentences.append(sentence)
@@ -382,6 +395,7 @@ def fetch_url_text(url: str, max_chars: int = 12000) -> dict:
         "title": title or str(url),
         "content_type": content_type,
         "text": cleaned_text,
+        "raw_excerpt": raw_excerpt,
         "insecure_ssl_fallback_used": insecure_ssl_fallback_used,
         "fetched_at": int(time.time()),
     }
@@ -418,8 +432,8 @@ def ingest_web_resource(url: str, title: str = "", max_chars: int = 12000) -> di
     fetched = fetch_url_text(url, max_chars=max_chars)
     public_memory = load_public_memory()
     now_ts = int(time.time())
-    item = PublicMemoryState(
-        id=f"web-{now_ts}",
+    note_item = PublicMemoryState(
+        id=f"web-note-{now_ts}",
         title=title or fetched.get("title") or str(url),
         kind="research",
         content=fetched.get("text", ""),
@@ -428,9 +442,19 @@ def ingest_web_resource(url: str, title: str = "", max_chars: int = 12000) -> di
         created_at=now_ts,
         updated_at=now_ts,
     ).to_dict()
-    public_memory.append(item)
+    raw_item = PublicMemoryState(
+        id=f"web-raw-{now_ts}",
+        title=f"Raw excerpt: {title or fetched.get('title') or str(url)}",
+        kind="research_raw",
+        content=fetched.get("raw_excerpt", fetched.get("text", "")),
+        source=str(url),
+        stability=0.28,
+        created_at=now_ts,
+        updated_at=now_ts,
+    ).to_dict()
+    public_memory.extend([note_item, raw_item])
     save_public_memory(public_memory[-120:])
-    return {"saved": item, "fetched": fetched, "public_memory_count": len(load_public_memory())}
+    return {"saved": [note_item, raw_item], "fetched": fetched, "public_memory_count": len(load_public_memory())}
 
 
 def score_search_result(query: str, result: dict) -> float:
@@ -4563,8 +4587,8 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
     synthesis = summarize_research_findings(query, fetched_items)
 
     public_memory = load_public_memory()
-    public_memory.append(PublicMemoryState(
-        id=f"web-search-{now_ts}",
+    research_note = PublicMemoryState(
+        id=f"web-search-note-{now_ts}",
         title=f"Autonomous research: {query}",
         kind="research",
         content="\n".join([
@@ -4578,7 +4602,19 @@ def maybe_autonomous_research_from_human_turn(message: str, topics: list[str], n
         stability=0.46 if fetched_items else 0.34,
         created_at=now_ts,
         updated_at=now_ts,
-    ).to_dict())
+    ).to_dict()
+    public_memory.append(research_note)
+    for index, item in enumerate(fetched_items[:2], start=1):
+        public_memory.append(PublicMemoryState(
+            id=f"web-search-raw-{now_ts}-{index}",
+            title=f"Raw excerpt {index}: {item.get('title') or item.get('url') or query}",
+            kind="research_raw",
+            content=item.get("raw_excerpt", item.get("text", "")),
+            source=str(item.get("url") or f"search:{query}"),
+            stability=0.24,
+            created_at=now_ts,
+            updated_at=now_ts,
+        ).to_dict())
     save_public_memory(public_memory[-120:])
     return {
         "query": query,
