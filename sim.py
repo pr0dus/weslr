@@ -5786,6 +5786,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "communicator_self": data.get("communicator_self"),
         "communicator_message": data.get("communicator_message"),
         "memory_lifecycle": build_memory_lifecycle_report(),
+        "memory_maintenance": {
+            "pressure": monitor_memory_pressure(),
+        },
         "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
         "operator_views": data.get("operator_views"),
@@ -5973,6 +5976,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p><strong>Recent archived:</strong> {escape(', '.join((((payload.get('memory_lifecycle') or {}).get('archive', {}) or {}).get('recent_archived_topics', [])[:6]) or ['—']))}</p>
         <p><strong>Unresolved:</strong> {escape(', '.join((((payload.get('memory_lifecycle') or {}).get('continuity', {}) or {}).get('unresolved_threads', [])[:8]) or ['—']))}</p>
       </section>
+      <section class="card">
+        <h2>Maintenance Pressure</h2>
+        <p>Level: <strong>{escape(str((((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('pressure_level', 'unknown'))))}</strong></p>
+        <p>Score: <strong>{(((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('pressure_score', 0))}</strong></p>
+        <p>Recommended actions: <strong>{escape(', '.join(((((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('recommended_actions', []) or ['none']))))}</strong></p>
+      </section>
     </div>
 
     <section class="card" style="margin-top:16px;" id="themes">
@@ -6069,6 +6078,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       const memoryLifecycleSemantic = memoryLifecycle.semantic || {{}};
       const memoryLifecycleArchive = memoryLifecycle.archive || {{}};
       const memoryLifecycleContinuity = memoryLifecycle.continuity || {{}};
+      const memoryMaintenance = payload.memory_maintenance || {{}};
+      const memoryMaintenancePressure = memoryMaintenance.pressure || {{}};
       const themes = Object.entries((payload.opportunity_board || {{}}).themes || {{}})
         .sort((a, b) => (b[1]?.pressure || 0) - (a[1]?.pressure || 0));
       const topThemes = themes.slice(0, 6);
@@ -6199,6 +6210,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <p><strong>Top episodes:</strong> ${{esc((memoryLifecycleEpisodic.top_episode_topics || []).slice(0, 6).join(', ') || '—')}}</p>
           <p><strong>Recent archived:</strong> ${{esc((memoryLifecycleArchive.recent_archived_topics || []).slice(0, 6).join(', ') || '—')}}</p>
           <p><strong>Unresolved:</strong> ${{esc((memoryLifecycleContinuity.unresolved_threads || []).slice(0, 8).join(', ') || '—')}}</p>
+        </section>
+        <section class="card">
+          <h2>Maintenance Pressure</h2>
+          <p>Level: <strong>${{esc(memoryMaintenancePressure.pressure_level || 'unknown')}}</strong></p>
+          <p>Score: <strong>${{memoryMaintenancePressure.pressure_score ?? 0}}</strong></p>
+          <p>Recommended actions: <strong>${{esc((memoryMaintenancePressure.recommended_actions || []).join(', ') || 'none')}}</strong></p>
         </section>`;
 
       const grids = document.querySelectorAll('.grid');
