@@ -81,6 +81,7 @@ from config import (
     VERSION,
 )
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
+from interpretation import classify_human_turn, infer_human_topics
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from sandbox import run_python
 
@@ -4504,53 +4505,6 @@ def clamp01(value: float) -> float:
     return round(max(0.0, min(float(value), 0.99)), 3)
 
 
-def infer_human_topics(message: str) -> list[str]:
-    original = str(message or "").strip()
-    lowered = original.lower()
-    topics = []
-    keyword_map = {
-        "circleforge": "CircleForge",
-        "backup confidence": "backup confidence",
-        "backup": "backup confidence",
-        "memory": "memory continuity",
-        "communicator": "communicator self",
-        "dashboard": "dashboard",
-        "agent": "internal minds",
-        "tester": "testers and feedback",
-        "feedback": "testers and feedback",
-        "github": "GitHub positioning",
-        "emergence": "emergence",
-        "entity": "entity status",
-        "conversation": "conversation quality",
-        "understand": "understanding",
-        "learn": "learning",
-        "prompt": "prompt dependence",
-    }
-    for token, topic in keyword_map.items():
-        if token in lowered and topic not in topics:
-            topics.append(topic)
-
-    if topics:
-        return topics[:4]
-
-    cleaned = lowered
-    for phrase in [
-        "why do you", "why are you", "how do you", "what do you", "can you", "could you", "would you", "do you", "are you", "is this", "i don't want to ask,", "i dont want to ask,",
-        "please", "actually", "really", "just", "still", "again"
-    ]:
-        cleaned = cleaned.replace(phrase, " ")
-    words = [word.strip(" ,.!?:;()[]{}\"'") for word in cleaned.split()]
-    stopwords = {
-        "i", "you", "me", "my", "we", "us", "this", "that", "it", "to", "the", "a", "an", "and", "or", "but", "if", "then", "of", "on", "in", "at", "for", "with", "about", "do", "does", "did", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "want", "need", "not"
-    }
-    filtered = [word for word in words if word and word not in stopwords]
-    if filtered:
-        topics.append(" ".join(filtered[:3]).strip())
-    elif original:
-        topics.append(original[:48].strip())
-    return topics[:4]
-
-
 def canonical_human_slot(label: str) -> str:
     label = (label or "").strip()
     if not label:
@@ -6856,25 +6810,6 @@ def load_failsafe_status() -> dict:
         "updated_at": int(payload.get("updated_at", 0) or 0),
         "last_reason": str(payload.get("last_reason", "")),
     }
-
-
-def classify_human_turn(message: str) -> str:
-    lowered = str(message or "").strip().lower()
-    if not lowered:
-        return "empty"
-    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
-        return "repair"
-    if any(token in lowered for token in ["who are you", "what are you", "emergence", "new entity", "entity"]):
-        return "identity_probe"
-    if any(token in lowered for token in ["what do you remember", "do you remember", "remember me"]):
-        return "memory_probe"
-    if any(token in lowered for token in ["why", "how come", "what for"]):
-        return "objection"
-    if any(token in lowered for token in ["i don't understand", "dont understand", "do not understand"]):
-        return "confusion"
-    if "?" in lowered or lowered.startswith(("do ", "are ", "can ", "will ", "would ", "is ", "should ", "could ", "what ", "why ", "how ", "who ")):
-        return "question"
-    return "statement"
 
 
 def pick_relevant_active_thread(relationships: dict, preferred_topic: str = "") -> tuple[str, dict] | None:
