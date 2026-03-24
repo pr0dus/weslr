@@ -4237,6 +4237,12 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         communicator["dominant_need"] = f"maintain continuity with {display_name} around {topic_list[0]}"
     communicator["current_intent"] = f"maintain conversation continuity with {display_name}"
     communicator["last_decision_summary"] = f"remembered human exchange with {display_name} about {topic_list[0] if topic_list else 'shared context'}"
+    if topic_list:
+        communicator["active_pursuit"] = topic_list[0]
+        communicator["curiosity_target"] = f"What is still unclear about {topic_list[0]}?"
+        communicator["unresolved_question"] = f"What is still unclear about {topic_list[0]}?"
+        communicator["attraction_bias"] = f"move toward {topic_list[0]}"
+        communicator["avoidance_bias"] = f"avoid brittle action around {topic_list[0]} until it is better understood"
     if research_trace:
         communicator["last_decision_summary"] = f"autonomous research on {research_trace.get('query', topic_list[0] if topic_list else 'current topic')} after human exchange"
     integration_topic = (research_trace or {}).get("query") or (topic_list[0] if topic_list else "")
@@ -4468,7 +4474,11 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         stale_thread = ((seconds_since_human > max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
         saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
         if stale_thread:
-            display_topic = str(relationships.get("last_human_topic") or chosen_theme or topic or "current context").strip()
+            recent_human_messages = list(relationships.get("recent_human_messages") or [])
+            latest_topic = ""
+            if recent_human_messages:
+                latest_topic = str((((recent_human_messages[-1].get("topics") or [""])[0]) or "")).strip()
+            display_topic = latest_topic or str(relationships.get("last_human_topic") or chosen_theme or topic or "current context").strip()
             narrative["active_thread_summary"] = f"A newer human topic is now in focus; older shared context with {human_name} should stay in memory without dominating."
             narrative["follow_up_impulse"] = f"Stay with {display_topic} until the current line of conversation is actually answered or resolved."
             narrative["why_it_matters"] = f"Older continuity still matters, but the present conversation about {display_topic} should shape the next response more than stale thread pressure."
