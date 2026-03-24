@@ -4284,10 +4284,12 @@ def clamp01(value: float) -> float:
 
 
 def infer_human_topics(message: str) -> list[str]:
-    lowered = str(message or "").lower()
+    original = str(message or "").strip()
+    lowered = original.lower()
     topics = []
     keyword_map = {
         "circleforge": "CircleForge",
+        "backup confidence": "backup confidence",
         "backup": "backup confidence",
         "memory": "memory continuity",
         "communicator": "communicator self",
@@ -4296,14 +4298,35 @@ def infer_human_topics(message: str) -> list[str]:
         "tester": "testers and feedback",
         "feedback": "testers and feedback",
         "github": "GitHub positioning",
+        "emergence": "emergence",
+        "entity": "entity status",
+        "conversation": "conversation quality",
+        "understand": "understanding",
+        "learn": "learning",
+        "prompt": "prompt dependence",
     }
     for token, topic in keyword_map.items():
         if token in lowered and topic not in topics:
             topics.append(topic)
-    if not topics:
-        words = [word.strip(" ,.!?:;()[]{}\"'") for word in str(message or "").split()]
-        if words:
-            topics.append(" ".join(words[:4]).strip())
+
+    if topics:
+        return topics[:4]
+
+    cleaned = lowered
+    for phrase in [
+        "why do you", "why are you", "how do you", "what do you", "can you", "could you", "would you", "do you", "are you", "is this", "i don't want to ask,", "i dont want to ask,",
+        "please", "actually", "really", "just", "still", "again"
+    ]:
+        cleaned = cleaned.replace(phrase, " ")
+    words = [word.strip(" ,.!?:;()[]{}\"'") for word in cleaned.split()]
+    stopwords = {
+        "i", "you", "me", "my", "we", "us", "this", "that", "it", "to", "the", "a", "an", "and", "or", "but", "if", "then", "of", "on", "in", "at", "for", "with", "about", "do", "does", "did", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "want", "need", "not"
+    }
+    filtered = [word for word in words if word and word not in stopwords]
+    if filtered:
+        topics.append(" ".join(filtered[:3]).strip())
+    elif original:
+        topics.append(original[:48].strip())
     return topics[:4]
 
 
