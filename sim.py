@@ -1303,7 +1303,10 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
         if source_id and source_id in recent_thought_ids:
             trimmed_thought_ids.append(source_id)
 
-    for item in list(relationships.get("recent_human_exchanges") or [])[:-2]:
+    exchange_items = list(relationships.get("recent_human_exchanges") or [])
+    exchange_candidates = exchange_items[:-2]
+    exchange_recent_holdback = exchange_items[-2:]
+    for item in exchange_candidates:
         _maybe_archive(
             "exchange",
             item,
@@ -1312,8 +1315,18 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
             derive_memory_topic("exchange", item),
             int(item.get("created_at", 0) or now_ts),
         )
+    for item in exchange_recent_holdback:
+        skipped.append({
+            "kind": "exchange",
+            "source_id": str(item.get("id") or ""),
+            "reason": "recent-holdback",
+            "topic": derive_memory_topic("exchange", item),
+        })
 
-    for item in list(self_state.get("inner_thoughts") or [])[:-3]:
+    thought_items = list(self_state.get("inner_thoughts") or [])
+    thought_candidates = thought_items[:-3]
+    thought_recent_holdback = thought_items[-3:]
+    for item in thought_candidates:
         _maybe_archive(
             "thought",
             item,
@@ -1322,6 +1335,13 @@ def archive_memory(self_state: dict | None = None, now_ts: int | None = None) ->
             derive_memory_topic("thought", item),
             int(item.get("created_at", 0) or now_ts),
         )
+    for item in thought_recent_holdback:
+        skipped.append({
+            "kind": "thought",
+            "source_id": str(item.get("id") or ""),
+            "reason": "recent-holdback",
+            "topic": derive_memory_topic("thought", item),
+        })
 
     archived_items.sort(key=lambda item: int(item.get("archived_at", 0) or 0), reverse=True)
     archive["archived_items"] = archived_items[-240:]
