@@ -65,3 +65,58 @@ def classify_human_turn(message: str) -> str:
     if "?" in lowered or lowered.startswith(("do ", "are ", "can ", "will ", "would ", "is ", "should ", "could ", "what ", "why ", "how ", "who ")):
         return "question"
     return "statement"
+
+
+def interpret_human_turn(message: str) -> dict:
+    text = str(message or "").strip()
+    topics = infer_human_topics(text)
+    turn_type = classify_human_turn(text)
+    lowered = text.lower()
+
+    intent = {
+        "repair": "repair conversation",
+        "identity_probe": "test identity / emergence",
+        "memory_probe": "test memory scope",
+        "objection": "challenge current behavior",
+        "confusion": "request clarification",
+        "question": "ask for explanation",
+        "statement": "share/update stance",
+        "empty": "no content",
+    }.get(turn_type, "unknown")
+
+    stance = "neutral"
+    if turn_type in {"repair", "objection"}:
+        stance = "resistant"
+    elif turn_type == "confusion":
+        stance = "uncertain"
+    elif turn_type in {"question", "memory_probe", "identity_probe"}:
+        stance = "inquiring"
+
+    reply_shape = "answer_directly"
+    if turn_type == "repair":
+        reply_shape = "repair_then_answer"
+    elif turn_type == "confusion":
+        reply_shape = "clarify"
+    elif turn_type in {"memory_probe", "identity_probe"}:
+        reply_shape = "answer_with_scope"
+
+    relational_signal = "neutral"
+    if any(token in lowered for token in ["no", "stop", "wrong", "not normal", "don't", "do not"]):
+        relational_signal = "friction"
+    elif any(token in lowered for token in ["understand", "learn", "help", "continue"]):
+        relational_signal = "engagement"
+
+    return {
+        "message": text,
+        "turn_type": turn_type,
+        "topics": topics,
+        "primary_topic": topics[0] if topics else "",
+        "intent": intent,
+        "stance": stance,
+        "relational_signal": relational_signal,
+        "needs_repair": turn_type == "repair",
+        "asks_for_clarification": turn_type == "confusion",
+        "probes_identity": turn_type == "identity_probe",
+        "probes_memory": turn_type == "memory_probe",
+        "reply_shape": reply_shape,
+    }

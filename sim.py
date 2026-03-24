@@ -81,7 +81,7 @@ from config import (
     VERSION,
 )
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
-from interpretation import classify_human_turn, infer_human_topics
+from interpretation import classify_human_turn, infer_human_topics, interpret_human_turn
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from sandbox import run_python
 
@@ -4674,7 +4674,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     if human_name not in relationships["known_humans"]:
         relationships["known_humans"].append(human_name)
 
-    topic_list = [topic for topic in (topics or infer_human_topics(message)) if topic]
+    interpreted_turn = interpret_human_turn(message)
+    topic_list = [topic for topic in (topics or interpreted_turn.get("topics") or infer_human_topics(message)) if topic]
     research_trace = maybe_autonomous_research_from_human_turn(message, topic_list, now_ts)
     relationships["last_human_topic"] = topic_list[0] if topic_list else relationships.get("last_human_topic", "")
     relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.03 + (0.01 * min(len(topic_list), 2)))
@@ -4736,6 +4737,10 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         "topics": topic_list,
         "message": (message or "")[:240],
         "response": (response or "")[:240],
+        "turn_type": interpreted_turn.get("turn_type", "statement"),
+        "intent": interpreted_turn.get("intent", ""),
+        "stance": interpreted_turn.get("stance", "neutral"),
+        "reply_shape": interpreted_turn.get("reply_shape", "answer_directly"),
         "created_at": now_ts,
         "unresolved": unresolved,
     })
@@ -6841,9 +6846,11 @@ def build_communicator_message() -> dict:
 
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
-        topic_list = [str(item).strip() for item in (latest_human.get("topics") or []) if str(item).strip()]
+        interpreted_turn = interpret_human_turn(last_message)
+        topic_list = [str(item).strip() for item in (latest_human.get("topics") or interpreted_turn.get("topics") or []) if str(item).strip()]
         lead_topic = topic_list[0] if topic_list else (active_thread[0] if active_thread else "that")
-        turn_type = classify_human_turn(last_message)
+        turn_type = str(latest_human.get("turn_type") or interpreted_turn.get("turn_type") or classify_human_turn(last_message))
+        reply_shape = str(latest_human.get("reply_shape") or interpreted_turn.get("reply_shape") or "answer_directly")
 
         if turn_type == "memory_probe":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
@@ -6867,8 +6874,10 @@ def build_communicator_message() -> dict:
                 message = f"What I think is happening is that I keep treating {lead_topic} as the live thread. If that's wrong, say so and I should shift instead of forcing it."
             else:
                 message = "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing."
+        if reply_shape == "repair_then_answer" and turn_type != "repair":
+            message = f"I'll answer directly. {message}"
         audience = str(latest_human.get("human_label") or "you") or "you"
-        source = f"conversation-aware-communicator:{turn_type}"
+        source = f"conversation-aware-communicator:{turn_type}:{reply_shape}"
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
