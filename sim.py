@@ -26,6 +26,9 @@ from config import (
     CIRCLEFORGE_WAKE_RANDOMNESS,
     CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
     CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+    CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS,
+    CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY,
+    CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS,
     CIRCLEFORGE_FAILSAFE_STATE_PATH,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
@@ -4128,7 +4131,12 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     communicator = load_communicator_state()
     self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
     role = classify_internal_role(agent.get("name", "agent"))
+    theme = plan.get("niche_theme") or communicator.get("active_pursuit") or "continuity"
+    role_state = ensure_internal_role_state(self_state, now_ts=now_ts).get("internal_role_state", {}).get(role, {})
+    repeat_stats = recent_similar_thought_stats(self_state, role, theme, now_ts)
     context = build_role_context(role, agent, plan, wake_reason, communicator, self_state)
+    context["recent_same_role_theme_thoughts"] = repeat_stats.get("count", 0)
+    context["seconds_since_same_role_theme_thought"] = repeat_stats.get("seconds_since_last", 999999)
     thought = generate_llm_inner_thought(role, context)
     thought.update({
         "id": f"thought-{role}-{tick}-{now_ts}",
@@ -4136,25 +4144,44 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
         "tick": tick,
         "created_at": now_ts,
         "wake_reason": wake_reason,
-        "theme": plan.get("niche_theme") or communicator.get("active_pursuit") or "continuity",
+        "theme": theme,
     })
-    thoughts = list(self_state.get("inner_thoughts") or [])
-    thoughts.append(thought)
-    self_state["inner_thoughts"] = thoughts[-40:]
-    working_memory = (self_state.get("memory_layers") or {}).get("working", {})
-    recent_thought_ids = list(working_memory.get("recent_thought_ids") or [])
-    recent_thought_ids.append(thought["id"])
-    working_memory["recent_thought_ids"] = recent_thought_ids[-int(working_memory.get("max_recent_thoughts", 80) or 80):]
-    role_state = ensure_internal_role_state(self_state, now_ts=now_ts).get("internal_role_state", {}).get(role, {})
+    signature = summarize_thought_signature(thought)
+    similar_too_soon = repeat_stats.get("count", 0) > 0 and repeat_stats.get("seconds_since_last", 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS
+    theme_overflow = repeat_stats.get("count", 0) >= CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS
+    duplicate_signature = signature in {summarize_thought_signature(item) for item in list(self_state.get("inner_thoughts") or [])[-12:]}
+    should_store = not theme_overflow and not (similar_too_soon and duplicate_signature)
+
+    thought["suppressed"] = not should_store
+    thought["repeat_stats"] = repeat_stats
+
+    if should_store:
+        thoughts = list(self_state.get("inner_thoughts") or [])
+        thoughts.append(thought)
+        trimmed = thoughts[-40:]
+        if theme:
+            same_theme = [item for item in trimmed if str(item.get("theme") or item.get("concern") or "").strip().lower() == str(theme).strip().lower()]
+            if len(same_theme) > CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS:
+                drop_ids = {item.get("id") for item in same_theme[:-CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS]}
+                trimmed = [item for item in trimmed if item.get("id") not in drop_ids]
+        self_state["inner_thoughts"] = trimmed[-40:]
+        working_memory = (self_state.get("memory_layers") or {}).get("working", {})
+        recent_thought_ids = list(working_memory.get("recent_thought_ids") or [])
+        recent_thought_ids.append(thought["id"])
+        working_memory["recent_thought_ids"] = recent_thought_ids[-int(working_memory.get("max_recent_thoughts", 80) or 80):]
     role_state["last_wake_tick"] = tick
     role_state["last_wake_at"] = now_ts
     role_state["last_wake_reason"] = wake_reason
     role_state["last_thought_summary"] = str(thought.get("summary", ""))[:240]
+    role_state["last_thought_signature"] = signature
     role_state["wake_count"] = int(role_state.get("wake_count", 0)) + 1
-    role_state["suppressed_until_tick"] = tick + int(INTERNAL_ROLE_SPECS.get(role, {}).get("refractory_ticks", 1))
-    role_state["activation"] = round(min(1.5, float(role_state.get("activation", 0.0) or 0.0) * 0.6 + 0.45), 4)
-    role_state["fatigue"] = round(min(1.0, float(role_state.get("fatigue", 0.0) or 0.0) * 0.82 + 0.18), 4)
-    role_state["inhibition"] = round(max(0.0, float(role_state.get("inhibition", 0.0) or 0.0) * 0.72), 4)
+    base_refractory = int(INTERNAL_ROLE_SPECS.get(role, {}).get("refractory_ticks", 1))
+    repeat_penalty_ticks = 1 if similar_too_soon else 0
+    overflow_penalty_ticks = 2 if theme_overflow else 0
+    role_state["suppressed_until_tick"] = tick + base_refractory + repeat_penalty_ticks + overflow_penalty_ticks
+    role_state["activation"] = round(min(1.5, float(role_state.get("activation", 0.0) or 0.0) * 0.6 + (0.45 if should_store else 0.22)), 4)
+    role_state["fatigue"] = round(min(1.0, float(role_state.get("fatigue", 0.0) or 0.0) * 0.82 + (0.18 if should_store else 0.24)), 4)
+    role_state["inhibition"] = round(min(1.0, max(0.0, float(role_state.get("inhibition", 0.0) or 0.0) * 0.72 + (0.06 if similar_too_soon else 0.0) + (0.12 if theme_overflow else 0.0))), 4)
     adapter = self_state.setdefault("llm_adapter", {})
     provider = str(thought.get("provider") or thought.get("source") or "fallback")
     adapter["provider"] = provider
@@ -4483,6 +4510,36 @@ def should_passively_reinforce_thread(thread: dict, now_ts: int) -> bool:
     if passive_reinforcement_count <= 0:
         return True
     return now_ts - last_human_exchange_at >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
+
+
+def summarize_thought_signature(thought: dict) -> str:
+    role = str(thought.get("role") or "").strip().lower()
+    theme = str(thought.get("theme") or thought.get("concern") or "").strip().lower()
+    summary = str(thought.get("summary") or "").strip().lower()
+    summary = " ".join(summary.split())[:120]
+    return f"{role}::{theme}::{summary}"
+
+
+def recent_similar_thought_stats(self_state: dict, role: str, theme: str, now_ts: int) -> dict:
+    thoughts = list(self_state.get("inner_thoughts") or [])[-24:]
+    theme = str(theme or "").strip().lower()
+    role = str(role or "").strip().lower()
+    matching = []
+    for item in thoughts:
+        if str(item.get("role") or "").strip().lower() != role:
+            continue
+        item_theme = str(item.get("theme") or item.get("concern") or "").strip().lower()
+        if theme and item_theme != theme:
+            continue
+        matching.append(item)
+    last_at = max((int(item.get("created_at", 0) or 0) for item in matching), default=0)
+    duplicate_signature_count = len({summarize_thought_signature(item) for item in matching})
+    return {
+        "count": len(matching),
+        "last_at": last_at,
+        "seconds_since_last": max(0, now_ts - last_at) if last_at else 999999,
+        "duplicate_signature_count": duplicate_signature_count,
+    }
 
 
 def update_communicator_self_from_tick(communicator: dict, summaries: list[dict], communicator_decision: dict, now_ts: int) -> dict:
@@ -4918,8 +4975,16 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         if thought.get("self_mod_hint"):
             thought_self_mod_hints.append(str(thought.get("self_mod_hint")))
         role_name = str(thought.get("role") or "")
-        thought_role_pressure[role_name] = max(thought_role_pressure.get(role_name, 0.0), thought_foreground_score(thought, communicator, communicator_self))
-        foreground_candidates.append((thought_foreground_score(thought, communicator, communicator_self), thought))
+        base_foreground = thought_foreground_score(thought, communicator, communicator_self)
+        repeat_stats = thought.get("repeat_stats") or {}
+        repeat_penalty = 0.0
+        if thought.get("suppressed"):
+            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY
+        if int(repeat_stats.get("count", 0) or 0) > 2 and int(repeat_stats.get("seconds_since_last", 999999) or 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS:
+            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY * 0.75
+        adjusted_foreground = max(0.0, base_foreground - repeat_penalty)
+        thought_role_pressure[role_name] = max(thought_role_pressure.get(role_name, 0.0), adjusted_foreground)
+        foreground_candidates.append((adjusted_foreground, thought))
     foreground_candidates.sort(key=lambda item: item[0], reverse=True)
     dominant_thought = foreground_candidates[0][1] if foreground_candidates else None
     dominant_thought_score = foreground_candidates[0][0] if foreground_candidates else 0.0
