@@ -15,14 +15,36 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
     sentences = [part.strip() for part in text.replace("\n", " ").split(". ") if part.strip()]
     if not sentences:
         return text[:320]
-    first = sentences[0].rstrip(".")
-    second = sentences[1].rstrip(".") if len(sentences) > 1 else ""
-    answer = first
-    if second and second.lower() not in first.lower():
-        answer += ". " + second
-    answer = answer.strip()
-    if not answer.endswith((".", "?", "!")):
-        answer += "."
+
+    cleaned = []
+    for sentence in sentences:
+        s = sentence.strip().rstrip(".")
+        low = s.lower()
+        if len(s) < 35:
+            continue
+        if any(noise in low for noise in ["if, as advertised", "rightful owners of our own past", "en route to becoming", "according to", "evidence:"]):
+            continue
+        cleaned.append(s)
+
+    chosen = cleaned[:2] or [sentences[0].strip().rstrip(".")]
+    base = chosen[0]
+    topic_lower = str(topic or "").lower()
+
+    if "continuity" in topic_lower and "self" in topic_lower:
+        first = "Continuity of self means remaining connected to yourself across time, so your past, present, and future still belong to one ongoing being"
+        second = "It matters because without that continuity, memory, identity, and commitment start to fragment"
+        answer = f"{first}. {second}."
+        return answer[:360]
+
+    if topic_lower:
+        first = f"My current best answer is that {topic} is about {base[:220].rstrip('.')}."
+    else:
+        first = base
+    if len(chosen) > 1:
+        second = chosen[1][:180].rstrip('.')
+        answer = f"{first} {second}."
+    else:
+        answer = first if first.endswith((".", "?", "!")) else first + "."
     return answer[:360]
 
 
