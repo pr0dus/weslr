@@ -6417,6 +6417,7 @@ def handoff_summary(limit: int = 5) -> Dict:
     export_queue = read_json_file(EXPORT_QUEUE_PATH, [])
     top_artifacts = sorted(export_queue, key=lambda item: (item.get("sellability_score", 0.0), item.get("commercial_readiness_score", 0.0)), reverse=True)[:max(1, limit)]
     return {
+        "memory_lifecycle": build_memory_lifecycle_report(),
         "top_packs": [
             {
                 "pack_name": pack.get("pack_name"),
