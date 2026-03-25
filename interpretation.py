@@ -16,6 +16,17 @@ SMALL_TALK_ONLY_MESSAGES = {
     "hey", "hi", "hello", "yo", "sup", "hallo", "moin", "hey there", "hi there"
 }
 
+IMPERATIVE_REQUEST_PHRASES = [
+    "suggest code",
+    "implement",
+    "search online",
+    "search the web",
+    "look online",
+    "look it up",
+    "change your coding",
+    "changed in your coding",
+]
+
 
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
@@ -49,6 +60,8 @@ def infer_human_topics(message: str) -> list[str]:
         return topics[:4]
 
     if any(phrase in lowered for phrase in LOW_INFORMATION_REFERENTIAL_PHRASES):
+        return []
+    if any(phrase in lowered for phrase in IMPERATIVE_REQUEST_PHRASES):
         return []
 
     cleaned = lowered

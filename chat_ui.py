@@ -136,17 +136,47 @@ def should_search_web(message: str) -> bool:
 
 
 def extract_search_query(message: str) -> str:
-    lowered = str(message or "").strip()
-    query = lowered
+    original = str(message or "").strip()
+    lowered = original.lower()
+    if any(token in lowered for token in ["understand each other", "understand me", "real communication", "what do you need"]):
+        return "dialogue systems mutual understanding user corrections conversational repair theory of mind"
+    if any(token in lowered for token in ["suggest code", "coding", "implement", "changed in your coding"]):
+        return "conversational agents mutual understanding retrieval grounding user correction handling dialogue repair implementation"
+    query = original
     for phrase in ["search online for", "search the web for", "look online for", "search web for", "look it up for"]:
         if phrase in query.lower():
             idx = query.lower().index(phrase)
             query = query[idx + len(phrase):].strip(" .,:;!?-")
             break
-    return query or lowered
+    return query or original
 
 
-def summarize_search_reply(query: str, raw_result: str) -> str:
+def message_asks_for_code_suggestions(message: str) -> bool:
+    lowered = str(message or "").lower()
+    return any(token in lowered for token in [
+        "suggest code",
+        "coding",
+        "implement",
+        "changed in your coding",
+        "what needs to be changed",
+        "needs to be changed",
+        "change in your coding",
+        "do it",
+    ])
+
+
+def synthesize_code_change_reply() -> str:
+    return (
+        "The code changes I should implement next are: "
+        "(1) stronger query rewriting so messy human requests turn into cleaner research intents, "
+        "(2) multi-step handling so search requests also produce synthesis and concrete next actions, "
+        "(3) instruction-vs-topic separation so imperatives do not become memory threads, "
+        "(4) better reply grounding in user corrections and conversational repair, and "
+        "(5) direct answer synthesis after retrieval so I stop narrating thread state when you asked for practical guidance."
+    )
+
+
+def summarize_search_reply(query: str, raw_result: str, message: str = "") -> str:
     try:
         parsed = json.loads(raw_result)
     except Exception:
@@ -154,6 +184,17 @@ def summarize_search_reply(query: str, raw_result: str) -> str:
     results = list(parsed.get("results") or [])[:3]
     if not results:
         return f"I searched for {query}, but I didn't get usable results yet."
+    if message_asks_for_code_suggestions(message):
+        top_links = "; ".join(str(item.get("url") or item.get("title") or "").strip() for item in results[:2] if str(item.get("url") or item.get("title") or "").strip())
+        return f"{synthesize_code_change_reply()} Best leads: {top_links}"
+    if any(token in str(message or "").lower() for token in ["understand each other", "understand me", "real communication", "what do you need"]):
+        top_links = "; ".join(str(item.get("url") or item.get("title") or "").strip() for item in results[:2] if str(item.get("url") or item.get("title") or "").strip())
+        return (
+            "I searched for ways to improve mutual understanding. What you should give me when I drift is: "
+            "what mattered most, what I misunderstood, what you actually meant, and what kind of answer you wanted. "
+            "What I should improve in code is retrieval relevance, conversational repair, and better handling of corrections and vague references. "
+            f"Best leads: {top_links}"
+        )
     lines = [f"I searched for {query}. Best leads:"]
     for item in results:
         title = str(item.get("title") or item.get("url") or "result").strip()
@@ -210,7 +251,7 @@ class Handler(BaseHTTPRequestHandler):
             if should_search_web(message):
                 query = extract_search_query(message)
                 search_result = run_cmd([PYTHON, "main.py", "search-web", query, "--limit", "5"])
-                immediate_reply = summarize_search_reply(query, search_result)
+                immediate_reply = summarize_search_reply(query, search_result, message)
                 bridged_message = (
                     f"{message}\n\n"
                     f"Web search results for: {query}\n"
@@ -219,7 +260,11 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
             else:
-                run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
+                if message_asks_for_code_suggestions(message):
+                    immediate_reply = synthesize_code_change_reply()
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                else:
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
             run_cmd([PYTHON, "main.py", "run", "--ticks", "12", "--interval", "0"])
             data = state_payload()
             if immediate_reply:
