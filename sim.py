@@ -4432,9 +4432,36 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
                     anchor_profile["unresolved_shared_threads"].append(chosen_theme)
                 if chosen_theme not in relationships["unresolved_shared_threads"]:
                     relationships["unresolved_shared_threads"].append(chosen_theme)
+        live_focus_topics = {str(item).strip().lower() for item in ((self_state.get("memory_layers") or {}).get("working", {}).get("active_concern_topics") or []) if str(item).strip()}
+        latest_human_topic_live = str(relationships.get("last_human_topic") or "").strip().lower()
+        unresolved_candidates = []
+        for topic_name in list(anchor_profile.get("unresolved_shared_threads") or []):
+            topic_key = str(topic_name).strip().lower()
+            thread_state = threads.get(topic_name) or threads.get(topic_key) or {}
+            unresolved_candidates.append((topic_name, topic_key, thread_state, int(thread_state.get("last_human_exchange_at", 0) or 0)))
+        newest_human_topic_key = ""
+        if unresolved_candidates:
+            newest_human_topic_key = max(unresolved_candidates, key=lambda item: item[3])[1]
+        cooled_shared_threads = []
+        filtered_anchor_threads = []
+        for topic_name, topic_key, thread_state, last_human_exchange_at in unresolved_candidates:
+            seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
+            topic_in_live_focus = topic_key in live_focus_topics or (latest_human_topic_live and topic_key == latest_human_topic_live)
+            preserve_as_newest = bool(newest_human_topic_key and topic_key == newest_human_topic_key)
+            stale_quiet_human_thread = bool(last_human_exchange_at) and seconds_since_human > max(1800, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 6)
+            should_cool = stale_quiet_human_thread and not preserve_as_newest
+            if should_cool:
+                cooled_shared_threads.append(topic_name)
+                if thread_state:
+                    thread_state["status"] = "cooled"
+                continue
+            filtered_anchor_threads.append(topic_name)
+        anchor_profile["unresolved_shared_threads"] = filtered_anchor_threads[-8:]
+        relationships["unresolved_shared_threads"] = [
+            topic_name for topic_name in (relationships.get("unresolved_shared_threads") or [])
+            if str(topic_name).strip() in anchor_profile["unresolved_shared_threads"]
+        ][-12:]
         anchor_profile["known_topics"] = anchor_profile.get("known_topics", [])[-12:]
-        anchor_profile["unresolved_shared_threads"] = anchor_profile.get("unresolved_shared_threads", [])[-8:]
-        relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
         display_name = display_human_label(anchor_slot, anchor_profile)
         anchor_profile["relationship_summary"] = f"{display_name.capitalize()} remains a recurring human anchor; current shared threads include {', '.join(anchor_profile['known_topics'][:3]) or 'ongoing context'}."
 
