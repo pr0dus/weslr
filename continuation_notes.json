@@ -138,5 +138,19 @@
     "Known risks": "Identity summaries are still heuristic and may overfit current self-model signals; the new identity-core report currently syncs in memory for inspection but only persists when self-model updates run during normal flows.",
     "Next exact step": "Persist identity refreshes during additional state-changing paths and then add a small human-legible identity evolution panel to handoff/dashboard without spilling decorative theatrics.",
     "Resume hint": "Inspect python3 main.py identity-core, communicator-self, and latest continuation note first; then decide whether to deepen biography milestones or wire identity refresh into more write paths."
+  },
+  {
+    "id": "continuation-1774480032-11",
+    "created_at": 1774480032,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Make CircleForge identity continuity legible in the main operator surfaces so continuity is visible in handoffs and dashboard views, not only buried in communicator_self or a separate inspector.",
+    "Completed": "Added identity_core to handoff output and dashboard payload; added a dedicated Identity Core dashboard section with declared/visible name, phase, summary, chapter, traits, values, continuity markers, and recent self-evolution milestones.",
+    "Files changed": "sim.py",
+    "Behavior changed": "python3 main.py handoff now includes identity_core; dashboard/dashboard.json now carries identity_core; dashboard/index.html now renders a visible Identity Core panel and jump link for operator review.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py; python3 main.py handoff --limit 3; python3 main.py dashboard; verified dashboard/dashboard.json identity_core fields and rendered dashboard HTML section",
+    "Known risks": "The dashboard section is still read-only and static; identity summaries remain heuristic and may need tighter earned-state thresholds before becoming a stronger operator-trust surface.",
+    "Next exact step": "Add earned-milestone thresholds so self_evolution_log records fewer but more meaningful identity shifts, then consider surfacing identity drift/change deltas across dashboard history.",
+    "Resume hint": "Open dashboard/index.html and dashboard/dashboard.json first, inspect the Identity Core section, then decide whether the next step should be milestone-threshold tightening or identity-history diffing."
   }
 ]

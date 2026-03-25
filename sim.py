@@ -5765,6 +5765,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "world": data.get("world"),
         "communicator": data.get("communicator"),
         "communicator_self": data.get("communicator_self"),
+        "identity_core": build_identity_core_report(),
         "communicator_message": data.get("communicator_message"),
         "memory_lifecycle": build_memory_lifecycle_report(),
         "memory_maintenance": {
@@ -5803,6 +5804,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     artifact_details = payload.get('artifact_details', [])
     refresh_seconds = int(auto_refresh_seconds or 0)
     payload_json = escape(json.dumps(payload))
+    identity_core = payload.get('identity_core', {})
     html = f"""<!doctype html>
 <html>
 <head>
@@ -5834,6 +5836,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     <nav class="sticky">
       <strong>Jump:</strong>
       <a href="#world">World</a> ·
+      <a href="#identity-core">Identity Core</a> ·
       <a href="#communicator-self">Communicator Self</a> ·
       <a href="#memory-lifecycle">Memory Lifecycle</a> ·
       <a href="#themes">Themes</a> ·
@@ -5895,6 +5898,36 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <section class="card">
         <h2>Weak-Proof Packs</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('pack_name'))}</strong> · sellability {item.get('sellability_score')} · offer readiness {item.get('offer_readiness_score')}<br><span class='muted'>{escape('; '.join(item.get('gaps', [])))}</span></li>" for item in payload.get('weak_proof_packs', [])) or '<li class="muted">No high-promise / low-proof packs right now.</li>'}</ul>
+      </section>
+    </div>
+
+    <div class="grid" style="margin-top:16px;" id="identity-core">
+      <section class="card">
+        <h2>Identity Core</h2>
+        <p>Declared name: <strong>{escape(str(identity_core.get('declared_name', 'CircleForge')))}</strong></p>
+        <p>Visible name: <strong>{escape(str(identity_core.get('visible_name', 'CircleForge')))}</strong></p>
+        <p>Phase: <strong>{escape(str(identity_core.get('phase', 'seedling')))}</strong></p>
+        <p>Identity summary: <strong>{escape(str(identity_core.get('identity_summary', '')))}</strong></p>
+        <p>Current chapter: <strong>{escape(str(identity_core.get('current_chapter', '')))}</strong></p>
+        <p>History summary: <strong>{escape(str(identity_core.get('history_summary', '')))}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Traits & Values</h2>
+        <p><strong>Traits:</strong> {escape(', '.join(identity_core.get('identity_traits', []) or ['—']))}</p>
+        <p><strong>Core values:</strong> {escape(', '.join(identity_core.get('core_values', []) or ['—']))}</p>
+        <p><strong>Style profile:</strong> warm {escape(str((identity_core.get('style_profile') or {}).get('warmth', '—')))} · humor {escape(str((identity_core.get('style_profile') or {}).get('humor', '—')))} · directness {escape(str((identity_core.get('style_profile') or {}).get('directness', '—')))} · poetry {escape(str((identity_core.get('style_profile') or {}).get('poetry', '—')))}</p>
+      </section>
+      <section class="card">
+        <h2>Continuity Markers</h2>
+        <p>Sessions: <strong>{escape(str((identity_core.get('continuity_markers') or {}).get('session_count', 0)))}</strong></p>
+        <p>Ticks lived: <strong>{escape(str((identity_core.get('continuity_markers') or {}).get('ticks_lived', 0)))}</strong></p>
+        <p>Identity stability: <strong>{escape(str((identity_core.get('continuity_markers') or {}).get('identity_stability', 0.0)))}</strong></p>
+        <p>Known humans: <strong>{escape(str((identity_core.get('continuity_markers') or {}).get('known_humans', 0)))}</strong></p>
+        <p>Unresolved shared threads: <strong>{escape(str((identity_core.get('continuity_markers') or {}).get('unresolved_shared_threads', 0)))}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Recent Self-Evolution</h2>
+        <ul>{''.join(f"<li>{escape(str(item.get('at', '')))} · {escape(str(item.get('summary', '')))}</li>" for item in (identity_core.get('latest_evolution') or [])) or '<li class="muted">No identity milestones yet.</li>'}</ul>
       </section>
     </div>
 
@@ -6472,6 +6505,7 @@ def handoff_summary(limit: int = 5) -> Dict:
         "recent_activity": build_memory_maintenance_summary(),
     }
     return {
+        "identity_core": build_identity_core_report(),
         "memory_lifecycle": build_memory_lifecycle_report(),
         "memory_maintenance": recent_memory_maintenance,
         "top_packs": [
