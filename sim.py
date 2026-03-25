@@ -4243,7 +4243,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     recent_exchange_ids = list(layers.get("recent_exchange_ids") or [])
     recent_exchange_ids.append(exchange["id"])
     layers["recent_exchange_ids"] = recent_exchange_ids[-int(layers.get("max_recent_exchanges", 24) or 24):]
-    layers["active_concern_topics"] = list(dict.fromkeys((layers.get("active_concern_topics") or []) + topic_list))[-12:]
+    merged_concern_topics = list(dict.fromkeys((layers.get("active_concern_topics") or []) + topic_list))
+    layers["active_concern_topics"] = merged_concern_topics[-3:]
 
     apply_human_exchange_to_threads(
         relationships,
@@ -4263,7 +4264,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         topic = str(concern.get("topic", "")).strip()
         if topic and (topic not in deduped or float(concern.get("updated_at", 0)) >= float(deduped[topic].get("updated_at", 0))):
             deduped[topic] = concern
-    self_state["active_concerns"] = list(deduped.values())[-12:]
+    self_state["active_concerns"] = list(deduped.values())[-3:]
     memory_layers = self_state.get("memory_layers") or {}
 
     narrative = self_state.setdefault("narrative_state", {})
