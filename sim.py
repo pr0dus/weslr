@@ -5851,6 +5851,42 @@ def sparkline_for_series(series: list[float | int], *, normalize: bool = False) 
     return ''.join(ticks[min(7, max(0, int(v * 8) - (0 if normalize else 1)))] for v in scaled)
 
 
+def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict:
+    recent = [point for point in history[-max(2, window):] if point.get('identity_core')]
+    if len(recent) < 2:
+        return {'window': len(recent), 'entries': [], 'summary': 'Not enough identity history yet for a timeline view.'}
+    entries = []
+    for prev, curr in zip(recent[:-1], recent[1:]):
+        prev_identity = prev.get('identity_core') or {}
+        curr_identity = curr.get('identity_core') or {}
+        diff = diff_identity_history(prev_identity, curr_identity)
+        tick_before = prev.get('tick', 0)
+        tick_after = curr.get('tick', 0)
+        tick_span = f"t{tick_before}→t{tick_after}"
+        summary = '; '.join(diff.get('salient_changes') or [])
+        if not summary and diff.get('summary_changed'):
+            summary = 'identity summary wording changed'
+        if not summary:
+            summary = 'no salient identity change'
+        entries.append({
+            'from_generated_at': prev.get('generated_at'),
+            'to_generated_at': curr.get('generated_at'),
+            'tick_span': tick_span,
+            'from_phase': prev_identity.get('phase') or 'seedling',
+            'to_phase': curr_identity.get('phase') or 'seedling',
+            'summary': summary,
+            'all_changes': diff.get('changes') or [],
+            'milestone': diff.get('latest_evolution_summary') or '',
+            'changed': bool(diff.get('changed')),
+        })
+    changed_count = sum(1 for entry in entries if entry.get('changed'))
+    return {
+        'window': len(recent),
+        'entries': entries[-6:],
+        'summary': f"{changed_count} of {len(entries)} recent identity transitions carried salient change.",
+    }
+
+
 def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
     recent = [point for point in history[-max(2, window):] if point.get('identity_core')]
     if len(recent) < 2:
@@ -5987,6 +6023,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     payload["history"] = update_dashboard_history(payload)
     payload["identity_drift"] = build_identity_drift_report(payload["history"])
     payload["identity_trend"] = build_identity_trend_report(payload["history"])
+    payload["identity_timeline"] = build_identity_timeline_report(payload["history"])
     payload["event_feed"] = build_dashboard_event_feed(payload)
     payload["persistent_event_log"] = persist_event_log(payload["event_feed"], payload["generated_at"])
     payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
@@ -6000,6 +6037,16 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     refresh_seconds = int(auto_refresh_seconds or 0)
     payload_json = escape(json.dumps(payload))
     identity_core = payload.get('identity_core', {})
+    timeline_entries = []
+    for item in ((payload.get('identity_timeline') or {}).get('entries') or []):
+        entry = f"<li><strong>{escape(str(item.get('tick_span', '')))}</strong> · {escape(str(item.get('from_phase', '')))} → {escape(str(item.get('to_phase', '')))}<br><span class='muted'>{escape(str(item.get('summary', '')))}</span>"
+        if item.get('milestone'):
+            entry += f"<br><span class='muted'>milestone: {escape(str(item.get('milestone', '')))}</span>"
+        if item.get('changed'):
+            entry += f"<br><span class='muted'>all: {escape('; '.join(item.get('all_changes', []) or []) or 'none')}</span>"
+        entry += "</li>"
+        timeline_entries.append(entry)
+    timeline_html = ''.join(timeline_entries) or '<li class="muted">No identity timeline entries yet.</li>'
     html = f"""<!doctype html>
 <html>
 <head>
@@ -6032,6 +6079,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <strong>Jump:</strong>
       <a href="#world">World</a> ·
       <a href="#identity-core">Identity Core</a> ·
+      <a href="#identity-timeline">Identity Timeline</a> ·
       <a href="#communicator-self">Communicator Self</a> ·
       <a href="#memory-lifecycle">Memory Lifecycle</a> ·
       <a href="#themes">Themes</a> ·
@@ -6113,6 +6161,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         </ul>
       </section>
     </div>
+
+    <section class="card" style="margin-top:16px;" id="identity-timeline">
+      <h2>Identity Timeline</h2>
+      <p class="muted">{escape(str((payload.get('identity_timeline') or {}).get('summary', 'Not enough identity history yet for a timeline view.')))}</p>
+      <ul>{timeline_html}</ul>
+    </section>
 
     <div class="grid" style="margin-top:16px;" id="identity-core">
       <section class="card">

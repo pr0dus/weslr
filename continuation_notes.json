@@ -222,5 +222,19 @@
     "Known risks": "Sparkline rendering is compact but still coarse; alert thresholds are heuristic and may need tuning once the system accumulates more varied identity histories. There is still no dedicated long-range identity timeline section beyond the trend card.",
     "Next exact step": "Consider adding explicit identity timeline entries or milestone-to-milestone comparison views so operators can inspect why reconfiguration happened, not only that it happened.",
     "Resume hint": "Generate more dashboard snapshots over time, inspect identity_trend and any identity-reconfiguration-alert events, then decide whether the next step should be a timeline panel or stronger threshold tuning."
+  },
+  {
+    "id": "continuation-1774481164-17",
+    "created_at": 1774481164,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add an explicit identity timeline so operators can inspect transition-by-transition identity changes and milestone context instead of relying only on aggregate drift/trend summaries.",
+    "Completed": "Added identity_timeline reporting from recent dashboard history, including tick-span transitions, phase-to-phase movement, salient summary, full change list, and milestone context; rendered a dedicated Identity Timeline dashboard section and added a jump link.",
+    "Files changed": "sim.py",
+    "Behavior changed": "dashboard/dashboard.json now includes identity_timeline; dashboard/index.html now renders a dedicated Identity Timeline section showing recent identity transitions and associated milestone context where available.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified dashboard/dashboard.json identity_timeline fields and dashboard HTML Identity Timeline section",
+    "Known risks": "Current timeline windows can still include transitions before the new identity-history machinery fully stabilized, and milestone text can repeat historical milestone context even when the latest transition itself is calm. Timeline entries are still textual rather than interactive.",
+    "Next exact step": "Refine timeline milestone semantics so entries distinguish carried-forward milestone context from newly triggered milestone events, then consider a small interactive or grouped timeline view if the history grows.",
+    "Resume hint": "Run python3 main.py dashboard, inspect payload['identity_timeline']['entries'], and tune how milestone text is attached so the timeline cleanly separates fresh identity shifts from older milestone carryover."
   }
 ]
