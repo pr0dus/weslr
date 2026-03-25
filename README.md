@@ -201,6 +201,9 @@ python3 main.py memory-scores
 python3 main.py speak
 python3 main.py communicator-message
 python3 main.py embedded-self-test
+python3 main.py continuation-latest
+python3 main.py continuation-list --limit 5
+python3 main.py continuation-add --objective "bounded next step" --completed "inspected architecture" --files-changed "main.py, continuation_notes.py, config.py" --behavior-changed "saved first structured handoff note" --checks-performed "python3 main.py continuation-latest" --known-risks "notes are operator-written, not auto-generated" --next-exact-step "wire note creation into bounded implementation workflow" --resume-hint "start with python3 main.py continuation-latest"
 python3 main.py human-exchange current-speaker "hello" --response "hello"
 python3 main.py init --reset --agents 5
 python3 main.py tick --verbose

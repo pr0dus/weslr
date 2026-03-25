@@ -38,6 +38,7 @@ COMMUNICATOR_SELF_PATH = BASE_DIR / "communicator_self.json"
 EXPERIMENTS_PATH = BASE_DIR / "experiments.json"
 EVAL_METRICS_PATH = BASE_DIR / "evaluation_metrics.json"
 SELF_EVIDENCE_PATH = BASE_DIR / "self_evidence.json"
+CONTINUATION_NOTES_PATH = BASE_DIR / "continuation_notes.json"
 
 TICK_SECONDS = 60
 EXECUTION_BUDGET_SECONDS = 40

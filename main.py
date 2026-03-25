@@ -10,7 +10,8 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from config import DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
+from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
+from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
@@ -212,6 +213,50 @@ def cmd_run_eval(args):
         "last_tick": last,
         "communicator": load_communicator_state(),
         "evaluation_metrics": load_evaluation_metrics(),
+    })
+
+
+def cmd_continuation_latest(_args):
+    note = latest_note(CONTINUATION_NOTES_PATH)
+    emit({
+        "path": str(CONTINUATION_NOTES_PATH),
+        "count": len(load_notes(CONTINUATION_NOTES_PATH)),
+        "latest": note,
+        "text": render_note_text(note),
+    })
+
+
+def cmd_continuation_list(args):
+    notes = load_notes(CONTINUATION_NOTES_PATH)
+    if args.limit > 0:
+        notes = notes[-args.limit:]
+    emit({
+        "path": str(CONTINUATION_NOTES_PATH),
+        "count": len(load_notes(CONTINUATION_NOTES_PATH)),
+        "notes": notes,
+    })
+
+
+def cmd_continuation_add(args):
+    payload = {
+        "Objective": args.objective,
+        "Completed": args.completed,
+        "Files changed": args.files_changed,
+        "Behavior changed": args.behavior_changed,
+        "Checks performed": args.checks_performed,
+        "Known risks": args.known_risks,
+        "Next exact step": args.next_exact_step,
+        "Resume hint": args.resume_hint,
+    }
+    try:
+        entry = append_note(CONTINUATION_NOTES_PATH, payload, author=args.author)
+    except ContinuationNoteError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+    emit({
+        "path": str(CONTINUATION_NOTES_PATH),
+        "saved": entry,
+        "text": render_note_text(entry),
     })
 
 
@@ -455,6 +500,25 @@ def main():
     p.add_argument("--interval", type=int, default=0)
     p.add_argument("--verbose", action="store_true")
     p.set_defaults(func=cmd_run_eval)
+
+    p = sub.add_parser("continuation-latest", help="show the latest structured continuation note plus rendered resume text")
+    p.set_defaults(func=cmd_continuation_latest)
+
+    p = sub.add_parser("continuation-list", help="list recent structured continuation notes")
+    p.add_argument("--limit", type=int, default=10)
+    p.set_defaults(func=cmd_continuation_list)
+
+    p = sub.add_parser("continuation-add", help="append a structured continuation note for reliable session handoff")
+    p.add_argument("--author", default="operator")
+    p.add_argument("--objective", required=True)
+    p.add_argument("--completed", required=True)
+    p.add_argument("--files-changed", required=True)
+    p.add_argument("--behavior-changed", required=True)
+    p.add_argument("--checks-performed", required=True)
+    p.add_argument("--known-risks", required=True)
+    p.add_argument("--next-exact-step", required=True)
+    p.add_argument("--resume-hint", required=True)
+    p.set_defaults(func=cmd_continuation_add)
 
     p = sub.add_parser("world-objects", help="inspect persistent world object collections")
     p.add_argument("kind", choices=["needs", "messages", "public-memory", "projects", "relationships", "self-mod-proposals", "work-items", "experiments"])

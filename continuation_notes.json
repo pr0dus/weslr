@@ -1,0 +1,16 @@
+[
+  {
+    "id": "continuation-1774476117-1",
+    "created_at": 1774476117,
+    "author": "principal-architect",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add explicit structured continuation-note machinery for bounded resume across coding sessions.",
+    "Completed": "Inspected architecture and added a structured continuation ledger with CLI read/write commands.",
+    "Files changed": "continuation_notes.py, config.py, main.py, README.md, ARCHITECTURE.md",
+    "Behavior changed": "CircleForge can now save, list, and render standardized continuation notes instead of relying on ad hoc handoff text.",
+    "Checks performed": "python3 -m py_compile CircleForge/main.py CircleForge/config.py CircleForge/continuation_notes.py; python3 CircleForge/main.py continuation-latest; python3 CircleForge/main.py continuation-add ...; python3 CircleForge/main.py continuation-list --limit 2",
+    "Known risks": "Continuation notes are manual/operator-authored for now and not yet auto-emitted after implementation runs.",
+    "Next exact step": "Integrate continuation note creation into the bounded implementation workflow so approved code changes can leave automatic resumable handoff records.",
+    "Resume hint": "Run python3 CircleForge/main.py continuation-latest, then inspect main.py and implementation_worker.py for the next workflow hook."
+  }
+]

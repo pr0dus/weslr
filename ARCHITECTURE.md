@@ -4,7 +4,7 @@ This file tracks the current layer extraction state so the codebase does not dri
 
 ## Extracted modules
 
-### Phase A
+### Phase A — complete first extraction pass
 - `interpretation.py`
   - human turn classification
   - topic inference
@@ -16,7 +16,7 @@ This file tracks the current layer extraction state so the codebase does not dri
   - display labels
   - active thread selection
 
-### Phase B
+### Phase B — complete first extraction pass
 - `inquiry.py`
   - internal query rewriting
   - human-triggered autonomous research trigger
@@ -32,8 +32,9 @@ This file tracks the current layer extraction state so the codebase does not dri
   - relevant research retrieval
   - working-summary extraction
   - first communicator integration bridge
+  - communicator research-context handoff
 
-### Phase C
+### Phase C — first extraction pass substantially present
 - `continuity.py`
   - passive thread reinforcement rule
   - human exchange -> thread update helper
@@ -43,6 +44,28 @@ This file tracks the current layer extraction state so the codebase does not dri
   - topic/fact application helpers
 - `self_model.py`
   - self-model updater from communicator self evidence/state
+
+### Phase D — first extraction pass substantially present
+- `motivation.py`
+  - question progression helper
+  - internal reputation weighting
+  - role-memory weighting
+  - decision-style weighting / update helpers
+- `meta_reflection.py`
+  - memory score reporting
+  - memory pressure / storage-pressure monitoring
+
+## Current completion status
+
+- Phase A: **done for first extraction pass**
+- Phase B: **done for first extraction pass**
+- Phase C: **done for first extraction pass**
+- Phase D: **done for first extraction pass**
+- Phase E: **not yet extracted**
+
+Important interpretation of "done":
+- this means the layer has a real module boundary now
+- it does **not** mean the layer is behaviorally mature or fully migrated out of `sim.py`
 
 ## Still primarily in `sim.py`
 
@@ -56,12 +79,26 @@ These areas still need later extraction or cleanup:
 
 ## Remaining planned layers
 
-### Phase D
-- `motivation.py`
-- `meta_reflection.py`
-
 ### Phase E
 - `perception.py`
+
+## Recommended immediate focus after extraction pass
+
+The architecture skeleton is now good enough that the next work should be biased toward **behavioral quality**, not layer-count vanity.
+
+Highest-value quality gaps now:
+- research-backed answers are still too extractive
+- stale continuity pressure can still leak into unrelated moments
+- integration is real but still shallow
+- theory-of-mind / human modeling is still early
+- engineering continuation/handoff notes were previously ad hoc rather than first-class state
+- `sim.py` still contains a large amount of orchestration glue and legacy logic
+
+Recommended next work order:
+1. stabilize / simplify glue between extracted layers
+2. improve research-informed answer quality
+3. reduce stale continuity dominance further
+4. only then decide whether `perception.py` should be extracted next or whether deeper migration of existing layers matters more
 
 ## Current guidance
 
