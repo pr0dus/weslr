@@ -1424,6 +1424,60 @@ def build_memory_lifecycle_report(self_state: dict | None = None, now_ts: int | 
     }
 
 
+def build_memory_maintenance_summary(self_state: dict | None = None, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    self_state = ensure_memory_layers(self_state or load_communicator_self(), now_ts=now_ts)
+    layers = self_state.get("memory_layers") or {}
+    working = layers.get("working") or {}
+    episodic = layers.get("episodic") or {}
+    semantic = layers.get("semantic") or {}
+    archive = layers.get("archive") or {}
+
+    candidates = []
+    if int(working.get("last_compacted_at", 0) or 0) > 0:
+        candidates.append({
+            "kind": "working-compaction",
+            "at": int(working.get("last_compacted_at", 0) or 0),
+            "label": "working memory compacted",
+        })
+    if int(episodic.get("last_distilled_at", 0) or 0) > 0:
+        candidates.append({
+            "kind": "episodic-distill",
+            "at": int(episodic.get("last_distilled_at", 0) or 0),
+            "label": f"episodic distill -> {len(episodic.get('episodes') or [])} episodes",
+        })
+    if int(semantic.get("last_updated_at", 0) or 0) > 0:
+        candidates.append({
+            "kind": "semantic-distill",
+            "at": int(semantic.get("last_updated_at", 0) or 0),
+            "label": f"semantic update -> {len(semantic.get('stable_topics') or [])} stable topics",
+        })
+    if int(archive.get("last_archived_at", 0) or 0) > 0:
+        candidates.append({
+            "kind": "archive-pass",
+            "at": int(archive.get("last_archived_at", 0) or 0),
+            "label": f"archive pass -> {len(archive.get('archived_items') or [])} archived",
+        })
+    if int(archive.get("last_pruned_at", 0) or 0) > 0:
+        candidates.append({
+            "kind": "prune-pass",
+            "at": int(archive.get("last_pruned_at", 0) or 0),
+            "label": "manual prune completed",
+        })
+
+    last_action = max(candidates, key=lambda item: item.get("at", 0), default=None)
+    seconds_since = None
+    if last_action is not None:
+        seconds_since = max(0, now_ts - int(last_action.get("at", 0) or 0))
+
+    return {
+        "last_action": last_action,
+        "seconds_since_last_action": seconds_since,
+        "observed_actions": sorted(candidates, key=lambda item: item.get("at", 0), reverse=True)[:5],
+        "generated_at": now_ts,
+    }
+
+
 def protected_self_edit_boundary() -> dict:
     return {
         "protected_paths": PROTECTED_SELF_EDIT_PATHS,
@@ -5566,6 +5620,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "memory_lifecycle": build_memory_lifecycle_report(),
         "memory_maintenance": {
             "pressure": monitor_memory_pressure(),
+            "recent_activity": build_memory_maintenance_summary(),
         },
         "evaluation_metrics": data.get("evaluation_metrics"),
         "opportunity_board": data.get("opportunity_board"),
@@ -5759,6 +5814,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p>Level: <strong>{escape(str((((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('pressure_level', 'unknown'))))}</strong></p>
         <p>Score: <strong>{(((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('pressure_score', 0))}</strong></p>
         <p>Recommended actions: <strong>{escape(', '.join(((((payload.get('memory_maintenance') or {}).get('pressure', {}) or {}).get('recommended_actions', []) or ['none']))))}</strong></p>
+        <p>Last activity: <strong>{escape(str((((payload.get('memory_maintenance') or {}).get('recent_activity', {}) or {}).get('last_action', {}) or {}).get('label', 'none yet')))}</strong></p>
       </section>
     </div>
 
@@ -6264,6 +6320,7 @@ def handoff_summary(limit: int = 5) -> Dict:
         "pressure_level": memory_pressure.get("pressure_level"),
         "pressure_score": memory_pressure.get("pressure_score"),
         "recommended_actions": memory_pressure.get("recommended_actions", []),
+        "recent_activity": build_memory_maintenance_summary(),
     }
     return {
         "memory_lifecycle": build_memory_lifecycle_report(),
