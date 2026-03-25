@@ -236,5 +236,19 @@
     "Known risks": "Current timeline windows can still include transitions before the new identity-history machinery fully stabilized, and milestone text can repeat historical milestone context even when the latest transition itself is calm. Timeline entries are still textual rather than interactive.",
     "Next exact step": "Refine timeline milestone semantics so entries distinguish carried-forward milestone context from newly triggered milestone events, then consider a small interactive or grouped timeline view if the history grows.",
     "Resume hint": "Run python3 main.py dashboard, inspect payload['identity_timeline']['entries'], and tune how milestone text is attached so the timeline cleanly separates fresh identity shifts from older milestone carryover."
+  },
+  {
+    "id": "continuation-1774481264-18",
+    "created_at": 1774481264,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Make identity timeline milestone semantics honest by distinguishing milestones that actually occurred within a transition window from older milestone context merely carried forward into later snapshots.",
+    "Completed": "Added latest_evolution_at to compact identity history points; timeline entries now compute whether a milestone is new within the current transition window versus carried context from an older snapshot; dashboard timeline rendering now labels these separately.",
+    "Files changed": "sim.py",
+    "Behavior changed": "identity_timeline entries now expose milestone, carried_milestone, and milestone_is_new separately; dashboard timeline text now says new milestone only when the milestone timestamp falls within that transition window, otherwise it shows carried context.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified identity_timeline entry fields and dashboard labels for new milestone vs carried context",
+    "Known risks": "The first timestamp-aware timeline entry can still classify an older milestone as newly visible because prior history points lacked milestone timestamps; future entries should behave correctly once the new baseline settles. Timeline is still text-heavy.",
+    "Next exact step": "Let a few fresh snapshots accumulate, then tighten the migration edge case if needed and consider collapsing calm carried-context entries so the timeline highlights only meaningful transitions by default.",
+    "Resume hint": "Generate several new dashboard snapshots, inspect identity_timeline entries for milestone/carried_milestone behavior, and then decide whether to suppress migration-era false-new milestones or add timeline filtering."
   }
 ]

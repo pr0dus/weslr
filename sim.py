@@ -5610,6 +5610,7 @@ def build_agent_memory_summary() -> list[dict]:
 
 def build_identity_history_point(identity_core: dict) -> dict:
     continuity = identity_core.get("continuity_markers") or {}
+    latest_evolution = ((identity_core.get("latest_evolution") or [{}])[-1] or {})
     return {
         "phase": identity_core.get("phase") or "seedling",
         "declared_name": identity_core.get("declared_name") or identity_core.get("identity_anchor") or "CircleForge",
@@ -5619,7 +5620,8 @@ def build_identity_history_point(identity_core: dict) -> dict:
         "known_humans": int(continuity.get("known_humans", 0) or 0),
         "unresolved_shared_threads": int(continuity.get("unresolved_shared_threads", 0) or 0),
         "identity_stability": float(continuity.get("identity_stability", 0.0) or 0.0),
-        "latest_evolution_summary": str(((identity_core.get("latest_evolution") or [{}])[-1] or {}).get("summary") or "").strip(),
+        "latest_evolution_summary": str(latest_evolution.get("summary") or "").strip(),
+        "latest_evolution_at": int(latest_evolution.get("at", 0) or 0),
     }
 
 
@@ -5868,16 +5870,23 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
             summary = 'identity summary wording changed'
         if not summary:
             summary = 'no salient identity change'
+        prev_generated_at = int(prev.get('generated_at', 0) or 0)
+        curr_generated_at = int(curr.get('generated_at', 0) or 0)
+        milestone_at = int(curr_identity.get('latest_evolution_at', 0) or 0)
+        milestone_summary = str(curr_identity.get('latest_evolution_summary') or '').strip()
+        milestone_is_new = bool(milestone_at and prev_generated_at < milestone_at <= curr_generated_at)
         entries.append({
-            'from_generated_at': prev.get('generated_at'),
-            'to_generated_at': curr.get('generated_at'),
+            'from_generated_at': prev_generated_at,
+            'to_generated_at': curr_generated_at,
             'tick_span': tick_span,
             'from_phase': prev_identity.get('phase') or 'seedling',
             'to_phase': curr_identity.get('phase') or 'seedling',
             'summary': summary,
             'all_changes': diff.get('changes') or [],
-            'milestone': diff.get('latest_evolution_summary') or '',
+            'milestone': milestone_summary if milestone_is_new else '',
+            'carried_milestone': milestone_summary if milestone_summary and not milestone_is_new else '',
             'changed': bool(diff.get('changed')),
+            'milestone_is_new': milestone_is_new,
         })
     changed_count = sum(1 for entry in entries if entry.get('changed'))
     return {
@@ -6041,7 +6050,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     for item in ((payload.get('identity_timeline') or {}).get('entries') or []):
         entry = f"<li><strong>{escape(str(item.get('tick_span', '')))}</strong> · {escape(str(item.get('from_phase', '')))} → {escape(str(item.get('to_phase', '')))}<br><span class='muted'>{escape(str(item.get('summary', '')))}</span>"
         if item.get('milestone'):
-            entry += f"<br><span class='muted'>milestone: {escape(str(item.get('milestone', '')))}</span>"
+            entry += f"<br><span class='muted'>new milestone: {escape(str(item.get('milestone', '')))}</span>"
+        elif item.get('carried_milestone'):
+            entry += f"<br><span class='muted'>carried context: {escape(str(item.get('carried_milestone', '')))}</span>"
         if item.get('changed'):
             entry += f"<br><span class='muted'>all: {escape('; '.join(item.get('all_changes', []) or []) or 'none')}</span>"
         entry += "</li>"
