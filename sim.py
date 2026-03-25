@@ -1066,7 +1066,10 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
 
         if human_label and topic:
             if status == "open":
-                fact = f"{human_label} still has an open shared thread with CircleForge around {topic}"
+                if human_label.strip().lower() == "you":
+                    fact = f"you and CircleForge still have an open shared thread around {topic}"
+                else:
+                    fact = f"{human_label} still has an open shared thread with CircleForge around {topic}"
             elif exchange_count >= 2:
                 fact = f"{human_label} and CircleForge have revisited {topic} across multiple exchanges"
             else:
