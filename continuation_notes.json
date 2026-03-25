@@ -320,5 +320,19 @@
     "Known risks": "The explicit reflection loop is still simple template synthesis, not a richer private reasoning process. It persists only flat reflection items, not compacted reflection episodes, and currently writes proposed-status reflection passes rather than a more nuanced multi-status bundle.",
     "Next exact step": "Distill repeated reflection-pass items into compact reflection episodes or add a small reflection-quality/reality-discipline evaluator before making the loop more expressive.",
     "Resume hint": "Run reflection-store before and after a tick to confirm generation only happens during runtime; then decide whether the next step should be reflection episode distillation or better reflection quality controls."
+  },
+  {
+    "id": "continuation-1774482227-24",
+    "created_at": 1774482227,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Distill repeated bounded reflection-pass items into compact reflection episodes so the reflection store can accumulate durable reflective patterns instead of only raw flat artifacts.",
+    "Completed": "Added reflection episodes to the reflection store schema/defaults, implemented reflection episode distillation grouped by topic/signature, and exposed compact episodes in reflection-store reports.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store reports now include episodes; repeated runtime reflection-pass items on the same topic can compact into a reflection-episode with count, first/last timestamps, and latest summary.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; forced two runtime reflection passes by resetting cooldown between ticks; ran python3 main.py reflection-store; verified episodes were produced with count=2",
+    "Known risks": "Episode grouping is still simple signature/topic matching and may over-split or under-merge semantically similar reflections. The verification reset the cooldown manually only for testing. Reflection items are not yet pruned after successful episode distillation.",
+    "Next exact step": "Add a small reflection quality / reality-discipline evaluator or prune/distill old reflection-pass items after episode formation so the store stays compact and honest as it grows.",
+    "Resume hint": "Inspect python3 main.py reflection-store and compare recent_items versus episodes; the next meaningful choice is quality evaluation versus cleanup/pruning of already-distilled passes."
   }
 ]

@@ -4762,11 +4762,13 @@ def default_reflection_store(now_ts: int | None = None) -> dict:
     return {
         "summary": "Private reflection artifacts with explicit reality-status tagging.",
         "items": [],
+        "episodes": [],
         "last_reflected_at": 0,
         "last_generated_at": 0,
         "generation_cooldown_seconds": 300,
         "last_compacted_at": 0,
         "max_items": 48,
+        "max_episodes": 16,
         "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
     }
 
@@ -4776,11 +4778,13 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     store = self_state.setdefault("reflection_store", default_reflection_store(now_ts))
     store.setdefault("summary", "Private reflection artifacts with explicit reality-status tagging.")
     store.setdefault("items", [])
+    store.setdefault("episodes", [])
     store.setdefault("last_reflected_at", 0)
     store.setdefault("last_generated_at", 0)
     store.setdefault("generation_cooldown_seconds", 300)
     store.setdefault("last_compacted_at", 0)
     store.setdefault("max_items", 48)
+    store.setdefault("max_episodes", 16)
     counts = store.setdefault("status_counts", {})
     for key in ("known", "inferred", "proposed", "imagined"):
         counts.setdefault(key, 0)
@@ -4852,6 +4856,48 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
     return self_state
 
 
+def distill_reflection_episodes(self_state: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    ensure_reflection_store(self_state, now_ts=now_ts)
+    store = self_state.get("reflection_store") or {}
+    items = list(store.get("items") or [])
+    episodes = list(store.get("episodes") or [])
+    by_topic = {}
+    for item in items:
+        if str(item.get("kind") or "") != "reflection-pass":
+            continue
+        topic = str(item.get("topic") or "continuity").strip() or "continuity"
+        bucket = by_topic.setdefault(topic, [])
+        bucket.append(item)
+    for topic, bucket in by_topic.items():
+        if len(bucket) < 2:
+            continue
+        last_item = bucket[-1]
+        signature = f"{topic}::{str(last_item.get('content') or '').strip()}"
+        existing = next((ep for ep in episodes if str(ep.get("signature") or "") == signature), None)
+        if existing:
+            existing["count"] = max(int(existing.get("count", 1) or 1), len(bucket))
+            existing["last_at"] = int(last_item.get("at", now_ts) or now_ts)
+            existing["summary"] = str(last_item.get("content") or "").strip()
+        else:
+            episodes.append({
+                "topic": topic,
+                "kind": "reflection-episode",
+                "status": "proposed",
+                "count": len(bucket),
+                "first_at": int(bucket[0].get("at", now_ts) or now_ts),
+                "last_at": int(last_item.get("at", now_ts) or now_ts),
+                "summary": str(last_item.get("content") or "").strip(),
+                "signature": signature,
+            })
+    max_episodes = int(store.get("max_episodes", 16) or 16)
+    episodes = sorted(episodes, key=lambda ep: (int(ep.get("last_at", 0) or 0), int(ep.get("count", 0) or 0)), reverse=True)[:max_episodes]
+    store["episodes"] = episodes
+    store["last_compacted_at"] = now_ts
+    self_state["reflection_store"] = store
+    return self_state
+
+
 def build_reflection_report(self_state: dict | None = None) -> dict:
     if self_state is None:
         self_state = load_communicator_self()
@@ -4860,11 +4906,14 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
         communicator = load_communicator_state()
     ensure_reflection_store(self_state)
     sync_reflection_store(self_state, communicator, allow_generation=False)
+    distill_reflection_episodes(self_state)
     return {
         "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
         "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
+        "last_compacted_at": (self_state.get("reflection_store") or {}).get("last_compacted_at", 0),
         "status_counts": (self_state.get("reflection_store") or {}).get("status_counts", {}),
         "recent_items": list(((self_state.get("reflection_store") or {}).get("items") or []))[-8:],
+        "episodes": list(((self_state.get("reflection_store") or {}).get("episodes") or []))[:8],
     }
 
 
