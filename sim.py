@@ -4426,10 +4426,12 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
                 recurring[chosen_theme] = int(recurring.get(chosen_theme, 0)) + 1
             anchor_profile["salience"] = clamp01(float(anchor_profile.get("salience", 0.24)) + (0.01 if passive_reinforced else 0.002))
             anchor_profile["attachment"] = clamp01(float(anchor_profile.get("attachment", 0.16)) + (0.008 if passive_reinforced else 0.001))
-            if chosen_theme not in anchor_profile["unresolved_shared_threads"]:
-                anchor_profile["unresolved_shared_threads"].append(chosen_theme)
-            if chosen_theme not in relationships["unresolved_shared_threads"]:
-                relationships["unresolved_shared_threads"].append(chosen_theme)
+            already_unresolved = chosen_theme in anchor_profile["unresolved_shared_threads"] or chosen_theme in relationships["unresolved_shared_threads"]
+            if already_unresolved:
+                if chosen_theme not in anchor_profile["unresolved_shared_threads"]:
+                    anchor_profile["unresolved_shared_threads"].append(chosen_theme)
+                if chosen_theme not in relationships["unresolved_shared_threads"]:
+                    relationships["unresolved_shared_threads"].append(chosen_theme)
         anchor_profile["known_topics"] = anchor_profile.get("known_topics", [])[-12:]
         anchor_profile["unresolved_shared_threads"] = anchor_profile.get("unresolved_shared_threads", [])[-8:]
         relationships["unresolved_shared_threads"] = relationships.get("unresolved_shared_threads", [])[-12:]
