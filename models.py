@@ -201,6 +201,7 @@ class CommunicatorSelfState:
     self_preservation_signals: Dict[str, Any]
     narrative_state: Dict[str, Any]
     memory_layers: Dict[str, Any]
+    reflection_store: Dict[str, Any]
     identity_state: Dict[str, Any]
     biography: Dict[str, Any]
     self_evolution_log: List[Dict[str, Any]]

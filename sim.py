@@ -293,6 +293,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         memory_layers=default_memory_layers(now_ts),
+        reflection_store=default_reflection_store(now_ts),
         identity_state={
             "declared_name": "CircleForge",
             "visible_name": "CircleForge",
@@ -547,6 +548,7 @@ def load_communicator_self() -> dict:
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         memory_layers=default_memory_layers(0),
+        reflection_store=default_reflection_store(0),
         identity_state={
             "declared_name": "CircleForge",
             "visible_name": "CircleForge",
@@ -4755,10 +4757,91 @@ def update_self_model(communicator: dict) -> None:
     save_communicator_self(self_state)
 
 
+def default_reflection_store(now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    return {
+        "summary": "Private reflection artifacts with explicit reality-status tagging.",
+        "items": [],
+        "last_reflected_at": 0,
+        "last_compacted_at": 0,
+        "max_items": 48,
+        "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
+    }
+
+
+def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    store = self_state.setdefault("reflection_store", default_reflection_store(now_ts))
+    store.setdefault("summary", "Private reflection artifacts with explicit reality-status tagging.")
+    store.setdefault("items", [])
+    store.setdefault("last_reflected_at", 0)
+    store.setdefault("last_compacted_at", 0)
+    store.setdefault("max_items", 48)
+    counts = store.setdefault("status_counts", {})
+    for key in ("known", "inferred", "proposed", "imagined"):
+        counts.setdefault(key, 0)
+    return self_state
+
+
+def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    ensure_reflection_store(self_state, now_ts=now_ts)
+    store = self_state.get("reflection_store") or {}
+    items = list(store.get("items") or [])
+    relationships = self_state.get("relationships") or {}
+    dynamic = self_state.get("dynamic_mind_state") or {}
+    unresolved_threads = [str(item).strip() for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()]
+    unresolved_question = str(communicator.get("unresolved_question") or "").strip()
+    active_pursuit = str(communicator.get("active_pursuit") or "continuity").strip() or "continuity"
+    uncertainty = float(dynamic.get("uncertainty", 0.0) or 0.0)
+    candidates = []
+    if unresolved_question:
+        candidates.append({"kind": "open-question", "status": "known", "topic": active_pursuit, "content": unresolved_question, "source": "communicator.unresolved_question", "at": now_ts})
+    if unresolved_threads:
+        candidates.append({"kind": "thread-pressure", "status": "inferred", "topic": unresolved_threads[0], "content": f"Unresolved shared threads are still shaping attention: {', '.join(unresolved_threads[:3])}", "source": "relationships.unresolved_shared_threads", "at": now_ts})
+    if uncertainty >= 0.35:
+        candidates.append({"kind": "uncertainty", "status": "known", "topic": active_pursuit, "content": f"Internal uncertainty is elevated at {uncertainty:.3f}.", "source": "dynamic_mind_state.uncertainty", "at": now_ts})
+    candidates.append({"kind": "next-step", "status": "proposed", "topic": active_pursuit, "content": f"A bounded next reflection should stay with {active_pursuit} until the main uncertainty is resolved.", "source": "communicator.active_pursuit", "at": now_ts})
+    seen = {(str(item.get("kind")), str(item.get("status")), str(item.get("content"))) for item in items if isinstance(item, dict)}
+    for item in candidates:
+        key = (str(item.get("kind")), str(item.get("status")), str(item.get("content")))
+        if key not in seen:
+            items.append(item)
+            seen.add(key)
+    max_items = int(store.get("max_items", 48) or 48)
+    items = items[-max_items:]
+    counts = {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0}
+    for item in items:
+        status = str(item.get("status") or "known")
+        counts[status] = counts.get(status, 0) + 1
+    store["items"] = items
+    store["status_counts"] = counts
+    store["last_reflected_at"] = now_ts
+    self_state["reflection_store"] = store
+    return self_state
+
+
+def build_reflection_report(self_state: dict | None = None) -> dict:
+    if self_state is None:
+        self_state = load_communicator_self()
+        communicator = load_communicator_state()
+    else:
+        communicator = load_communicator_state()
+    ensure_reflection_store(self_state)
+    sync_reflection_store(self_state, communicator)
+    return {
+        "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
+        "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
+        "status_counts": (self_state.get("reflection_store") or {}).get("status_counts", {}),
+        "recent_items": list(((self_state.get("reflection_store") or {}).get("items") or []))[-8:],
+    }
+
+
 def build_identity_core_report() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
     sync_identity_state(communicator, self_state, allow_milestone=False)
+    sync_reflection_store(self_state, communicator)
     return build_identity_core_report_from_state(communicator, self_state)
 
 

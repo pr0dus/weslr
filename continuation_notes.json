@@ -278,5 +278,19 @@
     "Known risks": "Previously written history rows still contain repeated false-new milestone timestamps from before the fix, so the current timeline may remain noisy until those rows age out or are pruned. The fix applies going forward.",
     "Next exact step": "Optionally prune or normalize the recent bad history rows created before this fix, or simply let them age out while continuing with higher-value continuity work.",
     "Resume hint": "Check the newest dashboard_history.json points after several fresh dashboard renders; if latest_evolution_at stays stable, the phantom-milestone bug is fixed and only old history cleanup remains."
+  },
+  {
+    "id": "continuation-1774481883-21",
+    "created_at": 1774481883,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add a first-class structured reflection store so CircleForge can keep inspectable private reflection artifacts with explicit reality-status tagging instead of smearing inner thought across generic state.",
+    "Completed": "Added reflection_store to communicator self schema/defaults, added reflection store defaults/sync/report helpers, and added a reflection-store CLI inspector that exposes known/inferred/proposed artifacts derived from live communicator/self state.",
+    "Files changed": "models.py, sim.py, main.py",
+    "Behavior changed": "CircleForge now has a dedicated reflection_store with status counts and recent tagged items; python3 main.py reflection-store shows structured private reflection artifacts such as open questions, inferred thread pressure, uncertainty, and proposed next reflection focus.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; verified known/inferred/proposed items were populated from live state",
+    "Known risks": "The reflection store currently derives from existing state instead of being written by a distinct reflection loop, so it is a real substrate but still shallow. It also does not yet persist compacted reflection episodes or clearly separate operator-visible vs strictly private reflection channels.",
+    "Next exact step": "Wire the reflection store into handoff/dashboard/operator surfaces and then decide whether to add a bounded explicit reflection-generation loop or compacted reflection episode distillation.",
+    "Resume hint": "Start with python3 main.py reflection-store and identity-core, inspect how reflection items map to current communicator state, then surface the reflection store in dashboard/handoff before deepening generation logic."
   }
 ]
