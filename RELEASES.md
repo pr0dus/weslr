@@ -27,7 +27,7 @@ Recommended rollback order:
 - milestone creation now prefers phase changes, new known humans, larger unresolved-thread deltas, or clear trait-basis changes over tiny heuristic drift
 - handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
 - intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
-- commit: `fd78940`
+- commit: `0a876ce`
 - backup: `CircleForge-backup-20260326-0008.tar.gz`
 - tag: `v0.0.99`
 
