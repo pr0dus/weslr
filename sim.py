@@ -1433,6 +1433,14 @@ def build_memory_maintenance_summary(self_state: dict | None = None, now_ts: int
     semantic = layers.get("semantic") or {}
     archive = layers.get("archive") or {}
 
+    semantic_signal_count = (
+        len(semantic.get("stable_topics") or [])
+        + len(semantic.get("continuity_anchors") or [])
+        + len(semantic.get("relationship_facts") or [])
+        + len(semantic.get("durable_lessons") or [])
+        + max(0, len(semantic.get("identity_anchors") or []) - 1)
+    )
+
     candidates = []
     if int(working.get("last_compacted_at", 0) or 0) > 0:
         candidates.append({
@@ -1446,7 +1454,7 @@ def build_memory_maintenance_summary(self_state: dict | None = None, now_ts: int
             "at": int(episodic.get("last_distilled_at", 0) or 0),
             "label": f"episodic distill -> {len(episodic.get('episodes') or [])} episodes",
         })
-    if int(semantic.get("last_updated_at", 0) or 0) > 0:
+    if int(semantic.get("last_updated_at", 0) or 0) > 0 and semantic_signal_count > 0:
         candidates.append({
             "kind": "semantic-distill",
             "at": int(semantic.get("last_updated_at", 0) or 0),
