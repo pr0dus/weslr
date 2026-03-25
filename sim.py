@@ -6120,6 +6120,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "communicator": data.get("communicator"),
         "communicator_self": data.get("communicator_self"),
         "identity_core": build_identity_core_report(),
+        "reflection_store": build_reflection_report(),
         "communicator_message": data.get("communicator_message"),
         "memory_lifecycle": build_memory_lifecycle_report(),
         "memory_maintenance": {
@@ -6215,6 +6216,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <strong>Jump:</strong>
       <a href="#world">World</a> ·
       <a href="#identity-core">Identity Core</a> ·
+      <a href="#reflection-store">Reflection Store</a> ·
       <a href="#identity-timeline">Identity Timeline</a> ·
       <a href="#communicator-self">Communicator Self</a> ·
       <a href="#memory-lifecycle">Memory Lifecycle</a> ·
@@ -6295,6 +6297,19 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
           <li>known humans: {escape(str((payload.get('identity_trend') or {}).get('known_humans_sparkline', '—')))} <span class='muted'>{escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('known_humans_series') or [])) or '—')}</span></li>
           <li>unresolved threads: {escape(str((payload.get('identity_trend') or {}).get('unresolved_threads_sparkline', '—')))} <span class='muted'>{escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('unresolved_threads_series') or [])) or '—')}</span></li>
         </ul>
+      </section>
+    </div>
+
+    <div class="grid" style="margin-top:16px;" id="reflection-store">
+      <section class="card">
+        <h2>Reflection Store</h2>
+        <p><strong>{escape(str((payload.get('reflection_store') or {}).get('summary', '')))}</strong></p>
+        <p>Last reflected at: <strong>{escape(str((payload.get('reflection_store') or {}).get('last_reflected_at', 0)))}</strong></p>
+        <p>Status counts: <strong>{escape('; '.join(f"{k}={v}" for k, v in ((payload.get('reflection_store') or {}).get('status_counts') or {}).items()) or 'none')}</strong></p>
+      </section>
+      <section class="card">
+        <h2>Recent Reflections</h2>
+        <ul>{''.join(f"<li><strong>{escape(str(item.get('status', 'unknown')))}</strong> · {escape(str(item.get('kind', 'note')))} · {escape(str(item.get('topic', '')))}<br><span class='muted'>{escape(str(item.get('content', '')))}</span></li>" for item in ((payload.get('reflection_store') or {}).get('recent_items') or [])) or '<li class="muted">No reflection artifacts yet.</li>'}</ul>
       </section>
     </div>
 
@@ -6909,6 +6924,7 @@ def handoff_summary(limit: int = 5) -> Dict:
     }
     return {
         "identity_core": build_identity_core_report(),
+        "reflection_store": build_reflection_report(),
         "memory_lifecycle": build_memory_lifecycle_report(),
         "memory_maintenance": recent_memory_maintenance,
         "top_packs": [

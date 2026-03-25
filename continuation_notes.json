@@ -292,5 +292,19 @@
     "Known risks": "The reflection store currently derives from existing state instead of being written by a distinct reflection loop, so it is a real substrate but still shallow. It also does not yet persist compacted reflection episodes or clearly separate operator-visible vs strictly private reflection channels.",
     "Next exact step": "Wire the reflection store into handoff/dashboard/operator surfaces and then decide whether to add a bounded explicit reflection-generation loop or compacted reflection episode distillation.",
     "Resume hint": "Start with python3 main.py reflection-store and identity-core, inspect how reflection items map to current communicator state, then surface the reflection store in dashboard/handoff before deepening generation logic."
+  },
+  {
+    "id": "continuation-1774481968-22",
+    "created_at": 1774481968,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Surface the structured reflection store in operator-visible handoff/dashboard views so the new inner-reflection substrate becomes inspectable before deepening reflection generation.",
+    "Completed": "Added reflection_store to handoff payloads and dashboard payloads; added dashboard navigation and compact Reflection Store / Recent Reflections panels showing status counts and recent tagged reflection items.",
+    "Files changed": "sim.py",
+    "Behavior changed": "handoff_summary now includes reflection_store; dashboard/dashboard.json now includes reflection_store; dashboard/index.html renders Reflection Store and Recent Reflections sections with known/inferred/proposed tagging and recent items.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py handoff --limit 3; python3 main.py dashboard; verified reflection_store in handoff/dashboard payloads and HTML sections",
+    "Known risks": "The reflection surface is intentionally compact and still derived from state rather than a dedicated reflection loop. It is operator-visible but not yet separated into public-vs-private channels or long-term reflection episode distillation.",
+    "Next exact step": "Decide whether to add a bounded explicit reflection-generation loop or to distill recent reflection items into compact reflection episodes before increasing surface complexity further.",
+    "Resume hint": "Inspect python3 main.py reflection-store, handoff, and dashboard together; if the substrate looks right, the next meaningful step is a bounded explicit reflection-generation loop with reality-status discipline."
   }
 ]
