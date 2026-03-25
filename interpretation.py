@@ -13,7 +13,16 @@ LOW_INFORMATION_REFERENTIAL_PHRASES = [
 ]
 
 SMALL_TALK_ONLY_MESSAGES = {
-    "hey", "hi", "hello", "yo", "sup", "hallo", "moin", "hey there", "hi there"
+    "hey", "hi", "hello", "yo", "sup", "hallo", "moin", "hey there", "hi there",
+    "hey again", "hi again", "hello again"
+}
+
+CONTROL_SIGNAL_MESSAGES = {
+    "ok go", "okay go", "alright go", "go then", "yes go", "do it", "go ahead"
+}
+
+APPROVAL_MESSAGES = {
+    "you are allowed to implement them", "so you are allowed to implement them", "implement them", "you can implement them"
 }
 
 IMPERATIVE_REQUEST_PHRASES = [
@@ -31,7 +40,7 @@ IMPERATIVE_REQUEST_PHRASES = [
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
-    if lowered in SMALL_TALK_ONLY_MESSAGES:
+    if lowered in SMALL_TALK_ONLY_MESSAGES or lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES:
         return []
     topics = []
     keyword_map = {
@@ -88,6 +97,8 @@ def classify_human_turn(message: str) -> str:
         return "empty"
     if lowered in SMALL_TALK_ONLY_MESSAGES:
         return "greeting"
+    if lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES:
+        return "approval"
     if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
         return "repair"
     if any(token in lowered for token in ["who are you", "what are you", "emergence", "new entity", "entity"]):
@@ -111,6 +122,7 @@ def interpret_human_turn(message: str) -> dict:
 
     intent = {
         "greeting": "open conversation",
+        "approval": "approve_or_continue",
         "repair": "repair conversation",
         "identity_probe": "test identity / emergence",
         "memory_probe": "test memory scope",
@@ -128,12 +140,16 @@ def interpret_human_turn(message: str) -> dict:
         stance = "uncertain"
     elif turn_type in {"question", "memory_probe", "identity_probe"}:
         stance = "inquiring"
+    elif turn_type == "approval":
+        stance = "supportive"
 
     reply_shape = "answer_directly"
     if turn_type == "repair":
         reply_shape = "repair_then_answer"
     elif turn_type == "confusion":
         reply_shape = "clarify"
+    elif turn_type == "approval":
+        reply_shape = "acknowledge_and_continue"
     elif turn_type in {"memory_probe", "identity_probe"}:
         reply_shape = "answer_with_scope"
 
@@ -159,6 +175,8 @@ def interpret_human_turn(message: str) -> dict:
             likely_need = "concept_explanation"
         elif any(token in lowered for token in ["do you", "can you", "would you", "are you"]):
             likely_need = "self_report"
+    elif turn_type == "approval":
+        likely_need = "continue_execution"
     elif turn_type == "statement" and relational_signal == "friction":
         likely_need = "acknowledgment_and_adjustment"
 

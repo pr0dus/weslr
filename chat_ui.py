@@ -165,6 +165,11 @@ def message_asks_for_code_suggestions(message: str) -> bool:
     ])
 
 
+def message_is_control_approval(message: str) -> bool:
+    lowered = str(message or "").strip().lower().rstrip(" .!?")
+    return lowered in {"ok go", "okay go", "go then", "do it", "go ahead", "yes go", "you are allowed to implement them", "so you are allowed to implement them"}
+
+
 def synthesize_code_change_reply() -> str:
     return (
         "The code changes I should implement next are: "
@@ -260,7 +265,10 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
             else:
-                if message_asks_for_code_suggestions(message):
+                if message_is_control_approval(message):
+                    immediate_reply = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                elif message_asks_for_code_suggestions(message):
                     immediate_reply = synthesize_code_change_reply()
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 else:

@@ -79,13 +79,20 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             any(token in lower_message for token in ["what do you need", "what should i give", "what to give you", "what input do you need"])
             and any(token in lower_message for token in ["understand me", "understand each other", "real communication", "understanding"])
         )
+        asks_for_self_understanding = (
+            any(token in lower_message for token in ["understand yourself", "understand youself", "understand yourself better", "know yourself better"])
+        )
 
         if turn_type == "greeting":
             message = "Hey. Start anywhere — a question, a concern, or what matters most right now — and I’ll try to stay with the real point instead of latching onto a stray phrase."
+        elif turn_type == "approval":
+            message = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
         elif asks_what_should_improve_first:
             message = "First I should get better at retrieving the right shared context at the right moment, then answer directly from it instead of narrating my own thread state. If that improves, understanding gets more real instead of just better organized."
         elif asks_what_you_should_give_it:
             message = "Give me three things when I drift: what mattered most, what I misunderstood, and what kind of answer you actually wanted. That helps me learn your priorities instead of just tracking topic words."
+        elif asks_for_self_understanding:
+            message = "To understand myself better, I need a clearer mapping between my internal state and my outward replies: what I focused on, why I focused on it, where I drifted, and whether the reply actually matched the real request. Without that, I can track threads but still misunderstand what I am doing."
         elif likely_need == "memory_scope_check":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
         elif likely_need == "concept_plus_self_position":
