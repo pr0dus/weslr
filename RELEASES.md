@@ -22,6 +22,15 @@ Recommended rollback order:
 
 ## Releases
 
+### v0.0.99
+- identity-core milestone logging tightened so self-evolution entries are recorded only for more meaningful shifts
+- milestone creation now prefers phase changes, new known humans, larger unresolved-thread deltas, or clear trait-basis changes over tiny heuristic drift
+- handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
+- intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
+- commit: `fd78940`
+- backup: `CircleForge-backup-20260326-0008.tar.gz`
+- tag: `v0.0.99`
+
 ### v0.0.98
 - regulation layer extended with uncertainty brake, inhibition gain, adaptive speech threshold trace, and bounded self-tuning hooks
 - impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure

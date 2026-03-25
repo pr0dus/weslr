@@ -4,6 +4,8 @@ import time
 
 
 MAX_SELF_EVOLUTION_LOG = 24
+MILESTONE_THREAD_DELTA_THRESHOLD = 2
+MILESTONE_TRAIT_OVERLAP_FLOOR = 2
 
 
 def _dedupe_keep_order(items: list[str], *, limit: int) -> list[str]:
@@ -39,6 +41,30 @@ def ensure_identity_scaffold(self_state: dict) -> dict:
     })
     self_state.setdefault("self_evolution_log", [])
     return self_state
+
+
+def should_record_identity_milestone(previous_signature: dict | None, new_signature: dict) -> bool:
+    if not previous_signature:
+        return True
+    if str(previous_signature.get("phase") or "") != str(new_signature.get("phase") or ""):
+        return True
+    prev_humans = int(previous_signature.get("known_humans", 0) or 0)
+    new_humans = int(new_signature.get("known_humans", 0) or 0)
+    if new_humans > prev_humans:
+        return True
+    prev_threads = int(previous_signature.get("unresolved_threads", 0) or 0)
+    new_threads = int(new_signature.get("unresolved_threads", 0) or 0)
+    if abs(new_threads - prev_threads) >= MILESTONE_THREAD_DELTA_THRESHOLD:
+        return True
+    prev_traits = {str(item).strip() for item in (previous_signature.get("traits") or []) if str(item).strip()}
+    new_traits = {str(item).strip() for item in (new_signature.get("traits") or []) if str(item).strip()}
+    if new_traits and len(prev_traits & new_traits) < min(MILESTONE_TRAIT_OVERLAP_FLOOR, len(new_traits)):
+        return True
+    prev_summary = str(previous_signature.get("identity_summary") or "").strip()
+    new_summary = str(new_signature.get("identity_summary") or "").strip()
+    if prev_summary != new_summary and not prev_traits and new_traits:
+        return True
+    return False
 
 
 def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | None = None) -> dict:
@@ -115,11 +141,23 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     evolution_log = list(self_state.get("self_evolution_log") or [])
     previous = evolution_log[-1] if evolution_log else {}
     previous_signature = previous.get("signature") if isinstance(previous, dict) else None
-    if signature != previous_signature:
+    if should_record_identity_milestone(previous_signature, signature):
+        milestone_parts = [f"phase={phase}", f"traits={', '.join(identity_traits[:3]) or 'none'}"]
+        if not previous_signature or str(previous_signature.get("phase") or "") != phase:
+            milestone_parts.append("phase-shift")
+        if int(signature.get("known_humans", 0) or 0) > int((previous_signature or {}).get("known_humans", 0) or 0):
+            milestone_parts.append(f"known_humans={signature.get('known_humans', 0)}")
+        thread_delta = int(signature.get("unresolved_threads", 0) or 0) - int((previous_signature or {}).get("unresolved_threads", 0) or 0)
+        if abs(thread_delta) >= MILESTONE_THREAD_DELTA_THRESHOLD:
+            milestone_parts.append(f"thread_delta={thread_delta:+d}")
+        prev_traits = {str(item).strip() for item in ((previous_signature or {}).get("traits") or []) if str(item).strip()}
+        new_traits = {str(item).strip() for item in (signature.get("traits") or []) if str(item).strip()}
+        if new_traits and len(prev_traits & new_traits) < min(MILESTONE_TRAIT_OVERLAP_FLOOR, len(new_traits)):
+            milestone_parts.append("trait-basis-shift")
         milestone = {
             "at": now_ts,
-            "kind": "identity-refresh",
-            "summary": f"phase={phase}; traits={', '.join(identity_traits[:3]) or 'none'}; unresolved_threads={len(unresolved_threads)}",
+            "kind": "identity-milestone",
+            "summary": '; '.join(milestone_parts),
             "signature": signature,
         }
         evolution_log.append(milestone)
