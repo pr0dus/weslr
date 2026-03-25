@@ -69,7 +69,15 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         reply_shape = str(latest_human.get("reply_shape") or interpreted_turn.get("reply_shape") or "answer_directly")
         likely_need = str(latest_human.get("likely_need") or interpreted_turn.get("likely_need") or "direct_answer")
 
-        if likely_need == "memory_scope_check":
+        lower_message = last_message.lower()
+        asks_what_should_improve_first = (
+            any(token in lower_message for token in ["what should improve first", "what should you focus on", "what should improve", "improve first"])
+            and any(token in lower_message for token in ["understand each other", "understand me", "understanding"])
+        )
+
+        if asks_what_should_improve_first:
+            message = "First I should get better at retrieving the right shared context at the right moment, then answer directly from it instead of narrating my own thread state. If that improves, understanding gets more real instead of just better organized."
+        elif likely_need == "memory_scope_check":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
         elif likely_need == "concept_plus_self_position":
             if research_context and research_context.get("summary"):
@@ -84,9 +92,9 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "justification":
             message = f"Because I probably over-latched onto {lead_topic}. That's useful as a diagnostic, but it's not the same thing as understanding you well."
         elif turn_type == "question":
-            has_research_answer = bool(research_context and research_context.get("summary") and any(token in last_message.lower() for token in ["what is", "what are", "why", "how", "explain", "define"]))
-            asks_about_its_own_learning = any(token in last_message.lower() for token in ["learn", "would you learn", "can you learn"]) and any(token in last_message.lower() for token in ["you", "yourself"])
-            asks_about_its_own_understanding = any(token in last_message.lower() for token in ["understand me", "do you understand", "can you understand"])
+            has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
+            asks_about_its_own_learning = any(token in lower_message for token in ["learn", "would you learn", "can you learn"]) and any(token in lower_message for token in ["you", "yourself"])
+            asks_about_its_own_understanding = any(token in lower_message for token in ["understand me", "do you understand", "can you understand"])
 
             if has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
