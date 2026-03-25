@@ -60,6 +60,33 @@ def monitor_memory_pressure(self_state: dict, now_ts: int, *, ensure_memory_laye
     raw_log_bytes = 0
     db_bytes = 0
     file_samples = []
+    runtime_state_prefixes = (
+        "agents/",
+        "exports/",
+        "dashboard/",
+    )
+    runtime_state_names = {
+        "communicator_self.json",
+        "communicator.json",
+        "messages.json",
+        "needs.json",
+        "projects.json",
+        "public_memory.json",
+        "relationships.json",
+        "self_mod_proposals.json",
+        "work_items.json",
+        "experiments.json",
+        "evaluation_metrics.json",
+        "self_evidence.json",
+        "demand_board.json",
+        "export_queue.json",
+        "review_queue.json",
+        "packs.json",
+        "categories.json",
+        "category_proposals.json",
+        "opportunity_board.json",
+        "event_log.json",
+    }
     for path in base_dir.rglob("*"):
         try:
             if not path.is_file():
@@ -68,11 +95,12 @@ def monitor_memory_pressure(self_state: dict, now_ts: int, *, ensure_memory_laye
         except OSError:
             continue
         rel = str(path.relative_to(base_dir))
-        if path.suffix in {".json", ".log", ".txt", ".md"}:
-            raw_log_bytes += size
         if path.suffix in {".db", ".sqlite", ".sqlite3"}:
             db_bytes += size
-        if len(file_samples) < 12:
+        is_runtime_state = rel in runtime_state_names or rel.startswith(runtime_state_prefixes)
+        if is_runtime_state and path.suffix in {".json", ".log", ".txt", ".md"}:
+            raw_log_bytes += size
+        if len(file_samples) < 12 and (is_runtime_state or path.suffix in {".db", ".sqlite", ".sqlite3"}):
             file_samples.append({"path": rel, "bytes": size})
 
     recent_exchange_count = len(working.get("recent_exchange_ids") or [])
