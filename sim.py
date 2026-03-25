@@ -997,7 +997,7 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
         working["recent_exchange_ids"] = [item for item in (working.get("recent_exchange_ids") or []) if item not in set(trimmed_exchange_ids)]
     if trimmed_thought_ids:
         working["recent_thought_ids"] = [item for item in (working.get("recent_thought_ids") or []) if item not in set(trimmed_thought_ids)]
-    working["last_compacted_at"] = now_ts if (created or updated or trimmed_exchange_ids or trimmed_thought_ids) else int(working.get("last_compacted_at", 0) or 0)
+    working["last_compacted_at"] = now_ts if (trimmed_exchange_ids or trimmed_thought_ids) else int(working.get("last_compacted_at", 0) or 0)
     semantic["last_updated_at"] = now_ts if (created or updated) else int(semantic.get("last_updated_at", now_ts) or now_ts)
 
     self_state["updated_at"] = now_ts
