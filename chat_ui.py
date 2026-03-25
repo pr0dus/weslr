@@ -182,6 +182,29 @@ def message_is_control_approval(message: str) -> bool:
     ])
 
 
+def message_starts_execution(message: str) -> bool:
+    lowered = str(message or "").strip().lower()
+    return any(pattern in lowered for pattern in [
+        "implement suggested actions",
+        "go for coding",
+        "start implementing",
+        "start coding",
+        "apply the changes",
+    ])
+
+
+def message_requests_completion_notice(message: str) -> bool:
+    lowered = str(message or "").strip().lower()
+    return any(pattern in lowered for pattern in [
+        "tell me when finished",
+        "tell me when you're finished",
+        "tell me when done",
+        "let me know when finished",
+        "let me know when done",
+        "notify me when finished",
+    ])
+
+
 def synthesize_code_change_reply() -> str:
     return (
         "The code changes I should implement next are: "
@@ -277,7 +300,13 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
             else:
-                if message_is_control_approval(message):
+                if message_requests_completion_notice(message):
+                    immediate_reply = "Understood. I should report back when the current implementation step is finished instead of treating that as a topic."
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                elif message_starts_execution(message):
+                    immediate_reply = "Understood. I should move from listing changes to actually starting one concrete implementation step."
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                elif message_is_control_approval(message):
                     immediate_reply = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 elif message_asks_can_implement(message):

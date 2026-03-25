@@ -87,6 +87,10 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = "Hey. Start anywhere — a question, a concern, or what matters most right now — and I’ll try to stay with the real point instead of latching onto a stray phrase."
         elif turn_type == "approval":
             message = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
+        elif turn_type == "execution_start":
+            message = "Understood. I should move from listing changes to actually starting one concrete implementation step."
+        elif turn_type == "completion_notify":
+            message = "Understood. I should report back when that implementation step is finished instead of treating your request like a topic."
         elif asks_what_should_improve_first:
             message = "First I should get better at retrieving the right shared context at the right moment, then answer directly from it instead of narrating my own thread state. If that improves, understanding gets more real instead of just better organized."
         elif asks_what_you_should_give_it:

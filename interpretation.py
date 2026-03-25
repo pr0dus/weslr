@@ -35,6 +35,23 @@ APPROVAL_PATTERNS = [
     "allowed to implement",
 ]
 
+EXECUTION_START_PATTERNS = [
+    "implement suggested actions",
+    "go for coding",
+    "start implementing",
+    "start coding",
+    "apply the changes",
+]
+
+COMPLETION_NOTIFY_PATTERNS = [
+    "tell me when finished",
+    "tell me when you're finished",
+    "tell me when done",
+    "let me know when finished",
+    "let me know when done",
+    "notify me when finished",
+]
+
 IMPERATIVE_REQUEST_PHRASES = [
     "suggest code",
     "implement",
@@ -50,7 +67,7 @@ IMPERATIVE_REQUEST_PHRASES = [
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
-    if lowered in SMALL_TALK_ONLY_MESSAGES or lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS):
+    if lowered in SMALL_TALK_ONLY_MESSAGES or lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS) or any(pattern in lowered for pattern in EXECUTION_START_PATTERNS) or any(pattern in lowered for pattern in COMPLETION_NOTIFY_PATTERNS):
         return []
     topics = []
     keyword_map = {
@@ -107,6 +124,10 @@ def classify_human_turn(message: str) -> str:
         return "empty"
     if lowered in SMALL_TALK_ONLY_MESSAGES:
         return "greeting"
+    if any(pattern in lowered for pattern in COMPLETION_NOTIFY_PATTERNS):
+        return "completion_notify"
+    if any(pattern in lowered for pattern in EXECUTION_START_PATTERNS):
+        return "execution_start"
     if lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS):
         return "approval"
     if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
@@ -133,6 +154,8 @@ def interpret_human_turn(message: str) -> dict:
     intent = {
         "greeting": "open conversation",
         "approval": "approve_or_continue",
+        "execution_start": "start_approved_work",
+        "completion_notify": "notify_on_completion",
         "repair": "repair conversation",
         "identity_probe": "test identity / emergence",
         "memory_probe": "test memory scope",
@@ -152,6 +175,8 @@ def interpret_human_turn(message: str) -> dict:
         stance = "inquiring"
     elif turn_type == "approval":
         stance = "supportive"
+    elif turn_type in {"execution_start", "completion_notify"}:
+        stance = "supportive"
 
     reply_shape = "answer_directly"
     if turn_type == "repair":
@@ -160,6 +185,10 @@ def interpret_human_turn(message: str) -> dict:
         reply_shape = "clarify"
     elif turn_type == "approval":
         reply_shape = "acknowledge_and_continue"
+    elif turn_type == "execution_start":
+        reply_shape = "acknowledge_and_start"
+    elif turn_type == "completion_notify":
+        reply_shape = "acknowledge_and_track"
     elif turn_type in {"memory_probe", "identity_probe"}:
         reply_shape = "answer_with_scope"
 
@@ -187,6 +216,10 @@ def interpret_human_turn(message: str) -> dict:
             likely_need = "self_report"
     elif turn_type == "approval":
         likely_need = "continue_execution"
+    elif turn_type == "execution_start":
+        likely_need = "start_execution"
+    elif turn_type == "completion_notify":
+        likely_need = "track_completion"
     elif turn_type == "statement" and relational_signal == "friction":
         likely_need = "acknowledgment_and_adjustment"
 
