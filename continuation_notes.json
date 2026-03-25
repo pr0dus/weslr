@@ -334,5 +334,19 @@
     "Known risks": "Episode grouping is still simple signature/topic matching and may over-split or under-merge semantically similar reflections. The verification reset the cooldown manually only for testing. Reflection items are not yet pruned after successful episode distillation.",
     "Next exact step": "Add a small reflection quality / reality-discipline evaluator or prune/distill old reflection-pass items after episode formation so the store stays compact and honest as it grows.",
     "Resume hint": "Inspect python3 main.py reflection-store and compare recent_items versus episodes; the next meaningful choice is quality evaluation versus cleanup/pruning of already-distilled passes."
+  },
+  {
+    "id": "continuation-1774482381-25",
+    "created_at": 1774482381,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add a small reflection quality / reality-discipline evaluator so private reflection artifacts are checked for honest status tagging and grounded wording instead of merely being stored.",
+    "Completed": "Implemented reflection quality evaluation over recent reflection items, checking status/source/wording consistency and whether generated reflection-pass artifacts preserve the known/inferred/proposed split; exposed the quality report in reflection-store output.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store reports now include quality_report with average_score, recent checks, flagged items, and a summary judgment about reflection reality-discipline.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; verified quality_report fields and current average_score/flagged_items output",
+    "Known risks": "The evaluator is still heuristic and syntax-sensitive; it checks discipline markers and grounding but not deeper semantic honesty. A perfect score does not prove deep correctness, only that current bounded artifacts match the expected format and sources.",
+    "Next exact step": "Prune already-distilled reflection-pass items or teach the evaluator to penalize repetition/staleness so the reflection store stays compact and meaningful as more runtime reflection passes accumulate.",
+    "Resume hint": "Inspect python3 main.py reflection-store quality_report alongside recent_items and episodes; the next sensible step is cleanup/pruning of redundant reflection passes or stronger quality penalties for stale repetition."
   }
 ]

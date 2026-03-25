@@ -4856,6 +4856,69 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
     return self_state
 
 
+def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> dict:
+    now_ts = now_ts or int(time.time())
+    ensure_reflection_store(self_state, now_ts=now_ts)
+    store = self_state.get("reflection_store") or {}
+    items = list(store.get("items") or [])[-12:]
+    checks = []
+    grounded_sources = {
+        "communicator.unresolved_question",
+        "relationships.unresolved_shared_threads",
+        "dynamic_mind_state.uncertainty",
+        "communicator.active_pursuit",
+        "reflection.generation_loop",
+    }
+    for item in items:
+        status = str(item.get("status") or "known")
+        content = str(item.get("content") or "")
+        source = str(item.get("source") or "")
+        score = 1.0
+        issues = []
+        lowered = content.lower()
+        if status == "known" and source not in grounded_sources:
+            score -= 0.35
+            issues.append("known-with-weak-source")
+        if status == "known" and "Inferred:" in content:
+            score -= 0.25
+            issues.append("known-item-mixes-inferred-language")
+        if status == "proposed" and "Proposed:" not in content and str(item.get("kind") or "") == "reflection-pass":
+            score -= 0.2
+            issues.append("proposed-pass-missing-proposed-marker")
+        if status == "inferred" and "Known:" in content:
+            score -= 0.2
+            issues.append("inferred-item-mixes-known-language")
+        if status == "imagined" and source in grounded_sources:
+            score -= 0.2
+            issues.append("imagined-item-looks-grounded")
+        if str(item.get("kind") or "") == "reflection-pass":
+            if not all(marker in content for marker in ["Known:", "Inferred:", "Proposed:"]):
+                score -= 0.3
+                issues.append("reflection-pass-missing-reality-split")
+        if "maybe" in lowered and status == "known":
+            score -= 0.15
+            issues.append("known-item-uses-hedging")
+        checks.append({
+            "kind": item.get("kind"),
+            "status": status,
+            "topic": item.get("topic"),
+            "source": source,
+            "score": round(max(0.0, min(1.0, score)), 3),
+            "issues": issues,
+        })
+    avg_score = round(sum(item.get("score", 0.0) for item in checks) / len(checks), 3) if checks else 1.0
+    report = {
+        "checked_at": now_ts,
+        "average_score": avg_score,
+        "flagged_items": [item for item in checks if item.get("issues")],
+        "recent_checks": checks[-8:],
+        "summary": "Reflection reality-discipline looks healthy." if avg_score >= 0.85 else "Reflection reality-discipline needs tightening.",
+    }
+    store["quality_report"] = report
+    self_state["reflection_store"] = store
+    return self_state
+
+
 def distill_reflection_episodes(self_state: dict, now_ts: int | None = None) -> dict:
     now_ts = now_ts or int(time.time())
     ensure_reflection_store(self_state, now_ts=now_ts)
@@ -4907,6 +4970,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
     ensure_reflection_store(self_state)
     sync_reflection_store(self_state, communicator, allow_generation=False)
     distill_reflection_episodes(self_state)
+    evaluate_reflection_quality(self_state)
     return {
         "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
         "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
@@ -4914,6 +4978,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
         "status_counts": (self_state.get("reflection_store") or {}).get("status_counts", {}),
         "recent_items": list(((self_state.get("reflection_store") or {}).get("items") or []))[-8:],
         "episodes": list(((self_state.get("reflection_store") or {}).get("episodes") or []))[:8],
+        "quality_report": ((self_state.get("reflection_store") or {}).get("quality_report") or {}),
     }
 
 
