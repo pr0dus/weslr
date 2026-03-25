@@ -1,14 +1,14 @@
 {
   "status": "completed",
-  "started_at": 1774476524,
-  "finished_at": 1774476524,
+  "started_at": 1774476687,
+  "finished_at": 1774476687,
   "announced": false,
-  "task_id": "post-repair-answering",
-  "task": "improve post-repair replies so corrections lead into a direct answer",
-  "summary": "Improved post-repair replies so correction acknowledgments continue into a direct answer stub.",
+  "task_id": "clarification-carryover",
+  "task": "prefer newest explicit human clarification during repair",
+  "summary": "Improved clarification carryover so explicit human corrections can override stale inferred topic focus.",
   "continuation_note_created": true,
   "continuation_note_error": "",
   "continuation_note_hint": "Run python3 main.py continuation-latest",
-  "checks_performed": "python3 implementation_worker.py post-repair-answering; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+  "checks_performed": "python3 implementation_worker.py clarification-carryover; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
   "error": ""
 }

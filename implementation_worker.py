@@ -145,6 +145,56 @@ def patch_post_repair_answering() -> dict:
     }
 
 
+def patch_clarification_carryover() -> dict:
+    dialogue = DIALOGUE_PATH.read_text()
+    changed = False
+
+    helper_marker = 'def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:\n'
+    helper_insert = (
+        'def extract_clarified_target(message: str) -> str:\n'
+        '    lowered = str(message or "").strip().lower()\n'
+        '    patterns = ["no, i mean", "no i mean", "what i meant is", "i meant", "the issue is", "the point is", "more overall"]\n'
+        '    for pattern in patterns:\n'
+        '        if pattern in lowered:\n'
+        '            tail = lowered.split(pattern, 1)[1].strip(" .,!?:;-")\n'
+        '            if tail:\n'
+        '                words = [word.strip(" ,.!?:;()[]{}\"\'") for word in tail.split() if word.strip(" ,.!?:;()[]{}\"\'")]\n'
+        '                cleaned = " ".join(words[:6]).strip()\n'
+        '                if cleaned:\n'
+        '                    return cleaned\n'
+        '    return ""\n\n\n'
+        'def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:\n'
+    )
+    if 'def extract_clarified_target(message: str) -> str:' not in dialogue:
+        if helper_marker not in dialogue:
+            raise RuntimeError("dialogue build_communicator_message_payload marker not found")
+        dialogue = dialogue.replace(helper_marker, helper_insert)
+        changed = True
+
+    old_topic = '        topic_list = [str(item).strip() for item in (latest_human.get("topics") or interpreted_turn.get("topics") or []) if str(item).strip()]\n        lead_topic = topic_list[0] if topic_list else (active_thread[0] if active_thread else "that")\n'
+    new_topic = '        topic_list = [str(item).strip() for item in (latest_human.get("topics") or interpreted_turn.get("topics") or []) if str(item).strip()]\n        clarified_target = extract_clarified_target(last_message)\n        lead_topic = clarified_target or (topic_list[0] if topic_list else (active_thread[0] if active_thread else "that"))\n'
+    if new_topic not in dialogue:
+        if old_topic not in dialogue:
+            raise RuntimeError("dialogue lead_topic marker not found")
+        dialogue = dialogue.replace(old_topic, new_topic)
+        changed = True
+
+    old_repair_tail = '                    message = f"You\'re right. I misunderstood you. Let me answer the corrected point directly: {lead_topic} is the part I should address now, not defend the earlier drift."\n'
+    new_repair_tail = '                    message = f"You\'re right. I misunderstood you. Let me answer the corrected point directly: {lead_topic} is the part I should address now, not defend the earlier drift."\n'
+    if old_repair_tail not in dialogue:
+        raise RuntimeError("dialogue repair answer stub missing after clarification upgrade")
+
+    if changed:
+        DIALOGUE_PATH.write_text(dialogue)
+
+    return {
+        "summary": "Improved clarification carryover so explicit human corrections can override stale inferred topic focus.",
+        "changed": changed,
+        "files_changed": "implementation_worker.py, dialogue.py",
+        "behavior_changed": "During repair, CircleForge now prefers a clarified target from the newest human correction phrase before falling back to older inferred topic state.",
+    }
+
+
 TASKS = {
     "dialogue-actual-coding": {
         "task": "add direct answer for actual coding prompts",
@@ -187,6 +237,20 @@ TASKS = {
         "failure_behavior_changed": "No post-repair answering upgrade was applied; the worker preserved a failure handoff instead of claiming the repair path improved.",
         "failure_next_step": "Inspect the repair branch in dialogue.py and refresh the bounded patch anchors before retrying post-repair-answering.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the patch-anchor failure in dialogue.py.",
+    },
+    "clarification-carryover": {
+        "task": "prefer newest explicit human clarification during repair",
+        "runner": patch_clarification_carryover,
+        "objective": "Add a bounded clarification-carryover step so explicit human corrections can override stale inferred topic focus during repair.",
+        "success_completed": "Added a clarification extractor in dialogue.py and used it to prefer the newest explicit corrected target before falling back to inferred lead_topic.",
+        "success_checks": "python3 implementation_worker.py clarification-carryover; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+        "success_known_risks": "Clarification extraction is still phrase-based and shallow; it captures explicit wording but not subtle reframings or longer semantic corrections.",
+        "success_next_step": "Promote explicit clarification targets into interpreted turn structure so repair, memory, and future answer selection can share the same corrected target.",
+        "success_resume_hint": "Inspect dialogue.py extract_clarified_target and repair handling, then run python3 main.py continuation-latest before moving clarification state into interpretation.py.",
+        "failure_objective": "Record a truthful failure handoff when clarification carryover cannot be patched safely into dialogue handling.",
+        "failure_behavior_changed": "No clarification-carryover upgrade was applied; the worker preserved a failure handoff instead of claiming better repair targeting.",
+        "failure_next_step": "Inspect the lead_topic and repair anchors in dialogue.py before retrying clarification-carryover.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the clarification patch-anchor failure.",
     },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"

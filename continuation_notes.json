@@ -68,5 +68,19 @@
     "Known risks": "The corrected-answer follow-through is still a lightweight stub based on lead_topic, not a full semantic reconstruction of the user's intended meaning.",
     "Next exact step": "Teach repair handling to prefer the newest explicit human clarification as the corrected target instead of relying mainly on inferred lead_topic.",
     "Resume hint": "Inspect dialogue.py around conversation_repair and lead_topic handling, then run python3 main.py continuation-latest before improving clarification carryover."
+  },
+  {
+    "id": "continuation-1774476687-6",
+    "created_at": 1774476687,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add a bounded clarification-carryover step so explicit human corrections can override stale inferred topic focus during repair.",
+    "Completed": "Added a clarification extractor in dialogue.py and used it to prefer the newest explicit corrected target before falling back to inferred lead_topic.",
+    "Files changed": "implementation_worker.py, dialogue.py",
+    "Behavior changed": "During repair, CircleForge now prefers a clarified target from the newest human correction phrase before falling back to older inferred topic state.",
+    "Checks performed": "python3 implementation_worker.py clarification-carryover; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+    "Known risks": "Clarification extraction is still phrase-based and shallow; it captures explicit wording but not subtle reframings or longer semantic corrections.",
+    "Next exact step": "Promote explicit clarification targets into interpreted turn structure so repair, memory, and future answer selection can share the same corrected target.",
+    "Resume hint": "Inspect dialogue.py extract_clarified_target and repair handling, then run python3 main.py continuation-latest before moving clarification state into interpretation.py."
   }
 ]
