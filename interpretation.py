@@ -25,6 +25,16 @@ APPROVAL_MESSAGES = {
     "you are allowed to implement them", "so you are allowed to implement them", "implement them", "you can implement them"
 }
 
+APPROVAL_PATTERNS = [
+    "you're allowed",
+    "you are allowed",
+    "you can implement",
+    "go ahead and implement",
+    "allowed to change",
+    "allowed to add",
+    "allowed to implement",
+]
+
 IMPERATIVE_REQUEST_PHRASES = [
     "suggest code",
     "implement",
@@ -40,7 +50,7 @@ IMPERATIVE_REQUEST_PHRASES = [
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
-    if lowered in SMALL_TALK_ONLY_MESSAGES or lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES:
+    if lowered in SMALL_TALK_ONLY_MESSAGES or lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS):
         return []
     topics = []
     keyword_map = {
@@ -97,7 +107,7 @@ def classify_human_turn(message: str) -> str:
         return "empty"
     if lowered in SMALL_TALK_ONLY_MESSAGES:
         return "greeting"
-    if lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES:
+    if lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS):
         return "approval"
     if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
         return "repair"

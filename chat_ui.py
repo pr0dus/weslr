@@ -170,7 +170,16 @@ def message_asks_can_implement(message: str) -> bool:
 
 def message_is_control_approval(message: str) -> bool:
     lowered = str(message or "").strip().lower().rstrip(" .!?")
-    return lowered in {"ok go", "okay go", "go then", "do it", "go ahead", "yes go", "you are allowed to implement them", "so you are allowed to implement them"}
+    if lowered in {"ok go", "okay go", "go then", "do it", "go ahead", "yes go", "you are allowed to implement them", "so you are allowed to implement them"}:
+        return True
+    return any(pattern in lowered for pattern in [
+        "you're allowed",
+        "you are allowed",
+        "allowed to change",
+        "allowed to add",
+        "allowed to implement",
+        "go ahead and implement",
+    ])
 
 
 def synthesize_code_change_reply() -> str:
