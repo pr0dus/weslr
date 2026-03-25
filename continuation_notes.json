@@ -12,5 +12,19 @@
     "Known risks": "Continuation notes are manual/operator-authored for now and not yet auto-emitted after implementation runs.",
     "Next exact step": "Integrate continuation note creation into the bounded implementation workflow so approved code changes can leave automatic resumable handoff records.",
     "Resume hint": "Run python3 CircleForge/main.py continuation-latest, then inspect main.py and implementation_worker.py for the next workflow hook."
+  },
+  {
+    "id": "continuation-1774476214-2",
+    "created_at": 1774476214,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Leave an automatic resumable handoff record after a bounded implementation-worker change.",
+    "Completed": "Updated dialogue.py to answer 'actual coding' prompts directly and recorded the result automatically from implementation_worker.py.",
+    "Files changed": "implementation_worker.py, dialogue.py",
+    "Behavior changed": "Bounded implementation runs now create a structured continuation note automatically when they complete successfully.",
+    "Checks performed": "Implementation worker finished and invoked main.py continuation-add.",
+    "Known risks": "This worker currently records a success-path note only for this specific bounded task; failure-path note emission is not implemented yet.",
+    "Next exact step": "Generalize the implementation worker so task metadata declares its own continuation-note payload and can emit failure notes too.",
+    "Resume hint": "Run python3 CircleForge/main.py continuation-latest and inspect implementation_state.json for the most recent worker outcome."
   }
 ]

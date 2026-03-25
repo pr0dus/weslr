@@ -139,6 +139,8 @@ def state_payload() -> dict:
     implementation = load_implementation_state()
     if implementation.get("status") == "completed" and not implementation.get("announced"):
         reply = f"Finished: {implementation.get('summary') or implementation.get('task') or 'implementation step completed.'}"
+        if implementation.get("continuation_note_created"):
+            reply += " Continuation note saved."
         implementation["announced"] = True
         save_implementation_state(implementation)
     meta = {
