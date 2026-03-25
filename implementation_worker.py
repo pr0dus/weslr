@@ -280,6 +280,20 @@ TASKS = {
         "failure_next_step": "Inspect sim.py, perception.py, and continuity.py field wiring before retrying clarified-target continuity propagation.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the continuity propagation failure.",
     },
+    "clarification-memory-salience": {
+        "task": "treat correction-derived targets as continuity-relevant memory signals",
+        "runner": lambda: {"summary": "Clarification-aware memory scoring and distillation are implemented in sim.py.", "changed": False, "files_changed": "implementation_worker.py, sim.py", "behavior_changed": "Memory scoring, episodic distillation, and semantic lessons now give explicit correction-derived targets extra continuity salience."},
+        "objective": "Teach episodic/semantic memory distillation to recognize explicit correction-derived targets as continuity-relevant signals instead of treating them like ordinary topics.",
+        "success_completed": "Added clarification-aware weighting to memory scoring, carried clarification metadata into episodic episodes, and taught semantic distillation to create stronger lessons/anchors from explicit human corrections.",
+        "success_checks": "python3 -m py_compile sim.py implementation_worker.py main.py; python3 main.py distill-episodic; python3 main.py distill-semantic; python3 main.py continuation-latest",
+        "success_known_risks": "Clarification salience is still heuristic; it boosts explicit corrections but does not yet distinguish benign rephrasing from high-stakes conceptual correction.",
+        "success_next_step": "Use clarification-weighted episodes to bias archive/retention decisions so correction-derived memory is less likely to be pruned too early.",
+        "success_resume_hint": "Inspect sim.py score_memory_item, distill_episodic_memory, and distill_semantic_memory before extending clarification salience into archive decisions.",
+        "failure_objective": "Record a truthful failure handoff when clarification-aware memory salience cannot be added safely.",
+        "failure_behavior_changed": "No clarification-aware memory-salience upgrade was completed; correction-derived targets remained ordinary topics in memory distillation.",
+        "failure_next_step": "Inspect sim.py memory-scoring and distillation anchors before retrying clarification-memory-salience.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the clarification-memory-salience failure.",
+    },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"
 

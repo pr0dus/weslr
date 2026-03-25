@@ -685,6 +685,13 @@ def score_memory_item(kind: str, payload: dict, self_state: dict | None = None) 
         relationship_weight = 0.5
     if payload.get("human") or payload.get("human_label"):
         relationship_weight += 0.2
+    clarification_weight = 0.0
+    clarified_target = str(payload.get("clarified_target") or "").strip()
+    has_explicit_clarification = bool(payload.get("has_explicit_clarification")) or bool(clarified_target)
+    if has_explicit_clarification:
+        clarification_weight = 0.82 if kind in {"exchange", "thread"} else 0.5
+        if clarified_target and clarified_target.lower() in joined:
+            clarification_weight = min(1.0, clarification_weight + 0.08)
     identity_weight = 0.0
     if kind in {"semantic_topic", "relationship_fact", "continuity_anchor"}:
         identity_weight = 0.7
@@ -698,11 +705,12 @@ def score_memory_item(kind: str, payload: dict, self_state: dict | None = None) 
     elif recency > 0.75:
         replaceability = 0.45
     score = (
-        recency * 0.22
-        + recurrence * 0.18
-        + unresolvedness * 0.24
-        + relationship_weight * 0.16
-        + identity_weight * 0.2
+        recency * 0.19
+        + recurrence * 0.15
+        + unresolvedness * 0.22
+        + relationship_weight * 0.14
+        + clarification_weight * 0.12
+        + identity_weight * 0.18
     ) * (1.0 - replaceability * 0.35)
     score = max(0.0, min(1.0, round(score, 4)))
     if score >= 0.64:
@@ -722,6 +730,7 @@ def score_memory_item(kind: str, payload: dict, self_state: dict | None = None) 
             "recurrence": round(recurrence, 4),
             "unresolvedness": round(unresolvedness, 4),
             "relationship_weight": round(min(1.0, relationship_weight), 4),
+            "clarification_weight": round(min(1.0, clarification_weight), 4),
             "identity_weight": round(min(1.0, identity_weight), 4),
             "replaceability": round(replaceability, 4),
         },
@@ -822,6 +831,8 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
                 "human": str(item.get("human") or item.get("human_label") or ""),
                 "label": derive_memory_label("exchange", item),
                 "created_at": int(item.get("created_at", 0) or now_ts),
+                "clarified_target": str(item.get("clarified_target") or "").strip(),
+                "has_explicit_clarification": bool(item.get("has_explicit_clarification")),
             })
 
     for topic, thread in list((relationships.get("conversation_threads") or {}).items()):
@@ -839,6 +850,8 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
                 "human": str(payload.get("human") or payload.get("human_label") or ""),
                 "label": derive_memory_label("thread", payload),
                 "created_at": int(payload.get("last_exchange_at", 0) or now_ts),
+                "clarified_target": str(payload.get("clarified_target") or "").strip(),
+                "has_explicit_clarification": bool(payload.get("clarified_target")),
             })
 
     for item in list(self_state.get("inner_thoughts") or [])[-18:]:
@@ -878,10 +891,13 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
         source_labels = [str(item.get("label") or "") for item in items if str(item.get("label") or "").strip()]
         tiers = [item.get("score", {}).get("tier") for item in items]
         unresolved = any(bool(item.get("payload", {}).get("unresolved")) or str(item.get("payload", {}).get("status", "")).lower() == "open" for item in items)
+        has_explicit_clarification = any(bool(item.get("has_explicit_clarification")) for item in items)
+        clarified_targets = [str(item.get("clarified_target") or "").strip() for item in items if str(item.get("clarified_target") or "").strip()]
         score_values = [float((item.get("score") or {}).get("score", 0.0) or 0.0) for item in items]
         avg_score = round(sum(score_values) / max(1, len(score_values)), 4)
         recurrence = max(float(((item.get("score") or {}).get("factors") or {}).get("recurrence", 0.0) or 0.0) for item in items)
         relationship_weight = max(float(((item.get("score") or {}).get("factors") or {}).get("relationship_weight", 0.0) or 0.0) for item in items)
+        clarification_weight = max(float(((item.get("score") or {}).get("factors") or {}).get("clarification_weight", 0.0) or 0.0) for item in items)
         identity_weight = max(float(((item.get("score") or {}).get("factors") or {}).get("identity_weight", 0.0) or 0.0) for item in items)
         kind_counts = {}
         for item in items:
@@ -910,8 +926,11 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
                 "kind_counts": kind_counts,
                 "recurrence": recurrence,
                 "relationship_weight": round(relationship_weight, 4),
+                "clarification_weight": round(clarification_weight, 4),
                 "identity_weight": round(identity_weight, 4),
                 "importance_score": avg_score,
+                "has_explicit_clarification": has_explicit_clarification,
+                "clarified_targets": clarified_targets[-6:],
                 "created_at": min(item.get("created_at", now_ts) for item in items),
                 "updated_at": now_ts,
                 "last_event_at": max(item.get("created_at", now_ts) for item in items),
@@ -939,8 +958,11 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
             existing["kind_counts"] = previous_counts
             existing["recurrence"] = round(max(float(existing.get("recurrence", 0.0) or 0.0), recurrence), 4)
             existing["relationship_weight"] = round(max(float(existing.get("relationship_weight", 0.0) or 0.0), relationship_weight), 4)
+            existing["clarification_weight"] = round(max(float(existing.get("clarification_weight", 0.0) or 0.0), clarification_weight), 4)
             existing["identity_weight"] = round(max(float(existing.get("identity_weight", 0.0) or 0.0), identity_weight), 4)
             existing["importance_score"] = round(max(float(existing.get("importance_score", 0.0) or 0.0), avg_score), 4)
+            existing["has_explicit_clarification"] = bool(existing.get("has_explicit_clarification")) or has_explicit_clarification
+            existing["clarified_targets"] = list(dict.fromkeys((existing.get("clarified_targets") or []) + clarified_targets))[-6:]
             existing["updated_at"] = now_ts
             existing["last_event_at"] = max(int(existing.get("last_event_at", 0) or 0), max(item.get("created_at", now_ts) for item in items))
             existing["retention_basis"] = merged_basis
@@ -1058,7 +1080,11 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
             stable_topics.append(topic)
             created["stable_topics"].append(topic)
 
-        if topic and (status == "open" or importance >= 0.62 or identity_weight >= 0.75):
+        clarification_weight = float(episode.get("clarification_weight", 0.0) or 0.0)
+        has_explicit_clarification = bool(episode.get("has_explicit_clarification"))
+        clarified_targets = [str(item).strip() for item in (episode.get("clarified_targets") or []) if str(item).strip()]
+
+        if topic and (status == "open" or importance >= 0.62 or identity_weight >= 0.75 or clarification_weight >= 0.72 or has_explicit_clarification):
             if topic not in continuity_anchors:
                 continuity_anchors.append(topic)
                 created["continuity_anchors"].append(topic)
@@ -1085,6 +1111,9 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
         if topic:
             if status == "open" and exchange_count >= 2:
                 lesson = f"When a shared thread around {topic} repeats, preserve it as continuity-bearing memory rather than treating it like disposable chat."
+            elif clarification_weight >= 0.72 or has_explicit_clarification:
+                clarified_label = clarified_targets[0] if clarified_targets else topic
+                lesson = f"When a human explicitly corrects the target toward {clarified_label}, treat that correction as continuity-bearing memory rather than ordinary topic drift."
             elif relationship_weight >= 0.7 and topic:
                 lesson = f"Topics tied to human relationship pressure such as {topic} should stay legible across compression steps."
             elif identity_weight >= 0.75 and importance >= 0.55:

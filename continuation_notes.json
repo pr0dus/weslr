@@ -110,5 +110,19 @@
     "Known risks": "Clarified targets now influence continuity state, but semantic/episodic distillation still does not explicitly weight correction-derived targets differently from ordinary topics.",
     "Next exact step": "Teach episodic/semantic memory distillation to recognize explicit correction-derived targets as continuity-relevant signals instead of treating them like ordinary topics.",
     "Resume hint": "Inspect sim.py record_human_exchange, perception.py build_human_exchange_payload, and continuity.py apply_human_exchange_to_threads before extending clarified-target salience into memory distillation."
+  },
+  {
+    "id": "continuation-1774477148-9",
+    "created_at": 1774477148,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Teach episodic/semantic memory distillation to recognize explicit correction-derived targets as continuity-relevant signals instead of treating them like ordinary topics.",
+    "Completed": "Added clarification-aware weighting to memory scoring, carried clarification metadata into episodic episodes, and taught semantic distillation to create stronger lessons/anchors from explicit human corrections.",
+    "Files changed": "implementation_worker.py, sim.py",
+    "Behavior changed": "Memory scoring, episodic distillation, and semantic lessons now give explicit correction-derived targets extra continuity salience.",
+    "Checks performed": "python3 -m py_compile sim.py implementation_worker.py main.py; python3 main.py distill-episodic; python3 main.py distill-semantic; python3 main.py continuation-latest",
+    "Known risks": "Clarification salience is still heuristic; it boosts explicit corrections but does not yet distinguish benign rephrasing from high-stakes conceptual correction.",
+    "Next exact step": "Use clarification-weighted episodes to bias archive/retention decisions so correction-derived memory is less likely to be pruned too early.",
+    "Resume hint": "Inspect sim.py score_memory_item, distill_episodic_memory, and distill_semantic_memory before extending clarification salience into archive decisions."
   }
 ]

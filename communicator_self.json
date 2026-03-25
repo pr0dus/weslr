@@ -463,11 +463,6 @@
       "summary": "Current hot memory for active thinking.",
       "recent_exchange_ids": [
         "human-exchange-interlocutor_001-1774463565-1",
-        "human-exchange-interlocutor_001-1774463570-2",
-        "human-exchange-interlocutor_001-1774463647-3",
-        "human-exchange-interlocutor_001-1774463698-4",
-        "human-exchange-interlocutor_001-1774463730-5",
-        "human-exchange-interlocutor_001-1774464787-6",
         "human-exchange-interlocutor_001-1774476942-7"
       ],
       "recent_thought_ids": [
@@ -486,15 +481,7 @@
         "thought-communicator-38-1774463698",
         "thought-memory_keeper-38-1774463698",
         "thought-builder-39-1774463699",
-        "thought-observer-44-1774463701",
-        "thought-critic-52-1774463732",
-        "thought-memory_keeper-52-1774463732",
-        "thought-observer-61-1774464790",
-        "thought-builder-62-1774464791",
-        "thought-critic-62-1774464791",
-        "thought-communicator-62-1774464791",
-        "thought-memory_keeper-62-1774464791",
-        "thought-memory_keeper-66-1774464793"
+        "thought-observer-44-1774463701"
       ],
       "active_thread_ids": [],
       "active_concern_topics": [
@@ -502,16 +489,214 @@
         "understanding",
         "understanding overall"
       ],
-      "last_compacted_at": 0,
+      "last_compacted_at": 1774477148,
       "max_recent_exchanges": 24,
       "max_recent_thoughts": 80,
       "max_active_threads": 6
     },
     "episodic": {
       "summary": "Meaningful event memory compressed from raw experience.",
-      "episodes": [],
-      "episode_count": 0,
-      "last_distilled_at": 0,
+      "episodes": [
+        {
+          "id": "episode-understanding-overall-interlocutor_001",
+          "topic": "understanding overall",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / understanding overall: 2 traces compressed; thread still open; latest signals: No, I mean understanding overall; shared thread around understanding overall",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774476942-7",
+            "thread::understanding overall"
+          ],
+          "source_labels": [
+            "No, I mean understanding overall",
+            "shared thread around understanding overall"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.1667,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.9,
+          "identity_weight": 0.0,
+          "importance_score": 0.5625,
+          "has_explicit_clarification": true,
+          "clarified_targets": [
+            "understanding overall",
+            "understanding overall"
+          ],
+          "created_at": 1774476942,
+          "updated_at": 1774477148,
+          "last_event_at": 1774476942,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-understanding-interlocutor_001",
+          "topic": "understanding",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / understanding: 2 traces compressed; thread still open; latest signals: Integrate code for better understanding; shared thread around understanding",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774464787-6",
+            "thread::understanding"
+          ],
+          "source_labels": [
+            "Integrate code for better understanding",
+            "shared thread around understanding"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.3333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.4753,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774464787,
+          "updated_at": 1774477148,
+          "last_event_at": 1774476942,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-backup-confidence-general",
+          "topic": "backup confidence",
+          "human": "",
+          "human_label": "",
+          "summary": "backup confidence: 8 traces compressed; latest signals: communicator woke on human-continuity-pressure around backup confidence.; memory_keeper woke on human-continuity-pressure around backup confidence.; memory_keeper woke on message-received around backup confidence.",
+          "status": "compressed",
+          "source_ids": [
+            "thought-critic-52-1774463732",
+            "thought-memory_keeper-52-1774463732",
+            "thought-observer-61-1774464790",
+            "thought-builder-62-1774464791",
+            "thought-critic-62-1774464791",
+            "thought-communicator-62-1774464791",
+            "thought-memory_keeper-62-1774464791",
+            "thought-memory_keeper-66-1774464793"
+          ],
+          "source_labels": [
+            "critic woke on message-received around backup confidence.",
+            "memory_keeper woke on human-continuity-pressure around backup confidence.",
+            "observer woke on human-continuity-pressure around backup confidence.",
+            "builder woke on experiment-pressure around backup confidence.",
+            "critic woke on human-continuity-pressure around backup confidence.",
+            "communicator woke on human-continuity-pressure around backup confidence.",
+            "memory_keeper woke on human-continuity-pressure around backup confidence.",
+            "memory_keeper woke on message-received around backup confidence."
+          ],
+          "kind_counts": {
+            "thought": 8
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.0,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.3338,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774463732,
+          "updated_at": 1774477148,
+          "last_event_at": 1774464793,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 0,
+          "thought_count": 8,
+          "thread_count": 0
+        },
+        {
+          "id": "episode-backup-confidence-interlocutor_001",
+          "topic": "backup confidence",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / backup confidence: 5 traces compressed; thread still open; latest signals: Suggest code for your improvement; Go for implement; shared thread around backup confidence",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774463570-2",
+            "human-exchange-interlocutor_001-1774463647-3",
+            "human-exchange-interlocutor_001-1774463698-4",
+            "human-exchange-interlocutor_001-1774463730-5",
+            "thread::backup confidence"
+          ],
+          "source_labels": [
+            "Tell me when finished",
+            "Hey",
+            "Suggest code for your improvement",
+            "Go for implement",
+            "shared thread around backup confidence"
+          ],
+          "kind_counts": {
+            "exchange": 4,
+            "thread": 1
+          },
+          "recurrence": 1.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.4778,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774463570,
+          "updated_at": 1774477148,
+          "last_event_at": 1774464790,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 4,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-enrich-the-local-world-interlocutor_001",
+          "topic": "enrich the local world",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / enrich the local world: 1 traces compressed; thread still open; latest signals: shared thread around enrich the local world",
+          "status": "open",
+          "source_ids": [
+            "thread::enrich the local world"
+          ],
+          "source_labels": [
+            "shared thread around enrich the local world"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 0.1667,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.4732,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774463565,
+          "updated_at": 1774477148,
+          "last_event_at": 1774463565,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        }
+      ],
+      "episode_count": 5,
+      "last_distilled_at": 1774477148,
       "max_episodes": 240
     },
     "semantic": {
@@ -519,11 +704,35 @@
       "identity_anchors": [
         "CircleForge"
       ],
-      "relationship_facts": [],
-      "stable_topics": [],
-      "durable_lessons": [],
-      "continuity_anchors": [],
-      "last_updated_at": 0
+      "relationship_facts": [
+        "you and CircleForge still have an open shared thread around understanding overall",
+        "you and CircleForge still have an open shared thread around understanding",
+        "you and CircleForge still have an open shared thread around backup confidence",
+        "you and CircleForge still have an open shared thread around enrich the local world"
+      ],
+      "stable_topics": [
+        "understanding overall",
+        "understanding",
+        "backup confidence",
+        "enrich the local world"
+      ],
+      "durable_lessons": [
+        "When a human explicitly corrects the target toward understanding overall, treat that correction as continuity-bearing memory rather than ordinary topic drift.",
+        "Open-thread summaries for understanding overall must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as understanding should stay legible across compression steps.",
+        "Open-thread summaries for understanding must survive compression so continuity pressure is not erased by cleanup.",
+        "When a shared thread around backup confidence repeats, preserve it as continuity-bearing memory rather than treating it like disposable chat.",
+        "Open-thread summaries for backup confidence must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as enrich the local world should stay legible across compression steps.",
+        "Open-thread summaries for enrich the local world must survive compression so continuity pressure is not erased by cleanup."
+      ],
+      "continuity_anchors": [
+        "backup confidence",
+        "understanding",
+        "understanding overall",
+        "enrich the local world"
+      ],
+      "last_updated_at": 1774477148
     },
     "archive": {
       "summary": "Cold storage index for old raw traces and compacted material.",
@@ -545,7 +754,7 @@
       }
     }
   },
-  "updated_at": 1774476942,
+  "updated_at": 1774477148,
   "internal_role_state": {
     "observer": {
       "purpose": "notice novelty, drift, change, and weak signals in the world or self",

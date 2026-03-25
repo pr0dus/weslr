@@ -1,14 +1,14 @@
 {
   "status": "completed",
-  "started_at": 1774476945,
-  "finished_at": 1774476945,
+  "started_at": 1774477148,
+  "finished_at": 1774477148,
   "announced": false,
-  "task_id": "continuity-clarified-target",
-  "task": "propagate clarified targets into continuity memory and thread updates",
-  "summary": "Clarified-target continuity wiring is implemented in sim.py, perception.py, and continuity.py.",
+  "task_id": "clarification-memory-salience",
+  "task": "treat correction-derived targets as continuity-relevant memory signals",
+  "summary": "Clarification-aware memory scoring and distillation are implemented in sim.py.",
   "continuation_note_created": true,
   "continuation_note_error": "",
   "continuation_note_hint": "Run python3 main.py continuation-latest",
-  "checks_performed": "python3 -m py_compile sim.py perception.py continuity.py implementation_worker.py main.py; python3 main.py continuation-latest",
+  "checks_performed": "python3 -m py_compile sim.py implementation_worker.py main.py; python3 main.py distill-episodic; python3 main.py distill-semantic; python3 main.py continuation-latest",
   "error": ""
 }
