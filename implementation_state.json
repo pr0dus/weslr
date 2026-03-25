@@ -1,14 +1,14 @@
 {
   "status": "completed",
-  "started_at": 1774476408,
-  "finished_at": 1774476408,
+  "started_at": 1774476524,
+  "finished_at": 1774476524,
   "announced": false,
-  "task_id": "correction-handling",
-  "task": "improve direct correction handling for misunderstood human turns",
-  "summary": "Improved direct correction handling for obvious user-misunderstanding signals.",
+  "task_id": "post-repair-answering",
+  "task": "improve post-repair replies so corrections lead into a direct answer",
+  "summary": "Improved post-repair replies so correction acknowledgments continue into a direct answer stub.",
   "continuation_note_created": true,
   "continuation_note_error": "",
   "continuation_note_hint": "Run python3 main.py continuation-latest",
-  "checks_performed": "python3 implementation_worker.py correction-handling; python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; inspect implementation_state.json",
+  "checks_performed": "python3 implementation_worker.py post-repair-answering; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
   "error": ""
 }

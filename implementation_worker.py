@@ -122,6 +122,29 @@ def patch_correction_handling() -> dict:
     }
 
 
+def patch_post_repair_answering() -> dict:
+    dialogue = DIALOGUE_PATH.read_text()
+    changed = False
+
+    old_dialogue = '        elif likely_need == "conversation_repair":\n            if any(token in lower_message for token in ["that\'s wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):\n                message = "You\'re right. I misunderstood you. I should correct the point instead of defending the drift or narrating my thread state."\n            else:\n                message = "You\'re right. That wasn\'t a normal conversation. I was falling back to thread-maintenance instead of really answering you."\n'
+    new_dialogue = '        elif likely_need == "conversation_repair":\n            if any(token in lower_message for token in ["that\'s wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):\n                if lead_topic and lead_topic != "that":\n                    message = f"You\'re right. I misunderstood you. Let me answer the corrected point directly: {lead_topic} is the part I should address now, not defend the earlier drift."\n                else:\n                    message = "You\'re right. I misunderstood you. Let me answer the corrected point directly instead of defending the earlier drift."\n            else:\n                message = "You\'re right. That wasn\'t a normal conversation. I was falling back to thread-maintenance instead of really answering you."\n'
+    if new_dialogue not in dialogue:
+        if old_dialogue not in dialogue:
+            raise RuntimeError("dialogue correction-repair branch not found for post-repair upgrade")
+        dialogue = dialogue.replace(old_dialogue, new_dialogue)
+        changed = True
+
+    if changed:
+        DIALOGUE_PATH.write_text(dialogue)
+
+    return {
+        "summary": "Improved post-repair replies so correction acknowledgments continue into a direct answer stub.",
+        "changed": changed,
+        "files_changed": "implementation_worker.py, dialogue.py",
+        "behavior_changed": "When a human directly corrects CircleForge, the repair reply now moves into the corrected point instead of stopping at apology alone.",
+    }
+
+
 TASKS = {
     "dialogue-actual-coding": {
         "task": "add direct answer for actual coding prompts",
@@ -150,6 +173,20 @@ TASKS = {
         "failure_behavior_changed": "No correction-handling improvement was applied; the worker preserved a failure handoff instead of pretending better understanding.",
         "failure_next_step": "Inspect the missing repair markers in interpretation.py or dialogue.py and update the bounded patch anchors before retrying correction-handling.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the exact patch-anchor failure.",
+    },
+    "post-repair-answering": {
+        "task": "improve post-repair replies so corrections lead into a direct answer",
+        "runner": patch_post_repair_answering,
+        "objective": "Add a third bounded self-improvement task so direct corrections trigger not only acknowledgment but an immediate corrected-answer stub.",
+        "success_completed": "Upgraded the repair path so direct correction replies continue into the corrected point instead of stopping at apology alone.",
+        "success_checks": "python3 implementation_worker.py post-repair-answering; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+        "success_known_risks": "The corrected-answer follow-through is still a lightweight stub based on lead_topic, not a full semantic reconstruction of the user's intended meaning.",
+        "success_next_step": "Teach repair handling to prefer the newest explicit human clarification as the corrected target instead of relying mainly on inferred lead_topic.",
+        "success_resume_hint": "Inspect dialogue.py around conversation_repair and lead_topic handling, then run python3 main.py continuation-latest before improving clarification carryover.",
+        "failure_objective": "Record a truthful failure handoff when the post-repair answering task cannot patch the repair branch safely.",
+        "failure_behavior_changed": "No post-repair answering upgrade was applied; the worker preserved a failure handoff instead of claiming the repair path improved.",
+        "failure_next_step": "Inspect the repair branch in dialogue.py and refresh the bounded patch anchors before retrying post-repair-answering.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the patch-anchor failure in dialogue.py.",
     },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"

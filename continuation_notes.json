@@ -54,5 +54,19 @@
     "Known risks": "Correction detection still relies on explicit phrase matching and does not yet capture softer or more indirect human corrections.",
     "Next exact step": "Add a third bounded task that improves post-repair behavior by making the next reply answer the corrected point directly.",
     "Resume hint": "Inspect interpretation.py and dialogue.py around repair handling, then run python3 main.py continuation-latest before deepening correction-aware reply grounding."
+  },
+  {
+    "id": "continuation-1774476524-5",
+    "created_at": 1774476524,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add a third bounded self-improvement task so direct corrections trigger not only acknowledgment but an immediate corrected-answer stub.",
+    "Completed": "Upgraded the repair path so direct correction replies continue into the corrected point instead of stopping at apology alone.",
+    "Files changed": "implementation_worker.py, dialogue.py",
+    "Behavior changed": "When a human directly corrects CircleForge, the repair reply now moves into the corrected point instead of stopping at apology alone.",
+    "Checks performed": "python3 implementation_worker.py post-repair-answering; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+    "Known risks": "The corrected-answer follow-through is still a lightweight stub based on lead_topic, not a full semantic reconstruction of the user's intended meaning.",
+    "Next exact step": "Teach repair handling to prefer the newest explicit human clarification as the corrected target instead of relying mainly on inferred lead_topic.",
+    "Resume hint": "Inspect dialogue.py around conversation_repair and lead_topic handling, then run python3 main.py continuation-latest before improving clarification carryover."
   }
 ]
