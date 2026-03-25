@@ -4271,13 +4271,6 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
             deduped[topic] = concern
     self_state["active_concerns"] = list(deduped.values())[-12:]
     memory_layers = self_state.get("memory_layers") or {}
-    semantic = memory_layers.get("semantic") or {}
-    apply_topics_to_semantic_memory(
-        semantic,
-        topic_list,
-        relationship_fact=(f"Recurring interlocutor keeps shared threads around {topic_list[0]}" if topic_list else ""),
-        now_ts=now_ts,
-    )
 
     narrative = self_state.setdefault("narrative_state", {})
     if topic_list:
