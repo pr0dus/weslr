@@ -26,5 +26,19 @@
     "Known risks": "This worker currently records a success-path note only for this specific bounded task; failure-path note emission is not implemented yet.",
     "Next exact step": "Generalize the implementation worker so task metadata declares its own continuation-note payload and can emit failure notes too.",
     "Resume hint": "Run python3 CircleForge/main.py continuation-latest and inspect implementation_state.json for the most recent worker outcome."
+  },
+  {
+    "id": "continuation-1774476290-3",
+    "created_at": 1774476290,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Generalize the bounded implementation worker so one declared task can run through explicit metadata and leave a resumable handoff record.",
+    "Completed": "Refactored implementation_worker.py into a tiny declared-task runner and applied the dialogue.py patch for 'actual coding' prompts through that framework.",
+    "Files changed": "implementation_worker.py, dialogue.py",
+    "Behavior changed": "Dialogue can now answer 'actual coding' prompts directly, and bounded implementation runs are driven by declared task metadata.",
+    "Checks performed": "python3 implementation_worker.py; python3 main.py continuation-latest; inspect implementation_state.json",
+    "Known risks": "Only one declared task exists so far, and failure-path notes still describe generic worker failure rather than task-specific recovery details.",
+    "Next exact step": "Add a second bounded task and task-specific failure guidance so the worker proves it can evolve without hard-coded one-off logic.",
+    "Resume hint": "Inspect implementation_worker.py TASKS and run python3 main.py continuation-latest before adding the next bounded task."
   }
 ]
