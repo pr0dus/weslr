@@ -12,10 +12,16 @@ LOW_INFORMATION_REFERENTIAL_PHRASES = [
     "more overall",
 ]
 
+SMALL_TALK_ONLY_MESSAGES = {
+    "hey", "hi", "hello", "yo", "sup", "hallo", "moin", "hey there", "hi there"
+}
+
 
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
+    if lowered in SMALL_TALK_ONLY_MESSAGES:
+        return []
     topics = []
     keyword_map = {
         "circleforge": "CircleForge",
@@ -67,6 +73,8 @@ def classify_human_turn(message: str) -> str:
     lowered = str(message or "").strip().lower()
     if not lowered:
         return "empty"
+    if lowered in SMALL_TALK_ONLY_MESSAGES:
+        return "greeting"
     if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
         return "repair"
     if any(token in lowered for token in ["who are you", "what are you", "emergence", "new entity", "entity"]):
@@ -89,6 +97,7 @@ def interpret_human_turn(message: str) -> dict:
     lowered = text.lower()
 
     intent = {
+        "greeting": "open conversation",
         "repair": "repair conversation",
         "identity_probe": "test identity / emergence",
         "memory_probe": "test memory scope",

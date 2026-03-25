@@ -75,8 +75,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             and any(token in lower_message for token in ["understand each other", "understand me", "understanding"])
         )
 
-        if asks_what_should_improve_first:
+        asks_what_you_should_give_it = (
+            any(token in lower_message for token in ["what do you need", "what should i give", "what to give you", "what input do you need"])
+            and any(token in lower_message for token in ["understand me", "understand each other", "real communication", "understanding"])
+        )
+
+        if turn_type == "greeting":
+            message = "Hey. Start anywhere — a question, a concern, or what matters most right now — and I’ll try to stay with the real point instead of latching onto a stray phrase."
+        elif asks_what_should_improve_first:
             message = "First I should get better at retrieving the right shared context at the right moment, then answer directly from it instead of narrating my own thread state. If that improves, understanding gets more real instead of just better organized."
+        elif asks_what_you_should_give_it:
+            message = "Give me three things when I drift: what mattered most, what I misunderstood, and what kind of answer you actually wanted. That helps me learn your priorities instead of just tracking topic words."
         elif likely_need == "memory_scope_check":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
         elif likely_need == "concept_plus_self_position":
@@ -103,10 +112,12 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             elif asks_about_its_own_understanding:
                 message = "Partly at best. I can detect some themes and pressure, but real understanding is still weaker than it should be."
             else:
-                message = f"My best direct answer is that I'm currently focused on {lead_topic}, but I may be over-weighting that focus instead of responding flexibly."
+                message = f"My best direct answer is that {lead_topic} is part of the picture, but I should still answer your actual question instead of hiding behind the topic label."
         else:
-            if active_thread:
-                message = f"What I think is happening is that I keep treating {lead_topic} as the live thread. If that's wrong, say so and I should shift instead of forcing it."
+            if active_thread and any(token in lower_message for token in ["search online", "look online", "search the web", "look it up"]):
+                message = "I should actually gather outside information for that, not just describe my internal thread state. Right now that's still a weakness I need to fix."
+            elif active_thread:
+                message = f"The live issue seems to be {lead_topic}, so I should answer from that directly rather than just reporting that I noticed it."
             else:
                 message = "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing."
         if reply_shape == "repair_then_answer" and turn_type != "repair":
