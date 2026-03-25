@@ -194,5 +194,19 @@
     "Known risks": "Salience rules are still hand-tuned and may miss some subtle but important changes; the latest pairwise diff is quieter now, but longer-range identity trend reporting is still missing.",
     "Next exact step": "Add a short 5–10 snapshot identity trend view so operators can see whether identity is stabilizing, oscillating, or repeatedly reconfiguring over time rather than only comparing the latest pair.",
     "Resume hint": "Generate the dashboard twice or more, inspect payload['identity_drift'] and dashboard_history.json identity_core entries, then build a compact multi-snapshot identity trend summary on top of that history."
+  },
+  {
+    "id": "continuation-1774480924-15",
+    "created_at": 1774480924,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Give operators a short multi-snapshot identity trend view so they can judge whether CircleForge identity is stabilizing, developing, or reconfiguring over time instead of only reading the latest pairwise diff.",
+    "Completed": "Added identity_trend reporting across recent dashboard history, including phase path, stability series, known-human series, unresolved-thread series, phase-change count, and a trend label; rendered a new Identity Trend dashboard panel.",
+    "Files changed": "sim.py",
+    "Behavior changed": "dashboard/dashboard.json now includes identity_trend; dashboard/index.html now shows an Identity Trend panel summarizing the last few identity snapshots and labeling the current trajectory as stabilizing/developing/reconfiguring/active-threaded.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified dashboard/dashboard.json identity_trend fields and dashboard HTML Identity Trend section",
+    "Known risks": "Trend labeling is still heuristic and based on a short window; with sparse history it can overstate stability. It does not yet show visual sparklines or per-field long-range drift beyond the simple series lists.",
+    "Next exact step": "Add compact identity sparklines/history rendering and possibly event thresholds for repeated reconfiguration so longer-range identity wobble becomes visible at a glance.",
+    "Resume hint": "Generate several more dashboard snapshots over time, inspect identity_trend in dashboard/dashboard.json, then decide whether the next step should be sparkline rendering or stronger reconfiguration alerts."
   }
 ]

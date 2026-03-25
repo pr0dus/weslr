@@ -5832,6 +5832,59 @@ def build_theme_trends(history: list[dict]) -> list[dict]:
     return sorted(result, key=lambda item: (item['series'][-1], item['delta']), reverse=True)[:8]
 
 
+def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
+    recent = [point for point in history[-max(2, window):] if point.get('identity_core')]
+    if len(recent) < 2:
+        return {
+            'window': len(recent),
+            'phase_series': [],
+            'stability_series': [],
+            'known_humans_series': [],
+            'unresolved_threads_series': [],
+            'stability_delta': 0.0,
+            'phase_changes': 0,
+            'trend_label': 'insufficient-history',
+            'summary': 'Not enough identity history yet for a trend view.',
+        }
+    phase_series = [str((point.get('identity_core') or {}).get('phase') or 'seedling') for point in recent]
+    stability_series = [round(float((point.get('identity_core') or {}).get('identity_stability', 0.0) or 0.0), 3) for point in recent]
+    known_humans_series = [int((point.get('identity_core') or {}).get('known_humans', 0) or 0) for point in recent]
+    unresolved_series = [int((point.get('identity_core') or {}).get('unresolved_shared_threads', 0) or 0) for point in recent]
+    unique_phases = []
+    for phase in phase_series:
+        if not unique_phases or unique_phases[-1] != phase:
+            unique_phases.append(phase)
+    phase_changes = max(0, len(unique_phases) - 1)
+    stability_delta = round(stability_series[-1] - stability_series[0], 3)
+    stability_span = round(max(stability_series) - min(stability_series), 3)
+    unresolved_span = max(unresolved_series) - min(unresolved_series)
+    if phase_changes >= 2 or stability_span >= 0.2:
+        trend_label = 'reconfiguring'
+    elif unresolved_span >= 3:
+        trend_label = 'active-threaded'
+    elif abs(stability_delta) <= 0.03 and stability_span <= 0.05 and phase_changes == 0:
+        trend_label = 'stabilizing'
+    else:
+        trend_label = 'developing'
+    summary_parts = [
+        f"phase path: {' → '.join(unique_phases)}",
+        f"stability {stability_series[0]:.3f} → {stability_series[-1]:.3f} ({stability_delta:+.3f})",
+        f"known humans {known_humans_series[0]} → {known_humans_series[-1]}",
+        f"unresolved threads {unresolved_series[0]} → {unresolved_series[-1]}",
+    ]
+    return {
+        'window': len(recent),
+        'phase_series': phase_series,
+        'stability_series': stability_series,
+        'known_humans_series': known_humans_series,
+        'unresolved_threads_series': unresolved_series,
+        'stability_delta': stability_delta,
+        'phase_changes': phase_changes,
+        'trend_label': trend_label,
+        'summary': '; '.join(summary_parts),
+    }
+
+
 def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> list[dict]:
     by_id = {}
     for item in export_queue + review_queue:
@@ -5906,6 +5959,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     }
     payload["history"] = update_dashboard_history(payload)
     payload["identity_drift"] = build_identity_drift_report(payload["history"])
+    payload["identity_trend"] = build_identity_trend_report(payload["history"])
     payload["event_feed"] = build_dashboard_event_feed(payload)
     payload["persistent_event_log"] = persist_event_log(payload["event_feed"], payload["generated_at"])
     payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
@@ -6018,6 +6072,18 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <p><strong>{escape(str((payload.get('identity_drift') or {}).get('summary', 'No prior identity snapshot yet.')))}</strong></p>
         <ul>{''.join(f"<li>{escape(str(item))}</li>" for item in ((payload.get('identity_drift') or {}).get('changes') or [])) or '<li class="muted">No explicit identity deltas in the latest comparison.</li>'}</ul>
         <p class="muted">All detected deltas: {escape('; '.join((payload.get('identity_drift') or {}).get('all_changes') or []) or 'none')}</p>
+      </section>
+      <section class="card">
+        <h2>Identity Trend</h2>
+        <p><strong>{escape(str((payload.get('identity_trend') or {}).get('trend_label', 'insufficient-history')))}</strong></p>
+        <p>{escape(str((payload.get('identity_trend') or {}).get('summary', 'Not enough identity history yet for a trend view.')))}</p>
+        <ul>
+          <li>window: {escape(str((payload.get('identity_trend') or {}).get('window', 0)))}</li>
+          <li>phase changes: {escape(str((payload.get('identity_trend') or {}).get('phase_changes', 0)))}</li>
+          <li>stability series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('stability_series') or [])) or '—')}</li>
+          <li>known humans series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('known_humans_series') or [])) or '—')}</li>
+          <li>unresolved threads series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('unresolved_threads_series') or [])) or '—')}</li>
+        </ul>
       </section>
     </div>
 
