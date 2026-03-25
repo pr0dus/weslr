@@ -180,5 +180,19 @@
     "Known risks": "The first diff after introducing identity history can look large because older snapshots lacked identity data; future diffs should be more meaningful once the baseline is established. Diff summaries are still heuristic and may need pruning if they become noisy.",
     "Next exact step": "Normalize and prune identity diff summaries so they prefer the most human-meaningful changes, then consider adding identity trend/history views over the last 5–10 snapshots instead of only latest-pair diffs.",
     "Resume hint": "Run python3 main.py dashboard, inspect payload['identity_drift'] and the latest two dashboard history entries, then tune diff salience before building longer-range identity trend views."
+  },
+  {
+    "id": "continuation-1774480656-14",
+    "created_at": 1774480656,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Reduce identity-drift noise so operator-facing summaries emphasize the few changes that actually matter while preserving a full audit trail of detected deltas.",
+    "Completed": "Added salience ranking to identity-history diffs, made the dashboard/event feed prefer salient changes instead of dumping every delta, and kept a separate all_changes list in the dashboard for audit visibility.",
+    "Files changed": "sim.py",
+    "Behavior changed": "identity_drift now distinguishes salient changes from all detected changes; dashboard summaries and identity-drift events are quieter and more human-legible, while the dashboard still exposes the full raw delta list for review.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified dashboard/dashboard.json identity_drift summary/changes/all_changes fields and dashboard HTML audit line",
+    "Known risks": "Salience rules are still hand-tuned and may miss some subtle but important changes; the latest pairwise diff is quieter now, but longer-range identity trend reporting is still missing.",
+    "Next exact step": "Add a short 5–10 snapshot identity trend view so operators can see whether identity is stabilizing, oscillating, or repeatedly reconfiguring over time rather than only comparing the latest pair.",
+    "Resume hint": "Generate the dashboard twice or more, inspect payload['identity_drift'] and dashboard_history.json identity_core entries, then build a compact multi-snapshot identity trend summary on top of that history."
   }
 ]

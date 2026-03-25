@@ -5627,43 +5627,70 @@ def diff_identity_history(prev_identity: dict, curr_identity: dict) -> dict:
     prev_identity = prev_identity or {}
     curr_identity = curr_identity or {}
     changes = []
+    salient_changes = []
     phase_before = str(prev_identity.get("phase") or "")
     phase_after = str(curr_identity.get("phase") or "")
     if phase_before and phase_after and phase_before != phase_after:
-        changes.append(f"phase {phase_before} → {phase_after}")
+        entry = f"phase {phase_before} → {phase_after}"
+        changes.append(entry)
+        salient_changes.append(entry)
     name_before = str(prev_identity.get("declared_name") or "")
     name_after = str(curr_identity.get("declared_name") or "")
     if name_before and name_after and name_before != name_after:
-        changes.append(f"name {name_before} → {name_after}")
+        entry = f"name {name_before} → {name_after}"
+        changes.append(entry)
+        salient_changes.append(entry)
     prev_traits = {str(item).strip() for item in (prev_identity.get("traits") or []) if str(item).strip()}
     curr_traits = {str(item).strip() for item in (curr_identity.get("traits") or []) if str(item).strip()}
     added_traits = sorted(curr_traits - prev_traits)
     removed_traits = sorted(prev_traits - curr_traits)
     if added_traits:
-        changes.append("traits +" + ", ".join(added_traits[:3]))
+        entry = "traits +" + ", ".join(added_traits[:3])
+        changes.append(entry)
+        if len(added_traits) >= 2:
+            salient_changes.append(entry)
     if removed_traits:
-        changes.append("traits -" + ", ".join(removed_traits[:3]))
+        entry = "traits -" + ", ".join(removed_traits[:3])
+        changes.append(entry)
+        if len(removed_traits) >= 2:
+            salient_changes.append(entry)
     prev_values = {str(item).strip() for item in (prev_identity.get("core_values") or []) if str(item).strip()}
     curr_values = {str(item).strip() for item in (curr_identity.get("core_values") or []) if str(item).strip()}
     added_values = sorted(curr_values - prev_values)
     if added_values:
-        changes.append("values +" + ", ".join(added_values[:3]))
+        entry = "values +" + ", ".join(added_values[:3])
+        changes.append(entry)
+        if len(added_values) >= 2:
+            salient_changes.append(entry)
     known_human_delta = int(curr_identity.get("known_humans", 0) or 0) - int(prev_identity.get("known_humans", 0) or 0)
     if known_human_delta:
-        changes.append(f"known_humans {known_human_delta:+d}")
+        entry = f"known_humans {known_human_delta:+d}"
+        changes.append(entry)
+        salient_changes.append(entry)
     unresolved_delta = int(curr_identity.get("unresolved_shared_threads", 0) or 0) - int(prev_identity.get("unresolved_shared_threads", 0) or 0)
     if unresolved_delta:
-        changes.append(f"unresolved_threads {unresolved_delta:+d}")
+        entry = f"unresolved_threads {unresolved_delta:+d}"
+        changes.append(entry)
+        if abs(unresolved_delta) >= 2:
+            salient_changes.append(entry)
     stability_delta = round(float(curr_identity.get("identity_stability", 0.0) or 0.0) - float(prev_identity.get("identity_stability", 0.0) or 0.0), 3)
     if abs(stability_delta) >= 0.03:
-        changes.append(f"identity_stability {stability_delta:+.3f}")
+        entry = f"identity_stability {stability_delta:+.3f}"
+        changes.append(entry)
+        if abs(stability_delta) >= 0.08:
+            salient_changes.append(entry)
     summary_before = str(prev_identity.get("identity_summary") or "").strip()
     summary_after = str(curr_identity.get("identity_summary") or "").strip()
     summary_changed = bool(summary_before and summary_after and summary_before != summary_after)
     changed = bool(changes or summary_changed)
+    if not salient_changes and summary_changed:
+        salient_changes.append("identity summary wording changed")
+    if not salient_changes and changes:
+        salient_changes = changes[:2]
     return {
         "changed": changed,
         "changes": changes[:8],
+        "salient_changes": salient_changes[:4],
         "summary_changed": summary_changed,
         "latest_evolution_summary": curr_identity.get("latest_evolution_summary") or "",
     }
@@ -5671,18 +5698,18 @@ def diff_identity_history(prev_identity: dict, curr_identity: dict) -> dict:
 
 def build_identity_drift_report(history: list[dict]) -> dict:
     if len(history) < 2:
-        return {"changed": False, "changes": [], "summary": "No prior identity snapshot yet."}
+        return {"changed": False, "changes": [], "all_changes": [], "summary": "No prior identity snapshot yet."}
     prev = history[-2].get("identity_core") or {}
     curr = history[-1].get("identity_core") or {}
     diff = diff_identity_history(prev, curr)
     if not diff.get("changed"):
-        return {"changed": False, "changes": [], "summary": "No meaningful identity drift between the latest two snapshots."}
-    summary = "; ".join(diff.get("changes") or [])
+        return {"changed": False, "changes": [], "all_changes": [], "summary": "No meaningful identity drift between the latest two snapshots."}
+    summary = "; ".join(diff.get("salient_changes") or [])
     if not summary and diff.get("summary_changed"):
         summary = "identity summary wording changed"
     if diff.get("latest_evolution_summary"):
         summary = f"{summary} | milestone: {diff.get('latest_evolution_summary')}" if summary else f"milestone: {diff.get('latest_evolution_summary')}"
-    return {"changed": True, "changes": diff.get("changes") or [], "summary": summary}
+    return {"changed": True, "changes": diff.get("salient_changes") or [], "all_changes": diff.get("changes") or [], "summary": summary}
 
 
 def update_dashboard_history(payload: dict) -> list[dict]:
@@ -5728,7 +5755,7 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
                     events.append({"kind": "pack-outcome", "pack": pack_name, "message": f"{pack_name} {key} changed from {old.get(key, 0)} to {counts.get(key, 0)}"})
         identity_diff = diff_identity_history(prev.get("identity_core") or {}, curr.get("identity_core") or {})
         if identity_diff.get("changed"):
-            message = '; '.join(identity_diff.get("changes") or [])
+            message = '; '.join(identity_diff.get("salient_changes") or [])
             if not message and identity_diff.get("summary_changed"):
                 message = "identity summary wording changed"
             if identity_diff.get("latest_evolution_summary"):
@@ -5990,6 +6017,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <h2>Identity Drift</h2>
         <p><strong>{escape(str((payload.get('identity_drift') or {}).get('summary', 'No prior identity snapshot yet.')))}</strong></p>
         <ul>{''.join(f"<li>{escape(str(item))}</li>" for item in ((payload.get('identity_drift') or {}).get('changes') or [])) or '<li class="muted">No explicit identity deltas in the latest comparison.</li>'}</ul>
+        <p class="muted">All detected deltas: {escape('; '.join((payload.get('identity_drift') or {}).get('all_changes') or []) or 'none')}</p>
       </section>
     </div>
 
