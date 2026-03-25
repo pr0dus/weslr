@@ -64,6 +64,20 @@ IMPERATIVE_REQUEST_PHRASES = [
 ]
 
 
+def extract_clarified_target(message: str) -> str:
+    lowered = str(message or "").strip().lower()
+    patterns = ["no, i mean", "no i mean", "what i meant is", "i meant", "the issue is", "the point is", "more overall"]
+    for pattern in patterns:
+        if pattern in lowered:
+            tail = lowered.split(pattern, 1)[1].strip(" .,!?:;-")
+            if tail:
+                words = [word.strip(" ,.!?:;()[]{}\"'") for word in tail.split() if word.strip(" ,.!?:;()[]{}\"'")]
+                cleaned = " ".join(words[:6]).strip()
+                if cleaned:
+                    return cleaned
+    return ""
+
+
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
@@ -148,6 +162,9 @@ def classify_human_turn(message: str) -> str:
 def interpret_human_turn(message: str) -> dict:
     text = str(message or "").strip()
     topics = infer_human_topics(text)
+    clarified_target = extract_clarified_target(text)
+    if clarified_target and clarified_target not in topics:
+        topics = [clarified_target, *topics][:4]
     turn_type = classify_human_turn(text)
     lowered = text.lower()
 
@@ -228,6 +245,8 @@ def interpret_human_turn(message: str) -> dict:
         "turn_type": turn_type,
         "topics": topics,
         "primary_topic": topics[0] if topics else "",
+        "clarified_target": clarified_target,
+        "has_explicit_clarification": bool(clarified_target),
         "intent": intent,
         "stance": stance,
         "relational_signal": relational_signal,

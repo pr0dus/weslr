@@ -252,6 +252,20 @@ TASKS = {
         "failure_next_step": "Inspect the lead_topic and repair anchors in dialogue.py before retrying clarification-carryover.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the clarification patch-anchor failure.",
     },
+    "interpretation-clarification-state": {
+        "task": "promote clarification targets into structured interpretation state",
+        "runner": lambda: {"summary": "Clarification state promotion is implemented directly in interpretation.py and dialogue.py.", "changed": False, "files_changed": "implementation_worker.py, interpretation.py, dialogue.py", "behavior_changed": "Interpretation now exposes clarified_target and has_explicit_clarification so dialogue can consume structured clarification state."},
+        "objective": "Promote explicit clarification targets into interpreted turn structure so repair, memory, and future answer selection can share the same corrected target.",
+        "success_completed": "Moved clarification extraction into interpretation.py, added clarified_target/has_explicit_clarification to interpreted turns, and updated dialogue.py to consume structured clarification state instead of re-parsing raw messages locally.",
+        "success_checks": "python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; python3 main.py continuation-latest",
+        "success_known_risks": "Memory and continuity layers do not consume clarified_target yet, so the benefit is currently shared between interpretation and dialogue but not fully propagated into longer-term state updates.",
+        "success_next_step": "Use clarified_target during human-exchange recording and thread update logic so corrected targets affect continuity memory as well as immediate replies.",
+        "success_resume_hint": "Inspect interpretation.py interpret_human_turn and dialogue.py lead_topic selection, then wire clarified_target into continuity-relevant state updates.",
+        "failure_objective": "Record a truthful failure handoff when clarification state promotion cannot be completed safely across interpretation and dialogue.",
+        "failure_behavior_changed": "No structured clarification-state promotion was completed; the system kept the old dialogue-local parsing path instead of pretending the migration succeeded.",
+        "failure_next_step": "Inspect interpretation.py and dialogue.py import/field wiring before retrying clarification-state promotion.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the interpretation/dialogue migration failure.",
+    },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"
 

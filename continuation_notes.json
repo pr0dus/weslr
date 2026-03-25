@@ -82,5 +82,19 @@
     "Known risks": "Clarification extraction is still phrase-based and shallow; it captures explicit wording but not subtle reframings or longer semantic corrections.",
     "Next exact step": "Promote explicit clarification targets into interpreted turn structure so repair, memory, and future answer selection can share the same corrected target.",
     "Resume hint": "Inspect dialogue.py extract_clarified_target and repair handling, then run python3 main.py continuation-latest before moving clarification state into interpretation.py."
+  },
+  {
+    "id": "continuation-1774476797-7",
+    "created_at": 1774476797,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Promote explicit clarification targets into interpreted turn structure so repair, memory, and future answer selection can share the same corrected target.",
+    "Completed": "Moved clarification extraction into interpretation.py, added clarified_target/has_explicit_clarification to interpreted turns, and updated dialogue.py to consume structured clarification state instead of re-parsing raw messages locally.",
+    "Files changed": "implementation_worker.py, interpretation.py, dialogue.py",
+    "Behavior changed": "Interpretation now exposes clarified_target and has_explicit_clarification so dialogue can consume structured clarification state.",
+    "Checks performed": "python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; python3 main.py continuation-latest",
+    "Known risks": "Memory and continuity layers do not consume clarified_target yet, so the benefit is currently shared between interpretation and dialogue but not fully propagated into longer-term state updates.",
+    "Next exact step": "Use clarified_target during human-exchange recording and thread update logic so corrected targets affect continuity memory as well as immediate replies.",
+    "Resume hint": "Inspect interpretation.py interpret_human_turn and dialogue.py lead_topic selection, then wire clarified_target into continuity-relevant state updates."
   }
 ]

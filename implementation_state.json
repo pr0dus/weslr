@@ -1,14 +1,14 @@
 {
   "status": "completed",
-  "started_at": 1774476687,
-  "finished_at": 1774476687,
+  "started_at": 1774476797,
+  "finished_at": 1774476797,
   "announced": false,
-  "task_id": "clarification-carryover",
-  "task": "prefer newest explicit human clarification during repair",
-  "summary": "Improved clarification carryover so explicit human corrections can override stale inferred topic focus.",
+  "task_id": "interpretation-clarification-state",
+  "task": "promote clarification targets into structured interpretation state",
+  "summary": "Clarification state promotion is implemented directly in interpretation.py and dialogue.py.",
   "continuation_note_created": true,
   "continuation_note_error": "",
   "continuation_note_hint": "Run python3 main.py continuation-latest",
-  "checks_performed": "python3 implementation_worker.py clarification-carryover; python3 -m py_compile dialogue.py implementation_worker.py; inspect implementation_state.json",
+  "checks_performed": "python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; python3 main.py continuation-latest",
   "error": ""
 }

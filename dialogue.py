@@ -59,26 +59,12 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
     return answer[:360]
 
 
-def extract_clarified_target(message: str) -> str:
-    lowered = str(message or "").strip().lower()
-    patterns = ["no, i mean", "no i mean", "what i meant is", "i meant", "the issue is", "the point is", "more overall"]
-    for pattern in patterns:
-        if pattern in lowered:
-            tail = lowered.split(pattern, 1)[1].strip(" .,!?:;-")
-            if tail:
-                words = [word.strip(" ,.!?:;()[]{}\"'") for word in tail.split() if word.strip(" ,.!?:;()[]{}\"'")]
-                cleaned = " ".join(words[:6]).strip()
-                if cleaned:
-                    return cleaned
-    return ""
-
-
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
         interpreted_turn = interpret_human_turn(last_message)
         topic_list = [str(item).strip() for item in (latest_human.get("topics") or interpreted_turn.get("topics") or []) if str(item).strip()]
-        clarified_target = extract_clarified_target(last_message)
+        clarified_target = str(interpreted_turn.get("clarified_target") or "").strip()
         lead_topic = clarified_target or (topic_list[0] if topic_list else (active_thread[0] if active_thread else "that"))
         turn_type = str(latest_human.get("turn_type") or interpreted_turn.get("turn_type") or classify_human_turn(last_message))
         reply_shape = str(latest_human.get("reply_shape") or interpreted_turn.get("reply_shape") or "answer_directly")
