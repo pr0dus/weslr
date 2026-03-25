@@ -9,6 +9,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 STATE_PATH = BASE_DIR / "implementation_state.json"
 DIALOGUE_PATH = BASE_DIR / "dialogue.py"
+INTERPRETATION_PATH = BASE_DIR / "interpretation.py"
 MAIN_PATH = BASE_DIR / "main.py"
 
 
@@ -88,26 +89,77 @@ def patch_dialogue_actual_coding() -> dict:
     }
 
 
+def patch_correction_handling() -> dict:
+    interpretation = INTERPRETATION_PATH.read_text()
+    dialogue = DIALOGUE_PATH.read_text()
+    changed = False
+
+    old_repair = '    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):\n        return "repair"\n'
+    new_repair = '    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly", "that\'s wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):\n        return "repair"\n'
+    if new_repair not in interpretation:
+        if old_repair not in interpretation:
+            raise RuntimeError("interpretation repair marker not found")
+        interpretation = interpretation.replace(old_repair, new_repair)
+        changed = True
+
+    old_dialogue = '        elif likely_need == "conversation_repair":\n            message = "You\'re right. That wasn\'t a normal conversation. I was falling back to thread-maintenance instead of really answering you."\n'
+    new_dialogue = '        elif likely_need == "conversation_repair":\n            if any(token in lower_message for token in ["that\'s wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):\n                message = "You\'re right. I misunderstood you. I should correct the point instead of defending the drift or narrating my thread state."\n            else:\n                message = "You\'re right. That wasn\'t a normal conversation. I was falling back to thread-maintenance instead of really answering you."\n'
+    if new_dialogue not in dialogue:
+        if old_dialogue not in dialogue:
+            raise RuntimeError("dialogue conversation_repair branch not found")
+        dialogue = dialogue.replace(old_dialogue, new_dialogue)
+        changed = True
+
+    if changed:
+        INTERPRETATION_PATH.write_text(interpretation)
+        DIALOGUE_PATH.write_text(dialogue)
+
+    return {
+        "summary": "Improved direct correction handling for obvious user-misunderstanding signals.",
+        "changed": changed,
+        "files_changed": "implementation_worker.py, interpretation.py, dialogue.py",
+        "behavior_changed": "CircleForge now classifies obvious correction phrases as repair signals and answers them with a plain acknowledgment of misunderstanding instead of generic thread-maintenance language.",
+    }
+
+
 TASKS = {
     "dialogue-actual-coding": {
         "task": "add direct answer for actual coding prompts",
         "runner": patch_dialogue_actual_coding,
         "objective": "Generalize the bounded implementation worker so one declared task can run through explicit metadata and leave a resumable handoff record.",
         "success_completed": "Refactored implementation_worker.py into a tiny declared-task runner and applied the dialogue.py patch for 'actual coding' prompts through that framework.",
-        "success_checks": "python3 implementation_worker.py; python3 main.py continuation-latest; inspect implementation_state.json",
-        "success_known_risks": "Only one declared task exists so far, and failure-path notes still describe generic worker failure rather than task-specific recovery details.",
-        "success_next_step": "Add a second bounded task and task-specific failure guidance so the worker proves it can evolve without hard-coded one-off logic.",
+        "success_checks": "python3 implementation_worker.py dialogue-actual-coding; python3 main.py continuation-latest; inspect implementation_state.json",
+        "success_known_risks": "Only a small number of declared tasks exist so far, and failure-path notes still describe generic worker failure rather than deeply task-specific recovery details.",
+        "success_next_step": "Add another bounded task aimed at mutual understanding so the worker proves it can improve behavior as well as workflow scaffolding.",
         "success_resume_hint": "Inspect implementation_worker.py TASKS and run python3 main.py continuation-latest before adding the next bounded task.",
         "failure_objective": "Record a truthful failure handoff when a bounded implementation task cannot complete safely.",
         "failure_behavior_changed": "No intended code change was completed; a failure continuation note was emitted instead of pretending success.",
         "failure_next_step": "Inspect implementation_state.json and implementation_worker.py to fix the broken task metadata or patch markers before retrying.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect the worker error stored in implementation_state.json.",
-    }
+    },
+    "correction-handling": {
+        "task": "improve direct correction handling for misunderstood human turns",
+        "runner": patch_correction_handling,
+        "objective": "Add a second bounded self-improvement task that strengthens mutual understanding by handling direct user corrections more honestly and naturally.",
+        "success_completed": "Added a declared correction-handling task that teaches CircleForge to detect obvious misunderstanding signals and respond with direct acknowledgment instead of generic thread-maintenance language.",
+        "success_checks": "python3 implementation_worker.py correction-handling; python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; inspect implementation_state.json",
+        "success_known_risks": "Correction detection still relies on explicit phrase matching and does not yet capture softer or more indirect human corrections.",
+        "success_next_step": "Add a third bounded task that improves post-repair behavior by making the next reply answer the corrected point directly.",
+        "success_resume_hint": "Inspect interpretation.py and dialogue.py around repair handling, then run python3 main.py continuation-latest before deepening correction-aware reply grounding.",
+        "failure_objective": "Record a truthful failure handoff when the correction-handling task cannot patch interpretation/dialogue safely.",
+        "failure_behavior_changed": "No correction-handling improvement was applied; the worker preserved a failure handoff instead of pretending better understanding.",
+        "failure_next_step": "Inspect the missing repair markers in interpretation.py or dialogue.py and update the bounded patch anchors before retrying correction-handling.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the exact patch-anchor failure.",
+    },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"
 
 
 def current_task_id() -> str:
+    if len(sys.argv) > 1:
+        requested = str(sys.argv[1]).strip()
+        if requested in TASKS:
+            return requested
     try:
         state = json.loads(STATE_PATH.read_text())
     except Exception:
@@ -169,7 +221,7 @@ def main() -> int:
             add_continuation_note(
                 objective=task["failure_objective"],
                 completed=f"Task '{task_id}' failed before completion: {exc}",
-                files_changed="implementation_worker.py" if task_id == DEFAULT_TASK_ID else "",
+                files_changed="implementation_worker.py",
                 behavior_changed=task["failure_behavior_changed"],
                 checks_performed="implementation worker caught the exception and preserved failure state",
                 known_risks="The requested bounded task remains incomplete and should not be treated as finished.",

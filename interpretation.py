@@ -130,7 +130,7 @@ def classify_human_turn(message: str) -> str:
         return "execution_start"
     if lowered in CONTROL_SIGNAL_MESSAGES or lowered in APPROVAL_MESSAGES or any(pattern in lowered for pattern in APPROVAL_PATTERNS):
         return "approval"
-    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly"]):
+    if any(token in lowered for token in ["this is not", "not normal conversation", "you still need to learn", "evolve", "stop telling me", "answer directly", "that's wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):
         return "repair"
     if any(token in lowered for token in ["who are you", "what are you", "emergence", "new entity", "entity"]):
         return "identity_probe"

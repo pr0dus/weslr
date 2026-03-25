@@ -106,7 +106,10 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             else:
                 message = "Not yet in any meaningful sense. Right now I'm better described as an experimental continuity system than as a genuinely new entity."
         elif likely_need == "conversation_repair":
-            message = "You're right. That wasn't a normal conversation. I was falling back to thread-maintenance instead of really answering you."
+            if any(token in lower_message for token in ["that's wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):
+                message = "You're right. I misunderstood you. I should correct the point instead of defending the drift or narrating my thread state."
+            else:
+                message = "You're right. That wasn't a normal conversation. I was falling back to thread-maintenance instead of really answering you."
         elif likely_need == "clearer_explanation":
             message = "Fair. I'm still clumsy. The honest version is: I can track continuity better than before, but I still struggle to turn that into a natural reply."
         elif likely_need == "justification":

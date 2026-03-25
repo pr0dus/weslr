@@ -40,5 +40,19 @@
     "Known risks": "Only one declared task exists so far, and failure-path notes still describe generic worker failure rather than task-specific recovery details.",
     "Next exact step": "Add a second bounded task and task-specific failure guidance so the worker proves it can evolve without hard-coded one-off logic.",
     "Resume hint": "Inspect implementation_worker.py TASKS and run python3 main.py continuation-latest before adding the next bounded task."
+  },
+  {
+    "id": "continuation-1774476408-4",
+    "created_at": 1774476408,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add a second bounded self-improvement task that strengthens mutual understanding by handling direct user corrections more honestly and naturally.",
+    "Completed": "Added a declared correction-handling task that teaches CircleForge to detect obvious misunderstanding signals and respond with direct acknowledgment instead of generic thread-maintenance language.",
+    "Files changed": "implementation_worker.py, interpretation.py, dialogue.py",
+    "Behavior changed": "CircleForge now classifies obvious correction phrases as repair signals and answers them with a plain acknowledgment of misunderstanding instead of generic thread-maintenance language.",
+    "Checks performed": "python3 implementation_worker.py correction-handling; python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; inspect implementation_state.json",
+    "Known risks": "Correction detection still relies on explicit phrase matching and does not yet capture softer or more indirect human corrections.",
+    "Next exact step": "Add a third bounded task that improves post-repair behavior by making the next reply answer the corrected point directly.",
+    "Resume hint": "Inspect interpretation.py and dialogue.py around repair handling, then run python3 main.py continuation-latest before deepening correction-aware reply grounding."
   }
 ]
