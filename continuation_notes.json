@@ -250,5 +250,19 @@
     "Known risks": "The first timestamp-aware timeline entry can still classify an older milestone as newly visible because prior history points lacked milestone timestamps; future entries should behave correctly once the new baseline settles. Timeline is still text-heavy.",
     "Next exact step": "Let a few fresh snapshots accumulate, then tighten the migration edge case if needed and consider collapsing calm carried-context entries so the timeline highlights only meaningful transitions by default.",
     "Resume hint": "Generate several new dashboard snapshots, inspect identity_timeline entries for milestone/carried_milestone behavior, and then decide whether to suppress migration-era false-new milestones or add timeline filtering."
+  },
+  {
+    "id": "continuation-1774481385-19",
+    "created_at": 1774481385,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Collapse calm carried-context identity timeline entries so operators see meaningful transitions first instead of a long tail of low-signal continuity rows.",
+    "Completed": "Added calm-run collapsing to identity_timeline so consecutive no-change transitions with only carried milestone context compress into a single summary row; updated dashboard timeline rendering to show collapsed runs distinctly.",
+    "Files changed": "sim.py",
+    "Behavior changed": "identity_timeline can now emit collapsed summary entries for calm carried-context runs; dashboard timeline shows fewer low-signal rows while preserving milestone context in the collapsed summary.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified identity_timeline collapsed entries and dashboard HTML collapsed-run rendering",
+    "Known risks": "The migration-era timestamp baseline still causes the newest timeline rows to sometimes classify an older milestone as newly visible, so a few noisy rows may persist until more fresh snapshots replace the transition window. Further filtering may be needed.",
+    "Next exact step": "Suppress or specially label migration-era false-new milestone rows once enough fresh snapshots exist, then consider hiding no-change rows entirely unless the operator explicitly expands them.",
+    "Resume hint": "Generate several fresh dashboard snapshots, inspect identity_timeline for repeated milestone_is_new rows, then decide whether to add a migration-baseline cutoff or an expandable calm-history toggle."
   }
 ]

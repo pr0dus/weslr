@@ -5857,7 +5857,7 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
     recent = [point for point in history[-max(2, window):] if point.get('identity_core')]
     if len(recent) < 2:
         return {'window': len(recent), 'entries': [], 'summary': 'Not enough identity history yet for a timeline view.'}
-    entries = []
+    raw_entries = []
     for prev, curr in zip(recent[:-1], recent[1:]):
         prev_identity = prev.get('identity_core') or {}
         curr_identity = curr.get('identity_core') or {}
@@ -5875,7 +5875,7 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
         milestone_at = int(curr_identity.get('latest_evolution_at', 0) or 0)
         milestone_summary = str(curr_identity.get('latest_evolution_summary') or '').strip()
         milestone_is_new = bool(milestone_at and prev_generated_at < milestone_at <= curr_generated_at)
-        entries.append({
+        raw_entries.append({
             'from_generated_at': prev_generated_at,
             'to_generated_at': curr_generated_at,
             'tick_span': tick_span,
@@ -5888,11 +5888,37 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
             'changed': bool(diff.get('changed')),
             'milestone_is_new': milestone_is_new,
         })
-    changed_count = sum(1 for entry in entries if entry.get('changed'))
+    entries = []
+    calm_run = []
+    for entry in raw_entries:
+        calm = (not entry.get('changed')) and bool(entry.get('carried_milestone')) and not entry.get('milestone')
+        if calm:
+            calm_run.append(entry)
+            continue
+        if calm_run:
+            entries.append({
+                'collapsed': True,
+                'tick_span': f"{calm_run[0].get('tick_span', '')} … {calm_run[-1].get('tick_span', '')}",
+                'summary': f"{len(calm_run)} calm transition(s) with carried milestone context",
+                'carried_milestone': calm_run[-1].get('carried_milestone', ''),
+                'changed': False,
+            })
+            calm_run = []
+        entries.append(entry)
+    if calm_run:
+        entries.append({
+            'collapsed': True,
+            'tick_span': f"{calm_run[0].get('tick_span', '')} … {calm_run[-1].get('tick_span', '')}",
+            'summary': f"{len(calm_run)} calm transition(s) with carried milestone context",
+            'carried_milestone': calm_run[-1].get('carried_milestone', ''),
+            'changed': False,
+        })
+    changed_count = sum(1 for entry in raw_entries if entry.get('changed'))
+    collapsed_count = sum(1 for entry in entries if entry.get('collapsed'))
     return {
         'window': len(recent),
         'entries': entries[-6:],
-        'summary': f"{changed_count} of {len(entries)} recent identity transitions carried salient change.",
+        'summary': f"{changed_count} of {len(raw_entries)} recent identity transitions carried salient change; {collapsed_count} calm run(s) collapsed.",
     }
 
 
@@ -6048,6 +6074,13 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     identity_core = payload.get('identity_core', {})
     timeline_entries = []
     for item in ((payload.get('identity_timeline') or {}).get('entries') or []):
+        if item.get('collapsed'):
+            entry = f"<li><strong>{escape(str(item.get('tick_span', '')))}</strong> · <span class='muted'>{escape(str(item.get('summary', '')))}</span>"
+            if item.get('carried_milestone'):
+                entry += f"<br><span class='muted'>carried context: {escape(str(item.get('carried_milestone', '')))}</span>"
+            entry += "</li>"
+            timeline_entries.append(entry)
+            continue
         entry = f"<li><strong>{escape(str(item.get('tick_span', '')))}</strong> · {escape(str(item.get('from_phase', '')))} → {escape(str(item.get('to_phase', '')))}<br><span class='muted'>{escape(str(item.get('summary', '')))}</span>"
         if item.get('milestone'):
             entry += f"<br><span class='muted'>new milestone: {escape(str(item.get('milestone', '')))}</span>"
