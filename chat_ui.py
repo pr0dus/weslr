@@ -156,13 +156,16 @@ def message_asks_for_code_suggestions(message: str) -> bool:
     return any(token in lowered for token in [
         "suggest code",
         "coding",
-        "implement",
         "changed in your coding",
         "what needs to be changed",
         "needs to be changed",
         "change in your coding",
-        "do it",
     ])
+
+
+def message_asks_can_implement(message: str) -> bool:
+    lowered = str(message or "").strip().lower().rstrip(" .!?")
+    return any(token in lowered for token in ["can you implement", "will you implement", "could you implement"])
 
 
 def message_is_control_approval(message: str) -> bool:
@@ -267,6 +270,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 if message_is_control_approval(message):
                     immediate_reply = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                elif message_asks_can_implement(message):
+                    immediate_reply = "Yes — if implementation is allowed, I should stop restating the plan and start applying one concrete fix."
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 elif message_asks_for_code_suggestions(message):
                     immediate_reply = synthesize_code_change_reply()

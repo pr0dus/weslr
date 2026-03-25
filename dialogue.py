@@ -111,8 +111,14 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
             asks_about_its_own_learning = any(token in lower_message for token in ["learn", "would you learn", "can you learn"]) and any(token in lower_message for token in ["you", "yourself"])
             asks_about_its_own_understanding = any(token in lower_message for token in ["understand me", "do you understand", "can you understand"])
+            asks_how_are_you = lower_message in {"how are you?", "how are you", "how're you", "howre you"}
+            asks_can_you_implement = any(token in lower_message for token in ["can you implement", "will you implement", "could you implement"])
 
-            if has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
+            if asks_how_are_you:
+                message = "Uneven, honestly — better than before at keeping a thread, still weak at turning that into natural understanding."
+            elif asks_can_you_implement:
+                message = "Yes, if implementation is allowed, I should move from listing changes to actually making them. The next step would be to pick one concrete fix and apply it instead of repeating the whole plan."
+            elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
             elif asks_about_its_own_learning:
                 message = "A little, yes. I can accumulate continuity inside the run, but the real question is whether I learn appropriately instead of just repeating patterns."
