@@ -4172,6 +4172,44 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
 
     interpreted_turn = interpret_human_turn(message)
     topic_list = [topic for topic in (topics or interpreted_turn.get("topics") or infer_human_topics(message)) if topic]
+    if not topic_list:
+        recent_human_messages = list(relationships.get("recent_human_messages") or [])
+        recent_topics = []
+        for item in reversed(recent_human_messages[-6:]):
+            for topic in list(item.get("topics") or []):
+                topic = str(topic).strip()
+                if topic and topic not in recent_topics:
+                    recent_topics.append(topic)
+        active_concern_topics = [str(topic).strip() for topic in (((self_state.get("memory_layers") or {}).get("working") or {}).get("active_concern_topics") or []) if str(topic).strip()]
+        semantic = (((self_state.get("memory_layers") or {}).get("semantic") or {}))
+        continuity_anchors = [str(topic).strip() for topic in (semantic.get("continuity_anchors") or []) if str(topic).strip()]
+        stable_topics = [str(topic).strip() for topic in (semantic.get("stable_topics") or []) if str(topic).strip()]
+        unresolved_threads = [str(topic).strip() for topic in (relationships.get("unresolved_shared_threads") or []) if str(topic).strip()]
+        candidate_topics = []
+        for topic in unresolved_threads + continuity_anchors + stable_topics + active_concern_topics + recent_topics + [str(relationships.get("last_human_topic") or "").strip()]:
+            if topic and topic not in candidate_topics:
+                candidate_topics.append(topic)
+        def fallback_topic_score(topic: str) -> tuple[float, float]:
+            lowered = topic.lower()
+            score = 0.0
+            if topic in unresolved_threads:
+                score += 3.0
+            if topic in continuity_anchors:
+                score += 2.0
+            if topic in stable_topics:
+                score += 1.5
+            if topic in active_concern_topics:
+                score += 1.0
+            if any(token in lowered for token in ["understand", "continuity", "memory", "conversation", "learn"]):
+                score += 1.25
+            if lowered.startswith("now let's") or lowered.startswith("lets ") or lowered.startswith("let's "):
+                score -= 1.5
+            recency_bonus = 0.0
+            if topic in recent_topics:
+                recency_bonus = max(0.0, 0.6 - (0.1 * recent_topics.index(topic)))
+            return (score, recency_bonus)
+        candidate_topics.sort(key=fallback_topic_score, reverse=True)
+        topic_list = [topic for topic in candidate_topics if topic][:1]
     research_trace = maybe_autonomous_research_from_human_turn(
         message,
         topic_list,

@@ -1,6 +1,18 @@
 from __future__ import annotations
 
 
+LOW_INFORMATION_REFERENTIAL_PHRASES = [
+    "no, i mean",
+    "no i mean",
+    "i mean the thing",
+    "the thing that matters",
+    "what i meant",
+    "that one",
+    "the important thing",
+    "more overall",
+]
+
+
 def infer_human_topics(message: str) -> list[str]:
     original = str(message or "").strip()
     lowered = original.lower()
@@ -29,6 +41,9 @@ def infer_human_topics(message: str) -> list[str]:
 
     if topics:
         return topics[:4]
+
+    if any(phrase in lowered for phrase in LOW_INFORMATION_REFERENTIAL_PHRASES):
+        return []
 
     cleaned = lowered
     for phrase in [
