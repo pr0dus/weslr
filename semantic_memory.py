@@ -8,18 +8,27 @@ def ensure_semantic_defaults(semantic: dict, *, identity_anchor: str, now_ts: in
     semantic.setdefault("stable_topics", [])
     semantic.setdefault("durable_lessons", [])
     semantic.setdefault("continuity_anchors", [])
-    semantic.setdefault("last_updated_at", now_ts)
+    semantic.setdefault("last_updated_at", 0)
     return semantic
 
 
 def sync_semantic_with_active_threads(semantic: dict, active_threads: list[str], now_ts: int) -> dict:
-    continuity_anchors = semantic.setdefault("continuity_anchors", [])
+    continuity_anchors = list(semantic.setdefault("continuity_anchors", []))
+    stable_topics = list(semantic.get("stable_topics") or [])
+    changed = False
     for topic in active_threads[:12]:
         if topic not in continuity_anchors:
             continuity_anchors.append(topic)
+            changed = True
+    merged_topics = list(dict.fromkeys(stable_topics + active_threads))[-24:]
+    if continuity_anchors[-24:] != (semantic.get("continuity_anchors") or []):
+        changed = True
+    if merged_topics != (semantic.get("stable_topics") or []):
+        changed = True
     semantic["continuity_anchors"] = continuity_anchors[-24:]
-    semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + active_threads))[-24:]
-    semantic["last_updated_at"] = now_ts
+    semantic["stable_topics"] = merged_topics
+    if changed:
+        semantic["last_updated_at"] = now_ts
     return semantic
 
 

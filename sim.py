@@ -597,7 +597,7 @@ def default_memory_layers(now_ts: int | None = None) -> dict:
             "stable_topics": [],
             "durable_lessons": [],
             "continuity_anchors": [],
-            "last_updated_at": now_ts,
+            "last_updated_at": 0,
         },
         "archive": {
             "summary": "Cold storage index for old raw traces and compacted material.",
