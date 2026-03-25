@@ -166,5 +166,19 @@
     "Known risks": "The milestone rules are still heuristic and may need tuning once more varied human/continuity states exist; current dashboard history still snapshots identity state but does not yet compute explicit identity-drift deltas.",
     "Next exact step": "Add identity-history diffing across dashboard snapshots so operators can see what actually changed between identity milestones instead of only reading the latest identity core.",
     "Resume hint": "Start from RELEASES.md v0.0.99, run python3 main.py identity-core and dashboard, then inspect how identity_core appears in dashboard history before implementing explicit delta views."
+  },
+  {
+    "id": "continuation-1774480490-13",
+    "created_at": 1774480490,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Make identity continuity historical and comparable by storing compact identity snapshots in dashboard history and computing explicit operator-visible diffs between recent snapshots.",
+    "Completed": "Added compact identity snapshots into dashboard history, implemented identity-history diffing, exposed an identity_drift payload/report, emitted identity-drift events, and rendered an Identity Drift dashboard panel.",
+    "Files changed": "sim.py",
+    "Behavior changed": "dashboard history points now include compact identity_core snapshots; dashboard/dashboard.json now includes identity_drift; event_feed can emit identity-drift entries; dashboard/index.html now shows an Identity Drift panel summarizing recent identity change.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified dashboard/dashboard.json contains identity_drift and history identity_core snapshots; verified dashboard/index.html contains Identity Drift section",
+    "Known risks": "The first diff after introducing identity history can look large because older snapshots lacked identity data; future diffs should be more meaningful once the baseline is established. Diff summaries are still heuristic and may need pruning if they become noisy.",
+    "Next exact step": "Normalize and prune identity diff summaries so they prefer the most human-meaningful changes, then consider adding identity trend/history views over the last 5–10 snapshots instead of only latest-pair diffs.",
+    "Resume hint": "Run python3 main.py dashboard, inspect payload['identity_drift'] and the latest two dashboard history entries, then tune diff salience before building longer-range identity trend views."
   }
 ]

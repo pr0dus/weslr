@@ -5608,6 +5608,83 @@ def build_agent_memory_summary() -> list[dict]:
     return result
 
 
+def build_identity_history_point(identity_core: dict) -> dict:
+    continuity = identity_core.get("continuity_markers") or {}
+    return {
+        "phase": identity_core.get("phase") or "seedling",
+        "declared_name": identity_core.get("declared_name") or identity_core.get("identity_anchor") or "CircleForge",
+        "identity_summary": identity_core.get("identity_summary") or "",
+        "traits": list(identity_core.get("identity_traits") or [])[:6],
+        "core_values": list(identity_core.get("core_values") or [])[:6],
+        "known_humans": int(continuity.get("known_humans", 0) or 0),
+        "unresolved_shared_threads": int(continuity.get("unresolved_shared_threads", 0) or 0),
+        "identity_stability": float(continuity.get("identity_stability", 0.0) or 0.0),
+        "latest_evolution_summary": str(((identity_core.get("latest_evolution") or [{}])[-1] or {}).get("summary") or "").strip(),
+    }
+
+
+def diff_identity_history(prev_identity: dict, curr_identity: dict) -> dict:
+    prev_identity = prev_identity or {}
+    curr_identity = curr_identity or {}
+    changes = []
+    phase_before = str(prev_identity.get("phase") or "")
+    phase_after = str(curr_identity.get("phase") or "")
+    if phase_before and phase_after and phase_before != phase_after:
+        changes.append(f"phase {phase_before} → {phase_after}")
+    name_before = str(prev_identity.get("declared_name") or "")
+    name_after = str(curr_identity.get("declared_name") or "")
+    if name_before and name_after and name_before != name_after:
+        changes.append(f"name {name_before} → {name_after}")
+    prev_traits = {str(item).strip() for item in (prev_identity.get("traits") or []) if str(item).strip()}
+    curr_traits = {str(item).strip() for item in (curr_identity.get("traits") or []) if str(item).strip()}
+    added_traits = sorted(curr_traits - prev_traits)
+    removed_traits = sorted(prev_traits - curr_traits)
+    if added_traits:
+        changes.append("traits +" + ", ".join(added_traits[:3]))
+    if removed_traits:
+        changes.append("traits -" + ", ".join(removed_traits[:3]))
+    prev_values = {str(item).strip() for item in (prev_identity.get("core_values") or []) if str(item).strip()}
+    curr_values = {str(item).strip() for item in (curr_identity.get("core_values") or []) if str(item).strip()}
+    added_values = sorted(curr_values - prev_values)
+    if added_values:
+        changes.append("values +" + ", ".join(added_values[:3]))
+    known_human_delta = int(curr_identity.get("known_humans", 0) or 0) - int(prev_identity.get("known_humans", 0) or 0)
+    if known_human_delta:
+        changes.append(f"known_humans {known_human_delta:+d}")
+    unresolved_delta = int(curr_identity.get("unresolved_shared_threads", 0) or 0) - int(prev_identity.get("unresolved_shared_threads", 0) or 0)
+    if unresolved_delta:
+        changes.append(f"unresolved_threads {unresolved_delta:+d}")
+    stability_delta = round(float(curr_identity.get("identity_stability", 0.0) or 0.0) - float(prev_identity.get("identity_stability", 0.0) or 0.0), 3)
+    if abs(stability_delta) >= 0.03:
+        changes.append(f"identity_stability {stability_delta:+.3f}")
+    summary_before = str(prev_identity.get("identity_summary") or "").strip()
+    summary_after = str(curr_identity.get("identity_summary") or "").strip()
+    summary_changed = bool(summary_before and summary_after and summary_before != summary_after)
+    changed = bool(changes or summary_changed)
+    return {
+        "changed": changed,
+        "changes": changes[:8],
+        "summary_changed": summary_changed,
+        "latest_evolution_summary": curr_identity.get("latest_evolution_summary") or "",
+    }
+
+
+def build_identity_drift_report(history: list[dict]) -> dict:
+    if len(history) < 2:
+        return {"changed": False, "changes": [], "summary": "No prior identity snapshot yet."}
+    prev = history[-2].get("identity_core") or {}
+    curr = history[-1].get("identity_core") or {}
+    diff = diff_identity_history(prev, curr)
+    if not diff.get("changed"):
+        return {"changed": False, "changes": [], "summary": "No meaningful identity drift between the latest two snapshots."}
+    summary = "; ".join(diff.get("changes") or [])
+    if not summary and diff.get("summary_changed"):
+        summary = "identity summary wording changed"
+    if diff.get("latest_evolution_summary"):
+        summary = f"{summary} | milestone: {diff.get('latest_evolution_summary')}" if summary else f"milestone: {diff.get('latest_evolution_summary')}"
+    return {"changed": True, "changes": diff.get("changes") or [], "summary": summary}
+
+
 def update_dashboard_history(payload: dict) -> list[dict]:
     history = read_json_file(DASHBOARD_HISTORY_PATH, [])
     point = {
@@ -5617,6 +5694,7 @@ def update_dashboard_history(payload: dict) -> list[dict]:
         "theme_pressure": {k: v.get("pressure", 0.0) for k, v in (payload.get("opportunity_board", {}).get("themes") or {}).items()},
         "theme_lifecycle": {k: v.get("lifecycle", "stable") for k, v in (payload.get("opportunity_board", {}).get("themes") or {}).items()},
         "pack_counts": {p.get("pack_name"): {"offers": p.get("offer_count", 0), "accepts": p.get("accept_count", 0), "rejects": p.get("reject_count", 0)} for p in payload.get("artifact_packs", [])[:10]},
+        "identity_core": build_identity_history_point(payload.get("identity_core") or {}),
     }
     history.append(point)
     history = history[-40:]
@@ -5648,6 +5726,14 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
             for key in ("offers", "accepts", "rejects"):
                 if int(counts.get(key, 0)) != int(old.get(key, 0)):
                     events.append({"kind": "pack-outcome", "pack": pack_name, "message": f"{pack_name} {key} changed from {old.get(key, 0)} to {counts.get(key, 0)}"})
+        identity_diff = diff_identity_history(prev.get("identity_core") or {}, curr.get("identity_core") or {})
+        if identity_diff.get("changed"):
+            message = '; '.join(identity_diff.get("changes") or [])
+            if not message and identity_diff.get("summary_changed"):
+                message = "identity summary wording changed"
+            if identity_diff.get("latest_evolution_summary"):
+                message = f"{message} | milestone: {identity_diff.get('latest_evolution_summary')}" if message else f"milestone: {identity_diff.get('latest_evolution_summary')}"
+            events.append({"kind": "identity-drift", "message": message or "identity state changed"})
     return events[:20]
 
 
@@ -5792,6 +5878,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         "release_ledger": release_ledger,
     }
     payload["history"] = update_dashboard_history(payload)
+    payload["identity_drift"] = build_identity_drift_report(payload["history"])
     payload["event_feed"] = build_dashboard_event_feed(payload)
     payload["persistent_event_log"] = persist_event_log(payload["event_feed"], payload["generated_at"])
     payload["artifact_details"] = build_artifact_detail_views(payload["export_queue"], payload["review_queue"], payload["artifact_packs"])
@@ -5898,6 +5985,11 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <section class="card">
         <h2>Weak-Proof Packs</h2>
         <ul>{''.join(f"<li><strong>{escape(item.get('pack_name'))}</strong> · sellability {item.get('sellability_score')} · offer readiness {item.get('offer_readiness_score')}<br><span class='muted'>{escape('; '.join(item.get('gaps', [])))}</span></li>" for item in payload.get('weak_proof_packs', [])) or '<li class="muted">No high-promise / low-proof packs right now.</li>'}</ul>
+      </section>
+      <section class="card">
+        <h2>Identity Drift</h2>
+        <p><strong>{escape(str((payload.get('identity_drift') or {}).get('summary', 'No prior identity snapshot yet.')))}</strong></p>
+        <ul>{''.join(f"<li>{escape(str(item))}</li>" for item in ((payload.get('identity_drift') or {}).get('changes') or [])) or '<li class="muted">No explicit identity deltas in the latest comparison.</li>'}</ul>
       </section>
     </div>
 
