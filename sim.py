@@ -951,7 +951,8 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
 
         has_recent_human_exchange = kind_counts.get("exchange", 0) > 0
         matching_recent_exchange_ids = [source_id for source_id in source_ids if source_id in recent_exchange_ids]
-        preserve_hot_unresolved_exchange = unresolved and has_recent_human_exchange and len(matching_recent_exchange_ids) <= 1 and len(matching_recent_exchange_ids) > 0
+        latest_recent_exchange_id = (working.get("recent_exchange_ids") or [])[-1] if (working.get("recent_exchange_ids") or []) else ""
+        preserve_hot_unresolved_exchange = unresolved and has_recent_human_exchange and latest_recent_exchange_id in matching_recent_exchange_ids
         trim_allowed = not any(tier == "keep-hot" for tier in tiers) and not preserve_hot_unresolved_exchange
         if trim_allowed:
             for source_id in source_ids:
