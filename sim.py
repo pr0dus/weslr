@@ -4171,6 +4171,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         relationships["known_humans"].append(human_name)
 
     interpreted_turn = interpret_human_turn(message)
+    clarified_target = str(interpreted_turn.get("clarified_target") or "").strip()
     topic_list = [topic for topic in (topics or interpreted_turn.get("topics") or infer_human_topics(message)) if topic]
     if not topic_list:
         recent_human_messages = list(relationships.get("recent_human_messages") or [])
@@ -4226,7 +4227,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
             save_public_memory=save_public_memory,
         ),
     )
-    relationships["last_human_topic"] = topic_list[0] if topic_list else relationships.get("last_human_topic", "")
+    relationships["last_human_topic"] = clarified_target or (topic_list[0] if topic_list else relationships.get("last_human_topic", ""))
     relationships["human_salience"] = clamp01(float(relationships.get("human_salience", 0.1)) + 0.03 + (0.01 * min(len(topic_list), 2)))
 
     profile = relationships["human_profiles"].setdefault(human_name, {

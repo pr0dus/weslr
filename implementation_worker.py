@@ -266,6 +266,20 @@ TASKS = {
         "failure_next_step": "Inspect interpretation.py and dialogue.py import/field wiring before retrying clarification-state promotion.",
         "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the interpretation/dialogue migration failure.",
     },
+    "continuity-clarified-target": {
+        "task": "propagate clarified targets into continuity memory and thread updates",
+        "runner": lambda: {"summary": "Clarified-target continuity wiring is implemented in sim.py, perception.py, and continuity.py.", "changed": False, "files_changed": "implementation_worker.py, sim.py, perception.py, continuity.py", "behavior_changed": "Human exchange records and thread updates now preserve and prefer clarified_target so corrections can affect continuity state as well as immediate replies."},
+        "objective": "Use clarified_target during human-exchange recording and thread update logic so corrected targets affect continuity memory as well as immediate replies.",
+        "success_completed": "Stored clarified_target in serialized human exchange records, preferred it for last_human_topic, and taught thread updates to prioritize corrected targets during continuity tracking.",
+        "success_checks": "python3 -m py_compile sim.py perception.py continuity.py implementation_worker.py main.py; python3 main.py continuation-latest",
+        "success_known_risks": "Clarified targets now influence continuity state, but semantic/episodic distillation still does not explicitly weight correction-derived targets differently from ordinary topics.",
+        "success_next_step": "Teach episodic/semantic memory distillation to recognize explicit correction-derived targets as continuity-relevant signals instead of treating them like ordinary topics.",
+        "success_resume_hint": "Inspect sim.py record_human_exchange, perception.py build_human_exchange_payload, and continuity.py apply_human_exchange_to_threads before extending clarified-target salience into memory distillation.",
+        "failure_objective": "Record a truthful failure handoff when clarified-target continuity wiring cannot be completed safely.",
+        "failure_behavior_changed": "No clarified-target continuity propagation was completed; immediate reply handling remained ahead of continuity memory instead of pretending the memory path had caught up.",
+        "failure_next_step": "Inspect sim.py, perception.py, and continuity.py field wiring before retrying clarified-target continuity propagation.",
+        "failure_resume_hint": "Run python3 main.py continuation-latest and inspect implementation_state.json for the continuity propagation failure.",
+    },
 }
 DEFAULT_TASK_ID = "dialogue-actual-coding"
 

@@ -8,174 +8,885 @@
   ],
   "affect": {
     "curiosity": 0.99,
-    "tension": 0.39,
+    "tension": 0.585,
     "hope": 0.99,
-    "stability": 0.92,
-    "attachment": 0.99
+    "stability": 0.99,
+    "attachment": 0.9
   },
   "continuity": {
-    "session_count": 120,
-    "ticks_lived": 120,
-    "memory_bonds": 0.99,
-    "identity_stability": 0.67,
+    "session_count": 72,
+    "ticks_lived": 72,
+    "memory_bonds": 0.7,
+    "identity_stability": 0.772,
     "unfinished_threads": [
+      "what part of the world is still under-understood?",
+      "enrich the local world",
       "backup confidence",
-      "What is still unclear about backup confidence?",
       "What new uncertainty appeared after inspect on backup confidence?",
       "What new uncertainty appeared after research on backup confidence?",
-      "repeated friction around inspect"
+      "repeated friction around inspect",
+      "What is still unclear about backup confidence?"
     ]
   },
   "relationships": {
-    "human_salience": 0.65,
+    "human_salience": 0.688,
     "known_humans": [
-      "Robert"
+      "interlocutor_001"
     ],
-    "last_human_topic": "CircleForge",
+    "last_human_topic": "understanding overall",
     "human_profiles": {
-      "Robert": {
-        "message_count": 1,
-        "salience": 0.24,
-        "trust": 0.23,
-        "attachment": 0.145,
+      "interlocutor_001": {
+        "message_count": 7,
+        "salience": 0.648,
+        "trust": 0.41,
+        "attachment": 0.388,
         "known_topics": [
-          "CircleForge",
-          "human continuity"
+          "enrich the local world",
+          "backup confidence",
+          "understanding",
+          "understanding overall"
         ],
         "recurring_topics": {
-          "CircleForge": 1,
-          "human continuity": 1
+          "enrich the local world": 1,
+          "backup confidence": 6,
+          "understanding": 2,
+          "understanding overall": 1
         },
         "unresolved_shared_threads": [
-          "CircleForge",
-          "human continuity"
+          "backup confidence",
+          "understanding",
+          "understanding overall"
         ],
-        "last_message_at": 1774265292,
-        "last_message_summary": "Continue CircleForge with the conversation-memory layer and human continuity.",
-        "relationship_summary": "Robert is a recurring human with 1 remembered exchanges around CircleForge, human continuity."
+        "last_message_at": 1774476942,
+        "last_message_summary": "No, I mean understanding overall",
+        "relationship_summary": "You is a recurring human with 7 remembered exchanges around enrich the local world, backup confidence, understanding.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
       }
     },
     "recent_human_messages": [
       {
-        "human": "Robert",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [],
+        "message": "Then implement suggested actions. Go for coding",
+        "response": "Understood. I am starting one concrete implementation step now.",
+        "turn_type": "execution_start",
+        "intent": "start_approved_work",
+        "stance": "supportive",
+        "reply_shape": "acknowledge_and_start",
+        "likely_need": "start_execution",
+        "created_at": 1774463565,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
         "topics": [
-          "CircleForge",
-          "human continuity"
+          "backup confidence"
         ],
-        "message": "Continue CircleForge with the conversation-memory layer and human continuity.",
-        "response": "implemented memory structure",
-        "created_at": 1774265292,
+        "message": "Tell me when finished",
+        "response": "Understood. I should report back when the current implementation step is finished instead of treating that as a topic.",
+        "turn_type": "completion_notify",
+        "intent": "notify_on_completion",
+        "stance": "supportive",
+        "reply_shape": "acknowledge_and_track",
+        "likely_need": "track_completion",
+        "created_at": 1774463570,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message": "Hey",
+        "response": "",
+        "turn_type": "greeting",
+        "intent": "open conversation",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774463647,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message": "Suggest code for your improvement",
+        "response": "The code changes I should implement next are: (1) stronger query rewriting so messy human requests turn into cleaner research intents, (2) multi-step handling so search requests also produce synthesis and concrete next actions, (3) instruct",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774463698,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message": "Go for implement",
+        "response": "",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774463730,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "understanding"
+        ],
+        "message": "Integrate code for better understanding",
+        "response": "",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774464787,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "understanding overall",
+          "understanding"
+        ],
+        "clarified_target": "understanding overall",
+        "has_explicit_clarification": true,
+        "message": "No, I mean understanding overall",
+        "response": "Understood.",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1774476942,
         "unresolved": true
       }
     ],
+    "recent_human_exchanges": [
+      {
+        "id": "human-exchange-interlocutor_001-1774463565-1",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [],
+        "message_summary": "Then implement suggested actions. Go for coding",
+        "response_summary": "Understood. I am starting one concrete implementation step now.",
+        "created_at": 1774463565,
+        "source": "human_exchange",
+        "message": "Then implement suggested actions. Go for coding",
+        "response": "Understood. I am starting one concrete implementation step now.",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774463570-2",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message_summary": "Tell me when finished",
+        "response_summary": "Understood. I should report back when the current implementation step is finished instead of tre\u2026",
+        "created_at": 1774463570,
+        "source": "human_exchange",
+        "message": "Tell me when finished",
+        "response": "Understood. I should report back when the current implementation step is finished instead of treating that as a topic.",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774463647-3",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message_summary": "Hey",
+        "response_summary": "",
+        "created_at": 1774463647,
+        "source": "human_exchange",
+        "message": "Hey",
+        "response": "",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774463698-4",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message_summary": "Suggest code for your improvement",
+        "response_summary": "The code changes I should implement next are: (1) stronger query rewriting so messy human reques\u2026",
+        "created_at": 1774463698,
+        "source": "human_exchange",
+        "message": "Suggest code for your improvement",
+        "response": "The code changes I should implement next are: (1) stronger query rewriting so messy human requests turn into cleaner research intents, (2) multi-step handling so search requests also produce synthesis and concrete next actions, (3) instruct",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774463730-5",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "backup confidence"
+        ],
+        "message_summary": "Go for implement",
+        "response_summary": "",
+        "created_at": 1774463730,
+        "source": "human_exchange",
+        "message": "Go for implement",
+        "response": "",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774464787-6",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "understanding"
+        ],
+        "message_summary": "Integrate code for better understanding",
+        "response_summary": "",
+        "created_at": 1774464787,
+        "source": "human_exchange",
+        "message": "Integrate code for better understanding",
+        "response": "",
+        "unresolved": true,
+        "kind": "human_exchange"
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774476942-7",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "understanding overall",
+          "understanding"
+        ],
+        "clarified_target": "understanding overall",
+        "has_explicit_clarification": true,
+        "message_summary": "No, I mean understanding overall",
+        "response_summary": "Understood.",
+        "created_at": 1774476942,
+        "source": "human_exchange",
+        "message": "No, I mean understanding overall",
+        "response": "Understood.",
+        "unresolved": true,
+        "kind": "human_exchange"
+      }
+    ],
+    "conversation_threads": {
+      "enrich the local world": {
+        "topic": "enrich the local world",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "simulation stayed with theme: enrich the local world",
+        "last_response_summary": "current intent: maintain conversation continuity with you",
+        "last_exchange_at": 1774463565,
+        "last_human_exchange_at": 0,
+        "last_passive_reinforced_at": 1774463565,
+        "passive_reinforcement_count": 1,
+        "status": "open",
+        "recent_exchange_ids": []
+      },
+      "backup confidence": {
+        "topic": "backup confidence",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 6,
+        "last_message_summary": "simulation stayed with theme: backup confidence",
+        "last_response_summary": "current intent: research around backup confidence | inner pull: communicator woke on human-continuity-pressure around ba",
+        "last_exchange_at": 1774464790,
+        "last_human_exchange_at": 1774463730,
+        "last_passive_reinforced_at": 1774464790,
+        "passive_reinforcement_count": 1,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774463570-2",
+          "human-exchange-interlocutor_001-1774463647-3",
+          "human-exchange-interlocutor_001-1774463698-4",
+          "human-exchange-interlocutor_001-1774463730-5"
+        ]
+      },
+      "understanding": {
+        "topic": "understanding",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 2,
+        "last_message_summary": "No, I mean understanding overall",
+        "last_response_summary": "Understood.",
+        "last_exchange_at": 1774476942,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774464787-6",
+          "human-exchange-interlocutor_001-1774476942-7"
+        ],
+        "last_human_exchange_at": 1774476942,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0,
+        "clarified_target": ""
+      },
+      "understanding overall": {
+        "topic": "understanding overall",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "No, I mean understanding overall",
+        "last_response_summary": "Understood.",
+        "last_exchange_at": 1774476942,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774476942-7"
+        ],
+        "clarified_target": "understanding overall",
+        "last_human_exchange_at": 1774476942,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      }
+    },
     "unresolved_shared_threads": [
-      "CircleForge",
-      "human continuity"
+      "backup confidence",
+      "understanding",
+      "understanding overall"
     ]
   },
   "active_concerns": [
     {
       "topic": "backup confidence",
       "weight": 0.4,
-      "updated_at": 1774249310
+      "updated_at": 1774464795
     },
     {
       "topic": "What is still unclear about backup confidence?",
       "weight": 0.4,
-      "updated_at": 1774249294
+      "updated_at": 1774464794
     },
     {
-      "topic": "What new uncertainty appeared after inspect on backup confidence?",
-      "weight": 0.48000000000000004,
-      "updated_at": 1774249310
-    },
-    {
-      "topic": "What new uncertainty appeared after research on backup confidence?",
-      "weight": 0.4,
-      "updated_at": 1774249310
-    },
-    {
-      "topic": "repeated friction around inspect",
-      "weight": 0.4,
-      "updated_at": 1774249310
-    },
-    {
-      "topic": "shared thread with Robert: CircleForge",
+      "topic": "shared thread with you: understanding overall",
       "weight": 0.52,
-      "updated_at": 1774265292
-    },
-    {
-      "topic": "shared thread with Robert: human continuity",
-      "weight": 0.52,
-      "updated_at": 1774265292
+      "updated_at": 1774476942
     }
   ],
   "evidence_profile": {
     "outcome_weighted_actions": {
-      "research": {
-        "evidence": 138.0,
-        "positive": 12.42,
+      "build_module": {
+        "evidence": 13.0,
+        "positive": 1.3,
         "strain": 0.0
       },
-      "build_module": {
-        "evidence": 56.0,
-        "positive": 5.6,
+      "research": {
+        "evidence": 50.0,
+        "positive": 4.5,
         "strain": 0.0
+      },
+      "inspect": {
+        "evidence": 19.0,
+        "positive": 0.55,
+        "strain": 2.21
       },
       "trade": {
         "evidence": 5.0,
         "positive": 0.3,
         "strain": 0.0
       },
-      "signal": {
-        "evidence": 38.0,
-        "positive": 3.04,
-        "strain": 0.0
-      },
       "optimize": {
-        "evidence": 103.0,
-        "positive": 10.3,
-        "strain": 0.0
-      },
-      "inspect": {
-        "evidence": 37.5,
-        "positive": 0.44,
-        "strain": 5.33
-      },
-      "rest": {
-        "evidence": 32.0,
-        "positive": 1.92,
+        "evidence": 15.0,
+        "positive": 1.5,
         "strain": 0.0
       },
       "gather": {
-        "evidence": 17.0,
-        "positive": 1.02,
+        "evidence": 4.0,
+        "positive": 0.24,
+        "strain": 0.0
+      },
+      "signal": {
+        "evidence": 19.0,
+        "positive": 1.52,
+        "strain": 0.0
+      },
+      "rest": {
+        "evidence": 9.0,
+        "positive": 0.54,
         "strain": 0.0
       }
     },
     "stable_traits": {
-      "inquiry": 0.646,
-      "coordination": 0.596,
-      "practical_change": 0.71,
-      "self_revision": 0.0,
-      "continuity": 0.459
+      "inquiry": 0.438,
+      "self_revision": 0.08,
+      "practical_change": 0.44,
+      "coordination": 0.36,
+      "continuity": 0.267
     },
     "friction_patterns": {
-      "inspect": 5.36
+      "inspect": 2.24
     },
     "theme_commitments": {
-      "backup confidence": 6.0
+      "enrich the local world": 0.05,
+      "backup confidence": 3.55
     }
   },
   "self_preservation_signals": {
     "continuity_preference": 0.99,
-    "memory_protection": 0.99,
-    "resume_drive": 0.93
+    "memory_protection": 0.746,
+    "resume_drive": 0.648
   },
   "narrative_state": {
     "self_story": "CircleForge is trying to remain continuous through practical_change, inquiry, coordination while learning from outcomes rather than self-flattery.",
-    "last_reflection": "Robert: CircleForge",
-    "relationship_state": "Currently carrying 2 unresolved shared thread(s) with humans."
+    "last_reflection": "you: understanding overall",
+    "relationship_state": "Currently carrying 3 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "Active shared thread: understanding overall with you.",
+    "follow_up_impulse": "Revisit understanding overall with you until the shared thread changes state.",
+    "why_it_matters": "understanding overall matters because shared human context should shape what CircleForge returns to instead of resetting."
   },
-  "updated_at": 1774265292
+  "memory_layers": {
+    "working": {
+      "summary": "Current hot memory for active thinking.",
+      "recent_exchange_ids": [
+        "human-exchange-interlocutor_001-1774463565-1",
+        "human-exchange-interlocutor_001-1774463570-2",
+        "human-exchange-interlocutor_001-1774463647-3",
+        "human-exchange-interlocutor_001-1774463698-4",
+        "human-exchange-interlocutor_001-1774463730-5",
+        "human-exchange-interlocutor_001-1774464787-6",
+        "human-exchange-interlocutor_001-1774476942-7"
+      ],
+      "recent_thought_ids": [
+        "thought-critic-2-1774463565",
+        "thought-observer-3-1774463565",
+        "thought-communicator-3-1774463565",
+        "thought-builder-4-1774463566",
+        "thought-memory_keeper-4-1774463566",
+        "thought-communicator-11-1774463568",
+        "thought-observer-13-1774463574",
+        "thought-communicator-13-1774463574",
+        "thought-memory_keeper-13-1774463574",
+        "thought-critic-14-1774463574",
+        "thought-observer-37-1774463698",
+        "thought-critic-38-1774463698",
+        "thought-communicator-38-1774463698",
+        "thought-memory_keeper-38-1774463698",
+        "thought-builder-39-1774463699",
+        "thought-observer-44-1774463701",
+        "thought-critic-52-1774463732",
+        "thought-memory_keeper-52-1774463732",
+        "thought-observer-61-1774464790",
+        "thought-builder-62-1774464791",
+        "thought-critic-62-1774464791",
+        "thought-communicator-62-1774464791",
+        "thought-memory_keeper-62-1774464791",
+        "thought-memory_keeper-66-1774464793"
+      ],
+      "active_thread_ids": [],
+      "active_concern_topics": [
+        "backup confidence",
+        "understanding",
+        "understanding overall"
+      ],
+      "last_compacted_at": 0,
+      "max_recent_exchanges": 24,
+      "max_recent_thoughts": 80,
+      "max_active_threads": 6
+    },
+    "episodic": {
+      "summary": "Meaningful event memory compressed from raw experience.",
+      "episodes": [],
+      "episode_count": 0,
+      "last_distilled_at": 0,
+      "max_episodes": 240
+    },
+    "semantic": {
+      "summary": "Long-term identity and relationship memory.",
+      "identity_anchors": [
+        "CircleForge"
+      ],
+      "relationship_facts": [],
+      "stable_topics": [],
+      "durable_lessons": [],
+      "continuity_anchors": [],
+      "last_updated_at": 0
+    },
+    "archive": {
+      "summary": "Cold storage index for old raw traces and compacted material.",
+      "archived_items": [],
+      "archived_count": 0,
+      "last_archived_at": 0,
+      "storage_pressure": {
+        "raw_log_bytes": 402514,
+        "communicator_self_bytes": 28242,
+        "db_bytes": 73728,
+        "pressure_level": "normal",
+        "working_pressure_score": 0.3333,
+        "episodic_pressure_score": 0.0,
+        "semantic_pressure_score": 0.0,
+        "bytes_pressure_score": 0.2013,
+        "pressure_score": 0.3333,
+        "recommended_actions": [],
+        "last_checked_at": 1774464795
+      }
+    }
+  },
+  "updated_at": 1774476942,
+  "internal_role_state": {
+    "observer": {
+      "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+      "baseline_wake_chance": 0.22,
+      "refractory_ticks": 1,
+      "last_wake_tick": 71,
+      "last_wake_at": 1774464794,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "observer woke on human-continuity-pressure around backup confidence.",
+      "wake_count": 31,
+      "suppressed_until_tick": 73,
+      "activation": 0.3498,
+      "fatigue": 0.5856,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1958,
+      "last_thought_signature": "observer::backup confidence::observer woke on human-continuity-pressure around backup confidence."
+    },
+    "builder": {
+      "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+      "baseline_wake_chance": 0.16,
+      "refractory_ticks": 2,
+      "last_wake_tick": 70,
+      "last_wake_at": 1774464794,
+      "last_wake_reason": "experiment-pressure",
+      "last_thought_summary": "builder woke on experiment-pressure around backup confidence.",
+      "wake_count": 22,
+      "suppressed_until_tick": 73,
+      "activation": 0.2878,
+      "fatigue": 0.3603,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1846,
+      "last_thought_signature": "builder::backup confidence::builder woke on experiment-pressure around backup confidence."
+    },
+    "critic": {
+      "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+      "baseline_wake_chance": 0.18,
+      "refractory_ticks": 1,
+      "last_wake_tick": 71,
+      "last_wake_at": 1774464794,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "critic woke on human-continuity-pressure around backup confidence.",
+      "wake_count": 33,
+      "suppressed_until_tick": 73,
+      "activation": 0.3825,
+      "fatigue": 0.6781,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1972,
+      "last_thought_signature": "critic::backup confidence::critic woke on human-continuity-pressure around backup confidence."
+    },
+    "communicator": {
+      "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+      "baseline_wake_chance": 0.2,
+      "refractory_ticks": 1,
+      "last_wake_tick": 72,
+      "last_wake_at": 1774464795,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "communicator woke on human-continuity-pressure around backup confidence.",
+      "wake_count": 30,
+      "suppressed_until_tick": 74,
+      "activation": 0.417,
+      "fatigue": 0.6977,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1977,
+      "last_thought_signature": "communicator::backup confidence::communicator woke on human-continuity-pressure around backup confidence."
+    },
+    "memory_keeper": {
+      "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+      "baseline_wake_chance": 0.24,
+      "refractory_ticks": 1,
+      "last_wake_tick": 71,
+      "last_wake_at": 1774464794,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
+      "wake_count": 32,
+      "suppressed_until_tick": 73,
+      "activation": 0.3914,
+      "fatigue": 0.5311,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1924,
+      "last_thought_signature": "memory_keeper::backup confidence::memory_keeper woke on human-continuity-pressure around backup confidence."
+    }
+  },
+  "dynamic_mind_state": {
+    "curiosity": 1.0,
+    "tension": 1.0,
+    "stability": 0.62,
+    "attachment": 1.0,
+    "uncertainty": 1.0,
+    "background_noise": 0.10429400425516816,
+    "sleep_pressure": 0.9993892409351756,
+    "mode": "engaged",
+    "last_mode_shift_at": 1774463565
+  },
+  "topic_pressure": {
+    "enrich the local world": {
+      "salience": 0.0969507205370819,
+      "novelty": 0.02785009760094022,
+      "emotional_weight": 0.07184843270860544,
+      "unresolvedness": 1.0,
+      "human_relevance": 0.04789895513907029,
+      "decay": 0.08,
+      "last_touched_at": 1774463565
+    },
+    "backup confidence": {
+      "salience": 1.5,
+      "novelty": 0.0644053182587813,
+      "emotional_weight": 1.0,
+      "unresolvedness": 1.0,
+      "human_relevance": 1.0,
+      "decay": 0.08,
+      "last_touched_at": 1774464795
+    },
+    "understanding": {
+      "salience": 1.196486634432,
+      "novelty": 0.052773191680000005,
+      "emotional_weight": 0.6357794625,
+      "unresolvedness": 1.0,
+      "human_relevance": 1.0,
+      "decay": 0.08,
+      "last_touched_at": 1774464790
+    }
+  },
+  "inner_thoughts": [
+    {
+      "kind": "inner_thought",
+      "role": "critic",
+      "summary": "critic woke on message-received around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-critic-52-1774463732",
+      "agent": "agent-3",
+      "tick": 52,
+      "created_at": 1774463732,
+      "wake_reason": "message-received",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774463698,
+        "seconds_since_last": 34,
+        "duplicate_signature_count": 1
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "memory_keeper",
+      "summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "trade",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-memory_keeper-52-1774463732",
+      "agent": "agent-5",
+      "tick": 52,
+      "created_at": 1774463732,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774463698,
+        "seconds_since_last": 34,
+        "duplicate_signature_count": 1
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "observer woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "optimize",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-61-1774464790",
+      "agent": "agent-1",
+      "tick": 61,
+      "created_at": 1774464790,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774463701,
+        "seconds_since_last": 1089,
+        "duplicate_signature_count": 2
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "builder",
+      "summary": "builder woke on experiment-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "inspect",
+      "should_speak": false,
+      "self_mod_hint": "consider tiny additive change",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-builder-62-1774464791",
+      "agent": "agent-2",
+      "tick": 62,
+      "created_at": 1774464791,
+      "wake_reason": "experiment-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774463699,
+        "seconds_since_last": 1092,
+        "duplicate_signature_count": 1
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "critic",
+      "summary": "critic woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-critic-62-1774464791",
+      "agent": "agent-3",
+      "tick": 62,
+      "created_at": 1774464791,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774463732,
+        "seconds_since_last": 1059,
+        "duplicate_signature_count": 1
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "communicator",
+      "summary": "communicator woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "inspect",
+      "should_speak": true,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-communicator-62-1774464791",
+      "agent": "agent-4",
+      "tick": 62,
+      "created_at": 1774464791,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 0,
+        "last_at": 0,
+        "seconds_since_last": 999999,
+        "duplicate_signature_count": 0
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "memory_keeper",
+      "summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "signal",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-memory_keeper-62-1774464791",
+      "agent": "agent-5",
+      "tick": 62,
+      "created_at": 1774464791,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774463732,
+        "seconds_since_last": 1059,
+        "duplicate_signature_count": 1
+      }
+    },
+    {
+      "kind": "inner_thought",
+      "role": "memory_keeper",
+      "summary": "memory_keeper woke on message-received around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "signal",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-memory_keeper-66-1774464793",
+      "agent": "agent-5",
+      "tick": 66,
+      "created_at": 1774464793,
+      "wake_reason": "message-received",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774464791,
+        "seconds_since_last": 2,
+        "duplicate_signature_count": 1
+      }
+    }
+  ],
+  "llm_adapter": {
+    "enabled": true,
+    "provider": "fallback",
+    "model": "Qwen2.5-0.5B-Instruct",
+    "last_error": "llm unavailable or fallback used",
+    "last_success_at": 0
+  }
 }

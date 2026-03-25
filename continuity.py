@@ -21,7 +21,11 @@ def apply_human_exchange_to_threads(relationships: dict, exchange: dict, human_n
     relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
     threads = relationships.setdefault("conversation_threads", {})
-    for topic in topics[:6]:
+    clarified_target = str(exchange.get("clarified_target") or "").strip()
+    effective_topics = list(topics[:6])
+    if clarified_target:
+        effective_topics = [clarified_target, *[topic for topic in effective_topics if str(topic).strip() and str(topic).strip() != clarified_target]][:6]
+    for topic in effective_topics:
         thread = threads.setdefault(topic, {
             "topic": topic,
             "human": human_name,
@@ -39,6 +43,7 @@ def apply_human_exchange_to_threads(relationships: dict, exchange: dict, human_n
         thread["last_message_summary"] = exchange["message_summary"]
         thread["last_response_summary"] = exchange["response_summary"]
         thread["last_exchange_at"] = now_ts
+        thread["clarified_target"] = clarified_target if clarified_target and topic == clarified_target else str(thread.get("clarified_target") or "")
         thread["last_human_exchange_at"] = now_ts
         thread["last_passive_reinforced_at"] = int(thread.get("last_passive_reinforced_at", 0) or 0)
         thread["passive_reinforcement_count"] = 0

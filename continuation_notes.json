@@ -96,5 +96,19 @@
     "Known risks": "Memory and continuity layers do not consume clarified_target yet, so the benefit is currently shared between interpretation and dialogue but not fully propagated into longer-term state updates.",
     "Next exact step": "Use clarified_target during human-exchange recording and thread update logic so corrected targets affect continuity memory as well as immediate replies.",
     "Resume hint": "Inspect interpretation.py interpret_human_turn and dialogue.py lead_topic selection, then wire clarified_target into continuity-relevant state updates."
+  },
+  {
+    "id": "continuation-1774476945-8",
+    "created_at": 1774476945,
+    "author": "implementation-worker",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Use clarified_target during human-exchange recording and thread update logic so corrected targets affect continuity memory as well as immediate replies.",
+    "Completed": "Stored clarified_target in serialized human exchange records, preferred it for last_human_topic, and taught thread updates to prioritize corrected targets during continuity tracking.",
+    "Files changed": "implementation_worker.py, sim.py, perception.py, continuity.py",
+    "Behavior changed": "Human exchange records and thread updates now preserve and prefer clarified_target so corrections can affect continuity state as well as immediate replies.",
+    "Checks performed": "python3 -m py_compile sim.py perception.py continuity.py implementation_worker.py main.py; python3 main.py continuation-latest",
+    "Known risks": "Clarified targets now influence continuity state, but semantic/episodic distillation still does not explicitly weight correction-derived targets differently from ordinary topics.",
+    "Next exact step": "Teach episodic/semantic memory distillation to recognize explicit correction-derived targets as continuity-relevant signals instead of treating them like ordinary topics.",
+    "Resume hint": "Inspect sim.py record_human_exchange, perception.py build_human_exchange_payload, and continuity.py apply_human_exchange_to_threads before extending clarified-target salience into memory distillation."
   }
 ]

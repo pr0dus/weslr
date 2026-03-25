@@ -1,14 +1,14 @@
 {
   "status": "completed",
-  "started_at": 1774476797,
-  "finished_at": 1774476797,
+  "started_at": 1774476945,
+  "finished_at": 1774476945,
   "announced": false,
-  "task_id": "interpretation-clarification-state",
-  "task": "promote clarification targets into structured interpretation state",
-  "summary": "Clarification state promotion is implemented directly in interpretation.py and dialogue.py.",
+  "task_id": "continuity-clarified-target",
+  "task": "propagate clarified targets into continuity memory and thread updates",
+  "summary": "Clarified-target continuity wiring is implemented in sim.py, perception.py, and continuity.py.",
   "continuation_note_created": true,
   "continuation_note_error": "",
   "continuation_note_hint": "Run python3 main.py continuation-latest",
-  "checks_performed": "python3 -m py_compile interpretation.py dialogue.py implementation_worker.py; python3 main.py continuation-latest",
+  "checks_performed": "python3 -m py_compile sim.py perception.py continuity.py implementation_worker.py main.py; python3 main.py continuation-latest",
   "error": ""
 }
