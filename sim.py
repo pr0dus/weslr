@@ -4763,6 +4763,8 @@ def default_reflection_store(now_ts: int | None = None) -> dict:
         "summary": "Private reflection artifacts with explicit reality-status tagging.",
         "items": [],
         "last_reflected_at": 0,
+        "last_generated_at": 0,
+        "generation_cooldown_seconds": 300,
         "last_compacted_at": 0,
         "max_items": 48,
         "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
@@ -4775,6 +4777,8 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     store.setdefault("summary", "Private reflection artifacts with explicit reality-status tagging.")
     store.setdefault("items", [])
     store.setdefault("last_reflected_at", 0)
+    store.setdefault("last_generated_at", 0)
+    store.setdefault("generation_cooldown_seconds", 300)
     store.setdefault("last_compacted_at", 0)
     store.setdefault("max_items", 48)
     counts = store.setdefault("status_counts", {})
@@ -4783,7 +4787,7 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     return self_state
 
 
-def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | None = None) -> dict:
+def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | None = None, allow_generation: bool = True) -> dict:
     now_ts = now_ts or int(time.time())
     ensure_reflection_store(self_state, now_ts=now_ts)
     store = self_state.get("reflection_store") or {}
@@ -4808,6 +4812,33 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
         if key not in seen:
             items.append(item)
             seen.add(key)
+    cooldown = int(store.get("generation_cooldown_seconds", 300) or 300)
+    last_generated_at = int(store.get("last_generated_at", 0) or 0)
+    generation_due = allow_generation and (last_generated_at <= 0 or now_ts - last_generated_at >= cooldown)
+    if generation_due:
+        reflection_lines = []
+        if unresolved_question:
+            reflection_lines.append(f"Known: the main open question is '{unresolved_question}'.")
+        if unresolved_threads:
+            reflection_lines.append(f"Inferred: relationship continuity is being pulled by {', '.join(unresolved_threads[:2])}.")
+        if uncertainty >= 0.35:
+            reflection_lines.append(f"Known: uncertainty is elevated ({uncertainty:.3f}), so reflection should prefer clarification over escalation.")
+        reflection_lines.append(f"Proposed: keep the next bounded reflection focused on {active_pursuit}.")
+        content = ' '.join(reflection_lines[:4]).strip()
+        if content:
+            item = {
+                "kind": "reflection-pass",
+                "status": "proposed",
+                "topic": active_pursuit,
+                "content": content,
+                "source": "reflection.generation_loop",
+                "at": now_ts,
+            }
+            key = (str(item.get("kind")), str(item.get("status")), str(item.get("content")))
+            if key not in seen:
+                items.append(item)
+                seen.add(key)
+            store["last_generated_at"] = now_ts
     max_items = int(store.get("max_items", 48) or 48)
     items = items[-max_items:]
     counts = {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0}
@@ -4828,7 +4859,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
     else:
         communicator = load_communicator_state()
     ensure_reflection_store(self_state)
-    sync_reflection_store(self_state, communicator)
+    sync_reflection_store(self_state, communicator, allow_generation=False)
     return {
         "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
         "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
@@ -4841,7 +4872,7 @@ def build_identity_core_report() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
     sync_identity_state(communicator, self_state, allow_milestone=False)
-    sync_reflection_store(self_state, communicator)
+    sync_reflection_store(self_state, communicator, allow_generation=False)
     return build_identity_core_report_from_state(communicator, self_state)
 
 
@@ -5369,6 +5400,8 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         unresolved_needs = summarize_unresolved_needs(conn)
         communicator = load_communicator_state()
         communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
+        communicator_self = sync_reflection_store(communicator_self, communicator, now_ts=started_at, allow_generation=True)
+        save_communicator_self(communicator_self)
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
