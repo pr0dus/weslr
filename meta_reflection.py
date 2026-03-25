@@ -82,6 +82,11 @@ def monitor_memory_pressure(self_state: dict, now_ts: int, *, ensure_memory_laye
     stable_topic_count = len(semantic.get("stable_topics") or [])
     continuity_anchor_count = len(semantic.get("continuity_anchors") or [])
     duplicate_episode_topics = max(0, episode_count - len({str(item.get("topic") or "").strip().lower() for item in (episodic.get("episodes") or []) if str(item.get("topic") or "").strip()}))
+    last_episodic_distill_at = int(episodic.get("last_distilled_at", 0) or 0)
+    last_semantic_update_at = int(semantic.get("last_updated_at", 0) or 0)
+    semantic_cooldown_seconds = 300
+    semantic_recently_distilled = bool(last_semantic_update_at and (now_ts - last_semantic_update_at) < semantic_cooldown_seconds)
+    semantic_is_fresher_than_episodes = bool(last_semantic_update_at and last_semantic_update_at >= last_episodic_distill_at)
 
     exchange_ratio = recent_exchange_count / max(1, int(working.get("max_recent_exchanges", 24) or 24))
     thought_ratio = recent_thought_count / max(1, int(working.get("max_recent_thoughts", 80) or 80))
@@ -104,7 +109,8 @@ def monitor_memory_pressure(self_state: dict, now_ts: int, *, ensure_memory_laye
     recommended_actions = []
     if exchange_ratio >= 0.33 or thought_ratio >= 0.33:
         recommended_actions.append("distill-episodic")
-    if episode_count > 0 and (semantic_ratio < 0.8 or continuity_anchor_count < min(12, episode_count + 2)):
+    semantic_needed = episode_count > 0 and (semantic_ratio < 0.8 or continuity_anchor_count < min(12, episode_count + 2))
+    if semantic_needed and not (semantic_recently_distilled and semantic_is_fresher_than_episodes):
         recommended_actions.append("distill-semantic")
     if duplicate_episode_topics >= 3 or episode_ratio >= 0.8:
         recommended_actions.append("prepare-archive")
