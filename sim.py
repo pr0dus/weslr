@@ -1021,6 +1021,7 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
     relationship_facts = list(semantic.get("relationship_facts") or [])
     durable_lessons = list(semantic.get("durable_lessons") or [])
     identity_anchors = list(semantic.get("identity_anchors") or [])
+    relationship_facts = [fact for fact in relationship_facts if "shared thread around" not in str(fact)]
 
     created = {
         "stable_topics": [],
@@ -1036,10 +1037,14 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
             continuity_anchors.append(topic)
             created["continuity_anchors"].append(topic)
 
+    conversation_threads = relationships.get("conversation_threads") or {}
     for episode in episodes[-64:]:
         topic = str(episode.get("topic") or "").strip()
         human_label = str(episode.get("human_label") or episode.get("human") or "").strip()
-        status = str(episode.get("status") or "compressed").strip().lower()
+        episode_status = str(episode.get("status") or "compressed").strip().lower()
+        live_thread = conversation_threads.get(topic) or {}
+        live_status = str(live_thread.get("status") or "").strip().lower()
+        status = live_status or episode_status
         summary = str(episode.get("summary") or "").strip()
         exchange_count = int(episode.get("exchange_count", 0) or 0)
         thread_count = int(episode.get("thread_count", 0) or 0)
@@ -1064,6 +1069,11 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
                     fact = f"you and CircleForge still have an open shared thread around {topic}"
                 else:
                     fact = f"{human_label} still has an open shared thread with CircleForge around {topic}"
+            elif status == "cooled":
+                if human_label.strip().lower() == "you":
+                    fact = f"you and CircleForge remember a cooled shared thread around {topic}"
+                else:
+                    fact = f"{human_label} and CircleForge remember a cooled shared thread around {topic}"
             elif exchange_count >= 2:
                 fact = f"{human_label} and CircleForge have revisited {topic} across multiple exchanges"
             else:
