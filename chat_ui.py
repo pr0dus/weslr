@@ -130,6 +130,42 @@ def state_payload() -> dict:
     return {"reply": reply or "...", "meta": json.dumps(meta, indent=2), "status": "Ready."}
 
 
+def should_search_web(message: str) -> bool:
+    lowered = str(message or "").strip().lower()
+    return any(token in lowered for token in ["search online", "search the web", "look online", "look it up", "search web"])
+
+
+def extract_search_query(message: str) -> str:
+    lowered = str(message or "").strip()
+    query = lowered
+    for phrase in ["search online for", "search the web for", "look online for", "search web for", "look it up for"]:
+        if phrase in query.lower():
+            idx = query.lower().index(phrase)
+            query = query[idx + len(phrase):].strip(" .,:;!?-")
+            break
+    return query or lowered
+
+
+def summarize_search_reply(query: str, raw_result: str) -> str:
+    try:
+        parsed = json.loads(raw_result)
+    except Exception:
+        parsed = {}
+    results = list(parsed.get("results") or [])[:3]
+    if not results:
+        return f"I searched for {query}, but I didn't get usable results yet."
+    lines = [f"I searched for {query}. Best leads:"]
+    for item in results:
+        title = str(item.get("title") or item.get("url") or "result").strip()
+        url = str(item.get("url") or "").strip()
+        if url:
+            lines.append(f"- {title} — {url}")
+        else:
+            lines.append(f"- {title}")
+    lines.append("From here, the practical next step is to read the strongest result and turn it into concrete communication guidance instead of generic self-report.")
+    return "\n".join(lines)
+
+
 class Handler(BaseHTTPRequestHandler):
     def _json(self, payload: dict, code: int = 200):
         body = json.dumps(payload).encode()
@@ -170,9 +206,24 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"reply": "", "meta": "", "status": "Nothing sent."}, 400)
             return
         try:
-            run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
+            immediate_reply = ""
+            if should_search_web(message):
+                query = extract_search_query(message)
+                search_result = run_cmd([PYTHON, "main.py", "search-web", query, "--limit", "5"])
+                immediate_reply = summarize_search_reply(query, search_result)
+                bridged_message = (
+                    f"{message}\n\n"
+                    f"Web search results for: {query}\n"
+                    f"{search_result[:4000]}\n\n"
+                    f"Use these results to answer directly and practically."
+                )
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
+            else:
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
             run_cmd([PYTHON, "main.py", "run", "--ticks", "12", "--interval", "0"])
             data = state_payload()
+            if immediate_reply:
+                data["reply"] = immediate_reply
             data["status"] = "Message processed."
             self._json(data)
         except Exception as e:
