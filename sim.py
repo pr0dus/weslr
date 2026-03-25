@@ -650,10 +650,6 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
     pressure.setdefault("db_bytes", 0)
     pressure.setdefault("pressure_level", "normal")
 
-    # keep semantic memory synced with live continuity anchors without replaying all raw history
-    active_threads = [str(item) for item in ((self_state.get("relationships") or {}).get("unresolved_shared_threads") or []) if str(item).strip()]
-    sync_semantic_with_active_threads(semantic, active_threads, now_ts)
-
     return self_state
 
 
@@ -961,11 +957,6 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
                 if source_id in recent_thought_ids:
                     trimmed_thought_ids.append(source_id)
 
-        if topic and topic not in (semantic.get("stable_topics") or []):
-            semantic["stable_topics"] = list(dict.fromkeys((semantic.get("stable_topics") or []) + [topic]))[-24:]
-        if human_label:
-            fact = f"{human_label} and CircleForge have a compressed episode around {topic}"
-            semantic["relationship_facts"] = list(dict.fromkeys((semantic.get("relationship_facts") or []) + [fact]))[-24:]
 
     max_episodes = int(episodic.get("max_episodes", 240) or 240)
     episodes.sort(key=lambda item: (int(item.get("last_event_at", 0) or 0), float(item.get("importance_score", 0.0) or 0.0)), reverse=True)
@@ -998,7 +989,6 @@ def distill_episodic_memory(self_state: dict | None = None, now_ts: int | None =
     if trimmed_thought_ids:
         working["recent_thought_ids"] = [item for item in (working.get("recent_thought_ids") or []) if item not in set(trimmed_thought_ids)]
     working["last_compacted_at"] = now_ts if (trimmed_exchange_ids or trimmed_thought_ids) else int(working.get("last_compacted_at", 0) or 0)
-    semantic["last_updated_at"] = now_ts if (created or updated) else int(semantic.get("last_updated_at", now_ts) or now_ts)
 
     self_state["updated_at"] = now_ts
     save_communicator_self(self_state)
