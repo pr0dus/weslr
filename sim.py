@@ -4758,7 +4758,7 @@ def update_self_model(communicator: dict) -> None:
 def build_identity_core_report() -> dict:
     communicator = load_communicator_state()
     self_state = load_communicator_self()
-    sync_identity_state(communicator, self_state)
+    sync_identity_state(communicator, self_state, allow_milestone=False)
     return build_identity_core_report_from_state(communicator, self_state)
 
 
@@ -5622,6 +5622,7 @@ def build_identity_history_point(identity_core: dict) -> dict:
         "identity_stability": float(continuity.get("identity_stability", 0.0) or 0.0),
         "latest_evolution_summary": str(latest_evolution.get("summary") or "").strip(),
         "latest_evolution_at": int(latest_evolution.get("at", 0) or 0),
+        "timeline_semantics_version": 1,
     }
 
 
@@ -5874,7 +5875,12 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
         curr_generated_at = int(curr.get('generated_at', 0) or 0)
         milestone_at = int(curr_identity.get('latest_evolution_at', 0) or 0)
         milestone_summary = str(curr_identity.get('latest_evolution_summary') or '').strip()
-        milestone_is_new = bool(milestone_at and prev_generated_at < milestone_at <= curr_generated_at)
+        prev_milestone_at = int(prev_identity.get('latest_evolution_at', 0) or 0)
+        prev_semantics = int(prev_identity.get('timeline_semantics_version', 0) or 0)
+        curr_semantics = int(curr_identity.get('timeline_semantics_version', 0) or 0)
+        migration_transition = prev_semantics < 1 <= curr_semantics
+        milestone_first_seen = milestone_at and milestone_at != prev_milestone_at
+        milestone_is_new = bool(milestone_first_seen and prev_generated_at < milestone_at <= curr_generated_at and not migration_transition)
         raw_entries.append({
             'from_generated_at': prev_generated_at,
             'to_generated_at': curr_generated_at,
@@ -5887,6 +5893,7 @@ def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict
             'carried_milestone': milestone_summary if milestone_summary and not milestone_is_new else '',
             'changed': bool(diff.get('changed')),
             'milestone_is_new': milestone_is_new,
+            'migration_context': migration_transition,
         })
     entries = []
     calm_run = []
@@ -6082,7 +6089,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
             timeline_entries.append(entry)
             continue
         entry = f"<li><strong>{escape(str(item.get('tick_span', '')))}</strong> · {escape(str(item.get('from_phase', '')))} → {escape(str(item.get('to_phase', '')))}<br><span class='muted'>{escape(str(item.get('summary', '')))}</span>"
-        if item.get('milestone'):
+        if item.get('migration_context') and item.get('carried_milestone'):
+            entry += f"<br><span class='muted'>migration context: {escape(str(item.get('carried_milestone', '')))}</span>"
+        elif item.get('milestone'):
             entry += f"<br><span class='muted'>new milestone: {escape(str(item.get('milestone', '')))}</span>"
         elif item.get('carried_milestone'):
             entry += f"<br><span class='muted'>carried context: {escape(str(item.get('carried_milestone', '')))}</span>"

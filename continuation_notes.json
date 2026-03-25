@@ -264,5 +264,19 @@
     "Known risks": "The migration-era timestamp baseline still causes the newest timeline rows to sometimes classify an older milestone as newly visible, so a few noisy rows may persist until more fresh snapshots replace the transition window. Further filtering may be needed.",
     "Next exact step": "Suppress or specially label migration-era false-new milestone rows once enough fresh snapshots exist, then consider hiding no-change rows entirely unless the operator explicitly expands them.",
     "Resume hint": "Generate several fresh dashboard snapshots, inspect identity_timeline for repeated milestone_is_new rows, then decide whether to add a migration-baseline cutoff or an expandable calm-history toggle."
+  },
+  {
+    "id": "continuation-1774481555-20",
+    "created_at": 1774481555,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Stop report-only dashboard renders from fabricating identity milestone timestamps, which was causing false repeated 'new milestone' rows in the identity timeline.",
+    "Completed": "Added an allow_milestone guard to identity syncing and disabled milestone creation in the report/inspection path used by build_identity_core_report; verified fresh dashboard renders now keep latest_evolution_at stable instead of inventing new milestone timestamps.",
+    "Files changed": "self_model.py, sim.py",
+    "Behavior changed": "Pure dashboard/inspection renders no longer create new identity milestones in memory; future identity timeline rows should stop repeating fake new milestones from passive observation alone.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; ran python3 main.py dashboard twice; inspected dashboard_history.json latest_evolution_at values and identity_timeline entries",
+    "Known risks": "Previously written history rows still contain repeated false-new milestone timestamps from before the fix, so the current timeline may remain noisy until those rows age out or are pruned. The fix applies going forward.",
+    "Next exact step": "Optionally prune or normalize the recent bad history rows created before this fix, or simply let them age out while continuing with higher-value continuity work.",
+    "Resume hint": "Check the newest dashboard_history.json points after several fresh dashboard renders; if latest_evolution_at stays stable, the phantom-milestone bug is fixed and only old history cleanup remains."
   }
 ]

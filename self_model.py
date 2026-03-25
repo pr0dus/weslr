@@ -67,7 +67,7 @@ def should_record_identity_milestone(previous_signature: dict | None, new_signat
     return False
 
 
-def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | None = None) -> dict:
+def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | None = None, allow_milestone: bool = True) -> dict:
     now_ts = int(now_ts or time.time())
     ensure_identity_scaffold(self_state)
     self_model = communicator.get("self_model") or {}
@@ -141,7 +141,7 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     evolution_log = list(self_state.get("self_evolution_log") or [])
     previous = evolution_log[-1] if evolution_log else {}
     previous_signature = previous.get("signature") if isinstance(previous, dict) else None
-    if should_record_identity_milestone(previous_signature, signature):
+    if allow_milestone and should_record_identity_milestone(previous_signature, signature):
         milestone_parts = [f"phase={phase}", f"traits={', '.join(identity_traits[:3]) or 'none'}"]
         if not previous_signature or str(previous_signature.get("phase") or "") != phase:
             milestone_parts.append("phase-shift")
