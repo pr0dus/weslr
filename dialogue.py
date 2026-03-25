@@ -117,9 +117,12 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             asks_about_its_own_understanding = any(token in lower_message for token in ["understand me", "do you understand", "can you understand"])
             asks_how_are_you = lower_message in {"how are you?", "how are you", "how're you", "howre you"}
             asks_can_you_implement = any(token in lower_message for token in ["can you implement", "will you implement", "could you implement"])
+            asks_for_actual_coding = any(token in lower_message for token in ["actual coding", "the actual coding"])
 
             if asks_how_are_you:
                 message = "Uneven, honestly — better than before at keeping a thread, still weak at turning that into natural understanding."
+            elif asks_for_actual_coding:
+                message = "The actual coding should start with three concrete pieces: a stronger intent rewriter for messy human requests, a tiny workflow state for suggest/approve/start/finished, and better reply grounding so selected threads turn into direct answers instead of self-report."
             elif asks_can_you_implement:
                 message = "Yes, if implementation is allowed, I should move from listing changes to actually making them. The next step would be to pick one concrete fix and apply it instead of repeating the whole plan."
             elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:

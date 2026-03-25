@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
 PYTHON = sys.executable
+IMPLEMENTATION_STATE_PATH = BASE_DIR / "implementation_state.json"
 
 HTML = """<!doctype html>
 <html>
@@ -117,17 +118,41 @@ def run_cmd(args: list[str]) -> str:
     return proc.stdout.strip()
 
 
+def load_implementation_state() -> dict:
+    if not IMPLEMENTATION_STATE_PATH.exists():
+        return {}
+    try:
+        return json.loads(IMPLEMENTATION_STATE_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def save_implementation_state(payload: dict) -> None:
+    IMPLEMENTATION_STATE_PATH.write_text(json.dumps(payload, indent=2))
+
+
 def state_payload() -> dict:
     reply = run_cmd([PYTHON, "main.py", "speak"])
     raw = run_cmd([PYTHON, "main.py", "communicator-self"])
     parsed = json.loads(raw)
     relationships = parsed.get("relationships") or {}
+    implementation = load_implementation_state()
+    if implementation.get("status") == "completed" and not implementation.get("announced"):
+        reply = f"Finished: {implementation.get('summary') or implementation.get('task') or 'implementation step completed.'}"
+        implementation["announced"] = True
+        save_implementation_state(implementation)
     meta = {
         "known_humans": relationships.get("known_humans") or [],
         "threads": list((relationships.get("conversation_threads") or {}).keys()),
         "last_human_topic": relationships.get("last_human_topic") or "",
+        "implementation": implementation,
     }
-    return {"reply": reply or "...", "meta": json.dumps(meta, indent=2), "status": "Ready."}
+    status = "Ready."
+    if implementation.get("status") == "running":
+        status = "Implementation step running."
+    elif implementation.get("status") == "completed":
+        status = "Implementation step completed."
+    return {"reply": reply or "...", "meta": json.dumps(meta, indent=2), "status": status}
 
 
 def should_search_web(message: str) -> bool:
@@ -203,6 +228,21 @@ def message_requests_completion_notice(message: str) -> bool:
         "let me know when done",
         "notify me when finished",
     ])
+
+
+def start_implementation_worker() -> None:
+    state = load_implementation_state()
+    if state.get("status") == "running":
+        return
+    save_implementation_state({
+        "status": "queued",
+        "started_at": 0,
+        "finished_at": 0,
+        "announced": False,
+        "task": "add direct answer for actual coding prompts",
+        "summary": "",
+    })
+    subprocess.Popen([PYTHON, "implementation_worker.py"], cwd=BASE_DIR, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def synthesize_code_change_reply() -> str:
@@ -288,6 +328,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             immediate_reply = ""
+            requested_completion_notice = message_requests_completion_notice(message)
             if should_search_web(message):
                 query = extract_search_query(message)
                 search_result = run_cmd([PYTHON, "main.py", "search-web", query, "--limit", "5"])
@@ -304,7 +345,8 @@ class Handler(BaseHTTPRequestHandler):
                     immediate_reply = "Understood. I should report back when the current implementation step is finished instead of treating that as a topic."
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 elif message_starts_execution(message):
-                    immediate_reply = "Understood. I should move from listing changes to actually starting one concrete implementation step."
+                    start_implementation_worker()
+                    immediate_reply = "Understood. I am starting one concrete implementation step now."
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 elif message_is_control_approval(message):
                     immediate_reply = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
@@ -318,8 +360,11 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
             run_cmd([PYTHON, "main.py", "run", "--ticks", "12", "--interval", "0"])
+            implementation = load_implementation_state()
             data = state_payload()
-            if immediate_reply:
+            if requested_completion_notice and implementation.get("status") == "completed":
+                data["reply"] = f"Finished: {implementation.get('summary') or implementation.get('task') or 'implementation step completed.'}"
+            elif immediate_reply:
                 data["reply"] = immediate_reply
             data["status"] = "Message processed."
             self._json(data)
