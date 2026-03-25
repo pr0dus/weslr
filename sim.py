@@ -5761,6 +5761,9 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
             if identity_diff.get("latest_evolution_summary"):
                 message = f"{message} | milestone: {identity_diff.get('latest_evolution_summary')}" if message else f"milestone: {identity_diff.get('latest_evolution_summary')}"
             events.append({"kind": "identity-drift", "message": message or "identity state changed"})
+        trend = build_identity_trend_report(history)
+        if trend.get("reconfiguration_alert"):
+            events.append({"kind": "identity-reconfiguration-alert", "message": f"identity trend looks reconfiguring across {trend.get('window', 0)} snapshots ({trend.get('summary')})"})
     return events[:20]
 
 
@@ -5832,6 +5835,22 @@ def build_theme_trends(history: list[dict]) -> list[dict]:
     return sorted(result, key=lambda item: (item['series'][-1], item['delta']), reverse=True)[:8]
 
 
+def sparkline_for_series(series: list[float | int], *, normalize: bool = False) -> str:
+    if not series:
+        return '—'
+    ticks = '▁▂▃▄▅▆▇█'
+    values = [float(v) for v in series]
+    if normalize:
+        low = min(values)
+        high = max(values)
+        if abs(high - low) < 1e-9:
+            return ticks[3] * len(values)
+        scaled = [(v - low) / (high - low) for v in values]
+    else:
+        scaled = [min(1.0, max(0.0, v)) for v in values]
+    return ''.join(ticks[min(7, max(0, int(v * 8) - (0 if normalize else 1)))] for v in scaled)
+
+
 def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
     recent = [point for point in history[-max(2, window):] if point.get('identity_core')]
     if len(recent) < 2:
@@ -5866,11 +5885,15 @@ def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
         trend_label = 'stabilizing'
     else:
         trend_label = 'developing'
+    stability_sparkline = sparkline_for_series(stability_series)
+    unresolved_sparkline = sparkline_for_series(unresolved_series, normalize=True)
+    known_humans_sparkline = sparkline_for_series(known_humans_series, normalize=True)
+    repeated_reconfiguration = phase_changes >= 2 or (trend_label == 'reconfiguring' and len(recent) >= 4)
     summary_parts = [
         f"phase path: {' → '.join(unique_phases)}",
-        f"stability {stability_series[0]:.3f} → {stability_series[-1]:.3f} ({stability_delta:+.3f})",
-        f"known humans {known_humans_series[0]} → {known_humans_series[-1]}",
-        f"unresolved threads {unresolved_series[0]} → {unresolved_series[-1]}",
+        f"stability {stability_series[0]:.3f} → {stability_series[-1]:.3f} ({stability_delta:+.3f}) {stability_sparkline}",
+        f"known humans {known_humans_series[0]} → {known_humans_series[-1]} {known_humans_sparkline}",
+        f"unresolved threads {unresolved_series[0]} → {unresolved_series[-1]} {unresolved_sparkline}",
     ]
     return {
         'window': len(recent),
@@ -5881,6 +5904,10 @@ def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
         'stability_delta': stability_delta,
         'phase_changes': phase_changes,
         'trend_label': trend_label,
+        'stability_sparkline': stability_sparkline,
+        'known_humans_sparkline': known_humans_sparkline,
+        'unresolved_threads_sparkline': unresolved_sparkline,
+        'reconfiguration_alert': repeated_reconfiguration,
         'summary': '; '.join(summary_parts),
     }
 
@@ -6075,14 +6102,14 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       </section>
       <section class="card">
         <h2>Identity Trend</h2>
-        <p><strong>{escape(str((payload.get('identity_trend') or {}).get('trend_label', 'insufficient-history')))}</strong></p>
+        <p><strong>{escape(str((payload.get('identity_trend') or {}).get('trend_label', 'insufficient-history')))}</strong>{' <span class="pill">alert</span>' if (payload.get('identity_trend') or {}).get('reconfiguration_alert') else ''}</p>
         <p>{escape(str((payload.get('identity_trend') or {}).get('summary', 'Not enough identity history yet for a trend view.')))}</p>
         <ul>
           <li>window: {escape(str((payload.get('identity_trend') or {}).get('window', 0)))}</li>
           <li>phase changes: {escape(str((payload.get('identity_trend') or {}).get('phase_changes', 0)))}</li>
-          <li>stability series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('stability_series') or [])) or '—')}</li>
-          <li>known humans series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('known_humans_series') or [])) or '—')}</li>
-          <li>unresolved threads series: {escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('unresolved_threads_series') or [])) or '—')}</li>
+          <li>stability: {escape(str((payload.get('identity_trend') or {}).get('stability_sparkline', '—')))} <span class='muted'>{escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('stability_series') or [])) or '—')}</span></li>
+          <li>known humans: {escape(str((payload.get('identity_trend') or {}).get('known_humans_sparkline', '—')))} <span class='muted'>{escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('known_humans_series') or [])) or '—')}</span></li>
+          <li>unresolved threads: {escape(str((payload.get('identity_trend') or {}).get('unresolved_threads_sparkline', '—')))} <span class='muted'>{escape(', '.join(str(v) for v in ((payload.get('identity_trend') or {}).get('unresolved_threads_series') or [])) or '—')}</span></li>
         </ul>
       </section>
     </div>

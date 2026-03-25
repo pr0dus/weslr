@@ -208,5 +208,19 @@
     "Known risks": "Trend labeling is still heuristic and based on a short window; with sparse history it can overstate stability. It does not yet show visual sparklines or per-field long-range drift beyond the simple series lists.",
     "Next exact step": "Add compact identity sparklines/history rendering and possibly event thresholds for repeated reconfiguration so longer-range identity wobble becomes visible at a glance.",
     "Resume hint": "Generate several more dashboard snapshots over time, inspect identity_trend in dashboard/dashboard.json, then decide whether the next step should be sparkline rendering or stronger reconfiguration alerts."
+  },
+  {
+    "id": "continuation-1774481039-16",
+    "created_at": 1774481039,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Make longer-range identity wobble visible at a glance by adding compact identity sparklines and a simple alert path for repeated reconfiguration.",
+    "Completed": "Added sparkline rendering for identity stability, known-human count, and unresolved-thread count inside identity_trend; added a reconfiguration_alert flag and event-feed alert path when identity looks repeatedly reconfiguring across recent snapshots; rendered the new view in the dashboard.",
+    "Files changed": "sim.py",
+    "Behavior changed": "identity_trend now includes sparkline fields plus reconfiguration_alert; dashboard/index.html renders compact identity trend sparklines and shows an alert pill when the recent identity path looks reconfiguring; event_feed can emit identity-reconfiguration-alert events.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py dashboard; verified identity_trend sparkline fields, reconfiguration_alert flag, absence of false alert on stable history, and dashboard HTML rendering",
+    "Known risks": "Sparkline rendering is compact but still coarse; alert thresholds are heuristic and may need tuning once the system accumulates more varied identity histories. There is still no dedicated long-range identity timeline section beyond the trend card.",
+    "Next exact step": "Consider adding explicit identity timeline entries or milestone-to-milestone comparison views so operators can inspect why reconfiguration happened, not only that it happened.",
+    "Resume hint": "Generate more dashboard snapshots over time, inspect identity_trend and any identity-reconfiguration-alert events, then decide whether the next step should be a timeline panel or stronger threshold tuning."
   }
 ]
