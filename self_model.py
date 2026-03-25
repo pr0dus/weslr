@@ -1,5 +1,177 @@
 from __future__ import annotations
 
+import time
+
+
+MAX_SELF_EVOLUTION_LOG = 24
+
+
+def _dedupe_keep_order(items: list[str], *, limit: int) -> list[str]:
+    seen = set()
+    result = []
+    for item in items:
+        value = str(item or "").strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result[:limit]
+
+
+def ensure_identity_scaffold(self_state: dict) -> dict:
+    identity_anchor = str(self_state.get("identity_anchor") or "CircleForge")
+    core_drives = [str(item).strip() for item in (self_state.get("core_drives") or []) if str(item).strip()]
+    self_state.setdefault("identity_state", {
+        "declared_name": identity_anchor,
+        "visible_name": identity_anchor,
+        "phase": "seedling",
+        "identity_traits": ["local", "continuity-first", "inspectable"],
+        "core_values": core_drives[:6],
+        "style_profile": {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16},
+        "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+        "last_identity_refresh_at": 0,
+    })
+    self_state.setdefault("biography", {
+        "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+        "current_chapter": "bootstrapping continuity",
+        "milestones": [],
+        "last_biography_refresh_at": 0,
+    })
+    self_state.setdefault("self_evolution_log", [])
+    return self_state
+
+
+def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | None = None) -> dict:
+    now_ts = int(now_ts or time.time())
+    ensure_identity_scaffold(self_state)
+    self_model = communicator.get("self_model") or {}
+    continuity = self_state.get("continuity") or {}
+    relationships = self_state.get("relationships") or {}
+    dynamic = self_state.get("dynamic_mind_state") or {}
+    unresolved_threads = [str(item).strip() for item in (relationships.get("unresolved_shared_threads") or []) if str(item).strip()]
+    ticks_lived = int(continuity.get("ticks_lived", 0) or 0)
+    session_count = int(continuity.get("session_count", 0) or 0)
+    known_humans = [str(item).strip() for item in (relationships.get("known_humans") or []) if str(item).strip()]
+    current_description = str(self_model.get("current_self_description") or self_state.get("narrative_state", {}).get("self_story") or "").strip()
+    strengths = [str(item).strip() for item in (self_model.get("perceived_strengths") or []) if str(item).strip()]
+    preferred_modes = [str(item).strip() for item in (self_model.get("preferred_modes") or []) if str(item).strip()]
+    continuity_commitments = [str(item).strip() for item in (self_model.get("continuity_commitments") or []) if str(item).strip()]
+    identity_state = self_state.get("identity_state") or {}
+    biography = self_state.get("biography") or {}
+
+    if ticks_lived >= 120:
+        phase = "enduring"
+    elif ticks_lived >= 40:
+        phase = "early-continuity"
+    else:
+        phase = "seedling"
+
+    identity_traits = _dedupe_keep_order(
+        strengths + preferred_modes + list(self_state.get("core_drives") or []),
+        limit=8,
+    ) or ["local", "continuity-first", "inspectable"]
+    core_values = _dedupe_keep_order(list(self_state.get("core_drives") or []) + continuity_commitments, limit=8)
+    style_profile = identity_state.get("style_profile") or {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16}
+    style_profile["warmth"] = round(min(0.95, max(0.15, 0.28 + float((relationships.get("human_salience") or 0.0)) * 0.55 + float((self_state.get("affect") or {}).get("attachment", 0.0)) * 0.12)), 3)
+    style_profile["humor"] = round(min(0.8, max(0.05, 0.08 + float((self_state.get("affect") or {}).get("hope", 0.0)) * 0.18 - float((self_state.get("affect") or {}).get("tension", 0.0)) * 0.06)), 3)
+    style_profile["directness"] = round(min(0.95, max(0.3, 0.54 + len(unresolved_threads) * 0.04 + float(dynamic.get("uncertainty", 0.0)) * 0.08)), 3)
+    style_profile["poetry"] = round(min(0.7, max(0.05, 0.1 + float((self_state.get("affect") or {}).get("hope", 0.0)) * 0.12 + float((self_state.get("affect") or {}).get("curiosity", 0.0)) * 0.08)), 3)
+
+    identity_summary = current_description or str(identity_state.get("identity_summary") or "")
+    if unresolved_threads:
+        identity_summary = f"{identity_summary}; carrying {len(unresolved_threads)} unresolved shared thread(s)"
+
+    identity_state.update({
+        "declared_name": str(identity_state.get("declared_name") or self_state.get("identity_anchor") or "CircleForge"),
+        "visible_name": str(identity_state.get("visible_name") or self_state.get("identity_anchor") or "CircleForge"),
+        "phase": phase,
+        "identity_traits": identity_traits,
+        "core_values": core_values,
+        "style_profile": style_profile,
+        "identity_summary": identity_summary.strip("; "),
+        "last_identity_refresh_at": now_ts,
+    })
+
+    chapter_bits = []
+    if unresolved_threads:
+        chapter_bits.append(f"carrying {len(unresolved_threads)} unresolved shared thread(s)")
+    if known_humans:
+        chapter_bits.append(f"remembering {len(known_humans)} known human(s)")
+    if strengths:
+        chapter_bits.append(f"leaning on {', '.join(strengths[:2])}")
+    biography.update({
+        "current_chapter": "; ".join(chapter_bits) if chapter_bits else "consolidating continuity",
+        "history_summary": f"{session_count} session(s), {ticks_lived} ticks lived, {len(known_humans)} known human(s)",
+        "last_biography_refresh_at": now_ts,
+    })
+
+    signature = {
+        "phase": phase,
+        "identity_summary": identity_state.get("identity_summary"),
+        "traits": identity_traits[:4],
+        "known_humans": len(known_humans),
+        "unresolved_threads": len(unresolved_threads),
+    }
+    evolution_log = list(self_state.get("self_evolution_log") or [])
+    previous = evolution_log[-1] if evolution_log else {}
+    previous_signature = previous.get("signature") if isinstance(previous, dict) else None
+    if signature != previous_signature:
+        milestone = {
+            "at": now_ts,
+            "kind": "identity-refresh",
+            "summary": f"phase={phase}; traits={', '.join(identity_traits[:3]) or 'none'}; unresolved_threads={len(unresolved_threads)}",
+            "signature": signature,
+        }
+        evolution_log.append(milestone)
+        milestones = list(biography.get("milestones") or [])
+        milestones.append({
+            "at": now_ts,
+            "summary": milestone["summary"],
+        })
+        biography["milestones"] = milestones[-12:]
+    self_state["identity_state"] = identity_state
+    self_state["biography"] = biography
+    self_state["self_evolution_log"] = evolution_log[-MAX_SELF_EVOLUTION_LOG:]
+    self_state["updated_at"] = now_ts
+    return self_state
+
+
+def build_identity_core_report(communicator: dict, self_state: dict) -> dict:
+    ensure_identity_scaffold(self_state)
+    identity_state = self_state.get("identity_state") or {}
+    biography = self_state.get("biography") or {}
+    continuity = self_state.get("continuity") or {}
+    relationships = self_state.get("relationships") or {}
+    self_model = communicator.get("self_model") or {}
+    evolution_log = list(self_state.get("self_evolution_log") or [])
+    return {
+        "identity_anchor": self_state.get("identity_anchor") or identity_state.get("declared_name") or communicator.get("name") or "CircleForge",
+        "declared_name": identity_state.get("declared_name") or self_state.get("identity_anchor") or communicator.get("name") or "CircleForge",
+        "visible_name": identity_state.get("visible_name") or self_state.get("identity_anchor") or communicator.get("name") or "CircleForge",
+        "phase": identity_state.get("phase") or "seedling",
+        "identity_traits": identity_state.get("identity_traits") or [],
+        "core_values": identity_state.get("core_values") or [],
+        "style_profile": identity_state.get("style_profile") or {},
+        "identity_summary": identity_state.get("identity_summary") or self_model.get("current_self_description") or "",
+        "current_chapter": biography.get("current_chapter") or "",
+        "history_summary": biography.get("history_summary") or "",
+        "continuity_markers": {
+            "session_count": continuity.get("session_count", 0),
+            "ticks_lived": continuity.get("ticks_lived", 0),
+            "identity_stability": continuity.get("identity_stability", 0.0),
+            "known_humans": len(relationships.get("known_humans") or []),
+            "unresolved_shared_threads": len(relationships.get("unresolved_shared_threads") or []),
+        },
+        "latest_evolution": evolution_log[-5:],
+        "self_model": {
+            "current_self_description": self_model.get("current_self_description", ""),
+            "perceived_strengths": self_model.get("perceived_strengths", []),
+            "preferred_modes": self_model.get("preferred_modes", []),
+            "continuity_commitments": self_model.get("continuity_commitments", []),
+            "caution_themes": self_model.get("caution_themes", []),
+        },
+    }
+
 
 def update_self_model_from_state(communicator: dict, self_evidence: dict, self_state: dict) -> dict:
     self_model = communicator.get("self_model") or {}

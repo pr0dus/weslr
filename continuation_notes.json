@@ -124,5 +124,19 @@
     "Known risks": "Clarification salience is still heuristic; it boosts explicit corrections but does not yet distinguish benign rephrasing from high-stakes conceptual correction.",
     "Next exact step": "Use clarification-weighted episodes to bias archive/retention decisions so correction-derived memory is less likely to be pruned too early.",
     "Resume hint": "Inspect sim.py score_memory_item, distill_episodic_memory, and distill_semantic_memory before extending clarification salience into archive decisions."
+  },
+  {
+    "id": "continuation-1774479813-10",
+    "created_at": 1774479813,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Make CircleForge identity continuity more explicit by persisting an inspectable identity core, biography summary, and self-evolution trail instead of leaving identity mostly implicit in scattered state.",
+    "Completed": "Added identity_state, biography, and self_evolution_log scaffolds to communicator self defaults and bootstrap state; wired self-model refreshes to sync an identity core from earned state; added an identity-core CLI inspector for fast architectural inspection.",
+    "Files changed": "models.py, sim.py, self_model.py, main.py",
+    "Behavior changed": "CircleForge now derives and preserves a compact identity core with phase, traits, values, style profile, biography summary, and recent identity-refresh milestones; new CLI command: python3 main.py identity-core.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py; python3 main.py identity-core",
+    "Known risks": "Identity summaries are still heuristic and may overfit current self-model signals; the new identity-core report currently syncs in memory for inspection but only persists when self-model updates run during normal flows.",
+    "Next exact step": "Persist identity refreshes during additional state-changing paths and then add a small human-legible identity evolution panel to handoff/dashboard without spilling decorative theatrics.",
+    "Resume hint": "Inspect python3 main.py identity-core, communicator-self, and latest continuation note first; then decide whether to deepen biography milestones or wire identity refresh into more write paths."
   }
 ]

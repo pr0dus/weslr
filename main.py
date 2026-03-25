@@ -14,7 +14,7 @@ from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, T
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
-from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -119,6 +119,10 @@ def cmd_communicator(_args):
 
 def cmd_communicator_self(_args):
     emit(load_communicator_self())
+
+
+def cmd_identity_core(_args):
+    emit(build_identity_core_report())
 
 
 def cmd_memory_layers(_args):
@@ -427,6 +431,9 @@ def main():
 
     p = sub.add_parser("communicator-self", help="show the slower communicator self / relationship continuity state")
     p.set_defaults(func=cmd_communicator_self)
+
+    p = sub.add_parser("identity-core", help="inspect the persisted identity core, biography summary, and recent self-evolution milestones")
+    p.set_defaults(func=cmd_identity_core)
 
     p = sub.add_parser("memory-layers", help="inspect working, episodic, semantic, and archive memory scaffolding")
     p.set_defaults(func=cmd_memory_layers)

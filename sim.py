@@ -94,7 +94,7 @@ from relational import canonical_human_slot, display_human_label, pick_relevant_
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
 from semantic_memory import apply_topics_to_semantic_memory, ensure_semantic_defaults, sync_semantic_with_active_threads
-from self_model import update_self_model_from_state
+from self_model import build_identity_core_report as build_identity_core_report_from_state, sync_identity_state, update_self_model_from_state
 
 BASE_CATEGORIES = [
     "modules",
@@ -293,6 +293,23 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         memory_layers=default_memory_layers(now_ts),
+        identity_state={
+            "declared_name": "CircleForge",
+            "visible_name": "CircleForge",
+            "phase": "seedling",
+            "identity_traits": ["local", "continuity-first", "inspectable"],
+            "core_values": ["continuity", "understanding", "relationship", "self-revision"],
+            "style_profile": {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16},
+            "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+            "last_identity_refresh_at": now_ts,
+        },
+        biography={
+            "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+            "current_chapter": "bootstrapping continuity",
+            "milestones": [],
+            "last_biography_refresh_at": now_ts,
+        },
+        self_evolution_log=[],
         updated_at=now_ts,
     ).to_dict())
     save_communicator_state(CommunicatorState(
@@ -530,6 +547,23 @@ def load_communicator_self() -> dict:
             "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten.",
         },
         memory_layers=default_memory_layers(0),
+        identity_state={
+            "declared_name": "CircleForge",
+            "visible_name": "CircleForge",
+            "phase": "seedling",
+            "identity_traits": ["local", "continuity-first", "inspectable"],
+            "core_values": ["continuity", "understanding", "relationship", "self-revision"],
+            "style_profile": {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16},
+            "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+            "last_identity_refresh_at": 0,
+        },
+        biography={
+            "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+            "current_chapter": "bootstrapping continuity",
+            "milestones": [],
+            "last_biography_refresh_at": 0,
+        },
+        self_evolution_log=[],
         updated_at=0,
     ).to_dict()
     return ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, default))
@@ -4717,6 +4751,15 @@ def update_self_model(communicator: dict) -> None:
     self_evidence = load_self_evidence()
     self_state = load_communicator_self()
     update_self_model_from_state(communicator, self_evidence, self_state)
+    sync_identity_state(communicator, self_state)
+    save_communicator_self(self_state)
+
+
+def build_identity_core_report() -> dict:
+    communicator = load_communicator_state()
+    self_state = load_communicator_self()
+    sync_identity_state(communicator, self_state)
+    return build_identity_core_report_from_state(communicator, self_state)
 
 
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
