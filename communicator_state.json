@@ -1,17 +1,17 @@
 {
   "name": "CircleForge",
   "status": "idle",
-  "current_intent": "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks. while preserving shared thread config sanity checks",
+  "current_intent": "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks. while preserving shared thread config sanity checks",
   "active_pursuit": "config sanity checks",
-  "unresolved_question": "What is still unclear about config sanity checks?",
+  "unresolved_question": "What new uncertainty appeared after research on config sanity checks?",
   "curiosity_target": "What new uncertainty appeared after inspect on config sanity checks?",
   "attraction_bias": "move toward config sanity checks",
   "avoidance_bias": "avoid overcommitting before experiment clarity on What is still unclear about config sanity checks?",
-  "curiosity": 0.66,
+  "curiosity": 0.75,
   "dominant_need": "inspect skipped: no valid target",
   "last_decision_summary": "no internal proposals this cycle",
   "self_model": {
-    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; increasingly protective of continuity; actively regulating around uncertainty",
+    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in inquiry; increasingly protective of continuity; actively regulating around uncertainty",
     "perceived_strengths": [],
     "perceived_weaknesses": [],
     "preferred_modes": [
@@ -29,7 +29,7 @@
       "impulse_control": 0.36,
       "uncertainty_tolerance": 0.73,
       "self_revision_readiness": 0.27,
-      "speech_threshold": 0.471,
+      "speech_threshold": 0.468,
       "uncertainty_brake": 0.82,
       "inhibition_gain": 0.4,
       "mode": "engaged"
@@ -55,7 +55,8 @@
       "themes": {
         "config sanity checks": [
           "research",
-          "build_module"
+          "build_module",
+          "gather"
         ]
       },
       "core_drives": [
@@ -65,29 +66,31 @@
         "self-revision"
       ],
       "continuity_markers": {
-        "ticks_lived": 21,
-        "identity_stability": 0.746,
-        "continuity_preference": 0.571
+        "ticks_lived": 26,
+        "identity_stability": 0.776,
+        "continuity_preference": 0.666
       }
     },
     "belief_confidence": {
-      "strengths": {},
+      "strengths": {
+        "research": 0.09
+      },
       "weaknesses": {},
       "modes": {
-        "act": 0.36
+        "act": 0.6
       },
       "themes": {
         "config sanity checks": {
-          "research": 0.72,
-          "build_module": 0.69,
-          "gather": 0.03
+          "research": 0.95,
+          "build_module": 0.93,
+          "gather": 0.27
         }
       }
     },
     "self_modeling_note": "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition.",
     "self_tuning": {
       "hazard_bias": 0.003,
-      "speech_threshold_delta": 0.032,
+      "speech_threshold_delta": 0.033,
       "inhibition_delta": -0.002
     }
   },
@@ -100,7 +103,10 @@
     "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
     "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
     "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks."
+    "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks."
   ],
   "question_history": [
     "resolved-ish: what part of the world is still under-understood?",
@@ -111,19 +117,22 @@
     "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
     "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
     "What new uncertainty appeared after inspect on config sanity checks?",
-    "What is still unclear about config sanity checks?"
+    "resolved-ish: What is still unclear about config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
+    "What new uncertainty appeared after research on config sanity checks?"
   ],
   "unresolved_objections": [],
   "decision_style_memory": {
     "actions": {
       "inspect": {
-        "count": 3,
-        "confidence": 0.21,
+        "count": 4,
+        "confidence": 0.3,
         "last_theme": "config sanity checks"
       },
       "research": {
-        "count": 4,
-        "confidence": 0.24,
+        "count": 6,
+        "confidence": 0.42,
         "last_theme": "config sanity checks"
       },
       "gather": {
@@ -138,14 +147,14 @@
         "confidence": 0.03
       },
       "act": {
-        "count": 7,
-        "confidence": 0.21
+        "count": 10,
+        "confidence": 0.3
       }
     }
   },
-  "last_wake_at": 1774564996,
-  "updated_at": 1774564996,
-  "last_research_topic": "hi circleforge, i'm struggling with python lists. can you explain them simply?",
-  "last_research_summary": "hi circleforge, i'm struggling with python lists. can you explain them simply?: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. In Python, you can access individual elements of a list using both positive and negative indexing.",
-  "last_research_source": "search:hi circleforge, i'm struggling with python lists. can you explain them simply?"
+  "last_wake_at": 1774567907,
+  "updated_at": 1774567907,
+  "last_research_topic": "config sanity checks?",
+  "last_research_summary": "config sanity checks?: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
+  "last_research_source": "search:config sanity checks?"
 }

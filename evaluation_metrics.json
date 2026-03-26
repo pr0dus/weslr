@@ -1,16 +1,16 @@
 {
   "persistence": {
-    "intent_history_len": 9,
-    "question_history_len": 9,
-    "ticks_with_state": 21
+    "intent_history_len": 12,
+    "question_history_len": 12,
+    "ticks_with_state": 26
   },
   "inquiry_continuity": {
-    "question_lineage_len": 9,
+    "question_lineage_len": 12,
     "experiment_count": 5,
-    "inspect_research_actions": 6
+    "inspect_research_actions": 9
   },
   "self_revision": {
-    "self_model_updates": 21,
+    "self_model_updates": 26,
     "preferred_modes_count": 1,
     "strengths_count": 0
   },
@@ -18,7 +18,7 @@
     "roles_active": [],
     "weighted_voice_count": 0,
     "role_counts": {
-      "observer": 8
+      "observer": 11
     },
     "memory_bias_hits": 0,
     "useful_role_memory_signals": 0

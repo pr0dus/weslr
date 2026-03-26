@@ -6,7 +6,7 @@
     "description": "Communicator inquiry currently driving exploration: what part of the world is still under-understood?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.24,
+    "pressure": 0.206,
     "novelty": 0.55,
     "status": "open",
     "created_at": 1774564980,
@@ -19,11 +19,11 @@
     "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after inspect on config sanity checks?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.391,
+    "pressure": 0.371,
     "novelty": 0.55,
     "status": "active",
     "created_at": 1774564980,
-    "updated_at": 1774564995
+    "updated_at": 1774567903
   },
   {
     "id": "need-question-3",
@@ -32,11 +32,11 @@
     "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after research on config sanity checks?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.567,
+    "pressure": 0.639,
     "novelty": 0.55,
     "status": "active",
     "created_at": 1774564980,
-    "updated_at": 1774564995
+    "updated_at": 1774567907
   },
   {
     "id": "need-question-7",
@@ -45,7 +45,7 @@
     "description": "Communicator inquiry currently driving exploration: What is still unclear about CircleForge?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.288,
+    "pressure": 0.247,
     "novelty": 0.55,
     "status": "open",
     "created_at": 1774564990,
@@ -58,11 +58,11 @@
     "description": "Observed unresolved runtime friction: inspect skipped: no valid target",
     "origin": "world-log",
     "scope": "public",
-    "pressure": 0.98,
+    "pressure": 0.99,
     "novelty": 0.42,
     "status": "active",
     "created_at": 1774564995,
-    "updated_at": 1774564996
+    "updated_at": 1774567907
   },
   {
     "id": "need-question-20",
@@ -71,7 +71,7 @@
     "description": "Communicator inquiry currently driving exploration: What is still unclear about config sanity checks?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.467,
+    "pressure": 0.401,
     "novelty": 0.55,
     "status": "active",
     "created_at": 1774564996,

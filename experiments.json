@@ -21,7 +21,7 @@
     "related_need": "need-question-2",
     "project_id": "project-backup-confidence",
     "observations": "Latest relevant action: inspect by agent-1",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
+    "follow_up": "Re-check whether the communicator question changed or narrowed after this action."
   },
   {
     "id": "exp-3",

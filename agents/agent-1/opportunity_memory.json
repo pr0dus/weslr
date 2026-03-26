@@ -15,11 +15,11 @@
       "last_category": null
     },
     "config sanity checks": {
-      "strength": 0.751,
-      "wins": 5,
-      "failures": 2,
-      "last_action": "gather",
-      "last_category": "memory"
+      "strength": 0.883,
+      "wins": 7,
+      "failures": 3,
+      "last_action": "research",
+      "last_category": "uncategorized"
     },
     "log readability": {
       "strength": 0.3,

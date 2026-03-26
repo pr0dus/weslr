@@ -41,6 +41,7 @@ from physics_knowledge import get_all_physics_concepts
 from mathematics_knowledge import get_all_mathematics_concepts
 from robotics_knowledge import get_all_robotics_concepts
 from ai_knowledge import get_all_ai_concepts
+from quantum_physics_knowledge import get_all_quantum_physics_concepts
 from core_knowledge import (
     CircleForgeKnowledge, cross_discipline_reasoning,
     integrate_knowledge_into_self_model, run_knowledge_test,
@@ -403,6 +404,8 @@ def cmd_knowledge_domain(args):
         concepts = get_all_robotics_concepts()
     elif domain == "ai":
         concepts = get_all_ai_concepts()
+    elif domain == "quantum_physics":
+        concepts = get_all_quantum_physics_concepts()
     else:
         concepts = []
     emit({"domain": domain, "concepts": concepts})

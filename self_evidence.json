@@ -10,11 +10,11 @@
       "reuse_signal": 0
     },
     "research": {
-      "count": 4,
+      "count": 6,
       "follow_through": 0,
-      "question_link": 4,
-      "experiment_link": 4,
-      "question_narrowing": 4,
+      "question_link": 6,
+      "experiment_link": 6,
+      "question_narrowing": 6,
       "coordination_effect": 0,
       "reuse_signal": 0
     },
@@ -38,9 +38,9 @@
         "reuse_signal": 0
       },
       "research": {
-        "count": 4,
+        "count": 6,
         "follow_through": 0,
-        "question_narrowing": 4,
+        "question_narrowing": 6,
         "coordination_effect": 0,
         "reuse_signal": 0
       },
@@ -61,11 +61,14 @@
     "decision_mode=act chosen_action=research",
     "decision_mode=act chosen_action=inspect",
     "decision_mode=act chosen_action=inspect",
-    "decision_mode=act chosen_action=gather"
+    "decision_mode=act chosen_action=gather",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research"
   ],
   "evidence_types": {
-    "question_link": 6,
-    "experiment_progress": 4,
-    "question_narrowing": 4
+    "question_link": 8,
+    "experiment_progress": 6,
+    "question_narrowing": 6
   }
 }

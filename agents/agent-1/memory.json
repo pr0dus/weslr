@@ -6,5 +6,8 @@
   "tick 14: researched local improvements; following last human topic: config sanity checks",
   "tick 16: inspect skipped: no valid target",
   "tick 18: inspect skipped: no valid target",
-  "tick 20: gathered resources; fallback policy selected gather"
+  "tick 20: gathered resources; fallback policy selected gather",
+  "tick 22: inspect skipped: no valid target",
+  "tick 23: researched local improvements; following last human topic: config sanity checks",
+  "tick 25: researched local improvements; following last human topic: config sanity checks"
 ]

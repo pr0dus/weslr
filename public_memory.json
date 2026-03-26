@@ -34,7 +34,7 @@
     ],
     "durable_lessons": [],
     "continuity_anchors": [],
-    "last_updated_at": 1774564996
+    "last_updated_at": 1774567907
   },
   {
     "id": "pm-question-1",
@@ -52,9 +52,9 @@
     "kind": "question",
     "content": "Active communicator inquiry tied to pursuit config sanity checks.",
     "source": "communicator-question-lineage",
-    "stability": 0.56,
+    "stability": 0.58,
     "created_at": 1774564980,
-    "updated_at": 1774564995
+    "updated_at": 1774567903
   },
   {
     "id": "pm-question-3",
@@ -62,9 +62,9 @@
     "kind": "question",
     "content": "Active communicator inquiry tied to pursuit config sanity checks.",
     "source": "communicator-question-lineage",
-    "stability": 0.7,
+    "stability": 0.78,
     "created_at": 1774564980,
-    "updated_at": 1774564995
+    "updated_at": 1774567907
   },
   {
     "id": "web-search-note-1774564986",
@@ -115,5 +115,35 @@
     "stability": 0.5,
     "created_at": 1774564996,
     "updated_at": 1774564996
+  },
+  {
+    "id": "web-search-note-1774567903",
+    "title": "Autonomous research: config sanity checks?",
+    "kind": "research",
+    "content": "Source trigger: internal-curiosity\nSearch results:\nOpenCore Sanity Checker is a web app for validating OC's config.plist \u2014 https://github.com/ocwebutils/sanitychecker (score 1.1)\nsanitychecker/README.md at main - GitHub \u2014 https://github.com/ocwebutils/sanitychecker/blob/main/README.md (score 0.88)\nOpenCore config.plist Sanity Checker - hackintosh-forum.de \u2014 https://www.hackintosh-forum.de/attachment/224217-opencore-config-plist-sanity-checker-pdf/ (score 0.61)\n\nSynthesis:\nWorking summary for config sanity checks?: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config\n\nEvidence:\nGitHub - ocwebutils/sanitychecker: OpenCore Sanity Checker is a web app for validating OC's config.plist \u00b7 GitHub: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License.\nsanitychecker/README.md at main \u00b7 ocwebutils/sanitychecker \u00b7 GitHub: OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
+    "source": "search:config sanity checks?",
+    "stability": 0.46,
+    "created_at": 1774567903,
+    "updated_at": 1774567903
+  },
+  {
+    "id": "web-search-raw-1774567903-1",
+    "title": "Raw excerpt 1: GitHub - ocwebutils/sanitychecker: OpenCore Sanity Checker is a web app for validating OC's config.plist \u00b7 GitHub",
+    "kind": "research_raw",
+    "content": "OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License. OpenCore Sanity Checker is a web app for validating OC's config.plist OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg website vue checker nuxt sanity fastify opencore sanitychecker ocsanity Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
+    "source": "https://github.com/ocwebutils/sanitychecker",
+    "stability": 0.24,
+    "created_at": 1774567903,
+    "updated_at": 1774567903
+  },
+  {
+    "id": "web-search-raw-1774567903-2",
+    "title": "Raw excerpt 2: sanitychecker/README.md at main \u00b7 ocwebutils/sanitychecker \u00b7 GitHub",
+    "kind": "research_raw",
+    "content": "OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
+    "source": "https://github.com/ocwebutils/sanitychecker/blob/main/README.md",
+    "stability": 0.24,
+    "created_at": 1774567903,
+    "updated_at": 1774567903
   }
 ]

@@ -59,8 +59,8 @@
   "proof_signals": {
     "artifact_id": "agent-1-module_export_candidate-1774564980",
     "first_seen_tick": 2,
-    "last_seen_tick": 20,
-    "appearances": 19,
+    "last_seen_tick": 25,
+    "appearances": 24,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,

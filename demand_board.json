@@ -22,6 +22,6 @@
   {
     "kind": "failure",
     "title": "Recent friction detected",
-    "reason": "Errors=0, cooldowns=0, skipped=2; hot actions: inspect."
+    "reason": "Errors=0, cooldowns=0, skipped=3; hot actions: inspect."
   }
 ]

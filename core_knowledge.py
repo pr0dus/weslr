@@ -40,6 +40,10 @@ from ai_knowledge import (
     get_ai_concept, get_all_ai_concepts,
     ai_capability_assessment, ai_types_comparison, ml_approach_selection, llm_characteristics, ai_safety_recommendations, ai_deployment_plan
 )
+from quantum_physics_knowledge import (
+    get_quantum_physics_concept, get_all_quantum_physics_concepts,
+    explain_quantum_concept, quantum_gravity_status
+)
 
 
 # ============================================================================
@@ -58,6 +62,7 @@ class CircleForgeKnowledge:
             "mathematics": get_all_mathematics_concepts(),
             "robotics": get_all_robotics_concepts(),
             "ai": get_all_ai_concepts(),
+            "quantum_physics": get_all_quantum_physics_concepts(),
         }
     
     def get_domain_knowledge(self, domain: str) -> list:
@@ -76,6 +81,8 @@ class CircleForgeKnowledge:
             return get_all_robotics_concepts()
         elif domain == "ai":
             return get_all_ai_concepts()
+        elif domain == "quantum_physics":
+            return get_all_quantum_physics_concepts()
         return []
     
 def get_concept(domain: str, concept: str) -> dict:
@@ -94,6 +101,8 @@ def get_concept(domain: str, concept: str) -> dict:
         return get_robotics_concept(concept)
     elif domain == "ai":
         return get_ai_concept(concept)
+    elif domain == "quantum_physics":
+        return get_quantum_physics_concept(concept)
     return {}
     
     def integrate_into_self_model(self, self_model: dict) -> dict:
@@ -116,7 +125,7 @@ def get_concept(domain: str, concept: str) -> dict:
 
 def get_all_domains() -> list:
     """Get all available knowledge domains."""
-    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai"]
+    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai", "quantum_physics"]
 
 
 def cross_discipline_reasoning(question: str) -> dict:
@@ -139,7 +148,7 @@ def cross_discipline_reasoning(question: str) -> dict:
     if any(word in question_lower for word in ["life", "alive", "organism", "human", "animal", "cell", "dna", "evolution"]):
         domains.append("biology")
     
-    if any(word in question_lower for word in ["force", "energy", "gravity", "motion", "mechanics"]):
+    if any(word in question_lower for word in ["force", "energy", "gravity", "motion", "mechanics", "quantum", "relativity"]):
         domains.append("physics")
     
     if any(word in question_lower for word in ["math", "equation", "function", "graph", "calculus", "algebra"]):
@@ -173,7 +182,8 @@ def cross_discipline_reasoning(question: str) -> dict:
             results["reasoning"]["chemistry"] = "Physical containment depends on relative size and material properties"
     
     if "physics" in domains:
-        results["reasoning"]["physics"] = "Physical systems follow forces, conserve energy, and obey gravity"
+        results["reasoning"]["physics"] = "Physical systems follow forces, conserve energy, and obey gravity. Quantum physics describes behavior at fundamental scales."
+        results["reasoning"]["quantum"] = "Quantum gravity seeks to unify general relativity with quantum mechanics"
     
     if "mathematics" in domains:
         results["reasoning"]["mathematics"] = "Mathematical relationships describe patterns, functions, and transformations"
