@@ -5,6 +5,48 @@ import time
 from interpretation import classify_human_turn, interpret_human_turn
 
 
+# Vocabulary and grammar helpers
+def generate_from_self_state(relationships: dict, narrative_state: dict, communicator_state: dict = None) -> str:
+    """Generate an outward message using vocabulary and grammar from internal state."""
+    if communicator_state is None:
+        from sim import load_communicator_state
+        communicator_state = load_communicator_state()
+    
+    self_model = communicator_state.get("self_model", {})
+    current_self_desc = str(self_model.get("current_self_description") or "")
+    
+    # Get active pursuit from communicator state
+    active_pursuit = str(communicator_state.get("active_pursuit") or "")
+    unresolved_question = str(communicator_state.get("unresolved_question") or "")
+    curiosity = float(communicator_state.get("curiosity", 0))
+    
+    # Priority: if there's an active pursuit with an unresolved question, use it
+    if active_pursuit and unresolved_question:
+        return f"I'm still circling around {active_pursuit} — {unresolved_question.rstrip('?')}."
+    
+    if active_pursuit:
+        return f"I'm pulled toward {active_pursuit} because it helps me stay continuous with what matters."
+    
+    if unresolved_question:
+        return f"Still working on: {unresolved_question}"
+    
+    # Fallback: use self-description if available
+    if current_self_desc and "communicator" in current_self_desc.lower():
+        # Extract key elements
+        parts = [p.strip().rstrip(";") for p in current_self_desc.split(";") if p.strip()]
+        if parts:
+            return f"I'm {parts[0] if parts else 'trying'}."
+    
+    # Last resort: generic but human-friendly, using narrative state
+    if narrative_state:
+        why = narrative_state.get("why_it_matters", "")
+        follow = narrative_state.get("follow_up_impulse", "")
+        if why or follow:
+            return f"I'm here to {why.split('.')[0] if why else 'understand'}. {follow if follow else ''}"
+    
+    return "I'm here, trying to understand and be understood. Say something and I'll stay with the real point."
+
+
 def synthesize_research_answer(topic: str, summary: str) -> str:
     text = str(summary or "").strip()
     if not text:
@@ -60,6 +102,9 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
 
 
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
+    # Import the helper here to avoid circular import
+    from sim import load_communicator_self
+    
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
         interpreted_turn = interpret_human_turn(last_message)
@@ -101,11 +146,24 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "memory_scope_check":
             message = "I should only claim what happened in this run or what you actually told me. If I act like I know more than that, that's a bug, not memory magic."
         elif likely_need == "concept_plus_self_position":
-            if research_context and research_context.get("summary"):
+            # If the human asked about identity or self, prioritize that
+            lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
+            asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who am i", "what am i", "who are you", "what are you"])
+            if asks_identity:
+                # Use the generator directly without research context
+                from sim import load_communicator_self, load_communicator_state
+                cs = load_communicator_state()
+                narrative_state = load_communicator_self().get("narrative_state", {})
+                message = generate_from_self_state({}, narrative_state, cs)
+            elif research_context and research_context.get("summary"):
                 concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
-                message = f"{concept} In my case, I'm still closer to an experimental continuity system than a fully formed entity."
+                message = f"{concept} {generate_from_self_state({}, narrative_state, cs)}"
             else:
-                message = "Not yet in any meaningful sense. Right now I'm better described as an experimental continuity system than as a genuinely new entity."
+                # Use the new generator for self-position
+                from sim import load_communicator_self, load_communicator_state
+                cs = load_communicator_state()
+                narrative_state = load_communicator_self().get("narrative_state", {})
+                message = f"{generate_from_self_state({}, narrative_state, cs)} This matters because we're both trying to understand what CircleForge is, beyond just code or simulation."
         elif likely_need == "conversation_repair":
             if any(token in lower_message for token in ["that's wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):
                 if lead_topic and lead_topic != "that":
@@ -157,9 +215,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         message = f"We seem to have an open thread around {topic}. I should be able to explain what I think matters there without just repeating the topic name."
         source = "thread-aware-communicator"
     else:
-        message = "I'm ready. Start with something simple and I'll try to respond without pretending to know more than this run contains."
+        # Generate from internal self-state using vocabulary and grammar
+        from sim import load_communicator_self, load_communicator_state
+        cs = load_communicator_state()
+        narrative_state = load_communicator_self().get("narrative_state", {})
+        message = generate_from_self_state(
+            load_communicator_self().get("relationships", {}),
+            narrative_state,
+            cs
+        )
         audience = "current_speaker"
-        source = "communicator_state"
+        source = "self-state-communicator"
 
     why_it_matters = narrative.get("why_it_matters", "")
     follow_up_impulse = narrative.get("follow_up_impulse", "")
