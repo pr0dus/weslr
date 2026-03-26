@@ -5047,6 +5047,13 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
     actions = [str(event.get("action") or "") for event in generation_history]
     suppressed_count = sum(1 for action in actions if action == "suppressed")
     generated_count = sum(1 for action in actions if action == "generated")
+    inactivity_span = int(now_ts - int(store.get("last_generated_at", 0) or 0)) if int(store.get("last_generated_at", 0) or 0) > 0 else 0
+    stagnation_detected = (
+        len(actions) >= 4
+        and suppressed_count >= 3
+        and generated_count == 0
+        and inactivity_span >= int(store.get("generation_cooldown_seconds", 300) or 300) * 3
+    )
     material_change_generated_count = sum(
         1 for event in generation_history
         if str(event.get("action") or "") == "generated" and bool(event.get("material_change_detected"))
@@ -5139,7 +5146,9 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         else:
             trend_narrative = "Reflection health appears to be drifting downward."
     elif trend_label == "stable":
-        if scores and scores[-1] >= 0.95:
+        if stagnation_detected:
+            trend_narrative = "Reflection health looks stable, but reflective refresh appears stalled under repeated suppression."
+        elif scores and scores[-1] >= 0.95:
             trend_narrative = "Reflection health looks stable and clean."
         else:
             trend_narrative = "Reflection health looks stable, without a strong directional shift."
@@ -5162,11 +5171,15 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
             "suppressed_count": suppressed_count,
             "material_change_generated_count": material_change_generated_count,
             "blind_generated_count": blind_generated_count,
+            "stagnation_detected": stagnation_detected,
+            "inactivity_span_seconds": inactivity_span,
             "flags": cadence_flags,
         },
         "health_trend": {
             "label": trend_label,
             "narrative": trend_narrative,
+            "stagnation_detected": stagnation_detected,
+            "inactivity_span_seconds": inactivity_span,
             "score_delta": score_delta,
             "recent_scores": scores[-6:],
             "recent_flag_counts": [int(item.get("flag_count", 0) or 0) for item in health_history][-6:],

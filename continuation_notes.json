@@ -488,5 +488,19 @@
     "Known risks": "Trend logic is still heuristic and short-window based; different combinations of artifact issues and cadence warnings may eventually need weighted treatment rather than simple monotonic/threshold rules.",
     "Next exact step": "Surface a compact reflection health narrative string that summarizes the trend in operator language (e.g. stabilizing, slipping under cadence pressure, recovering) so the report is easier to scan than raw labels alone.",
     "Resume hint": "Inspect sim.py health_trend assembly inside evaluate_reflection_quality; if continuing, derive a human-readable narrative from trend_label, score_delta, and warning movement without replacing the structured fields."
+  },
+  {
+    "id": "continuation-1774514603-36",
+    "created_at": 1774514603,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Surface a compact reflection health narrative so operators can scan trend state quickly without decoding labels and counters by hand.",
+    "Completed": "Inspected health_trend reporting, added a narrative string derived from trend_label, score delta, and warning movement, and verified sensible operator-language summaries for stable, improving, and degrading reflection health states.",
+    "Files changed": "sim.py",
+    "Behavior changed": "quality_report.health_trend and top-level health_report now include a narrative field such as stable and clean, recovering with easing warning pressure, or slipping under rising cadence pressure, while preserving the full structured trend fields.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic improving/degrading/stable probes confirmed narrative output aligned with the structured trend labels.",
+    "Known risks": "Narrative phrasing is still template-based and may eventually need richer wording for edge cases like mixed-but-improving or stable-but-pressured states.",
+    "Next exact step": "Add a small operator-facing distinction between clean stability and suppressed stagnation so stable reflection health does not hide long quiet periods with little real reflective refresh.",
+    "Resume hint": "Inspect sim.py health_trend narrative generation and consider combining stable trend with generation_report activity levels to separate healthy stability from low-activity stagnation."
   }
 ]

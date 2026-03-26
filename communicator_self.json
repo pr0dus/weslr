@@ -1204,10 +1204,10 @@
         "at": 1774482215
       }
     ],
-    "last_reflected_at": 1774514584,
+    "last_reflected_at": 1774514757,
     "last_generated_at": 1774482215,
     "generation_cooldown_seconds": 300,
-    "last_compacted_at": 1774514584,
+    "last_compacted_at": 1774514757,
     "max_items": 48,
     "status_counts": {
       "known": 4,
@@ -1232,7 +1232,7 @@
     "reflection_pass_retention": 1,
     "last_pruned_reflection_passes": 0,
     "quality_report": {
-      "checked_at": 1774514584,
+      "checked_at": 1774514757,
       "average_score": 1.0,
       "flagged_items": [],
       "recent_checks": [
@@ -1308,13 +1308,18 @@
         "suppressed_count": 0,
         "material_change_generated_count": 0,
         "blind_generated_count": 0,
+        "stagnation_detected": false,
+        "inactivity_span_seconds": 32542,
         "flags": []
       },
       "health_trend": {
         "label": "stable",
         "narrative": "Reflection health looks stable and clean.",
+        "stagnation_detected": false,
+        "inactivity_span_seconds": 32542,
         "score_delta": 0.0,
         "recent_scores": [
+          1.0,
           1.0,
           1.0,
           1.0
@@ -1322,9 +1327,11 @@
         "recent_flag_counts": [
           0,
           0,
+          0,
           0
         ],
         "recent_warning_counts": [
+          0,
           0,
           0,
           0
@@ -1346,6 +1353,13 @@
           },
           {
             "at": 1774514584,
+            "average_score": 1.0,
+            "summary": "Reflection reality-discipline looks healthy.",
+            "flag_count": 0,
+            "cadence_warning_count": 0
+          },
+          {
+            "at": 1774514757,
             "average_score": 1.0,
             "summary": "Reflection reality-discipline looks healthy.",
             "flag_count": 0,
@@ -1373,6 +1387,13 @@
       },
       {
         "at": 1774514584,
+        "average_score": 1.0,
+        "summary": "Reflection reality-discipline looks healthy.",
+        "flag_count": 0,
+        "cadence_warning_count": 0
+      },
+      {
+        "at": 1774514757,
         "average_score": 1.0,
         "summary": "Reflection reality-discipline looks healthy.",
         "flag_count": 0,
