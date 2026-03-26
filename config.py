@@ -39,6 +39,7 @@ EXPERIMENTS_PATH = BASE_DIR / "experiments.json"
 EVAL_METRICS_PATH = BASE_DIR / "evaluation_metrics.json"
 SELF_EVIDENCE_PATH = BASE_DIR / "self_evidence.json"
 CONTINUATION_NOTES_PATH = BASE_DIR / "continuation_notes.json"
+CHECKPOINT_DIR = BASE_DIR / "checkpoints"
 
 TICK_SECONDS = 60
 
@@ -145,6 +146,11 @@ PROTECTED_SELF_EDIT_PATHS = [
     "AGENT-TIME.md",
     "V0.2-GRAND-VISION.md",
 ]
+
+# Circuit breaker thresholds
+TICK_TIME_LIMIT_SECONDS = 30
+TICKS_PER_SECOND_LIMIT = 10
+SCHEMA_VERSION = 1
 
 HUMAN_SAFETY_RULES = [
     "Do not self-modify protected core files or safety-boundary documents without explicit human review.",

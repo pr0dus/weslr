@@ -42,11 +42,60 @@ def cmd_tick(args):
 
 def cmd_run(args):
     count = 0
+    last_tick_time = time.time()
+    ticks_in_second = 0
+    circuit_breaker_active = False
+    
     while args.ticks <= 0 or count < args.ticks:
-        emit({"tick_run": count + 1, "results": perform_tick(verbose=args.verbose)})
+        # Circuit breaker: rate limiter (max TICKS_PER_SECOND_LIMIT per second)
+        now = time.time()
+        if now - last_tick_time >= 1.0:
+            ticks_in_second = 0
+            last_tick_time = now
+        else:
+            ticks_in_second += 1
+            if ticks_in_second > TICKS_PER_SECOND_LIMIT and not circuit_breaker_active:
+                # Trigger circuit breaker
+                circuit_breaker_active = True
+                from safety_gateway import get_failsafe_state, save_failsafe_state
+                failsafe = get_failsafe_state()
+                failsafe["circuit_breaker_active"] = True
+                failsafe["circuit_breaker_reason"] = f"Rate limit exceeded: {ticks_in_second} ticks in last second (max {TICKS_PER_SECOND_LIMIT})"
+                save_failsafe_state(failsafe)
+                emit({"circuit_breaker_triggered": True, "reason": failsafe["circuit_breaker_reason"]})
+                time.sleep(5)  # Cooldown before next tick
+                continue
+        
+        # Circuit breaker: per-tick time limit
+        tick_start = time.time()
+        result = {"tick_run": count + 1, "results": perform_tick(verbose=args.verbose)}
+        tick_duration = time.time() - tick_start
+        
+        if tick_duration > TICK_TIME_LIMIT_SECONDS and not circuit_breaker_active:
+            # Trigger circuit breaker
+            circuit_breaker_active = True
+            from safety_gateway import get_failsafe_state, save_failsafe_state
+            failsafe = get_failsafe_state()
+            failsafe["circuit_breaker_active"] = True
+            failsafe["circuit_breaker_reason"] = f"Tick took {tick_duration:.2f}s (max {TICK_TIME_LIMIT_SECONDS}s)"
+            save_failsafe_state(failsafe)
+            emit({"circuit_breaker_triggered": True, "reason": failsafe["circuit_breaker_reason"]})
+            time.sleep(5)  # Cooldown
+            continue
+        
+        emit(result)
         count += 1
+        
         if args.ticks > 0 and count >= args.ticks:
             break
+        
+        if circuit_breaker_active and count % 10 == 0:
+            # Check if circuit breaker can be cleared after cooldown
+            failsafe = get_failsafe_state()
+            if failsafe.get("circuit_breaker_active"):
+                # Keep circuit breaker active but log status
+                emit({"circuit_breaker_status": "active", "reason": failsafe.get("circuit_breaker_reason", "unknown")})
+        
         time.sleep(args.interval)
 
 
@@ -231,6 +280,12 @@ def cmd_communicator_message(args):
         ))
     else:
         emit(build_communicator_message())
+
+
+def cmd_self_test(_args):
+    """Run self-integrity test (DB, files, checkpoints)."""
+    from self_test import run_self_test
+    emit(run_self_test())
 
 
 def cmd_fetch_url(args):
@@ -526,6 +581,9 @@ def main():
 
     p = sub.add_parser("communicator-message", help="show natural outward language plus behind-the-curtain metadata")
     p.set_defaults(func=cmd_communicator_message)
+
+    p = sub.add_parser("self-test", help="run self-integrity test (DB, files, checkpoints)")
+    p.set_defaults(func=cmd_self_test)
 
     p = sub.add_parser("speak", help="print only the natural outward message")
     p.set_defaults(func=cmd_speak)
