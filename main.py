@@ -11,6 +11,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
+from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
+from continuity import apply_human_exchange_to_threads
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
@@ -286,6 +288,15 @@ def cmd_self_test(_args):
     """Run self-integrity test (DB, files, checkpoints)."""
     from self_test import run_self_test
     emit(run_self_test())
+
+
+def cmd_spontaneous_expression(_args):
+    """Generate a spontaneous self-expression."""
+    from autonomous_expression import generate_spontaneous_expression, update_last_expression_at
+    expression = generate_spontaneous_expression()
+    emit(expression)
+    # Update timestamp so we don't generate another immediately
+    update_last_expression_at()
 
 
 def cmd_fetch_url(args):
@@ -584,6 +595,9 @@ def main():
 
     p = sub.add_parser("self-test", help="run self-integrity test (DB, files, checkpoints)")
     p.set_defaults(func=cmd_self_test)
+
+    p = sub.add_parser("spontaneous-expression", help="generate a spontaneous self-expression (thought, question, idea, joke)")
+    p.set_defaults(func=cmd_spontaneous_expression)
 
     p = sub.add_parser("speak", help="print only the natural outward message")
     p.set_defaults(func=cmd_speak)

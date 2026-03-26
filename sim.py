@@ -82,6 +82,7 @@ from config import (
     STARTING_STORAGE,
     TICK_SECONDS,
     VERSION,
+    SCHEMA_VERSION,
 )
 from continuity import apply_human_exchange_to_threads, should_passively_reinforce_thread
 from dialogue import build_communicator_message_payload
@@ -92,6 +93,7 @@ from integration import find_relevant_research_note, integrate_research_into_com
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
+from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
@@ -6186,6 +6188,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     with conn:
         conn.execute("UPDATE world SET value=? WHERE key='tick'", (str(tick),))
         conn.execute("UPDATE world SET value=? WHERE key='last_tick_started'", (str(started_at),))
+        
         agents = list_agents(conn)
         categories = load_categories()
         relationships = load_relationships()
@@ -6250,6 +6253,8 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 continue
             role = classify_internal_role(agent.get("name"))
             
+            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role, "communicator_self": communicator_self}, agent_dir)
+            
             # Safety check: Validate plan before execution
             safety = get_safety_gateway()
             plan_dict = {"action": plan.get("action", ""), "niche_theme": plan.get("niche_theme"), "reason": plan.get("reason")}
@@ -6261,7 +6266,6 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                 summaries.append(item)
                 continue
             
-            plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role, "communicator_self": communicator_self}, agent_dir)
             register_inner_thought(agent, plan, wake_reason, tick, started_at)
             internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))
             result = apply_action(agent, plan, agent_dir, agents_by_name, started_at, conn)
@@ -6344,6 +6348,25 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     save_opportunity_board(opportunity_board)
     refresh_state_files(conn)
     conn.close()
+    
+    # Check for spontaneous expression (autonomous self-expression) at end of tick
+    spontaneous = maybe_autonomous_expression(communicator_self=communicator_self)
+    if spontaneous:
+        # Update last expression timestamp
+        from autonomous_expression import update_last_expression_at
+        update_last_expression_at()
+        # Log the spontaneous expression
+        spont_summary = f"spontaneous {spontaneous.get('type', 'expression')}: {spontaneous.get('message', '')[:50]}"
+        summaries.append({
+            "agent": "self",
+            "action": "spontaneous-expression",
+            "status": "ok",
+            "summary": spont_summary,
+            "message": spontaneous.get("message", ""),
+            "type": spontaneous.get("type", "unknown"),
+            "active_topics": spontaneous.get("metadata", {}).get("active_topics", []),
+        })
+    
     return {
         "summaries": summaries,
         "communicator": load_communicator_state(),
