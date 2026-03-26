@@ -390,5 +390,19 @@
     "Known risks": "Repetition detection is still heuristic and lexical; it can miss deeper semantic sameness or occasionally over-penalize legitimate continuity language when the world truly has not changed much.",
     "Next exact step": "Use repetition pressure upstream in sync_reflection_store so stale reflection passes are generated less often instead of only being penalized after the fact.",
     "Resume hint": "Inspect sim.py evaluate_reflection_quality and sync_reflection_store, then decide how generation_due or reflection-pass insertion should respond to recent repetition/staleness signals without suppressing legitimate continuity reflection."
+  },
+  {
+    "id": "continuation-1774504585-29",
+    "created_at": 1774504585,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Suppress stale reflection-pass generation upstream so near-duplicate same-topic reflection is skipped before it enters the live reflection store.",
+    "Completed": "Inspected sync_reflection_store(), added normalization/overlap-based duplicate suppression for generated same-topic reflection passes, and verified current clean behavior plus synthetic upstream suppression with recorded reason metadata.",
+    "Files changed": "sim.py",
+    "Behavior changed": "sync_reflection_store now suppresses obvious exact-repeat or near-duplicate same-topic reflection-pass generation, recording last_generation_suppressed_for_repetition and incrementing last_suppressed_reflection_passes instead of appending stale reflective churn.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic in-memory sync_reflection_store() probe confirming before/after reflection-pass count stayed constant and suppression metadata was set with reason near-duplicate.",
+    "Known risks": "Suppression is still lexical/heuristic and keyed mainly to the latest same-topic pass, so subtle genuinely new reflection may occasionally be suppressed if its wording overlaps too much with prior reflection.",
+    "Next exact step": "Gate reflection regeneration on material state change so unresolved question, uncertainty, thread pressure, or pursuit shifts can explicitly re-enable fresh reflection even when wording overlap stays high.",
+    "Resume hint": "Inspect sim.py sync_reflection_store and the stored suppression metadata fields, then decide how to encode material-change signals so legitimate continuity reflection is refreshed by changed state rather than mere cooldown expiry."
   }
 ]

@@ -4817,6 +4817,12 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
     unresolved_question = str(communicator.get("unresolved_question") or "").strip()
     active_pursuit = str(communicator.get("active_pursuit") or "continuity").strip() or "continuity"
     uncertainty = float(dynamic.get("uncertainty", 0.0) or 0.0)
+    current_generation_signature = {
+        "topic": active_pursuit,
+        "unresolved_question": unresolved_question,
+        "thread_focus": list(unresolved_threads[:2]),
+        "uncertainty_band": round(uncertainty, 1),
+    }
     candidates = []
     if unresolved_question:
         candidates.append({"kind": "open-question", "status": "known", "topic": active_pursuit, "content": unresolved_question, "source": "communicator.unresolved_question", "at": now_ts})
@@ -4853,6 +4859,7 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
                 "source": "reflection.generation_loop",
                 "at": now_ts,
             }
+            item["generation_signature"] = current_generation_signature
             same_topic_passes = [
                 existing for existing in items
                 if str(existing.get("kind") or "") == "reflection-pass"
@@ -4861,26 +4868,37 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
             latest_same_topic = same_topic_passes[-1] if same_topic_passes else None
             suppressed_for_repetition = False
             suppression_reason = ""
+            material_change_detected = False
             if latest_same_topic is not None:
                 latest_content = str(latest_same_topic.get("content") or "")
-                if normalize_reflection_text(latest_content) == normalize_reflection_text(content):
-                    suppressed_for_repetition = True
-                    suppression_reason = "exact-repeat"
-                elif word_overlap(latest_content, content) >= 0.82:
-                    suppressed_for_repetition = True
-                    suppression_reason = "near-duplicate"
+                latest_signature = latest_same_topic.get("generation_signature") or {
+                    "topic": str(latest_same_topic.get("topic") or active_pursuit).strip() or active_pursuit,
+                    "unresolved_question": str(communicator.get("unresolved_question") or "").strip(),
+                    "thread_focus": list(unresolved_threads[:2]),
+                    "uncertainty_band": round(uncertainty, 1),
+                }
+                material_change_detected = latest_signature != current_generation_signature
+                if not material_change_detected:
+                    if normalize_reflection_text(latest_content) == normalize_reflection_text(content):
+                        suppressed_for_repetition = True
+                        suppression_reason = "exact-repeat"
+                    elif word_overlap(latest_content, content) >= 0.82:
+                        suppressed_for_repetition = True
+                        suppression_reason = "near-duplicate"
             key = (str(item.get("kind")), str(item.get("status")), str(item.get("content")))
             if suppressed_for_repetition:
                 store["last_generation_suppressed_for_repetition"] = {
                     "at": now_ts,
                     "topic": active_pursuit,
                     "reason": suppression_reason,
+                    "material_change_detected": material_change_detected,
                 }
                 store["last_suppressed_reflection_passes"] = int(store.get("last_suppressed_reflection_passes", 0) or 0) + 1
             elif key not in seen:
                 items.append(item)
                 seen.add(key)
                 store["last_generation_suppressed_for_repetition"] = None
+                store["last_reflection_generation_signature"] = current_generation_signature
             store["last_generated_at"] = now_ts
     max_items = int(store.get("max_items", 48) or 48)
     items = items[-max_items:]
