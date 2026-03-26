@@ -432,5 +432,19 @@
     "Known risks": "Live persisted generation history will remain sparse until additional generation/suppression events occur naturally; the current ledger is short-run and heuristic, not yet a long-range trend or dashboard visualization.",
     "Next exact step": "Use generation_report cadence signals to flag reflection oscillation or chronic suppression in quality reporting so operators can distinguish healthy restraint from stalled self-observation.",
     "Resume hint": "Inspect sim.py generation_history handling in sync_reflection_store() and generation_report assembly in build_reflection_report(); then decide whether the next move should be oscillation detection or dashboard surfacing."
+  },
+  {
+    "id": "continuation-1774505130-32",
+    "created_at": 1774505130,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Use reflection cadence history to detect and report oscillation or chronic suppression so operators can distinguish healthy restraint from stalled or unstable self-observation.",
+    "Completed": "Inspected the reflection quality/report path, added cadence-based diagnostics into evaluate_reflection_quality(), and verified that synthetic oscillation and chronic suppression patterns now surface explicit cadence flags and affect the summary/score.",
+    "Files changed": "sim.py",
+    "Behavior changed": "quality_report now includes cadence_report with recent actions, generated/suppressed counts, and cadence flags; oscillating generation/suppression or chronic suppression can now reduce reflection quality and change the summary even when individual artifacts remain structurally well-formed.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic oscillation probe confirmed reflection-cadence-oscillation and reflection-chronic-suppression flags; synthetic chronic-suppression probe confirmed cadence-pressure reporting without needing malformed reflection artifacts.",
+    "Known risks": "Cadence thresholds are still short-window heuristics; some legitimate bursty reflection control could be flagged as pressure until longer-run context or topic-sensitive thresholds are added.",
+    "Next exact step": "Teach cadence diagnostics to distinguish healthy material-change-driven regeneration from noisy flip-flopping by weighting generated events differently when material_change_detected is true.",
+    "Resume hint": "Inspect sim.py evaluate_reflection_quality cadence_report logic and generation_history event fields, then refine cadence scoring so material-change-driven refresh looks healthier than blind alternation."
   }
 ]

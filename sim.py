@@ -5043,17 +5043,33 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
     actions = [str(event.get("action") or "") for event in generation_history]
     suppressed_count = sum(1 for action in actions if action == "suppressed")
     generated_count = sum(1 for action in actions if action == "generated")
+    material_change_generated_count = sum(
+        1 for event in generation_history
+        if str(event.get("action") or "") == "generated" and bool(event.get("material_change_detected"))
+    )
+    blind_generated_count = max(0, generated_count - material_change_generated_count)
     cadence_flags = []
-    if len(actions) >= 4 and all(actions[i] != actions[i - 1] for i in range(1, len(actions))):
-        avg_score -= 0.08
-        cadence_flags.append({
-            "kind": "cadence",
-            "status": "warning",
-            "topic": (generation_history[-1] or {}).get("topic", ""),
-            "source": "reflection_store.generation_history",
-            "score": 0.92,
-            "issues": ["reflection-cadence-oscillation"],
-        })
+    alternating = len(actions) >= 4 and all(actions[i] != actions[i - 1] for i in range(1, len(actions)))
+    if alternating:
+        if blind_generated_count > 0:
+            avg_score -= 0.08
+            cadence_flags.append({
+                "kind": "cadence",
+                "status": "warning",
+                "topic": (generation_history[-1] or {}).get("topic", ""),
+                "source": "reflection_store.generation_history",
+                "score": 0.92,
+                "issues": ["reflection-cadence-oscillation"],
+            })
+        else:
+            cadence_flags.append({
+                "kind": "cadence",
+                "status": "note",
+                "topic": (generation_history[-1] or {}).get("topic", ""),
+                "source": "reflection_store.generation_history",
+                "score": 1.0,
+                "issues": ["reflection-cadence-material-refresh"],
+            })
     if suppressed_count >= 3 and suppressed_count > generated_count:
         avg_score -= 0.1
         cadence_flags.append({
@@ -5066,11 +5082,15 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         })
     avg_score = round(max(0.0, min(1.0, avg_score)), 3)
     summary = "Reflection reality-discipline looks healthy."
-    if cadence_flags and avg_score >= 0.85:
+    cadence_warning_flags = [flag for flag in cadence_flags if str(flag.get("status") or "") == "warning"]
+    cadence_note_flags = [flag for flag in cadence_flags if str(flag.get("status") or "") == "note"]
+    if cadence_warning_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but cadence pressure is visible."
+    elif cadence_note_flags and avg_score >= 0.85:
+        summary = "Reflection reality-discipline looks healthy, and cadence looks materially responsive."
     if repetition_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but repetition pressure is visible."
-    if cadence_flags and repetition_flags and avg_score >= 0.85:
+    if cadence_warning_flags and repetition_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but repetition and cadence pressure are visible."
     elif avg_score < 0.85:
         summary = "Reflection reality-discipline needs tightening."
@@ -5084,6 +5104,8 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
             "recent_actions": actions,
             "generated_count": generated_count,
             "suppressed_count": suppressed_count,
+            "material_change_generated_count": material_change_generated_count,
+            "blind_generated_count": blind_generated_count,
             "flags": cadence_flags,
         },
     }
