@@ -418,5 +418,19 @@
     "Known risks": "Material change is still represented by a compact heuristic fingerprint; subtle meaningful changes outside the chosen fields may be missed, while coarse uncertainty banding may sometimes under- or over-trigger refresh.",
     "Next exact step": "Surface reflection generation/suppression history in reflection-store quality reporting so operators can see not just current artifact quality but whether reflection is repeatedly suppressed, refreshed, or oscillating.",
     "Resume hint": "Inspect sim.py sync_reflection_store and the new generation_signature / suppression metadata, then decide whether the next move should be operator-visible reflection cadence history or stronger semantic material-change detection."
+  },
+  {
+    "id": "continuation-1774504963-31",
+    "created_at": 1774504963,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Surface reflection generation/suppression cadence in reflection-store so operators can see whether reflection is being refreshed, suppressed, or oscillating instead of only reading current artifact quality.",
+    "Completed": "Inspected the reflection-store surface, added a small bounded generation_history ledger to reflection_store, recorded generated/suppressed events in sync_reflection_store(), and exposed a compact generation_report in build_reflection_report().",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store now includes generation_report with recent generation/suppression events, generated_count, suppressed_count, latest_suppression metadata, and latest generation signature, giving operators a short-run view of reflective cadence instead of only static artifact quality.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic two-step sync_reflection_store() probe confirming generation_report recorded one suppressed and one generated event with corresponding metadata.",
+    "Known risks": "Live persisted generation history will remain sparse until additional generation/suppression events occur naturally; the current ledger is short-run and heuristic, not yet a long-range trend or dashboard visualization.",
+    "Next exact step": "Use generation_report cadence signals to flag reflection oscillation or chronic suppression in quality reporting so operators can distinguish healthy restraint from stalled self-observation.",
+    "Resume hint": "Inspect sim.py generation_history handling in sync_reflection_store() and generation_report assembly in build_reflection_report(); then decide whether the next move should be oscillation detection or dashboard surfacing."
   }
 ]

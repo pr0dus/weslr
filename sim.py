@@ -5039,17 +5039,53 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         })
     avg_score = round(sum(item.get("score", 0.0) for item in checks) / len(checks), 3) if checks else 1.0
     repetition_flags = [item for item in checks if any("repeat" in issue or "stale" in issue or "reheated" in issue for issue in (item.get("issues") or []))]
+    generation_history = list(store.get("generation_history") or [])[-6:]
+    actions = [str(event.get("action") or "") for event in generation_history]
+    suppressed_count = sum(1 for action in actions if action == "suppressed")
+    generated_count = sum(1 for action in actions if action == "generated")
+    cadence_flags = []
+    if len(actions) >= 4 and all(actions[i] != actions[i - 1] for i in range(1, len(actions))):
+        avg_score -= 0.08
+        cadence_flags.append({
+            "kind": "cadence",
+            "status": "warning",
+            "topic": (generation_history[-1] or {}).get("topic", ""),
+            "source": "reflection_store.generation_history",
+            "score": 0.92,
+            "issues": ["reflection-cadence-oscillation"],
+        })
+    if suppressed_count >= 3 and suppressed_count > generated_count:
+        avg_score -= 0.1
+        cadence_flags.append({
+            "kind": "cadence",
+            "status": "warning",
+            "topic": (generation_history[-1] or {}).get("topic", ""),
+            "source": "reflection_store.generation_history",
+            "score": 0.9,
+            "issues": ["reflection-chronic-suppression"],
+        })
+    avg_score = round(max(0.0, min(1.0, avg_score)), 3)
     summary = "Reflection reality-discipline looks healthy."
+    if cadence_flags and avg_score >= 0.85:
+        summary = "Reflection reality-discipline looks healthy, but cadence pressure is visible."
     if repetition_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but repetition pressure is visible."
+    if cadence_flags and repetition_flags and avg_score >= 0.85:
+        summary = "Reflection reality-discipline looks healthy, but repetition and cadence pressure are visible."
     elif avg_score < 0.85:
         summary = "Reflection reality-discipline needs tightening."
     report = {
         "checked_at": now_ts,
         "average_score": avg_score,
-        "flagged_items": [item for item in checks if item.get("issues")],
+        "flagged_items": [item for item in checks if item.get("issues")] + cadence_flags,
         "recent_checks": checks[-8:],
         "summary": summary,
+        "cadence_report": {
+            "recent_actions": actions,
+            "generated_count": generated_count,
+            "suppressed_count": suppressed_count,
+            "flags": cadence_flags,
+        },
     }
     store["quality_report"] = report
     self_state["reflection_store"] = store
