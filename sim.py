@@ -4769,6 +4769,7 @@ def default_reflection_store(now_ts: int | None = None) -> dict:
         "last_compacted_at": 0,
         "max_items": 48,
         "max_episodes": 16,
+        "reflection_pass_retention": 1,
         "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
     }
 
@@ -4785,6 +4786,7 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     store.setdefault("last_compacted_at", 0)
     store.setdefault("max_items", 48)
     store.setdefault("max_episodes", 16)
+    store.setdefault("reflection_pass_retention", 1)
     counts = store.setdefault("status_counts", {})
     for key in ("known", "inferred", "proposed", "imagined"):
         counts.setdefault(key, 0)
@@ -4925,38 +4927,56 @@ def distill_reflection_episodes(self_state: dict, now_ts: int | None = None) -> 
     store = self_state.get("reflection_store") or {}
     items = list(store.get("items") or [])
     episodes = list(store.get("episodes") or [])
+    retained_items = []
     by_topic = {}
     for item in items:
         if str(item.get("kind") or "") != "reflection-pass":
+            retained_items.append(item)
             continue
         topic = str(item.get("topic") or "continuity").strip() or "continuity"
         bucket = by_topic.setdefault(topic, [])
         bucket.append(item)
+
+    retention = max(0, int(store.get("reflection_pass_retention", 1) or 1))
+    pruned_count = 0
     for topic, bucket in by_topic.items():
-        if len(bucket) < 2:
-            continue
-        last_item = bucket[-1]
-        signature = f"{topic}::{str(last_item.get('content') or '').strip()}"
-        existing = next((ep for ep in episodes if str(ep.get("signature") or "") == signature), None)
-        if existing:
-            existing["count"] = max(int(existing.get("count", 1) or 1), len(bucket))
-            existing["last_at"] = int(last_item.get("at", now_ts) or now_ts)
-            existing["summary"] = str(last_item.get("content") or "").strip()
+        if len(bucket) >= 2:
+            last_item = bucket[-1]
+            signature = f"{topic}::{str(last_item.get('content') or '').strip()}"
+            existing = next((ep for ep in episodes if str(ep.get("signature") or "") == signature), None)
+            if existing:
+                existing["count"] = max(int(existing.get("count", 1) or 1), len(bucket))
+                existing["last_at"] = int(last_item.get("at", now_ts) or now_ts)
+                existing["summary"] = str(last_item.get("content") or "").strip()
+                existing["last_distilled_at"] = now_ts
+            else:
+                episodes.append({
+                    "topic": topic,
+                    "kind": "reflection-episode",
+                    "status": "proposed",
+                    "count": len(bucket),
+                    "first_at": int(bucket[0].get("at", now_ts) or now_ts),
+                    "last_at": int(last_item.get("at", now_ts) or now_ts),
+                    "summary": str(last_item.get("content") or "").strip(),
+                    "signature": signature,
+                    "last_distilled_at": now_ts,
+                })
+            keep_from = max(0, len(bucket) - retention)
+            retained_items.extend(bucket[keep_from:])
+            pruned_count += max(0, len(bucket) - retention)
         else:
-            episodes.append({
-                "topic": topic,
-                "kind": "reflection-episode",
-                "status": "proposed",
-                "count": len(bucket),
-                "first_at": int(bucket[0].get("at", now_ts) or now_ts),
-                "last_at": int(last_item.get("at", now_ts) or now_ts),
-                "summary": str(last_item.get("content") or "").strip(),
-                "signature": signature,
-            })
+            retained_items.extend(bucket)
     max_episodes = int(store.get("max_episodes", 16) or 16)
     episodes = sorted(episodes, key=lambda ep: (int(ep.get("last_at", 0) or 0), int(ep.get("count", 0) or 0)), reverse=True)[:max_episodes]
+    store["items"] = retained_items[-int(store.get("max_items", 48) or 48):]
     store["episodes"] = episodes
     store["last_compacted_at"] = now_ts
+    store["last_pruned_reflection_passes"] = pruned_count
+    counts = {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0}
+    for item in store["items"]:
+        status = str(item.get("status") or "known")
+        counts[status] = counts.get(status, 0) + 1
+    store["status_counts"] = counts
     self_state["reflection_store"] = store
     return self_state
 
@@ -4975,6 +4995,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
         "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
         "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
         "last_compacted_at": (self_state.get("reflection_store") or {}).get("last_compacted_at", 0),
+        "last_pruned_reflection_passes": (self_state.get("reflection_store") or {}).get("last_pruned_reflection_passes", 0),
         "status_counts": (self_state.get("reflection_store") or {}).get("status_counts", {}),
         "recent_items": list(((self_state.get("reflection_store") or {}).get("items") or []))[-8:],
         "episodes": list(((self_state.get("reflection_store") or {}).get("episodes") or []))[:8],
