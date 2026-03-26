@@ -362,5 +362,19 @@
     "Known risks": "Pruning is intentionally conservative but still heuristic: it assumes one retained reflection-pass per topic is enough live context, and it does not yet penalize stale repetition semantically across nearby but non-identical passes.",
     "Next exact step": "Add staleness/repetition penalties to the reflection evaluator so nearly-duplicate reflection passes can be downgraded even before compaction.",
     "Resume hint": "Start with python3 main.py reflection-store, inspect sim.py around distill_reflection_episodes and evaluate_reflection_quality, then decide whether to add repetition signatures or age-weighted penalties."
+  },
+  {
+    "id": "continuation-1774504086-27",
+    "created_at": 1774504086,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Prune already-distilled reflection-pass items so the reflection layer keeps bounded continuity without accumulating redundant passes.",
+    "Completed": "Inspected the reflection store pipeline, added bounded reflection-pass retention during reflection episode distillation, exposed last_pruned_reflection_passes in reflection-store output, and made reflection-store persist compaction/quality updates back into communicator_self.json.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store now prunes already-distilled duplicate reflection-pass items while retaining a bounded recent tail per topic; it also persists compaction metadata, episodes, and quality_report back into communicator_self.json when run directly.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; verified output now includes last_pruned_reflection_passes; verified communicator_self.json persists last_compacted_at, episodes, quality_report, and pruned-count metadata.",
+    "Known risks": "Retention is still topic-bucket heuristic and currently keeps only a small recent tail, not semantic novelty-aware exemplars; future work may need staleness/repetition scoring across near-duplicate but non-identical passes.",
+    "Next exact step": "Add staleness/repetition penalties so reflection quality scoring and generation pressure both discourage reheated near-duplicate passes before they need pruning.",
+    "Resume hint": "Inspect sim.py default_reflection_store, distill_reflection_episodes, and build_reflection_report; then run python3 main.py reflection-store and compare retained reflection-pass items against episodes before adding repetition-aware penalties."
   }
 ]

@@ -4859,6 +4859,19 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
 
 
 def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> dict:
+    def normalize_reflection_text(value: str) -> str:
+        value = re.sub(r"\d+\.\d+", "<num>", str(value or "").lower())
+        value = re.sub(r"\d+", "<num>", value)
+        value = re.sub(r"\s+", " ", value)
+        return value.strip()
+
+    def word_overlap(a: str, b: str) -> float:
+        left = {part for part in normalize_reflection_text(a).split(" ") if part}
+        right = {part for part in normalize_reflection_text(b).split(" ") if part}
+        if not left or not right:
+            return 0.0
+        return len(left & right) / max(len(left | right), 1)
+
     now_ts = now_ts or int(time.time())
     ensure_reflection_store(self_state, now_ts=now_ts)
     store = self_state.get("reflection_store") or {}
@@ -4871,10 +4884,18 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         "communicator.active_pursuit",
         "reflection.generation_loop",
     }
-    for item in items:
+    reflection_passes = [item for item in items if str(item.get("kind") or "") == "reflection-pass"]
+    latest_pass_by_topic = {}
+    for item in reflection_passes:
+        topic = str(item.get("topic") or "continuity").strip() or "continuity"
+        latest_pass_by_topic[topic] = item
+
+    for index, item in enumerate(items):
         status = str(item.get("status") or "known")
         content = str(item.get("content") or "")
         source = str(item.get("source") or "")
+        kind = str(item.get("kind") or "")
+        topic = str(item.get("topic") or "")
         score = 1.0
         issues = []
         lowered = content.lower()
@@ -4884,7 +4905,7 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         if status == "known" and "Inferred:" in content:
             score -= 0.25
             issues.append("known-item-mixes-inferred-language")
-        if status == "proposed" and "Proposed:" not in content and str(item.get("kind") or "") == "reflection-pass":
+        if status == "proposed" and "Proposed:" not in content and kind == "reflection-pass":
             score -= 0.2
             issues.append("proposed-pass-missing-proposed-marker")
         if status == "inferred" and "Known:" in content:
@@ -4893,10 +4914,41 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         if status == "imagined" and source in grounded_sources:
             score -= 0.2
             issues.append("imagined-item-looks-grounded")
-        if str(item.get("kind") or "") == "reflection-pass":
+        if kind == "reflection-pass":
             if not all(marker in content for marker in ["Known:", "Inferred:", "Proposed:"]):
                 score -= 0.3
                 issues.append("reflection-pass-missing-reality-split")
+            normalized = normalize_reflection_text(content)
+            prior_same_topic = [prior for prior in reflection_passes if prior is not item and str(prior.get("topic") or "") == topic and int(prior.get("at", 0) or 0) <= int(item.get("at", 0) or 0)]
+            latest_topic_pass = latest_pass_by_topic.get(topic)
+            if any(normalize_reflection_text(str(prior.get("content") or "")) == normalized for prior in prior_same_topic):
+                score -= 0.2
+                issues.append("reflection-pass-exact-repeat")
+            else:
+                overlap = max((word_overlap(content, str(prior.get("content") or "")) for prior in prior_same_topic), default=0.0)
+                if overlap >= 0.82:
+                    score -= 0.12
+                    issues.append("reflection-pass-near-duplicate")
+            if latest_topic_pass is not None and latest_topic_pass is not item:
+                latest_normalized = normalize_reflection_text(str(latest_topic_pass.get("content") or ""))
+                if normalized == latest_normalized:
+                    score -= 0.12
+                    issues.append("reflection-pass-stale-under-same-topic")
+                elif word_overlap(content, str(latest_topic_pass.get("content") or "")) >= 0.82:
+                    score -= 0.08
+                    issues.append("reflection-pass-stale-near-same-topic")
+            proposed_segment = ""
+            if "Proposed:" in content:
+                proposed_segment = content.split("Proposed:", 1)[-1].strip()
+            if proposed_segment:
+                prior_proposals = []
+                for prior in prior_same_topic:
+                    prior_content = str(prior.get("content") or "")
+                    if "Proposed:" in prior_content:
+                        prior_proposals.append(prior_content.split("Proposed:", 1)[-1].strip())
+                if any(normalize_reflection_text(prev) == normalize_reflection_text(proposed_segment) for prev in prior_proposals):
+                    score -= 0.1
+                    issues.append("reheated-proposed-guidance")
         if "maybe" in lowered and status == "known":
             score -= 0.15
             issues.append("known-item-uses-hedging")
@@ -4909,12 +4961,18 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
             "issues": issues,
         })
     avg_score = round(sum(item.get("score", 0.0) for item in checks) / len(checks), 3) if checks else 1.0
+    repetition_flags = [item for item in checks if any("repeat" in issue or "stale" in issue or "reheated" in issue for issue in (item.get("issues") or []))]
+    summary = "Reflection reality-discipline looks healthy."
+    if repetition_flags and avg_score >= 0.85:
+        summary = "Reflection reality-discipline looks healthy, but repetition pressure is visible."
+    elif avg_score < 0.85:
+        summary = "Reflection reality-discipline needs tightening."
     report = {
         "checked_at": now_ts,
         "average_score": avg_score,
         "flagged_items": [item for item in checks if item.get("issues")],
         "recent_checks": checks[-8:],
-        "summary": "Reflection reality-discipline looks healthy." if avg_score >= 0.85 else "Reflection reality-discipline needs tightening.",
+        "summary": summary,
     }
     store["quality_report"] = report
     self_state["reflection_store"] = store
