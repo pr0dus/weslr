@@ -28,6 +28,7 @@ from self_mod_enhancements import generate_autonomous_suggestion, check_modifica
 from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 from autonomous_expression import get_rate_expression, update_last_expression_at
+from session_continuity import start_new_session, get_session_continuity, remember_conversation
 
 
 def emit(data):
@@ -298,6 +299,12 @@ def cmd_spontaneous_expression(_args):
     emit(expression)
     # Update timestamp so we don't generate another immediately
     update_last_expression_at()
+
+
+def cmd_session_continuity(_args):
+    """Check session continuity and time-persistent identity."""
+    continuity = get_session_continuity()
+    emit(continuity)
 
 
 def cmd_set_expression_rate(args):
@@ -611,6 +618,9 @@ def main():
 
     p = sub.add_parser("spontaneous-expression", help="generate a spontaneous self-expression (thought, question, idea, joke)")
     p.set_defaults(func=cmd_spontaneous_expression)
+
+    p = sub.add_parser("session-continuity", help="check session continuity and time-persistent identity")
+    p.set_defaults(func=cmd_session_continuity)
 
     p = sub.add_parser("set-expression-rate", help="set autonomous expression rate modifier (0.1 = slow, 1.0 = normal, 2.0 = fast)")
     p.add_argument("rate", type=float, help="expression rate multiplier")

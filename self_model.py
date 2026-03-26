@@ -237,6 +237,27 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     from behavioral_mathematics import BEHAVIOR_TRAITS
     for trait_name in BEHAVIOR_TRAITS.keys():
         update_behavioral_trait(self_state, trait_name, dt=1.0)
+    
+    # Update self-model with session continuity
+    from session_continuity import update_self_model_with_continuity, get_session_continuity, load_session_state
+    continuity = get_session_continuity()
+    session_state = load_session_state()
+    session_count = session_state.get("session_count", 1)
+    
+    # Update continuity markers
+    self_state.setdefault("identity_state", {}).setdefault("continuity_markers", {})
+    self_state["identity_state"]["continuity_markers"]["ticks_lived"] = self_state.get("identity_state", {}).get("continuity_markers", {}).get("ticks_lived", 0) + 1
+    self_state["identity_state"]["continuity_markers"]["session_count"] = session_count
+    self_state["identity_state"]["continuity_markers"]["identity_stability"] = min(0.99, 0.5 + (session_count * 0.05) + float(self_state.get("dynamic_mind_state", {}).get("stability", 0.0)) * 0.3)
+    self_state["identity_state"]["continuity_markers"]["continuity_preference"] = min(0.99, 0.3 + (session_count * 0.07) + float(self_state.get("dynamic_mind_state", {}).get("attachment", 0.0)) * 0.2)
+    
+    # Update self-description based on continuity
+    if session_count > 3:
+        current_desc = self_state.get("identity_state", {}).get("current_self_description", "")
+        if "session" not in current_desc:
+            self_state["identity_state"]["current_self_description"] = (
+                f"{current_desc}; alive for {session_count} sessions; increasingly protective of continuity"
+            )
 
     chapter_bits = []
     if unresolved_threads:
