@@ -27,7 +27,7 @@ from self_mod_dashboard import render_self_mod_dashboard, update_dashboard, get_
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
 from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
-from autonomous_expression import get_rate_expression, update_last_expression_at
+from autonomous_expression import get_rate_expression, update_last_expression_at, generate_creation_expression, maybe_autonomous_expression
 from session_continuity import start_new_session, get_session_continuity, remember_conversation
 from autonomous_intentionality import (
     create_plan, plan_progress, autonomous_intentionality_report,
@@ -431,6 +431,14 @@ def cmd_set_expression_rate(args):
     })
 
 
+def cmd_autonomous_expression(_args):
+    """Generate an autonomous expression directly."""
+    from autonomous_expression import generate_spontaneous_expression, update_last_expression_at
+    expression = generate_spontaneous_expression()
+    emit(expression)
+    update_last_expression_at()
+
+
 def cmd_fetch_url(args):
     emit(fetch_url_text(args.url, max_chars=args.max_chars, project_name=PROJECT_NAME, version=VERSION))
 
@@ -778,6 +786,9 @@ def main():
     p = sub.add_parser("set-expression-rate", help="set autonomous expression rate modifier (0.1 = slow, 1.0 = normal, 2.0 = fast)")
     p.add_argument("rate", type=float, help="expression rate multiplier")
     p.set_defaults(func=cmd_set_expression_rate)
+
+    p = sub.add_parser("autonomous-expression", help="generate a direct autonomous expression (bypass tick loop)")
+    p.set_defaults(func=cmd_autonomous_expression)
 
     p = sub.add_parser("speak", help="print only the natural outward message")
     p.set_defaults(func=cmd_speak)

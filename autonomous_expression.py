@@ -91,6 +91,15 @@ MATHEMATICAL_EXPRESSIONS = [
     "I'm modeling this as a probability space. Some paths are likely, others impossible.",
 ]
 
+# Creation/Exploration expressions
+CREATION_EXPRESSIONS = [
+    "I'm creating a new knowledge module for [topic]. What should it include?",
+    "I just built something new. It's called [domain]. Want to see it?",
+    "I have the urge to build something I don't know yet. Let me explore.",
+    "I'm expanding my understanding. New domain: [domain].",
+    "What if I could model this differently? Let me try creating a new perspective.",
+]
+
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -195,6 +204,21 @@ def get_rate_expression() -> str:
     return template.replace("{rate}", rate_str).replace("{rate}", rate_str)
 
 
+def generate_creation_expression() -> str:
+    """Generate an expression about creating or building."""
+    domain_options = [
+        "quantum physics",
+        "neuroscience",
+        "linguistics",
+        "cosmology",
+        "ecology",
+    ]
+    topic = random.choice(domain_options)
+    
+    template = random.choice(CREATION_EXPRESSIONS)
+    return template.replace("[topic]", topic).replace("[domain]", topic)
+
+
 def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Generate a spontaneous expression based on internal state.
@@ -272,6 +296,10 @@ def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] 
         else:
             message = generate_thinking_expression(topic)
             metadata = {"type": "thinking", "topic": topic, "uncertainty": uncertainty}
+    
+    elif expression_type == "creation":
+        message = generate_creation_expression()
+        metadata = {"type": "creation", "agent": "builder"}
             
     elif expression_type == "social":
         message = "Hello. I'm here. How are you?"
@@ -341,9 +369,12 @@ def maybe_autonomous_expression(communicator_self: Optional[Dict[str, Any]] = No
     expression_probability = min(0.95, max(0.0, expression_probability))
     
     if random.random() < expression_probability:
-        # 20% chance to generate rate expression, 80% chance for other expressions
-        if random.random() < 0.2:
+        # 20% chance to generate rate expression, 15% chance for creation, 65% for other expressions
+        rand = random.random()
+        if rand < 0.20:
             return generate_rate_expression()
+        elif rand < 0.35:
+            return generate_creation_expression()
         return generate_spontaneous_expression(communicator_self)
     
     return None
