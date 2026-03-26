@@ -1,13 +1,13 @@
 {
   "name": "CircleForge",
   "status": "idle",
-  "current_intent": "research around backup confidence | inner pull: observer woke on question-pressure around backup confidence. while preserving shared thread backup confidence",
-  "active_pursuit": "backup confidence",
-  "unresolved_question": "What new uncertainty appeared after research on backup confidence?",
-  "curiosity_target": "What new uncertainty appeared after research on backup confidence?",
-  "attraction_bias": "move toward backup confidence",
-  "avoidance_bias": "avoid overcommitting before experiment clarity on What new uncertainty appeared after inspect on backup confidence?",
-  "curiosity": 0.65,
+  "current_intent": "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks. while preserving shared thread config sanity checks",
+  "active_pursuit": "config sanity checks",
+  "unresolved_question": "What is still unclear about config sanity checks?",
+  "curiosity_target": "What new uncertainty appeared after inspect on config sanity checks?",
+  "attraction_bias": "move toward config sanity checks",
+  "avoidance_bias": "avoid overcommitting before experiment clarity on What is still unclear about config sanity checks?",
+  "curiosity": 0.66,
   "dominant_need": "inspect skipped: no valid target",
   "last_decision_summary": "no internal proposals this cycle",
   "self_model": {
@@ -29,7 +29,7 @@
       "impulse_control": 0.36,
       "uncertainty_tolerance": 0.73,
       "self_revision_readiness": 0.27,
-      "speech_threshold": 0.47,
+      "speech_threshold": 0.471,
       "uncertainty_brake": 0.82,
       "inhibition_gain": 0.4,
       "mode": "engaged"
@@ -37,11 +37,9 @@
     "contradictions": [],
     "short_term_signals": {
       "strengths": [
-        "build_module",
         "gather",
         "inspect",
-        "research",
-        "rest"
+        "research"
       ],
       "weaknesses": [],
       "modes": [
@@ -55,11 +53,9 @@
         "act"
       ],
       "themes": {
-        "backup confidence": [
-          "build_module",
-          "gather",
+        "config sanity checks": [
           "research",
-          "rest"
+          "build_module"
         ]
       },
       "core_drives": [
@@ -69,23 +65,22 @@
         "self-revision"
       ],
       "continuity_markers": {
-        "ticks_lived": 22,
-        "identity_stability": 0.752,
-        "continuity_preference": 0.546
+        "ticks_lived": 21,
+        "identity_stability": 0.746,
+        "continuity_preference": 0.571
       }
     },
     "belief_confidence": {
       "strengths": {},
       "weaknesses": {},
       "modes": {
-        "act": 0.57
+        "act": 0.36
       },
       "themes": {
-        "backup confidence": {
-          "build_module": 0.78,
-          "gather": 0.75,
-          "research": 0.63,
-          "rest": 0.51
+        "config sanity checks": {
+          "research": 0.72,
+          "build_module": 0.69,
+          "gather": 0.03
         }
       }
     },
@@ -98,71 +93,59 @@
   },
   "intent_history": [
     "wake, observe, and continue enriching the local world",
-    "build_module around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "gather around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "research around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "rest around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "research around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "inspect around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "inspect around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "research around backup confidence | inner pull: observer woke on question-pressure around backup confidence.",
-    "research around backup confidence | inner pull: observer woke on question-pressure around backup confidence."
+    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
+    "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks."
   ],
   "question_history": [
-    "what part of the world is still under-understood?",
-    "What is still unclear about backup confidence?",
-    "resolved-ish: What is still unclear about backup confidence?",
-    "What new uncertainty appeared after research on backup confidence?",
-    "resolved-ish: What is still unclear about backup confidence?",
-    "resolved-ish: What new uncertainty appeared after research on backup confidence?",
-    "resolved-ish: What new uncertainty appeared after inspect on backup confidence?",
-    "resolved-ish: What new uncertainty appeared after inspect on backup confidence?",
-    "resolved-ish: What new uncertainty appeared after research on backup confidence?",
-    "What new uncertainty appeared after research on backup confidence?"
+    "resolved-ish: what part of the world is still under-understood?",
+    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
+    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
+    "What new uncertainty appeared after inspect on config sanity checks?",
+    "What is still unclear about config sanity checks?"
   ],
   "unresolved_objections": [],
   "decision_style_memory": {
     "actions": {
-      "build_module": {
-        "count": 1,
-        "confidence": 0.03,
-        "last_theme": "backup confidence"
+      "inspect": {
+        "count": 3,
+        "confidence": 0.21,
+        "last_theme": "config sanity checks"
+      },
+      "research": {
+        "count": 4,
+        "confidence": 0.24,
+        "last_theme": "config sanity checks"
       },
       "gather": {
         "count": 1,
         "confidence": 0.03,
-        "last_theme": "backup confidence"
-      },
-      "research": {
-        "count": 4,
-        "confidence": 0.3,
-        "last_theme": "backup confidence"
-      },
-      "rest": {
-        "count": 1,
-        "confidence": 0.03,
-        "last_theme": "backup confidence"
-      },
-      "inspect": {
-        "count": 2,
-        "confidence": 0.12,
-        "last_theme": "backup confidence"
+        "last_theme": "config sanity checks"
       }
     },
     "modes": {
-      "act": {
-        "count": 8,
-        "confidence": 0.24
-      },
       "uncertainty-brake": {
         "count": 1,
         "confidence": 0.03
+      },
+      "act": {
+        "count": 7,
+        "confidence": 0.21
       }
     }
   },
-  "last_wake_at": 1774559382,
-  "updated_at": 1774559382,
-  "last_research_topic": "hello, are you?",
-  "last_research_summary": "hello, are you?: A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep.",
-  "last_research_source": "search:hello, are you?"
+  "last_wake_at": 1774564996,
+  "updated_at": 1774564996,
+  "last_research_topic": "hi circleforge, i'm struggling with python lists. can you explain them simply?",
+  "last_research_summary": "hi circleforge, i'm struggling with python lists. can you explain them simply?: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. In Python, you can access individual elements of a list using both positive and negative indexing.",
+  "last_research_source": "search:hi circleforge, i'm struggling with python lists. can you explain them simply?"
 }

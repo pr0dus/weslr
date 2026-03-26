@@ -1,83 +1,76 @@
 {
   "themes": {
     "backup confidence": {
-      "pressure": 0.98,
-      "evidence": 10716,
-      "updated_at": 1774557119,
-      "acceptances": 0,
-      "rejections": 0,
-      "revisions": 0,
-      "aliases": [],
-      "lifecycle": "emergent",
-      "split_from": "workflow packaging"
-    },
-    "service visibility": {
-      "pressure": 0.1,
-      "evidence": 2,
-      "updated_at": 1774179750,
-      "acceptances": 0,
-      "rejections": 0,
-      "revisions": 0,
-      "aliases": [],
-      "lifecycle": "dormant",
-      "split_from": null
-    },
-    "config sanity checks": {
-      "pressure": 0.1,
+      "pressure": 0.358,
       "evidence": 0,
       "updated_at": 0,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "dormant",
+      "lifecycle": "stable",
+      "split_from": null
+    },
+    "service visibility": {
+      "pressure": 0.358,
+      "evidence": 0,
+      "updated_at": 0,
+      "acceptances": 0,
+      "rejections": 0,
+      "revisions": 0,
+      "aliases": [],
+      "lifecycle": "stable",
+      "split_from": null
+    },
+    "config sanity checks": {
+      "pressure": 0.785,
+      "evidence": 6,
+      "updated_at": 1774564996,
+      "acceptances": 0,
+      "rejections": 0,
+      "revisions": 0,
+      "aliases": [],
+      "lifecycle": "stable",
       "split_from": null
     },
     "log readability": {
-      "pressure": 0.1,
-      "evidence": 3,
-      "updated_at": 1774180116,
+      "pressure": 0.358,
+      "evidence": 0,
+      "updated_at": 0,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "dormant",
+      "lifecycle": "stable",
       "split_from": null
     },
     "workflow packaging": {
-      "pressure": 0.1,
-      "evidence": 310,
-      "updated_at": 1774202851,
+      "pressure": 0.358,
+      "evidence": 0,
+      "updated_at": 0,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "dormant",
+      "lifecycle": "stable",
       "split_from": null
-    },
-    "backup confidence validation": {
-      "pressure": 0.1,
-      "evidence": 0,
-      "updated_at": 1774182807,
-      "acceptances": 0,
-      "rejections": 0,
-      "revisions": 0,
-      "aliases": [],
-      "lifecycle": "dormant",
-      "split_from": "backup confidence"
-    },
-    "workflow packaging validation": {
-      "pressure": 0.1,
-      "evidence": 0,
-      "updated_at": 1774185402,
-      "acceptances": 0,
-      "rejections": 0,
-      "revisions": 0,
-      "aliases": [],
-      "lifecycle": "dormant",
-      "split_from": "workflow packaging"
     }
   },
-  "emergent_candidates": [],
+  "emergent_candidates": [
+    {
+      "theme": "backup validation",
+      "parent_theme": "config sanity checks",
+      "signal_count": 2,
+      "confidence": 0.261,
+      "updated_at": 1774564991
+    },
+    {
+      "theme": "config validation",
+      "parent_theme": "config sanity checks",
+      "signal_count": 3,
+      "confidence": 0.371,
+      "updated_at": 1774564995
+    }
+  ],
   "clusters": []
 }

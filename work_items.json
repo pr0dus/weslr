@@ -2,78 +2,78 @@
   {
     "id": "work-1",
     "title": "Advance Backup Confidence",
-    "status": "done",
-    "priority": 0.28,
+    "status": "open",
+    "priority": 0.36,
     "owner": "agent-1",
-    "created_at": 1774549590,
+    "created_at": 1774564971,
     "project_id": "project-backup-confidence",
     "need_id": "",
-    "notes": "Last progressed at 1774557119 by agent-1"
+    "notes": "Last progressed at 1774564996 by agent-1"
   },
   {
     "id": "work-2",
     "title": "Advance Workflow Packaging",
-    "status": "done",
-    "priority": 0.28,
+    "status": "open",
+    "priority": 0.36,
     "owner": "agent-1",
-    "created_at": 1774549590,
+    "created_at": 1774564971,
     "project_id": "project-workflow-packaging",
     "need_id": "",
-    "notes": "Last progressed at 1774557119 by agent-1"
+    "notes": "Last progressed at 1774564996 by agent-1"
   },
   {
     "id": "work-question-1",
-    "title": "What is still unclear about backup confidence?",
+    "title": "what part of the world is still under-understood?",
     "status": "open",
-    "priority": 0.3,
+    "priority": 0.34,
     "owner": "agent-1",
-    "created_at": 1774549595,
+    "created_at": 1774564980,
     "project_id": "project-backup-confidence",
     "need_id": "need-question-1",
-    "notes": "Last progressed at 1774557119 by agent-1"
+    "notes": "Last progressed at 1774564996 by agent-1"
+  },
+  {
+    "id": "work-question-2",
+    "title": "What new uncertainty appeared after inspect on config sanity checks?",
+    "status": "open",
+    "priority": 0.38,
+    "owner": "agent-1",
+    "created_at": 1774564980,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-2",
+    "notes": "Last progressed at 1774564996 by agent-1"
+  },
+  {
+    "id": "work-question-3",
+    "title": "What new uncertainty appeared after research on config sanity checks?",
+    "status": "open",
+    "priority": 0.42,
+    "owner": "agent-1",
+    "created_at": 1774564980,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-3",
+    "notes": "Last progressed at 1774564996 by agent-1"
   },
   {
     "id": "work-question-7",
-    "title": "What new uncertainty appeared after research on backup confidence?",
+    "title": "What is still unclear about CircleForge?",
     "status": "open",
-    "priority": 0.38,
+    "priority": 0.42,
     "owner": "agent-1",
-    "created_at": 1774549820,
+    "created_at": 1774564990,
     "project_id": "project-backup-confidence",
     "need_id": "need-question-7",
-    "notes": "Last progressed at 1774557119 by agent-1"
+    "notes": "Last progressed at 1774564996 by agent-1"
   },
   {
-    "id": "work-question-8",
-    "title": "What is still unclear about hello how?",
+    "id": "work-question-20",
+    "title": "What is still unclear about config sanity checks?",
     "status": "open",
-    "priority": 0.38,
+    "priority": 0.58,
     "owner": "agent-1",
-    "created_at": 1774549835,
+    "created_at": 1774564996,
     "project_id": "project-backup-confidence",
-    "need_id": "need-question-8",
-    "notes": "Last progressed at 1774557119 by agent-1"
-  },
-  {
-    "id": "work-question-15",
-    "title": "What new uncertainty appeared after inspect on backup confidence?",
-    "status": "open",
-    "priority": 0.5,
-    "owner": "agent-1",
-    "created_at": 1774550027,
-    "project_id": "project-backup-confidence",
-    "need_id": "need-question-15",
-    "notes": "Last progressed at 1774557119 by agent-1"
-  },
-  {
-    "id": "work-project-workflow-packaging-1774559353",
-    "title": "Advance Workflow Packaging",
-    "status": "open",
-    "priority": 0.62,
-    "owner": "agent-1",
-    "created_at": 1774559353,
-    "project_id": "project-workflow-packaging",
-    "need_id": "",
-    "notes": "Auto-routed follow-up work for Workflow Packaging"
+    "need_id": "need-question-20",
+    "notes": "Inquiry-driven work item spawned from communicator question lineage"
   }
 ]

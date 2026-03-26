@@ -6,8 +6,8 @@
     "content": "Prefer inspectable local artifacts, reversible changes, and visible world state over opaque autonomy.",
     "source": "system-bootstrap",
     "stability": 0.92,
-    "created_at": 1774549590,
-    "updated_at": 1774549590
+    "created_at": 1774564971,
+    "updated_at": 1774564971
   },
   {
     "id": "memory-needs-drive-change",
@@ -16,8 +16,8 @@
     "content": "Treat repeated friction, unmet coordination, and unexplained failures as first-class world signals.",
     "source": "system-bootstrap",
     "stability": 0.88,
-    "created_at": 1774549590,
-    "updated_at": 1774549590
+    "created_at": 1774564971,
+    "updated_at": 1774564971
   },
   {
     "kind": "semantic-memory",
@@ -34,76 +34,86 @@
     ],
     "durable_lessons": [],
     "continuity_anchors": [],
-    "last_updated_at": 1774559382
+    "last_updated_at": 1774564996
   },
   {
     "id": "pm-question-1",
-    "title": "Communicator question: What is still unclear about backup confidence?",
+    "title": "Communicator question: what part of the world is still under-understood?",
     "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit backup confidence.",
+    "content": "Active communicator inquiry tied to pursuit enrich the local world.",
     "source": "communicator-question-lineage",
-    "stability": 0.62,
-    "created_at": 1774549595,
-    "updated_at": 1774549852
+    "stability": 0.48,
+    "created_at": 1774564980,
+    "updated_at": 1774564980
+  },
+  {
+    "id": "pm-question-2",
+    "title": "Communicator question: What new uncertainty appeared after inspect on config sanity checks?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
+    "source": "communicator-question-lineage",
+    "stability": 0.56,
+    "created_at": 1774564980,
+    "updated_at": 1774564995
+  },
+  {
+    "id": "pm-question-3",
+    "title": "Communicator question: What new uncertainty appeared after research on config sanity checks?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
+    "source": "communicator-question-lineage",
+    "stability": 0.7,
+    "created_at": 1774564980,
+    "updated_at": 1774564995
+  },
+  {
+    "id": "web-search-note-1774564986",
+    "title": "Autonomous research: hi circleforge, i'm struggling with python lists. can you explain them simply?",
+    "kind": "research",
+    "content": "Source trigger: human-turn\nSearch results:\nPython Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing \u2014 https://diveintopython.org/learn/variables/list/basic-operations (score 1.1)\nA Comprehensive Guide to Lists in Python - PyFin.org \u2014 https://pyfin.org/python/data-structure/lists (score 0.91)\nPython Lists - GeeksforGeeks \u2014 https://www.geeksforgeeks.org/python/python-lists/ (score 0.83)\n\nSynthesis:\nWorking summary for hi circleforge, i'm struggling with python lists. can you explain them simply?: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. In Python, you can access individual elements of a list using both positive and negative indexing.\n\nEvidence:\nPython Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. They support various basic operations and methods that enable you to manipulate and work with the list elements easily.\nA Comprehensive Guide to Lists in Python - PyFin.org: In Python, you can access individual elements of a list using both positive and negative indexing. Remember that Python uses 0-based indexing, so the first element is at index 0, the second element is at index 1, and so on.",
+    "source": "search:hi circleforge, i'm struggling with python lists. can you explain them simply?",
+    "stability": 0.46,
+    "created_at": 1774564986,
+    "updated_at": 1774564986
+  },
+  {
+    "id": "web-search-raw-1774564986-1",
+    "title": "Raw excerpt 1: Python Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing",
+    "kind": "research_raw",
+    "content": "Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. They support various basic operations and methods that enable you to manipulate and work with the list elements easily. Some of the commonly used operations and methods for lists include indexing, slicing, appending, inserting, deleting, sorting, and searching for elements. Let's review the basic list methods and functions step by step. A list is an ordered collection of elements that can be of any type. Each element in a list has a unique index, which represents its position in the list. List indexes start at 0, which means that the first element in a list has an index of 0, the second element has an index of 1, and so on. my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] # get first three items print(my_list[:3]) # output: [0, 1, 2] # get items 3-5 print(my_list[3:6]) # output: [3, 4, 5] # get every other item starting from the second item print(my_list[1::2]) # output: [1, 3, 5, 7, 9] # reverse the list print(my_list[::-1]) # output: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0] # Define a function to apply to each element of the list def double(x): return x * 2 # Define a list my_list = [1, 2, 3, 4, 5] # Use map() to apply the function to each element of the list new_list = map(double, my_list) # Convert the result to a list and print it print(list(new_list)) # Output: [2, 4, 6, 8, 10] The filter() function takes two arguments: a function and an iterable. The function should return True or False for each element in the iterable. The filter() function then returns a new iterable that contains only the elements for which the function returned True. In Python, the list data type is a built-in type that represents a collection of ordered items. The contains method is not a built-in method for Python lists, but you can check whether an item is in a list using the in keyword or the index method. Let's review what is list comprehension in Python. List comprehension is a concise way to create a new list in Python by applying an expression to each element of an existing list or iterable. The basic syntax of a list comprehension is: You can split a list in Python using the split() method, which is available for strings but not for lists. However, you can use slicing to extract a portion of a list and create a new list with those elements. There is no direct method called indexof() for finding the index of an element in a list. However, you can use the index() method that is built into Python to get index of item in list. where start is the index of the first item to include, end is the index of the first item to exclude, and step is the number of items to skip between each item in the slice (the default is 1). In Python, map() is a built-in function that applies a function to each element of an iterable (like a list, tuple, or set) and returns a new iterable with the transformed values. list1 = [1, 2, 3] list2 = [1, 2, 4] if list1 == list2: print(\"The two lists are equal\") elif list1 < list2: print(\"list1 is less than list2\") else: print(\"list1 is greater than list2\")",
+    "source": "https://diveintopython.org/learn/variables/list/basic-operations",
+    "stability": 0.24,
+    "created_at": 1774564986,
+    "updated_at": 1774564986
+  },
+  {
+    "id": "web-search-raw-1774564986-2",
+    "title": "Raw excerpt 2: A Comprehensive Guide to Lists in Python - PyFin.org",
+    "kind": "research_raw",
+    "content": "In Python, you can access individual elements of a list using both positive and negative indexing. Remember that Python uses 0-based indexing, so the first element is at index 0, the second element is at index 1, and so on. Therefore, positive indexing starts from 0 for the first element, while negative indexing starts from -1 for the last element. This allows you to access elements from the beginning or end of the list based on your needs. Lists are versatile and commonly used data structures in Python. They allow you to store and manipulate collections of items efficiently. In this post, we will explore lists in Python, including their creation, accessing elements, available methods, slicing and indexing, and list comprehensions. By the end of this post, you will have a solid understanding of lists and how to work with them effectively. Lists are ordered collections of items in Python. They can contain elements of different data types, such as numbers , strings , or even other lists. Lists are mutable , meaning you can modify them after creation. They are enclosed in square brackets [ ] , and elements are separated by commas. Lists offer flexibility and various operations for manipulating data efficiently. In addition to the built-in methods covered above, Python provides several list functions that operate on lists. These functions are separate from list methods and can be applied to lists as well as other iterable objects. In this section, we will explore some commonly used list functions, their purposes, and provide examples to illustrate their usage. In Python, there are multiple ways to create a copy of a list. When working with lists, it's important to understand how copying works to avoid unintended modifications to the original list. In this section, we will explore different methods to create copies of lists and provide code examples to illustrate each approach. List comprehensions provide a concise and powerful way to create new lists based on existing lists or other iterables . They allow you to combine looping and conditional statements in a single line of code. List comprehensions are widely used in Python for transforming, filtering, and manipulating data efficiently. In this example, we used slicing to access a subset of elements from the fruits list. The expression fruits[1:-1] returns a sublist from index 1 to the second-to-last element, fruits[-3:] returns a sublist from the third-to-last element to the end, and fruits[:-2] returns a sublist from the beginning to the third-to-last element. In this example, we used nested list comprehensions to create a 3x3 matrix. The outer list comprehension [x + y for x in range(columns)] generates each row of the matrix by adding x with each element of range(columns) . The inner list comprehension [y in range(rows)] creates the rows by iterating over range(rows) . List functions, such as len() , sorted() , sum() , min() , and max() , are general functions that can be applied to any iterable object , including lists. They operate on the entire list as a whole and return a value or create a new list without modifying the original list. The copy() method, list() function and slicing ( [:] ) create shallow copies. This means that if the original list contains nested objects, such as another list or dictionary, the nested objects will still be referenced and not duplicated in the copy. The index() method is used to find the index position of the first occurrence of a specified element in a list. It returns the index of the element if found, and raises a ValueError if the element is not present in the list. Here's an example: The copy module's copy() function can create both shallow and deep copies. By default, it creates a shallow copy. However, you can use the deepcopy() function from the copy module to create a deep copy that duplicates all the objects, including nested ones.",
+    "source": "https://pyfin.org/python/data-structure/lists",
+    "stability": 0.24,
+    "created_at": 1774564986,
+    "updated_at": 1774564986
   },
   {
     "id": "pm-question-7",
-    "title": "Communicator question: What new uncertainty appeared after research on backup confidence?",
+    "title": "Communicator question: What is still unclear about CircleForge?",
     "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit backup confidence.",
+    "content": "Active communicator inquiry tied to pursuit CircleForge.",
     "source": "communicator-question-lineage",
-    "stability": 0.66,
-    "created_at": 1774549820,
-    "updated_at": 1774559382
+    "stability": 0.48,
+    "created_at": 1774564990,
+    "updated_at": 1774564990
   },
   {
-    "id": "web-search-note-1774549827",
-    "title": "Autonomous research: hello, are you?",
-    "kind": "research",
-    "content": "Source trigger: human-turn\nSearch results:\n'How Are You?' Has Lost All Meaning. Here's A Better Way To ... - TIME \u2014 https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/ (score 0.61)\n40 Better Ways to Say \"How Are You\" in Everyday Conversations - Grammartel \u2014 https://grammartel.com/ways-to-say-how-are-you/ (score 0.61)\nHello! | Kids Greeting Song and Feelings Song | Super Simple Songs \u2014 https://www.youtube.com/watch?v=tVlcKp3bWH8 (score 0.33)\n\nSynthesis:\nWorking summary for hello, are you?: A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep.\n\nEvidence:\nhttps://time.com/article/2026/03/18/how-are-you-question-meaning-listening/: A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. The friend asked the woman how she was, and Saunders-Waldron\u2019s client\u2014who had been going through a divorce and custody battle\u2014said she was good because she felt like the friend didn't really want to know.\n40 Better Ways to Say \u201cHow Are You\u201d in Everyday Conversations \u2013 Grammartel: You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep. The meaning shifts with the tone, the place, and the person.",
-    "source": "search:hello, are you?",
-    "stability": 0.46,
-    "created_at": 1774549827,
-    "updated_at": 1774549827
-  },
-  {
-    "id": "web-search-raw-1774549827-1",
-    "title": "Raw excerpt 1: https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/",
-    "kind": "research_raw",
-    "content": "A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. The friend asked the woman how she was, and Saunders-Waldron\u2019s client\u2014who had been going through a divorce and custody battle\u2014said she was good because she felt like the friend didn't really want to know. They had a two-minute chat before going their separate ways. \u201cMy client sat in her car afterward devastated, because she'd just performed OK-ness for someone who supposedly cared about her,\u201d Saunders-Waldron says. Keep in mind, too, that people can tell when you\u2019re moving through a conversation with your attention already on what you're going to have for dinner or who you need to text back. Saunders-Waldron likes to challenge people to ask three friends a week how they\u2019re doing\u2014and to put their phones away, make direct eye contact, and make it clear they\u2019re not zipping off somewhere else. If their friend says they\u2019re fine but you sense they\u2019re not, she suggests following up like this: \u201cNo, really, how are you?\u201d It\u2019s still a great question to ask sometimes. The key is following one simple rule: If you\u2019re not prepared to listen to the answer, don\u2019t ask, or choose a different phrase. \u201cTo me, \u2018How are you?\u2019 carries an implicit promise,\u201d Nuru says. \u201cWhen you ask that and mean it, you\u2019re signaling, \u2018Hey, I have space and time for you right now\u2019\u2014and that's worth being really intentional about.\u201d The stakes of treating \u201chow are you?\u201d like a throwaway greeting are higher than you might expect. When the question becomes little more than a social script, people learn to respond in a superficial way. Over time, that can contribute to loneliness, shallow connections, and what some experts describe as emotional dishonesty. Over time, people also learn the honest answer to \u201chow are you?\u201d isn\u2019t always welcome. \u201cWe perform this OK-ness because we know people are uncomfortable with our real feelings,\u201d Saunders-Waldron says. Instead of opening up, many default to socially acceptable replies like \u201cfine, thanks\u201d\u2014even when they\u2019re struggling. Research suggests that close relationships predict how healthy and happy we are as we age. \u201cThose relationships aren't built in grand gestures,\u201d Nuru says. \u201cThey're built in the accumulation of small moments where we actually show up for each other\u2014and asking them how they are, and meaning it, is one of those moments.\u201d Asking someone how they are implies they have your attention. If that\u2019s not the case\u2014because you\u2019re already late to a meeting that started five minutes ago or are juggling a dozen other things in your head\u2014say something else instead, experts suggest. Only ask the question if you\u2019re actually prepared to listen. When we don\u2019t slow down enough for meaningful interactions, we risk ending up with plenty of relationships but few that feel close. Surface-level check-ins can create the illusion of connection without the depth that sustains relationships. Over time, those missed moments of real conversation erode the bond two people once shared. \u201cWe've turned \u2018how are you\u2019 into punctuation \u2014it\u2019s not really a question anymore,\u201d says Audra Nuru, a professor of communication studies and family studies at the University of St. Thomas in St. Paul, Minn. \u201cAnd the moment it stopped being a real question, we stopped expecting a real answer.\u201d When you ask someone how they are and don't actually stop to hear the answer, you're \u201cteaching them that their real experience doesn't matter,\u201d Saunders-Waldron says. \u201cYou\u2019re saying, \u2018I\u2019m going through the motions of caring, but I don't actually have space for you.\u2019 And people feel that.\u201d Many people are so busy rushing to the next thing\u2014and the thing after that\u2014that they\u2019re never fully present for whoever is in front of them. As a result, interactions become quick and transactional, Nuru says: \u201cHow are you?\u201d \u201cGood. You?\u201d \u201cGood.\u201d Then we move on. You probably ask many of the people you interact with every day the same question: \u201cHow are you?\u201d Yet this phrase, once a genuine inquiry, has morphed into little more than a reflexive greeting we say while passing a colleague in the hall or running into a neighbor in the produce aisle.",
-    "source": "https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/",
-    "stability": 0.24,
-    "created_at": 1774549827,
-    "updated_at": 1774549827
-  },
-  {
-    "id": "web-search-raw-1774549827-2",
-    "title": "Raw excerpt 2: 40 Better Ways to Say \u201cHow Are You\u201d in Everyday Conversations \u2013 Grammartel",
-    "kind": "research_raw",
-    "content": "\u201cHow are you?\u201d sounds simple, but it isn\u2019t. Sometimes it\u2019s real, sometimes it\u2019s just a habit. You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep. But other times, it matters. A friend asks after a hard day. A coworker checks in during a quiet moment. Then it\u2019s not small talk\u2014it\u2019s care. The meaning shifts with the tone, the place, and the person. At work, it might be formality. At home, it might be genuine. So, what does it mean? It depends. But one thing\u2019s true: it\u2019s how people reach out, even if just for a moment. We say \u201cHow are you?\u201d so often, it\u2019s become more of a habit than a real question. Most of the time, we don\u2019t even wait for an answer. But what if there were better, more thoughtful ways to check in with someone? Whether you\u2019re talking to a friend, coworker, or someone you just met, switching it up can make the conversation feel warmer and more real. Small changes in words can lead to deeper connections. In this list, you\u2019ll find 40 fresh and friendly ways to ask how someone\u2019s doing\u2014without sounding like a robot or reading from a script. You can use \u201cHow are you?\u201d almost anywhere\u2014as long as it fits the moment. It works when starting a chat, sending a message, or easing into a call. It\u2019s good for casual meetings, emails, and check-ins with people who matter. It shows respect or simple kindness. But don\u2019t use it when things are tense, rushed, or out of place\u2014it can feel forced. And when you do say it, make sure it sounds real. Look them in the eye, keep your tone warm, and mean it. That\u2019s what makes the question stick. Saying \u201cHow are you?\u201d isn\u2019t wrong\u2014but switching it up now and then can make your conversations feel more genuine. A thoughtful question can open the door to a better chat, whether it\u2019s with someone close or just an everyday interaction. So next time, try something new. It might surprise you how much people open up when they hear something a little different\u2014and more sincere. Meaning: Asking about progress or development. Explanation: Encourages updates, especially in projects or life plans. Example: \u201cHow\u2019s that new job? How are things shaping up?\u201d Best Use: Project-based or life transition conversations. Worst Use: Very personal check-ins. Tone: Curious, constructive. Meaning: Asking about their current life/state. Explanation: Especially useful for remote or long-distance chats. Example: \u201cThings are hectic here. How are things on your end?\u201d Best Use: Remote work or long-distance relationships. Worst Use: Face-to-face quick chats. Tone: Friendly, formal. Meaning: Checking how they\u2019re managing stress or hardship. Explanation: Acknowledges difficult circumstances. Example: \u201cIt\u2019s been a crazy month\u2014how are you holding up?\u201d Best Use: When someone\u2019s facing challenges. Worst Use: In casual, upbeat settings. Tone: Empathetic, serious. Meaning: Asking what\u2019s happening in their life right now. Explanation: More casual and open-ended than \u201cHow are you.\u201d Example: \u201cHey Alex, what\u2019s going on?\u201d Best Use: With friends or coworkers you speak to regularly. Worst Use: In a job interview. Tone: Casual, friendly. Meaning: Offering support in tough times. Explanation: Suggests you know they\u2019re struggling. Example: \u201cIt\u2019s been rough lately. You hanging in there?\u201d Best Use: When someone is stressed or overwhelmed. Worst Use: Casual greetings. Tone: Compassionate, supportive. Meaning: Checking in on their mental and emotional state. Explanation: Focused on mental health. Example: \u201cYou\u2019ve had a lot going on. How\u2019s your headspace lately?\u201d Best Use: With people you\u2019re emotionally close to. Worst Use: Surface-level chats or strangers. Tone: Compassionate, deep. Meaning: Asking how life is from their perspective. Explanation: Shows balance in conversation. Example: \u201cEnough about me\u2014how\u2019s everything on your side?\u201d Best Use: Mutual updates in conversations. Worst Use: When you don\u2019t know them well. Tone: Friendly, reciprocal. Meaning: Asking about emotional or motivational state. Explanation: Suggests care for well-being. Example: \u201cYou\u2019ve had a lot going on\u2014how are your spirits?\u201d Best Use: Supportive roles, therapy, coaching. Worst Use: Casual or joking tones. Tone: Gentle, uplifting.",
-    "source": "https://grammartel.com/ways-to-say-how-are-you/",
-    "stability": 0.24,
-    "created_at": 1774549827,
-    "updated_at": 1774549827
-  },
-  {
-    "id": "pm-question-8",
-    "title": "Communicator question: What is still unclear about hello how?",
+    "id": "pm-question-20",
+    "title": "Communicator question: What is still unclear about config sanity checks?",
     "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit hello how.",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
     "source": "communicator-question-lineage",
     "stability": 0.5,
-    "created_at": 1774549835,
-    "updated_at": 1774549835
-  },
-  {
-    "id": "pm-question-15",
-    "title": "Communicator question: What new uncertainty appeared after inspect on backup confidence?",
-    "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit backup confidence.",
-    "source": "communicator-question-lineage",
-    "stability": 0.5,
-    "created_at": 1774550027,
-    "updated_at": 1774550230
+    "created_at": 1774564996,
+    "updated_at": 1774564996
   }
 ]

@@ -1,15 +1,6 @@
 {
   "actions": {
     "build_module": {
-      "count": 2,
-      "follow_through": 0,
-      "question_link": 2,
-      "experiment_link": 0,
-      "question_narrowing": 0,
-      "coordination_effect": 0,
-      "reuse_signal": 0
-    },
-    "gather": {
       "count": 1,
       "follow_through": 0,
       "question_link": 1,
@@ -27,7 +18,7 @@
       "coordination_effect": 0,
       "reuse_signal": 0
     },
-    "rest": {
+    "gather": {
       "count": 1,
       "follow_through": 0,
       "question_link": 1,
@@ -38,15 +29,8 @@
     }
   },
   "themes": {
-    "backup confidence": {
+    "config sanity checks": {
       "build_module": {
-        "count": 2,
-        "follow_through": 0,
-        "question_narrowing": 0,
-        "coordination_effect": 0,
-        "reuse_signal": 0
-      },
-      "gather": {
         "count": 1,
         "follow_through": 0,
         "question_narrowing": 0,
@@ -60,7 +44,7 @@
         "coordination_effect": 0,
         "reuse_signal": 0
       },
-      "rest": {
+      "gather": {
         "count": 1,
         "follow_through": 0,
         "question_narrowing": 0,
@@ -70,18 +54,17 @@
     }
   },
   "notes": [
-    "decision_mode=act chosen_action=build_module",
-    "decision_mode=act chosen_action=gather",
-    "decision_mode=act chosen_action=research",
-    "decision_mode=act chosen_action=rest",
-    "decision_mode=act chosen_action=research",
     "decision_mode=uncertainty-brake chosen_action=inspect",
-    "decision_mode=act chosen_action=inspect",
     "decision_mode=act chosen_action=research",
-    "decision_mode=act chosen_action=research"
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=act chosen_action=gather"
   ],
   "evidence_types": {
-    "question_link": 8,
+    "question_link": 6,
     "experiment_progress": 4,
     "question_narrowing": 4
   }

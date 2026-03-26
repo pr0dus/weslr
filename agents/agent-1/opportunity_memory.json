@@ -1,11 +1,11 @@
 {
   "themes": {
     "backup confidence": {
-      "strength": 0.972,
-      "wins": 6,
-      "failures": 1,
-      "last_action": "research",
-      "last_category": "lineage"
+      "strength": 0.3,
+      "wins": 0,
+      "failures": 0,
+      "last_action": null,
+      "last_category": null
     },
     "service visibility": {
       "strength": 0.3,
@@ -15,11 +15,11 @@
       "last_category": null
     },
     "config sanity checks": {
-      "strength": 0.3,
-      "wins": 0,
-      "failures": 0,
-      "last_action": null,
-      "last_category": null
+      "strength": 0.751,
+      "wins": 5,
+      "failures": 2,
+      "last_action": "gather",
+      "last_category": "memory"
     },
     "log readability": {
       "strength": 0.3,
@@ -36,5 +36,5 @@
       "last_category": null
     }
   },
-  "last_theme": "backup confidence"
+  "last_theme": "config sanity checks"
 }

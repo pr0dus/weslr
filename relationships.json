@@ -2,11 +2,11 @@
   {
     "source_agent": "agent-1",
     "target_agent": "agent-1",
-    "trust": 0.66,
-    "usefulness": 0.7,
+    "trust": 0.7,
+    "usefulness": 0.75,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774557119
+    "updated_at": 1774564995
   },
   {
     "source_agent": "agent-2",
@@ -15,7 +15,7 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774559382
+    "updated_at": 1774564996
   },
   {
     "source_agent": "agent-3",
@@ -24,7 +24,7 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774559382
+    "updated_at": 1774564996
   },
   {
     "source_agent": "agent-4",
@@ -33,7 +33,7 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774559382
+    "updated_at": 1774564996
   },
   {
     "source_agent": "agent-5",
@@ -42,15 +42,15 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774559382
+    "updated_at": 1774564996
   },
   {
     "source_agent": "agent-1",
     "target_agent": "unknown",
-    "trust": 0.47,
+    "trust": 0.44,
     "usefulness": 0.5,
-    "friction": 0.07,
+    "friction": 0.14,
     "last_event": "inspect",
-    "updated_at": 1774550230
+    "updated_at": 1774564995
   }
 ]

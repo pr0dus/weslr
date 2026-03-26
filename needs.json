@@ -1,55 +1,55 @@
 [
   {
     "id": "need-question-1",
-    "title": "What is still unclear about backup confidence?",
+    "title": "what part of the world is still under-understood?",
     "kind": "exploration",
-    "description": "Communicator inquiry currently driving exploration: What is still unclear about backup confidence?",
+    "description": "Communicator inquiry currently driving exploration: what part of the world is still under-understood?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.404,
+    "pressure": 0.24,
+    "novelty": 0.55,
+    "status": "open",
+    "created_at": 1774564980,
+    "updated_at": 1774564980
+  },
+  {
+    "id": "need-question-2",
+    "title": "What new uncertainty appeared after inspect on config sanity checks?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after inspect on config sanity checks?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.391,
     "novelty": 0.55,
     "status": "active",
-    "created_at": 1774549595,
-    "updated_at": 1774549852
+    "created_at": 1774564980,
+    "updated_at": 1774564995
+  },
+  {
+    "id": "need-question-3",
+    "title": "What new uncertainty appeared after research on config sanity checks?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after research on config sanity checks?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.567,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774564980,
+    "updated_at": 1774564995
   },
   {
     "id": "need-question-7",
-    "title": "What new uncertainty appeared after research on backup confidence?",
+    "title": "What is still unclear about CircleForge?",
     "kind": "exploration",
-    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after research on backup confidence?",
+    "description": "Communicator inquiry currently driving exploration: What is still unclear about CircleForge?",
     "origin": "communicator-question-lineage",
     "scope": "public",
-    "pressure": 0.593,
+    "pressure": 0.288,
     "novelty": 0.55,
-    "status": "active",
-    "created_at": 1774549820,
-    "updated_at": 1774559382
-  },
-  {
-    "id": "need-question-8",
-    "title": "What is still unclear about hello how?",
-    "kind": "exploration",
-    "description": "Communicator inquiry currently driving exploration: What is still unclear about hello how?",
-    "origin": "communicator-question-lineage",
-    "scope": "public",
-    "pressure": 0.314,
-    "novelty": 0.55,
-    "status": "active",
-    "created_at": 1774549835,
-    "updated_at": 1774549835
-  },
-  {
-    "id": "need-question-15",
-    "title": "What new uncertainty appeared after inspect on backup confidence?",
-    "kind": "exploration",
-    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after inspect on backup confidence?",
-    "origin": "communicator-question-lineage",
-    "scope": "public",
-    "pressure": 0.389,
-    "novelty": 0.55,
-    "status": "active",
-    "created_at": 1774550027,
-    "updated_at": 1774550230
+    "status": "open",
+    "created_at": 1774564990,
+    "updated_at": 1774564990
   },
   {
     "id": "need-16-5",
@@ -58,10 +58,23 @@
     "description": "Observed unresolved runtime friction: inspect skipped: no valid target",
     "origin": "world-log",
     "scope": "public",
-    "pressure": 0.99,
+    "pressure": 0.98,
     "novelty": 0.42,
     "status": "active",
-    "created_at": 1774550230,
-    "updated_at": 1774559382
+    "created_at": 1774564995,
+    "updated_at": 1774564996
+  },
+  {
+    "id": "need-question-20",
+    "title": "What is still unclear about config sanity checks?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What is still unclear about config sanity checks?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.467,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774564996,
+    "updated_at": 1774564996
   }
 ]
