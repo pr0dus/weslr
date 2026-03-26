@@ -14,6 +14,16 @@ from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, T
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
+from self_inspection import build_self_inspection_report, inspect_self
+from code_translator import explain_code, translate_code_to_concept, translate_internal_theme_to_code
+from error_translator import explain_error, translate_error, translate_error_to_plain_english
+from tool_search import explain_tool_usage, search_tool_and_synthesize, search_for_tool
+from self_modifier import build_proposal_report, propose_self_modification_report, propose_improvement
+from self_mod_applier import apply_modification, build_self_mod_report, create_checkpoint, list_checkpoints, log_modification, rollback
+from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
+from self_mod_dashboard import render_self_mod_dashboard, update_dashboard, get_dashboard_status
+from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
+from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 
 
@@ -663,8 +673,643 @@ def main():
     p = sub.add_parser("version", help="print release version")
     p.set_defaults(func=cmd_version)
 
+    p = sub.add_parser("self-inspection", help="run self-inspection and generate plain-English description of CircleForge's code")
+    p.set_defaults(func=cmd_self_inspection)
+
+    p = sub.add_parser("translate-code", help="translate code snippet to concepts and internal themes")
+    p.add_argument("code", nargs="?", default="")
+    p.add_argument("--snippet", default="", help="inline code snippet to translate")
+    p.set_defaults(func=cmd_translate_code)
+
+    p = sub.add_parser("explain-code", help="explain code snippet in plain English")
+    p.add_argument("code", nargs="?", default="")
+    p.add_argument("--snippet", default="", help="inline code snippet to explain")
+    p.set_defaults(func=cmd_explain_code)
+
+    p = sub.add_parser("translate-error", help="parse a Python traceback and explain the error")
+    p.add_argument("--traceback", default="", help="inline traceback to translate")
+    p.add_argument("--file", default="", help="file containing traceback text")
+    p.set_defaults(func=cmd_translate_error)
+
+    p = sub.add_parser("search-tool", help="search for tools/APIs and generate usage patterns")
+    p.add_argument("--need", required=True, help="what you need to do (e.g., 'read web pages')")
+    p.set_defaults(func=cmd_search_tool)
+
+    p = sub.add_parser("propose-self-mod", help="propose a self-modification with diff and rationale")
+    p.add_argument("--file", required=True, help="file to modify (relative to CircleForge directory)")
+    p.add_argument("--change", required=True, help="what change to make")
+    p.add_argument("--rationale", required=True, help="why this change is needed")
+    p.set_defaults(func=cmd_propose_self_mod)
+
+    p = sub.add_parser("propose-improvement", help="propose a self-improvement based on a need")
+    p.add_argument("--need", required=True, help="what CircleForge needs to do better")
+    p.set_defaults(func=cmd_propose_improvement)
+
+    p = sub.add_parser("apply-mod", help="apply an approved self-modification (with checkpoint)")
+    p.add_argument("--file", required=True, help="file to modify")
+    p.add_argument("--change", required=True, help="what change to make")
+    p.add_argument("--rationale", required=True, help="why this change is needed")
+    p.add_argument("--approved-by", default="human", help="who approved the change")
+    p.set_defaults(func=cmd_apply_mod)
+
+    p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
+    p.add_argument("--file", required=True, help="file to checkpoint")
+    p.set_defaults(func=cmd_create_checkpoint)
+
+    p = sub.add_parser("rollback", help="rollback a file to a previous checkpoint")
+    p.add_argument("--file", required=True, help="file to rollback")
+    p.add_argument("--checkpoint", required=True, help="checkpoint name to restore")
+    p.set_defaults(func=cmd_rollback)
+
+    p = sub.add_parser("mod-log", help="show modification log and pending modifications")
+    p.set_defaults(func=cmd_mod_log)
+
+    p = sub.add_parser("checkpoints", help="list available checkpoints")
+    p.add_argument("--file", default="", help="optional filter by file path")
+    p.set_defaults(func=cmd_checkpoints)
+
+    p = sub.add_parser("llm-diff", help="use LLM to generate better diff with explanation")
+    p.add_argument("--file", required=True, help="file to analyze")
+    p.add_argument("--change", required=True, help="proposed change")
+    p.add_argument("--rationale", default="", help="context for the change")
+    p.set_defaults(func=cmd_llm_diff)
+
+    p = sub.add_parser("llm-analyze", help="use LLM to analyze code for issues")
+    p.add_argument("--file", required=True, help="file to analyze")
+    p.set_defaults(func=cmd_llm_analyze)
+
+    p = sub.add_parser("llm-suggest", help="use LLM to suggest self-improvements")
+    p.add_argument("--need", required=True, help="what needs improvement")
+    p.set_defaults(func=cmd_llm_suggest)
+
+    p = sub.add_parser("dashboard-selfmod", help="update the self-modification dashboard")
+    p.set_defaults(func=cmd_dashboard_selfmod)
+
+    p = sub.add_parser("dashboard-status", help="check self-modification dashboard status")
+    p.set_defaults(func=cmd_dashboard_status)
+
+    p = sub.add_parser("auto-suggest", help="generate autonomous self-improvement suggestions")
+    p.set_defaults(func=cmd_auto_suggest)
+
+    p = sub.add_parser("check-safe", help="check if a modification is safe")
+    p.add_argument("--file", required=True, help="file to modify")
+    p.add_argument("--change", required=True, help="proposed change")
+    p.set_defaults(func=cmd_check_safe)
+
+    p = sub.add_parser("validate-mod", help="validate a modification before applying")
+    p.add_argument("--file", required=True, help="file to modify")
+    p.add_argument("--change", required=True, help="proposed change")
+    p.add_argument("--rationale", required=True, help="why this change is needed")
+    p.set_defaults(func=cmd_validate_mod)
+
+    p = sub.add_parser("rollback-preview", help="preview a rollback operation")
+    p.add_argument("--file", required=True, help="file to rollback")
+    p.add_argument("--checkpoint", required=True, help="checkpoint name")
+    p.set_defaults(func=cmd_rollback_preview)
+
+    p = sub.add_parser("batch-mods", help="batch multiple modifications together")
+    p.add_argument("--mods", required=True, help="JSON array of modifications")
+    p.set_defaults(func=cmd_batch_mods)
+
+    p = sub.add_parser("self-eval", help="run self-evaluation to identify gaps and opportunities")
+    p.set_defaults(func=cmd_self_eval)
+
+    p = sub.add_parser("self-grow", help="run full self-directed growth cycle")
+    p.set_defaults(func=cmd_self_grow)
+
+    p = sub.add_parser("self-speak", help="generate speech explaining CircleForge's self-decisions")
+    p.add_argument("--gaps", default="[]", help="gaps to speak about")
+    p.set_defaults(func=cmd_self_speak)
+
     args = parser.parse_args()
     args.func(args)
+
+
+# ============================================================================
+# New Phase 1 command handlers
+# ============================================================================
+
+def cmd_self_inspection(_args):
+    """Run self-inspection and emit structured data plus description."""
+    result = build_self_inspection_report()
+    emit(result)
+    if result.get("ok"):
+        print(f"\nDescription:\n{result.get('description', 'No description generated.')}")
+
+
+def cmd_translate_code(args):
+    """Translate code to concepts and internal themes."""
+    code = args.snippet or args.code
+    if not code:
+        emit({"error": "No code snippet provided. Use --snippet or pass code as argument."})
+        return
+    result = translate_code_to_concept(code)
+    theme = translate_internal_theme_to_code(code)
+    emit({
+        "code_snippet": code[:120] + ("..." if len(code) > 120 else ""),
+        "concepts": result,
+        "themes": theme.get("themes", []),
+        "confidence": theme.get("confidence", 0.0),
+    })
+
+
+def cmd_explain_code(args):
+    """Explain code snippet in plain English."""
+    code = args.snippet or args.code
+    if not code:
+        emit({"error": "No code snippet provided. Use --snippet or pass code as argument."})
+        return
+    explanation = explain_code(code)
+    emit({
+        "code_snippet": code[:120] + ("..." if len(code) > 120 else ""),
+        "explanation": explanation,
+    })
+
+
+def cmd_translate_error(args):
+    """Parse a traceback and explain the error."""
+    tb = args.traceback or ""
+    if args.file:
+        try:
+            with open(args.file, "r") as f:
+                tb = f.read()
+        except Exception as e:
+            emit({"error": f"Could not read file: {e}"})
+            return
+    if not tb:
+        emit({"error": "No traceback provided. Use --traceback or --file."})
+        return
+
+    result = translate_error(tb)
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit({
+        "error_type": result.get("error_info", {}).get("exception_type", "Unknown"),
+        "error_message": result.get("error_info", {}).get("exception_message", ""),
+        "category": result.get("error_type", {}).get("category", "unknown"),
+        "cause": result.get("error_type", {}).get("cause", ""),
+        "fix_proposal": result.get("fix_proposal", ""),
+        "location": result.get("error_info", {}).get("file_info", {}),
+    })
+    print("\nPlain English explanation:")
+    print(translate_error_to_plain_english(tb))
+
+
+def cmd_search_tool(args):
+    """Search for tools and synthesize usage."""
+    need = args.need
+    if not need:
+        emit({"error": "No need specified. Use --need to describe what you want to do."})
+        return
+    result = search_tool_and_synthesize(need)
+    emit(result)
+    if result.get("ok"):
+        print("\nHuman-readable summary:")
+        print(explain_tool_usage(need))
+
+
+def cmd_propose_self_mod(args):
+    """Propose a specific self-modification."""
+    file_path = args.file
+    change = args.change
+    rationale = args.rationale
+
+    if not file_path or not change or not rationale:
+        emit({"error": "Missing required fields: --file, --change, and --rationale are required."})
+        return
+
+    result = propose_self_modification_report(file_path, change, rationale)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit({
+        "ok": True,
+        "file_path": file_path,
+        "change_description": change,
+        "rationale": rationale,
+        "protected": result.get("protected", False),
+    })
+
+    if result.get("protected"):
+        print("\n⚠️  This file is PROTECTED and cannot be modified automatically.")
+        print("You must manually edit it if you want to make this change.")
+    else:
+        print("\n--- Proposed Diff ---")
+        for line in result.get("diff", {}).get("diff", []):
+            print(line)
+        print("\n--- Full Change ---")
+        print(result.get("diff", {}).get("proposed", ""))
+
+
+def cmd_propose_improvement(args):
+    """Propose a self-improvement based on a need."""
+    need = args.need
+    if not need:
+        emit({"error": "No need specified. Use --need to describe what CircleForge needs to do better."})
+        return
+
+    result = build_proposal_report(need)
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print("\n--- Proposed Improvement ---")
+    print(f"**Need**: {need}")
+    improvement = result.get('improvement', {})
+    best_match = improvement.get('best_match')
+    print(f"**Best match**: {best_match if best_match else 'None'}")
+    print(f"**File**: {improvement.get('proposed', {}).get('file_path', 'N/A')}")
+    print(f"**Change**: {improvement.get('proposed', {}).get('change_description', 'N/A')}")
+    print(f"**Rationale**: {improvement.get('proposed', {}).get('rationale', 'N/A')}")
+    print("\n--- Diff ---")
+    for line in result.get('diff', {}).get('diff', []):
+        print(line)
+
+
+def cmd_apply_mod(args):
+    """Apply an approved self-modification."""
+    file_path = args.file
+    change = args.change
+    rationale = args.rationale
+    approved_by = args.approved_by
+
+    if not file_path or not change or not rationale:
+        emit({"error": "Missing required fields: --file, --change, and --rationale are required."})
+        return
+
+    result = apply_modification(file_path, change, rationale, approved_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit({
+        "ok": True,
+        "file_path": file_path,
+        "change": change,
+        "checkpoint": result.get("checkpoint"),
+        "log_entry": result.get("log_entry"),
+    })
+    print(f"\n✅ Applied to {file_path}")
+    print(f"Checkpoint: {result.get('checkpoint', {}).get('checkpoint_name', 'N/A')}")
+
+
+def cmd_create_checkpoint(args):
+    """Create a checkpoint of the current file state."""
+    file_path = args.file
+
+    if not file_path:
+        emit({"error": "Missing required field: --file is required."})
+        return
+
+    result = create_checkpoint(file_path)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Checkpoint created: {result.get('checkpoint_name', 'N/A')}")
+
+
+def cmd_rollback(args):
+    """Rollback a file to a previous checkpoint."""
+    file_path = args.file
+    checkpoint_name = args.checkpoint
+
+    if not file_path or not checkpoint_name:
+        emit({"error": "Missing required fields: --file and --checkpoint are required."})
+        return
+
+    result = rollback(file_path, checkpoint_name)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Rolled back {file_path} to checkpoint {checkpoint_name}")
+
+
+def cmd_mod_log(args):
+    """Show modification log and pending modifications."""
+    result = build_self_mod_report()
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n--- Modification Log ({result.get('total_modifications', 0)} entries) ---")
+    print(f"Checkpoints: {result.get('checkpoints', 0)}")
+    print(f"By file: {result.get('by_file', {})}")
+
+    last_5 = result.get('last_5', [])
+    if last_5:
+        print("\nLast 5 entries:")
+        for entry in last_5:
+            status = "✅" if entry.get("success") else "❌"
+            print(f"  {status} {entry.get('file_path')}: {entry.get('rationale', '')[:60]}...")
+
+
+def cmd_checkpoints(args):
+    """List available checkpoints."""
+    file_path = args.file or ""
+
+    result = list_checkpoints(file_path)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+
+    print(f"\n--- Checkpoints ({result.get('total', 0)} total) ---")
+    for cp in result.get('checkpoints', []):
+        print(f"  - {cp}")
+
+
+def cmd_llm_diff(args):
+    """Use LLM to generate better diff with explanation."""
+    file_path = args.file
+    change = args.change
+    rationale = args.rationale or ""
+
+    # First read current content
+    circleforge_dir = Path(__file__).parent
+    full_path = circleforge_dir / file_path
+
+    try:
+        with open(full_path, "r", encoding="utf-8") as f:
+            current_content = f.read()
+    except Exception as e:
+        emit({"error": f"Could not read file: {e}"})
+        return
+
+    result = generate_diff_with_llm(current_content, change, rationale)
+
+    emit(result)
+    print(f"\n--- LLM-Generated Diff ---")
+    print(result.get("diff", ""))
+    print(f"\n--- Explanation ---")
+    print(result.get("explanation", ""))
+    print(f"\n--- Side Effects ---")
+    print(result.get("side_effects", ""))
+
+
+def cmd_llm_analyze(args):
+    """Use LLM to analyze code for issues."""
+    file_path = args.file
+
+    circleforge_dir = Path(__file__).parent
+    full_path = circleforge_dir / file_path
+
+    try:
+        with open(full_path, "r", encoding="utf-8") as f:
+            current_content = f.read()
+    except Exception as e:
+        emit({"error": f"Could not read file: {e}"})
+        return
+
+    result = analyze_code_for_issues(current_content, file_path)
+
+    emit(result)
+    print(f"\n--- Issues ---")
+    print(result.get("issues", ""))
+    print(f"\n--- Recommendations ---")
+    print(result.get("recommendations", ""))
+
+
+def cmd_llm_suggest(args):
+    """Use LLM to suggest self-improvements."""
+    need = args.need
+
+    result = generate_improvement_suggestion("CircleForge v0.0.100 with 27 source files", need)
+
+    emit(result)
+    print(f"\n--- Suggestion ---")
+    print(result.get("suggestion", ""))
+
+
+def cmd_dashboard_selfmod(args):
+    """Update the self-modification dashboard."""
+    result = update_dashboard()
+
+    emit(result)
+    print(f"\n✅ Dashboard updated at: {result.get('html_path', 'N/A')}")
+
+
+def cmd_dashboard_status(args):
+    """Check self-modification dashboard status."""
+    result = get_dashboard_status()
+
+    emit(result)
+    if result.get("ok"):
+        print(f"\n✅ Dashboard exists: {result.get('html_path', 'N/A')}")
+        print(f"Last updated: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.get('last_updated', 0)))}")
+
+
+def cmd_auto_suggest(args):
+    """Generate autonomous self-improvement suggestions."""
+    result = generate_autonomous_suggestion("CircleForge v0.0.100 with 27 source files")
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Autonomous Suggestions ({len(result.get('suggestions', []))}) ---")
+    for s in result.get("suggestions", []):
+        print(f"\n[{s.get('priority', 'medium').upper()}] {s.get('description', '')}")
+        print(f"  Type: {s.get('type', 'unknown')}")
+        print(f"  Suggestion: {s.get('suggestion', '')}")
+
+
+def cmd_check_safe(args):
+    """Check if a modification is safe."""
+    file_path = args.file
+    change = args.change
+
+    result = check_modification_safety(file_path, change)
+
+    emit(result)
+    if result.get("ok"):
+        status = "✅ SAFE" if result.get("safe") else "❌ UNSAFE"
+        print(f"\n{status} - {file_path}")
+        print("Checks:")
+        for check, passed in result.get("checks", {}).items():
+            symbol = "✅" if passed else "❌"
+            print(f"  {symbol} {check}")
+
+
+def cmd_validate_mod(args):
+    """Validate a modification before applying."""
+    file_path = args.file
+    change = args.change
+    rationale = args.rationale
+
+    result = validate_modification(file_path, change, rationale)
+
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\n❌ Validation failed: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n✅ Validated: {file_path}")
+    print("Checks:")
+    for check, passed in result.get("checks", {}).items():
+        symbol = "✅" if passed else "❌"
+        print(f"  {symbol} {check}")
+    print(f"\nRationale: {rationale}")
+
+
+def cmd_rollback_preview(args):
+    """Preview a rollback operation."""
+    file_path = args.file
+    checkpoint_name = args.checkpoint
+
+    # Read current content
+    circleforge_dir = Path(__file__).parent
+    full_path = circleforge_dir / file_path
+
+    try:
+        with open(full_path, "r", encoding="utf-8") as f:
+            current_content = f.read()
+    except Exception as e:
+        emit({"error": f"Could not read file: {e}"})
+        return
+
+    # Read checkpoint content
+    checkpoint_path = circleforge_dir / "checkpoints" / checkpoint_name
+    try:
+        with open(checkpoint_path, "r", encoding="utf-8") as f:
+            original_content = f.read()
+    except Exception as e:
+        emit({"error": f"Could not read checkpoint: {e}"})
+        return
+
+    result = generate_rollback_preview(file_path, current_content, original_content)
+
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Rollback Preview for {file_path} ---")
+    print(f"Changes:")
+    print(f"  Added lines: {result.get('added_lines', 0)}")
+    print(f"  Removed lines: {result.get('removed_lines', 0)}")
+    print(f"  Changed lines: {result.get('changed_lines', 0)}")
+
+    if result.get("preview", {}).get("added"):
+        print("\nAdded (new lines):")
+        for line in result.get("preview", {}).get("added", [])[:3]:
+            print(f"  + {line}")
+    if result.get("preview", {}).get("removed"):
+        print("\nRemoved (old lines):")
+        for line in result.get("preview", {}).get("removed", [])[:3]:
+            print(f"  - {line}")
+    if result.get("preview", {}).get("changed"):
+        print("\nChanged:")
+        for line in result.get("preview", {}).get("changed", [])[:3]:
+            print(f"  ~ {line}")
+
+
+def cmd_batch_mods(args):
+    """Batch multiple modifications together."""
+    mods_json = args.mods
+
+    try:
+        modifications = json.loads(mods_json)
+    except Exception as e:
+        emit({"error": f"Could not parse JSON: {e}"})
+        return
+
+    result = batch_modifications(modifications)
+
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Batch Validation ({result.get('total', 0)} total) ---")
+    print(f"✅ Safe: {result.get('safe', 0)}")
+    print(f"❌ Unsafe: {result.get('unsafe', 0)}")
+
+    for r in result.get("results", []):
+        status = r.get("status", "unknown")
+        if status == "safe":
+            print(f"  ✅ {r.get('file_path', 'unknown')}")
+        else:
+            print(f"  ❌ {r.get('file_path', 'unknown')}: {r.get('error', 'unknown error')}")
+
+
+def cmd_self_eval(args):
+    """Run self-evaluation to identify gaps and opportunities."""
+    from sim import load_communicator_self
+    self_state = load_communicator_self()
+    result = run_self_evaluation(self_state)
+    emit(result)
+    print(f"\n--- Self-Evaluation Summary ---")
+    print(result.get('summary', 'No summary generated'))
+
+
+def cmd_self_grow(args):
+    """Run full self-directed growth cycle."""
+    from sim import load_communicator_self
+    self_state = load_communicator_self()
+    result = run_self_directed_growth(self_state)
+    emit(result)
+    
+    # Show decision summary
+    print(f"\n--- Self-Directed Growth Decision ---")
+    
+    gaps = result.get('evaluation', {}).get('gaps', [])
+    proposals = result.get('proposals', [])
+    application = result.get('application', {})
+    
+    if not gaps:
+        print("No gaps identified. System appears balanced.")
+    else:
+        print(f"Identified {len(gaps)} gap(s):")
+        for g in gaps:
+            print(f"  - {g.get('category')}: {g.get('gap')}")
+    
+    if application.get('needs_approval', 0) > 0:
+        print(f"\n✅ {application.get('needs_approval')} proposed change(s) ready for human approval")
+    
+    # Show speech
+    speech = result.get('speech', '')
+    if speech:
+        print(f"\n🗣️  CircleForge says: \"{speech}\"")
+
+
+def cmd_self_speak(args):
+    """Generate speech explaining CircleForge's self-decisions."""
+    gaps_json = args.gaps
+    if gaps_json:
+        try:
+            gaps = json.loads(gaps_json)
+        except Exception as e:
+            emit({"error": f"Could not parse gaps JSON: {e}"})
+            return
+    else:
+        gaps = []
+    
+    from sim import load_communicator_self
+    self_state = load_communicator_self()
+    speech = generate_self_speech(self_state, {"gaps": gaps})
+    emit({"speech": speech})
+    print(f"\n🗣️  CircleForge says: \"{speech}\"")
 
 
 if __name__ == "__main__":
