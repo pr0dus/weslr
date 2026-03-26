@@ -1,0 +1,27 @@
+{
+  "persistence": {
+    "intent_history_len": 10,
+    "question_history_len": 10,
+    "ticks_with_state": 22
+  },
+  "inquiry_continuity": {
+    "question_lineage_len": 10,
+    "experiment_count": 4,
+    "inspect_research_actions": 5
+  },
+  "self_revision": {
+    "self_model_updates": 22,
+    "preferred_modes_count": 1,
+    "strengths_count": 0
+  },
+  "internal_differentiation": {
+    "roles_active": [],
+    "weighted_voice_count": 0,
+    "role_counts": {
+      "observer": 9
+    },
+    "memory_bias_hits": 0,
+    "useful_role_memory_signals": 0
+  },
+  "gate_note": "Postpone bounded free-finger test until persistence, better-than-random inquiry continuity, stable self-revision, and useful internal differentiation can be revisited honestly."
+}

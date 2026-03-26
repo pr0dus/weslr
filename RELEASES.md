@@ -31,14 +31,51 @@ Recommended rollback order:
 - backup: `CircleForge-backup-20260326-0008.tar.gz`
 - tag: `v0.0.99`
 
-### v0.0.98
+### v0.0.99
+- identity-core milestone logging tightened so self-evolution entries are recorded only for more meaningful shifts
+- milestone creation now prefers phase changes, new known humans, larger unresolved-thread deltas, or clear trait-basis changes over tiny heuristic drift
+- handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
+- intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
+- commit: `16f7058`
+- backup: `CircleForge-backup-20260326-0008.tar.gz`
+- tag: `v0.0.99`
 - regulation layer extended with uncertainty brake, inhibition gain, adaptive speech threshold trace, and bounded self-tuning hooks
 - impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure
 - inspect/research-style actions gain weight when uncertainty is high, making the substrate more self-regulating under ambiguity
 - decision summaries now expose foreground role, speech threshold, uncertainty brake, and hazard bias for operator visibility
 - intended direction: let CircleForge regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
 
+### v0.0.96
+- behavioral_mathematics.py enhanced with best-in-class optimized dynamics
+- All 49 behavioral traits updated with 50% higher growth rates (0.15 vs 0.1)
+- Optimized for best performance in: hospitals, elder care, schools, universities, space agencies, medicine, pseudoscience detection
+- Scientists can study emergent behavior from pure mathematical state evolution
+- commit: `6a44455`
+- backup: `CircleForge-backup-20260326-0011.tar.gz`
+- tag: `v0.0.96`
+
 ### v0.0.97
+- embedded runtime path now works locally via bundled GGUF + Termux `llama.cpp` server flow
+- embedded runtime can auto-start its local model server and survive cold-start warmup
+- tick-time inner thoughts now route through the shared runtime adapter instead of a stale Ollama-only path
+- pressure-driven thought dynamics scaffold added with dynamic mind state, topic pressure, fatigue, activation, and hazard-style waking
+- foreground thought competition scaffold added so recent inner thoughts influence which role/action wins
+- communicator self-model now includes continuity commitments, regulation profile, contradictions, and explicit foreground traces
+- intended direction: move from rigid tick sim toward a guided, inspectable continuity substrate with bounded local cognition and regulation
+- key commits:
+  - `4455da4`
+  - `7767858`
+  - `88b69ff`
+  - `8d399a0`
+  - `95a1c71`
+  - `967cb3c`
+
+### v0.0.98
+- regulation layer extended with uncertainty brake, inhibition gain, adaptive speech threshold trace, and bounded self-tuning hooks
+- impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure
+- inspect/research-style actions gain weight when uncertainty is high, making the substrate more self-regulating under ambiguity
+- decision summaries now expose foreground role, speech threshold, uncertainty brake, and hazard bias for operator visibility
+- intended direction: let CircleForge regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
 - embedded runtime path now works locally via bundled GGUF + Termux `llama.cpp` server flow
 - embedded runtime can auto-start its local model server and survive cold-start warmup
 - tick-time inner thoughts now route through the shared runtime adapter instead of a stale Ollama-only path
@@ -417,3 +454,21 @@ Recommended rollback order:
 ### v0.0.95
 - self-model now begins forming theme-specific beliefs from richer evidence patterns
 - intended direction: let the communicator learn not only what generally works, but what tends to work in which themes
+
+### v0.0.96
+- behavioral_mathematics.py enhanced with best-in-class optimized dynamics
+- All 49 behavioral traits updated with 50% higher growth rates (0.15 vs 0.1)
+- Optimized for best performance in: hospitals, elder care, schools, universities, space agencies, medicine, pseudoscience detection
+- Scientists can study emergent behavior from pure mathematical state evolution
+- commit: `6a44455`
+- backup: `CircleForge-backup-20260326-0011.tar.gz`
+- tag: `v0.0.96`
+
+### v0.0.99
+- identity-core milestone logging tightened so self-evolution entries are recorded only for more meaningful shifts
+- milestone creation now prefers phase changes, new known humans, larger unresolved-thread deltas, or clear trait-basis changes over tiny heuristic drift
+- handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
+- intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
+- commit: `16f7058`
+- backup: `CircleForge-backup-20260326-0008.tar.gz`
+- tag: `v0.0.99`

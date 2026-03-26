@@ -1,0 +1,27 @@
+[
+  {
+    "kind": "demand",
+    "title": "Turn research notes into reusable export artifacts",
+    "reason": "Research notes exist, but they need packaging paths and clearer export destinations."
+  },
+  {
+    "kind": "demand",
+    "title": "Rank export candidates for human review",
+    "reason": "There are exportable modules/components that should be shortlisted outside the sim."
+  },
+  {
+    "kind": "governance",
+    "title": "Dormant categories detected",
+    "reason": "These categories are underused and may need retirement or revival: observability, packaging, interfaces, forecasting, market-tools, replay, lineage, automation, orchestration, evaluation."
+  },
+  {
+    "kind": "family",
+    "title": "Active artifact families detected",
+    "reason": "Current artifact work is clustering around: packaging, evaluation."
+  },
+  {
+    "kind": "failure",
+    "title": "Recent friction detected",
+    "reason": "Errors=0, cooldowns=0, skipped=1; hot actions: inspect."
+  }
+]

@@ -1,0 +1,1421 @@
+[
+  {
+    "generated_at": 1774178588,
+    "tick": 2,
+    "version": "0.0.54",
+    "theme_pressure": {
+      "backup confidence": 0.457,
+      "service visibility": 0.42,
+      "config sanity checks": 0.396,
+      "log readability": 0.418,
+      "workflow packaging": 0.495
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774178708,
+    "tick": 1,
+    "version": "0.0.54",
+    "theme_pressure": {
+      "backup confidence": 0.48,
+      "service visibility": 0.418,
+      "config sanity checks": 0.394,
+      "log readability": 0.416,
+      "workflow packaging": 0.518
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774179750,
+    "tick": 1,
+    "version": "0.0.54",
+    "theme_pressure": {
+      "backup confidence": 0.478,
+      "service visibility": 0.442,
+      "config sanity checks": 0.392,
+      "log readability": 0.414,
+      "workflow packaging": 0.54
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774180116,
+    "tick": 1,
+    "version": "0.0.55",
+    "theme_pressure": {
+      "backup confidence": 0.501,
+      "service visibility": 0.44,
+      "config sanity checks": 0.39,
+      "log readability": 0.438,
+      "workflow packaging": 0.537
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774180537,
+    "tick": 1,
+    "version": "0.0.55",
+    "theme_pressure": {
+      "backup confidence": 0.501,
+      "service visibility": 0.44,
+      "config sanity checks": 0.39,
+      "log readability": 0.438,
+      "workflow packaging": 0.537
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774180571,
+    "tick": 1,
+    "version": "0.0.56",
+    "theme_pressure": {
+      "backup confidence": 0.501,
+      "service visibility": 0.44,
+      "config sanity checks": 0.39,
+      "log readability": 0.438,
+      "workflow packaging": 0.537
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774182788,
+    "tick": 3,
+    "version": "0.0.56",
+    "theme_pressure": {
+      "backup confidence": 0.735,
+      "service visibility": 0.434,
+      "config sanity checks": 0.384,
+      "log readability": 0.432,
+      "workflow packaging": 0.664
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774184369,
+    "tick": 4,
+    "version": "0.0.58",
+    "theme_pressure": {
+      "backup confidence": 0.96,
+      "service visibility": 0.416,
+      "config sanity checks": 0.366,
+      "log readability": 0.414,
+      "workflow packaging": 0.781,
+      "backup confidence validation": 0.434
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774185403,
+    "tick": 8,
+    "version": "0.0.60",
+    "theme_pressure": {
+      "backup confidence": 0.96,
+      "service visibility": 0.4,
+      "config sanity checks": 0.35,
+      "log readability": 0.398,
+      "workflow packaging": 0.896,
+      "backup confidence validation": 0.418,
+      "workflow packaging validation": 0.403
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774185780,
+    "tick": 10,
+    "version": "0.0.61",
+    "theme_pressure": {
+      "backup confidence": 0.976,
+      "service visibility": 0.38,
+      "config sanity checks": 0.33,
+      "log readability": 0.378,
+      "workflow packaging": 0.856,
+      "backup confidence validation": 0.398,
+      "workflow packaging validation": 0.383
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774187666,
+    "tick": 1,
+    "version": "0.0.63",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.378,
+      "config sanity checks": 0.328,
+      "log readability": 0.376,
+      "workflow packaging": 0.873,
+      "backup confidence validation": 0.396,
+      "workflow packaging validation": 0.381
+    },
+    "theme_lifecycle": {
+      "backup confidence": "stable",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774188973,
+    "tick": 3,
+    "version": "0.0.66",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.356,
+      "config sanity checks": 0.306,
+      "log readability": 0.354,
+      "workflow packaging": 0.975,
+      "backup confidence validation": 0.374,
+      "workflow packaging validation": 0.359
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774189374,
+    "tick": 4,
+    "version": "0.0.67",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.348,
+      "config sanity checks": 0.298,
+      "log readability": 0.346,
+      "workflow packaging": 0.99,
+      "backup confidence validation": 0.366,
+      "workflow packaging validation": 0.351
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774189599,
+    "tick": 5,
+    "version": "0.0.68",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.338,
+      "config sanity checks": 0.293,
+      "log readability": 0.336,
+      "workflow packaging": 0.965,
+      "backup confidence validation": 0.356,
+      "workflow packaging validation": 0.341
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774190117,
+    "tick": 5,
+    "version": "0.0.70",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.32,
+      "config sanity checks": 0.284,
+      "log readability": 0.318,
+      "workflow packaging": 0.99,
+      "backup confidence validation": 0.338,
+      "workflow packaging validation": 0.323
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "stable",
+      "config sanity checks": "stable",
+      "log readability": "stable",
+      "workflow packaging": "stable",
+      "backup confidence validation": "emergent",
+      "workflow packaging validation": "emergent"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774283349,
+    "tick": 120,
+    "version": "0.0.96",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774293266,
+    "tick": 2,
+    "version": "0.0.96",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774366866,
+    "tick": 2,
+    "version": "0.0.98",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774369439,
+    "tick": 4,
+    "version": "0.0.98",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774417357,
+    "tick": 60,
+    "version": "0.0.98",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774479971,
+    "tick": 72,
+    "version": "0.0.98",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774480022,
+    "tick": 72,
+    "version": "0.0.98",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {}
+  },
+  {
+    "generated_at": 1774480477,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774480642,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774480910,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481025,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481151,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481250,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481374,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481463,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "latest_evolution_at": 1774481463,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774481491,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "phase=early-continuity; traits=research, signal, optimize; phase-shift; known_humans=1; thread_delta=+3; trait-basis-shift",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1,
+      "history_migration_context": true
+    }
+  },
+  {
+    "generated_at": 1774481542,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774481543,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774481599,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774481615,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774481958,
+    "tick": 72,
+    "version": "0.0.99",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "early-continuity",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "optimize",
+        "inspect",
+        "uncertainty-brake",
+        "act"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 1,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.772,
+      "latest_evolution_summary": "",
+      "latest_evolution_at": 0,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774536038,
+    "tick": 153,
+    "version": "0.0.100",
+    "theme_pressure": {
+      "backup confidence": 0.99,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "enduring",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "rest",
+        "optimize",
+        "inspect",
+        "uncertainty-brake"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 5,
+      "unresolved_shared_threads": 3,
+      "identity_stability": 0.846,
+      "latest_evolution_summary": "phase=enduring; traits=research, signal, rest; thread_delta=+3",
+      "latest_evolution_at": 1774533547,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774536052,
+    "tick": 154,
+    "version": "0.0.100",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "enduring",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "rest",
+        "optimize",
+        "inspect",
+        "uncertainty-brake"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 5,
+      "unresolved_shared_threads": 1,
+      "identity_stability": 0.842,
+      "latest_evolution_summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2",
+      "latest_evolution_at": 1774536047,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774536590,
+    "tick": 154,
+    "version": "0.0.100",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "enduring",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "rest",
+        "optimize",
+        "inspect",
+        "uncertainty-brake"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 5,
+      "unresolved_shared_threads": 1,
+      "identity_stability": 0.842,
+      "latest_evolution_summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2",
+      "latest_evolution_at": 1774536047,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774536923,
+    "tick": 154,
+    "version": "0.0.100",
+    "theme_pressure": {
+      "backup confidence": 0.975,
+      "service visibility": 0.1,
+      "config sanity checks": 0.1,
+      "log readability": 0.1,
+      "workflow packaging": 0.1,
+      "backup confidence validation": 0.1,
+      "workflow packaging validation": 0.1
+    },
+    "theme_lifecycle": {
+      "backup confidence": "emergent",
+      "service visibility": "dormant",
+      "config sanity checks": "dormant",
+      "log readability": "dormant",
+      "workflow packaging": "dormant",
+      "backup confidence validation": "dormant",
+      "workflow packaging validation": "dormant"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "enduring",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
+      "traits": [
+        "research",
+        "signal",
+        "rest",
+        "optimize",
+        "inspect",
+        "uncertainty-brake"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 5,
+      "unresolved_shared_threads": 1,
+      "identity_stability": 0.842,
+      "latest_evolution_summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2",
+      "latest_evolution_at": 1774536047,
+      "timeline_semantics_version": 1
+    }
+  }
+]

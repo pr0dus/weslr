@@ -1,0 +1,79 @@
+[
+  {
+    "id": "work-1",
+    "title": "Advance Backup Confidence",
+    "status": "done",
+    "priority": 0.28,
+    "owner": "agent-1",
+    "created_at": 1774549590,
+    "project_id": "project-backup-confidence",
+    "need_id": "",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-2",
+    "title": "Advance Workflow Packaging",
+    "status": "done",
+    "priority": 0.28,
+    "owner": "agent-1",
+    "created_at": 1774549590,
+    "project_id": "project-workflow-packaging",
+    "need_id": "",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-question-1",
+    "title": "What is still unclear about backup confidence?",
+    "status": "open",
+    "priority": 0.3,
+    "owner": "agent-1",
+    "created_at": 1774549595,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-1",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-question-7",
+    "title": "What new uncertainty appeared after research on backup confidence?",
+    "status": "open",
+    "priority": 0.38,
+    "owner": "agent-1",
+    "created_at": 1774549820,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-7",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-question-8",
+    "title": "What is still unclear about hello how?",
+    "status": "open",
+    "priority": 0.38,
+    "owner": "agent-1",
+    "created_at": 1774549835,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-8",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-question-15",
+    "title": "What new uncertainty appeared after inspect on backup confidence?",
+    "status": "open",
+    "priority": 0.5,
+    "owner": "agent-1",
+    "created_at": 1774550027,
+    "project_id": "project-backup-confidence",
+    "need_id": "need-question-15",
+    "notes": "Last progressed at 1774557119 by agent-1"
+  },
+  {
+    "id": "work-project-workflow-packaging-1774559353",
+    "title": "Advance Workflow Packaging",
+    "status": "open",
+    "priority": 0.62,
+    "owner": "agent-1",
+    "created_at": 1774559353,
+    "project_id": "project-workflow-packaging",
+    "need_id": "",
+    "notes": "Auto-routed follow-up work for Workflow Packaging"
+  }
+]

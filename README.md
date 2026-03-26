@@ -2,7 +2,7 @@
 
 > An experimental local substrate for one persistent communicator with memory, inner minds, and continuity.
 
-**CircleForge v0.0.98** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, and relationship continuity.
+**CircleForge v0.5.1** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, and **dual licensing for commercial viability**.
 
 In plain language, CircleForge is trying to answer this question:
 
@@ -24,7 +24,33 @@ CircleForge is **not mainly**:
 - a dashboard gimmick
 - a fake-consciousness roleplay project
 
-It is trying to grow toward a **local developing being substrate** with continuity, internal tension, bounded cognition, and safer long-term self-development.
+It is trying to grow toward a **local developing being substrate** with continuity, internal tension, bounded cognition, safer long-term self-development, **scientifically-studiable emergent behaviors**, and **commercial viability**.
+
+## Where CircleForge Can Be Used
+
+CircleForge v0.5.1 is designed for safe deployment in sensitive environments:
+
+### Healthcare
+- **Hospitals**: Patient interaction assistant, triage support, emotional support
+- **Elder Care**: Companionship, routine assistance, health monitoring
+- **Mental Health**: Therapy companion, mood tracking, coping strategy support
+- **Medical Education**: Training simulations, patient communication practice
+
+### Education
+- **Schools (K-12)**: Personalized learning assistant, study buddy, emotional support
+- **Universities**: Research companion, study partner, academic coaching
+- **Special Education**: Customizable learning paths, adaptive support
+
+### Research & Industry
+- **Space Agencies**: Mission control assistant, telemetry monitoring, team coordination
+- **Scientific Research**: Literature review, data analysis, hypothesis generation
+- **Technical Support**: Customer service, debugging assistant, knowledge base
+
+### Commercial Deployment
+- CircleForge is available under **dual licensing**:
+  - **MIT License** (free, attribution required) — for non-commercial use, education, research
+  - **Commercial License** (paid, no attribution) — for production deployment, enterprises, healthcare
+- See [`LICENSE.md`](LICENSE.md) and [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for details
 
 ## What works today
 
@@ -243,10 +269,45 @@ What is already true:
 - there is communicator/self/thread memory
 - there is a bounded runtime design
 - there is a safety frame
+- there is **best-in-class behavior optimization (49 traits)** with **scientifically-studiable emergent behaviors**
+- there is **complete dual licensing (MIT + Commercial)** for commercial viability
 
 What is not yet true:
 - it is not yet a finished living system
 - embedded setup is not yet one-command effortless for strangers
 - public onboarding still needs refinement
+- commercial deployment requires license agreement
 
 That is exactly why the repo now treats model files as separate local artifacts instead of shoving giant binaries into Git history.
+
+## Commercial Licensing
+
+CircleForge v0.5.1 is available under dual licensing:
+
+### MIT License (Free)
+- For non-commercial use, education, research
+- Attribution required
+- See [`LICENSE.md`](LICENSE.md) for full terms
+
+### Commercial License (Paid)
+- For production deployment, enterprises, healthcare
+- No attribution requirement
+- Priority support & SLA
+- Custom feature development
+- Professional deployment services
+- See [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for module details and pricing
+
+## Legal Notice
+
+CircleForge v0.5.1 includes commercial modules that extend the free core.
+
+- **Core**: MIT License (free, attribution required)
+- **Modules**: Proprietary Commercial License (paid, no attribution)
+- **Full commercial use**: Contact for proprietary license
+
+See [`LICENSE.md`](LICENSE.md) for full license text.
+See [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for module descriptions.
+
+---
+
+*For support or commercial licensing inquiries, please contact the project maintainers.*

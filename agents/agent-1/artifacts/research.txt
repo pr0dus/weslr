@@ -1,0 +1,1 @@
+Observation: shorter loops waste less time.

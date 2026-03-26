@@ -1,0 +1,40 @@
+{
+  "themes": {
+    "backup confidence": {
+      "strength": 0.972,
+      "wins": 6,
+      "failures": 1,
+      "last_action": "research",
+      "last_category": "lineage"
+    },
+    "service visibility": {
+      "strength": 0.3,
+      "wins": 0,
+      "failures": 0,
+      "last_action": null,
+      "last_category": null
+    },
+    "config sanity checks": {
+      "strength": 0.3,
+      "wins": 0,
+      "failures": 0,
+      "last_action": null,
+      "last_category": null
+    },
+    "log readability": {
+      "strength": 0.3,
+      "wins": 0,
+      "failures": 0,
+      "last_action": null,
+      "last_category": null
+    },
+    "workflow packaging": {
+      "strength": 0.3,
+      "wins": 0,
+      "failures": 0,
+      "last_action": null,
+      "last_category": null
+    }
+  },
+  "last_theme": "backup confidence"
+}

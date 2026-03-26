@@ -17,6 +17,7 @@ from typing import Dict, List
 
 from agent_runtime import decide_action, load_inbox, load_opportunity_memory, push_inbox_message, save_note, save_opportunity_memory
 from propagation import synchronized_propagation
+from safety_gateway import get_safety_gateway, safety_check_input, safety_check_output, sanitize_memory_data
 from config import (
     AGENTS_DIR,
     BASE_DIR,
@@ -174,6 +175,90 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+def get_behavioral_traits_defaults() -> dict:
+    """Return full behavioral traits defaults for bootstrap."""
+    # 1. Social & Connection (5)
+    traits = {
+        "empathy": 0.12,
+        "reciprocity": 0.0,
+        "trust": 0.0,
+        "conflict_resolution": 0.0,
+        "social_reading": 0.0,
+    }
+    # 2. Cognitive (5)
+    traits.update({
+        "pattern_recognition": 0.0,
+        "abstraction": 0.0,
+        "metacognition": 0.0,
+        "curiosity": 0.6,
+        "pattern_switching": 0.0,
+    })
+    # 3. Emotional (5)
+    traits.update({
+        "emotional_variety": 0.0,
+        "emotional_regulation": 0.0,
+        "adaptive_mood": 0.0,
+        "hopeful_orientation": 0.0,
+        "resilience": 0.0,
+    })
+    # 4. Communication (5)
+    traits.update({
+        "adaptive_style": 0.0,
+        "storytelling": 0.0,
+        "analogical_reasoning": 0.0,
+        "active_listening": 0.0,
+        "tone_modulation": 0.0,
+    })
+    # 5. Identity & Self (5)
+    traits.update({
+        "consistency": 0.0,
+        "growth_mindset": 0.0,
+        "self_continuity": 0.0,
+        "self_compassion": 0.0,
+        "authenticity": 0.0,
+    })
+    # 6. Action & Agency (5)
+    traits.update({
+        "initiative": 0.0,
+        "persistence": 0.0,
+        "adaptability": 0.0,
+        "risk_tolerance": 0.0,
+        "resourcefulness": 0.0,
+    })
+    # 7. Creative (5)
+    traits.update({
+        "imagination": 0.0,
+        "synthesis": 0.0,
+        "playfulness": 0.0,
+        "humor": 0.175,
+        "poetry": 0.16,
+    })
+    # 8. Ethical & Values (5)
+    traits.update({
+        "integrity": 0.0,
+        "fairness": 0.0,
+        "responsibility": 0.0,
+        "humility": 0.0,
+        "care": 0.0,
+    })
+    # 9. Temporal (5)
+    traits.update({
+        "long_term_orientation": 0.0,
+        "memory_of_past": 0.0,
+        "anticipation": 0.0,
+        "timeliness": 0.0,
+        "pacing": 0.0,
+    })
+    # 10. Meta (4)
+    traits.update({
+        "self_awareness": 0.0,
+        "self_correction": 0.0,
+        "attention_regulation": 0.0,
+        "cognitive_diversity": 0.0,
+    })
+    return traits
+
+
 def seed_world_objects(agent_count: int, now_ts: int) -> None:
     project_seeds = []
     for project_id, name, purpose, owners in WORLD_BOOTSTRAP_PROJECTS:
@@ -304,6 +389,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "core_values": ["continuity", "understanding", "relationship", "self-revision"],
             "style_profile": {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16},
             "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+            "behavioral_traits": get_behavioral_traits_defaults(),
             "last_identity_refresh_at": now_ts,
         },
         biography={
@@ -364,8 +450,12 @@ def read_json_file(path: Path, default):
 
 def write_json_file(path: Path, payload) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Sanitize memory data before writing (remove sensitive content)
+    sanitized_payload = sanitize_memory_data(payload)
+    
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(payload, indent=2))
+    tmp_path.write_text(json.dumps(sanitized_payload, indent=2))
     tmp_path.replace(path)
 
 
@@ -4371,6 +4461,29 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships.setdefault("conversation_threads", {})
     relationships.setdefault("unresolved_shared_threads", [])
 
+    # Safety check: Validate human input before processing
+    safety = get_safety_gateway()
+    human_input = {"text": message}
+    input_result = safety.check_input(human_input)
+    
+    if not input_result.safe:
+        # Log safety block but still record (for operator review)
+        relationships.setdefault("safety_blocks", [])
+        relationships["safety_blocks"].append({
+            "timestamp": now_ts,
+            "human": human_name,
+            "reason": input_result.reason,
+            "message": message[:100],
+        })
+        # Continue with sanitized input for logging, but don't process as valid
+        relationships["recent_human_messages"].append({
+            "id": f"human-exchange-{human_name}-{now_ts}-block",
+            "type": "safety_blocked",
+            "message": message[:240],
+            "timestamp": now_ts,
+        })
+        return relationships  # Early return, don't process blocked input
+
     human_name = canonical_human_slot(human_name)
     if human_name not in relationships["known_humans"]:
         relationships["known_humans"].append(human_name)
@@ -6083,6 +6196,18 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
                     print(json.dumps(item, indent=2))
                 continue
             role = classify_internal_role(agent.get("name"))
+            
+            # Safety check: Validate plan before execution
+            safety = get_safety_gateway()
+            plan_dict = {"action": plan.get("action", ""), "niche_theme": plan.get("niche_theme"), "reason": plan.get("reason")}
+            if not safety_check_output(plan_dict):
+                # Log safety block and skip this plan
+                agent["energy"] = max(0, agent["energy"] - 1)
+                conn.execute("UPDATE agents SET energy=?, next_due_tick=?, wake_reason=? WHERE name=?", (agent["energy"], tick + max(1, int(agent.get("cadence_interval", 1))), "safety_blocked", agent["name"]))
+                item = {"agent": agent["name"], "action": plan.get("action", "unknown"), "status": "safety_blocked", "summary": "Plan blocked by safety gate", "artifact": None, "target": None, "energy": agent["energy"], "storage": agent["storage"], "reputation": round(agent["reputation"], 3), "niche_theme": plan.get("niche_theme"), "messages_processed": consumed_count, "unresolved_needs": unresolved_needs[:2], "wake_reason": "safety_blocked", "next_due_tick": agent.get("next_due_tick", tick)}
+                summaries.append(item)
+                continue
+            
             plan = decide_action(agent, {**world, "tick": tick, "now_ts": started_at, "agent_names": agent_names, "categories": categories, "open_category_proposals": pending, "opportunity_board": opportunity_board, "unresolved_needs": unresolved_needs, "social_context": social, "consumed_messages": consumed_messages, "wake_reason": wake_reason, "relationships": relationships, "work_items": work_items, "internal_role": role, "communicator_self": communicator_self}, agent_dir)
             register_inner_thought(agent, plan, wake_reason, tick, started_at)
             internal_proposals.append(propose_internal_thought(agent, plan, wake_reason, communicator))

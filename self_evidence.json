@@ -1,0 +1,88 @@
+{
+  "actions": {
+    "build_module": {
+      "count": 2,
+      "follow_through": 0,
+      "question_link": 2,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "gather": {
+      "count": 1,
+      "follow_through": 0,
+      "question_link": 1,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "research": {
+      "count": 4,
+      "follow_through": 0,
+      "question_link": 4,
+      "experiment_link": 4,
+      "question_narrowing": 4,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "rest": {
+      "count": 1,
+      "follow_through": 0,
+      "question_link": 1,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    }
+  },
+  "themes": {
+    "backup confidence": {
+      "build_module": {
+        "count": 2,
+        "follow_through": 0,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "gather": {
+        "count": 1,
+        "follow_through": 0,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "research": {
+        "count": 4,
+        "follow_through": 0,
+        "question_narrowing": 4,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "rest": {
+        "count": 1,
+        "follow_through": 0,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      }
+    }
+  },
+  "notes": [
+    "decision_mode=act chosen_action=build_module",
+    "decision_mode=act chosen_action=gather",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=rest",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research"
+  ],
+  "evidence_types": {
+    "question_link": 8,
+    "experiment_progress": 4,
+    "question_narrowing": 4
+  }
+}

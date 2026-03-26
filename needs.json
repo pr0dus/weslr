@@ -1,0 +1,67 @@
+[
+  {
+    "id": "need-question-1",
+    "title": "What is still unclear about backup confidence?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What is still unclear about backup confidence?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.404,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774549595,
+    "updated_at": 1774549852
+  },
+  {
+    "id": "need-question-7",
+    "title": "What new uncertainty appeared after research on backup confidence?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after research on backup confidence?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.593,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774549820,
+    "updated_at": 1774559382
+  },
+  {
+    "id": "need-question-8",
+    "title": "What is still unclear about hello how?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What is still unclear about hello how?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.314,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774549835,
+    "updated_at": 1774549835
+  },
+  {
+    "id": "need-question-15",
+    "title": "What new uncertainty appeared after inspect on backup confidence?",
+    "kind": "exploration",
+    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after inspect on backup confidence?",
+    "origin": "communicator-question-lineage",
+    "scope": "public",
+    "pressure": 0.389,
+    "novelty": 0.55,
+    "status": "active",
+    "created_at": 1774550027,
+    "updated_at": 1774550230
+  },
+  {
+    "id": "need-16-5",
+    "title": "inspect skipped: no valid target",
+    "kind": "repair",
+    "description": "Observed unresolved runtime friction: inspect skipped: no valid target",
+    "origin": "world-log",
+    "scope": "public",
+    "pressure": 0.99,
+    "novelty": 0.42,
+    "status": "active",
+    "created_at": 1774550230,
+    "updated_at": 1774559382
+  }
+]

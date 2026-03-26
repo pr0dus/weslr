@@ -20,9 +20,122 @@ def _dedupe_keep_order(items: list[str], *, limit: int) -> list[str]:
     return result[:limit]
 
 
+def update_behavioral_trait(self_state: dict, trait_name: str, dt: float = 1.0) -> float:
+    """Update a behavioral trait using dense mathematical dynamics from behavioral_mathematics.py."""
+    current = float(self_state.get("identity_state", {}).get("behavioral_traits", {}).get(trait_name, 0.0))
+    
+    # Import dynamics from behavioral_mathematics.py
+    from behavioral_mathematics import BEHAVIOR_TRAITS
+    
+    if trait_name not in BEHAVIOR_TRAITS:
+        # Fallback: simple decay if trait not found in library
+        decay_rate = 0.01
+        new_val = max(0.0, current * (1 - decay_rate * dt))
+        identity_state = self_state.setdefault("identity_state", {})
+        identity_state.setdefault("behavioral_traits", {})
+        identity_state["behavioral_traits"][trait_name] = round(new_val, 3)
+        return new_val
+    
+    # Get the trait's dynamics function and update
+    trait = BEHAVIOR_TRAITS[trait_name]
+    
+    # Build state vector from communicator_self
+    relationships = self_state.get("relationships", {})
+    dynamic = self_state.get("dynamic_mind_state", {})
+    
+    state = {
+        "human_salience": float(relationships.get("human_salience", 0.0)),
+        "connection_count": len(relationships.get("known_humans", [])) + len(relationships.get("conversation_threads", {})),
+        "trust": float((relationships.get("human_profiles", {}).get("you", {}) or {}).get("trust", 0.5)),
+        "reliability": 0.8,  # Placeholder - would need actual reliability tracking
+        "resolution_rate": 0.7,  # Placeholder
+        "conflict_count": len(relationships.get("unresolved_shared_threads", [])),
+        "attention": float(dynamic.get("curiosity", 0.5)),
+        "context_complexity": float(dynamic.get("uncertainty", 0.5)),
+        "exchange_count": int(self_state.get("continuity", {}).get("session_count", 0)),
+    }
+    
+    # dv/dt = dynamics(v, state) - decay * v
+    dv_dt = trait.dynamics(current, state) - trait.decay * current
+    new_val = current + dv_dt * dt
+    
+    # Apply saturation and min_val bounds
+    new_val = min(trait.saturation, max(trait.min_val, new_val))
+    
+    # Save back
+    identity_state = self_state.setdefault("identity_state", {})
+    identity_state.setdefault("behavioral_traits", {})
+    identity_state["behavioral_traits"][trait_name] = round(new_val, 3)
+    
+    return new_val
+
+
 def ensure_identity_scaffold(self_state: dict) -> dict:
     identity_anchor = str(self_state.get("identity_anchor") or "CircleForge")
     core_drives = [str(item).strip() for item in (self_state.get("core_drives") or []) if str(item).strip()]
+    # Initialize behavioral_traits from behavioral_mathematics.py if not present
+    behavioral_traits = {
+        # 1. Social & Connection (5)
+        "empathy": 0.12,
+        "reciprocity": 0.0,
+        "trust": 0.0,
+        "conflict_resolution": 0.0,
+        "social_reading": 0.0,
+        # 2. Cognitive (5)
+        "pattern_recognition": 0.0,
+        "abstraction": 0.0,
+        "metacognition": 0.0,
+        "curiosity": 0.6,  # Already active in affect
+        "pattern_switching": 0.0,
+        # 3. Emotional (5)
+        "emotional_variety": 0.0,
+        "emotional_regulation": 0.0,
+        "adaptive_mood": 0.0,
+        "hopeful_orientation": 0.0,
+        "resilience": 0.0,
+        # 4. Communication (5)
+        "adaptive_style": 0.0,
+        "storytelling": 0.0,
+        "analogical_reasoning": 0.0,
+        "active_listening": 0.0,
+        "tone_modulation": 0.0,
+        # 5. Identity & Self (5)
+        "consistency": 0.0,
+        "growth_mindset": 0.0,
+        "self_continuity": 0.0,
+        "self_compassion": 0.0,
+        "authenticity": 0.0,
+        # 6. Action & Agency (5)
+        "initiative": 0.0,
+        "persistence": 0.0,
+        "adaptability": 0.0,
+        "risk_tolerance": 0.0,
+        "resourcefulness": 0.0,
+        # 7. Creative (5)
+        "imagination": 0.0,
+        "synthesis": 0.0,
+        "playfulness": 0.0,
+        "humor": 0.175,
+        "poetry": 0.16,
+        # 8. Ethical & Values (5)
+        "integrity": 0.0,
+        "fairness": 0.0,
+        "responsibility": 0.0,
+        "humility": 0.0,
+        "care": 0.0,
+        # 9. Temporal (5)
+        "long_term_orientation": 0.0,
+        "memory_of_past": 0.0,
+        "anticipation": 0.0,
+        "timeliness": 0.0,
+        "pacing": 0.0,
+        # 10. Meta (4)
+        "self_awareness": 0.0,
+        "self_correction": 0.0,
+        "attention_regulation": 0.0,
+        "cognitive_diversity": 0.0,
+    }
+    
     self_state.setdefault("identity_state", {
         "declared_name": identity_anchor,
         "visible_name": identity_anchor,
@@ -31,6 +144,7 @@ def ensure_identity_scaffold(self_state: dict) -> dict:
         "core_values": core_drives[:6],
         "style_profile": {"warmth": 0.42, "humor": 0.18, "directness": 0.72, "poetry": 0.16},
         "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+        "behavioral_traits": behavioral_traits,
         "last_identity_refresh_at": 0,
     })
     self_state.setdefault("biography", {
@@ -117,6 +231,12 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
         "identity_summary": identity_summary.strip("; "),
         "last_identity_refresh_at": now_ts,
     })
+
+    # Update ALL behavioral traits using dense mathematical dynamics from behavioral_mathematics.py
+    # Each trait has its own dynamics function that responds to state signals
+    from behavioral_mathematics import BEHAVIOR_TRAITS
+    for trait_name in BEHAVIOR_TRAITS.keys():
+        update_behavioral_trait(self_state, trait_name, dt=1.0)
 
     chapter_bits = []
     if unresolved_threads:

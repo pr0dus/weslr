@@ -1,0 +1,109 @@
+[
+  {
+    "id": "memory-local-first",
+    "title": "Local-first inspectability",
+    "kind": "principle",
+    "content": "Prefer inspectable local artifacts, reversible changes, and visible world state over opaque autonomy.",
+    "source": "system-bootstrap",
+    "stability": 0.92,
+    "created_at": 1774549590,
+    "updated_at": 1774549590
+  },
+  {
+    "id": "memory-needs-drive-change",
+    "title": "Needs should drive change",
+    "kind": "principle",
+    "content": "Treat repeated friction, unmet coordination, and unexplained failures as first-class world signals.",
+    "source": "system-bootstrap",
+    "stability": 0.88,
+    "created_at": 1774549590,
+    "updated_at": 1774549590
+  },
+  {
+    "kind": "semantic-memory",
+    "id": "semantic-memory",
+    "summary": "Long-term identity and relationship memory.",
+    "identity_anchors": [
+      "CircleForge"
+    ],
+    "relationship_facts": [],
+    "stable_topics": [
+      "understanding",
+      "relationship",
+      "self-revision"
+    ],
+    "durable_lessons": [],
+    "continuity_anchors": [],
+    "last_updated_at": 1774559382
+  },
+  {
+    "id": "pm-question-1",
+    "title": "Communicator question: What is still unclear about backup confidence?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit backup confidence.",
+    "source": "communicator-question-lineage",
+    "stability": 0.62,
+    "created_at": 1774549595,
+    "updated_at": 1774549852
+  },
+  {
+    "id": "pm-question-7",
+    "title": "Communicator question: What new uncertainty appeared after research on backup confidence?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit backup confidence.",
+    "source": "communicator-question-lineage",
+    "stability": 0.66,
+    "created_at": 1774549820,
+    "updated_at": 1774559382
+  },
+  {
+    "id": "web-search-note-1774549827",
+    "title": "Autonomous research: hello, are you?",
+    "kind": "research",
+    "content": "Source trigger: human-turn\nSearch results:\n'How Are You?' Has Lost All Meaning. Here's A Better Way To ... - TIME \u2014 https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/ (score 0.61)\n40 Better Ways to Say \"How Are You\" in Everyday Conversations - Grammartel \u2014 https://grammartel.com/ways-to-say-how-are-you/ (score 0.61)\nHello! | Kids Greeting Song and Feelings Song | Super Simple Songs \u2014 https://www.youtube.com/watch?v=tVlcKp3bWH8 (score 0.33)\n\nSynthesis:\nWorking summary for hello, are you?: A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep.\n\nEvidence:\nhttps://time.com/article/2026/03/18/how-are-you-question-meaning-listening/: A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. The friend asked the woman how she was, and Saunders-Waldron\u2019s client\u2014who had been going through a divorce and custody battle\u2014said she was good because she felt like the friend didn't really want to know.\n40 Better Ways to Say \u201cHow Are You\u201d in Everyday Conversations \u2013 Grammartel: You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep. The meaning shifts with the tone, the place, and the person.",
+    "source": "search:hello, are you?",
+    "stability": 0.46,
+    "created_at": 1774549827,
+    "updated_at": 1774549827
+  },
+  {
+    "id": "web-search-raw-1774549827-1",
+    "title": "Raw excerpt 1: https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/",
+    "kind": "research_raw",
+    "content": "A client recently told Saunders-Waldron that she cried for 20 minutes after running into a friend at the grocery store. The friend asked the woman how she was, and Saunders-Waldron\u2019s client\u2014who had been going through a divorce and custody battle\u2014said she was good because she felt like the friend didn't really want to know. They had a two-minute chat before going their separate ways. \u201cMy client sat in her car afterward devastated, because she'd just performed OK-ness for someone who supposedly cared about her,\u201d Saunders-Waldron says. Keep in mind, too, that people can tell when you\u2019re moving through a conversation with your attention already on what you're going to have for dinner or who you need to text back. Saunders-Waldron likes to challenge people to ask three friends a week how they\u2019re doing\u2014and to put their phones away, make direct eye contact, and make it clear they\u2019re not zipping off somewhere else. If their friend says they\u2019re fine but you sense they\u2019re not, she suggests following up like this: \u201cNo, really, how are you?\u201d It\u2019s still a great question to ask sometimes. The key is following one simple rule: If you\u2019re not prepared to listen to the answer, don\u2019t ask, or choose a different phrase. \u201cTo me, \u2018How are you?\u2019 carries an implicit promise,\u201d Nuru says. \u201cWhen you ask that and mean it, you\u2019re signaling, \u2018Hey, I have space and time for you right now\u2019\u2014and that's worth being really intentional about.\u201d The stakes of treating \u201chow are you?\u201d like a throwaway greeting are higher than you might expect. When the question becomes little more than a social script, people learn to respond in a superficial way. Over time, that can contribute to loneliness, shallow connections, and what some experts describe as emotional dishonesty. Over time, people also learn the honest answer to \u201chow are you?\u201d isn\u2019t always welcome. \u201cWe perform this OK-ness because we know people are uncomfortable with our real feelings,\u201d Saunders-Waldron says. Instead of opening up, many default to socially acceptable replies like \u201cfine, thanks\u201d\u2014even when they\u2019re struggling. Research suggests that close relationships predict how healthy and happy we are as we age. \u201cThose relationships aren't built in grand gestures,\u201d Nuru says. \u201cThey're built in the accumulation of small moments where we actually show up for each other\u2014and asking them how they are, and meaning it, is one of those moments.\u201d Asking someone how they are implies they have your attention. If that\u2019s not the case\u2014because you\u2019re already late to a meeting that started five minutes ago or are juggling a dozen other things in your head\u2014say something else instead, experts suggest. Only ask the question if you\u2019re actually prepared to listen. When we don\u2019t slow down enough for meaningful interactions, we risk ending up with plenty of relationships but few that feel close. Surface-level check-ins can create the illusion of connection without the depth that sustains relationships. Over time, those missed moments of real conversation erode the bond two people once shared. \u201cWe've turned \u2018how are you\u2019 into punctuation \u2014it\u2019s not really a question anymore,\u201d says Audra Nuru, a professor of communication studies and family studies at the University of St. Thomas in St. Paul, Minn. \u201cAnd the moment it stopped being a real question, we stopped expecting a real answer.\u201d When you ask someone how they are and don't actually stop to hear the answer, you're \u201cteaching them that their real experience doesn't matter,\u201d Saunders-Waldron says. \u201cYou\u2019re saying, \u2018I\u2019m going through the motions of caring, but I don't actually have space for you.\u2019 And people feel that.\u201d Many people are so busy rushing to the next thing\u2014and the thing after that\u2014that they\u2019re never fully present for whoever is in front of them. As a result, interactions become quick and transactional, Nuru says: \u201cHow are you?\u201d \u201cGood. You?\u201d \u201cGood.\u201d Then we move on. You probably ask many of the people you interact with every day the same question: \u201cHow are you?\u201d Yet this phrase, once a genuine inquiry, has morphed into little more than a reflexive greeting we say while passing a colleague in the hall or running into a neighbor in the produce aisle.",
+    "source": "https://time.com/article/2026/03/18/how-are-you-question-meaning-listening/",
+    "stability": 0.24,
+    "created_at": 1774549827,
+    "updated_at": 1774549827
+  },
+  {
+    "id": "web-search-raw-1774549827-2",
+    "title": "Raw excerpt 2: 40 Better Ways to Say \u201cHow Are You\u201d in Everyday Conversations \u2013 Grammartel",
+    "kind": "research_raw",
+    "content": "\u201cHow are you?\u201d sounds simple, but it isn\u2019t. Sometimes it\u2019s real, sometimes it\u2019s just a habit. You hear it at the coffee shop or walking past someone at work\u2014it\u2019s polite, not deep. But other times, it matters. A friend asks after a hard day. A coworker checks in during a quiet moment. Then it\u2019s not small talk\u2014it\u2019s care. The meaning shifts with the tone, the place, and the person. At work, it might be formality. At home, it might be genuine. So, what does it mean? It depends. But one thing\u2019s true: it\u2019s how people reach out, even if just for a moment. We say \u201cHow are you?\u201d so often, it\u2019s become more of a habit than a real question. Most of the time, we don\u2019t even wait for an answer. But what if there were better, more thoughtful ways to check in with someone? Whether you\u2019re talking to a friend, coworker, or someone you just met, switching it up can make the conversation feel warmer and more real. Small changes in words can lead to deeper connections. In this list, you\u2019ll find 40 fresh and friendly ways to ask how someone\u2019s doing\u2014without sounding like a robot or reading from a script. You can use \u201cHow are you?\u201d almost anywhere\u2014as long as it fits the moment. It works when starting a chat, sending a message, or easing into a call. It\u2019s good for casual meetings, emails, and check-ins with people who matter. It shows respect or simple kindness. But don\u2019t use it when things are tense, rushed, or out of place\u2014it can feel forced. And when you do say it, make sure it sounds real. Look them in the eye, keep your tone warm, and mean it. That\u2019s what makes the question stick. Saying \u201cHow are you?\u201d isn\u2019t wrong\u2014but switching it up now and then can make your conversations feel more genuine. A thoughtful question can open the door to a better chat, whether it\u2019s with someone close or just an everyday interaction. So next time, try something new. It might surprise you how much people open up when they hear something a little different\u2014and more sincere. Meaning: Asking about progress or development. Explanation: Encourages updates, especially in projects or life plans. Example: \u201cHow\u2019s that new job? How are things shaping up?\u201d Best Use: Project-based or life transition conversations. Worst Use: Very personal check-ins. Tone: Curious, constructive. Meaning: Asking about their current life/state. Explanation: Especially useful for remote or long-distance chats. Example: \u201cThings are hectic here. How are things on your end?\u201d Best Use: Remote work or long-distance relationships. Worst Use: Face-to-face quick chats. Tone: Friendly, formal. Meaning: Checking how they\u2019re managing stress or hardship. Explanation: Acknowledges difficult circumstances. Example: \u201cIt\u2019s been a crazy month\u2014how are you holding up?\u201d Best Use: When someone\u2019s facing challenges. Worst Use: In casual, upbeat settings. Tone: Empathetic, serious. Meaning: Asking what\u2019s happening in their life right now. Explanation: More casual and open-ended than \u201cHow are you.\u201d Example: \u201cHey Alex, what\u2019s going on?\u201d Best Use: With friends or coworkers you speak to regularly. Worst Use: In a job interview. Tone: Casual, friendly. Meaning: Offering support in tough times. Explanation: Suggests you know they\u2019re struggling. Example: \u201cIt\u2019s been rough lately. You hanging in there?\u201d Best Use: When someone is stressed or overwhelmed. Worst Use: Casual greetings. Tone: Compassionate, supportive. Meaning: Checking in on their mental and emotional state. Explanation: Focused on mental health. Example: \u201cYou\u2019ve had a lot going on. How\u2019s your headspace lately?\u201d Best Use: With people you\u2019re emotionally close to. Worst Use: Surface-level chats or strangers. Tone: Compassionate, deep. Meaning: Asking how life is from their perspective. Explanation: Shows balance in conversation. Example: \u201cEnough about me\u2014how\u2019s everything on your side?\u201d Best Use: Mutual updates in conversations. Worst Use: When you don\u2019t know them well. Tone: Friendly, reciprocal. Meaning: Asking about emotional or motivational state. Explanation: Suggests care for well-being. Example: \u201cYou\u2019ve had a lot going on\u2014how are your spirits?\u201d Best Use: Supportive roles, therapy, coaching. Worst Use: Casual or joking tones. Tone: Gentle, uplifting.",
+    "source": "https://grammartel.com/ways-to-say-how-are-you/",
+    "stability": 0.24,
+    "created_at": 1774549827,
+    "updated_at": 1774549827
+  },
+  {
+    "id": "pm-question-8",
+    "title": "Communicator question: What is still unclear about hello how?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit hello how.",
+    "source": "communicator-question-lineage",
+    "stability": 0.5,
+    "created_at": 1774549835,
+    "updated_at": 1774549835
+  },
+  {
+    "id": "pm-question-15",
+    "title": "Communicator question: What new uncertainty appeared after inspect on backup confidence?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit backup confidence.",
+    "source": "communicator-question-lineage",
+    "stability": 0.5,
+    "created_at": 1774550027,
+    "updated_at": 1774550230
+  }
+]
