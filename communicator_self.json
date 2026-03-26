@@ -1204,10 +1204,10 @@
         "at": 1774482215
       }
     ],
-    "last_reflected_at": 1774504040,
+    "last_reflected_at": 1774504536,
     "last_generated_at": 1774482215,
     "generation_cooldown_seconds": 300,
-    "last_compacted_at": 1774504040,
+    "last_compacted_at": 1774504536,
     "max_items": 48,
     "status_counts": {
       "known": 4,
@@ -1230,9 +1230,9 @@
     ],
     "max_episodes": 16,
     "reflection_pass_retention": 1,
-    "last_pruned_reflection_passes": 1,
+    "last_pruned_reflection_passes": 0,
     "quality_report": {
-      "checked_at": 1774504040,
+      "checked_at": 1774504536,
       "average_score": 1.0,
       "flagged_items": [],
       "recent_checks": [

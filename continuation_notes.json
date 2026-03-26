@@ -376,5 +376,19 @@
     "Known risks": "Retention is still topic-bucket heuristic and currently keeps only a small recent tail, not semantic novelty-aware exemplars; future work may need staleness/repetition scoring across near-duplicate but non-identical passes.",
     "Next exact step": "Add staleness/repetition penalties so reflection quality scoring and generation pressure both discourage reheated near-duplicate passes before they need pruning.",
     "Resume hint": "Inspect sim.py default_reflection_store, distill_reflection_episodes, and build_reflection_report; then run python3 main.py reflection-store and compare retained reflection-pass items against episodes before adding repetition-aware penalties."
+  },
+  {
+    "id": "continuation-1774504359-28",
+    "created_at": 1774504359,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add repetition and staleness penalties to reflection quality scoring so well-formed but reheated reflection passes no longer look fully healthy.",
+    "Completed": "Inspected the evaluator/generation path, added normalization plus repetition/staleness checks inside evaluate_reflection_quality(), and verified both clean-current behavior and synthetic duplicate detection.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection quality scoring now penalizes exact repeated reflection-pass artifacts, near-duplicate passes, stale same-topic passes, and reheated Proposed guidance; the report summary now distinguishes healthy structure with visible repetition pressure.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic in-memory duplicate check via evaluate_reflection_quality() confirming repetition/staleness flags and reduced score.",
+    "Known risks": "Repetition detection is still heuristic and lexical; it can miss deeper semantic sameness or occasionally over-penalize legitimate continuity language when the world truly has not changed much.",
+    "Next exact step": "Use repetition pressure upstream in sync_reflection_store so stale reflection passes are generated less often instead of only being penalized after the fact.",
+    "Resume hint": "Inspect sim.py evaluate_reflection_quality and sync_reflection_store, then decide how generation_due or reflection-pass insertion should respond to recent repetition/staleness signals without suppressing legitimate continuity reflection."
   }
 ]
