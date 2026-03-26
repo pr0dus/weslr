@@ -404,5 +404,19 @@
     "Known risks": "Suppression is still lexical/heuristic and keyed mainly to the latest same-topic pass, so subtle genuinely new reflection may occasionally be suppressed if its wording overlaps too much with prior reflection.",
     "Next exact step": "Gate reflection regeneration on material state change so unresolved question, uncertainty, thread pressure, or pursuit shifts can explicitly re-enable fresh reflection even when wording overlap stays high.",
     "Resume hint": "Inspect sim.py sync_reflection_store and the stored suppression metadata fields, then decide how to encode material-change signals so legitimate continuity reflection is refreshed by changed state rather than mere cooldown expiry."
+  },
+  {
+    "id": "continuation-1774504735-30",
+    "created_at": 1774504735,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Gate fresh reflection generation on material state change so stale same-topic reflection stays suppressed unless the underlying question, thread focus, pursuit, or uncertainty band actually changes.",
+    "Completed": "Inspected sync_reflection_store(), added generation_signature tracking for reflection passes, used a compact state fingerprint to distinguish material change from lexical repetition, and added backward-compatible fallback handling for older passes without stored signatures.",
+    "Files changed": "sim.py",
+    "Behavior changed": "Reflection generation now stays suppressed when same-topic reflective wording repeats under the same effective state, but fresh reflection is allowed again when the unresolved question, thread focus, pursuit, or uncertainty band materially changes.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic unchanged-state probe confirmed suppression with material_change_detected false; synthetic changed-question probe confirmed a new reflection-pass was admitted with an updated generation_signature.",
+    "Known risks": "Material change is still represented by a compact heuristic fingerprint; subtle meaningful changes outside the chosen fields may be missed, while coarse uncertainty banding may sometimes under- or over-trigger refresh.",
+    "Next exact step": "Surface reflection generation/suppression history in reflection-store quality reporting so operators can see not just current artifact quality but whether reflection is repeatedly suppressed, refreshed, or oscillating.",
+    "Resume hint": "Inspect sim.py sync_reflection_store and the new generation_signature / suppression metadata, then decide whether the next move should be operator-visible reflection cadence history or stronger semantic material-change detection."
   }
 ]

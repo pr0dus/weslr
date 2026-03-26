@@ -4770,6 +4770,8 @@ def default_reflection_store(now_ts: int | None = None) -> dict:
         "max_items": 48,
         "max_episodes": 16,
         "reflection_pass_retention": 1,
+        "generation_history": [],
+        "max_generation_history": 12,
         "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
     }
 
@@ -4787,6 +4789,8 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     store.setdefault("max_items", 48)
     store.setdefault("max_episodes", 16)
     store.setdefault("reflection_pass_retention", 1)
+    store.setdefault("generation_history", [])
+    store.setdefault("max_generation_history", 12)
     counts = store.setdefault("status_counts", {})
     for key in ("known", "inferred", "proposed", "imagined"):
         counts.setdefault(key, 0)
@@ -4837,6 +4841,8 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
         if key not in seen:
             items.append(item)
             seen.add(key)
+    generation_history = list(store.get("generation_history") or [])
+    max_generation_history = max(4, int(store.get("max_generation_history", 12) or 12))
     cooldown = int(store.get("generation_cooldown_seconds", 300) or 300)
     last_generated_at = int(store.get("last_generated_at", 0) or 0)
     generation_due = allow_generation and (last_generated_at <= 0 or now_ts - last_generated_at >= cooldown)
@@ -4887,18 +4893,34 @@ def sync_reflection_store(self_state: dict, communicator: dict, now_ts: int | No
                         suppression_reason = "near-duplicate"
             key = (str(item.get("kind")), str(item.get("status")), str(item.get("content")))
             if suppressed_for_repetition:
-                store["last_generation_suppressed_for_repetition"] = {
+                suppression_meta = {
                     "at": now_ts,
                     "topic": active_pursuit,
                     "reason": suppression_reason,
                     "material_change_detected": material_change_detected,
                 }
+                store["last_generation_suppressed_for_repetition"] = suppression_meta
                 store["last_suppressed_reflection_passes"] = int(store.get("last_suppressed_reflection_passes", 0) or 0) + 1
+                generation_history.append({
+                    "at": now_ts,
+                    "action": "suppressed",
+                    "topic": active_pursuit,
+                    "reason": suppression_reason,
+                    "material_change_detected": material_change_detected,
+                })
             elif key not in seen:
                 items.append(item)
                 seen.add(key)
                 store["last_generation_suppressed_for_repetition"] = None
                 store["last_reflection_generation_signature"] = current_generation_signature
+                generation_history.append({
+                    "at": now_ts,
+                    "action": "generated",
+                    "topic": active_pursuit,
+                    "reason": "material-change" if material_change_detected else "fresh-pass",
+                    "material_change_detected": material_change_detected,
+                })
+            store["generation_history"] = generation_history[-max_generation_history:]
             store["last_generated_at"] = now_ts
     max_items = int(store.get("max_items", 48) or 48)
     items = items[-max_items:]
@@ -5107,15 +5129,25 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
     evaluate_reflection_quality(self_state)
     if should_persist:
         save_communicator_self(self_state)
+    store = self_state.get("reflection_store") or {}
+    generation_history = list(store.get("generation_history") or [])
+    generation_report = {
+        "recent_events": generation_history[-6:],
+        "generated_count": sum(1 for event in generation_history if str(event.get("action") or "") == "generated"),
+        "suppressed_count": sum(1 for event in generation_history if str(event.get("action") or "") == "suppressed"),
+        "latest_suppression": store.get("last_generation_suppressed_for_repetition"),
+        "latest_signature": store.get("last_reflection_generation_signature"),
+    }
     return {
-        "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
-        "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),
-        "last_compacted_at": (self_state.get("reflection_store") or {}).get("last_compacted_at", 0),
-        "last_pruned_reflection_passes": (self_state.get("reflection_store") or {}).get("last_pruned_reflection_passes", 0),
-        "status_counts": (self_state.get("reflection_store") or {}).get("status_counts", {}),
-        "recent_items": list(((self_state.get("reflection_store") or {}).get("items") or []))[-8:],
-        "episodes": list(((self_state.get("reflection_store") or {}).get("episodes") or []))[:8],
-        "quality_report": ((self_state.get("reflection_store") or {}).get("quality_report") or {}),
+        "summary": store.get("summary", ""),
+        "last_reflected_at": store.get("last_reflected_at", 0),
+        "last_compacted_at": store.get("last_compacted_at", 0),
+        "last_pruned_reflection_passes": store.get("last_pruned_reflection_passes", 0),
+        "status_counts": store.get("status_counts", {}),
+        "recent_items": list((store.get("items") or []))[-8:],
+        "episodes": list((store.get("episodes") or []))[:8],
+        "quality_report": (store.get("quality_report") or {}),
+        "generation_report": generation_report,
     }
 
 
