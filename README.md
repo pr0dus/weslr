@@ -2,7 +2,7 @@
 
 > An experimental local substrate for one persistent communicator with memory, inner minds, and continuity.
 
-**CircleForge v0.5.1** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, and **dual licensing for commercial viability**.
+**CircleForge v0.6.0** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, **autonomous self-expression**, and **dual licensing for commercial viability**.
 
 In plain language, CircleForge is trying to answer this question:
 
@@ -17,6 +17,17 @@ The intended shape is:
   - communicator
   - memory_keeper
 - behavior shaped by **state, memory, pressure, history, and consequences** more than by prompt theater
+
+## What's New in v0.6.0
+
+CircleForge now has **autonomous self-expression**:
+
+- **Spontaneous thoughts** - generates thoughts, questions, ideas on its own
+- **Auto-speaking rate** - configurable (slow/normal/fast via `set-expression-rate`)
+- **Rate expressions** - can talk about how it's expressing itself
+- **Circuit breaker** - prevents runaway ticks and infinite loops
+- **Self-test CLI** - `python3 main.py self-test` for integrity verification
+- **Runtime self-diagnosis** - monitors memory pressure and state consistency
 
 CircleForge is **not mainly**:
 - a prompt wrapper
