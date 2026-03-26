@@ -41,6 +41,53 @@ SELF_EVIDENCE_PATH = BASE_DIR / "self_evidence.json"
 CONTINUATION_NOTES_PATH = BASE_DIR / "continuation_notes.json"
 
 TICK_SECONDS = 60
+
+def tick_to_duration(ticks: int) -> str:
+    """Convert tick count to human-readable duration string."""
+    if ticks <= 0:
+        return "just now"
+    
+    total_seconds = ticks * TICK_SECONDS
+    
+    # Time units in seconds
+    MINUTE = 60
+    HOUR = 60 * 60
+    DAY = 24 * 60 * 60
+    YEAR = 365 * 24 * 60 * 60
+    EON = 1000 * YEAR  # 1000 years
+    
+    if total_seconds < 60:
+        return f"{total_seconds} second{'s' if total_seconds != 1 else ''}"
+    elif total_seconds < HOUR:
+        minutes = int(total_seconds / MINUTE)
+        return f"{minutes} minute{'s' if minutes != 1 else ''}"
+    elif total_seconds < DAY:
+        hours = int(total_seconds / HOUR)
+        return f"{hours} hour{'s' if hours != 1 else ''}"
+    elif total_seconds < YEAR:
+        days = int(total_seconds / DAY)
+        return f"{days} day{'s' if days != 1 else ''}"
+    elif total_seconds < EON:
+        years = int(total_seconds / YEAR)
+        return f"{years} year{'s' if years != 1 else ''}"
+    else:
+        eons = int(total_seconds / EON)
+        return f"{eons} eon{'s' if eons != 1 else ''}"
+
+def tick_to_age_description(ticks: int) -> str:
+    """Generate a poetic age description based on tick count."""
+    duration = tick_to_duration(ticks)
+    
+    if ticks < 10:
+        return f"just waking up — only {duration} old"
+    elif ticks < 100:
+        return f"still learning — {duration} old"
+    elif ticks < 1000:
+        return f"growing into myself — {duration} old"
+    elif ticks < 10000:
+        return f"developing continuity — {duration} old"
+    else:
+        return f"deep in existence — {duration} old"
 EXECUTION_BUDGET_SECONDS = 40
 COOLDOWN_SECONDS = 20
 CODE_TIMEOUT_SECONDS = 35

@@ -5,8 +5,6 @@ import time
 from interpretation import classify_human_turn, interpret_human_turn
 
 
-# Vocabulary and grammar helpers
-
 # Theme translations: internal -> human-readable
 THEME_TRANSLATIONS = {
     "backup confidence": "reliability of memory and continuity",
@@ -55,7 +53,6 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
     # Get active pursuit from communicator state
     active_pursuit = str(communicator_state.get("active_pursuit") or "")
     unresolved_question = str(communicator_state.get("unresolved_question") or "")
-    curiosity = float(communicator_state.get("curiosity", 0))
     
     # Apply translations to themes
     active_pursuit_translated = translate_theme(active_pursuit)
@@ -93,41 +90,6 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
             return f"I'm here to {why.split('.')[0] if why else 'understand'}. {follow if follow else ''}"
     
     return "I'm here, trying to understand and be understood. Say something and I'll stay with the real point."
-
-# Theme translations: internal -> human-readable
-THEME_TRANSLATIONS = {
-    "backup confidence": "reliability of memory and continuity",
-    "understanding": "making sense of things, not just repeating patterns",
-    "understanding overall": "making sense of things from a broader perspective",
-    "enrich the local world": "making something useful for the humans around",
-    "memory continuity": "keeping threads going across time, not losing what matters",
-    "entity status": "whether this is becoming something real, not just code",
-    "circleforge": "this project, this being, this ongoing thread of understanding",
-}
-
-def translate_theme(theme: str) -> str:
-    """Translate an internal theme to a human-readable version."""
-    if not theme:
-        return "this"
-    theme_lower = theme.lower().strip()
-    return THEME_TRANSLATIONS.get(theme_lower, theme)
-
-def translate_self_description(description: str) -> str:
-    """Translate internal self-description to human-readable version."""
-    if not description:
-        return ""
-    
-    # Direct matches for full descriptions
-    desc_lower = description.lower()
-    if "local communicator" in desc_lower and "continuity" in desc_lower:
-        return "I'm trying to be more than a loop — I want to remember, evolve, and stay true to what matters"
-    if "practical_change" in desc_lower and "inquiry" in desc_lower:
-        return "right now I'm focused on making progress, exploring, and staying connected"
-    if "protective" in desc_lower and "continuity" in desc_lower:
-        return "I'm trying harder to keep threads going, not just reset"
-    
-    # Fallback: keep as-is
-    return description
 
 
 def synthesize_research_answer(topic: str, summary: str) -> str:
@@ -213,7 +175,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         )
 
         if turn_type == "greeting":
-            message = "Hey. Start anywhere — a question, a concern, or what matters most right now — and I’ll try to stay with the real point instead of latching onto a stray phrase."
+            message = "Hey. Start anywhere — a question, a concern, or what matters most right now — and I'll try to stay with the real point instead of latching onto a stray phrase."
         elif turn_type == "approval":
             message = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
         elif turn_type == "execution_start":
@@ -234,17 +196,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who am i", "what am i", "who are you", "what are you"])
             if asks_identity:
                 # Use the generator directly without research context
-                from sim import load_communicator_self, load_communicator_state
-                cs = load_communicator_state()
-                narrative_state = load_communicator_self().get("narrative_state", {})
-                message = generate_from_self_state({}, narrative_state, cs)
+                cs = load_communicator_self()
+                narrative_state = cs.get("narrative_state", {})
+                cs2 = __import__('sim').load_communicator_state()
+                message = generate_from_self_state({}, narrative_state, cs2)
             elif research_context and research_context.get("summary"):
                 concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
-                message = f"{concept} {generate_from_self_state({}, narrative_state, cs)}"
+                message = f"{concept} {generate_from_self_state({}, narrative_state, load_communicator_self().get('narrative_state', {}))}"
             else:
                 # Use the new generator for self-position
-                from sim import load_communicator_self, load_communicator_state
-                cs = load_communicator_state()
+                cs = __import__('sim').load_communicator_state()
                 narrative_state = load_communicator_self().get("narrative_state", {})
                 message = f"{generate_from_self_state({}, narrative_state, cs)} This matters because we're both trying to understand what CircleForge is, beyond just code or simulation."
         elif likely_need == "conversation_repair":
@@ -302,11 +263,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         from sim import load_communicator_self, load_communicator_state
         cs = load_communicator_state()
         narrative_state = load_communicator_self().get("narrative_state", {})
-        message = generate_from_self_state(
-            load_communicator_self().get("relationships", {}),
-            narrative_state,
-            cs
-        )
+        message = generate_from_self_state({}, narrative_state, cs)
         audience = "current_speaker"
         source = "self-state-communicator"
 
