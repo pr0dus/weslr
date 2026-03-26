@@ -5059,6 +5059,16 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         if str(event.get("action") or "") == "generated" and bool(event.get("material_change_detected"))
     )
     blind_generated_count = max(0, generated_count - material_change_generated_count)
+    refresh_quality = "none"
+    refresh_quality_score = 0.0
+    if generated_count > 0:
+        refresh_quality_score = round(material_change_generated_count / max(generated_count, 1), 3)
+        if refresh_quality_score >= 0.67:
+            refresh_quality = "meaningful"
+        elif refresh_quality_score >= 0.34:
+            refresh_quality = "mixed"
+        else:
+            refresh_quality = "churn-like"
     cadence_flags = []
     alternating = len(actions) >= 4 and all(actions[i] != actions[i - 1] for i in range(1, len(actions)))
     if alternating:
@@ -5158,6 +5168,10 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
     elif trend_label == "stable":
         if stagnation_detected:
             trend_narrative = "Reflection health looks stable, but reflective refresh appears stalled under repeated suppression."
+        elif refresh_quality == "meaningful":
+            trend_narrative = "Reflection health looks stable, with meaningful reflective refresh when state changes." 
+        elif refresh_quality == "churn-like":
+            trend_narrative = "Reflection health looks stable, but recent refresh appears low-value or churn-like."
         elif scores and scores[-1] >= 0.95:
             trend_narrative = "Reflection health looks stable and clean."
         else:
@@ -5181,6 +5195,8 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
             "suppressed_count": suppressed_count,
             "material_change_generated_count": material_change_generated_count,
             "blind_generated_count": blind_generated_count,
+            "refresh_quality": refresh_quality,
+            "refresh_quality_score": refresh_quality_score,
             "stagnation_detected": stagnation_detected,
             "inactivity_span_seconds": inactivity_span,
             "flags": cadence_flags,
@@ -5188,6 +5204,8 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         "health_trend": {
             "label": trend_label,
             "narrative": trend_narrative,
+            "refresh_quality": refresh_quality,
+            "refresh_quality_score": refresh_quality_score,
             "stagnation_detected": stagnation_detected,
             "inactivity_span_seconds": inactivity_span,
             "score_delta": score_delta,

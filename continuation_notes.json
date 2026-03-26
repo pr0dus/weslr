@@ -516,5 +516,19 @@
     "Known risks": "Stagnation is currently coupled to existing suppression penalties, so strong stalled-refresh cases can read as degrading instead of a separate neutral stalled-stability state. That is honest under current scoring but may still want a finer semantic split later.",
     "Next exact step": "If desired, split stable-but-stalled from degrading by introducing a note/warning distinction for stagnation that can surface operator concern without always dragging the trend label downward.",
     "Resume hint": "Inspect sim.py stagnation_detected handling in evaluate_reflection_quality; decide whether stagnation should remain part of degradation pressure or become a separate operator-visible state orthogonal to trend direction."
+  },
+  {
+    "id": "continuation-1774515092-38",
+    "created_at": 1774515092,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Split stable-but-stalled reflection from outright degradation so suppressed refresh can surface as operator concern without always forcing the trend label downward.",
+    "Completed": "Inspected cadence/trend scoring, softened chronic-suppression handling into a note-level concern when reflection is stalled with no generated refreshes, and refined summary wording so stalled refresh and materially responsive cadence no longer share the same message.",
+    "Files changed": "sim.py",
+    "Behavior changed": "Repeated suppression with no generated refresh can now produce stable-but-stalled reporting: stagnation stays visible in cadence_report and health_trend while the overall trend can remain stable instead of automatically degrading. Genuine worsening cadence with warning-level pressure still degrades normally.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic stable-but-stalled probe confirmed stable trend with stalled-refresh narrative and note-level chronic suppression; synthetic responsive note probe kept materially responsive wording; degrading probe still classified as degrading.",
+    "Known risks": "The split still uses heuristic conditions keyed to zero generated refreshes; edge cases with sparse but weak generation may still blur the boundary between stalled and degrading until finer cadence semantics are added.",
+    "Next exact step": "Consider adding an operator-visible refresh-quality metric so recent generations can be distinguished as meaningful refreshes versus low-value churn, not just present versus absent.",
+    "Resume hint": "Inspect sim.py chronic suppression handling and stagnation_detected logic in evaluate_reflection_quality; if continuing, define what counts as meaningful refresh quality before expanding the cadence model."
   }
 ]
