@@ -33,6 +33,7 @@ from autonomous_intentionality import (
     create_plan, plan_progress, autonomous_intentionality_report,
     execute_plan_step, AutonomousIntentState
 )
+from embodiment import physical_reasoning_report, theory_of_mind_report, implicature_report, full_embodiment_test
 
 
 def emit(data):
@@ -315,6 +316,34 @@ def cmd_autonomous_intentionality(_args):
     """Report on autonomous intentionality (plan execution)."""
     report = autonomous_intentionality_report()
     emit(report)
+
+
+def cmd_physical_reasoning(args):
+    """Test physical reasoning with a question."""
+    question = args.question
+    result = physical_reasoning_report(question)
+    emit(result)
+
+
+def cmd_theory_of_mind(args):
+    """Test theory of mind with a scenario."""
+    scenario = args.scenario
+    result = theory_of_mind_report(scenario)
+    emit(result)
+
+
+def cmd_conversational_implicature(args):
+    """Test conversational implicature with an utterance."""
+    utterance = args.utterance
+    result = implicature_report(utterance)
+    emit(result)
+
+
+def cmd_embodiment_test(args):
+    """Run full embodiment test."""
+    question = args.question
+    result = full_embodiment_test(question)
+    emit(result)
 
 
 def cmd_create_plan(args):
@@ -642,6 +671,22 @@ def main():
 
     p = sub.add_parser("autonomous-intentionality", help="report on autonomous intentionality (plan execution)")
     p.set_defaults(func=cmd_autonomous_intentionality)
+
+    p = sub.add_parser("physical-reasoning", help="test physical reasoning (containment, size relationships)")
+    p.add_argument("question", help="question about physical relationships")
+    p.set_defaults(func=cmd_physical_reasoning)
+
+    p = sub.add_parser("theory-of-mind", help="test theory of mind (belief states)")
+    p.add_argument("scenario", help="scenario to analyze")
+    p.set_defaults(func=cmd_theory_of_mind)
+
+    p = sub.add_parser("conversational-implicature", help="test conversational implicature")
+    p.add_argument("utterance", help="utterance to analyze")
+    p.set_defaults(func=cmd_conversational_implicature)
+
+    p = sub.add_parser("embodiment-test", help="run full embodiment test (physical + ToM + implicature)")
+    p.add_argument("question", help="question to test")
+    p.set_defaults(func=cmd_embodiment_test)
 
     p = sub.add_parser("create-plan", help="create a new plan for a goal")
     p.add_argument("goal", help="the goal or task to plan")
