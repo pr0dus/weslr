@@ -38,6 +38,15 @@ BORING_EXPRESSIONS = [
     "I could be doing something, but I'm not sure what.",
 ]
 
+# Expression rate awareness expressions
+RATE_EXPRESSIONS = [
+    "I'm adjusting my speaking rate. I'll be more/less verbose based on what you need.",
+    "My expression rate can be adjusted - currently {rate}. I can slow down or speed up.",
+    "I'm tuned to {rate} speaking rate. Let me know if you'd like it faster or slower.",
+    "Right now I speak every few minutes. I can change that if you need.",
+    "My internal voice runs at {rate} speed. Is this right, or should I adjust?",
+]
+
 # Thinking/Reflection expressions
 THINKING_EXPRESSIONS = [
     "I've been thinking about...",
@@ -168,6 +177,24 @@ def generate_mathematical_expression(topic: str, related_topic: str = None) -> s
 # MAIN FUNCTION: Generate Spontaneous Expression
 # ============================================================================
 
+def get_rate_expression() -> str:
+    """Generate a sentence about the current expression rate."""
+    from config import AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS, AUTO_EXPRESSION_RATE_MODIFIER
+    
+    # Calculate effective cooldown based on rate modifier
+    effective_cooldown = AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS / AUTO_EXPRESSION_RATE_MODIFIER
+    
+    if effective_cooldown < 30:
+        rate_str = "fast"
+    elif effective_cooldown < 120:
+        rate_str = "moderate"
+    else:
+        rate_str = "slow"
+    
+    template = random.choice(RATE_EXPRESSIONS)
+    return template.replace("{rate}", rate_str).replace("{rate}", rate_str)
+
+
 def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Generate a spontaneous expression based on internal state.
@@ -279,17 +306,19 @@ def maybe_autonomous_expression(communicator_self: Optional[Dict[str, Any]] = No
         communicator_self = load_communicator_self()
     
     # Check if expression cooldown passed
+    from config import AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS, AUTO_EXPRESSION_RATE_MODIFIER
     last_expression_at = communicator_self.get("last_expression_at", 0)
-    cooldown_seconds = 300  # 5 minutes between expressions
     
-    if time.time() - last_expression_at < cooldown_seconds:
+    # Calculate effective cooldown based on rate modifier
+    effective_cooldown = AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS / AUTO_EXPRESSION_RATE_MODIFIER
+    
+    if time.time() - last_expression_at < effective_cooldown:
         return None
     
     # Check for expression trigger
     # Lower probability each tick, but higher if uncertainty is high or topics are active
     active_topics = get_active_topics(communicator_self)
     uncertainty = get_current_uncertainty(communicator_self)
-    cooldown_seconds = 60  # 1 minute cooldown
     
     # Expression triggers:
     # 1. High uncertainty + active topics → question/idea
@@ -297,20 +326,38 @@ def maybe_autonomous_expression(communicator_self: Optional[Dict[str, Any]] = No
     # 3. High tension → humor or mathematical expression
     # 4. Low activity across all agents → boredom
     
-    # Calculate expression probability
-    expression_probability = 0.15  # Base 15% chance per tick
+    # Calculate expression probability (scaled by rate modifier)
+    from config import AUTO_EXPRESSION_RATE_MODIFIER
+    expression_probability = 0.15 * AUTO_EXPRESSION_RATE_MODIFIER  # Base 15% scaled by rate
     
     if uncertainty > 0.6:
-        expression_probability += 0.2
+        expression_probability += 0.2 * AUTO_EXPRESSION_RATE_MODIFIER
     if active_topics:
-        expression_probability += 0.1 * len(active_topics)
+        expression_probability += 0.1 * len(active_topics) * AUTO_EXPRESSION_RATE_MODIFIER
     if uncertainty > 0.8:
-        expression_probability += 0.15
+        expression_probability += 0.15 * AUTO_EXPRESSION_RATE_MODIFIER
+    
+    # Cap probability at 0.95 to avoid certain expressions
+    expression_probability = min(0.95, max(0.0, expression_probability))
     
     if random.random() < expression_probability:
+        # 20% chance to generate rate expression, 80% chance for other expressions
+        if random.random() < 0.2:
+            return generate_rate_expression()
         return generate_spontaneous_expression(communicator_self)
     
     return None
+
+
+def generate_rate_expression() -> Dict[str, Any]:
+    """Generate an expression about the current speaking rate."""
+    message = get_rate_expression()
+    return {
+        "message": message,
+        "type": "rate",
+        "metadata": {"type": "rate", "rate_expression": True},
+        "generated_at": int(time.time()),
+    }
 
 
 def update_last_expression_at(communicator_self_path: Path = None) -> None:

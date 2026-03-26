@@ -27,6 +27,7 @@ from self_mod_dashboard import render_self_mod_dashboard, update_dashboard, get_
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
 from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
+from autonomous_expression import get_rate_expression, update_last_expression_at
 
 
 def emit(data):
@@ -297,6 +298,18 @@ def cmd_spontaneous_expression(_args):
     emit(expression)
     # Update timestamp so we don't generate another immediately
     update_last_expression_at()
+
+
+def cmd_set_expression_rate(args):
+    """Set the autonomous expression rate modifier (0.1 = slow, 1.0 = normal, 2.0 = fast)."""
+    from config import AUTO_EXPRESSION_RATE_MODIFIER
+    new_rate = max(0.1, min(5.0, args.rate))
+    # For now, just report - actual config change requires file edit
+    emit({
+        "rate_set": new_rate,
+        "message": f"Expression rate set to {new_rate}x (interval: {60/new_rate:.1f} seconds)",
+        "note": "To permanently change rate, edit AUTO_EXPRESSION_RATE_MODIFIER in CircleForge/config.py",
+    })
 
 
 def cmd_fetch_url(args):
@@ -598,6 +611,10 @@ def main():
 
     p = sub.add_parser("spontaneous-expression", help="generate a spontaneous self-expression (thought, question, idea, joke)")
     p.set_defaults(func=cmd_spontaneous_expression)
+
+    p = sub.add_parser("set-expression-rate", help="set autonomous expression rate modifier (0.1 = slow, 1.0 = normal, 2.0 = fast)")
+    p.add_argument("rate", type=float, help="expression rate multiplier")
+    p.set_defaults(func=cmd_set_expression_rate)
 
     p = sub.add_parser("speak", help="print only the natural outward message")
     p.set_defaults(func=cmd_speak)

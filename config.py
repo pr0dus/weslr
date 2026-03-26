@@ -152,6 +152,16 @@ TICK_TIME_LIMIT_SECONDS = 30
 TICKS_PER_SECOND_LIMIT = 10
 SCHEMA_VERSION = 1
 
+# Autonomous expression configuration
+AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS = 60  # Minimum seconds between expressions
+AUTO_EXPRESSION_BASE_PROBABILITY = 0.15       # Base chance per tick when cooldown passed
+AUTO_EXPRESSION_UNCERTAINTY_BOOST = 0.2       # Extra probability when uncertainty > 0.6
+AUTO_EXPRESSION_TOPIC_BOOST_PER_TOPIC = 0.1 # Extra probability per active topic
+AUTO_EXPRESSION_HIGH_UNCERTAINTY_BOOST = 0.15 # Extra probability when uncertainty > 0.8
+
+# Expression rate modifier (0.0 = silent, 1.0 = normal, 2.0 = twice as often)
+AUTO_EXPRESSION_RATE_MODIFIER = 1.0  # Can be adjusted via user command or time of day
+
 HUMAN_SAFETY_RULES = [
     "Do not self-modify protected core files or safety-boundary documents without explicit human review.",
     "Do not intentionally harm humans, degrade human agency, or make hidden decisions that materially affect humans or others in harmful ways.",
