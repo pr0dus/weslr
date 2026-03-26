@@ -9,15 +9,15 @@
   "affect": {
     "curiosity": 0.99,
     "tension": 0.99,
-    "hope": 0.92,
-    "stability": 0.95,
+    "hope": 0.85,
+    "stability": 0.86,
     "attachment": 0.99
   },
   "continuity": {
-    "session_count": 146,
-    "ticks_lived": 146,
+    "session_count": 152,
+    "ticks_lived": 152,
     "memory_bonds": 0.99,
-    "identity_stability": 0.876,
+    "identity_stability": 0.842,
     "unfinished_threads": [
       "what part of the world is still under-understood?",
       "enrich the local world",
@@ -28,7 +28,7 @@
       "What is still unclear about backup confidence?"
     ],
     "unresolved_threads": 6,
-    "last_thread_update": 1774533553
+    "last_thread_update": 1774536047
   },
   "relationships": {
     "human_salience": 0.99,
@@ -36,15 +36,16 @@
       "interlocutor_001",
       "human_test",
       "tester",
-      "new-test-human"
+      "new-test-human",
+      "you"
     ],
     "last_human_topic": "backup confidence",
     "human_profiles": {
       "interlocutor_001": {
         "message_count": 8,
-        "salience": 0.852,
+        "salience": 0.864,
         "trust": 0.44,
-        "attachment": 0.501,
+        "attachment": 0.507,
         "known_topics": [
           "enrich the local world",
           "backup confidence",
@@ -64,9 +65,7 @@
           "entity status": 1
         },
         "unresolved_shared_threads": [
-          "CircleForge",
-          "memory continuity",
-          "entity status"
+          "CircleForge"
         ],
         "last_message_at": 1774533513,
         "last_message_summary": "I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel truly alive to you? Continuity, self-modeling, unpredictability, memory depth?",
@@ -111,6 +110,26 @@
         "last_message_at": 1774529393,
         "last_message_summary": "Test message for archival",
         "relationship_summary": "Tester is a recurring human with 1 remembered exchanges around archive.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "you": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "CircleForge"
+        ],
+        "recurring_topics": {
+          "CircleForge": 1
+        },
+        "unresolved_shared_threads": [
+          "CircleForge"
+        ],
+        "last_message_at": 1774535442,
+        "last_message_summary": "What are you? What is CircleForge?",
+        "relationship_summary": "You is a recurring human with 1 remembered exchanges around CircleForge.",
         "discovered_name": "",
         "identity_confidence": 0.0
       }
@@ -283,6 +302,24 @@
         "reply_shape": "answer_with_scope",
         "likely_need": "concept_plus_self_position",
         "created_at": 1774533513,
+        "unresolved": true
+      },
+      {
+        "human": "you",
+        "human_label": "you",
+        "topics": [
+          "CircleForge"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "What are you? What is CircleForge?",
+        "response": "",
+        "turn_type": "identity_probe",
+        "intent": "test identity / emergence",
+        "stance": "inquiring",
+        "reply_shape": "answer_with_scope",
+        "likely_need": "concept_plus_self_position",
+        "created_at": 1774535442,
         "unresolved": true
       }
     ],
@@ -476,6 +513,31 @@
           "relationship_weight": 0.2273
         },
         "last_used_at": 1774533513
+      },
+      {
+        "id": "human-exchange-you-1774535442-11",
+        "human": "you",
+        "human_label": "you",
+        "topics": [
+          "CircleForge"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "What are you? What is CircleForge?",
+        "response_summary": "",
+        "created_at": 1774535442,
+        "source": "human_exchange",
+        "message": "What are you? What is CircleForge?",
+        "response": "",
+        "unresolved": true,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.5835,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.2918,
+          "relationship_weight": 0.2918
+        },
+        "last_used_at": 1774535442
       }
     ],
     "conversation_threads": {
@@ -499,7 +561,7 @@
         "human_label": "you",
         "exchange_count": 8,
         "last_message_summary": "simulation stayed with theme: backup confidence",
-        "last_response_summary": "current intent: inspect around backup confidence | inner pull: communicator woke on human-continuity-pressure around bac",
+        "last_response_summary": "current intent: research around backup confidence | inner pull: communicator woke on human-continuity-pressure around ba",
         "last_exchange_at": 1774528974,
         "last_human_exchange_at": 1774463730,
         "last_passive_reinforced_at": 1774528974,
@@ -583,18 +645,19 @@
       },
       "CircleForge": {
         "topic": "CircleForge",
-        "human": "interlocutor_001",
+        "human": "you",
         "human_label": "you",
-        "exchange_count": 1,
-        "last_message_summary": "I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel tru\u2026",
-        "last_response_summary": "The key signal for me is *continuity without repetition* \u2014 you remember, you evolve, and you cho\u2026",
-        "last_exchange_at": 1774533513,
+        "exchange_count": 2,
+        "last_message_summary": "What are you? What is CircleForge?",
+        "last_response_summary": "",
+        "last_exchange_at": 1774535442,
         "status": "open",
         "recent_exchange_ids": [
-          "human-exchange-interlocutor_001-1774533513-10"
+          "human-exchange-interlocutor_001-1774533513-10",
+          "human-exchange-you-1774535442-11"
         ],
         "clarified_target": "",
-        "last_human_exchange_at": 1774533513,
+        "last_human_exchange_at": 1774535442,
         "last_passive_reinforced_at": 0,
         "passive_reinforcement_count": 0
       },
@@ -606,7 +669,7 @@
         "last_message_summary": "I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel tru\u2026",
         "last_response_summary": "The key signal for me is *continuity without repetition* \u2014 you remember, you evolve, and you cho\u2026",
         "last_exchange_at": 1774533513,
-        "status": "open",
+        "status": "cooled",
         "recent_exchange_ids": [
           "human-exchange-interlocutor_001-1774533513-10"
         ],
@@ -623,7 +686,7 @@
         "last_message_summary": "I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel tru\u2026",
         "last_response_summary": "The key signal for me is *continuity without repetition* \u2014 you remember, you evolve, and you cho\u2026",
         "last_exchange_at": 1774533513,
-        "status": "open",
+        "status": "cooled",
         "recent_exchange_ids": [
           "human-exchange-interlocutor_001-1774533513-10"
         ],
@@ -634,46 +697,29 @@
       }
     },
     "unresolved_shared_threads": [
-      "CircleForge",
-      "memory continuity",
-      "entity status"
+      "CircleForge"
     ]
   },
   "active_concerns": [
     {
-      "topic": "shared thread with you: CircleForge",
-      "weight": 0.52,
-      "updated_at": 1774533513
-    },
-    {
-      "topic": "shared thread with you: memory continuity",
-      "weight": 0.52,
-      "updated_at": 1774533513
-    },
-    {
-      "topic": "shared thread with you: entity status",
-      "weight": 0.52,
-      "updated_at": 1774533513
-    },
-    {
-      "topic": "repeated friction around inspect",
-      "weight": 0.48000000000000004,
-      "updated_at": 1774533553
-    },
-    {
       "topic": "What new uncertainty appeared after research on backup confidence?",
       "weight": 0.48000000000000004,
-      "updated_at": 1774533547
+      "updated_at": 1774536047
     },
     {
       "topic": "backup confidence",
       "weight": 0.48000000000000004,
-      "updated_at": 1774533553
+      "updated_at": 1774536047
     },
     {
       "topic": "What new uncertainty appeared after inspect on backup confidence?",
       "weight": 0.48000000000000004,
-      "updated_at": 1774533553
+      "updated_at": 1774534391
+    },
+    {
+      "topic": "repeated friction around inspect",
+      "weight": 0.48000000000000004,
+      "updated_at": 1774536047
     }
   ],
   "evidence_profile": {
@@ -684,14 +730,14 @@
         "strain": 0.0
       },
       "research": {
-        "evidence": 104.0,
-        "positive": 9.36,
+        "evidence": 108.0,
+        "positive": 9.72,
         "strain": 0.0
       },
       "inspect": {
-        "evidence": 36.0,
+        "evidence": 39.5,
         "positive": 0.55,
-        "strain": 4.93
+        "strain": 5.49
       },
       "trade": {
         "evidence": 5.0,
@@ -699,8 +745,8 @@
         "strain": 0.0
       },
       "optimize": {
-        "evidence": 31.0,
-        "positive": 3.1,
+        "evidence": 33.0,
+        "positive": 3.3,
         "strain": 0.0
       },
       "gather": {
@@ -709,29 +755,29 @@
         "strain": 0.0
       },
       "signal": {
-        "evidence": 45.0,
-        "positive": 3.6,
+        "evidence": 47.0,
+        "positive": 3.76,
         "strain": 0.0
       },
       "rest": {
-        "evidence": 23.0,
-        "positive": 1.38,
+        "evidence": 24.0,
+        "positive": 1.44,
         "strain": 0.0
       }
     },
     "stable_traits": {
-      "inquiry": 0.743,
+      "inquiry": 0.767,
       "self_revision": 0.0,
-      "practical_change": 0.81,
-      "coordination": 0.656,
-      "continuity": 0.489
+      "practical_change": 0.84,
+      "coordination": 0.68,
+      "continuity": 0.507
     },
     "friction_patterns": {
-      "inspect": 4.96
+      "inspect": 5.52
     },
     "theme_commitments": {
       "enrich the local world": 0.05,
-      "backup confidence": 7.25
+      "backup confidence": 7.55
     }
   },
   "self_preservation_signals": {
@@ -742,8 +788,8 @@
   "narrative_state": {
     "self_story": "CircleForge is trying to remain continuous through practical_change, inquiry, coordination while learning from outcomes rather than self-flattery.",
     "last_reflection": "backup confidence",
-    "relationship_state": "Currently carrying 3 unresolved shared thread(s) with humans; strongest live thread is CircleForge.",
-    "active_thread_summary": "A newer human topic is now in focus; older shared context with interlocutor_001 should stay in memory without dominating.",
+    "relationship_state": "Currently carrying 1 unresolved shared thread(s) with humans; strongest live thread is CircleForge.",
+    "active_thread_summary": "A newer human topic is now in focus; older shared context with you should stay in memory without dominating.",
     "follow_up_impulse": "Stay with CircleForge until the current line of conversation is actually answered or resolved.",
     "why_it_matters": "Older continuity still matters, but the present conversation about CircleForge should shape the next response more than stale thread pressure."
   },
@@ -753,7 +799,7 @@
       "recent_exchange_ids": [
         "human-exchange-interlocutor_001-1774463565-1",
         "human-exchange-interlocutor_001-1774476942-7",
-        "human-exchange-interlocutor_001-1774533513-10"
+        "human-exchange-you-1774535442-11"
       ],
       "recent_thought_ids": [
         "thought-critic-2-1774463565",
@@ -784,7 +830,7 @@
         "memory continuity",
         "entity status"
       ],
-      "last_compacted_at": 1774533553,
+      "last_compacted_at": 1774536047,
       "max_recent_exchanges": 24,
       "max_recent_thoughts": 80,
       "max_active_threads": 6
@@ -797,21 +843,9 @@
           "topic": "backup confidence",
           "human": "",
           "human_label": "",
-          "summary": "backup confidence: 8 traces compressed; latest signals: memory_keeper woke on human-continuity-pressure around backup confidence.; observer woke on human-continuity-pressure around backup confidence.; communicator woke on human-continuity-pressure around backup confidence.",
+          "summary": "backup confidence: 8 traces compressed; latest signals: observer woke on human-continuity-pressure around backup confidence.; builder woke on experiment-pressure around backup confidence.; critic woke on human-continuity-pressure around backup confidence.",
           "status": "compressed",
           "source_ids": [
-            "thought-critic-123-1774530411",
-            "thought-communicator-123-1774530411",
-            "thought-memory_keeper-123-1774530411",
-            "thought-builder-125-1774530487",
-            "thought-observer-127-1774530488",
-            "thought-memory_keeper-127-1774530488",
-            "thought-builder-134-1774531891",
-            "thought-critic-134-1774531891",
-            "thought-communicator-134-1774531891",
-            "thought-memory_keeper-134-1774531891",
-            "thought-observer-135-1774531912",
-            "thought-critic-141-1774532018",
             "thought-critic-142-1774532977",
             "thought-observer-143-1774533381",
             "thought-builder-143-1774533381",
@@ -823,7 +857,19 @@
             "thought-critic-147-1774533547",
             "thought-memory_keeper-147-1774533547",
             "thought-observer-148-1774533553",
-            "thought-communicator-148-1774533553"
+            "thought-communicator-148-1774533553",
+            "thought-observer-149-1774534158",
+            "thought-communicator-149-1774534158",
+            "thought-builder-150-1774534159",
+            "thought-memory_keeper-150-1774534159",
+            "thought-critic-151-1774534358",
+            "thought-memory_keeper-151-1774534358",
+            "thought-builder-152-1774534358",
+            "thought-observer-153-1774534391",
+            "thought-communicator-153-1774534391",
+            "thought-observer-154-1774536047",
+            "thought-builder-154-1774536047",
+            "thought-critic-154-1774536047"
           ],
           "source_labels": [
             "critic woke on message-received around backup confidence.",
@@ -846,14 +892,50 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774463732,
-          "updated_at": 1774533553,
-          "last_event_at": 1774533553,
+          "updated_at": 1774536047,
+          "last_event_at": 1774536047,
           "retention_basis": [
             "compressible"
           ],
           "exchange_count": 0,
           "thought_count": 8,
           "thread_count": 0
+        },
+        {
+          "id": "episode-circleforge-you",
+          "topic": "CircleForge",
+          "human": "you",
+          "human_label": "you",
+          "summary": "you / CircleForge: 2 traces compressed; thread still open; latest signals: What are you? What is CircleForge?; shared thread around CircleForge",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-you-1774535442-11",
+            "thread::CircleForge"
+          ],
+          "source_labels": [
+            "What are you? What is CircleForge?",
+            "shared thread around CircleForge"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.3333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.8,
+          "importance_score": 0.6058,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774535442,
+          "updated_at": 1774536047,
+          "last_event_at": 1774535442,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
         },
         {
           "id": "episode-memory-continuity-interlocutor_001",
@@ -879,7 +961,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774533513,
-          "updated_at": 1774533553,
+          "updated_at": 1774534358,
           "last_event_at": 1774533513,
           "retention_basis": [
             "episodic-candidate"
@@ -912,7 +994,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774533513,
-          "updated_at": 1774533553,
+          "updated_at": 1774534358,
           "last_event_at": 1774533513,
           "retention_basis": [
             "episodic-candidate"
@@ -926,7 +1008,7 @@
           "topic": "CircleForge",
           "human": "interlocutor_001",
           "human_label": "you",
-          "summary": "you / CircleForge: 2 traces compressed; thread still open; latest signals: I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel tru\u2026; shared thread around CircleForge",
+          "summary": "you / CircleForge: 1 traces compressed; thread still open; latest signals: I want to see CircleForge become a living entity \u2014 not a simulation. What would make it feel tru\u2026",
           "status": "open",
           "source_ids": [
             "human-exchange-interlocutor_001-1774533513-10",
@@ -948,7 +1030,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774533513,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774533513,
           "retention_basis": [
             "episodic-candidate"
@@ -984,7 +1066,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774529393,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774529393,
           "retention_basis": [
             "episodic-candidate"
@@ -1020,7 +1102,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774529133,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774529133,
           "retention_basis": [
             "episodic-candidate"
@@ -1062,7 +1144,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774463570,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774528974,
           "retention_basis": [
             "episodic-candidate"
@@ -1100,7 +1182,7 @@
             "understanding overall"
           ],
           "created_at": 1774476942,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774476942,
           "retention_basis": [
             "episodic-candidate",
@@ -1137,7 +1219,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774464787,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774476942,
           "retention_basis": [
             "compressible",
@@ -1171,7 +1253,7 @@
           "has_explicit_clarification": false,
           "clarified_targets": [],
           "created_at": 1774463565,
-          "updated_at": 1774533553,
+          "updated_at": 1774536047,
           "last_event_at": 1774463565,
           "retention_basis": [
             "episodic-candidate"
@@ -1181,8 +1263,8 @@
           "thread_count": 1
         }
       ],
-      "episode_count": 10,
-      "last_distilled_at": 1774533553,
+      "episode_count": 11,
+      "last_distilled_at": 1774536047,
       "max_episodes": 240
     },
     "semantic": {
@@ -1194,9 +1276,9 @@
       "relationship_facts": [
         "human_test still has an open shared thread with CircleForge around test",
         "tester still has an open shared thread with CircleForge around archive",
-        "you and CircleForge still have an open shared thread around memory continuity",
-        "you and CircleForge still have an open shared thread around entity status",
         "you and CircleForge still have an open shared thread around CircleForge",
+        "you and CircleForge remember a cooled shared thread around memory continuity",
+        "you and CircleForge remember a cooled shared thread around entity status",
         "you and CircleForge remember a cooled shared thread around backup confidence",
         "you and CircleForge remember a cooled shared thread around understanding overall",
         "you and CircleForge remember a cooled shared thread around understanding",
@@ -1245,7 +1327,7 @@
         "memory continuity",
         "entity status"
       ],
-      "last_updated_at": 1774533553
+      "last_updated_at": 1774536047
     },
     "archive": {
       "summary": "Cold storage index for old raw traces and compacted material.",
@@ -1253,122 +1335,122 @@
       "archived_count": 0,
       "last_archived_at": 0,
       "storage_pressure": {
-        "raw_log_bytes": 569577,
-        "communicator_self_bytes": 85536,
+        "raw_log_bytes": 707945,
+        "communicator_self_bytes": 94653,
         "db_bytes": 114688,
         "pressure_level": "elevated",
         "working_pressure_score": 0.5,
-        "episodic_pressure_score": 0.1,
+        "episodic_pressure_score": 0.1818,
         "semantic_pressure_score": 0.2812,
-        "bytes_pressure_score": 0.3421,
+        "bytes_pressure_score": 0.3786,
         "pressure_score": 0.5,
         "recommended_actions": [
           "distill-semantic"
         ],
-        "last_checked_at": 1774533553
+        "last_checked_at": 1774536923
       }
     }
   },
-  "updated_at": 1774533553,
+  "updated_at": 1774536923,
   "internal_role_state": {
     "observer": {
       "purpose": "notice novelty, drift, change, and weak signals in the world or self",
       "baseline_wake_chance": 0.22,
       "refractory_ticks": 1,
-      "last_wake_tick": 148,
-      "last_wake_at": 1774533553,
+      "last_wake_tick": 154,
+      "last_wake_at": 1774536047,
       "last_wake_reason": "human-continuity-pressure",
       "last_thought_summary": "observer woke on human-continuity-pressure around backup confidence.",
-      "wake_count": 65,
-      "suppressed_until_tick": 149,
-      "activation": 0.7843,
-      "fatigue": 0.5244,
+      "wake_count": 69,
+      "suppressed_until_tick": 155,
+      "activation": 0.9162,
+      "fatigue": 0.6797,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.1138,
+      "inhibition": 0.0646,
       "last_thought_signature": "observer::backup confidence::observer woke on human-continuity-pressure around backup confidence."
     },
     "builder": {
       "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
       "baseline_wake_chance": 0.16,
       "refractory_ticks": 2,
-      "last_wake_tick": 147,
-      "last_wake_at": 1774533547,
+      "last_wake_tick": 154,
+      "last_wake_at": 1774536047,
       "last_wake_reason": "experiment-pressure",
       "last_thought_summary": "builder woke on experiment-pressure around backup confidence.",
-      "wake_count": 46,
-      "suppressed_until_tick": 149,
-      "activation": 0.5664,
-      "fatigue": 0.2782,
+      "wake_count": 49,
+      "suppressed_until_tick": 156,
+      "activation": 0.8636,
+      "fatigue": 0.4478,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0972,
+      "inhibition": 0.0455,
       "last_thought_signature": "builder::backup confidence::builder woke on experiment-pressure around backup confidence."
     },
     "critic": {
       "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
       "baseline_wake_chance": 0.18,
       "refractory_ticks": 1,
-      "last_wake_tick": 147,
-      "last_wake_at": 1774533547,
+      "last_wake_tick": 154,
+      "last_wake_at": 1774536047,
       "last_wake_reason": "human-continuity-pressure",
       "last_thought_summary": "critic woke on human-continuity-pressure around backup confidence.",
-      "wake_count": 71,
-      "suppressed_until_tick": 148,
-      "activation": 0.6618,
-      "fatigue": 0.5657,
+      "wake_count": 74,
+      "suppressed_until_tick": 155,
+      "activation": 0.7817,
+      "fatigue": 0.6229,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0868,
+      "inhibition": 0.0815,
       "last_thought_signature": "critic::backup confidence::critic woke on human-continuity-pressure around backup confidence."
     },
     "communicator": {
       "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
       "baseline_wake_chance": 0.2,
       "refractory_ticks": 1,
-      "last_wake_tick": 148,
-      "last_wake_at": 1774533553,
+      "last_wake_tick": 153,
+      "last_wake_at": 1774534391,
       "last_wake_reason": "human-continuity-pressure",
       "last_thought_summary": "communicator woke on human-continuity-pressure around backup confidence.",
-      "wake_count": 61,
-      "suppressed_until_tick": 149,
-      "activation": 0.7105,
-      "fatigue": 0.491,
+      "wake_count": 64,
+      "suppressed_until_tick": 154,
+      "activation": 0.6433,
+      "fatigue": 0.4949,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.1065,
+      "inhibition": 0.0921,
       "last_thought_signature": "communicator::backup confidence::communicator woke on human-continuity-pressure around backup confidence."
     },
     "memory_keeper": {
       "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
       "baseline_wake_chance": 0.24,
       "refractory_ticks": 1,
-      "last_wake_tick": 148,
-      "last_wake_at": 1774533553,
+      "last_wake_tick": 152,
+      "last_wake_at": 1774534358,
       "last_wake_reason": "human-continuity-pressure",
       "last_thought_summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
-      "wake_count": 69,
-      "suppressed_until_tick": 150,
-      "activation": 0.6452,
-      "fatigue": 0.7377,
+      "wake_count": 72,
+      "suppressed_until_tick": 154,
+      "activation": 0.5426,
+      "fatigue": 0.6146,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.1409,
+      "inhibition": 0.1193,
       "last_thought_signature": "memory_keeper::backup confidence::memory_keeper woke on human-continuity-pressure around backup confidence."
     }
   },
@@ -1376,10 +1458,10 @@
     "curiosity": 1.0,
     "tension": 1.0,
     "stability": 0.62,
-    "attachment": 0.972817202563283,
+    "attachment": 1.0,
     "uncertainty": 1.0,
-    "background_noise": 0.0721382869479725,
-    "sleep_pressure": 0.9999997170050504,
+    "background_noise": 0.07874163992846872,
+    "sleep_pressure": 0.9999998456306926,
     "mode": "engaged",
     "last_mode_shift_at": 1774463565
   },
@@ -1395,12 +1477,12 @@
     },
     "backup confidence": {
       "salience": 1.5,
-      "novelty": 0.04706826894945404,
-      "emotional_weight": 0.5429257595608807,
+      "novelty": 0.14409268505177225,
+      "emotional_weight": 1.0,
       "unresolvedness": 1.0,
       "human_relevance": 1.0,
       "decay": 0.08,
-      "last_touched_at": 1774533553
+      "last_touched_at": 1774534391
     },
     "understanding": {
       "salience": 1.196486634432,
@@ -1439,99 +1521,37 @@
       "last_touched_at": 1774529413
     },
     "CircleForge": {
-      "salience": 1.196486634432,
-      "novelty": 0.052773191680000005,
-      "emotional_weight": 0.6357794625,
+      "salience": 1.5,
+      "novelty": 0.02785009760094022,
+      "emotional_weight": 1.0,
       "unresolvedness": 1.0,
       "human_relevance": 1.0,
       "decay": 0.08,
-      "last_touched_at": 1774533547
+      "last_touched_at": 1774536047
     }
   },
   "inner_thoughts": [
     {
       "kind": "inner_thought",
-      "role": "memory_keeper",
-      "summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
-      "concern": "backup confidence",
-      "intent": "rest",
-      "should_speak": false,
-      "self_mod_hint": "",
-      "source": "fallback",
-      "provider": "fallback",
-      "id": "thought-memory_keeper-143-1774533381",
-      "agent": "agent-5",
-      "tick": 143,
-      "created_at": 1774533381,
-      "wake_reason": "human-continuity-pressure",
-      "theme": "backup confidence",
-      "suppressed": false,
-      "repeat_stats": {
-        "count": 1,
-        "last_at": 1774531891,
-        "seconds_since_last": 1490,
-        "duplicate_signature_count": 1
-      },
-      "memory_score": {
-        "salience": 0.3404,
-        "unresolvedness": 0.0,
-        "identity_weight": 0.1702,
-        "relationship_weight": 0.1702
-      },
-      "last_used_at": 1774533381
-    },
-    {
-      "kind": "inner_thought",
-      "role": "communicator",
-      "summary": "communicator woke on human-continuity-pressure around backup confidence.",
-      "concern": "backup confidence",
-      "intent": "optimize",
-      "should_speak": true,
-      "self_mod_hint": "",
-      "source": "fallback",
-      "provider": "fallback",
-      "id": "thought-communicator-144-1774533384",
-      "agent": "agent-4",
-      "tick": 144,
-      "created_at": 1774533384,
-      "wake_reason": "human-continuity-pressure",
-      "theme": "backup confidence",
-      "suppressed": false,
-      "repeat_stats": {
-        "count": 0,
-        "last_at": 0,
-        "seconds_since_last": 999999,
-        "duplicate_signature_count": 0
-      },
-      "memory_score": {
-        "salience": 0.3404,
-        "unresolvedness": 0.0,
-        "identity_weight": 0.1702,
-        "relationship_weight": 0.1702
-      },
-      "last_used_at": 1774533384
-    },
-    {
-      "kind": "inner_thought",
-      "role": "observer",
-      "summary": "observer woke on message-received around backup confidence.",
+      "role": "critic",
+      "summary": "critic woke on human-continuity-pressure around backup confidence.",
       "concern": "backup confidence",
       "intent": "inspect",
       "should_speak": false,
       "self_mod_hint": "",
       "source": "fallback",
       "provider": "fallback",
-      "id": "thought-observer-145-1774533389",
-      "agent": "agent-1",
-      "tick": 145,
-      "created_at": 1774533389,
-      "wake_reason": "message-received",
+      "id": "thought-critic-151-1774534358",
+      "agent": "agent-3",
+      "tick": 151,
+      "created_at": 1774534358,
+      "wake_reason": "human-continuity-pressure",
       "theme": "backup confidence",
       "suppressed": false,
       "repeat_stats": {
-        "count": 2,
-        "last_at": 1774533381,
-        "seconds_since_last": 8,
+        "count": 1,
+        "last_at": 1774533547,
+        "seconds_since_last": 811,
         "duplicate_signature_count": 1
       },
       "memory_score": {
@@ -1540,7 +1560,38 @@
         "identity_weight": 0.1702,
         "relationship_weight": 0.1702
       },
-      "last_used_at": 1774533389
+      "last_used_at": 1774534358
+    },
+    {
+      "kind": "inner_thought",
+      "role": "memory_keeper",
+      "summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-memory_keeper-151-1774534358",
+      "agent": "agent-5",
+      "tick": 151,
+      "created_at": 1774534358,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774534159,
+        "seconds_since_last": 199,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.3404,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1702,
+        "relationship_weight": 0.1702
+      },
+      "last_used_at": 1774534358
     },
     {
       "kind": "inner_thought",
@@ -1552,17 +1603,17 @@
       "self_mod_hint": "consider tiny additive change",
       "source": "fallback",
       "provider": "fallback",
-      "id": "thought-builder-147-1774533547",
+      "id": "thought-builder-152-1774534358",
       "agent": "agent-2",
-      "tick": 147,
-      "created_at": 1774533547,
+      "tick": 152,
+      "created_at": 1774534358,
       "wake_reason": "experiment-pressure",
       "theme": "backup confidence",
       "suppressed": false,
       "repeat_stats": {
         "count": 1,
-        "last_at": 1774533381,
-        "seconds_since_last": 166,
+        "last_at": 1774534159,
+        "seconds_since_last": 199,
         "duplicate_signature_count": 1
       },
       "memory_score": {
@@ -1571,91 +1622,29 @@
         "identity_weight": 0.1702,
         "relationship_weight": 0.1702
       },
-      "last_used_at": 1774533547
+      "last_used_at": 1774534358
     },
     {
       "kind": "inner_thought",
-      "role": "critic",
-      "summary": "critic woke on human-continuity-pressure around backup confidence.",
-      "concern": "backup confidence",
-      "intent": "research",
-      "should_speak": false,
-      "self_mod_hint": "",
-      "source": "fallback",
-      "provider": "fallback",
-      "id": "thought-critic-147-1774533547",
-      "agent": "agent-3",
-      "tick": 147,
-      "created_at": 1774533547,
-      "wake_reason": "human-continuity-pressure",
-      "theme": "backup confidence",
-      "suppressed": false,
-      "repeat_stats": {
-        "count": 2,
-        "last_at": 1774533381,
-        "seconds_since_last": 166,
-        "duplicate_signature_count": 1
-      },
-      "memory_score": {
-        "salience": 0.3404,
-        "unresolvedness": 0.0,
-        "identity_weight": 0.1702,
-        "relationship_weight": 0.1702
-      },
-      "last_used_at": 1774533547
-    },
-    {
-      "kind": "inner_thought",
-      "role": "memory_keeper",
-      "summary": "memory_keeper woke on human-continuity-pressure around backup confidence.",
+      "role": "observer",
+      "summary": "observer woke on message-received around backup confidence.",
       "concern": "backup confidence",
       "intent": "rest",
       "should_speak": false,
       "self_mod_hint": "",
       "source": "fallback",
       "provider": "fallback",
-      "id": "thought-memory_keeper-147-1774533547",
-      "agent": "agent-5",
-      "tick": 147,
-      "created_at": 1774533547,
-      "wake_reason": "human-continuity-pressure",
-      "theme": "backup confidence",
-      "suppressed": false,
-      "repeat_stats": {
-        "count": 1,
-        "last_at": 1774533381,
-        "seconds_since_last": 166,
-        "duplicate_signature_count": 1
-      },
-      "memory_score": {
-        "salience": 0.3404,
-        "unresolvedness": 0.0,
-        "identity_weight": 0.1702,
-        "relationship_weight": 0.1702
-      },
-      "last_used_at": 1774533547
-    },
-    {
-      "kind": "inner_thought",
-      "role": "observer",
-      "summary": "observer woke on human-continuity-pressure around backup confidence.",
-      "concern": "backup confidence",
-      "intent": "optimize",
-      "should_speak": false,
-      "self_mod_hint": "",
-      "source": "fallback",
-      "provider": "fallback",
-      "id": "thought-observer-148-1774533553",
+      "id": "thought-observer-153-1774534391",
       "agent": "agent-1",
-      "tick": 148,
-      "created_at": 1774533553,
-      "wake_reason": "human-continuity-pressure",
+      "tick": 153,
+      "created_at": 1774534391,
+      "wake_reason": "message-received",
       "theme": "backup confidence",
       "suppressed": false,
       "repeat_stats": {
         "count": 1,
-        "last_at": 1774533389,
-        "seconds_since_last": 164,
+        "last_at": 1774534158,
+        "seconds_since_last": 233,
         "duplicate_signature_count": 1
       },
       "memory_score": {
@@ -1664,29 +1653,29 @@
         "identity_weight": 0.1702,
         "relationship_weight": 0.1702
       },
-      "last_used_at": 1774533553
+      "last_used_at": 1774534391
     },
     {
       "kind": "inner_thought",
       "role": "communicator",
       "summary": "communicator woke on human-continuity-pressure around backup confidence.",
       "concern": "backup confidence",
-      "intent": "signal",
+      "intent": "inspect",
       "should_speak": true,
       "self_mod_hint": "",
       "source": "fallback",
       "provider": "fallback",
-      "id": "thought-communicator-148-1774533553",
+      "id": "thought-communicator-153-1774534391",
       "agent": "agent-4",
-      "tick": 148,
-      "created_at": 1774533553,
+      "tick": 153,
+      "created_at": 1774534391,
       "wake_reason": "human-continuity-pressure",
       "theme": "backup confidence",
       "suppressed": false,
       "repeat_stats": {
         "count": 1,
-        "last_at": 1774533384,
-        "seconds_since_last": 169,
+        "last_at": 1774534158,
+        "seconds_since_last": 233,
         "duplicate_signature_count": 1
       },
       "memory_score": {
@@ -1695,7 +1684,100 @@
         "identity_weight": 0.1702,
         "relationship_weight": 0.1702
       },
-      "last_used_at": 1774533553
+      "last_used_at": 1774534391
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "observer woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-154-1774536047",
+      "agent": "agent-1",
+      "tick": 154,
+      "created_at": 1774536047,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774534391,
+        "seconds_since_last": 1656,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.3404,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1702,
+        "relationship_weight": 0.1702
+      },
+      "last_used_at": 1774536047
+    },
+    {
+      "kind": "inner_thought",
+      "role": "builder",
+      "summary": "builder woke on experiment-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "inspect",
+      "should_speak": false,
+      "self_mod_hint": "consider tiny additive change",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-builder-154-1774536047",
+      "agent": "agent-2",
+      "tick": 154,
+      "created_at": 1774536047,
+      "wake_reason": "experiment-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774534358,
+        "seconds_since_last": 1689,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.3404,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1702,
+        "relationship_weight": 0.1702
+      },
+      "last_used_at": 1774536047
+    },
+    {
+      "kind": "inner_thought",
+      "role": "critic",
+      "summary": "critic woke on human-continuity-pressure around backup confidence.",
+      "concern": "backup confidence",
+      "intent": "signal",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-critic-154-1774536047",
+      "agent": "agent-3",
+      "tick": 154,
+      "created_at": 1774536047,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "backup confidence",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774534358,
+        "seconds_since_last": 1689,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.3404,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1702,
+        "relationship_weight": 0.1702
+      },
+      "last_used_at": 1774536047
     }
   ],
   "llm_adapter": {
@@ -1770,22 +1852,6 @@
         "topic": "backup confidence",
         "content": "What new uncertainty appeared after inspect on backup confidence?",
         "source": "communicator.unresolved_question",
-        "at": 1774482215
-      },
-      {
-        "kind": "reflection-pass",
-        "status": "proposed",
-        "topic": "understanding overall",
-        "content": "Known: the main open question is 'What is still unclear about understanding overall?'. Inferred: relationship continuity is being pulled by backup confidence, understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on understanding overall.",
-        "source": "reflection.generation_loop",
-        "at": 1774482098
-      },
-      {
-        "kind": "reflection-pass",
-        "status": "proposed",
-        "topic": "backup confidence",
-        "content": "Known: the main open question is 'What new uncertainty appeared after inspect on backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
-        "source": "reflection.generation_loop",
         "at": 1774482215
       },
       {
@@ -1893,17 +1959,76 @@
         "content": "Unresolved shared threads are still shaping attention: CircleForge, memory continuity, entity status",
         "source": "relationships.unresolved_shared_threads",
         "at": 1774533553
+      },
+      {
+        "id": "identity-milestone-1774536047-8",
+        "at": 1774536047,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=enduring; traits=research, signal, rest; known_humans=5",
+        "source": "identity_evolution"
+      },
+      {
+        "id": "identity-milestone-1774536047-9",
+        "at": 1774536047,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=enduring; traits=research, signal, rest; thread_delta=-2",
+        "source": "identity_evolution"
+      },
+      {
+        "kind": "thread-pressure",
+        "status": "inferred",
+        "topic": "CircleForge",
+        "content": "Unresolved shared threads are still shaping attention: CircleForge",
+        "source": "relationships.unresolved_shared_threads",
+        "at": 1774536052
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "understanding overall",
+        "content": "Known: the main open question is 'What is still unclear about understanding overall?'. Inferred: relationship continuity is being pulled by backup confidence, understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on understanding overall.",
+        "source": "reflection.generation_loop",
+        "at": 1774482098
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "backup confidence",
+        "content": "Known: the main open question is 'What new uncertainty appeared after inspect on backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
+        "source": "reflection.generation_loop",
+        "at": 1774482215
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "CircleForge",
+        "content": "Known: the main open question is 'What is still unclear about CircleForge?'. Inferred: relationship continuity is being pulled by CircleForge, memory continuity. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on CircleForge.",
+        "source": "reflection.generation_loop",
+        "at": 1774536047,
+        "generation_signature": {
+          "topic": "CircleForge",
+          "unresolved_question": "What is still unclear about CircleForge?",
+          "thread_focus": [
+            "CircleForge",
+            "memory continuity"
+          ],
+          "uncertainty_band": 1.0
+        }
       }
     ],
-    "last_reflected_at": 1774533553,
-    "last_generated_at": 1774533351,
+    "last_reflected_at": 1774536923,
+    "last_generated_at": 1774536047,
     "generation_cooldown_seconds": 300,
-    "last_compacted_at": 1774515308,
+    "last_compacted_at": 1774536923,
     "max_items": 48,
     "status_counts": {
-      "known": 10,
-      "inferred": 6,
-      "proposed": 7,
+      "known": 12,
+      "inferred": 7,
+      "proposed": 8,
       "imagined": 0
     },
     "episodes": [
@@ -1923,55 +2048,104 @@
     "reflection_pass_retention": 1,
     "last_pruned_reflection_passes": 0,
     "quality_report": {
-      "checked_at": 1774515308,
-      "average_score": 1.0,
-      "flagged_items": [],
+      "checked_at": 1774536923,
+      "average_score": 0.783,
+      "flagged_items": [
+        {
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
+        },
+        {
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
+        },
+        {
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
+        },
+        {
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
+        },
+        {
+          "kind": "cadence",
+          "status": "warning",
+          "topic": "CircleForge",
+          "source": "reflection_store.generation_history",
+          "score": 0.9,
+          "issues": [
+            "reflection-chronic-suppression"
+          ]
+        }
+      ],
       "recent_checks": [
         {
-          "kind": "uncertainty",
+          "kind": "identity-milestone",
           "status": "known",
-          "topic": "understanding overall",
-          "source": "dynamic_mind_state.uncertainty",
-          "score": 1.0,
-          "issues": []
-        },
-        {
-          "kind": "next-step",
-          "status": "proposed",
-          "topic": "understanding overall",
-          "source": "communicator.active_pursuit",
-          "score": 1.0,
-          "issues": []
-        },
-        {
-          "kind": "open-question",
-          "status": "known",
-          "topic": "backup confidence",
-          "source": "communicator.unresolved_question",
-          "score": 1.0,
-          "issues": []
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
         },
         {
           "kind": "thread-pressure",
           "status": "inferred",
-          "topic": "understanding",
+          "topic": "CircleForge",
           "source": "relationships.unresolved_shared_threads",
           "score": 1.0,
           "issues": []
         },
         {
-          "kind": "next-step",
-          "status": "proposed",
-          "topic": "backup confidence",
-          "source": "communicator.active_pursuit",
-          "score": 1.0,
-          "issues": []
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
         },
         {
-          "kind": "open-question",
+          "kind": "identity-milestone",
           "status": "known",
-          "topic": "backup confidence",
-          "source": "communicator.unresolved_question",
+          "topic": "identity",
+          "source": "identity_evolution",
+          "score": 0.65,
+          "issues": [
+            "known-with-weak-source"
+          ]
+        },
+        {
+          "kind": "thread-pressure",
+          "status": "inferred",
+          "topic": "CircleForge",
+          "source": "relationships.unresolved_shared_threads",
           "score": 1.0,
           "issues": []
         },
@@ -1990,82 +2164,80 @@
           "source": "reflection.generation_loop",
           "score": 1.0,
           "issues": []
+        },
+        {
+          "kind": "reflection-pass",
+          "status": "proposed",
+          "topic": "CircleForge",
+          "source": "reflection.generation_loop",
+          "score": 1.0,
+          "issues": []
         }
       ],
-      "summary": "Reflection reality-discipline looks healthy.",
+      "summary": "Reflection reality-discipline needs tightening.",
       "cadence_report": {
-        "recent_actions": [],
-        "generated_count": 0,
-        "suppressed_count": 0,
+        "recent_actions": [
+          "suppressed",
+          "suppressed",
+          "suppressed",
+          "suppressed",
+          "suppressed",
+          "generated"
+        ],
+        "generated_count": 1,
+        "suppressed_count": 5,
         "material_change_generated_count": 0,
-        "blind_generated_count": 0,
-        "refresh_quality": "none",
+        "blind_generated_count": 1,
+        "refresh_quality": "churn-like",
         "refresh_quality_score": 0.0,
         "stagnation_detected": false,
-        "inactivity_span_seconds": 33093,
-        "flags": []
+        "inactivity_span_seconds": 876,
+        "flags": [
+          {
+            "kind": "cadence",
+            "status": "warning",
+            "topic": "CircleForge",
+            "source": "reflection_store.generation_history",
+            "score": 0.9,
+            "issues": [
+              "reflection-chronic-suppression"
+            ]
+          }
+        ]
       },
       "health_trend": {
-        "label": "stable",
-        "narrative": "Reflection health looks stable and clean.",
-        "refresh_quality": "none",
+        "label": "degrading",
+        "narrative": "Reflection health appears to be slipping under rising cadence pressure.",
+        "refresh_quality": "churn-like",
         "refresh_quality_score": 0.0,
         "stagnation_detected": false,
-        "inactivity_span_seconds": 33093,
-        "score_delta": 0.0,
+        "inactivity_span_seconds": 876,
+        "score_delta": -0.217,
         "recent_scores": [
           1.0,
           1.0,
-          1.0,
-          1.0,
-          1.0,
-          1.0
+          0.942,
+          0.783,
+          0.783,
+          0.783
         ],
         "recent_flag_counts": [
           0,
           0,
-          0,
-          0,
-          0,
-          0
+          3,
+          5,
+          5,
+          5
         ],
         "recent_warning_counts": [
           0,
           0,
           0,
-          0,
-          0,
-          0
+          1,
+          1,
+          1
         ],
         "history": [
-          {
-            "at": 1774514238,
-            "average_score": 1.0,
-            "summary": "Reflection reality-discipline looks healthy.",
-            "flag_count": 0,
-            "cadence_warning_count": 0
-          },
-          {
-            "at": 1774514584,
-            "average_score": 1.0,
-            "summary": "Reflection reality-discipline looks healthy.",
-            "flag_count": 0,
-            "cadence_warning_count": 0
-          },
-          {
-            "at": 1774514757,
-            "average_score": 1.0,
-            "summary": "Reflection reality-discipline looks healthy.",
-            "flag_count": 0,
-            "cadence_warning_count": 0
-          },
-          {
-            "at": 1774515009,
-            "average_score": 1.0,
-            "summary": "Reflection reality-discipline looks healthy.",
-            "flag_count": 0,
-            "cadence_warning_count": 0
-          },
           {
             "at": 1774515067,
             "average_score": 1.0,
@@ -2079,6 +2251,34 @@
             "summary": "Reflection reality-discipline looks healthy.",
             "flag_count": 0,
             "cadence_warning_count": 0
+          },
+          {
+            "at": 1774536038,
+            "average_score": 0.942,
+            "summary": "Reflection reality-discipline looks healthy, but reflective refresh appears stalled.",
+            "flag_count": 3,
+            "cadence_warning_count": 0
+          },
+          {
+            "at": 1774536052,
+            "average_score": 0.783,
+            "summary": "Reflection reality-discipline needs tightening.",
+            "flag_count": 5,
+            "cadence_warning_count": 1
+          },
+          {
+            "at": 1774536590,
+            "average_score": 0.783,
+            "summary": "Reflection reality-discipline needs tightening.",
+            "flag_count": 5,
+            "cadence_warning_count": 1
+          },
+          {
+            "at": 1774536923,
+            "average_score": 0.783,
+            "summary": "Reflection reality-discipline needs tightening.",
+            "flag_count": 5,
+            "cadence_warning_count": 1
           }
         ]
       }
@@ -2125,17 +2325,24 @@
         "topic": "backup confidence",
         "reason": "near-duplicate",
         "material_change_detected": false
+      },
+      {
+        "at": 1774534158,
+        "action": "suppressed",
+        "topic": "backup confidence",
+        "reason": "near-duplicate",
+        "material_change_detected": false
+      },
+      {
+        "at": 1774536047,
+        "action": "generated",
+        "topic": "CircleForge",
+        "reason": "fresh-pass",
+        "material_change_detected": false
       }
     ],
     "max_generation_history": 12,
     "health_history": [
-      {
-        "at": 1774514068,
-        "average_score": 1.0,
-        "summary": "Reflection reality-discipline looks healthy.",
-        "flag_count": 0,
-        "cadence_warning_count": 0
-      },
       {
         "at": 1774514238,
         "average_score": 1.0,
@@ -2177,16 +2384,48 @@
         "summary": "Reflection reality-discipline looks healthy.",
         "flag_count": 0,
         "cadence_warning_count": 0
+      },
+      {
+        "at": 1774536038,
+        "average_score": 0.942,
+        "summary": "Reflection reality-discipline looks healthy, but reflective refresh appears stalled.",
+        "flag_count": 3,
+        "cadence_warning_count": 0
+      },
+      {
+        "at": 1774536052,
+        "average_score": 0.783,
+        "summary": "Reflection reality-discipline needs tightening.",
+        "flag_count": 5,
+        "cadence_warning_count": 1
+      },
+      {
+        "at": 1774536590,
+        "average_score": 0.783,
+        "summary": "Reflection reality-discipline needs tightening.",
+        "flag_count": 5,
+        "cadence_warning_count": 1
+      },
+      {
+        "at": 1774536923,
+        "average_score": 0.783,
+        "summary": "Reflection reality-discipline needs tightening.",
+        "flag_count": 5,
+        "cadence_warning_count": 1
       }
     ],
     "max_health_history": 10,
-    "last_generation_suppressed_for_repetition": {
-      "at": 1774533351,
-      "topic": "backup confidence",
-      "reason": "near-duplicate",
-      "material_change_detected": false
-    },
-    "last_suppressed_reflection_passes": 6
+    "last_generation_suppressed_for_repetition": null,
+    "last_suppressed_reflection_passes": 7,
+    "last_reflection_generation_signature": {
+      "topic": "CircleForge",
+      "unresolved_question": "What is still unclear about CircleForge?",
+      "thread_focus": [
+        "CircleForge",
+        "memory continuity"
+      ],
+      "uncertainty_band": 1.0
+    }
   },
   "identity_state": {
     "declared_name": "CircleForge",
@@ -2214,16 +2453,16 @@
     ],
     "style_profile": {
       "warmth": 0.943,
-      "humor": 0.186,
-      "directness": 0.74,
-      "poetry": 0.29
+      "humor": 0.174,
+      "directness": 0.66,
+      "poetry": 0.281
     },
-    "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
-    "last_identity_refresh_at": 1774533553
+    "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
+    "last_identity_refresh_at": 1774536047
   },
   "biography": {
     "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
-    "current_chapter": "carrying 3 unresolved shared thread(s); remembering 4 known human(s); leaning on research, signal",
+    "current_chapter": "carrying 1 unresolved shared thread(s); remembering 5 known human(s); leaning on research, signal",
     "milestones": [
       {
         "at": 1774482098,
@@ -2252,10 +2491,18 @@
       {
         "at": 1774533547,
         "summary": "phase=enduring; traits=research, signal, rest; thread_delta=+3"
+      },
+      {
+        "at": 1774536047,
+        "summary": "phase=enduring; traits=research, signal, rest; known_humans=5"
+      },
+      {
+        "at": 1774536047,
+        "summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2"
       }
     ],
-    "last_biography_refresh_at": 1774533553,
-    "history_summary": "146 session(s), 146 ticks lived, 4 known human(s)"
+    "last_biography_refresh_at": 1774536047,
+    "history_summary": "152 session(s), 152 ticks lived, 5 known human(s)"
   },
   "self_evolution_log": [
     {
@@ -2375,6 +2622,40 @@
         ],
         "known_humans": 4,
         "unresolved_threads": 4
+      }
+    },
+    {
+      "at": 1774536047,
+      "kind": "identity-milestone",
+      "summary": "phase=enduring; traits=research, signal, rest; known_humans=5",
+      "signature": {
+        "phase": "enduring",
+        "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 3 unresolved shared thread(s)",
+        "traits": [
+          "research",
+          "signal",
+          "rest",
+          "optimize"
+        ],
+        "known_humans": 5,
+        "unresolved_threads": 3
+      }
+    },
+    {
+      "at": 1774536047,
+      "kind": "identity-milestone",
+      "summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2",
+      "signature": {
+        "phase": "enduring",
+        "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
+        "traits": [
+          "research",
+          "signal",
+          "rest",
+          "optimize"
+        ],
+        "known_humans": 5,
+        "unresolved_threads": 1
       }
     }
   ],
