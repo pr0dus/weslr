@@ -474,5 +474,19 @@
     "Known risks": "Trend labeling is intentionally conservative and threshold-based; mild declines may remain classified as mixed until a larger score drop or longer worsening run appears. This avoids overreacting but may under-call early degradation.",
     "Next exact step": "Tune trend interpretation so repeated modest declines plus rising warning counts can register as early degradation without becoming jumpy on one-off noise.",
     "Resume hint": "Inspect sim.py health_history / health_trend logic inside evaluate_reflection_quality; if the next move is tuning, consider combining score delta with monotonic worsening or warning-count slope rather than only absolute threshold."
+  },
+  {
+    "id": "continuation-1774514252-35",
+    "created_at": 1774514252,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Tune reflection health trend interpretation so repeated modest declines plus rising warning pressure can register as early degradation without overreacting to one-off noise.",
+    "Completed": "Inspected health_trend scoring, added monotonic decline/improvement and warning-slope checks, and verified that modest sustained decline with rising warnings now counts as degrading while a one-off dip still remains mixed.",
+    "Files changed": "sim.py",
+    "Behavior changed": "health_trend labeling is now less purely threshold-bound: repeated modest decline plus rising cadence warnings can trigger degrading early, while monotonic improvement with easing warnings can count as improving before large score swings appear.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic early-degrading probe confirmed degrading at score_delta -0.05 with rising warnings; synthetic one-off dip probe remained mixed.",
+    "Known risks": "Trend logic is still heuristic and short-window based; different combinations of artifact issues and cadence warnings may eventually need weighted treatment rather than simple monotonic/threshold rules.",
+    "Next exact step": "Surface a compact reflection health narrative string that summarizes the trend in operator language (e.g. stabilizing, slipping under cadence pressure, recovering) so the report is easier to scan than raw labels alone.",
+    "Resume hint": "Inspect sim.py health_trend assembly inside evaluate_reflection_quality; if continuing, derive a human-readable narrative from trend_label, score_delta, and warning movement without replacing the structured fields."
   }
 ]

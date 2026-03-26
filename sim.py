@@ -5127,6 +5127,29 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         trend_label = "stable"
     else:
         trend_label = "mixed"
+
+    if trend_label == "improving":
+        if warning_ease:
+            trend_narrative = "Reflection health looks to be recovering with easing warning pressure."
+        else:
+            trend_narrative = "Reflection health is improving, though some pressure remains."
+    elif trend_label == "degrading":
+        if warning_rise:
+            trend_narrative = "Reflection health appears to be slipping under rising cadence pressure."
+        else:
+            trend_narrative = "Reflection health appears to be drifting downward."
+    elif trend_label == "stable":
+        if scores and scores[-1] >= 0.95:
+            trend_narrative = "Reflection health looks stable and clean."
+        else:
+            trend_narrative = "Reflection health looks stable, without a strong directional shift."
+    else:
+        if score_delta > 0.02:
+            trend_narrative = "Reflection health is mixed but leaning upward."
+        elif score_delta < -0.02:
+            trend_narrative = "Reflection health is mixed, with some mild downward drift."
+        else:
+            trend_narrative = "Reflection health is mixed, without a clear directional signal yet."
     report = {
         "checked_at": now_ts,
         "average_score": avg_score,
@@ -5143,6 +5166,7 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         },
         "health_trend": {
             "label": trend_label,
+            "narrative": trend_narrative,
             "score_delta": score_delta,
             "recent_scores": scores[-6:],
             "recent_flag_counts": [int(item.get("flag_count", 0) or 0) for item in health_history][-6:],
@@ -5240,6 +5264,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
     }
     health_report = ((store.get("quality_report") or {}).get("health_trend") or {
         "label": "mixed",
+        "narrative": "Reflection health is mixed, without a clear directional signal yet.",
         "score_delta": 0.0,
         "recent_scores": [],
         "recent_flag_counts": [],

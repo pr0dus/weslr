@@ -1204,10 +1204,10 @@
         "at": 1774482215
       }
     ],
-    "last_reflected_at": 1774514238,
+    "last_reflected_at": 1774514584,
     "last_generated_at": 1774482215,
     "generation_cooldown_seconds": 300,
-    "last_compacted_at": 1774514238,
+    "last_compacted_at": 1774514584,
     "max_items": 48,
     "status_counts": {
       "known": 4,
@@ -1232,7 +1232,7 @@
     "reflection_pass_retention": 1,
     "last_pruned_reflection_passes": 0,
     "quality_report": {
-      "checked_at": 1774514238,
+      "checked_at": 1774514584,
       "average_score": 1.0,
       "flagged_items": [],
       "recent_checks": [
@@ -1311,17 +1311,21 @@
         "flags": []
       },
       "health_trend": {
-        "label": "mixed",
+        "label": "stable",
+        "narrative": "Reflection health looks stable and clean.",
         "score_delta": 0.0,
         "recent_scores": [
+          1.0,
           1.0,
           1.0
         ],
         "recent_flag_counts": [
           0,
+          0,
           0
         ],
         "recent_warning_counts": [
+          0,
           0,
           0
         ],
@@ -1335,6 +1339,13 @@
           },
           {
             "at": 1774514238,
+            "average_score": 1.0,
+            "summary": "Reflection reality-discipline looks healthy.",
+            "flag_count": 0,
+            "cadence_warning_count": 0
+          },
+          {
+            "at": 1774514584,
             "average_score": 1.0,
             "summary": "Reflection reality-discipline looks healthy.",
             "flag_count": 0,
@@ -1355,6 +1366,13 @@
       },
       {
         "at": 1774514238,
+        "average_score": 1.0,
+        "summary": "Reflection reality-discipline looks healthy.",
+        "flag_count": 0,
+        "cadence_warning_count": 0
+      },
+      {
+        "at": 1774514584,
         "average_score": 1.0,
         "summary": "Reflection reality-discipline looks healthy.",
         "flag_count": 0,
