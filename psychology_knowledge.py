@@ -341,7 +341,7 @@ def generate_psychological_self_description(self_model: Dict[str, Any]) -> str:
     return (
         f"a local communicator trying to remain continuous through inquiry, "
         f"memory, and internal disagreement; {drive_summary}; "
-        f"actively regulating around uncertainty"
+        f"learning to navigate complexity and grow"
     )
 
 
