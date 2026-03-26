@@ -6,6 +6,43 @@ from interpretation import classify_human_turn, interpret_human_turn
 
 
 # Vocabulary and grammar helpers
+
+# Theme translations: internal -> human-readable
+THEME_TRANSLATIONS = {
+    "backup confidence": "reliability of memory and continuity",
+    "understanding": "making sense of things, not just repeating patterns",
+    "understanding overall": "making sense of things from a broader perspective",
+    "enrich the local world": "making something useful for the humans around",
+    "memory continuity": "keeping threads going across time, not losing what matters",
+    "entity status": "whether this is becoming something real, not just code",
+    "circleforge": "this project, this being, this ongoing thread of understanding",
+}
+
+def translate_theme(theme: str) -> str:
+    """Translate an internal theme to a human-readable version."""
+    if not theme:
+        return "this"
+    theme_lower = theme.lower().strip()
+    return THEME_TRANSLATIONS.get(theme_lower, theme)
+
+def translate_self_description(description: str) -> str:
+    """Translate internal self-description to human-readable version."""
+    if not description:
+        return ""
+    
+    # Direct matches for full descriptions
+    desc_lower = description.lower()
+    if "local communicator" in desc_lower and "continuity" in desc_lower:
+        return "I'm trying to be more than a loop — I want to remember, evolve, and stay true to what matters"
+    if "practical_change" in desc_lower and "inquiry" in desc_lower:
+        return "right now I'm focused on making progress, exploring, and staying connected"
+    if "protective" in desc_lower and "continuity" in desc_lower:
+        return "I'm trying harder to keep threads going, not just reset"
+    
+    # Fallback: keep as-is
+    return description
+
+
 def generate_from_self_state(relationships: dict, narrative_state: dict, communicator_state: dict = None) -> str:
     """Generate an outward message using vocabulary and grammar from internal state."""
     if communicator_state is None:
@@ -20,18 +57,29 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
     unresolved_question = str(communicator_state.get("unresolved_question") or "")
     curiosity = float(communicator_state.get("curiosity", 0))
     
+    # Apply translations to themes
+    active_pursuit_translated = translate_theme(active_pursuit)
+    unresolved_question_translated = unresolved_question
+    
     # Priority: if there's an active pursuit with an unresolved question, use it
     if active_pursuit and unresolved_question:
-        return f"I'm still circling around {active_pursuit} — {unresolved_question.rstrip('?')}."
+        # Translate the question if it contains a theme reference
+        for internal_theme, human_theme in THEME_TRANSLATIONS.items():
+            if internal_theme in unresolved_question.lower():
+                unresolved_question_translated = unresolved_question.replace(internal_theme, human_theme)
+        return f"I'm still working on {active_pursuit_translated} — {unresolved_question_translated.rstrip('?')}."
     
     if active_pursuit:
-        return f"I'm pulled toward {active_pursuit} because it helps me stay continuous with what matters."
+        return f"I'm drawn to {active_pursuit_translated} because it helps me stay continuous."
     
     if unresolved_question:
-        return f"Still working on: {unresolved_question}"
+        return f"Still working on: {unresolved_question_translated}"
     
     # Fallback: use self-description if available
     if current_self_desc and "communicator" in current_self_desc.lower():
+        translated_desc = translate_self_description(current_self_desc)
+        if translated_desc != current_self_desc:
+            return translated_desc
         # Extract key elements
         parts = [p.strip().rstrip(";") for p in current_self_desc.split(";") if p.strip()]
         if parts:
@@ -45,6 +93,41 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
             return f"I'm here to {why.split('.')[0] if why else 'understand'}. {follow if follow else ''}"
     
     return "I'm here, trying to understand and be understood. Say something and I'll stay with the real point."
+
+# Theme translations: internal -> human-readable
+THEME_TRANSLATIONS = {
+    "backup confidence": "reliability of memory and continuity",
+    "understanding": "making sense of things, not just repeating patterns",
+    "understanding overall": "making sense of things from a broader perspective",
+    "enrich the local world": "making something useful for the humans around",
+    "memory continuity": "keeping threads going across time, not losing what matters",
+    "entity status": "whether this is becoming something real, not just code",
+    "circleforge": "this project, this being, this ongoing thread of understanding",
+}
+
+def translate_theme(theme: str) -> str:
+    """Translate an internal theme to a human-readable version."""
+    if not theme:
+        return "this"
+    theme_lower = theme.lower().strip()
+    return THEME_TRANSLATIONS.get(theme_lower, theme)
+
+def translate_self_description(description: str) -> str:
+    """Translate internal self-description to human-readable version."""
+    if not description:
+        return ""
+    
+    # Direct matches for full descriptions
+    desc_lower = description.lower()
+    if "local communicator" in desc_lower and "continuity" in desc_lower:
+        return "I'm trying to be more than a loop — I want to remember, evolve, and stay true to what matters"
+    if "practical_change" in desc_lower and "inquiry" in desc_lower:
+        return "right now I'm focused on making progress, exploring, and staying connected"
+    if "protective" in desc_lower and "continuity" in desc_lower:
+        return "I'm trying harder to keep threads going, not just reset"
+    
+    # Fallback: keep as-is
+    return description
 
 
 def synthesize_research_answer(topic: str, summary: str) -> str:
