@@ -502,5 +502,19 @@
     "Known risks": "Narrative phrasing is still template-based and may eventually need richer wording for edge cases like mixed-but-improving or stable-but-pressured states.",
     "Next exact step": "Add a small operator-facing distinction between clean stability and suppressed stagnation so stable reflection health does not hide long quiet periods with little real reflective refresh.",
     "Resume hint": "Inspect sim.py health_trend narrative generation and consider combining stable trend with generation_report activity levels to separate healthy stability from low-activity stagnation."
+  },
+  {
+    "id": "continuation-1774514772-37",
+    "created_at": 1774514772,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Add an operator-facing distinction between clean stability and low-activity suppressed stagnation so stable-looking reflection health does not hide reflective refresh stalls.",
+    "Completed": "Inspected reflection quality/trend reporting, added stagnation_detected plus inactivity_span_seconds based on repeated suppression and long no-generation spans, and threaded that signal into cadence_report plus health_trend/health_report narratives.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store now exposes stagnation_detected and inactivity_span_seconds, allowing operators to distinguish stable clean reflection from reflection that is quiet because refresh has been repeatedly suppressed for too long.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic clean-stable probe stayed stable and clean; synthetic repeated-suppression probe set stagnation_detected true and surfaced stalled refresh pressure, which under current scoring also classified as degrading rather than merely stable-but-stalled.",
+    "Known risks": "Stagnation is currently coupled to existing suppression penalties, so strong stalled-refresh cases can read as degrading instead of a separate neutral stalled-stability state. That is honest under current scoring but may still want a finer semantic split later.",
+    "Next exact step": "If desired, split stable-but-stalled from degrading by introducing a note/warning distinction for stagnation that can surface operator concern without always dragging the trend label downward.",
+    "Resume hint": "Inspect sim.py stagnation_detected handling in evaluate_reflection_quality; decide whether stagnation should remain part of degradation pressure or become a separate operator-visible state orthogonal to trend direction."
   }
 ]

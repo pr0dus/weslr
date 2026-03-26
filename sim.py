@@ -5082,22 +5082,32 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
                 "issues": ["reflection-cadence-material-refresh"],
             })
     if suppressed_count >= 3 and suppressed_count > generated_count:
-        avg_score -= 0.1
+        chronic_suppression_status = "warning"
+        chronic_suppression_score = 0.9
+        if stagnation_detected and generated_count == 0:
+            chronic_suppression_status = "note"
+            chronic_suppression_score = 0.96
+        else:
+            avg_score -= 0.1
         cadence_flags.append({
             "kind": "cadence",
-            "status": "warning",
+            "status": chronic_suppression_status,
             "topic": (generation_history[-1] or {}).get("topic", ""),
             "source": "reflection_store.generation_history",
-            "score": 0.9,
+            "score": chronic_suppression_score,
             "issues": ["reflection-chronic-suppression"],
         })
     avg_score = round(max(0.0, min(1.0, avg_score)), 3)
     summary = "Reflection reality-discipline looks healthy."
     cadence_warning_flags = [flag for flag in cadence_flags if str(flag.get("status") or "") == "warning"]
     cadence_note_flags = [flag for flag in cadence_flags if str(flag.get("status") or "") == "note"]
+    stagnation_note_flags = [flag for flag in cadence_note_flags if "reflection-chronic-suppression" in (flag.get("issues") or [])]
+    material_refresh_note_flags = [flag for flag in cadence_note_flags if "reflection-cadence-material-refresh" in (flag.get("issues") or [])]
     if cadence_warning_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but cadence pressure is visible."
-    elif cadence_note_flags and avg_score >= 0.85:
+    elif stagnation_note_flags and avg_score >= 0.85:
+        summary = "Reflection reality-discipline looks healthy, but reflective refresh appears stalled."
+    elif material_refresh_note_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, and cadence looks materially responsive."
     if repetition_flags and avg_score >= 0.85:
         summary = "Reflection reality-discipline looks healthy, but repetition pressure is visible."
