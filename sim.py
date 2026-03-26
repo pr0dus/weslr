@@ -5113,9 +5113,15 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
     scores = [float(item.get("average_score", 0.0) or 0.0) for item in health_history]
     score_delta = round(scores[-1] - scores[0], 3) if len(scores) >= 2 else 0.0
     warning_series = [int(item.get("cadence_warning_count", 0) or 0) for item in health_history]
-    if len(scores) >= 3 and score_delta >= 0.08 and warning_series[-1] <= warning_series[0]:
+    recent_scores = scores[-4:]
+    recent_warnings = warning_series[-4:]
+    monotonic_decline = len(recent_scores) >= 3 and all(recent_scores[i] <= recent_scores[i - 1] for i in range(1, len(recent_scores))) and recent_scores[-1] < recent_scores[0]
+    warning_rise = len(recent_warnings) >= 3 and recent_warnings[-1] > recent_warnings[0]
+    monotonic_improve = len(recent_scores) >= 3 and all(recent_scores[i] >= recent_scores[i - 1] for i in range(1, len(recent_scores))) and recent_scores[-1] > recent_scores[0]
+    warning_ease = len(recent_warnings) >= 3 and recent_warnings[-1] <= recent_warnings[0]
+    if len(scores) >= 3 and (score_delta >= 0.08 or (monotonic_improve and score_delta >= 0.04)) and warning_ease:
         trend_label = "improving"
-    elif len(scores) >= 3 and score_delta <= -0.08:
+    elif len(scores) >= 3 and (score_delta <= -0.08 or (monotonic_decline and warning_rise and score_delta <= -0.04)):
         trend_label = "degrading"
     elif len(scores) >= 3 and max(scores) - min(scores) <= 0.03:
         trend_label = "stable"

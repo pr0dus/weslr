@@ -460,5 +460,19 @@
     "Known risks": "Cadence interpretation still uses short-window heuristics and trusts the material_change_detected flag; if upstream material-change detection is too coarse, healthy vs unhealthy cadence may still sometimes be misclassified.",
     "Next exact step": "Persist and expose a compact reflection health trend so operators can see whether reflection quality/cadence is stabilizing, improving, or degrading across multiple checks instead of only reading the latest snapshot.",
     "Resume hint": "Inspect sim.py evaluate_reflection_quality cadence_report logic and consider adding a short history of average_score + cadence flags over the last few reflection-store runs before moving to dashboard surfacing."
+  },
+  {
+    "id": "continuation-1774514085-34",
+    "created_at": 1774514085,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Persist and expose a compact reflection health trend so operators can see whether reflection quality and cadence are stabilizing, improving, or degrading across recent checks.",
+    "Completed": "Inspected the reflection store/report path, added bounded health_history persistence, computed a compact health_trend inside quality_report, and surfaced the same trend as top-level health_report in reflection-store output.",
+    "Files changed": "sim.py",
+    "Behavior changed": "reflection-store now preserves recent reflection health snapshots and reports a short-run trend label with score delta, recent scores, flag counts, warning counts, and bounded history so operators can see movement over time instead of only the latest reflection snapshot.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic improving probe confirmed health_trend label improving with shrinking warning counts; synthetic modest-decline probe remained mixed under the current conservative degradation threshold.",
+    "Known risks": "Trend labeling is intentionally conservative and threshold-based; mild declines may remain classified as mixed until a larger score drop or longer worsening run appears. This avoids overreacting but may under-call early degradation.",
+    "Next exact step": "Tune trend interpretation so repeated modest declines plus rising warning counts can register as early degradation without becoming jumpy on one-off noise.",
+    "Resume hint": "Inspect sim.py health_history / health_trend logic inside evaluate_reflection_quality; if the next move is tuning, consider combining score delta with monotonic worsening or warning-count slope rather than only absolute threshold."
   }
 ]
