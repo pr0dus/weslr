@@ -34,6 +34,7 @@ from autonomous_intentionality import (
     execute_plan_step, AutonomousIntentState
 )
 from embodiment import physical_reasoning_report, theory_of_mind_report, implicature_report, full_embodiment_test
+from psychology_knowledge import generate_psychological_self_description
 
 
 def emit(data):
@@ -344,6 +345,13 @@ def cmd_embodiment_test(args):
     question = args.question
     result = full_embodiment_test(question)
     emit(result)
+
+
+def cmd_psychological_self(_args):
+    """Show psychological self-description."""
+    self_state = load_communicator_self()
+    desc = generate_psychological_self_description(self_state)
+    emit({"psychological_self_description": desc})
 
 
 def cmd_create_plan(args):
@@ -687,6 +695,9 @@ def main():
     p = sub.add_parser("embodiment-test", help="run full embodiment test (physical + ToM + implicature)")
     p.add_argument("question", help="question to test")
     p.set_defaults(func=cmd_embodiment_test)
+
+    p = sub.add_parser("psychological-self", help="show psychological self-description")
+    p.set_defaults(func=cmd_psychological_self)
 
     p = sub.add_parser("create-plan", help="create a new plan for a goal")
     p.add_argument("goal", help="the goal or task to plan")

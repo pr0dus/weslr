@@ -221,6 +221,13 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     if unresolved_threads:
         identity_summary = f"{identity_summary}; carrying {len(unresolved_threads)} unresolved shared thread(s)"
 
+    # Generate psychological self-description
+    from psychology_knowledge import generate_psychological_self_description
+    psychological_desc = generate_psychological_self_description(self_state)
+    if psychological_desc and "trying to remain continuous" not in psychological_desc:
+        psychological_desc = psychological_desc.replace("core drives", identity_summary) if identity_summary else psychological_desc
+        identity_summary = psychological_desc if psychological_desc else identity_summary
+
     identity_state.update({
         "declared_name": str(identity_state.get("declared_name") or self_state.get("identity_anchor") or "CircleForge"),
         "visible_name": str(identity_state.get("visible_name") or self_state.get("identity_anchor") or "CircleForge"),
@@ -240,6 +247,8 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     
     # Update self-model with session continuity
     from session_continuity import update_self_model_with_continuity, get_session_continuity, load_session_state
+    from psychology_knowledge import integrate_psychology_into_self_model, generate_psychological_self_description
+    
     continuity = get_session_continuity()
     session_state = load_session_state()
     session_count = session_state.get("session_count", 1)
@@ -250,6 +259,9 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
     self_state["identity_state"]["continuity_markers"]["session_count"] = session_count
     self_state["identity_state"]["continuity_markers"]["identity_stability"] = min(0.99, 0.5 + (session_count * 0.05) + float(self_state.get("dynamic_mind_state", {}).get("stability", 0.0)) * 0.3)
     self_state["identity_state"]["continuity_markers"]["continuity_preference"] = min(0.99, 0.3 + (session_count * 0.07) + float(self_state.get("dynamic_mind_state", {}).get("attachment", 0.0)) * 0.2)
+    
+    # Integrate psychology into self-model
+    self_state = integrate_psychology_into_self_model(self_state)
     
     # Update self-description based on continuity
     if session_count > 3:
