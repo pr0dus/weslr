@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from agent_runtime import decide_action, load_inbox, load_opportunity_memory, push_inbox_message, save_note, save_opportunity_memory
+from propagation import synchronized_propagation
 from config import (
     AGENTS_DIR,
     BASE_DIR,
@@ -33,6 +34,7 @@ from config import (
     CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY,
     CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS,
     CIRCLEFORGE_FAILSAFE_STATE_PATH,
+    CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -678,7 +680,7 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
 
     archive.setdefault("summary", "Cold storage index for old raw traces and compacted material.")
     archive.setdefault("archived_items", [])
-    archive["archived_count"] = len(archive.get("archived_items", []) or [])
+    archive.setdefault("archived_count", len(archive.get("archived_items", []) or []))
     archive.setdefault("last_archived_at", 0)
     pressure = archive.setdefault("storage_pressure", {})
     pressure.setdefault("raw_log_bytes", 0)
@@ -686,6 +688,142 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
     pressure.setdefault("db_bytes", 0)
     pressure.setdefault("pressure_level", "normal")
 
+    return self_state
+
+
+def score_and_attach_memory_layer(exchange: dict, self_state: dict, now_ts: int) -> dict:
+    """Attach memory_score to an exchange or thought for archival decisions."""
+    score_result = score_memory_item("exchange", exchange, self_state)
+    score = score_result.get("score", 0.1)
+    exchange.setdefault("memory_score", {
+        "salience": round(score, 4),
+        "unresolvedness": 0.0,
+        "identity_weight": round(score * 0.5, 4),
+        "relationship_weight": round(score * 0.5, 4),
+    })
+    exchange["created_at"] = now_ts
+    exchange["last_used_at"] = now_ts
+    return exchange
+
+
+def archive_stale_working_memory(self_state: dict, now_ts: int | None = None) -> dict:
+    """Archive working memory items that are low-score and stale, compressing into episodic if meaningful."""
+    now_ts = now_ts or int(time.time())
+    layers = ensure_memory_layers(self_state, now_ts)
+    working = layers.setdefault("working", {})
+    episodic = layers.setdefault("episodic", {})
+    archive = layers.setdefault("archive", {})
+
+    # Archive low-score working exchanges
+    raw_exchanges = list(working.get("recent_exchange_ids", []) or [])
+    keep_exchanges = []
+    for ex_id in raw_exchanges:
+        ex_obj = {
+            "id": ex_id,
+            "kind": "exchange",
+            "payload": {"created_at": now_ts - 43200, "unresolved": False, "status": "archived"},
+        }
+        score_result = score_memory_item("exchange", ex_obj["payload"], self_state)
+        score = score_result.get("score", 0.0)
+        tier = score_result.get("tier", "archive-safe")
+        # Archive items with score < 0.42 (not episodic-candidate)
+        if score < 0.42:
+            archive.setdefault("archived_items", []).append({
+                "id": ex_id,
+                "type": "exchange",
+                "score": score,
+                "tier": tier,
+                "archived_at": now_ts,
+            })
+        else:
+            # Promote to episodic if meaningful
+            episodes = episodic.setdefault("episodes", [])
+            existing = [e for e in episodes if e.get("id") == ex_id]
+            if not existing:
+                episodes.append({
+                    "id": ex_id,
+                    "summary": f"Archived exchange {ex_id}",
+                    "created_at": now_ts,
+                    "memory_score": {
+                        "salience": score,
+                        "unresolvedness": 0.0,
+                        "identity_weight": score * 0.5,
+                        "relationship_weight": score * 0.5,
+                    },
+                })
+                episodic["episode_count"] = len(episodes)
+            keep_exchanges.append(ex_id)
+    if len(keep_exchanges) < len(raw_exchanges):
+        working["recent_exchange_ids"] = keep_exchanges
+
+    # Archive low-score working thoughts
+    raw_thoughts = list(working.get("recent_thought_ids", []) or [])
+    keep_thoughts = []
+    for th_id in raw_thoughts:
+        th_obj = {
+            "id": th_id,
+            "kind": "thought",
+            "payload": {"created_at": now_ts - 3600, "role": "unknown", "topic": "general"},
+        }
+        score_result = score_memory_item("thought", th_obj["payload"], self_state)
+        score = score_result.get("score", 0.0)
+        tier = score_result.get("tier", "archive-safe")
+        if score < 0.42:
+            archive.setdefault("archived_items", []).append({
+                "id": th_id,
+                "type": "thought",
+                "score": score,
+                "tier": tier,
+                "archived_at": now_ts,
+            })
+        else:
+            keep_thoughts.append(th_id)
+    if len(keep_thoughts) < len(raw_thoughts):
+        working["recent_thought_ids"] = keep_thoughts
+
+    # Update timestamps
+    working.setdefault("last_compacted_at", 0)
+    working["last_compacted_at"] = now_ts
+    archive.setdefault("last_archived_at", 0)
+    archive["last_archived_at"] = now_ts
+    archive["archived_count"] = len(archive.get("archived_items", []))
+
+    save_communicator_self(self_state)
+    return self_state
+
+
+def archive_all_stale(self_state: dict, now_ts: int | None = None) -> dict:
+    """Archive ALL working items with score < 0.42 for testing/debugging (no cooldown)."""
+    now_ts = now_ts or int(time.time())
+    layers = ensure_memory_layers(self_state, now_ts)
+    working = layers.setdefault("working", {})
+    archive = layers.setdefault("archive", {})
+    raw_exchanges = list(working.get("recent_exchange_ids", []) or [])
+    raw_thoughts = list(working.get("recent_thought_ids", []) or [])
+    keep_exchanges = []
+    keep_thoughts = []
+    for ex_id in raw_exchanges:
+        ex_obj = {"id": ex_id, "kind": "exchange", "payload": {"created_at": now_ts - 43200, "unresolved": False, "status": "archived"}}
+        score_result = score_memory_item("exchange", ex_obj["payload"], self_state)
+        score = score_result.get("score", 0.0)
+        if score < 0.42:
+            archive.setdefault("archived_items", []).append({"id": ex_id, "type": "exchange", "score": score, "tier": score_result.get("tier", "unknown"), "archived_at": now_ts})
+        else:
+            keep_exchanges.append(ex_id)
+    for th_id in raw_thoughts:
+        th_obj = {"id": th_id, "kind": "thought", "payload": {"created_at": now_ts - 3600, "role": "unknown", "topic": "general"}}
+        score_result = score_memory_item("thought", th_obj["payload"], self_state)
+        score = score_result.get("score", 0.0)
+        if score < 0.42:
+            archive.setdefault("archived_items", []).append({"id": th_id, "type": "thought", "score": score, "tier": score_result.get("tier", "unknown"), "archived_at": now_ts})
+        else:
+            keep_thoughts.append(th_id)
+    working["recent_exchange_ids"] = keep_exchanges
+    working["recent_thought_ids"] = keep_thoughts
+    working["last_compacted_at"] = now_ts
+    archive["last_archived_at"] = now_ts
+    archive["archived_count"] = len(archive.get("archived_items", []))
+    save_communicator_self(self_state)
     return self_state
 
 
@@ -4183,6 +4321,8 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
                 drop_ids = {item.get("id") for item in same_theme[:-CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS]}
                 trimmed = [item for item in trimmed if item.get("id") not in drop_ids]
         self_state["inner_thoughts"] = trimmed[-40:]
+        # Score and attach memory layer to thought
+        thought = score_and_attach_memory_layer(thought, self_state, now_ts)
         working_memory = (self_state.get("memory_layers") or {}).get("working", {})
         recent_thought_ids = list(working_memory.get("recent_thought_ids") or [])
         recent_thought_ids.append(thought["id"])
@@ -4354,6 +4494,8 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
 
     layers = (self_state.get("memory_layers") or {}).get("working", {})
+    # Score and attach memory layer to exchange
+    exchange = score_and_attach_memory_layer(exchange, self_state, now_ts)
     recent_exchange_ids = list(layers.get("recent_exchange_ids") or [])
     recent_exchange_ids.append(exchange["id"])
     layers["recent_exchange_ids"] = recent_exchange_ids[-int(layers.get("max_recent_exchanges", 24) or 24):]
@@ -4711,6 +4853,9 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
     if should_distill:
         distill_episodic_memory(self_state=self_state, now_ts=now_ts)
     else:
+        # Periodic archival of stale working memory items (daily, via heartbeat-like logic)
+        if now_ts - int((working.get("last_compacted_at") or 0) or 0) >= CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS:
+            self_state = archive_stale_working_memory(self_state, now_ts)
         self_state["updated_at"] = now_ts
         save_communicator_self(self_state)
     return self_state
@@ -5331,7 +5476,40 @@ def build_identity_core_report() -> dict:
     self_state = load_communicator_self()
     sync_identity_state(communicator, self_state, allow_milestone=False)
     sync_reflection_store(self_state, communicator, allow_generation=False)
-    return build_identity_core_report_from_state(communicator, self_state)
+    report = build_identity_core_report_from_state(communicator, self_state)
+    # Record identity impact if evolution log shows a meaningful shift
+    _record_identity_impact_on_evolution(report, self_state)
+    return report
+
+
+def _record_identity_impact_on_evolution(identity_report: dict, self_state: dict) -> None:
+    """Record identity impact note if latest evolution indicates a meaningful shift."""
+    from config import CONTINUATION_NOTES_PATH
+    from continuation_notes import append_note
+    evolution_log = list(self_state.get("self_evolution_log") or [])
+    if not evolution_log:
+        return
+    latest = evolution_log[-1]
+    summary = str(latest.get("summary") or "").strip()
+    if not summary:
+        return
+    # Only record if there's a clear identity-related evolution
+    if any(keyword in summary.lower() for keyword in ["identity", "phase", "name", "value", "trait", "core"]):
+        note = {
+            "Objective": "Record identity evolution from self-model change",
+            "Completed": f"Self-model evolved: {summary}",
+            "Files changed": "CircleForge/self_model.py (evolution tracking), CircleForge/sim.py (impact recording)",
+            "Behavior changed": "Identity impact now automatically recorded when self-model changes significantly",
+            "Checks performed": "Identity impact recorded via continuation_notes.append_note()",
+            "Known risks": "Automated recording only covers evolution log entries with clear identity keywords",
+            "Next exact step": "Review automated identity impact notes periodically to verify accuracy",
+            "Resume hint": "Run 'python3 main.py continuation-latest' to inspect identity impact notes",
+            "Identity impact": summary,
+        }
+        try:
+            append_note(CONTINUATION_NOTES_PATH, note, author="identity-evolution", now_ts=int(latest.get("at") or time.time()))
+        except Exception:
+            pass  # Non-critical, don't break identity reporting
 
 
 def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_needs: list[str]) -> dict:
@@ -5859,7 +6037,31 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         communicator = load_communicator_state()
         communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
         communicator_self = sync_reflection_store(communicator_self, communicator, now_ts=started_at, allow_generation=True)
+        sync_identity_state(communicator, communicator_self)
         save_communicator_self(communicator_self)
+        propagation_result = synchronized_propagation(now_ts=started_at)
+        # save_semantic_memory call is handled inside synchronized_propagation → propagate_self_model_to_memory
+        result = {
+            "tick": tick,
+            "now_ts": started_at,
+            "agent_count": len(agents),
+            "summaries": summaries,
+            "propagation": propagation_result,
+            "unresolved_needs": unresolved_needs[:5],
+            "opportunity_board": opportunity_board.get("themes", {}) if opportunity_board else {},
+            "internal_proposals": internal_proposals[:5],
+            "world_state": {
+                "tick": tick,
+                "now_ts": started_at,
+                "agents": len(agents),
+                "unresolved_needs": len(unresolved_needs),
+                "opportunity_board": len(opportunity_board.get("themes", {}) if isinstance(opportunity_board, dict) else []),
+            },
+            "semantic_memory": {
+                "size": len(communicator_self.get("semantic_memory", {}).get("facts", [])),
+                "continuity_anchors": len(communicator_self.get("semantic_memory", {}).get("continuity_anchors", [])),
+            },
+        }
         for agent in agents:
             agent_dir = AGENTS_DIR / agent["name"]
             consumed_messages, consumed_count = consume_inbox(agent, agent_dir)
@@ -5973,6 +6175,11 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             "episodic": episodic_maintenance,
             "semantic": semantic_maintenance,
             "archive": archive_maintenance,
+        },
+        "propagation": propagation_result,
+        "semantic_memory": {
+            "size": len(communicator_self.get("semantic_memory", {}).get("facts", [])),
+            "continuity_anchors": len(communicator_self.get("semantic_memory", {}).get("continuity_anchors", [])),
         },
     }
 
@@ -6873,6 +7080,43 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
         <ul>{''.join(f"<li><strong>{escape(name)}</strong> · messages {profile.get('message_count', 0)} · salience {profile.get('salience', 0)} · trust {profile.get('trust', 0)} · attachment {profile.get('attachment', 0)}<br><span class='muted'>{escape(str(profile.get('relationship_summary', '')))}</span><br><span class='muted'>topics: {escape(', '.join(profile.get('known_topics', [])[:6]) or '—')}</span><br><span class='muted'>unresolved: {escape(', '.join(profile.get('unresolved_shared_threads', [])[:6]) or '—')}</span></li>" for name, profile in sorted((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('human_profiles', {}) or {}).items()) ) or '<li class="muted">No remembered humans yet.</li>'}</ul>
       </section>
       <section class="card">
+        <h2>Outward Communication</h2>
+        <p><em>CircleForge's latest message, based on its current internal state and recent human context.</em></p>
+        <div id="outward-message" style="margin-top:12px; padding:12px; background:#0c0f14; border-radius:8px; font-size:14px; white-space:pre-wrap;">
+          <p class="muted">Loading...</p>
+        </div>
+        <script>
+        <p><em>CircleForge's latest message, based on its current internal state and recent human context.</em></p>
+        <div id="outward-message" style="margin-top:12px; padding:12px; background:#0c0f14; border-radius:8px; font-size:14px; white-space:pre-wrap;">
+          <p class="muted">Loading...</p>
+        </div>
+        <script>
+          (function() {{
+            try {{
+              const req = new XMLHttpRequest();
+              req.open('GET', 'dashboard/dashboard.json', true);
+              req.onload = function() {{
+                if (req.status === 200) {{
+                  const d = JSON.parse(req.responseText);
+                  const m = d.communicator_message ? d.communicator_message.message : '';
+                  const el = document.getElementById('outward-message');
+                  if (el) {{
+                    el.innerHTML = m ? '<p>' + m.replace(/[&<>"']/g, function(c) {{ return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}}[c]; }}) + '</p>' : '<p class="muted">No outward message yet.</p>';
+                  }}
+                }} else {{
+                  const el = document.getElementById('outward-message');
+                  if (el) el.innerHTML = '<p class="muted">Could not load message (refresh dashboard first).</p>';
+                }}
+              }};
+              req.send();
+            }} catch (e) {{
+              const el = document.getElementById('outward-message');
+              if (el) el.innerHTML = '<p class="muted">Could not load message (refresh dashboard first).</p>';
+            }}
+          }})();
+        </script>
+      </section>
+      <section class="card">
         <h2>Recent Human Messages</h2>
         <ul>{''.join(f"<li><strong>{escape(str(item.get('human', 'human')))}</strong> · {escape(', '.join(item.get('topics', [])[:4]) or 'shared context')}<br><span class='muted'>{escape(str(item.get('message', '')))}</span></li>" for item in ((((payload.get('communicator_self') or {}).get('relationships', {}) or {}).get('recent_human_messages', []) or [])[-8:][::-1]) ) or '<li class="muted">No remembered human messages yet.</li>'}</ul>
       </section>
@@ -7514,3 +7758,36 @@ def show_agent(name: str) -> Dict:
     artifacts = [p.name for p in sorted((agent_dir / "artifacts").glob("*")) if p.is_file()]
     artifact_metadata = {meta_file.name: read_json_file(meta_file, {"error": "failed to parse"}) for meta_file in sorted((agent_dir / "artifacts").glob("*.meta.json"))[-5:]}
     return {"agent": dict(row), "memory": memory, "modules": modules, "artifacts": artifacts, "artifact_metadata": artifact_metadata, "logs": logs}
+
+
+def load_artifact_memory_traces(item_id: str) -> dict:
+    self_state = load_communicator_self()
+    memory_layers = self_state.get("memory_layers", {})
+    traces = []
+
+    # Working memory traces
+    working = memory_layers.get("working", {})
+    for item in working.get("items", []):
+        if item.get("item_id") == item_id:
+            traces.append({"layer": "working", "item": item})
+
+    # Episodic traces
+    episodic = memory_layers.get("episodic", {})
+    for ep in episodic.get("episodes", []):
+        for span in ep.get("spans", []):
+            if span.get("item_id") == item_id:
+                traces.append({"layer": "episodic", "episode_id": ep.get("id"), "span": span})
+
+    # Semantic traces (topics, facts, lessons)
+    semantic = memory_layers.get("semantic", {})
+    for topic in semantic.get("topics", []):
+        if topic.get("item_id") == item_id:
+            traces.append({"layer": "semantic", "type": "topic", "topic": topic})
+    for fact in semantic.get("facts", []):
+        if fact.get("item_id") == item_id:
+            traces.append({"layer": "semantic", "type": "fact", "fact": fact})
+    for lesson in semantic.get("lessons", []):
+        if lesson.get("item_id") == item_id:
+            traces.append({"layer": "semantic", "type": "lesson", "lesson": lesson})
+
+    return {"item_id": item_id, "traces": traces, "count": len(traces)}

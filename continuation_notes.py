@@ -17,6 +17,10 @@ REQUIRED_FIELDS = [
     "Resume hint",
 ]
 
+OPTIONAL_FIELDS = [
+    "Identity impact",
+]
+
 
 class ContinuationNoteError(ValueError):
     pass
@@ -56,6 +60,9 @@ def validate_note_fields(note: dict) -> dict:
 def append_note(path: Path, note: dict, *, author: str = "operator", now_ts: int | None = None) -> dict:
     now_ts = int(now_ts or time.time())
     normalized = validate_note_fields(note)
+    # Add identity impact if present (optional field)
+    if "Identity impact" in note:
+        normalized["Identity impact"] = str(note["Identity impact"]).strip()
     notes = load_notes(path)
     entry = {
         "id": f"continuation-{now_ts}-{len(notes) + 1}",
@@ -76,8 +83,10 @@ def latest_note(path: Path) -> dict:
 
 def render_note_text(note: dict) -> str:
     if not note:
-        return "CONTINUATION NOTE\nObjective: \nCompleted: \nFiles changed: \nBehavior changed: \nChecks performed: \nKnown risks: \nNext exact step: \nResume hint: "
+        return "CONTINUATION NOTE\nObjective: \nCompleted: \nFiles changed: \nBehavior changed: \nChecks performed: \nKnown risks: \nNext exact step: \nResume hint: \nIdentity impact: "
     lines = ["CONTINUATION NOTE"]
     for field in REQUIRED_FIELDS:
         lines.append(f"{field}: {str(note.get(field, '')).strip()}")
+    if "Identity impact" in note:
+        lines.append(f"Identity impact: {str(note['Identity impact']).strip()}")
     return "\n".join(lines)

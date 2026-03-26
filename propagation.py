@@ -72,6 +72,15 @@ def propagate_self_model_to_memory(now_ts: int) -> dict:
             stable_topics.append(trait)
 
     semantic["stable_topics"] = stable_topics[-24:]
+    
+    # Merge continuity anchors and durable lessons from memory layers if present
+    mem_layers = self_state.get("memory_layers", {}) or {}
+    sem_mem = mem_layers.get("semantic", {}) or {}
+    if sem_mem.get("continuity_anchors"):
+        semantic["continuity_anchors"] = sem_mem["continuity_anchors"]
+    if sem_mem.get("durable_lessons"):
+        semantic["durable_lessons"] = sem_mem["durable_lessons"]
+    
     semantic["last_updated_at"] = now_ts
 
     save_semantic_memory(semantic)

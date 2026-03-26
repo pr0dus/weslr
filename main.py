@@ -14,7 +14,7 @@ from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, T
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
-from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
+from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 
 
 def emit(data):
@@ -137,6 +137,11 @@ def cmd_memory_scores(_args):
     emit(build_memory_score_report())
 
 
+def cmd_artifact_memory(args):
+    from sim import load_artifact_memory_traces
+    emit(load_artifact_memory_traces(args.id))
+
+
 def cmd_episodic_summarize(_args):
     emit(distill_episodic_memory())
 
@@ -161,6 +166,24 @@ def cmd_prune_memory(_args):
     emit(prune_archived_memory())
 
 
+def cmd_archive_stale(_args):
+    from sim import archive_stale_working_memory, load_communicator_self, save_communicator_self
+    now_ts = int(time.time())
+    self_state = load_communicator_self()
+    self_state = archive_stale_working_memory(self_state, now_ts)
+    save_communicator_self(self_state)
+    emit({"archived": True, "timestamp": now_ts})
+
+
+def cmd_archive_items(_args):
+    from sim import archive_all_stale, load_communicator_self, save_communicator_self
+    now_ts = int(time.time())
+    self_state = load_communicator_self()
+    self_state = archive_all_stale(self_state, now_ts)
+    save_communicator_self(self_state)
+    emit({"archived": True, "timestamp": now_ts})
+
+
 def cmd_communicator_message(_args):
     emit(build_communicator_message())
 
@@ -183,6 +206,21 @@ def cmd_embedded_self_test(_args):
 
 def cmd_human_exchange(args):
     emit(record_human_exchange(args.name, args.message, response=args.response, topics=args.topics, unresolved=not args.resolved))
+
+
+def cmd_communicator_message(args):
+    # Accept an optional message from a human to generate a response
+    message = getattr(args, 'message', None)
+    if message:
+        emit(build_communicator_message_payload(
+            narrative=load_communicator_self().get("narrative_state"),
+            relationships=load_relationships(),
+            active_thread="human_message",
+            latest_human={"message": message},
+            research_context=None,
+        ))
+    else:
+        emit(build_communicator_message())
 
 
 def cmd_fetch_url(args):
@@ -460,11 +498,21 @@ def main():
     p = sub.add_parser("memory-lifecycle", help="show one compact summary of working, episodic, semantic, archive, and continuity state")
     p.set_defaults(func=cmd_memory_lifecycle)
 
+    p = sub.add_parser("artifact-memory", help="show memory traces linked to a specific artifact by id")
+    p.add_argument("id")
+    p.set_defaults(func=cmd_artifact_memory)
+
     p = sub.add_parser("archive-memory", help="manually archive low-priority traces once episodic/semantic preservation exists")
     p.set_defaults(func=cmd_archive_memory)
 
     p = sub.add_parser("prune-memory", help="manually prune raw archived traces when continuity protection allows it")
     p.set_defaults(func=cmd_prune_memory)
+
+    p = sub.add_parser("archive-stale", help="archive low-score working memory items into episodic or archive index")
+    p.set_defaults(func=cmd_archive_stale)
+
+    p = sub.add_parser("archive-items", help="archive all low-score working items (testing/debugging only)")
+    p.set_defaults(func=cmd_archive_items)
 
     p = sub.add_parser("communicator-message", help="show natural outward language plus behind-the-curtain metadata")
     p.set_defaults(func=cmd_communicator_message)

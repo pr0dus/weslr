@@ -161,6 +161,26 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
             "signature": signature,
         }
         evolution_log.append(milestone)
+        # Record a reflection note about this identity shift
+        reflection_store = self_state.setdefault("reflection_store", {
+            "items": [],
+            "last_reflected_at": now_ts,
+            "summary": "Private reflection artifacts with explicit reality-status tagging.",
+            "max_items": 48,
+        })
+        reflection_items = list(reflection_store.get("items") or [])
+        reflection_items.append({
+            "id": f"identity-milestone-{now_ts}-{len(evolution_log)}",
+            "at": now_ts,
+            "kind": "identity-milestone",
+            "status": "known",
+            "topic": "identity",
+            "content": f"Identity milestone: {milestone['summary']}",
+            "source": "identity_evolution",
+        })
+        reflection_store["items"] = reflection_items[-64:]
+        reflection_store["last_reflected_at"] = now_ts
+        self_state["reflection_store"] = reflection_store
         milestones = list(biography.get("milestones") or [])
         milestones.append({
             "at": now_ts,
