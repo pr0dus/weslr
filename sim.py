@@ -4982,6 +4982,7 @@ def distill_reflection_episodes(self_state: dict, now_ts: int | None = None) -> 
 
 
 def build_reflection_report(self_state: dict | None = None) -> dict:
+    should_persist = self_state is None
     if self_state is None:
         self_state = load_communicator_self()
         communicator = load_communicator_state()
@@ -4991,6 +4992,8 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
     sync_reflection_store(self_state, communicator, allow_generation=False)
     distill_reflection_episodes(self_state)
     evaluate_reflection_quality(self_state)
+    if should_persist:
+        save_communicator_self(self_state)
     return {
         "summary": (self_state.get("reflection_store") or {}).get("summary", ""),
         "last_reflected_at": (self_state.get("reflection_store") or {}).get("last_reflected_at", 0),

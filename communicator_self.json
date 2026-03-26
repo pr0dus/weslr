@@ -1156,14 +1156,6 @@
         "at": 1774482098
       },
       {
-        "kind": "reflection-pass",
-        "status": "proposed",
-        "topic": "understanding overall",
-        "content": "Known: the main open question is 'What is still unclear about understanding overall?'. Inferred: relationship continuity is being pulled by backup confidence, understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on understanding overall.",
-        "source": "reflection.generation_loop",
-        "at": 1774482098
-      },
-      {
         "kind": "open-question",
         "status": "known",
         "topic": "backup confidence",
@@ -1188,14 +1180,6 @@
         "at": 1774482214
       },
       {
-        "kind": "reflection-pass",
-        "status": "proposed",
-        "topic": "backup confidence",
-        "content": "Known: the main open question is 'What is still unclear about backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
-        "source": "reflection.generation_loop",
-        "at": 1774482214
-      },
-      {
         "kind": "open-question",
         "status": "known",
         "topic": "backup confidence",
@@ -1206,25 +1190,119 @@
       {
         "kind": "reflection-pass",
         "status": "proposed",
+        "topic": "understanding overall",
+        "content": "Known: the main open question is 'What is still unclear about understanding overall?'. Inferred: relationship continuity is being pulled by backup confidence, understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on understanding overall.",
+        "source": "reflection.generation_loop",
+        "at": 1774482098
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
         "topic": "backup confidence",
         "content": "Known: the main open question is 'What new uncertainty appeared after inspect on backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
         "source": "reflection.generation_loop",
         "at": 1774482215
       }
     ],
-    "last_reflected_at": 1774482215,
+    "last_reflected_at": 1774504040,
     "last_generated_at": 1774482215,
     "generation_cooldown_seconds": 300,
-    "last_compacted_at": 0,
+    "last_compacted_at": 1774504040,
     "max_items": 48,
     "status_counts": {
       "known": 4,
       "inferred": 2,
-      "proposed": 5,
+      "proposed": 4,
       "imagined": 0
     },
-    "episodes": [],
-    "max_episodes": 16
+    "episodes": [
+      {
+        "topic": "backup confidence",
+        "kind": "reflection-episode",
+        "status": "proposed",
+        "count": 2,
+        "first_at": 1774482214,
+        "last_at": 1774482215,
+        "summary": "Known: the main open question is 'What new uncertainty appeared after inspect on backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
+        "signature": "backup confidence::Known: the main open question is 'What new uncertainty appeared after inspect on backup confidence?'. Inferred: relationship continuity is being pulled by understanding. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on backup confidence.",
+        "last_distilled_at": 1774504040
+      }
+    ],
+    "max_episodes": 16,
+    "reflection_pass_retention": 1,
+    "last_pruned_reflection_passes": 1,
+    "quality_report": {
+      "checked_at": 1774504040,
+      "average_score": 1.0,
+      "flagged_items": [],
+      "recent_checks": [
+        {
+          "kind": "uncertainty",
+          "status": "known",
+          "topic": "understanding overall",
+          "source": "dynamic_mind_state.uncertainty",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "understanding overall",
+          "source": "communicator.active_pursuit",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "open-question",
+          "status": "known",
+          "topic": "backup confidence",
+          "source": "communicator.unresolved_question",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "thread-pressure",
+          "status": "inferred",
+          "topic": "understanding",
+          "source": "relationships.unresolved_shared_threads",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "backup confidence",
+          "source": "communicator.active_pursuit",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "open-question",
+          "status": "known",
+          "topic": "backup confidence",
+          "source": "communicator.unresolved_question",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "reflection-pass",
+          "status": "proposed",
+          "topic": "understanding overall",
+          "source": "reflection.generation_loop",
+          "score": 1.0,
+          "issues": []
+        },
+        {
+          "kind": "reflection-pass",
+          "status": "proposed",
+          "topic": "backup confidence",
+          "source": "reflection.generation_loop",
+          "score": 1.0,
+          "issues": []
+        }
+      ],
+      "summary": "Reflection reality-discipline looks healthy."
+    }
   },
   "identity_state": {
     "declared_name": "CircleForge",
