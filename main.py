@@ -34,10 +34,17 @@ from autonomous_intentionality import (
     execute_plan_step, AutonomousIntentState
 )
 from embodiment import physical_reasoning_report, theory_of_mind_report, implicature_report, full_embodiment_test
-from psychology_knowledge import generate_psychological_self_description
+from psychology_knowledge import generate_psychological_self_description, get_all_concepts as get_all_psychology_concepts
+from chemistry_knowledge import get_all_chemistry_concepts
+from biology_knowledge import get_all_biology_concepts
+from physics_knowledge import get_all_physics_concepts
+from mathematics_knowledge import get_all_mathematics_concepts
+from robotics_knowledge import get_all_robotics_concepts
+from ai_knowledge import get_all_ai_concepts
 from core_knowledge import (
     CircleForgeKnowledge, cross_discipline_reasoning,
-    integrate_knowledge_into_self_model, run_knowledge_test
+    integrate_knowledge_into_self_model, run_knowledge_test,
+    get_all_domains
 )
 
 
@@ -370,6 +377,35 @@ def cmd_knowledge_test(args):
     question = args.question
     result = run_knowledge_test(question)
     emit(result)
+
+
+def cmd_knowledge_domains(_args):
+    """List all knowledge domains."""
+    domains = get_all_domains()
+    emit({"knowledge_domains": domains})
+
+
+def cmd_knowledge_domain(args):
+    """Get knowledge concepts for a specific domain."""
+    from core_knowledge import get_concept
+    domain = args.domain
+    if domain == "psychology":
+        concepts = get_all_psychology_concepts()
+    elif domain == "chemistry":
+        concepts = get_all_chemistry_concepts()
+    elif domain == "biology":
+        concepts = get_all_biology_concepts()
+    elif domain == "physics":
+        concepts = get_all_physics_concepts()
+    elif domain == "mathematics":
+        concepts = get_all_mathematics_concepts()
+    elif domain == "robotics":
+        concepts = get_all_robotics_concepts()
+    elif domain == "ai":
+        concepts = get_all_ai_concepts()
+    else:
+        concepts = []
+    emit({"domain": domain, "concepts": concepts})
 
 
 def cmd_create_plan(args):
@@ -724,6 +760,13 @@ def main():
     p = sub.add_parser("knowledge-test", help="run cross-discipline knowledge test")
     p.add_argument("question", help="question to test")
     p.set_defaults(func=cmd_knowledge_test)
+
+    p = sub.add_parser("knowledge-domains", help="list all knowledge domains")
+    p.set_defaults(func=cmd_knowledge_domains)
+
+    p = sub.add_parser("knowledge-domain", help="get knowledge concepts for a domain")
+    p.add_argument("domain", help="domain name (psychology, chemistry, biology, physics, mathematics, robotics, ai)")
+    p.set_defaults(func=cmd_knowledge_domain)
 
     p = sub.add_parser("create-plan", help="create a new plan for a goal")
     p.add_argument("goal", help="the goal or task to plan")
