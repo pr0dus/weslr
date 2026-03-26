@@ -4772,6 +4772,8 @@ def default_reflection_store(now_ts: int | None = None) -> dict:
         "reflection_pass_retention": 1,
         "generation_history": [],
         "max_generation_history": 12,
+        "health_history": [],
+        "max_health_history": 10,
         "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
     }
 
@@ -4791,6 +4793,8 @@ def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict
     store.setdefault("reflection_pass_retention", 1)
     store.setdefault("generation_history", [])
     store.setdefault("max_generation_history", 12)
+    store.setdefault("health_history", [])
+    store.setdefault("max_health_history", 10)
     counts = store.setdefault("status_counts", {})
     for key in ("known", "inferred", "proposed", "imagined"):
         counts.setdefault(key, 0)
@@ -5094,6 +5098,29 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
         summary = "Reflection reality-discipline looks healthy, but repetition and cadence pressure are visible."
     elif avg_score < 0.85:
         summary = "Reflection reality-discipline needs tightening."
+    health_history = list(store.get("health_history") or [])
+    max_health_history = max(4, int(store.get("max_health_history", 10) or 10))
+    health_entry = {
+        "at": now_ts,
+        "average_score": avg_score,
+        "summary": summary,
+        "flag_count": len([item for item in checks if item.get("issues")]) + len(cadence_flags),
+        "cadence_warning_count": len([flag for flag in cadence_flags if str(flag.get("status") or "") == "warning"]),
+    }
+    if not health_history or health_history[-1] != health_entry:
+        health_history.append(health_entry)
+    health_history = health_history[-max_health_history:]
+    scores = [float(item.get("average_score", 0.0) or 0.0) for item in health_history]
+    score_delta = round(scores[-1] - scores[0], 3) if len(scores) >= 2 else 0.0
+    warning_series = [int(item.get("cadence_warning_count", 0) or 0) for item in health_history]
+    if len(scores) >= 3 and score_delta >= 0.08 and warning_series[-1] <= warning_series[0]:
+        trend_label = "improving"
+    elif len(scores) >= 3 and score_delta <= -0.08:
+        trend_label = "degrading"
+    elif len(scores) >= 3 and max(scores) - min(scores) <= 0.03:
+        trend_label = "stable"
+    else:
+        trend_label = "mixed"
     report = {
         "checked_at": now_ts,
         "average_score": avg_score,
@@ -5108,7 +5135,16 @@ def evaluate_reflection_quality(self_state: dict, now_ts: int | None = None) -> 
             "blind_generated_count": blind_generated_count,
             "flags": cadence_flags,
         },
+        "health_trend": {
+            "label": trend_label,
+            "score_delta": score_delta,
+            "recent_scores": scores[-6:],
+            "recent_flag_counts": [int(item.get("flag_count", 0) or 0) for item in health_history][-6:],
+            "recent_warning_counts": warning_series[-6:],
+            "history": health_history[-6:],
+        },
     }
+    store["health_history"] = health_history
     store["quality_report"] = report
     self_state["reflection_store"] = store
     return self_state
@@ -5196,6 +5232,14 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
         "latest_suppression": store.get("last_generation_suppressed_for_repetition"),
         "latest_signature": store.get("last_reflection_generation_signature"),
     }
+    health_report = ((store.get("quality_report") or {}).get("health_trend") or {
+        "label": "mixed",
+        "score_delta": 0.0,
+        "recent_scores": [],
+        "recent_flag_counts": [],
+        "recent_warning_counts": [],
+        "history": [],
+    })
     return {
         "summary": store.get("summary", ""),
         "last_reflected_at": store.get("last_reflected_at", 0),
@@ -5206,6 +5250,7 @@ def build_reflection_report(self_state: dict | None = None) -> dict:
         "episodes": list((store.get("episodes") or []))[:8],
         "quality_report": (store.get("quality_report") or {}),
         "generation_report": generation_report,
+        "health_report": health_report,
     }
 
 

@@ -446,5 +446,19 @@
     "Known risks": "Cadence thresholds are still short-window heuristics; some legitimate bursty reflection control could be flagged as pressure until longer-run context or topic-sensitive thresholds are added.",
     "Next exact step": "Teach cadence diagnostics to distinguish healthy material-change-driven regeneration from noisy flip-flopping by weighting generated events differently when material_change_detected is true.",
     "Resume hint": "Inspect sim.py evaluate_reflection_quality cadence_report logic and generation_history event fields, then refine cadence scoring so material-change-driven refresh looks healthier than blind alternation."
+  },
+  {
+    "id": "continuation-1774505426-33",
+    "created_at": 1774505426,
+    "author": "operator",
+    "format": "circleforge.continuation-note.v1",
+    "Objective": "Refine reflection cadence diagnostics so material-change-driven regeneration is treated as healthier than blind generated/suppressed alternation.",
+    "Completed": "Inspected cadence scoring, separated material-change-driven generated events from blind generated events, and adjusted cadence diagnostics so alternating patterns only count as pressure when regeneration is not explained by material state change.",
+    "Files changed": "sim.py",
+    "Behavior changed": "quality_report cadence diagnostics now track material_change_generated_count and blind_generated_count; healthy material-refresh alternation is surfaced as a note instead of pressure, while blind oscillation remains a warning and still lowers score.",
+    "Checks performed": "python3 -m py_compile main.py sim.py self_model.py models.py config.py; python3 main.py reflection-store; synthetic material-refresh cadence probe confirmed a healthy summary with note-level cadence signal; synthetic blind-oscillation probe confirmed cadence-pressure summary and lowered score.",
+    "Known risks": "Cadence interpretation still uses short-window heuristics and trusts the material_change_detected flag; if upstream material-change detection is too coarse, healthy vs unhealthy cadence may still sometimes be misclassified.",
+    "Next exact step": "Persist and expose a compact reflection health trend so operators can see whether reflection quality/cadence is stabilizing, improving, or degrading across multiple checks instead of only reading the latest snapshot.",
+    "Resume hint": "Inspect sim.py evaluate_reflection_quality cadence_report logic and consider adding a short history of average_score + cadence flags over the last few reflection-store runs before moving to dashboard surfacing."
   }
 ]
