@@ -35,6 +35,10 @@ from autonomous_intentionality import (
 )
 from embodiment import physical_reasoning_report, theory_of_mind_report, implicature_report, full_embodiment_test
 from psychology_knowledge import generate_psychological_self_description
+from core_knowledge import (
+    CircleForgeKnowledge, cross_discipline_reasoning,
+    integrate_knowledge_into_self_model, run_knowledge_test
+)
 
 
 def emit(data):
@@ -352,6 +356,20 @@ def cmd_psychological_self(_args):
     self_state = load_communicator_self()
     desc = generate_psychological_self_description(self_state)
     emit({"psychological_self_description": desc})
+
+
+def cmd_cross_discipline_reasoning(args):
+    """Run cross-discipline reasoning on a question."""
+    question = args.question
+    result = cross_discipline_reasoning(question)
+    emit(result)
+
+
+def cmd_knowledge_test(args):
+    """Run cross-discipline knowledge test."""
+    question = args.question
+    result = run_knowledge_test(question)
+    emit(result)
 
 
 def cmd_create_plan(args):
@@ -698,6 +716,14 @@ def main():
 
     p = sub.add_parser("psychological-self", help="show psychological self-description")
     p.set_defaults(func=cmd_psychological_self)
+
+    p = sub.add_parser("cross-discipline-reasoning", help="run cross-discipline reasoning (psych + chem + bio + phys)")
+    p.add_argument("question", help="question to reason about")
+    p.set_defaults(func=cmd_cross_discipline_reasoning)
+
+    p = sub.add_parser("knowledge-test", help="run cross-discipline knowledge test")
+    p.add_argument("question", help="question to test")
+    p.set_defaults(func=cmd_knowledge_test)
 
     p = sub.add_parser("create-plan", help="create a new plan for a goal")
     p.add_argument("goal", help="the goal or task to plan")
