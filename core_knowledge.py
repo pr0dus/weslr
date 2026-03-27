@@ -51,6 +51,14 @@ from aviation_knowledge import (
     get_airspace_restrictions, integrate_aviation_into_self_model,
     generate_aviation_self_description, get_aviation_psychology_concept
 )
+from emergency_firstaid_knowledge import (
+    get_emergency_concept, get_all_emergency_concepts,
+    get_cardiac_arrest_procedure, get_bleeding_control_procedure, get_choking_procedure,
+    get_stroke_recognition, get_allergy_reaction_procedure, get_disaster_response_protocol,
+    get_emergency_agencies, get_agency_info, get_first_aid_by_condition,
+    get_do_not_commands, get_do_commands, integrate_emergency_into_self_model,
+    generate_emergency_self_description, get_emergency_psychology_concept
+)
 
 
 # ============================================================================
@@ -71,6 +79,7 @@ class WeslrKnowledge:
             "ai": get_all_ai_concepts(),
             "quantum_physics": get_all_quantum_physics_concepts(),
             "aviation": get_all_aviation_concepts(),
+            "emergency": get_all_emergency_concepts(),
         }
     
     def get_domain_knowledge(self, domain: str) -> list:
@@ -93,6 +102,8 @@ class WeslrKnowledge:
             return get_all_quantum_physics_concepts()
         elif domain == "aviation":
             return get_all_aviation_concepts()
+        elif domain == "emergency":
+            return get_all_emergency_concepts()
         return []
     
 def get_concept(domain: str, concept: str) -> dict:
@@ -115,6 +126,8 @@ def get_concept(domain: str, concept: str) -> dict:
         return get_quantum_physics_concept(concept)
     elif domain == "aviation":
         return get_aviation_concept(concept)
+    elif domain == "emergency":
+        return get_emergency_concept(concept)
     return {}
     
     def integrate_into_self_model(self, self_model: dict) -> dict:
@@ -137,7 +150,7 @@ def get_concept(domain: str, concept: str) -> dict:
 
 def get_all_domains() -> list:
     """Get all available knowledge domains."""
-    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai", "quantum_physics", "aviation"]
+    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai", "quantum_physics", "aviation", "emergency"]
 
 
 def cross_discipline_reasoning(question: str) -> dict:
