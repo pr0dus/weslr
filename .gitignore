@@ -45,3 +45,6 @@ MEMORY.md
 .openclaw/
 .memory/
 .learnings/
+
+# Language modules (can be configured per user)
+languages/
