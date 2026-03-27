@@ -2,38 +2,38 @@
   {
     "source_agent": "agent-1",
     "target_agent": "agent-2",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "signal",
+    "updated_at": 1774643000
   },
   {
     "source_agent": "agent-1",
     "target_agent": "agent-3",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "signal",
+    "updated_at": 1774643048
   },
   {
     "source_agent": "agent-1",
     "target_agent": "agent-4",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "signal",
+    "updated_at": 1774643058
   },
   {
     "source_agent": "agent-2",
     "target_agent": "agent-1",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "experiment-progress",
+    "updated_at": 1774645906
   },
   {
     "source_agent": "agent-2",
@@ -56,11 +56,11 @@
   {
     "source_agent": "agent-3",
     "target_agent": "agent-1",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "experiment-progress",
+    "updated_at": 1774645906
   },
   {
     "source_agent": "agent-3",
@@ -83,11 +83,11 @@
   {
     "source_agent": "agent-4",
     "target_agent": "agent-1",
-    "trust": 0.5,
-    "usefulness": 0.5,
+    "trust": 0.99,
+    "usefulness": 0.99,
     "friction": 0.0,
-    "last_event": "bootstrap",
-    "updated_at": 1774627082
+    "last_event": "experiment-progress",
+    "updated_at": 1774645906
   },
   {
     "source_agent": "agent-4",
@@ -106,5 +106,23 @@
     "friction": 0.0,
     "last_event": "bootstrap",
     "updated_at": 1774627082
+  },
+  {
+    "source_agent": "agent-1",
+    "target_agent": "agent-1",
+    "trust": 0.99,
+    "usefulness": 0.99,
+    "friction": 0.0,
+    "last_event": "experiment-progress",
+    "updated_at": 1774641624
+  },
+  {
+    "source_agent": "agent-5",
+    "target_agent": "agent-1",
+    "trust": 0.99,
+    "usefulness": 0.99,
+    "friction": 0.0,
+    "last_event": "experiment-progress",
+    "updated_at": 1774645906
   }
 ]
