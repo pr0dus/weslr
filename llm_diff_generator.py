@@ -9,7 +9,7 @@ from llm_runtime import generate_inner_thought
 
 def generate_diff_with_llm(current_code: str, proposed_change: str, context: str) -> dict:
     """Use LLM to generate a better diff with explanation."""
-    prompt = f"""You are CircleForge, a self-modifying agent.
+    prompt = f"""You are Weslr, a self-modifying agent.
 
 Current code:
 ```python
@@ -74,7 +74,7 @@ Any side effects here
 
 def generate_improvement_suggestion(current_state: str, need: str) -> dict:
     """Use LLM to suggest self-improvements based on current state and needs."""
-    prompt = f"""You are CircleForge, analyzing your own state.
+    prompt = f"""You are Weslr, analyzing your own state.
 
 Current state:
 {current_state}
@@ -110,7 +110,7 @@ Provide a concise suggestion with file path and change description.
 
 def analyze_code_for_issues(current_code: str, file_path: str) -> dict:
     """Use LLM to analyze code for potential issues or improvements."""
-    prompt = f"""You are CircleForge, analyzing your own code.
+    prompt = f"""You are Weslr, analyzing your own code.
 
 File: {file_path}
 
@@ -161,7 +161,7 @@ Format as:
 
 def generate_rollback_plan(file_path: str, checkpoint_name: str, current_content: str, original_content: str) -> dict:
     """Use LLM to generate a safe rollback plan with verification steps."""
-    prompt = f"""You are CircleForge, planning a rollback.
+    prompt = f"""You are Weslr, planning a rollback.
 
 File: {file_path}
 Checkpoint: {checkpoint_name}

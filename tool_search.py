@@ -22,7 +22,7 @@ def search_for_tool(need: str, limit: int = 5) -> dict:
     query = f"python {need} library api"
     encoded = urllib.parse.quote_plus(query)
     url = f"https://html.duckduckgo.com/html/?q={encoded}"
-    req = urllib.request.Request(url, headers={"User-Agent": "CircleForge/v0.5"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Weslr/v0.5"})
 
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -72,7 +72,7 @@ def fetch_url_text(url: str, max_chars: int = 8000) -> dict:
         return {"ok": False, "error": "No URL provided."}
 
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "CircleForge/v0.5"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Weslr/v0.5"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             raw = resp.read(1024 * 1024)
             content_type = str(resp.headers.get("Content-Type", ""))

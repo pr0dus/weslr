@@ -1,7 +1,7 @@
-# chemistry_knowledge.py - Chemistry foundation for CircleForge
+# chemistry_knowledge.py - Chemistry foundation for Weslr
 """
-Chemistry concepts that CircleForge should understand to model physical reality.
-This enables CircleForge to reason about physical relationships, containment,
+Chemistry concepts that Weslr should understand to model physical reality.
+This enables Weslr to reason about physical relationships, containment,
 and material properties.
 """
 from __future__ import annotations

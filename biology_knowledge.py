@@ -1,6 +1,6 @@
-# biology_knowledge.py - Biology foundation for CircleForge
+# biology_knowledge.py - Biology foundation for Weslr
 """
-Biology concepts that CircleForge should understand to model living systems,
+Biology concepts that Weslr should understand to model living systems,
 cells, organisms, and the distinction between living and non-living.
 """
 from __future__ import annotations

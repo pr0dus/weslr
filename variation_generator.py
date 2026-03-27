@@ -10,11 +10,9 @@ This module provides:
 from __future__ import annotations
 
 import json
-import math
 import os
 import random
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -440,7 +438,7 @@ def generate_variations_for_theme(
     
     Args:
         theme: The opportunity theme that was rejected
-        base_dir: Base directory (default: CircleForge directory)
+        base_dir: Base directory (default: Weslr directory)
         methods: List of methods to use: "markov", "bandit", "entropy", "gradient", "hybrid"
         max_variations: Maximum number of variations to generate per method
         

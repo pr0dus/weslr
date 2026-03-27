@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import re
 import time
 from pathlib import Path
 
@@ -56,7 +55,7 @@ def generate_autonomous_suggestion(current_state: str) -> dict:
     
     # Generate a high-level observation
     if suggestions:
-        summary = f"CircleForge has identified {len(suggestions)} potential self-improvement opportunities:"
+        summary = f"Weslr has identified {len(suggestions)} potential self-improvement opportunities:"
         for s in suggestions[:3]:
             summary += f"\n- {s.get('description', '')}"
     else:

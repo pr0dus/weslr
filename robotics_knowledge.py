@@ -1,6 +1,6 @@
-# robotics_knowledge.py - Robotics foundation for CircleForge
+# robotics_knowledge.py - Robotics foundation for Weslr
 """
-Robotics concepts that CircleForge should understand to model embodied systems,
+Robotics concepts that Weslr should understand to model embodied systems,
 movement, sensing, and interaction with physical environments.
 """
 from __future__ import annotations

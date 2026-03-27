@@ -1,1 +1,1 @@
-"""Language modules for CircleForge outward communication."""
+"""Language modules for Weslr outward communication."""

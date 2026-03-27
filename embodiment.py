@@ -10,13 +10,10 @@ These are key for sentience tests from the article:
 """
 from __future__ import annotations
 
-import json
 import re
 import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
-from config import BASE_DIR
 
 
 # ============================================================================

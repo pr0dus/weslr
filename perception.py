@@ -1,4 +1,4 @@
-"""Perception layer for CircleForge.
+"""Perception layer for Weslr.
 
 Handles incoming data streams, environmental sensing, attention filtering,
 and input prioritization for the communicator entity.
@@ -7,7 +7,7 @@ and input prioritization for the communicator entity.
 from __future__ import annotations
 
 import time
-from typing import Dict, List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any
 
 
 def build_human_exchange_payload(

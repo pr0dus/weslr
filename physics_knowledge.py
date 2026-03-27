@@ -1,6 +1,6 @@
-# physics_knowledge.py - Physics foundation for CircleForge
+# physics_knowledge.py - Physics foundation for Weslr
 """
-Physics concepts that CircleForge should understand to model physical reality,
+Physics concepts that Weslr should understand to model physical reality,
 forces, energy, motion, and the relationship between matter and energy.
 """
 from __future__ import annotations

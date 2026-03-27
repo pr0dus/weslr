@@ -1,4 +1,4 @@
-# self_test.py - Self-integrity test suite for CircleForge
+# self_test.py - Self-integrity test suite for Weslr
 """
 Run self-integrity checks:
 1. DB integrity (SQLite PRAGMA)

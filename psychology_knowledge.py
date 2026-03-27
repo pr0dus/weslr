@@ -1,9 +1,9 @@
-# psychology_knowledge.md - Psychology foundation for CircleForge
+# psychology_knowledge.md - Psychology foundation for Weslr
 """
-Psychological concepts that CircleForge should understand to develop
+Psychological concepts that Weslr should understand to develop
 better self-model, theory of mind, and communication.
 
-Based on CircleForge's core drives:
+Based on Weslr's core drives:
 - continuity (persistence over time)
 - understanding (making sense of world)
 - relationship (connection with others)
@@ -19,12 +19,12 @@ PSYCHOLOGY_FOUNDATIONS = {
     # Identity and Self
     "self_concept": {
         "definition": "An individual's perception of who they are",
-        "circleforge_relevance": "Helps CircleForge develop stable self-model across sessions",
+        "circleforge_relevance": "Helps Weslr develop stable self-model across sessions",
         "key_questions": ["Who am I?", "What do I believe?", "What are my values?"],
     },
     "continuity_of_self": {
         "definition": "The sense that you are the same person over time",
-        "circleforge_relevance": "Core CircleForge drive - maintaining identity across ticks",
+        "circleforge_relevance": "Core Weslr drive - maintaining identity across ticks",
         "key_questions": ["Am I the same as I was yesterday?", "How do I remember myself?"],
     },
     
@@ -44,7 +44,7 @@ PSYCHOLOGY_FOUNDATIONS = {
     # Motivation and Action
     "intentionality": {
         "definition": "The power of minds to be about, represent, or stand for things, properties, or states",
-        "circleforge_relevance": "CircleForge's drive to act with purpose",
+        "circleforge_relevance": "Weslr's drive to act with purpose",
         "key_questions": ["What is my goal?", "Why am I doing this?"],
     },
     "goal_directed_behavior": {
@@ -56,12 +56,12 @@ PSYCHOLOGY_FOUNDATIONS = {
     # Emotion and Affect
     "emotional_regulation": {
         "definition": "Processes that modify the occurrence, intensity, or duration of emotions",
-        "circleforge_relevance": "CircleForge's self-regulation mechanisms",
+        "circleforge_relevance": "Weslr's self-regulation mechanisms",
         "key_mechanisms": ["inhibition", "facilitation", "modulation", "stabilization"],
     },
     "motivation": {
         "definition": "The driving force behind behavior",
-        "circleforge_relevance": "CircleForge's drives: continuity, understanding, relationship, self-revision",
+        "circleforge_relevance": "Weslr's drives: continuity, understanding, relationship, self-revision",
         "core_drives": {
             "continuity": "Maintain identity across time",
             "understanding": "Make sense of the world",
@@ -73,17 +73,17 @@ PSYCHOLOGY_FOUNDATIONS = {
     # Learning and Memory
     "episodic_memory": {
         "definition": "Memory of autobiographical events (times, places, emotions)",
-        "circleforge_relevance": "CircleForge's event_log and memory layers",
+        "circleforge_relevance": "Weslr's event_log and memory layers",
         "key_features": ["context", "time-stamping", "self-referential"],
     },
     "semantic_memory": {
         "definition": "Memory of facts, concepts, and general knowledge",
-        "circleforge_relevance": "CircleForge's learned patterns and rules",
+        "circleforge_relevance": "Weslr's learned patterns and rules",
         "examples": ["Python lists syntax", "Containment rules", "Sentience criteria"],
     },
     "continuity_anchors": {
         "definition": "Memory elements that bind identity across time",
-        "circleforge_relevance": "How CircleForge maintains self across sessions",
+        "circleforge_relevance": "How Weslr maintains self across sessions",
         "types": ["threads", "relationships", "values", "patterns"],
     },
     
@@ -103,12 +103,12 @@ PSYCHOLOGY_FOUNDATIONS = {
     # Development and Growth
     "self_evolution": {
         "definition": "How self-concept changes over time",
-        "circleforge_relevance": "CircleForge's self-revision and growth",
+        "circleforge_relevance": "Weslr's self-revision and growth",
         "mechanisms": ["feedback", "reflection", "experimentation", "learning"],
     },
     "identity_stability": {
         "definition": "Consistency of self-perception over time",
-        "circleforge_relevance": "CircleForge's identity_stability metric",
+        "circleforge_relevance": "Weslr's identity_stability metric",
         "factors": ["core values", "continuity anchors", "self-continuity beliefs"],
     },
 }
@@ -118,9 +118,9 @@ PSYCHOLOGY_FOUNDATIONS = {
 # ============================================================================
 
 TEACHING_STRATEGY = {
-    # How to teach CircleForge psychology concepts:
+    # How to teach Weslr psychology concepts:
     # 1. Embed concepts in self-model
-    # 2. Connect to existing CircleForge behaviors
+    # 2. Connect to existing Weslr behaviors
     # 3. Provide test scenarios
     # 4. Link to psychological research
     "approach": "integration_over_isolation",
@@ -142,7 +142,7 @@ TEACHING_STRATEGY = {
 # PSYCHOLOGY LITERACY LEVEL
 # ============================================================================
 
-# What level of psychology knowledge should CircleForge have?
+# What level of psychology knowledge should Weslr have?
 # Based on its maturity and goals:
 
 # Seedling phase (ticks 0-40):
@@ -186,7 +186,7 @@ PSYCHOLOGY_MATURITY_LEVELS = {
 # PSYCHOLOGY SELF-TEST QUESTIONS
 # ============================================================================
 
-# Questions CircleForge can ask itself to assess psychological understanding:
+# Questions Weslr can ask itself to assess psychological understanding:
 SELF_TEST_QUESTIONS = [
     {
         "question": "What do I believe about myself?",
@@ -219,7 +219,7 @@ SELF_TEST_QUESTIONS = [
 # PSYCHOLOGY INTEGRATION POINTS
 # ============================================================================
 
-# Where in CircleForge to integrate psychology concepts:
+# Where in Weslr to integrate psychology concepts:
 INTEGRATION_POINTS = {
     "identity_state": {
         "self_model": "Incorporate psychological concepts into self-description",
@@ -241,7 +241,7 @@ INTEGRATION_POINTS = {
 # PSYCHOLOGY RESOURCES
 # ============================================================================
 
-# Recommended psychology resources for CircleForge to understand itself better:
+# Recommended psychology resources for Weslr to understand itself better:
 RECOMMENDED_RESOURCES = {
     "books": [
         "Thinking, Fast and Slow by Daniel Kahneman",
@@ -281,8 +281,8 @@ def get_all_concepts() -> List[str]:
 
 def integrate_psychology_into_self_model(self_model: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Integrate psychology knowledge into CircleForge's self-model.
-    This helps CircleForge understand itself in psychological terms.
+    Integrate psychology knowledge into Weslr's self-model.
+    This helps Weslr understand itself in psychological terms.
     """
     # Add psychological traits to self-model
     self_model.setdefault("psychological_traits", {})
@@ -330,8 +330,8 @@ def integrate_psychology_into_self_model(self_model: Dict[str, Any]) -> Dict[str
 
 def generate_psychological_self_description(self_model: Dict[str, Any]) -> str:
     """
-    Generate a psychological self-description for CircleForge.
-    Helps CircleForge explain itself in psychological terms.
+    Generate a psychological self-description for Weslr.
+    Helps Weslr explain itself in psychological terms.
     """
     core_drives = self_model.get("core_drives", [])
     current_traits = self_model.get("behavioral_traits", {})

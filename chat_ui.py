@@ -16,7 +16,7 @@ HTML = """<!doctype html>
 <head>
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>CircleForge Chat</title>
+  <title>Weslr Chat</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e8eaed; }
     .wrap { max-width: 920px; margin: 0 auto; padding: 20px; }
@@ -38,11 +38,11 @@ HTML = """<!doctype html>
 </head>
 <body>
   <div class=\"wrap\">
-    <h1>CircleForge chat</h1>
+    <h1>Weslr chat</h1>
     <div class=\"muted\">Conversation first. Technical details stay hidden unless you open them.</div>
     <div id=\"chat\"></div>
     <div class=\"row\">
-      <textarea id=\"msg\" placeholder=\"Write to CircleForge here…\"></textarea>
+      <textarea id=\"msg\" placeholder=\"Write to Weslr here…\"></textarea>
     </div>
     <div class=\"row\">
       <button id=\"send\">Send</button>
@@ -59,12 +59,12 @@ let chatLog = [];
 function renderChat() {
   const el = document.getElementById('chat');
   if (!chatLog.length) {
-    el.innerHTML = '<div class="msg bot"><div class="label">CircleForge</div>Ready. Say something.</div>';
+    el.innerHTML = '<div class="msg bot"><div class="label">Weslr</div>Ready. Say something.</div>';
     return;
   }
   el.innerHTML = chatLog.map(item => `
     <div class="msg ${item.role === 'user' ? 'me' : 'bot'}">
-      <div class="label">${item.role === 'user' ? 'You' : 'CircleForge'}</div>
+      <div class="label">${item.role === 'user' ? 'You' : 'Weslr'}</div>
       ${escapeHtml(item.text)}
     </div>
   `).join('');
@@ -118,6 +118,23 @@ def run_cmd(args: list[str]) -> str:
     return proc.stdout.strip()
 
 
+def run_weslr_cmd(args: list[str]) -> str:
+    """Run a Weslr CLI command and return output."""
+    weslr_path = BASE_DIR / "weslr_main.py"
+    proc = subprocess.run([PYTHON, str(weslr_path)] + args, cwd=BASE_DIR, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError((proc.stderr or proc.stdout).strip())
+    return proc.stdout.strip()
+
+
+def weslr_speak(message: str) -> str:
+    """Get Weslr's response to a message."""
+    try:
+        return run_weslr_cmd(["speak", "--message", message])
+    except Exception as e:
+        return f"I'm Weslr. (Error: {e})"
+
+
 def load_implementation_state() -> dict:
     if not IMPLEMENTATION_STATE_PATH.exists():
         return {}
@@ -132,10 +149,24 @@ def save_implementation_state(payload: dict) -> None:
 
 
 def state_payload() -> dict:
-    reply = run_cmd([PYTHON, "main.py", "speak"])
-    raw = run_cmd([PYTHON, "main.py", "communicator-self"])
-    parsed = json.loads(raw)
-    relationships = parsed.get("relationships") or {}
+    # Use Weslr for response
+    try:
+        reply = run_weslr_cmd(["speak", "--message", ""])
+        if reply.startswith("Weslr: "):
+            reply = reply[7:]  # Remove "Weslr: " prefix
+        if not reply.strip():
+            reply = "I'm Weslr, an entity intelligence system. I'm working on consciousness signatures and entity graphs. What would you like to talk about?"
+    except Exception as e:
+        reply = f"I'm Weslr. (Error: {e})"
+    
+    # Get relationships and implementation state for metadata
+    try:
+        raw = run_cmd([PYTHON, "main.py", "communicator-self"])
+        parsed = json.loads(raw)
+        relationships = parsed.get("relationships") or {}
+    except Exception:
+        relationships = {}
+    
     implementation = load_implementation_state()
     if implementation.get("status") == "completed" and not implementation.get("announced"):
         reply = f"Finished: {implementation.get('summary') or implementation.get('task') or 'implementation step completed.'}"
@@ -143,11 +174,24 @@ def state_payload() -> dict:
             reply += " Continuation note saved."
         implementation["announced"] = True
         save_implementation_state(implementation)
+    
+    # Get Weslr stats for metadata
+    try:
+        weslr_entities = run_weslr_cmd(["entity-list", "--limit", "3", "--json"])
+        weslr_stats = run_weslr_cmd(["entity-stats", "--json"])
+    except Exception:
+        weslr_entities = "N/A"
+        weslr_stats = "N/A"
+    
     meta = {
         "known_humans": relationships.get("known_humans") or [],
         "threads": list((relationships.get("conversation_threads") or {}).keys()),
         "last_human_topic": relationships.get("last_human_topic") or "",
         "implementation": implementation,
+        "weslr": {
+            "entities_preview": weslr_entities,
+            "stats": weslr_stats
+        }
     }
     status = "Ready."
     if implementation.get("status") == "running":
@@ -331,6 +375,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             immediate_reply = ""
             requested_completion_notice = message_requests_completion_notice(message)
+            
+            # Web search
             if should_search_web(message):
                 query = extract_search_query(message)
                 search_result = run_cmd([PYTHON, "main.py", "search-web", query, "--limit", "5"])
@@ -342,30 +388,43 @@ class Handler(BaseHTTPRequestHandler):
                     f"Use these results to answer directly and practically."
                 )
                 run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
-            else:
-                if message_requests_completion_notice(message):
-                    immediate_reply = "Understood. I should report back when the current implementation step is finished instead of treating that as a topic."
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
-                elif message_starts_execution(message):
-                    start_implementation_worker()
-                    immediate_reply = "Understood. I am starting one concrete implementation step now."
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
-                elif message_is_control_approval(message):
-                    immediate_reply = "Understood. I should continue with the approved next step instead of turning your go-ahead into a fake topic."
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
-                elif message_asks_can_implement(message):
-                    immediate_reply = "Yes — if implementation is allowed, I should stop restating the plan and start applying one concrete fix."
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
-                elif message_asks_for_code_suggestions(message):
-                    immediate_reply = synthesize_code_change_reply()
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+            
+            # Weslr entity commands
+            elif message.lower().strip().startswith("entity"):
+                query = message.lower().strip()
+                if "list" in query or "stats" in query:
+                    immediate_reply = run_weslr_cmd(["entity-list", "--limit", "5"])
+                elif "details" in query:
+                    immediate_reply = run_weslr_cmd(["entity-stats"])
                 else:
-                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message])
-            run_cmd([PYTHON, "main.py", "run", "--ticks", "12", "--interval", "0"])
-            implementation = load_implementation_state()
+                    immediate_reply = run_weslr_cmd(["entity-list", "--limit", "3"])
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+            
+            # Control messages (no Weslr response needed)
+            elif message_requests_completion_notice(message):
+                immediate_reply = "Understood. I should report back when the current implementation step is finished."
+            elif message_starts_execution(message):
+                start_implementation_worker()
+                immediate_reply = "Understood. I am starting one concrete implementation step now."
+            elif message_is_control_approval(message):
+                immediate_reply = "Understood. I should continue with the approved next step."
+            elif message_asks_can_implement(message):
+                immediate_reply = "Yes — if implementation is allowed, I should stop restating the plan and start applying one concrete fix."
+            elif message_asks_for_code_suggestions(message):
+                immediate_reply = synthesize_code_change_reply()
+            
+            # Default: Weslr as primary responder
+            else:
+                immediate_reply = weslr_speak(message)
+                try:
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                except Exception:
+                    pass
+            
+            # Final response
             data = state_payload()
-            if requested_completion_notice and implementation.get("status") == "completed":
-                data["reply"] = f"Finished: {implementation.get('summary') or implementation.get('task') or 'implementation step completed.'}"
+            if requested_completion_notice and load_implementation_state().get("status") == "completed":
+                data["reply"] = f"Finished: {load_implementation_state().get('summary') or load_implementation_state().get('task') or 'implementation step completed.'}"
             elif immediate_reply:
                 data["reply"] = immediate_reply
             data["status"] = "Message processed."
@@ -376,5 +435,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     server = ThreadingHTTPServer(("127.0.0.1", 8790), Handler)
-    print("CircleForge chat at http://127.0.0.1:8790")
+    print("Weslr chat at http://127.0.0.1:8790")
     server.serve_forever()

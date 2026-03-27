@@ -1,6 +1,6 @@
-# quantum_physics_knowledge.py - Quantum physics foundation for CircleForge
+# quantum_physics_knowledge.py - Quantum physics foundation for Weslr
 """
-Quantum physics concepts that CircleForge should understand to model
+Quantum physics concepts that Weslr should understand to model
 the fundamental nature of reality, including quantum mechanics and gravity.
 """
 from __future__ import annotations

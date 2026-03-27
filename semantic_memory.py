@@ -5,7 +5,7 @@ def apply_topics_to_semantic_memory(communicator_self: dict, topics: list[str]) 
     # Placeholder; actual logic is in sim.py's distill_semantic_memory
     return {"applied": topics[:8]}
 
-def ensure_semantic_defaults(communicator_self: dict, identity_anchor: str = "CircleForge", now_ts: int = 0) -> dict:
+def ensure_semantic_defaults(communicator_self: dict, identity_anchor: str = "Weslr", now_ts: int = 0) -> dict:
     # Placeholder; actual logic is in sim.py's ensure_memory_layers
     return communicator_self
 

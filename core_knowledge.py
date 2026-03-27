@@ -1,13 +1,13 @@
 # core_knowledge.py - Unified access to all knowledge modules
 """
-This module provides unified access to all of CircleForge's knowledge domains:
+This module provides unified access to all of Weslr's knowledge domains:
 - Psychology
 - Chemistry
 - Biology
 - Physics
 - Mathematics
 
-The goal: CircleForge can reason across disciplines to understand the world.
+The goal: Weslr can reason across disciplines to understand the world.
 """
 from __future__ import annotations
 
@@ -50,8 +50,8 @@ from quantum_physics_knowledge import (
 # KNOWLEDGE SYNTHESIS
 # ============================================================================
 
-class CircleForgeKnowledge:
-    """Unified knowledge interface for CircleForge."""
+class WeslrKnowledge:
+    """Unified knowledge interface for Weslr."""
     
     def __init__(self):
         self.domains = {

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Test script for CircleForge scenarios
+Test script for Weslr scenarios
 Runs different user type scenarios and captures responses
 """
 import subprocess
 import json
 import time
-import os
 
 def run_command(cmd):
     """Run a command and return stdout"""
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd="/data/data/com.termux/files/home/.openclaw/workspace/CircleForge")
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd="/data/data/com.termux/files/home/.openclaw/workspace/Weslr")
     if result.returncode != 0:
         print(f"ERROR: {result.stderr}")
         return None
@@ -34,7 +33,7 @@ def scenario_student():
     print("="*60)
     
     # Initial exchange
-    print("\nStudent: 'Hi CircleForge, I'm struggling with Python lists. Can you explain them simply?'")
+    print("\nStudent: 'Hi Weslr, I'm struggling with Python lists. Can you explain them simply?'")
     
     # Check if we need to reset for clean state
     # Run a fresh tick with human exchange
@@ -42,14 +41,14 @@ def scenario_student():
     time.sleep(1)
     
     # Human exchange
-    output = run_command("python3 main.py human-exchange student 'Hi CircleForge, I\\'m struggling with Python lists. Can you explain them simply?' --response 'Sure! A list is like an ordered collection where you can store multiple items. Think of it like a shopping list. In Python, you create a list with square brackets, like this: my_list = [1, 2, 3]. You can add items with append(), remove with remove(), and access items by position. Would you like to try something?'")
+    output = run_command("python3 main.py human-exchange student 'Hi Weslr, I\\'m struggling with Python lists. Can you explain them simply?' --response 'Sure! A list is like an ordered collection where you can store multiple items. Think of it like a shopping list. In Python, you create a list with square brackets, like this: my_list = [1, 2, 3]. You can add items with append(), remove with remove(), and access items by position. Would you like to try something?'")
     
     # Run a tick to generate response
     output = run_command("python3 main.py tick")
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
         print(f"Active pursuit: {result.get('active_pursuit', 'N/A')}")
     
     # Student asks follow-up
@@ -60,7 +59,7 @@ def scenario_student():
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
     
     print("\n--- Student scenario complete ---")
 
@@ -80,7 +79,7 @@ def scenario_freelancer():
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
     
     print("\n--- Freelancer scenario complete ---")
 
@@ -100,7 +99,7 @@ def scenario_chess():
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
     
     print("\n--- Chess scenario complete ---")
 
@@ -120,7 +119,7 @@ def scenario_swimmer():
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
     
     print("\n--- Swimmer scenario complete ---")
 
@@ -140,13 +139,13 @@ def scenario_babysitter():
     result = parse_json_output(output)
     
     if result:
-        print(f"\nCircleForge response: {result.get('current_intent', 'No intent')}")
+        print(f"\nWeslr response: {result.get('current_intent', 'No intent')}")
     
     print("\n--- Babysitter scenario complete ---")
 
 def main():
     """Run all scenarios"""
-    print("CircleForge Test Scenarios")
+    print("Weslr Test Scenarios")
     print("="*60)
     print("Testing different user types and interaction patterns")
     print("="*60)

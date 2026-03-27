@@ -1,19 +1,13 @@
 # self_eval.py - Self-evaluation, self-proposal, self-enablement
 from __future__ import annotations
 
-import json
 import time
-from pathlib import Path
 
-from llm_diff_generator import generate_improvement_suggestion
-from self_mod_enhancements import batch_modifications, validate_modification
-from behavioral_mathematics import BEHAVIOR_TRAITS, get_behavior_category, get_all_behavior_names
-from plugins import discover_plugins, load_plugins_config, list_plugins
-from config import BASE_DIR
+from plugins import list_plugins
 
 
 def check_plugin_ecosystem_health() -> dict:
-    """Check if CircleForge has adequate plugin capabilities."""
+    """Check if Weslr has adequate plugin capabilities."""
     result = list_plugins()
     discovered = result.get('discovered', [])
     enabled = result.get('enabled', [])
@@ -154,7 +148,7 @@ def run_self_evaluation(self_state: dict) -> dict:
     
     # Generate self-evaluation summary
     summary_parts = []
-    summary_parts.append(f"CircleForge is at phase: {identity.get('phase', 'unknown')}")
+    summary_parts.append(f"Weslr is at phase: {identity.get('phase', 'unknown')}")
     summary_parts.append(f"Current traits: {', '.join(traits[:6])}")
     
     if gaps:
@@ -284,7 +278,7 @@ def self_apply_changes(self_state: dict, validated_proposals: list[dict]) -> dic
 
 
 def generate_self_speech(self_state: dict, decisions: dict) -> str:
-    """Generate speech that explains what CircleForge decided to grow into."""
+    """Generate speech that explains what Weslr decided to grow into."""
     gaps = decisions.get('gaps', [])
     proposals = decisions.get('proposals', [])
     

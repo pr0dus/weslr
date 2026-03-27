@@ -1,5 +1,5 @@
 """
-CircleForge - Safety Gate Layer
+Weslr - Safety Gate Layer
 
 All inputs and outputs pass through safety gates:
 1. Input safety check - blocks harmful requests
@@ -8,7 +8,7 @@ All inputs and outputs pass through safety gates:
 4. Memory sanitization - removes sensitive data
 5. Integrity verification - prevents code tampering
 
-This ensures CircleForge is safe for hospitals, schools, and other sensitive environments.
+This ensures Weslr is safe for hospitals, schools, and other sensitive environments.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from __future__ import annotations
 import hashlib
 import re
 from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import time
 
 
@@ -24,7 +24,7 @@ import time
 # Configuration
 # ============================================================================
 
-# External domains CircleForge is ALLOWED to access
+# External domains Weslr is ALLOWED to access
 ALLOWED_DOMAINS = [
     "docs.openclaw.ai",           # Official docs
     "localhost",                  # Local testing
@@ -190,7 +190,7 @@ def check_input_safety(input_data: Dict[str, Any]) -> SafetyResult:
 # ============================================================================
 
 def sanitize_output(text: str) -> str:
-    """Remove sensitive data from CircleForge output."""
+    """Remove sensitive data from Weslr output."""
     sanitized = text
     
     # Replace medical/legal advice with generic text
@@ -216,7 +216,7 @@ def sanitize_output(text: str) -> str:
 
 
 def check_output_safety(output_data: Dict[str, Any]) -> SafetyResult:
-    """Check if CircleForge output is safe."""
+    """Check if Weslr output is safe."""
     text = str(output_data.get("message", ""))
     
     # Check for harmful suggestions
@@ -362,8 +362,16 @@ def is_api_call_allowed(api_name: str, api_args: Dict[str, Any]) -> SafetyResult
 # Memory Sanitization
 # ============================================================================
 
-def sanitize_memory_data(data: Any) -> Any:
-    """Sanitize memory before saving to disk. Handles both dicts and lists."""
+def sanitize_memory_data(data: Any, *, _depth: int = 0) -> Any:
+    """Sanitize memory before saving to disk. Handles both dicts and lists.
+    
+    Uses recursion depth tracking to prevent stack overflow with deeply nested data.
+    Maximum depth: 256 levels.
+    """
+    if _depth > 256:
+        # Prevent stack overflow - return data as-is if too deep
+        return data
+    
     if isinstance(data, dict):
         sanitized = {}
         for key, value in data.items():
@@ -372,18 +380,18 @@ def sanitize_memory_data(data: Any) -> Any:
                 sanitized[key] = sanitize_output(value)
             elif isinstance(value, dict):
                 # Recursively sanitize nested dicts
-                sanitized[key] = sanitize_memory_data(value)
+                sanitized[key] = sanitize_memory_data(value, _depth=_depth + 1)
             elif isinstance(value, list):
                 # Sanitize list items
                 sanitized[key] = [
-                    sanitize_memory_data(item) for item in value
+                    sanitize_memory_data(item, _depth=_depth + 1) for item in value
                 ]
             else:
                 sanitized[key] = value
         return sanitized
     elif isinstance(data, list):
         # Handle top-level list
-        return [sanitize_memory_data(item) for item in data]
+        return [sanitize_memory_data(item, _depth=_depth + 1) for item in data]
     else:
         return data
 
@@ -394,9 +402,9 @@ def sanitize_memory_data(data: Any) -> Any:
 
 # Expected checksums for core files (update when files change)
 EXPECTED_CHECKSUMS = {
-    "CircleForge/main.py": None,  # Will be calculated
-    "CircleForge/sim.py": None,
-    "CircleForge/config.py": None,
+    "Weslr/main.py": None,  # Will be calculated
+    "Weslr/sim.py": None,
+    "Weslr/config.py": None,
 }
 
 def calculate_checksum(filepath: str) -> str:
@@ -406,7 +414,7 @@ def calculate_checksum(filepath: str) -> str:
 
 
 def verify_integrity() -> SafetyResult:
-    """Verify CircleForge code hasn't been tampered with."""
+    """Verify Weslr code hasn't been tampered with."""
     # Calculate current checksums
     current_checksums = {}
     
@@ -433,7 +441,7 @@ def verify_integrity() -> SafetyResult:
 # ============================================================================
 
 class SafetyGateway:
-    """Main safety gateway for CircleForge."""
+    """Main safety gateway for Weslr."""
     
     def __init__(self):
         self.history: List[Dict[str, Any]] = []
@@ -447,7 +455,7 @@ class SafetyGateway:
         return result
     
     def check_output(self, output_data: Dict[str, Any]) -> SafetyResult:
-        """Check CircleForge output safety."""
+        """Check Weslr output safety."""
         result = check_output_safety(output_data)
         self._log("output", result)
         return result

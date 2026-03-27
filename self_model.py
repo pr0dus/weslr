@@ -71,7 +71,7 @@ def update_behavioral_trait(self_state: dict, trait_name: str, dt: float = 1.0) 
 
 
 def ensure_identity_scaffold(self_state: dict) -> dict:
-    identity_anchor = str(self_state.get("identity_anchor") or "CircleForge")
+    identity_anchor = str(self_state.get("identity_anchor") or "Weslr")
     core_drives = [str(item).strip() for item in (self_state.get("core_drives") or []) if str(item).strip()]
     # Initialize behavioral_traits from behavioral_mathematics.py if not present
     behavioral_traits = {
@@ -229,8 +229,8 @@ def sync_identity_state(communicator: dict, self_state: dict, *, now_ts: int | N
         identity_summary = psychological_desc if psychological_desc else identity_summary
 
     identity_state.update({
-        "declared_name": str(identity_state.get("declared_name") or self_state.get("identity_anchor") or "CircleForge"),
-        "visible_name": str(identity_state.get("visible_name") or self_state.get("identity_anchor") or "CircleForge"),
+        "declared_name": str(identity_state.get("declared_name") or self_state.get("identity_anchor") or "Weslr"),
+        "visible_name": str(identity_state.get("visible_name") or self_state.get("identity_anchor") or "Weslr"),
         "phase": phase,
         "identity_traits": identity_traits,
         "core_values": core_values,
@@ -356,9 +356,9 @@ def build_identity_core_report(communicator: dict, self_state: dict) -> dict:
     self_model = communicator.get("self_model") or {}
     evolution_log = list(self_state.get("self_evolution_log") or [])
     return {
-        "identity_anchor": self_state.get("identity_anchor") or identity_state.get("declared_name") or communicator.get("name") or "CircleForge",
-        "declared_name": identity_state.get("declared_name") or self_state.get("identity_anchor") or communicator.get("name") or "CircleForge",
-        "visible_name": identity_state.get("visible_name") or self_state.get("identity_anchor") or communicator.get("name") or "CircleForge",
+        "identity_anchor": self_state.get("identity_anchor") or identity_state.get("declared_name") or communicator.get("name") or "Weslr",
+        "declared_name": identity_state.get("declared_name") or self_state.get("identity_anchor") or communicator.get("name") or "Weslr",
+        "visible_name": identity_state.get("visible_name") or self_state.get("identity_anchor") or communicator.get("name") or "Weslr",
         "phase": identity_state.get("phase") or "seedling",
         "identity_traits": identity_state.get("identity_traits") or [],
         "core_values": identity_state.get("core_values") or [],

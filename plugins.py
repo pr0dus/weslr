@@ -1,7 +1,7 @@
-# plugins.py - Plugin system for CircleForge
+# plugins.py - Plugin system for Weslr
 """
 Plugin system to load external addon modules dynamically.
-This allows CircleForge to extend its capabilities without
+This allows Weslr to extend its capabilities without
 modifying core code.
 """
 from __future__ import annotations
@@ -304,7 +304,7 @@ def get_plugin_function(plugin_name: str, function_name: str) -> Optional[Callab
 
 def integrate_plugins_into_core() -> Dict[str, Any]:
     """
-    Integrate loaded plugins into CircleForge's core functionality.
+    Integrate loaded plugins into Weslr's core functionality.
     This connects plugins to the main system.
     """
     config = load_plugins_config()
@@ -349,7 +349,7 @@ def integrate_plugins_into_core() -> Dict[str, Any]:
 # ============================================================================
 
 PLUGIN_TEMPLATE = """
-# {plugin_name}.py - Plugin for CircleForge
+# {plugin_name}.py - Plugin for Weslr
 # Template for new plugins
 
 # Required metadata

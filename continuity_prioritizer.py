@@ -1,4 +1,4 @@
-"""Continuity prioritization layer for CircleForge.
+"""Continuity prioritization layer for Weslr.
 
 Reduces stale continuity dominance by improving thread prioritization.
 
@@ -12,7 +12,7 @@ Key improvements:
 from __future__ import annotations
 
 import time
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple
 
 
 def calculate_thread_priority(

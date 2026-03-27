@@ -1,15 +1,13 @@
-# self_inspection.py - CircleForge can read and describe its own code in plain English
+# self_inspection.py - Weslr can read and describe its own code in plain English
 from __future__ import annotations
 
 import ast
-import os
-import re
 import time
 from pathlib import Path
 
 
 def list_circlegeforge_files() -> list[str]:
-    """Return list of CircleForge source files to inspect."""
+    """Return list of Weslr source files to inspect."""
     circleforge_dir = Path(__file__).parent
     files = []
     for f in circleforge_dir.glob("*.py"):
@@ -85,7 +83,7 @@ def parse_python_file(filepath: str) -> dict:
 
 
 def generate_self_description(inspections: list[dict]) -> str:
-    """Generate plain-English summary of CircleForge's structure."""
+    """Generate plain-English summary of Weslr's structure."""
     if not inspections:
         return "I couldn't inspect myself because no source files were found."
 
@@ -100,7 +98,7 @@ def generate_self_description(inspections: list[dict]) -> str:
     parts = []
 
     parts.append(
-        f"I am CircleForge, a local continuous system written in Python. "
+        f"I am Weslr, a local continuous system written in Python. "
         f"I consists of {total_files} source files with {total_functions} functions and {total_classes} classes."
     )
 

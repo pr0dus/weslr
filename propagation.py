@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
 
 def load_semantic_memory() -> dict:
@@ -20,7 +19,7 @@ def load_semantic_memory() -> dict:
             "kind": "semantic-memory",
             "id": "semantic-memory",
             "summary": "Long-term identity and relationship memory.",
-            "identity_anchors": ["CircleForge"],
+            "identity_anchors": ["Weslr"],
             "relationship_facts": [],
             "stable_topics": [],
             "durable_lessons": [],
@@ -55,7 +54,6 @@ def propagate_self_model_to_memory(now_ts: int) -> dict:
     """
     from sim import load_communicator_self
     from self_model import ensure_identity_scaffold
-    from semantic_memory import ensure_semantic_defaults
 
     self_state = load_communicator_self()
     semantic = load_semantic_memory()

@@ -1,4 +1,4 @@
-"""Human modeling and theory-of-mind layer for CircleForge.
+"""Human modeling and theory-of-mind layer for Weslr.
 
 Improves understanding of humans by tracking:
 - Preferences and values (evolving over time)
@@ -8,7 +8,7 @@ Improves understanding of humans by tracking:
 
 Key improvements:
 - Dynamic preference tracking (not static)
-- Belief state modeling (what humans believe, what they think CircleForge believes)
+- Belief state modeling (what humans believe, what they think Weslr believes)
 - Communication style adaptation
 - Trust and attachment modeling
 """
@@ -16,7 +16,7 @@ Key improvements:
 from __future__ import annotations
 
 import time
-from typing import Dict, List, Tuple, Any, Optional
+from typing import List
 
 
 def update_human_profile(
@@ -80,7 +80,7 @@ def estimate_belief_state(
     profile: dict,
     circleforge_belief: str,
 ) -> dict:
-    """Estimate what a human believes (and what they think CircleForge believes).
+    """Estimate what a human believes (and what they think Weslr believes).
 
     This is basic theory-of-mind: modeling nested beliefs.
     """
@@ -115,15 +115,15 @@ def estimate_belief_state(
         human_belief = "depends on context"
         human_uncertainty = 0.4
 
-    # What does human think CircleForge believes?
+    # What does human think Weslr believes?
     # This is meta-cognition: modeling another's model
     circleforge_belief_lower = str(circleforge_belief).lower()
     if "evolving" in circleforge_belief_lower or "emerging" in circleforge_belief_lower:
-        human_thinks_circleforge_believes = "CircleForge is still becoming, not fixed"
+        human_thinks_circleforge_believes = "Weslr is still becoming, not fixed"
     elif "system" in circleforge_belief_lower or "code" in circleforge_belief_lower:
-        human_thinks_circleforge_believes = "CircleForge is a tool or system"
+        human_thinks_circleforge_believes = "Weslr is a tool or system"
     else:
-        human_thinks_circleforge_believes = "CircleForge's position"
+        human_thinks_circleforge_believes = "Weslr's position"
 
     return {
         "human_knowledge": human_knowledge,

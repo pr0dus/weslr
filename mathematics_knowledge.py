@@ -1,6 +1,6 @@
-# mathematics_knowledge.py - Mathematics foundation for CircleForge
+# mathematics_knowledge.py - Mathematics foundation for Weslr
 """
-Mathematics concepts that CircleForge should understand to model relationships,
+Mathematics concepts that Weslr should understand to model relationships,
 patterns, and quantitative reasoning.
 """
 from __future__ import annotations
@@ -324,7 +324,6 @@ def calculate_growth(rate: float, initial: float, periods: int) -> dict:
     """
     Calculate exponential growth: A = P(1 + r)^t
     """
-    import math
     final = initial * (1 + rate) ** periods
     
     return {

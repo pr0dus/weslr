@@ -85,7 +85,7 @@ def infer_human_topics(message: str) -> list[str]:
         return []
     topics = []
     keyword_map = {
-        "circleforge": "CircleForge",
+        "circleforge": "Weslr",
         "backup confidence": "backup confidence",
         "backup": "backup confidence",
         "memory": "memory continuity",

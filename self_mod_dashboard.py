@@ -1,4 +1,4 @@
-# self_mod_dashboard.py - Dashboard integration for CircleForge self-modification
+# self_mod_dashboard.py - Dashboard integration for Weslr self-modification
 from __future__ import annotations
 
 import json
@@ -82,7 +82,7 @@ def generate_self_mod_dashboard_html(data: dict) -> str:
     return f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>CircleForge Self-Modification Dashboard</title>
+    <title>Weslr Self-Modification Dashboard</title>
     <style>
         body {{ font-family: sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }}
         .mod-entry {{ background: #16213e; padding: 10px; margin: 10px 0; border-radius: 5px; }}
@@ -101,7 +101,7 @@ def generate_self_mod_dashboard_html(data: dict) -> str:
     </style>
 </head>
 <body>
-    <h1>CircleForge Self-Modification Dashboard</h1>
+    <h1>Weslr Self-Modification Dashboard</h1>
 
     <div class="stats">
         <div class="stat">

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-import time
 
 
 def translate_code_to_concept(code_snippet: str) -> list[str]:
@@ -74,7 +73,7 @@ def translate_concept_to_code(concept: str) -> str | None:
 
 
 def translate_internal_theme_to_code(theme: str) -> dict:
-    """Translate an internal CircleForge theme into code patterns."""
+    """Translate an internal Weslr theme into code patterns."""
     theme = str(theme).strip().lower()
 
     mappings = {
@@ -128,7 +127,7 @@ def translate_internal_theme_to_code(theme: str) -> dict:
 
 
 def translate_code_to_internal_theme(code_snippet: str) -> dict:
-    """Parse code snippet and map it to internal CircleForge themes."""
+    """Parse code snippet and map it to internal Weslr themes."""
     concepts = translate_code_to_concept(code_snippet)
     themes = []
 

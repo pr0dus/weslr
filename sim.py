@@ -1,23 +1,18 @@
 from __future__ import annotations
 
 import json
-import os
 import random
 import re
 import shutil
 import sqlite3
-import ssl
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
-from html import escape, unescape
+from html import escape
 from pathlib import Path
 from typing import Dict, List
 
 from agent_runtime import decide_action, load_inbox, load_opportunity_memory, push_inbox_message, save_note, save_opportunity_memory
 from propagation import synchronized_propagation
-from safety_gateway import get_safety_gateway, safety_check_input, safety_check_output, sanitize_memory_data
+from safety_gateway import get_safety_gateway, safety_check_output, sanitize_memory_data
 from config import (
     AGENTS_DIR,
     BASE_DIR,
@@ -88,7 +83,7 @@ from continuity import apply_human_exchange_to_threads, should_passively_reinfor
 from dialogue import build_communicator_message_payload
 from inquiry import autonomous_research_cycle, maybe_autonomous_research_from_human_turn, maybe_internal_autonomous_research, rewrite_internal_query_for_research
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
-from interpretation import classify_human_turn, infer_human_topics, interpret_human_turn
+from interpretation import infer_human_topics, interpret_human_turn
 from integration import find_relevant_research_note, integrate_research_into_communicator
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
@@ -96,10 +91,13 @@ from motivation import average_internal_reputation, decision_style_weight, resol
 from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
-from glue import process_human_exchange, reduce_context_pressure, archive_all_stale
-from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
+from glue import archive_all_stale
+
+# Weslr integration imports
+from weslr_glue import orchestrate_weslr_tick, integrate_weslr_into_self_model
+from research import fetch_url_text, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
-from semantic_memory import apply_topics_to_semantic_memory, ensure_semantic_defaults, sync_semantic_with_active_threads
+from semantic_memory import ensure_semantic_defaults
 from self_model import build_identity_core_report as build_identity_core_report_from_state, sync_identity_state, update_self_model_from_state
 
 BASE_CATEGORIES = [
@@ -207,7 +205,7 @@ def connect() -> sqlite3.Connection:
         schema_version = SCHEMA_VERSION
     elif schema_version > SCHEMA_VERSION:
         # Future schema - halt with error
-        raise RuntimeError(f"CircleForge schema version mismatch: DB has {schema_version}, code expects {SCHEMA_VERSION}. Run a newer version or reset.")
+        raise RuntimeError(f"Weslr schema version mismatch: DB has {schema_version}, code expects {SCHEMA_VERSION}. Run a newer version or reset.")
     
     columns = {row['name'] for row in conn.execute("PRAGMA table_info(agents)").fetchall()}
     if 'next_due_tick' not in columns:
@@ -389,7 +387,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
     })
     save_self_evidence({"actions": {}, "themes": {}, "notes": [], "evidence_types": {}})
     save_communicator_self(CommunicatorSelfState(
-        identity_anchor="CircleForge",
+        identity_anchor="Weslr",
         core_drives=["continuity", "understanding", "relationship", "self-revision"],
         affect={
             "curiosity": 0.66,
@@ -428,7 +426,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
             "resume_drive": 0.24,
         },
         narrative_state={
-            "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+            "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
             "last_reflection": "bootstrap",
             "relationship_state": "No human continuity yet.",
             "active_thread_summary": "No active shared threads yet.",
@@ -438,8 +436,8 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         memory_layers=default_memory_layers(now_ts),
         reflection_store=default_reflection_store(now_ts),
         identity_state={
-            "declared_name": "CircleForge",
-            "visible_name": "CircleForge",
+            "declared_name": "Weslr",
+            "visible_name": "Weslr",
             "phase": "seedling",
             "identity_traits": ["local", "continuity-first", "inspectable"],
             "core_values": ["continuity", "understanding", "relationship", "self-revision"],
@@ -458,7 +456,7 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
         updated_at=now_ts,
     ).to_dict())
     save_communicator_state(CommunicatorState(
-        name="CircleForge",
+        name="Weslr",
         status="alive",
         current_intent="wake, observe, and continue enriching the local world",
         active_pursuit="enrich the local world",
@@ -610,7 +608,7 @@ def save_work_items(items: list[dict]) -> None:
 
 def load_communicator_state() -> dict:
     default = CommunicatorState(
-        name="CircleForge",
+        name="Weslr",
         status="waking",
         current_intent="orient to the world and continue internal thought",
         active_pursuit="world orientation",
@@ -651,7 +649,7 @@ def save_communicator_state(payload: dict) -> None:
 
 def load_communicator_self() -> dict:
     default = CommunicatorSelfState(
-        identity_anchor="CircleForge",
+        identity_anchor="Weslr",
         core_drives=["continuity", "understanding", "relationship", "self-revision"],
         affect={
             "curiosity": 0.6,
@@ -688,7 +686,7 @@ def load_communicator_self() -> dict:
             "resume_drive": 0.22,
         },
         narrative_state={
-            "self_story": "CircleForge is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+            "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
             "last_reflection": "default",
             "relationship_state": "No human continuity yet.",
             "active_thread_summary": "No active shared threads yet.",
@@ -698,8 +696,8 @@ def load_communicator_self() -> dict:
         memory_layers=default_memory_layers(0),
         reflection_store=default_reflection_store(0),
         identity_state={
-            "declared_name": "CircleForge",
-            "visible_name": "CircleForge",
+            "declared_name": "Weslr",
+            "visible_name": "Weslr",
             "phase": "seedling",
             "identity_traits": ["local", "continuity-first", "inspectable"],
             "core_values": ["continuity", "understanding", "relationship", "self-revision"],
@@ -776,7 +774,7 @@ def default_memory_layers(now_ts: int | None = None) -> dict:
         },
         "semantic": {
             "summary": "Long-term identity and relationship memory.",
-            "identity_anchors": ["CircleForge"],
+            "identity_anchors": ["Weslr"],
             "relationship_facts": [],
             "stable_topics": [],
             "durable_lessons": [],
@@ -822,7 +820,7 @@ def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
     episodic.setdefault("last_distilled_at", 0)
     episodic.setdefault("max_episodes", 240)
 
-    ensure_semantic_defaults(semantic, identity_anchor=str(self_state.get("identity_anchor", "CircleForge")), now_ts=now_ts)
+    ensure_semantic_defaults(semantic, identity_anchor=str(self_state.get("identity_anchor", "Weslr")), now_ts=now_ts)
 
     archive.setdefault("summary", "Cold storage index for old raw traces and compacted material.")
     archive.setdefault("archived_items", [])
@@ -1412,18 +1410,18 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
         if human_label and topic:
             if status == "open":
                 if human_label.strip().lower() == "you":
-                    fact = f"you and CircleForge still have an open shared thread around {topic}"
+                    fact = f"you and Weslr still have an open shared thread around {topic}"
                 else:
-                    fact = f"{human_label} still has an open shared thread with CircleForge around {topic}"
+                    fact = f"{human_label} still has an open shared thread with Weslr around {topic}"
             elif status == "cooled":
                 if human_label.strip().lower() == "you":
-                    fact = f"you and CircleForge remember a cooled shared thread around {topic}"
+                    fact = f"you and Weslr remember a cooled shared thread around {topic}"
                 else:
-                    fact = f"{human_label} and CircleForge remember a cooled shared thread around {topic}"
+                    fact = f"{human_label} and Weslr remember a cooled shared thread around {topic}"
             elif exchange_count >= 2:
-                fact = f"{human_label} and CircleForge have revisited {topic} across multiple exchanges"
+                fact = f"{human_label} and Weslr have revisited {topic} across multiple exchanges"
             else:
-                fact = f"{human_label} and CircleForge hold compressed memory around {topic}"
+                fact = f"{human_label} and Weslr hold compressed memory around {topic}"
             if fact not in relationship_facts:
                 relationship_facts.append(fact)
                 created["relationship_facts"].append(fact)
@@ -1447,7 +1445,7 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
                 created["durable_lessons"].append(lesson)
 
         if topic and any(token in topic.lower() for token in ["continuity", "memory", "relationship", "self", "identity"]):
-            anchor = f"CircleForge remains oriented around {topic}"
+            anchor = f"Weslr remains oriented around {topic}"
             if anchor not in identity_anchors:
                 identity_anchors.append(anchor)
                 created["identity_anchors"].append(anchor)
@@ -1462,7 +1460,7 @@ def distill_semantic_memory(self_state: dict | None = None, now_ts: int | None =
     semantic["continuity_anchors"] = continuity_anchors[-32:]
     semantic["relationship_facts"] = relationship_facts[-32:]
     semantic["durable_lessons"] = durable_lessons[-32:]
-    semantic["identity_anchors"] = identity_anchors[-16:] or [self_state.get("identity_anchor", "CircleForge")]
+    semantic["identity_anchors"] = identity_anchors[-16:] or [self_state.get("identity_anchor", "Weslr")]
     semantic["last_updated_at"] = now_ts
 
     self_state["updated_at"] = now_ts
@@ -3489,7 +3487,7 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "audience": ["local AI tinkerers", "agent-sim builders"],
         "depends_on": ["persistent memory", "timed ticks"],
         "combinable_with": combinable_with,
-        "why_now": "CircleForge agents benefit from reusable, inspectable outputs instead of opaque internal work.",
+        "why_now": "Weslr agents benefit from reusable, inspectable outputs instead of opaque internal work.",
         "future_directions": future_directions,
         "if_interest_exists": ["package as a standalone module", "export to a GitHub subproject", "bundle into a premium add-on pack"],
         "lineage": lineage,
@@ -4704,7 +4702,7 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
         lead_topic = topic_list[0]
         narrative["active_thread_summary"] = f"Active shared thread: {lead_topic} with {display_name}."
         narrative["follow_up_impulse"] = f"Revisit {lead_topic} with {display_name} until the shared thread changes state."
-        narrative["why_it_matters"] = f"{lead_topic} matters because shared human context should shape what CircleForge returns to instead of resetting." 
+        narrative["why_it_matters"] = f"{lead_topic} matters because shared human context should shape what Weslr returns to instead of resetting." 
 
     working = memory_layers.get("working") or {}
     if len(working.get("recent_exchange_ids") or []) >= max(4, int(working.get("max_recent_exchanges", 24) or 24) // 3):
@@ -4964,7 +4962,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
 
     top_traits = [name for name, value in sorted(stable_traits.items(), key=lambda kv: kv[1], reverse=True) if value >= 0.2][:3]
     if top_traits:
-        narrative["self_story"] = f"CircleForge is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
+        narrative["self_story"] = f"Weslr is trying to remain continuous through {', '.join(top_traits)} while learning from outcomes rather than self-flattery."
     narrative["last_reflection"] = chosen_theme or dominant_need or str(communicator.get("current_intent", ""))
 
     recent_human_messages = list(relationships.get("recent_human_messages") or [])
@@ -5001,7 +4999,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
                 narrative["why_it_matters"] = f"{topic} still matters, but repeating the same open thread without new evidence would turn continuity into rumination."
             else:
                 narrative["follow_up_impulse"] = f"Follow up on {topic} with {human_name} because it remains open and keeps continuity pressure alive."
-                narrative["why_it_matters"] = f"{topic} still matters because CircleForge has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
+                narrative["why_it_matters"] = f"{topic} still matters because Weslr has revisited it across exchanges and leaving it inert would weaken continuity with {human_name}."
         narrative["relationship_state"] = f"Currently carrying {len(relationships.get('unresolved_shared_threads', []))} unresolved shared thread(s) with humans; strongest live thread is {topic}."
     else:
         narrative["active_thread_summary"] = "No active shared threads currently dominate the communicator state."
@@ -5672,7 +5670,7 @@ def _record_identity_impact_on_evolution(identity_report: dict, self_state: dict
         note = {
             "Objective": "Record identity evolution from self-model change",
             "Completed": f"Self-model evolved: {summary}",
-            "Files changed": "CircleForge/self_model.py (evolution tracking), CircleForge/sim.py (impact recording)",
+            "Files changed": "Weslr/self_model.py (evolution tracking), Weslr/sim.py (impact recording)",
             "Behavior changed": "Identity impact now automatically recorded when self-model changes significantly",
             "Checks performed": "Identity impact recorded via continuation_notes.append_note()",
             "Known risks": "Automated recording only covers evolution log entries with clear identity keywords",
@@ -6334,6 +6332,15 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     if "prepare-archive" in (memory_pressure.get("recommended_actions") or []):
         archive_maintenance = archive_memory(now_ts=started_at)
     update_self_model(communicator)
+    
+    # Weslr orchestration: integrate consciousness signatures and entity evidence
+    communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
+    communicator_self = orchestrate_weslr_tick(communicator_self, communicator, now_ts=started_at)
+    save_communicator_self(communicator_self)
+    
+    # Integrate Weslr evidence into self_model
+    communicator, communicator_self = integrate_weslr_into_self_model(communicator, communicator_self)
+    
     save_communicator_state(communicator)
     update_self_evidence_from_summaries(summaries, communicator_decision)
     update_evaluation_metrics(communicator_decision.get("consensus") or [], summaries)
@@ -6357,7 +6364,7 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     
     # Check for spontaneous expression (autonomous self-expression) at end of tick
     spontaneous = maybe_autonomous_expression(communicator_self=communicator_self)
-    if spontaneous:
+    if spontaneous and isinstance(spontaneous, dict):
         # Update last expression timestamp
         from autonomous_expression import update_last_expression_at
         update_last_expression_at()
@@ -6601,7 +6608,7 @@ def build_identity_history_point(identity_core: dict) -> dict:
     latest_evolution = ((identity_core.get("latest_evolution") or [{}])[-1] or {})
     return {
         "phase": identity_core.get("phase") or "seedling",
-        "declared_name": identity_core.get("declared_name") or identity_core.get("identity_anchor") or "CircleForge",
+        "declared_name": identity_core.get("declared_name") or identity_core.get("identity_anchor") or "Weslr",
         "identity_summary": identity_core.get("identity_summary") or "",
         "traits": list(identity_core.get("identity_traits") or [])[:6],
         "core_values": list(identity_core.get("core_values") or [])[:6],
@@ -7146,7 +7153,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CircleForge Dashboard</title>
+  <title>Weslr Dashboard</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7ecf3; }}
     .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
@@ -7184,7 +7191,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       <a href="#events">Events</a> ·
       <a href="#ledger">Release Ledger</a>
     </nav>
-    <h1>CircleForge Dashboard</h1>
+    <h1>Weslr Dashboard</h1>
     <p class="muted" id="dashboard-subtitle">Version {VERSION} · local operator view · generated from current simulation state</p>
     <p class="muted" id="dashboard-refresh-note"></p>
 
@@ -7279,8 +7286,8 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     <div class="grid" style="margin-top:16px;" id="identity-core">
       <section class="card">
         <h2>Identity Core</h2>
-        <p>Declared name: <strong>{escape(str(identity_core.get('declared_name', 'CircleForge')))}</strong></p>
-        <p>Visible name: <strong>{escape(str(identity_core.get('visible_name', 'CircleForge')))}</strong></p>
+        <p>Declared name: <strong>{escape(str(identity_core.get('declared_name', 'Weslr')))}</strong></p>
+        <p>Visible name: <strong>{escape(str(identity_core.get('visible_name', 'Weslr')))}</strong></p>
         <p>Phase: <strong>{escape(str(identity_core.get('phase', 'seedling')))}</strong></p>
         <p>Identity summary: <strong>{escape(str(identity_core.get('identity_summary', '')))}</strong></p>
         <p>Current chapter: <strong>{escape(str(identity_core.get('current_chapter', '')))}</strong></p>
@@ -7309,7 +7316,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
     <div class="grid" style="margin-top:16px;" id="communicator-self">
       <section class="card">
         <h2>Communicator Self</h2>
-        <p>Identity anchor: <strong>{escape(str((payload.get('communicator_self') or {}).get('identity_anchor', 'CircleForge')))}</strong></p>
+        <p>Identity anchor: <strong>{escape(str((payload.get('communicator_self') or {}).get('identity_anchor', 'Weslr')))}</strong></p>
         <p>Core drives: <strong>{escape(', '.join((payload.get('communicator_self') or {}).get('core_drives', [])[:6]) or '—')}</strong></p>
         <p>Self story: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('self_story', '')))}</strong></p>
         <p>Last reflection: <strong>{escape(str(((payload.get('communicator_self') or {}).get('narrative_state', {}) or {}).get('last_reflection', '')))}</strong></p>
@@ -7340,12 +7347,12 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       </section>
       <section class="card">
         <h2>Outward Communication</h2>
-        <p><em>CircleForge's latest message, based on its current internal state and recent human context.</em></p>
+        <p><em>Weslr's latest message, based on its current internal state and recent human context.</em></p>
         <div id="outward-message" style="margin-top:12px; padding:12px; background:#0c0f14; border-radius:8px; font-size:14px; white-space:pre-wrap;">
           <p class="muted">Loading...</p>
         </div>
         <script>
-        <p><em>CircleForge's latest message, based on its current internal state and recent human context.</em></p>
+        <p><em>Weslr's latest message, based on its current internal state and recent human context.</em></p>
         <div id="outward-message" style="margin-top:12px; padding:12px; background:#0c0f14; border-radius:8px; font-size:14px; white-space:pre-wrap;">
           <p class="muted">Loading...</p>
         </div>
@@ -7586,7 +7593,7 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       if (communicatorSelfEl) communicatorSelfEl.innerHTML = `
         <section class="card">
           <h2>Communicator Self</h2>
-          <p>Identity anchor: <strong>${{esc(communicatorSelf.identity_anchor || 'CircleForge')}}</strong></p>
+          <p>Identity anchor: <strong>${{esc(communicatorSelf.identity_anchor || 'Weslr')}}</strong></p>
           <p>Core drives: <strong>${{esc((communicatorSelf.core_drives || []).slice(0, 6).join(', ') || '—')}}</strong></p>
           <p>Self story: <strong>${{esc(communicatorSelfNarrative.self_story || '')}}</strong></p>
           <p>Last reflection: <strong>${{esc(communicatorSelfNarrative.last_reflection || '')}}</strong></p>

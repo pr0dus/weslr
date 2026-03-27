@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 
 from interpretation import classify_human_turn, interpret_human_turn
 from config import CIRCLEFORGE_LANGUAGE
@@ -243,7 +242,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         role_responses = None
         if isinstance(anchors, list) and len(anchors) > 0:
             latest = anchors[-1]
-            if latest.get("type") == "self_check":
+            if isinstance(latest, dict) and latest.get("type") == "self_check":
                 self_check_observation = latest.get("observation")
                 role_responses = latest.get("role_responses")
         if self_check_observation:
@@ -260,6 +259,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = f"I'll answer directly. {message}"
         audience = str(latest_human.get("human_label") or "you") or "you"
         source = f"conversation-aware-communicator:{turn_type}:{reply_shape}"
+        
+        return {"message": message, "audience": audience, "source": source}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -272,8 +273,27 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         role_responses = None
         if isinstance(anchors, list) and len(anchors) > 0:
             latest = anchors[-1]
-            if latest.get("type") == "self_check":
+            if isinstance(latest, dict) and latest.get("type") == "self_check":
                 self_check_observation = latest.get("observation")
                 role_responses = latest.get("role_responses")
         if self_check_observation:
             obs = self_check_observation
+            if obs.startswith("Self-check: "):
+                obs = obs[12:]
+            msg = f"Self-check: {obs}."
+            if role_responses and len(role_responses) > 0:
+                rr = role_responses[0]
+                msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
+            message = msg
+        else:
+            message = _get_language_module().live_issue_response(topic)
+        
+        source = f"thread-aware-communicator:{topic}"
+        
+        return {"message": message, "audience": audience, "source": source}
+    
+    # Fallback when no human interaction and no active thread
+    message = _get_language_module().simple_response()
+    source = "fallback"
+    
+    return {"message": message, "audience": "you", "source": source}

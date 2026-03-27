@@ -1,4 +1,4 @@
-"""Per-layer glue layer for CircleForge.
+"""Per-layer glue layer for Weslr.
 
 This module provides clean orchestration between extracted layers,
 reducing orchestration glue in sim.py while maintaining behavioral quality.
@@ -9,7 +9,7 @@ Goal: Each sim.py function should call *one* layer function, not mix layers.
 from __future__ import annotations
 
 import time
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 # ============== Human Exchange Glue ==============
@@ -36,7 +36,7 @@ def process_human_exchange(
         return _handle_safety_block(human_name, message, relationships, now_ts), {}
 
     # 2. Interpretation layer
-    from interpretation import interpret_human_turn, infer_human_topics
+    from interpretation import interpret_human_turn
     from relational import canonical_human_slot
     human_name = canonical_human_slot(human_name)
     
@@ -79,8 +79,6 @@ def _resolve_topics(
 
     This extracts topic inference logic from sim.py glue.
     """
-    from interpretation import infer_human_topics
-    from relational import canonical_human_slot
     
     topic_list = [topic for topic in (interpreted_turn.get("topics") or []) if topic]
     
@@ -222,7 +220,6 @@ def orchestrate_internal_handoff(
 
     Returns (updated_state, handoff_payload if any)
     """
-    from integration import find_relevant_research_note, integrate_research_into_communicator
     
     # Default: just pass through
     return state, None
@@ -276,9 +273,6 @@ def orchestrate_memory_archival(
     self_state["relationships"] = relationships
     
     # 2. Archive stale working memory
-    from continuity import apply_human_exchange_to_threads, should_passively_reinforce_thread
-    from config import CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
-    from config import CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS
     
     self_state = archive_all_stale(self_state, now_ts)
     

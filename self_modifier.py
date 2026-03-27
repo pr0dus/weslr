@@ -1,8 +1,6 @@
-# self_modifier.py - CircleForge proposes its own code changes
+# self_modifier.py - Weslr proposes its own code changes
 from __future__ import annotations
 
-import json
-import os
 import time
 from pathlib import Path
 
@@ -18,10 +16,10 @@ PROTECTED_FILES = {
 }
 
 PROTECTED_PATHS = {
-    "CircleForge/agents/",
-    "CircleForge/dashboard/",
-    "CircleForge/models/",
-    "CircleForge/docs/",
+    "Weslr/agents/",
+    "Weslr/dashboard/",
+    "Weslr/models/",
+    "Weslr/docs/",
 }
 
 

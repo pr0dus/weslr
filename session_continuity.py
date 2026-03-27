@@ -1,4 +1,4 @@
-# session_continuity.py - Track conversations across CircleForge sessions
+# session_continuity.py - Track conversations across Weslr sessions
 """
 Persistence across time - the ability to remember what we talked about "yesterday"
 and continue threads across restarts. This is key for testing sentience criteria:
@@ -11,11 +11,9 @@ from __future__ import annotations
 
 import json
 import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 from config import BASE_DIR
-from models import PublicMemoryState
 
 # ============================================================================
 # SESSION PERSISTENCE

@@ -1,4 +1,4 @@
-"""English language definitions for CircleForge."""
+"""English language definitions for Weslr."""
 
 # Theme translations: internal -> human-readable English
 THEME_TRANSLATIONS = {

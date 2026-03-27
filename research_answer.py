@@ -1,4 +1,4 @@
-"""Research answer synthesis layer for CircleForge.
+"""Research answer synthesis layer for Weslr.
 
 Improves research-informed answers by moving from extractive quoting
 to synthesis, cross-referencing, and deeper integration.
@@ -7,7 +7,7 @@ to synthesis, cross-referencing, and deeper integration.
 from __future__ import annotations
 
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def find_relevant_sources(public_memory: List[dict], topic: str, limit: int = 3) -> List[dict]:

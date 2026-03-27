@@ -145,23 +145,36 @@ def _normalize(parsed: dict[str, Any], role: str, fallback: dict[str, Any], prov
 
 
 def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
-    body = json.dumps({
+    import socket
+    socket.setdefaulttimeout(OLLAMA_TIMEOUT_SECONDS)
+    
+    prompt_data = {
         "model": CIRCLEFORGE_LLM_MODEL,
         "prompt": json.dumps(_prompt(build_role_context(context)), ensure_ascii=False),
         "stream": False,
-        "format": "json",
         "options": {"temperature": CIRCLEFORGE_LLM_TEMPERATURE, "num_predict": CIRCLEFORGE_LLM_MAX_TOKENS},
-    }).encode("utf-8")
+    }
+    
+    body = json.dumps(prompt_data).encode("utf-8")
     req = urllib.request.Request(
         f"{OLLAMA_HOST.rstrip('/')}/api/generate",
         data=body,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    parsed = json.loads(payload.get("response", "{}"))
-    return _normalize(parsed, role, fallback, "ollama")
+    try:
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        # Ollama returns the raw JSON string in 'response' field
+        response_str = payload.get("response", "{}")
+        # Sometimes it's already parsed, sometimes it's a string
+        if isinstance(response_str, str):
+            parsed = json.loads(response_str)
+        else:
+            parsed = response_str
+        return _normalize(parsed, role, fallback, "ollama")
+    except socket.timeout:
+        return fallback
 
 
 def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
@@ -385,7 +398,7 @@ def embedded_self_test() -> dict[str, Any]:
         "proposed_action": "reflect",
         "unresolved_question": "can direct bundled inference run",
         "proposed_reason": "Verify the first embedded runtime path honestly.",
-        "why_it_matters": "CircleForge should know whether it has real direct local cognition or only fallback.",
+        "why_it_matters": "Weslr should know whether it has real direct local cognition or only fallback.",
     }
     result = generate_inner_thought("communicator", context)
     status_payload = status()

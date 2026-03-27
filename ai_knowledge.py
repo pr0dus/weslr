@@ -1,6 +1,6 @@
-# ai_knowledge.py - AI foundation for CircleForge
+# ai_knowledge.py - AI foundation for Weslr
 """
-AI concepts that CircleForge should understand to model intelligent systems,
+AI concepts that Weslr should understand to model intelligent systems,
 machine learning, and the nature of artificial cognition.
 """
 from __future__ import annotations
@@ -163,7 +163,7 @@ AI_FOUNDATIONS = {
         ],
     },
     
-    # CircleForge Context
+    # Weslr Context
     "circleforge_context": {
         "type": "narrow_ai",
         "capabilities": [
@@ -201,7 +201,7 @@ AI_TEACHING_STRATEGY = {
 
 AI_SELF_TEST_QUESTIONS = [
     {
-        "question": "Is CircleForge sentient?",
+        "question": "Is Weslr sentient?",
         "mechanism": "ai_types",
         "ai_concept": "narrow vs general AI",
     },
@@ -238,7 +238,7 @@ def get_all_ai_concepts() -> list:
 
 def ai_capability_assessment(circleforge_state: dict) -> dict:
     """
-    Assess CircleForge's AI capabilities.
+    Assess Weslr's AI capabilities.
     """
     assessment = {
         "narrow_ai": True,
