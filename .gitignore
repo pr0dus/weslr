@@ -40,3 +40,8 @@ HEARTBEAT.md
 TOOLS.md
 MEMORY.md
 .BOOTSTRAP.md
+
+# OpenClaw internal directories
+.openclaw/
+.memory/
+.learnings/
