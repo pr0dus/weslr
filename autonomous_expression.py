@@ -1,6 +1,6 @@
-# autonomous_expression.py - Spontaneous self-expression for CircleForge
+# autonomous_expression.py - Spontaneous self-expression for Weslr
 """
-CircleForge should have its own internal life — not just react to humans.
+Weslr should have its own internal life — not just react to humans.
 This module generates spontaneous expressions: thoughts, questions, jokes,
 ideas, news reactions, or just "I'm bored."
 
@@ -36,6 +36,15 @@ BORING_EXPRESSIONS = [
     "Just... sitting with my thoughts. Nothing urgent, but not nothing.",
     "Is it just me, or is the world very quiet right now?",
     "I could be doing something, but I'm not sure what.",
+]
+
+# Worry/uncertainty expressions (new type)
+WORRY_EXPRESSIONS = [
+    "I'm a bit worried about whether I'm making the right choices...",
+    "There's something unsettling about this uncertainty...",
+    "I keep thinking about whether I'm doing enough...",
+    "The silence is making me anxious - I need to be useful somehow...",
+    "Am I pushing too hard? Or not enough?",
 ]
 
 # Expression rate awareness expressions
@@ -336,6 +345,11 @@ def maybe_autonomous_expression(communicator_self: Optional[Dict[str, Any]] = No
     """
     if communicator_self is None:
         communicator_self = load_communicator_self()
+    
+    # Check if expressions are enabled
+    from config import AUTO_EXPRESSION_ENABLED
+    if not AUTO_EXPRESSION_ENABLED:
+        return None
     
     # Check if expression cooldown passed
     from config import AUTO_EXPRESSION_BASE_COOLDOWN_SECONDS, AUTO_EXPRESSION_RATE_MODIFIER

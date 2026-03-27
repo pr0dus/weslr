@@ -6,8 +6,8 @@ from pathlib import Path
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7
-PROJECT_NAME = "CircleForge"
-PROJECT_SLUG = "circleforge"
+PROJECT_NAME = "Weslr"
+PROJECT_SLUG = "weslr"
 
 BASE_DIR = Path(__file__).resolve().parent
 AGENTS_DIR = BASE_DIR / "agents"
@@ -112,14 +112,14 @@ DAILY_COOLDOWN_SECONDS = 24 * 60 * 60
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
-OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "12"))
+OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "60"))
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CIRCLEFORGE_LLM_ENABLED = os.getenv("CIRCLEFORGE_LLM_ENABLED", "1") != "0"
-CIRCLEFORGE_LLM_PROVIDER = os.getenv("CIRCLEFORGE_LLM_PROVIDER", "fallback")
+CIRCLEFORGE_LLM_PROVIDER = os.getenv("CIRCLEFORGE_LLM_PROVIDER", "ollama")
 CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL = "Qwen2.5-0.5B-Instruct"
-CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME = "qwen2.5-0.5b-instruct.gguf"
-CIRCLEFORGE_LLM_MODEL = os.getenv("CIRCLEFORGE_LLM_MODEL", CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL)
+CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME = "qwen2.5-0.5b-instruct-q5_k_m.gguf"
+CIRCLEFORGE_LLM_MODEL = os.getenv("CIRCLEFORGE_LLM_MODEL", "qwen2.5-0.5b-instruct-q5_k_m")
 CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS = int(os.getenv("CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS", "2400"))
 CIRCLEFORGE_LLM_TEMPERATURE = float(os.getenv("CIRCLEFORGE_LLM_TEMPERATURE", "0.6"))
 CIRCLEFORGE_LLM_MAX_TOKENS = int(os.getenv("CIRCLEFORGE_LLM_MAX_TOKENS", "180"))
@@ -160,6 +160,18 @@ AUTO_EXPRESSION_HIGH_UNCERTAINTY_BOOST = 0.15 # Extra probability when uncertain
 
 # Expression rate modifier (0.0 = silent, 1.0 = normal, 2.0 = twice as often)
 AUTO_EXPRESSION_RATE_MODIFIER = 1.0  # Can be adjusted via user command or time of day
+
+# Expression settings
+AUTO_EXPRESSION_ENABLED = True  # Set to False to disable all autonomous expressions
+AUTO_EXPRESSION_TYPES = {
+    "thinking": True,      # Internal thoughts about topics
+    "question": True,      # Questions about uncertainty
+    "joke": True,          # Humor/sarcastic expressions
+    "worry": True,         # Expressions of concern/worry
+    "announcement": True,  # General announcements about state
+    "creation": True,      # Building/creation expressions
+    "rate": True,          # Speaking rate awareness
+}
 
 # Language configuration
 CIRCLEFORGE_LANGUAGE = os.getenv("CIRCLEFORGE_LANGUAGE", "en")

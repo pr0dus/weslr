@@ -7,35 +7,32 @@ import subprocess
 import sys
 import time
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
-from continuity import apply_human_exchange_to_threads
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
-from self_inspection import build_self_inspection_report, inspect_self
+from self_inspection import build_self_inspection_report
 from code_translator import explain_code, translate_code_to_concept, translate_internal_theme_to_code
-from error_translator import explain_error, translate_error, translate_error_to_plain_english
-from tool_search import explain_tool_usage, search_tool_and_synthesize, search_for_tool
-from self_modifier import build_proposal_report, propose_self_modification_report, propose_improvement
-from self_mod_applier import apply_modification, build_self_mod_report, create_checkpoint, list_checkpoints, log_modification, rollback
+from error_translator import translate_error, translate_error_to_plain_english
+from tool_search import explain_tool_usage, search_tool_and_synthesize
+from self_modifier import build_proposal_report, propose_self_modification_report
+from self_mod_applier import apply_modification, build_self_mod_report, create_checkpoint, list_checkpoints, rollback
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
-from self_mod_dashboard import render_self_mod_dashboard, update_dashboard, get_dashboard_status
+from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
 from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
-from autonomous_expression import get_rate_expression, update_last_expression_at, generate_creation_expression, maybe_autonomous_expression
-from session_continuity import start_new_session, get_session_continuity, remember_conversation
+from session_continuity import get_session_continuity
 from plugins import (
-    discover_plugins, load_plugins_config, enable_plugin, disable_plugin,
-    load_plugin, list_plugins, create_plugin, integrate_plugins_into_core
+    enable_plugin, disable_plugin, list_plugins, create_plugin,
+    integrate_plugins_into_core
 )
 from autonomous_intentionality import (
-    create_plan, plan_progress, autonomous_intentionality_report,
-    execute_plan_step, AutonomousIntentState
+    create_plan, autonomous_intentionality_report
 )
 from embodiment import physical_reasoning_report, theory_of_mind_report, implicature_report, full_embodiment_test
 from psychology_knowledge import generate_psychological_self_description, get_all_concepts as get_all_psychology_concepts
@@ -47,10 +44,10 @@ from robotics_knowledge import get_all_robotics_concepts
 from ai_knowledge import get_all_ai_concepts
 from quantum_physics_knowledge import get_all_quantum_physics_concepts
 from core_knowledge import (
-    CircleForgeKnowledge, cross_discipline_reasoning,
-    integrate_knowledge_into_self_model, run_knowledge_test,
+    cross_discipline_reasoning, run_knowledge_test,
     get_all_domains
 )
+from entity_graph import get_entity_graph
 
 
 def emit(data):
@@ -392,7 +389,6 @@ def cmd_knowledge_domains(_args):
 
 def cmd_knowledge_domain(args):
     """Get knowledge concepts for a specific domain."""
-    from core_knowledge import get_concept
     domain = args.domain
     if domain == "psychology":
         concepts = get_all_psychology_concepts()
@@ -425,13 +421,30 @@ def cmd_create_plan(args):
 
 def cmd_set_expression_rate(args):
     """Set the autonomous expression rate modifier (0.1 = slow, 1.0 = normal, 2.0 = fast)."""
-    from config import AUTO_EXPRESSION_RATE_MODIFIER
     new_rate = max(0.1, min(5.0, args.rate))
     # For now, just report - actual config change requires file edit
     emit({
         "rate_set": new_rate,
         "message": f"Expression rate set to {new_rate}x (interval: {60/new_rate:.1f} seconds)",
-        "note": "To permanently change rate, edit AUTO_EXPRESSION_RATE_MODIFIER in CircleForge/config.py",
+        "note": "To permanently change rate, edit AUTO_EXPRESSION_RATE_MODIFIER in Weslr/config.py",
+    })
+
+
+def cmd_enable_expressions(_args):
+    """Enable autonomous expressions (AUTO_EXPRESSION_ENABLED = True)."""
+    emit({
+        "enabled": True,
+        "message": "Autonomous expressions enabled",
+        "note": "Expressions will now be generated based on AUTO_EXPRESSION_RATE_MODIFIER setting"
+    })
+
+
+def cmd_disable_expressions(_args):
+    """Disable autonomous expressions (AUTO_EXPRESSION_ENABLED = False)."""
+    emit({
+        "enabled": False,
+        "message": "Autonomous expressions disabled",
+        "note": "Set AUTO_EXPRESSION_ENABLED = True in Weslr/config.py to re-enable"
     })
 
 
@@ -468,7 +481,7 @@ def cmd_plugins_create(args):
 
 
 def cmd_plugins_integrate(_args):
-    """Integrate plugins into CircleForge core."""
+    """Integrate plugins into Weslr core."""
     result = integrate_plugins_into_core()
     emit(result)
 
@@ -821,6 +834,12 @@ def main():
     p.add_argument("rate", type=float, help="expression rate multiplier")
     p.set_defaults(func=cmd_set_expression_rate)
 
+    p = sub.add_parser("enable-expressions", help="enable autonomous expressions")
+    p.set_defaults(func=cmd_enable_expressions)
+
+    p = sub.add_parser("disable-expressions", help="disable autonomous expressions")
+    p.set_defaults(func=cmd_disable_expressions)
+
     p = sub.add_parser("autonomous-expression", help="generate a direct autonomous expression (bypass tick loop)")
     p.set_defaults(func=cmd_autonomous_expression)
 
@@ -840,7 +859,7 @@ def main():
     p.add_argument("--description", "-d", default="", help="plugin description")
     p.set_defaults(func=cmd_plugins_create)
 
-    p = sub.add_parser("plugins-integrate", help="integrate plugins into CircleForge core")
+    p = sub.add_parser("plugins-integrate", help="integrate plugins into Weslr core")
     p.set_defaults(func=cmd_plugins_integrate)
 
     p = sub.add_parser("speak", help="print only the natural outward message")
@@ -849,11 +868,52 @@ def main():
     p = sub.add_parser("failsafe-status", help="show public external failsafe mode without exposing any secret")
     p.set_defaults(func=cmd_failsafe_status)
 
-    p = sub.add_parser("llm-status", help="show whether CircleForge currently has live local-LLM access or is falling back")
+    p = sub.add_parser("llm-status", help="show whether Weslr currently has live local-LLM access or is falling back")
     p.set_defaults(func=cmd_llm_status)
 
     p = sub.add_parser("embedded-self-test", help="run one direct embedded-provider self-test thought generation")
     p.set_defaults(func=cmd_embedded_self_test)
+
+    # === Entity Graph CLI ===
+    p = sub.add_parser("entity-list", help="list entities in the entity graph")
+    p.add_argument("--limit", "-l", type=int, default=None, help="limit results")
+    p.set_defaults(func=cmd_entity_list)
+
+    p = sub.add_parser("entity-details", help="show detailed information about an entity")
+    p.add_argument("id", help="entity ID")
+    p.set_defaults(func=cmd_entity_details)
+
+    p = sub.add_parser("entity-add", help="add a new entity")
+    p.add_argument("name", help="entity name")
+    p.add_argument("--type", "-t", default="other", help="entity type (person, organization, concept, event, object, other)")
+    p.add_argument("--aliases", "-a", default="", help="comma-separated aliases")
+    p.add_argument("--confidence", "-c", type=float, default=0.5, help="initial confidence (0.0-1.0)")
+    p.add_argument("--authoritative", action="store_true", help="add as authoritative (not ghost)")
+    p.add_argument("--metadata", "-m", default="", help="JSON metadata")
+    p.set_defaults(func=cmd_entity_add)
+
+    p = sub.add_parser("entity-promote", help="promote ghost entity to authoritative")
+    p.add_argument("id", help="entity ID")
+    p.set_defaults(func=cmd_entity_promote)
+
+    p = sub.add_parser("entity-search", help="search entities by name or alias")
+    p.add_argument("query", help="search query")
+    p.set_defaults(func=cmd_entity_search)
+
+    p = sub.add_parser("entity-stats", help="show entity graph statistics")
+    p.set_defaults(func=cmd_entity_stats)
+
+    p = sub.add_parser("relationship-list", help="list relationships in the entity graph")
+    p.add_argument("--limit", "-l", type=int, default=None, help="limit results")
+    p.set_defaults(func=cmd_relationship_list)
+
+    p = sub.add_parser("relationship-add", help="add a relationship between entities")
+    p.add_argument("source", help="source entity name")
+    p.add_argument("target", help="target entity name")
+    p.add_argument("--type", "-t", default="related_to", help="relationship type")
+    p.add_argument("--strength", "-s", type=float, default=0.5, help="relationship strength")
+    p.add_argument("--provenance", "-p", default="", help="JSON provenance")
+    p.set_defaults(func=cmd_relationship_add)
 
     p = sub.add_parser("human-exchange", help="record a remembered human conversation exchange into communicator self")
     p.add_argument("name")
@@ -989,7 +1049,7 @@ def main():
     p = sub.add_parser("version", help="print release version")
     p.set_defaults(func=cmd_version)
 
-    p = sub.add_parser("self-inspection", help="run self-inspection and generate plain-English description of CircleForge's code")
+    p = sub.add_parser("self-inspection", help="run self-inspection and generate plain-English description of Weslr's code")
     p.set_defaults(func=cmd_self_inspection)
 
     p = sub.add_parser("translate-code", help="translate code snippet to concepts and internal themes")
@@ -1012,13 +1072,13 @@ def main():
     p.set_defaults(func=cmd_search_tool)
 
     p = sub.add_parser("propose-self-mod", help="propose a self-modification with diff and rationale")
-    p.add_argument("--file", required=True, help="file to modify (relative to CircleForge directory)")
+    p.add_argument("--file", required=True, help="file to modify (relative to Weslr directory)")
     p.add_argument("--change", required=True, help="what change to make")
     p.add_argument("--rationale", required=True, help="why this change is needed")
     p.set_defaults(func=cmd_propose_self_mod)
 
     p = sub.add_parser("propose-improvement", help="propose a self-improvement based on a need")
-    p.add_argument("--need", required=True, help="what CircleForge needs to do better")
+    p.add_argument("--need", required=True, help="what Weslr needs to do better")
     p.set_defaults(func=cmd_propose_improvement)
 
     p = sub.add_parser("apply-mod", help="apply an approved self-modification (with checkpoint)")
@@ -1093,7 +1153,7 @@ def main():
     p = sub.add_parser("self-grow", help="run full self-directed growth cycle")
     p.set_defaults(func=cmd_self_grow)
 
-    p = sub.add_parser("self-speak", help="generate speech explaining CircleForge's self-decisions")
+    p = sub.add_parser("self-speak", help="generate speech explaining Weslr's self-decisions")
     p.add_argument("--gaps", default="[]", help="gaps to speak about")
     p.set_defaults(func=cmd_self_speak)
 
@@ -1262,7 +1322,7 @@ def cmd_propose_improvement(args):
     """Propose a self-improvement based on a need."""
     need = args.need
     if not need:
-        emit({"error": "No need specified. Use --need to describe what CircleForge needs to do better."})
+        emit({"error": "No need specified. Use --need to describe what Weslr needs to do better."})
         return
 
     result = build_proposal_report(need)
@@ -1443,7 +1503,7 @@ def cmd_llm_suggest(args):
     """Use LLM to suggest self-improvements."""
     need = args.need
 
-    result = generate_improvement_suggestion("CircleForge v0.0.100 with 27 source files", need)
+    result = generate_improvement_suggestion("Weslr v0.0.100 with 27 source files", need)
 
     emit(result)
     print(f"\n--- Suggestion ---")
@@ -1470,7 +1530,7 @@ def cmd_dashboard_status(args):
 
 def cmd_auto_suggest(args):
     """Generate autonomous self-improvement suggestions."""
-    result = generate_autonomous_suggestion("CircleForge v0.0.100 with 27 source files")
+    result = generate_autonomous_suggestion("Weslr v0.0.100 with 27 source files")
     emit(result)
 
     if not result.get("ok"):
@@ -1643,11 +1703,11 @@ def cmd_self_grow(args):
     # Show speech
     speech = result.get('speech', '')
     if speech:
-        print(f"\n🗣️  CircleForge says: \"{speech}\"")
+        print(f"\n🗣️  Weslr says: \"{speech}\"")
 
 
 def cmd_self_speak(args):
-    """Generate speech explaining CircleForge's self-decisions."""
+    """Generate speech explaining Weslr's self-decisions."""
     gaps_json = args.gaps
     if gaps_json:
         try:
@@ -1662,7 +1722,7 @@ def cmd_self_speak(args):
     self_state = load_communicator_self()
     speech = generate_self_speech(self_state, {"gaps": gaps})
     emit({"speech": speech})
-    print(f"\n🗣️  CircleForge says: \"{speech}\"")
+    print(f"\n🗣️  Weslr says: \"{speech}\"")
 
 
 def cmd_opportunity_list(args):
@@ -1731,7 +1791,7 @@ def cmd_opportunity_auto_transition(args):
 
 def cmd_opportunity_reject(args):
     """Record a rejection for an opportunity theme."""
-    from sim import load_opportunity_board, save_opportunity_board, track_rejection, decay_opportunities_by_rejections, opportunity_lifecycle_state
+    from sim import load_opportunity_board, save_opportunity_board, track_rejection, decay_opportunities_by_rejections
     
     theme = args.theme
     reason = args.reason
@@ -1981,6 +2041,228 @@ def cmd_variation_show(args):
     for method, score in data.get('math_scores', {}).items():
         print(f"  {method}: {score:.3f}")
     print(f"  Combined: {tracker.get('math_weights', {}).get('markov', 0.25) + tracker.get('math_weights', {}).get('bandit_ucb', 0.25) + tracker.get('math_weights', {}).get('entropy', 0.25) + tracker.get('math_weights', {}).get('gradient', 0.25):.3f}")
+
+
+# === Entity Graph CLI Commands ===
+
+def cmd_entity_list(args):
+    """List entities in the entity graph."""
+    g = get_entity_graph()
+    
+    limit = args.limit or 10
+    entities = g.get_all_entities()[:limit]
+    
+    emit({
+        "ok": True,
+        "entities": [e.to_dict() for e in entities],
+        "count": len(entities),
+        "total": len(g.get_all_entities())
+    })
+    
+    print(f"\n=== Entities ({len(g.get_all_entities())} total) ===\n")
+    for e in entities:
+        print(f"ID: {e.id}")
+        print(f"  Name: {e.name}")
+        print(f"  Type: {e.type}")
+        print(f"  Aliases: {', '.join(e.aliases) if e.aliases else '(none)'}")
+        print(f"  Confidence: {e.confidence:.2f}")
+        print(f"  Ghost: {e.is_ghost}")
+        print(f"  Last seen: {e.last_seen}")
+        if e.evidence:
+            print(f"  Evidence: {len(e.evidence)} items")
+        print(f"  Relationships: {len(e.relationships)}")
+        print()
+
+
+def cmd_entity_details(args):
+    """Show detailed information about a specific entity."""
+    g = get_entity_graph()
+    
+    entity = g.get_entity(args.id)
+    if not entity:
+        emit({"error": f"Entity '{args.id}' not found"})
+        print(f"\n❌ Entity '{args.id}' not found")
+        return
+    
+    relationships = g.get_relationships_for_entity(entity.id)
+    
+    emit({
+        "ok": True,
+        "entity": entity.to_dict(),
+        "relationships": [r.to_dict() for r in relationships]
+    })
+    
+    print(f"\n=== Entity: {entity.name} (ID: {entity.id}) ===\n")
+    
+    print(f"Type: {entity.type}")
+    print(f"Aliases: {', '.join(entity.aliases) if entity.aliases else '(none)'}")
+    print(f"Confidence: {entity.confidence:.2f}")
+    print(f"Ghost entity: {entity.is_ghost}")
+    if entity.metadata:
+        print(f"Metadata: {entity.metadata}")
+    
+    if entity.evidence:
+        print(f"\nEvidence ({len(entity.evidence)} items):")
+        for ev in entity.evidence:
+            print(f"  - [{ev['source']}] {ev['content']} (timestamp: {ev['timestamp']})")
+    
+    if relationships:
+        print(f"\nRelationships ({len(relationships)}):")
+        for rel in relationships:
+            target = g.get_entity(rel.target_id) if rel.source_id == entity.id else g.get_entity(rel.source_id)
+            target_name = target.name if target else rel.target_id if rel.source_id == entity.id else rel.source_id
+            print(f"  - {rel.type}: {target_name} (strength: {rel.strength:.2f})")
+    else:
+        print("\nNo relationships")
+
+
+def cmd_entity_add(args):
+    """Add a new entity to the entity graph."""
+    g = get_entity_graph()
+    
+    entity = g.add_entity(
+        name=args.name,
+        entity_type=args.type or "other",
+        aliases=args.aliases.split(",") if args.aliases else [],
+        confidence=args.confidence or 0.5,
+        is_ghost=not args.authoritative,
+        metadata=json.loads(args.metadata) if args.metadata else {}
+    )
+    
+    g.save()
+    
+    emit({
+        "ok": True,
+        "entity": entity.to_dict()
+    })
+    
+    print(f"\n✅ Added entity: {entity.name} (ID: {entity.id})")
+    print(f"   Type: {entity.type}")
+    print(f"   Ghost: {entity.is_ghost}")
+
+
+def cmd_entity_promote(args):
+    """Promote a ghost entity to authoritative."""
+    g = get_entity_graph()
+    
+    entity = g.get_entity(args.id)
+    if not entity:
+        emit({"error": f"Entity '{args.id}' not found"})
+        print(f"\n❌ Entity '{args.id}' not found")
+        return
+    
+    if not entity.is_ghost:
+        emit({"error": f"Entity '{args.id}' is not a ghost entity"})
+        print(f"\n❌ Entity '{args.id}' is not a ghost entity")
+        return
+    
+    g.promote_entity(entity.id)
+    
+    emit({
+        "ok": True,
+        "entity": entity.to_dict()
+    })
+    
+    print(f"\n✅ Promoted entity: {entity.name} to authoritative")
+
+
+def cmd_entity_search(args):
+    """Search entities by name or alias."""
+    g = get_entity_graph()
+    
+    entities = g.search_entities(args.query)
+    
+    emit({
+        "ok": True,
+        "query": args.query,
+        "results": [e.to_dict() for e in entities],
+        "count": len(entities)
+    })
+    
+    print(f"\n=== Search Results for '{args.query}' ({len(entities)} found) ===\n")
+    for e in entities:
+        print(f"ID: {e.id} | Name: {e.name} | Type: {e.type} | Ghost: {e.is_ghost}")
+
+
+def cmd_entity_stats(args):
+    """Show entity graph statistics."""
+    g = get_entity_graph()
+    
+    stats = g.get_entity_stats()
+    emit({
+        "ok": True,
+        "stats": stats
+    })
+    
+    print(f"\n=== Entity Graph Statistics ===\n")
+    print(f"Total entities: {stats['total_entities']}")
+    print(f"  Authoritative: {stats['authoritative_entities']}")
+    print(f"  Ghost: {stats['ghost_entities']}")
+    print(f"Total relationships: {stats['total_relationships']}")
+    print("\nEntities by type:")
+    for etype, count in stats['entities_by_type'].items():
+        print(f"  {etype}: {count}")
+
+
+def cmd_relationship_list(args):
+    """List relationships in the entity graph."""
+    g = get_entity_graph()
+    
+    relationships = g.get_all_relationships()[:args.limit] if args.limit else g.get_all_relationships()
+    
+    emit({
+        "ok": True,
+        "relationships": [r.to_dict() for r in relationships],
+        "count": len(relationships)
+    })
+    
+    print(f"\n=== Relationships ({len(relationships)} total) ===\n")
+    for rel in relationships:
+        source = g.get_entity(rel.source_id)
+        target = g.get_entity(rel.target_id)
+        source_name = source.name if source else rel.source_id
+        target_name = target.name if target else rel.target_id
+        print(f"ID: {rel.id}")
+        print(f"  {source_name} --[{rel.type}]--> {target_name}")
+        print(f"  Strength: {rel.strength:.2f}")
+        if rel.provenance:
+            print(f"  Provenance: {rel.provenance}")
+        print()
+
+
+def cmd_relationship_add(args):
+    """Add a new relationship between entities."""
+    g = get_entity_graph()
+    
+    source = g.get_entity_by_name(args.source)
+    target = g.get_entity_by_name(args.target)
+    
+    if not source:
+        emit({"error": f"Source entity '{args.source}' not found"})
+        print(f"\n❌ Source entity '{args.source}' not found")
+        return
+    if not target:
+        emit({"error": f"Target entity '{args.target}' not found"})
+        print(f"\n❌ Target entity '{args.target}' not found")
+        return
+    
+    rel = g.add_relationship(
+        source.id,
+        target.id,
+        args.type or "related_to",
+        strength=args.strength or 0.5,
+        provenance=json.loads(args.provenance) if args.provenance else {"source": "cli", "timestamp": int(time.time())}
+    )
+    
+    g.save()
+    
+    emit({
+        "ok": True,
+        "relationship": rel.to_dict()
+    })
+    
+    print(f"\n✅ Added relationship: {source.name} --[{rel.type}]--> {target.name}")
+    print(f"   Strength: {rel.strength:.2f}")
 
 
 if __name__ == "__main__":
