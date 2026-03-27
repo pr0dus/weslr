@@ -3,17 +3,23 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from config import CIRCLEFORGE_LANGUAGE
+
 
 def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: str | None) -> tuple[str, bool]:
+    from languages import de, en
+    
+    lang_module = de if CIRCLEFORGE_LANGUAGE == "de" else en
+    
     previous_question = str(communicator.get("unresolved_question", "")).strip()
     theme = chosen.get("niche_theme") or communicator.get("active_pursuit") or "current pressure"
     if final_action in {"inspect", "research"}:
-        new_question = f"What new uncertainty appeared after {final_action} on {theme}?"
+        new_question = lang_module.theme_inspection_question(final_action, theme)
         return new_question, True
     if chosen.get("niche_theme"):
-        new_question = f"What is still unclear about {theme}?"
+        new_question = lang_module.theme_unclear_question(theme)
         return new_question, False
-    return previous_question or "What remains under-understood?", False
+    return previous_question or lang_module.fallback_question(), False
 
 
 def average_internal_reputation(agent_name: str, *, load_relationships_func) -> tuple[float, float, float]:

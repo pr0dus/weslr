@@ -1,26 +1,20 @@
 {
   "name": "CircleForge",
   "status": "active",
-  "current_intent": "signal around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+  "current_intent": "research around log readability | inner pull: critic woke on question-pressure around log readability.",
   "active_pursuit": "log readability",
-  "unresolved_question": "What is still unclear about log readability?",
-  "curiosity_target": "What new uncertainty appeared after research on log readability?",
+  "unresolved_question": "Was neue Unklarheit trat nach research auf log readability?",
+  "curiosity_target": "log readability",
   "attraction_bias": "move toward log readability",
-  "avoidance_bias": "avoid brittle action around log readability until objections are understood",
-  "curiosity": 0.59,
+  "avoidance_bias": "avoid overcommitting before experiment clarity on Was neue Unklarheit trat nach research auf log readability?",
+  "curiosity": 0.65,
   "dominant_need": "log readability",
-  "last_decision_summary": "act from agent-1 (observer) with 0 questioning voice(s); trust=0.9 usefulness=0.902 memory_bias=0.0; foreground=communicator:0.65; speech_threshold=0.521; uncertainty_brake=0.76; hazard_bias=0.018",
+  "last_decision_summary": "reconsider from agent-3 (critic) with 1 questioning voice(s); trust=0.5 usefulness=0.5 memory_bias=0.0; foreground=critic:0.33; speech_threshold=0.486; uncertainty_brake=0.448; hazard_bias=0.045",
   "self_model": {
-    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
-    "perceived_strengths": [
-      "research",
-      "inspect"
-    ],
+    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement",
+    "perceived_strengths": [],
     "perceived_weaknesses": [],
-    "preferred_modes": [
-      "act",
-      "uncertainty-brake"
-    ],
+    "preferred_modes": [],
     "caution_themes": [
       "reckless action before clarity",
       "internal objections still unresolved"
@@ -28,58 +22,32 @@
     "continuity_commitments": [
       "preserve meaningful unfinished threads",
       "prefer reversible change over blind rupture",
-      "hold action when inner objections cluster",
-      "protect continuity-relevant memory traces"
+      "hold action when inner objections cluster"
     ],
     "regulation_profile": {
-      "impulse_control": 0.48,
-      "uncertainty_tolerance": 0.73,
-      "self_revision_readiness": 0.417,
-      "speech_threshold": 0.521,
-      "uncertainty_brake": 0.76,
-      "inhibition_gain": 0.26,
-      "mode": "resting"
+      "impulse_control": 0.4,
+      "uncertainty_tolerance": 0.52,
+      "self_revision_readiness": 0.3,
+      "speech_threshold": 0.535,
+      "uncertainty_brake": 0.427,
+      "inhibition_gain": 0.286,
+      "mode": "focused"
     },
     "contradictions": [],
     "short_term_signals": {
       "strengths": [
-        "gather",
-        "inspect",
-        "research",
-        "rest",
-        "signal"
+        "research"
       ],
       "weaknesses": [],
       "modes": [
-        "act",
-        "reconsider",
-        "uncertainty-brake"
+        "reconsider"
       ]
     },
     "long_term_beliefs": {
-      "strengths": [
-        "research",
-        "inspect"
-      ],
+      "strengths": [],
       "weaknesses": [],
-      "modes": [
-        "act",
-        "uncertainty-brake"
-      ],
-      "themes": {
-        "config sanity checks validation": [
-          "build_module",
-          "research",
-          "optimize",
-          "signal"
-        ],
-        "log readability": [
-          "research",
-          "inspect",
-          "optimize",
-          "gather"
-        ]
-      },
+      "modes": [],
+      "themes": {},
       "core_drives": [
         "continuity",
         "understanding",
@@ -87,81 +55,31 @@
         "self-revision"
       ],
       "continuity_markers": {
-        "ticks_lived": 31,
-        "identity_stability": 0.806,
-        "continuity_preference": 0.741
+        "ticks_lived": 1,
+        "identity_stability": 0.626,
+        "continuity_preference": 0.191
       }
     },
     "belief_confidence": {
-      "strengths": {
-        "research": 0.95,
-        "inspect": 0.63
-      },
+      "strengths": {},
       "weaknesses": {},
-      "modes": {
-        "act": 0.95,
-        "uncertainty-brake": 0.63
-      },
-      "themes": {
-        "config sanity checks validation": {
-          "build_module": 0.95,
-          "research": 0.95,
-          "optimize": 0.95,
-          "signal": 0.95,
-          "gather": 0.95,
-          "trade": 0.95,
-          "rest": 0.95
-        },
-        "log readability": {
-          "research": 0.95,
-          "inspect": 0.95,
-          "optimize": 0.95,
-          "gather": 0.95,
-          "signal": 0.87,
-          "build_module": 0.78,
-          "trade": 0.78,
-          "rest": 0.39
-        }
-      }
+      "modes": {},
+      "themes": {}
     },
     "self_modeling_note": "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition.",
     "self_tuning": {
-      "hazard_bias": 0.018,
-      "speech_threshold_delta": 0.012,
-      "inhibition_delta": -0.019
+      "hazard_bias": 0.053,
+      "speech_threshold_delta": 0.006,
+      "inhibition_delta": -0.016
     }
   },
   "intent_history": [
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "rest around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
-    "signal around log readability | inner pull: communicator woke on scheduled-cadence around log readability."
+    "wake, observe, and continue enriching the local world",
+    "research around log readability | inner pull: critic woke on question-pressure around log readability."
   ],
   "question_history": [
-    "resolved-ish: What is still unclear about log readability?",
-    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "What new uncertainty appeared after research on log readability?",
-    "resolved-ish: What is still unclear about log readability?",
-    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
-    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "resolved-ish: What new uncertainty appeared after research on log readability?",
-    "What new uncertainty appeared after research on log readability?",
-    "What is still unclear about log readability?"
+    "resolved-ish: what part of the world is still under-understood?",
+    "Was neue Unklarheit trat nach research auf log readability?"
   ],
   "unresolved_objections": [
     "critic:fallback policy selected build_module"
@@ -169,28 +87,8 @@
   "decision_style_memory": {
     "actions": {
       "research": {
-        "count": 14,
-        "confidence": 0.84,
-        "last_theme": "log readability"
-      },
-      "signal": {
-        "count": 2,
-        "confidence": 0.06,
-        "last_theme": "log readability"
-      },
-      "inspect": {
-        "count": 8,
-        "confidence": 0.48,
-        "last_theme": "log readability"
-      },
-      "rest": {
-        "count": 2,
-        "confidence": 0.06,
-        "last_theme": "log readability"
-      },
-      "gather": {
         "count": 1,
-        "confidence": 0.03,
+        "confidence": 0.06,
         "last_theme": "log readability"
       }
     },
@@ -198,17 +96,9 @@
       "reconsider": {
         "count": 1,
         "confidence": 0.05
-      },
-      "act": {
-        "count": 21,
-        "confidence": 0.63
-      },
-      "uncertainty-brake": {
-        "count": 5,
-        "confidence": 0.15
       }
     }
   },
-  "last_wake_at": 1774619009,
-  "updated_at": 1774619009
+  "last_wake_at": 1774624083,
+  "updated_at": 1774624083
 }

@@ -1,9 +1,9 @@
 {
-  "id": "agent-1-research_note-1774619004",
+  "id": "agent-1-research_note-1774624083",
   "agent_name": "agent-1",
   "title": "Research Note",
   "artifact_type": "market_hypothesis",
-  "category": "optimization",
+  "category": "memory",
   "family": "evaluation",
   "idea": "Short-cycle agents should compress observations into exportable research notes.",
   "explanation": "This artifact captures a compact research note produced during a simulation tick.",
@@ -14,10 +14,10 @@
   "problem_statement": "raw logs are hard to scan during small incidents",
   "gap_reason": "existing tooling is often overbuilt when all people need is a readable local summary",
   "existing_solution_friction": "existing tooling is often overbuilt when all people need is a readable local summary",
-  "artifact_hypothesis": "Build a small optimization artifact around log readability",
+  "artifact_hypothesis": "Build a small memory artifact around log readability",
   "offer_hypothesis": "A narrow log readability helper could be packaged for technical builders",
   "delivery_mode_guess": "bundle_candidate",
-  "research_confidence": 0.692,
+  "research_confidence": 0.47,
   "audience": [
     "local AI tinkerers",
     "agent-sim builders"
@@ -43,7 +43,7 @@
   ],
   "lineage": {
     "action": "research",
-    "reason": "following last human topic: log readability",
+    "reason": "advancing assigned work: Advance Backup Confidence",
     "tick_context": "research"
   },
   "parent_ids": [],
@@ -56,10 +56,9 @@
   "approved_for_export": false,
   "export_path": null,
   "proof_signals": {
-    "artifact_id": "agent-1-research_note-1774619004",
-    "first_seen_tick": 27,
-    "last_seen_tick": 30,
-    "appearances": 4,
+    "first_seen_tick": 0,
+    "last_seen_tick": 0,
+    "appearances": 0,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,
@@ -68,7 +67,7 @@
     "handoff_acceptances": 0,
     "handoff_rejections": 0,
     "external_validation_state": "unvalidated",
-    "last_status": "unreviewed"
+    "last_status": "unseen"
   },
   "artifact_source_path": "agents/agent-1/artifacts/research.txt",
   "artifact_source_kind": "txt",
@@ -95,11 +94,11 @@
   "buyer_specificity_score": 0.28,
   "gap_severity_score": 0.36,
   "packaging_ease_score": 0.41,
-  "opportunity_score": 0.444,
+  "opportunity_score": 0.426,
   "buyer_clarity_score": 0.31,
   "pain_severity_score": 0.48,
-  "deployment_effort_score": 0.68,
-  "proof_level_score": 0.21,
+  "deployment_effort_score": 0.7,
+  "proof_level_score": 0.12,
   "support_burden_score": 0.48,
   "commercial_readiness_score": 0.01,
   "sellability_score": 0.01,

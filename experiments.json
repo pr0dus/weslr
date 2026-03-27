@@ -1,74 +1,14 @@
 [
   {
     "id": "exp-1",
-    "title": "What new uncertainty appeared after research on config sanity checks validation?",
-    "hypothesis": "A short inspect/research loop around config sanity checks validation will reduce uncertainty.",
+    "title": "Was neue Unklarheit trat nach research auf log readability?",
+    "hypothesis": "A short inspect/research loop around log readability will reduce uncertainty.",
     "owner": "agent-1",
-    "status": "running",
-    "created_at": 1774616033,
+    "status": "proposed",
+    "created_at": 1774624083,
     "related_need": "need-question-1",
     "project_id": "project-backup-confidence",
-    "observations": "Latest relevant action: research by agent-2",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
-  },
-  {
-    "id": "exp-4",
-    "title": "What is still unclear about config sanity checks validation?",
-    "hypothesis": "A short inspect/research loop around config sanity checks validation will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "proposed",
-    "created_at": 1774618516,
-    "related_need": "need-question-4",
-    "project_id": "project-backup-confidence",
     "observations": "",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
-  },
-  {
-    "id": "exp-5",
-    "title": "What new uncertainty appeared after inspect on config sanity checks validation?",
-    "hypothesis": "A short inspect/research loop around config sanity checks validation will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "proposed",
-    "created_at": 1774618596,
-    "related_need": "need-question-5",
-    "project_id": "project-backup-confidence",
-    "observations": "",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
-  },
-  {
-    "id": "exp-10",
-    "title": "What new uncertainty appeared after research on log readability?",
-    "hypothesis": "A short inspect/research loop around log readability will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "running",
-    "created_at": 1774618726,
-    "related_need": "need-question-10",
-    "project_id": "project-backup-confidence",
-    "observations": "Latest relevant action: research by agent-4",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
-  },
-  {
-    "id": "exp-12",
-    "title": "What new uncertainty appeared after inspect on log readability?",
-    "hypothesis": "A short inspect/research loop around log readability will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "running",
-    "created_at": 1774618728,
-    "related_need": "need-question-12",
-    "project_id": "project-backup-confidence",
-    "observations": "Latest relevant action: inspect by agent-4",
-    "follow_up": "No clarifying action observed yet; caution may be warranted if this keeps stalling."
-  },
-  {
-    "id": "exp-13",
-    "title": "What is still unclear about log readability?",
-    "hypothesis": "A short inspect/research loop around log readability will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "running",
-    "created_at": 1774618728,
-    "related_need": "need-question-13",
-    "project_id": "project-backup-confidence",
-    "observations": "Latest relevant action: research by agent-2",
-    "follow_up": "Re-check whether the communicator question changed or narrowed after this action."
+    "follow_up": "Run inspect or research and compare whether the question changes."
   }
 ]

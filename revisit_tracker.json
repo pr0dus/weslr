@@ -50,13 +50,17 @@
       }
     },
     "config sanity checks": {
-      "times_revisited": 1,
+      "times_revisited": 7,
       "last_revisit_tick": 1774616033,
       "self_correction_notes": [
         "Focus on core value: config sanity \u2014 add evidence layer and human validation"
       ],
       "generated_variations": [
-        "config sanity with evidence layer"
+        "refined config sanity checks",
+        "refined config sanity checks",
+        "refined config sanity checks",
+        "refined config sanity checks",
+        "refined config sanity checks"
       ],
       "math_scores": {
         "markov": 0.18,
@@ -67,16 +71,12 @@
       }
     },
     "backup confidence": {
-      "times_revisited": 1,
+      "times_revisited": 7,
       "last_revisit_tick": 1774616033,
       "self_correction_notes": [
         "Focus on core value: backup confidence \u2014 emphasize recovery and continuity"
       ],
       "generated_variations": [
-        "backup confidence with recovery emphasis",
-        "unexplored backup confidence dimension",
-        "unexplored backup confidence dimension",
-        "unexplored backup confidence dimension",
         "novel approach to backup confidence",
         "novel approach to backup confidence",
         "novel approach to backup confidence",
@@ -93,14 +93,17 @@
       }
     },
     "test opportunity": {
-      "times_revisited": 1,
+      "times_revisited": 7,
       "last_revisit_tick": 1774618727,
       "self_correction_notes": [
         "Focus on core value: test opportunity \u2014 focus on real-world usability metrics"
       ],
       "generated_variations": [
-        "test opportunity with usability metrics",
-        "unexplored test opportunity dimension"
+        "refined test opportunity",
+        "refined test opportunity",
+        "refined test opportunity",
+        "refined test opportunity",
+        "refined test opportunity"
       ],
       "math_scores": {
         "markov": 0.12,

@@ -22,11 +22,11 @@
       "last_category": null
     },
     "log readability": {
-      "strength": 0.99,
-      "wins": 5,
+      "strength": 0.418,
+      "wins": 1,
       "failures": 0,
-      "last_action": "signal",
-      "last_category": "observability"
+      "last_action": "research",
+      "last_category": "memory"
     },
     "workflow packaging": {
       "strength": 0.3,
@@ -34,22 +34,6 @@
       "failures": 0,
       "last_action": null,
       "last_category": null
-    },
-    "config sanity checks validation": {
-      "strength": 0.39,
-      "wins": 3,
-      "failures": 0,
-      "rejections": 0,
-      "last_action": "research",
-      "last_category": "uncategorized"
-    },
-    "test opportunity": {
-      "strength": 0.168,
-      "wins": 1,
-      "failures": 0,
-      "rejections": 0,
-      "last_action": "optimize",
-      "last_category": "research"
     }
   },
   "last_theme": "log readability"
