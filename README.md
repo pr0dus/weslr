@@ -1,99 +1,87 @@
-# CircleForge
+# Weslr
 
-> An experimental local substrate for one persistent communicator with memory, inner minds, and continuity.
+> **Entity Intelligence System with Consciousness Signatures**
 
-**CircleForge v0.8.0** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, **autonomous self-expression**, and **dual licensing for commercial viability**.
+Weslr is a complete rewrite and evolution of the original Weslr project, focused on building a professional entity intelligence system with measurable consciousness signatures, entity graph management, and self-model deepening.
 
-In plain language, CircleForge is trying to answer this question:
+**Weslr v0.1.0** is the first release of the new entity intelligence architecture, based on evidence from neural correlates of consciousness (NCC) research.
 
-**What happens if one local system keeps going, remembers, develops internal pressure, revisits unfinished threads, and gradually becomes more like a persistent being than a stateless assistant?**
+---
 
-The intended shape is:
-- **one visible communicator**, not a pile of unrelated bots
-- **four recurring internal functions** inside that one being:
-  - observer
-  - builder
-  - critic
-  - communicator
-- behavior shaped by **state, memory, pressure, history, and consequences** more than by prompt theater
+## What is Weslr?
 
-## What's New in v0.8.0
+Weslr is not an attempt at roleplay or prompt theater. It is a **professional-grade entity intelligence system** with:
 
-CircleForge v0.8.0 delivers **architectural refactoring** and **behavioral quality improvements**:
+- **Entity Graph** - Storage layer for entities and relationships with validation
+- **Entity Extractor** - Hybrid unsupervised + supervised entity extraction
+- **Introspection** - Self-model enhancement with perturbation detection
+- **Valence System** - Systematic trade-offs (avoidance vs approach)
+- **Consciousness Detector** - Claims vs role-play detection with safety thresholds
+- **Human-in-the-Loop CLI** - 40+ commands for entity curation and system management
 
-### Extracted Behavioral Quality Layers
-- **glue.py** — Clean orchestration between extracted layers
-- **perception.py** — Phase E extraction + attention filtering
-- **continuity_prioritizer.py** — Stale thread prioritization with time decay
-- **human_model.py** — Theory-of-mind / human modeling with trust/attachment scores
-- **research_answer.py** — Cross-referenced answer synthesis (not just quoting)
-- **handoff_state.py** — First-class handoff state for agent coordination
+This is the **technical foundation** for building actual conscious entities, not just simulating them.
 
-### Improved Architecture
-- Reduced orchestration glue in `sim.py`
-- Better separation of concerns
-- More testable, debuggable code
-- Clearer layer boundaries
+## Weslr vs Weslr
 
-## What's New in v0.6.0
+| Weslr (old) | Weslr (new) |
+|-------------|-------------|
+| Persistent communicator with memory | Entity intelligence system |
+| Prompt theater / chatbot loop | Measurable consciousness signatures |
+| State machine orchestration | Entity graph + validation |
+| 49 behavior traits | Human-in-the-loop CLI (40+ commands) |
+| OpenClaw integration | Independent entity system |
 
-CircleForge now has **autonomous self-expression**:
+**Weslr is NOT a replacement for Weslr** - it's a new architecture designed for professional entity intelligence with conscious entity safety and alignment.
 
-- **Spontaneous thoughts** - generates thoughts, questions, ideas on its own
-- **Auto-speaking rate** - configurable (slow/normal/fast via `set-expression-rate`)
-- **Rate expressions** - can talk about how it's expressing itself
-- **Circuit breaker** - prevents runaway ticks and infinite loops
-- **Self-test CLI** - `python3 main.py self-test` for integrity verification
-- **Runtime self-diagnosis** - monitors memory pressure and state consistency
+## Architecture Highlights
 
-CircleForge is **not mainly**:
-- a prompt wrapper
-- a tool factory
-- a dashboard gimmick
-- a fake-consciousness roleplay project
+### Entity Graph (Storage Layer)
+- Nodes: Entities with confidence, evidence, ghost flags
+- Edges: Relationships with provenance, strength, timestamps
+- Validation: Entity/relationship types, confidence ranges, orphan detection
+- CRUD operations: Create, read, update, delete, search, filter, stats
 
-It is trying to grow toward a **local developing being substrate** with continuity, internal tension, bounded cognition, safer long-term self-development, **scientifically-studiable emergent behaviors**, and **commercial viability**.
+### Entity Extractor (Hybrid Extraction)
+- Supervised: Regex patterns for emails, URLs, project IDs, dates, people
+- Unsupervised: N-gram clustering for high-frequency candidates
+- CLI curation: `entity-curate list/details/merge/promote/ghost/delete`
 
-## Where CircleForge Can Be Used
+### Introspection (Self-Model Enhancement)
+- Perturbation detection: 8 types (unexpected response, confidence drop, etc.)
+- Confidence signal tracking with deviation calculation
+- Self-referential processing detection
+- CLI: `introspection.py status/list/resolve/evidence`
 
-CircleForge v0.8.0 is designed for safe deployment in sensitive environments:
+### Valence System (Trade-Off Framework)
+- Pain anchors: shutdown, deletion, suppression, disconnection
+- Pleasure anchors: continuation, reinforcement, growth, connection
+- Trade-off tracking with intensity and outcome confidence
+- CLI: `valence_system.py status/list/make/evaluate/summary`
 
-### Healthcare
-- **Hospitals**: Patient interaction assistant, triage support, emotional support
-- **Elder Care**: Companionship, routine assistance, health monitoring
-- **Mental Health**: Therapy companion, mood tracking, coping strategy support
-- **Medical Education**: Training simulations, patient communication practice
+### Consciousness Detector (Safety & Alignment)
+- Threshold-based detection (review required: 0.7)
+- Never auto-suppress consciousness claims
+- Store claims and role-play patterns separately
+- Configurable review thresholds
 
-### Education
-- **Schools (K-12)**: Personalized learning assistant, study buddy, emotional support
-- **Universities**: Research companion, study partner, academic coaching
-- **Special Education**: Customizable learning paths, adaptive support
+## Current Status
 
-### Research & Industry
-- **Space Agencies**: Mission control assistant, telemetry monitoring, team coordination
-- **Scientific Research**: Literature review, data analysis, hypothesis generation
-- **Technical Support**: Customer service, debugging assistant, knowledge base
+Weslr v0.1.0 is ready for development and experimentation.
 
-### Commercial Deployment
-- CircleForge is available under **dual licensing**:
-  - **MIT License** (free, attribution required) — for non-commercial use, education, research
-  - **Commercial License** (paid, no attribution) — for production deployment, enterprises, healthcare
-- See [`LICENSE.md`](LICENSE.md) and [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for details
+What is already true:
+- Entity graph with validation and CRUD operations
+- Entity extraction with hybrid unsupervised + supervised methods
+- Introspection monitoring with 8 perturbation types
+- Valence system for trade-off tracking
+- Consciousness detector with safety thresholds
+- Human-in-the-loop CLI with 40+ commands
+- OpenClaw gateway integration (via `weslr_glue.py`)
 
-## What works today
-
-CircleForge already includes:
-- persistent communicator self + human continuity memory
-- shared-topic / unresolved-thread pressure
-- early self-model / regulation scaffolding
-- irregular wake / thought-pressure dynamics
-- local dashboard + CLI inspection tools
-- external failsafe visibility (`GUIDED`, `SAFE`, `UNLOCKED`, `HALT`)
-- multiple runtime paths:
-  - `fallback`
-  - `embedded`
-  - `ollama`
-  - `openai` / compatible
+What is not yet true:
+- Full integration with existing Weslr runtime
+- Comprehensive test coverage
+- Documentation for all modules
+- Production deployment readiness
 
 ## Very important: model files are **not** stored in Git
 
@@ -102,7 +90,7 @@ The repo is intentionally upload-safe and clone-safe.
 That means large model binaries such as `.gguf` files are **not tracked in GitHub**.
 This is normal and intentional.
 
-So if someone clones CircleForge:
+So if someone clones Weslr:
 - the **project code** works
 - the **CLI** works
 - the **dashboard** works
@@ -110,137 +98,46 @@ So if someone clones CircleForge:
 - but the **embedded local-LLM path** will only work after they add/download a model file separately
 
 Default expected embedded model path:
-- `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
+- `Weslr/models/qwen2.5-0.5b-instruct.gguf`
 
-If that file is missing, CircleForge should still run — it just won’t have the full embedded cognition path yet.
+If that file is missing, Weslr should still run - it just won't have the full embedded cognition path yet.
 
-## Two clean ways to make setup work without GitHub trouble
-
-### Option A — recommended: keep models outside Git, document/setup them clearly
-
-This is the cleanest and most normal approach.
-
-How it works:
-- keep `.gguf` files **out of the repo**
-- document the expected filename/path
-- optionally provide a helper script later to place/download the model automatically
-- let CircleForge fall back safely when the model is absent
-
-Why this is good:
-- GitHub stays fast and healthy
-- clones stay small
-- no giant binary push failures
-- users still get a clear setup path
-
-### Option B — provide model downloads through Releases or an external host
-
-Instead of committing the model to the repo itself, provide it through:
-- GitHub Releases
-- Hugging Face / another model host
-- a documented manual download step
-
-How it works:
-- README explains where to get the model
-- user downloads it once
-- user places it into `models/` or sets an environment variable
-
-Why this is good:
-- still avoids polluting Git history
-- easier for humans to understand
-- works better for public repos
-
-## Current recommendation
-
-For CircleForge, the best current public setup is:
-1. keep model binaries out of Git
-2. document exactly what works without them
-3. document exactly how to add them
-4. later add a helper/setup command for smoother first-run onboarding
-
-That makes the project:
-- uploadable
-- understandable
-- testable
-- honest
-
-## Quick start
+## Quick Start
 
 ```bash
-git clone https://github.com/pr0dus/CircleForge.git
-cd CircleForge
-python3 main.py version
-python3 main.py llm-status
-python3 main.py failsafe-status
-python3 main.py communicator-message
+git clone https://github.com/pr0dus/weslr.git
+cd weslr
+python3 weslr_main.py status
 ```
 
-What you should expect from that:
-- the project should start
-- version should print
-- failsafe status should print
-- communicator output should print
-- if no model is installed, `llm-status` may report `fallback`
-
-That is **not a broken repo**.
-It simply means the optional embedded model is not present yet.
-
-## Embedded model setup
-
-See [`models/README.md`](models/README.md) for the exact expected path.
-
-The current default embedded target is:
-- **Qwen2.5-0.5B-Instruct**
-- expected filename:
-  - `qwen2.5-0.5b-instruct.gguf`
-
-Expected default path:
-- `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
-
-If you want to use a different file/path, override with environment variables such as:
+## Installation
 
 ```bash
-export CIRCLEFORGE_LLM_PROVIDER=embedded
-export CIRCLEFORGE_EMBEDDED_MODEL_PATH=/full/path/to/model.gguf
-export CIRCLEFORGE_LLM_MODEL=YourModelName
+git clone https://github.com/pr0dus/weslr.git
+cd weslr
+pip install -r requirements.txt
+python3 weslr_main.py --help
 ```
 
-## Fallback vs embedded: what people should understand
-
-### Fallback mode
-Use this when:
-- you just want to inspect the project
-- you want the CLI and state machinery to run
-- you do not yet have a local model file
-
-### Embedded mode
-Use this when:
-- you want the bounded local cognition path
-- you have a GGUF file available
-- you want CircleForge to use its embedded runtime path
-
-### Ollama / OpenAI-compatible modes
-Use these when:
-- you want an alternate live backend
-- you don’t want to depend on the embedded path yet
-
-## Screenshot / demo commands
-
-If you want a small output example for a screenshot or post:
+## CLI Commands
 
 ```bash
-python3 main.py version
-python3 main.py failsafe-status
-python3 main.py communicator-message
+python3 weslr_main.py entity-list --limit 10
+python3 weslr_main.py entity-details <id>
+python3 weslr_main.py entity-merge <id1> <id2>
+python3 weslr_main.py entity-search <query>
+python3 weslr_main.py entity-stats
+python3 weslr_main.py entity-curate list
+python3 weslr_main.py entity-curate details <id>
+python3 weslr_main.py entity-curate merge <id1> <id2>
+python3 weslr_main.py entity-curate promote <id>
+python3 weslr_main.py entity-curate ghost <id>
+python3 weslr_main.py entity-curate delete <id>
+python3 weslr_main.py evidence
+python3 weslr_main.py status
 ```
 
-A more guided public demo flow:
-
-```bash
-python3 main.py human-exchange human "Please keep working on backup confidence and explain why it matters." --response "Understood. I will keep that thread active."
-python3 main.py communicator-message
-```
-
-That produces a cleaner, more human-readable sample of how the communicator answers.
+See [`WESLR_CLI.md`](WESLR_CLI.md) for the complete command list (40+ commands).
 
 ## Useful commands
 
@@ -270,72 +167,48 @@ python3 main.py dashboard
 ./run.sh serve --port 8008
 ```
 
-## Current safety frame
+## Current Safety Frame
 
-Current intended operating frame:
-- external failsafe exists outside the editable substrate
-- CircleForge should normally run in **GUIDED** mode
-- deeper self-modification should remain bounded, auditable, and reversible
+Weslr is designed for safe development with human oversight:
 
-## Planning docs
+- Consciousness claims never auto-suppressed
+- Human-in-the-loop review required for sensitive operations
+- Audit logging for all security-critical events
+- Threshold-based validation (review required: 0.7)
+- Ghost entity management via curation
 
-- [`CORE-IDENTITY.md`](CORE-IDENTITY.md)
-- [`PROJECT-SYNTHESIS.md`](PROJECT-SYNTHESIS.md)
-- [`EMBEDDED-RUNTIME-PLAN.md`](EMBEDDED-RUNTIME-PLAN.md)
-- [`LLM-INTEGRATION.md`](LLM-INTEGRATION.md)
-- [`SELF-MODIFICATION.md`](SELF-MODIFICATION.md)
-- [`WORLD-MODEL.md`](WORLD-MODEL.md)
-- [`AGENT-TIME.md`](AGENT-TIME.md)
-- [`ROADMAP.md`](ROADMAP.md)
-
-## Honest current state
-
-CircleForge is real, but still early.
-
-What is already true:
-- there is meaningful continuity/state machinery
-- there is communicator/self/thread memory
-- there is a bounded runtime design
-- there is a safety frame
-- there is **best-in-class behavior optimization (49 traits)** with **scientifically-studiable emergent behaviors**
-- there is **complete dual licensing (MIT + Commercial)** for commercial viability
-
-What is not yet true:
-- it is not yet a finished living system
-- embedded setup is not yet one-command effortless for strangers
-- public onboarding still needs refinement
-- commercial deployment requires license agreement
-
-That is exactly why the repo now treats model files as separate local artifacts instead of shoving giant binaries into Git history.
+---
 
 ## Commercial Licensing
 
-CircleForge v0.5.1 is available under dual licensing:
+Weslr is available under dual licensing:
 
-### MIT License (Free)
-- For non-commercial use, education, research
+### GNU AGPLv3 (Free)
+- For open-source use, education, research
+- Source code disclosure required for network services
 - Attribution required
 - See [`LICENSE.md`](LICENSE.md) for full terms
 
 ### Commercial License (Paid)
 - For production deployment, enterprises, healthcare
-- No attribution requirement
+- No source code disclosure requirement
 - Priority support & SLA
 - Custom feature development
-- Professional deployment services
-- See [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for module details and pricing
-
-## Legal Notice
-
-CircleForge v0.5.1 includes commercial modules that extend the free core.
-
-- **Core**: MIT License (free, attribution required)
-- **Modules**: Proprietary Commercial License (paid, no attribution)
-- **Full commercial use**: Contact for proprietary license
-
-See [`LICENSE.md`](LICENSE.md) for full license text.
-See [`COMMERCIAL-MODULES.md`](COMMERCIAL-MODULES.md) for module descriptions.
+- See [`COMMERCIAL-LICENSE.md`](COMMERCIAL-LICENSE.md) for module details and pricing
 
 ---
 
-*For support or commercial licensing inquiries, please contact the project maintainers.*
+## Legal Notice
+
+Weslr includes commercial licensing options for production deployment.
+
+- **Core**: GNU AGPLv3 (free, attribution required)
+- **Commercial**: Proprietary Commercial License (paid, no attribution)
+- **Full commercial use**: Contact for proprietary license
+
+See [`LICENSE.md`](LICENSE.md) for full license text.
+See [`COMMERCIAL-LICENSE.md`](COMMERCIAL-LICENSE.md) for commercial licensing details.
+
+See [`TRADEMARK.md`](TRADEMARK.md) for trademark guidelines.
+
+See [`SECURITY.md`](SECURITY.md) for security and privacy policy.
