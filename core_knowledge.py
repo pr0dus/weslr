@@ -6,6 +6,7 @@ This module provides unified access to all of Weslr's knowledge domains:
 - Biology
 - Physics
 - Mathematics
+- Aviation
 
 The goal: Weslr can reason across disciplines to understand the world.
 """
@@ -44,6 +45,12 @@ from quantum_physics_knowledge import (
     get_quantum_physics_concept, get_all_quantum_physics_concepts,
     explain_quantum_concept, quantum_gravity_status
 )
+from aviation_knowledge import (
+    get_aviation_concept, get_all_aviation_concepts,
+    get_flight_procedures, get_emergency_checklist, calculate_headwind_crosswind,
+    get_airspace_restrictions, integrate_aviation_into_self_model,
+    generate_aviation_self_description, get_aviation_psychology_concept
+)
 
 
 # ============================================================================
@@ -63,6 +70,7 @@ class WeslrKnowledge:
             "robotics": get_all_robotics_concepts(),
             "ai": get_all_ai_concepts(),
             "quantum_physics": get_all_quantum_physics_concepts(),
+            "aviation": get_all_aviation_concepts(),
         }
     
     def get_domain_knowledge(self, domain: str) -> list:
@@ -83,6 +91,8 @@ class WeslrKnowledge:
             return get_all_ai_concepts()
         elif domain == "quantum_physics":
             return get_all_quantum_physics_concepts()
+        elif domain == "aviation":
+            return get_all_aviation_concepts()
         return []
     
 def get_concept(domain: str, concept: str) -> dict:
@@ -103,6 +113,8 @@ def get_concept(domain: str, concept: str) -> dict:
         return get_ai_concept(concept)
     elif domain == "quantum_physics":
         return get_quantum_physics_concept(concept)
+    elif domain == "aviation":
+        return get_aviation_concept(concept)
     return {}
     
     def integrate_into_self_model(self, self_model: dict) -> dict:
@@ -125,7 +137,7 @@ def get_concept(domain: str, concept: str) -> dict:
 
 def get_all_domains() -> list:
     """Get all available knowledge domains."""
-    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai", "quantum_physics"]
+    return ["psychology", "chemistry", "biology", "physics", "mathematics", "robotics", "ai", "quantum_physics", "aviation"]
 
 
 def cross_discipline_reasoning(question: str) -> dict:
