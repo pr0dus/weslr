@@ -105,7 +105,7 @@ Recommended next work order:
 3. **reduce stale continuity dominance** (COMPLETE)
 4. **deepen theory-of-mind / human modeling** (COMPLETE)
 5. **make handoff notes first-class state** (COMPLETE)
-6. **clean up `sim.py` orchestration glue and legacy logic** (IN PROGRESS - glue.py created, sim.py imports updated)
+6. **clean up `sim.py` orchestration glue and legacy logic** (IN PROGRESS - glue.py created, sim.py imports updated, archive_all_stale refactored)
 
 ## Current guidance
 
