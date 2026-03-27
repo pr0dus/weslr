@@ -1,11 +1,6 @@
 [
   {
     "kind": "demand",
-    "title": "Turn research notes into reusable export artifacts",
-    "reason": "Research notes exist, but they need packaging paths and clearer export destinations."
-  },
-  {
-    "kind": "demand",
     "title": "Rank export candidates for human review",
     "reason": "There are exportable modules/components that should be shortlisted outside the sim."
   },
@@ -17,6 +12,11 @@
   {
     "kind": "family",
     "title": "Active artifact families detected",
-    "reason": "Current artifact work is clustering around: evaluation, packaging."
+    "reason": "Current artifact work is clustering around: packaging, local-ai-ops."
+  },
+  {
+    "kind": "market",
+    "title": "Rising categories detected",
+    "reason": "Current activity is clustering around: modules."
   }
 ]

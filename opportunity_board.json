@@ -1,7 +1,7 @@
 {
   "themes": {
     "backup confidence": {
-      "pressure": 0.154,
+      "pressure": 0.184,
       "evidence": 0,
       "updated_at": 1774612821,
       "acceptances": 0,
@@ -12,7 +12,7 @@
       "split_from": "config sanity checks"
     },
     "service visibility": {
-      "pressure": 0.22,
+      "pressure": 0.218,
       "evidence": 1,
       "updated_at": 1774618726,
       "acceptances": 0,
@@ -23,7 +23,7 @@
       "split_from": null
     },
     "config sanity checks": {
-      "pressure": 0.512,
+      "pressure": 0.429,
       "evidence": 31,
       "updated_at": 1774595883,
       "acceptances": 0,
@@ -35,8 +35,8 @@
     },
     "log readability": {
       "pressure": 0.99,
-      "evidence": 46,
-      "updated_at": 1774624083,
+      "evidence": 52,
+      "updated_at": 1774627084,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
@@ -45,7 +45,7 @@
       "split_from": null
     },
     "workflow packaging": {
-      "pressure": 0.223,
+      "pressure": 0.221,
       "evidence": 0,
       "updated_at": 1774591958,
       "acceptances": 0,
@@ -56,7 +56,7 @@
       "split_from": null
     },
     "config sanity checks validation": {
-      "pressure": 0.955,
+      "pressure": 0.945,
       "evidence": 75,
       "updated_at": 1774618597,
       "acceptances": 0,
@@ -67,18 +67,18 @@
       "split_from": "config sanity checks"
     },
     "test opportunity": {
-      "pressure": 0.141,
+      "pressure": 0.118,
       "evidence": 1,
       "updated_at": 1774618727,
       "acceptances": 0,
       "rejections": 11,
       "revisions": 1,
       "aliases": [],
-      "lifecycle": "declining",
+      "lifecycle": "dormant",
       "split_from": null
     },
     "log readability validation": {
-      "pressure": 0.376,
+      "pressure": 0.372,
       "evidence": 0,
       "updated_at": 1774618808,
       "acceptances": 0,
@@ -91,18 +91,18 @@
   },
   "emergent_candidates": [
     {
-      "theme": "backup validation",
-      "parent_theme": "config sanity checks validation",
-      "signal_count": 3,
-      "confidence": 0.335,
-      "updated_at": 1774624083
-    },
-    {
       "theme": "readable logs",
       "parent_theme": "log readability",
       "signal_count": 1,
-      "confidence": 0.214,
+      "confidence": 0.208,
       "updated_at": 1774623471
+    },
+    {
+      "theme": "backup validation",
+      "parent_theme": "log readability",
+      "signal_count": 1,
+      "confidence": 0.217,
+      "updated_at": 1774627084
     }
   ],
   "clusters": []

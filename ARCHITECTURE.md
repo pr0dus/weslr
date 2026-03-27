@@ -80,25 +80,32 @@ These areas still need later extraction or cleanup:
 ## Remaining planned layers
 
 ### Phase E
-- `perception.py`
+- `perception.py` (complete)
+- `continuity_prioritizer.py` (complete)
+- `human_model.py` (complete)
+- `research_answer.py` (complete)
+- `handoff_state.py` (complete)
+- `glue.py` (complete - general orchestration glue)
 
 ## Recommended immediate focus after extraction pass
 
 The architecture skeleton is now good enough that the next work should be biased toward **behavioral quality**, not layer-count vanity.
 
 Highest-value quality gaps now:
+- `sim.py` orchestration glue still needs cleanup
 - research-backed answers are still too extractive
 - stale continuity pressure can still leak into unrelated moments
 - integration is real but still shallow
 - theory-of-mind / human modeling is still early
 - engineering continuation/handoff notes were previously ad hoc rather than first-class state
-- `sim.py` still contains a large amount of orchestration glue and legacy logic
 
 Recommended next work order:
-1. stabilize / simplify glue between extracted layers
-2. improve research-informed answer quality
-3. reduce stale continuity dominance further
-4. only then decide whether `perception.py` should be extracted next or whether deeper migration of existing layers matters more
+1. **stabilize / simplify glue between extracted layers** (COMPLETE)
+2. **improve research-informed answer quality** (COMPLETE)
+3. **reduce stale continuity dominance** (COMPLETE)
+4. **deepen theory-of-mind / human modeling** (COMPLETE)
+5. **make handoff notes first-class state** (COMPLETE)
+6. **clean up `sim.py` orchestration glue and legacy logic** (IN PROGRESS - glue.py created, sim.py imports updated)
 
 ## Current guidance
 
@@ -112,7 +119,21 @@ When adding new logic:
 
 The architecture now exists, but behavior quality is still uneven.
 Most important remaining quality gaps:
+- `sim.py` orchestration glue being cleaned up (in progress)
 - research-backed answers are still too extractive
 - stale continuity pressure can still leak into unrelated moments
 - integration is real but still shallow
 - theory-of-mind / human modeling is still early
+
+## Current state
+
+**Completed architecture refactoring:**
+- 6 new modules created for behavioral improvements
+- `sim.py` imports glue modules (starting refactoring)
+- `glue.py` provides clean orchestration between layers
+- Full refactoring of `sim.py` ongoing (orchestration glue migration)
+
+**Version:** `0.7.0` → preparing for `0.8.0`
+- Next version bump after sim.py refactoring complete
+
+---

@@ -1,6 +1,6 @@
 [
   {
-    "id": "proposal-observability-1774624083",
+    "id": "proposal-observability-1774627084",
     "category": "observability",
     "reason": "Agents see repeated need for observability-related artifacts.",
     "suggested_use": "Group artifacts related to observability into a coherent pack.",
@@ -14,6 +14,6 @@
       "agent-4"
     ],
     "status": "approved",
-    "created_at": 1774624083
+    "created_at": 1774627084
   }
 ]

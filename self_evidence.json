@@ -1,39 +1,39 @@
 {
   "actions": {
-    "research": {
+    "optimize": {
       "count": 1,
       "follow_through": 1,
       "question_link": 1,
       "experiment_link": 1,
-      "question_narrowing": 1,
-      "coordination_effect": 0,
-      "reuse_signal": 0
-    },
-    "build_module": {
-      "count": 1,
-      "follow_through": 1,
-      "question_link": 1,
-      "experiment_link": 0,
       "question_narrowing": 0,
       "coordination_effect": 0,
       "reuse_signal": 1
+    },
+    "build_module": {
+      "count": 2,
+      "follow_through": 2,
+      "question_link": 2,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 2
     }
   },
   "themes": {
     "log readability": {
-      "research": {
-        "count": 1,
-        "follow_through": 1,
-        "question_narrowing": 1,
-        "coordination_effect": 0,
-        "reuse_signal": 0
-      },
-      "build_module": {
+      "optimize": {
         "count": 1,
         "follow_through": 1,
         "question_narrowing": 0,
         "coordination_effect": 0,
         "reuse_signal": 1
+      },
+      "build_module": {
+        "count": 2,
+        "follow_through": 2,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 2
       }
     }
   },
@@ -41,10 +41,9 @@
     "decision_mode=reconsider chosen_action=research"
   ],
   "evidence_types": {
-    "follow_through": 2,
-    "question_link": 2,
+    "follow_through": 3,
+    "question_link": 3,
     "experiment_progress": 1,
-    "question_narrowing": 1,
-    "reuse_signal": 1
+    "reuse_signal": 3
   }
 }

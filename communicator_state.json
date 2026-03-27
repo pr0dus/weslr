@@ -1,15 +1,15 @@
 {
   "name": "CircleForge",
   "status": "active",
-  "current_intent": "research around log readability | inner pull: critic woke on question-pressure around log readability.",
+  "current_intent": "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
   "active_pursuit": "log readability",
-  "unresolved_question": "Was neue Unklarheit trat nach research auf log readability?",
+  "unresolved_question": "What new uncertainty appeared after research on log readability?",
   "curiosity_target": "log readability",
   "attraction_bias": "move toward log readability",
-  "avoidance_bias": "avoid overcommitting before experiment clarity on Was neue Unklarheit trat nach research auf log readability?",
+  "avoidance_bias": "avoid overcommitting before experiment clarity on What new uncertainty appeared after research on log readability?",
   "curiosity": 0.65,
   "dominant_need": "log readability",
-  "last_decision_summary": "reconsider from agent-3 (critic) with 1 questioning voice(s); trust=0.5 usefulness=0.5 memory_bias=0.0; foreground=critic:0.33; speech_threshold=0.486; uncertainty_brake=0.448; hazard_bias=0.045",
+  "last_decision_summary": "reconsider from agent-4 (communicator) with 1 questioning voice(s); trust=0.5 usefulness=0.5 memory_bias=0.0; foreground=communicator:0.47; speech_threshold=0.486; uncertainty_brake=0.448; hazard_bias=0.045",
   "self_model": {
     "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement",
     "perceived_strengths": [],
@@ -35,9 +35,7 @@
     },
     "contradictions": [],
     "short_term_signals": {
-      "strengths": [
-        "research"
-      ],
+      "strengths": [],
       "weaknesses": [],
       "modes": [
         "reconsider"
@@ -75,11 +73,11 @@
   },
   "intent_history": [
     "wake, observe, and continue enriching the local world",
-    "research around log readability | inner pull: critic woke on question-pressure around log readability."
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability."
   ],
   "question_history": [
     "resolved-ish: what part of the world is still under-understood?",
-    "Was neue Unklarheit trat nach research auf log readability?"
+    "What new uncertainty appeared after research on log readability?"
   ],
   "unresolved_objections": [
     "critic:fallback policy selected build_module"
@@ -99,6 +97,6 @@
       }
     }
   },
-  "last_wake_at": 1774624083,
-  "updated_at": 1774624083
+  "last_wake_at": 1774627084,
+  "updated_at": 1774627084
 }

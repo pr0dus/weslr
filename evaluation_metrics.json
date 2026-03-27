@@ -7,7 +7,7 @@
   "inquiry_continuity": {
     "question_lineage_len": 2,
     "experiment_count": 0,
-    "inspect_research_actions": 1
+    "inspect_research_actions": 0
   },
   "self_revision": {
     "self_model_updates": 1,
@@ -16,13 +16,15 @@
   },
   "internal_differentiation": {
     "roles_active": [
+      "communicator",
       "critic",
       "observer"
     ],
-    "weighted_voice_count": 2,
+    "weighted_voice_count": 3,
     "role_counts": {
       "observer": 1,
-      "critic": 1
+      "critic": 1,
+      "communicator": 1
     },
     "memory_bias_hits": 0,
     "useful_role_memory_signals": 0

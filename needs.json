@@ -1,15 +1,15 @@
 [
   {
     "id": "need-question-1",
-    "title": "Was neue Unklarheit trat nach research auf log readability?",
+    "title": "What new uncertainty appeared after research on log readability?",
     "kind": "exploration",
-    "description": "Communicator inquiry currently driving exploration: Was neue Unklarheit trat nach research auf log readability?",
+    "description": "Communicator inquiry currently driving exploration: What new uncertainty appeared after research on log readability?",
     "origin": "communicator-question-lineage",
     "scope": "public",
     "pressure": 0.44,
     "novelty": 0.55,
     "status": "open",
-    "created_at": 1774624083,
-    "updated_at": 1774624083
+    "created_at": 1774627084,
+    "updated_at": 1774627084
   }
 ]

@@ -96,6 +96,7 @@ from motivation import average_internal_reputation, decision_style_weight, resol
 from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
+from glue import process_human_exchange, reduce_context_pressure, archive_all_stale
 from research import fetch_url_text, ingest_web_resource, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
 from semantic_memory import apply_topics_to_semantic_memory, ensure_semantic_defaults, sync_semantic_with_active_threads
@@ -4506,6 +4507,11 @@ def clamp01(value: float) -> float:
 
 
 def record_human_exchange(human_name: str, message: str, response: str = "", topics: list[str] | None = None, unresolved: bool = True, now_ts: int | None = None) -> dict:
+    """Refactored to use glue.py orchestration for cleaner separation.
+    
+    This function is being migrated to use glue.process_human_exchange.
+    For now, it maintains backward compatibility while calling glue internally.
+    """
     now_ts = now_ts or int(time.time())
     self_state = ensure_internal_role_state(load_communicator_self(), now_ts=now_ts)
     relationships = self_state.setdefault("relationships", {})

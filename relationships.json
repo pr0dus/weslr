@@ -6,7 +6,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-1",
@@ -15,7 +15,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-1",
@@ -24,7 +24,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-2",
@@ -33,7 +33,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-2",
@@ -42,7 +42,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-2",
@@ -51,7 +51,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-3",
@@ -60,7 +60,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-3",
@@ -69,7 +69,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-3",
@@ -78,7 +78,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-4",
@@ -87,7 +87,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-4",
@@ -96,7 +96,7 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   },
   {
     "source_agent": "agent-4",
@@ -105,6 +105,6 @@
     "usefulness": 0.5,
     "friction": 0.0,
     "last_event": "bootstrap",
-    "updated_at": 1774624069
+    "updated_at": 1774627082
   }
 ]
