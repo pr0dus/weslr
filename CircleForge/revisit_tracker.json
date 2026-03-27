@@ -1,0 +1,132 @@
+{
+  "rejections_by_theme": {
+    "config sanity checks validation": {
+      "count": 0,
+      "last_rejection_tick": null,
+      "revision_hints": [],
+      "last_attempted_variation": null
+    },
+    "config sanity checks": {
+      "count": 7,
+      "last_rejection_tick": 1774595883,
+      "revision_hints": [],
+      "last_attempted_variation": "config sanity checks validation"
+    },
+    "backup confidence": {
+      "count": 91,
+      "last_rejection_tick": 1774612821,
+      "revision_hints": [],
+      "last_attempted_variation": "config sanity checks"
+    },
+    "test opportunity": {
+      "count": 0,
+      "last_rejection_tick": null,
+      "revision_hints": [],
+      "last_attempted_variation": null
+    }
+  },
+  "revisits_by_theme": {
+    "config sanity checks validation": {
+      "times_revisited": 4,
+      "last_revisit_tick": 1774618597,
+      "self_correction_notes": [
+        "Focus on core value: config sanity \u2014 add evidence layer and human validation",
+        "Simplify: config sanity for beginners \u2014 add evidence layer and human validation",
+        "Expand: config sanity with broader scope \u2014 add evidence layer and human validation",
+        "Pivot: config sanity from technical to practical \u2014 add evidence layer and human validation"
+      ],
+      "generated_variations": [
+        "config sanity with evidence layer",
+        "simplified config sanity for beginners",
+        "broadened config sanity scope",
+        "practical config sanity pivot"
+      ],
+      "math_scores": {
+        "markov": 0.23,
+        "bandit_ucb": 0.67,
+        "entropy": 0.41,
+        "gradient": 0.55,
+        "combined": 0.49
+      }
+    },
+    "config sanity checks": {
+      "times_revisited": 1,
+      "last_revisit_tick": 1774616033,
+      "self_correction_notes": [
+        "Focus on core value: config sanity \u2014 add evidence layer and human validation"
+      ],
+      "generated_variations": [
+        "config sanity with evidence layer"
+      ],
+      "math_scores": {
+        "markov": 0.18,
+        "bandit_ucb": 0.52,
+        "entropy": 0.38,
+        "gradient": 0.47,
+        "combined": 0.39
+      }
+    },
+    "backup confidence": {
+      "times_revisited": 1,
+      "last_revisit_tick": 1774616033,
+      "self_correction_notes": [
+        "Focus on core value: backup confidence \u2014 emphasize recovery and continuity"
+      ],
+      "generated_variations": [
+        "backup confidence with recovery emphasis",
+        "unexplored backup confidence dimension",
+        "unexplored backup confidence dimension",
+        "unexplored backup confidence dimension",
+        "novel approach to backup confidence",
+        "novel approach to backup confidence",
+        "novel approach to backup confidence",
+        "novel approach to backup confidence",
+        "novel approach to backup confidence"
+      ],
+      "math_scores": {
+        "markov": 0.15,
+        "bandit_ucb": 0.48,
+        "entropy": 0.7000727858718058,
+        "gradient": 0.42,
+        "combined": 0.35,
+        "bandit": 0.7
+      }
+    },
+    "test opportunity": {
+      "times_revisited": 1,
+      "last_revisit_tick": 1774618727,
+      "self_correction_notes": [
+        "Focus on core value: test opportunity \u2014 focus on real-world usability metrics"
+      ],
+      "generated_variations": [
+        "test opportunity with usability metrics",
+        "unexplored test opportunity dimension"
+      ],
+      "math_scores": {
+        "markov": 0.12,
+        "bandit_ucb": 0.45,
+        "entropy": 0.5287721440681192,
+        "gradient": 0.38,
+        "combined": 0.31
+      }
+    }
+  },
+  "global_settings": {
+    "revisit_threshold": 3,
+    "min_revision_wait_ticks": 10,
+    "decay_rate": 0.1
+  },
+  "math_weights": {
+    "markov": 0.15,
+    "bandit_ucb": 0.35,
+    "entropy": 0.25,
+    "gradient": 0.25
+  },
+  "math_config": {
+    "markov_decay": 0.85,
+    "bandit_exploration": 1.5,
+    "entropy_epsilon": 0.01,
+    "gradient_alpha": 0.1,
+    "gradient_decay": 0.95
+  }
+}

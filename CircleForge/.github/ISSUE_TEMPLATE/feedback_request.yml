@@ -1,0 +1,46 @@
+name: Feedback request
+description: Ask for early feedback on project direction, architecture, usability, or value.
+title: "[Feedback] "
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking a look at CircleForge.
+        Use this template if you want to share feedback on direction, design, usability, or whether the project seems useful.
+  - type: textarea
+    id: area
+    attributes:
+      label: What part are you giving feedback on?
+      description: Example: dashboard, opportunity model, pack workflow, explainability, install flow
+      placeholder: I’m giving feedback on...
+    validations:
+      required: true
+  - type: textarea
+    id: reaction
+    attributes:
+      label: What feels promising?
+      placeholder: The strongest part seems to be...
+    validations:
+      required: false
+  - type: textarea
+    id: concern
+    attributes:
+      label: What feels weak, confusing, or risky?
+      placeholder: The main weakness seems to be...
+    validations:
+      required: true
+  - type: textarea
+    id: next
+    attributes:
+      label: What should be improved next?
+      placeholder: The next thing I would improve is...
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Your background / use case (optional)
+      placeholder: self-hoster, local AI tinkerer, developer, operator...
+    validations:
+      required: false

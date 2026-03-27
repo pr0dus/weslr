@@ -1,0 +1,272 @@
+# CircleForge Roadmap
+
+This file captures the planned path from the current prototype into a more complete local agent research sandbox and artifact-incubation system.
+
+## Project direction
+
+CircleForge is evolving toward:
+
+> A persistent local agent research sandbox that turns recurring agent work into inspectable artifacts, then helps humans review, rank, and curate the promising ones into reusable packs.
+
+Longer-term, it may evolve beyond artifact incubation into a richer self-transforming world model. See `V0.2-GRAND-VISION.md` for the post-v0.1 direction centered on memory, self-observation, public world objects, per-agent ticks, and needs-driven enrichment.
+
+## Current foundation
+
+Already implemented:
+- persistent agents
+- timed ticks
+- local model integration
+- inspect / trade
+- artifact metadata
+- dual scoring
+- demand board
+- export queue
+- review queue
+- export-ready flow
+- category governance
+- artifact packs
+- uncategorized handling
+- dormant-category signals
+
+## Phase 1 — Structural maturity
+
+### v0.0.29
+- artifact lineage graph fields
+- artifact lifecycle states
+- category lifecycle states
+- quality dimensions
+
+### v0.0.30
+- manual category governance controls
+- approve / reject / retire / revive / merge category actions
+- category metadata and lifecycle handling
+
+## Phase 2 — Market and idea intelligence
+
+### v0.0.31
+- market evolution engine
+- category demand trends
+- saturation / decline / rise detection
+
+### v0.0.32
+- uncategorized clustering
+- emergent clusters
+- cluster-driven category proposals
+
+## Phase 3 — Practical artifact families
+
+### v0.0.33
+- local-ai-ops family
+- observability family
+- status-page family
+- dashboard family
+- packaging family
+- evaluation family
+
+### v0.0.34
+- richer export folders
+- README / manifest / notes per export
+- pack-level export bundles
+
+## Phase 4 — Human curation and pack incubation
+
+### v0.0.35
+- failure-driven demand signals
+- recent errors, skips, and cooldowns influence the demand board
+- friction becomes part of artifact demand discovery
+
+### v0.0.36
+- pack quality scoring
+- release-candidate packs
+- top-pack ranking
+- pack-level demand signals for human curation
+
+## Phase 5 — Commercial qualification and artifact shaping
+
+### v0.0.37
+- artifact-level commercial qualification
+- sellability scoring
+- target-user and price-band guesses
+- pack-level commercial readiness signals
+
+### v0.0.38
+- queue and pack browsing ergonomics
+- ranking explanations and curation reasons
+- better operator views for promising artifacts
+
+### v0.0.39
+- better export bundles
+- publishable pack wrappers
+- project handoff formats for curated outputs
+
+### v0.0.40
+- category-specific publishing templates
+- delivery-mode recommendations
+- stronger buyer/problem/install framing in wrappers and handoffs
+
+### v0.0.53
+- artifact substance scoring
+- thin-artifact penalties
+- description-to-artifact mismatch penalties
+- stronger honesty pressure on scored outputs before generator upgrades
+
+## Quality model target
+
+### Internal artifact quality
+- reusability
+- composability
+- clarity
+- maintainability
+- stability
+
+### External artifact quality
+- installability
+- exportability
+- usefulness
+- readability
+- extension potential
+
+### Market quality
+- timing
+- differentiation
+- category demand
+- pack fit
+- future need alignment
+
+## Lifecycle targets
+
+### Artifact lifecycle
+- idea
+- prototype
+- internal_use
+- tradable
+- review_proposed
+- approved
+- export_ready
+- packed
+- release_candidate
+- archived
+- retired
+
+### Category lifecycle
+- active
+- dormant
+- reviving
+- archived
+- merged
+
+### Pack lifecycle
+- draft
+- coherent
+- reviewed
+- release_candidate
+- published
+- retired
+
+## Practical artifact families to encourage
+- local-ai-ops
+- observability
+- status-pages
+- dashboards
+- packaging
+- evaluation
+- benchmarks
+- replay / debugging
+- memory tools
+- export wrappers
+
+## Grouped upload plan
+
+### Upload Group A
+- v0.0.29
+- v0.0.30
+
+Focus:
+- structure
+- lifecycle
+- quality dimensions
+- manual category governance
+
+### Upload Group B
+- v0.0.31
+- v0.0.32
+
+Focus:
+- market evolution
+- emergent clusters
+- category formation pressure
+
+### Upload Group C
+- v0.0.33
+- v0.0.34
+
+Focus:
+- practical artifact families
+- richer exports
+- pack exports
+
+### Upload Group D
+- v0.0.35
+- v0.0.36
+
+Focus:
+- friction-aware demand
+- pack quality
+- release-candidate logic
+- ranked curation targets
+
+### Upload Group E
+- v0.0.37
+- v0.0.39
+
+Focus:
+- commercial qualification
+- human review ergonomics
+- artifact shaping
+- curated output packaging
+
+## Phase 6 — Sellability pressure and pack reality checks
+
+### v0.0.43
+- explicit sellability model for artifacts and packs
+- first opportunity model for entity-defined niches and buyer/problem hypotheses
+- artifact-level niche themes, gap reasons, and packaging hypotheses
+- clearer separation between internal score, opportunity score, and external proof
+- initial explain support for why an artifact may fit a real niche
+
+Focus:
+- move from internally interesting artifacts toward small reusable tools that humans can test, package, and potentially sell
+- begin shifting artifact-family discovery from the human toward the entities themselves
+
+### v0.0.44
+- clustering of repeated opportunity themes into emerging niche families
+- pack formation around discovered opportunity themes instead of category only
+- version ledger for clearer rollback and recovery points
+
+### v0.0.45
+- pack-level external validation events
+- offer outcome tracking
+- pack outcome feedback tied back into clustered opportunity themes
+- rejection-reason visibility for repeated pack failures
+- stronger buyer/problem/install framing at pack level
+
+### v0.0.46
+- theme lifecycle states with explicit dormancy and decay
+- overloaded themes can split into emergent subthemes
+- repeated unexplained signals can register emergent candidates
+- groundwork for a human dashboard built on more stable opportunity dynamics
+
+### v0.0.47
+- operator dashboard renderer
+- local HTML/JSON visibility layer for themes, packs, queues, logs, and rollback state
+- first human-facing monitoring surface for CircleForge
+
+### v0.0.48
+- richer dashboard with agent memory panels and lightweight trend history
+- better visibility into pack outcomes and opportunity lifecycle changes
+- stronger operator monitoring before drill-down interactions
+
+### v0.0.49
+- dashboard drill-downs for top themes and top packs
+- event feed for lifecycle changes and pack outcome changes
+- safer operator resumption via stronger memory notes and release tracking
