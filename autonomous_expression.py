@@ -297,6 +297,10 @@ def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] 
             message = generate_thinking_expression(topic)
             metadata = {"type": "thinking", "topic": topic, "uncertainty": uncertainty}
     
+    elif expression_type == "rate":
+        message = get_rate_expression()
+        metadata = {"type": "rate", "rate_expression": True}
+    
     elif expression_type == "creation":
         message = generate_creation_expression()
         metadata = {"type": "creation", "agent": "builder"}

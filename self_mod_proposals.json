@@ -1,17 +1,1 @@
-[
-  {
-    "id": "smp-agent-1-1774564995",
-    "agent_id": "agent-1",
-    "created_at": 1774564995,
-    "target_path": "agents/agent-1/modules/helper_agent-1.py",
-    "scope": "private",
-    "pressure_source": "skipped",
-    "problem_summary": "inspect skipped: no valid target",
-    "proposed_change": "Create or refine a private helper/wrapper to reduce repeated local friction.",
-    "expected_benefit": "Lower repeated failure cost and improve local capability without touching protected core files.",
-    "risk_level": "low",
-    "checkpoint_ref": "pending-before-apply",
-    "status": "proposed",
-    "validation_notes": "seen again at 1774567903"
-  }
-]
+[]

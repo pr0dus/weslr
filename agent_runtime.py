@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 from typing import Any, Dict, List
@@ -10,6 +11,20 @@ from config import (
     MAX_MEMORY_NOTES,
     OPPORTUNITY_BOARD_PATH,
 )
+
+# Import variation generator for math-based theme variation generation
+try:
+    from variation_generator import (
+        generate_variations_for_theme,
+        update_tracker_with_variations,
+        load_revisit_tracker,
+        save_revisit_tracker,
+        get_theme_profile,
+    )
+    VARIATION_GEN_AVAILABLE = True
+except ImportError:
+    VARIATION_GEN_AVAILABLE = False
+    print("Warning: variation_generator.py not available, using template-based variations")
 
 ACTIONS = ["gather", "optimize", "research", "build_module", "inspect", "trade", "signal", "rest"]
 
@@ -187,7 +202,61 @@ def profile_for_theme(theme: str) -> Dict[str, Any]:
     })
 
 
+def generate_theme_variations_for_rejection(
+    theme: str,
+    agent_dir: Path,
+    world: Dict[str, Any],
+    method: str = "hybrid",
+    max_variations: int = 3
+) -> List[Dict[str, Any]]:
+    """Generate math-based variations for a rejected theme.
+    
+    If variation_generator is available, uses math models (Markov, Bandit, Entropy, Gradient).
+    Otherwise falls back to simple template-based variations.
+    
+    Returns list of variation strings with metadata.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    if VARIATION_GEN_AVAILABLE:
+        try:
+            variations = generate_variations_for_theme(
+                theme, 
+                base_dir=base_dir,
+                methods=[method],
+                max_variations=max_variations
+            )
+            # Convert VariationResult to dict for compatibility
+            result = []
+            for v in variations:
+                result.append({
+                    "variation": v.variation,
+                    "method": v.method,
+                    "confidence": v.confidence,
+                    "score": v.score,
+                    "original_theme": v.original_theme
+                })
+            # Update tracker with new variations
+            update_tracker_with_variations(theme, variations, base_dir)
+            return result
+        except Exception as e:
+            print(f"Variation generation failed for {theme}: {e}")
+    
+    # Fallback: simple template-based variations
+    fallback_variations = [
+        f"{theme} with explicit validation",
+        f"simplified {theme}",
+        f"broader {theme} scope",
+        f"practical {theme} pivot",
+        f"{theme} with recovery emphasis"
+    ]
+    return [{"variation": v, "method": "fallback", "confidence": 0.3, "score": 0.3} for v in fallback_variations[:max_variations]]
+
+
 def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: Dict[str, Any]) -> str:
+    import os
+    import json as _json
+
     memory = load_opportunity_memory(agent_dir)
     board = world.get("opportunity_board") or load_opportunity_board()
     inbox = load_inbox(agent_dir)
@@ -199,6 +268,17 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
     recent_human_messages = relationships.get("recent_human_messages") or []
     primary_profile = next(iter(human_profiles.values()), {}) if human_profiles else {}
     recurring_topics = {str(name).lower(): int(count) for name, count in (primary_profile.get("recurring_topics") or {}).items()}
+
+    # Load revisit tracker for revision bias and variation selection
+    REVISIT_TRACKER_PATH = os.path.join(os.path.dirname(agent_dir.parent), "revisit_tracker.json")
+    revisits = {}
+    try:
+        if os.path.exists(REVISIT_TRACKER_PATH):
+            tracker = _json.loads(open(REVISIT_TRACKER_PATH, "r").read())
+            revisits = tracker.get("revisits_by_theme", {})
+    except Exception:
+        pass
+
     themes = []
     theme_names = sorted(set(list(SEED_OPPORTUNITIES.keys()) + list((board.get("themes") or {}).keys())))
     for theme in theme_names:
@@ -233,8 +313,64 @@ def choose_theme_for_action(agent_dir: Path, action: str, category: str, world: 
             score -= 0.08
         elif lifecycle == "declining":
             score -= 0.04
+
+        # Revision bias: penalize themes that were recently revisited (to avoid repeating the same approach)
+        revisit_data = revisits.get(theme, {})
+        times_revisited = revisit_data.get("times_revisited", 0)
+        if times_revisited >= 2:
+            score -= 0.35  # strong penalty for repeated revisit
+        elif times_revisited >= 1:
+            score -= 0.15  # moderate penalty for first revisit
+
+        # Generate math-based variations if theme has been rejected many times
+        board_theme = board.get("themes", {}).get(theme, {})
+        total_rejections = board_theme.get("rejections", 0)
+        
+        # If this theme has many rejections, generate new variations using math models
+        if total_rejections >= 5 and VARIATION_GEN_AVAILABLE:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            try:
+                # Generate 2 variations using hybrid method
+                new_variations = generate_theme_variations_for_rejection(
+                    theme, agent_dir, world, method="hybrid", max_variations=2
+                )
+                # Add to tracker's variations list
+                current_variations = revisit_data.get("generated_variations", [])
+                for v in new_variations:
+                    current_variations.append(v["variation"])
+                revisits[theme] = {
+                    **revisit_data,
+                    "generated_variations": current_variations[-5:],  # Keep last 5
+                    "times_revisited": times_revisited + 1
+                }
+                # Update tracker file
+                tracker["revisits_by_theme"] = revisits
+                save_revisit_tracker(tracker, base_dir)
+            except Exception as e:
+                print(f"Variation generation failed for {theme}: {e}")
+
+        # Variation boost: if this theme has a generated variation and the agent hasn't used it yet, boost it
+        variations = revisits.get(theme, {}).get("generated_variations", [])
+        if variations and times_revisited > 0:
+            # Use the most recent variation as a hint to boost
+            last_variation = variations[-1]
+            if theme.lower() in last_variation.lower() or last_variation.lower() in theme.lower():
+                score += 0.08  # slight boost for using variation
+
         score += random.uniform(0.0, 0.06)
         themes.append((score, theme))
+
+    # Check if any theme has a variation to promote
+    highest_score = themes[0][0] if themes else 0
+    for score, theme in themes:
+        revisit_data = revisits.get(theme, {})
+        variations = revisit_data.get("generated_variations", [])
+        if variations and times_revisited > 0:
+            # Find variation with highest score
+            if score >= highest_score * 0.9:
+                # Promote themes with variations to encourage trying something different
+                score += 0.04
+
     themes.sort(reverse=True)
     return themes[0][1]
 

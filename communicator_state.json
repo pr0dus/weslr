@@ -1,61 +1,82 @@
 {
   "name": "CircleForge",
-  "status": "idle",
-  "current_intent": "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks. while preserving shared thread config sanity checks",
-  "active_pursuit": "config sanity checks",
-  "unresolved_question": "What new uncertainty appeared after research on config sanity checks?",
-  "curiosity_target": "What new uncertainty appeared after inspect on config sanity checks?",
-  "attraction_bias": "move toward config sanity checks",
-  "avoidance_bias": "avoid overcommitting before experiment clarity on What is still unclear about config sanity checks?",
-  "curiosity": 0.75,
-  "dominant_need": "inspect skipped: no valid target",
-  "last_decision_summary": "no internal proposals this cycle",
+  "status": "active",
+  "current_intent": "signal around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+  "active_pursuit": "log readability",
+  "unresolved_question": "What is still unclear about log readability?",
+  "curiosity_target": "What new uncertainty appeared after research on log readability?",
+  "attraction_bias": "move toward log readability",
+  "avoidance_bias": "avoid brittle action around log readability until objections are understood",
+  "curiosity": 0.59,
+  "dominant_need": "log readability",
+  "last_decision_summary": "act from agent-1 (observer) with 0 questioning voice(s); trust=0.9 usefulness=0.902 memory_bias=0.0; foreground=communicator:0.65; speech_threshold=0.521; uncertainty_brake=0.76; hazard_bias=0.018",
   "self_model": {
-    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in inquiry; increasingly protective of continuity; actively regulating around uncertainty",
-    "perceived_strengths": [],
+    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+    "perceived_strengths": [
+      "research",
+      "inspect"
+    ],
     "perceived_weaknesses": [],
     "preferred_modes": [
-      "act"
+      "act",
+      "uncertainty-brake"
     ],
     "caution_themes": [
-      "reckless action before clarity"
+      "reckless action before clarity",
+      "internal objections still unresolved"
     ],
     "continuity_commitments": [
       "preserve meaningful unfinished threads",
       "prefer reversible change over blind rupture",
+      "hold action when inner objections cluster",
       "protect continuity-relevant memory traces"
     ],
     "regulation_profile": {
-      "impulse_control": 0.36,
+      "impulse_control": 0.48,
       "uncertainty_tolerance": 0.73,
-      "self_revision_readiness": 0.27,
-      "speech_threshold": 0.468,
-      "uncertainty_brake": 0.82,
-      "inhibition_gain": 0.4,
-      "mode": "engaged"
+      "self_revision_readiness": 0.417,
+      "speech_threshold": 0.521,
+      "uncertainty_brake": 0.76,
+      "inhibition_gain": 0.26,
+      "mode": "resting"
     },
     "contradictions": [],
     "short_term_signals": {
       "strengths": [
         "gather",
         "inspect",
-        "research"
+        "research",
+        "rest",
+        "signal"
       ],
       "weaknesses": [],
       "modes": [
-        "act"
+        "act",
+        "reconsider",
+        "uncertainty-brake"
       ]
     },
     "long_term_beliefs": {
-      "strengths": [],
+      "strengths": [
+        "research",
+        "inspect"
+      ],
       "weaknesses": [],
       "modes": [
-        "act"
+        "act",
+        "uncertainty-brake"
       ],
       "themes": {
-        "config sanity checks": [
-          "research",
+        "config sanity checks validation": [
           "build_module",
+          "research",
+          "optimize",
+          "signal"
+        ],
+        "log readability": [
+          "research",
+          "inspect",
+          "optimize",
           "gather"
         ]
       },
@@ -66,95 +87,128 @@
         "self-revision"
       ],
       "continuity_markers": {
-        "ticks_lived": 26,
-        "identity_stability": 0.776,
-        "continuity_preference": 0.666
+        "ticks_lived": 31,
+        "identity_stability": 0.806,
+        "continuity_preference": 0.741
       }
     },
     "belief_confidence": {
       "strengths": {
-        "research": 0.09
+        "research": 0.95,
+        "inspect": 0.63
       },
       "weaknesses": {},
       "modes": {
-        "act": 0.6
+        "act": 0.95,
+        "uncertainty-brake": 0.63
       },
       "themes": {
-        "config sanity checks": {
+        "config sanity checks validation": {
+          "build_module": 0.95,
           "research": 0.95,
-          "build_module": 0.93,
-          "gather": 0.27
+          "optimize": 0.95,
+          "signal": 0.95,
+          "gather": 0.95,
+          "trade": 0.95,
+          "rest": 0.95
+        },
+        "log readability": {
+          "research": 0.95,
+          "inspect": 0.95,
+          "optimize": 0.95,
+          "gather": 0.95,
+          "signal": 0.87,
+          "build_module": 0.78,
+          "trade": 0.78,
+          "rest": 0.39
         }
       }
     },
     "self_modeling_note": "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition.",
     "self_tuning": {
-      "hazard_bias": 0.003,
-      "speech_threshold_delta": 0.033,
-      "inhibition_delta": -0.002
+      "hazard_bias": 0.018,
+      "speech_threshold_delta": 0.012,
+      "inhibition_delta": -0.019
     }
   },
   "intent_history": [
-    "wake, observe, and continue enriching the local world",
-    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "gather around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "inspect around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks.",
-    "research around config sanity checks | inner pull: observer woke on question-pressure around config sanity checks."
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "rest around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "inspect around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: communicator woke on scheduled-cadence around log readability.",
+    "signal around log readability | inner pull: communicator woke on scheduled-cadence around log readability."
   ],
   "question_history": [
-    "resolved-ish: what part of the world is still under-understood?",
-    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
-    "What new uncertainty appeared after inspect on config sanity checks?",
-    "resolved-ish: What is still unclear about config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after inspect on config sanity checks?",
-    "resolved-ish: What new uncertainty appeared after research on config sanity checks?",
-    "What new uncertainty appeared after research on config sanity checks?"
+    "resolved-ish: What is still unclear about log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What is still unclear about log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "What new uncertainty appeared after research on log readability?",
+    "What is still unclear about log readability?"
   ],
-  "unresolved_objections": [],
+  "unresolved_objections": [
+    "critic:fallback policy selected build_module"
+  ],
   "decision_style_memory": {
     "actions": {
-      "inspect": {
-        "count": 4,
-        "confidence": 0.3,
-        "last_theme": "config sanity checks"
-      },
       "research": {
-        "count": 6,
-        "confidence": 0.42,
-        "last_theme": "config sanity checks"
+        "count": 14,
+        "confidence": 0.84,
+        "last_theme": "log readability"
+      },
+      "signal": {
+        "count": 2,
+        "confidence": 0.06,
+        "last_theme": "log readability"
+      },
+      "inspect": {
+        "count": 8,
+        "confidence": 0.48,
+        "last_theme": "log readability"
+      },
+      "rest": {
+        "count": 2,
+        "confidence": 0.06,
+        "last_theme": "log readability"
       },
       "gather": {
         "count": 1,
         "confidence": 0.03,
-        "last_theme": "config sanity checks"
+        "last_theme": "log readability"
       }
     },
     "modes": {
-      "uncertainty-brake": {
+      "reconsider": {
         "count": 1,
-        "confidence": 0.03
+        "confidence": 0.05
       },
       "act": {
-        "count": 10,
-        "confidence": 0.3
+        "count": 21,
+        "confidence": 0.63
+      },
+      "uncertainty-brake": {
+        "count": 5,
+        "confidence": 0.15
       }
     }
   },
-  "last_wake_at": 1774567907,
-  "updated_at": 1774567907,
-  "last_research_topic": "config sanity checks?",
-  "last_research_summary": "config sanity checks?: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
-  "last_research_source": "search:config sanity checks?"
+  "last_wake_at": 1774619009,
+  "updated_at": 1774619009
 }

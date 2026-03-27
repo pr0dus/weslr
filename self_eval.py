@@ -8,6 +8,72 @@ from pathlib import Path
 from llm_diff_generator import generate_improvement_suggestion
 from self_mod_enhancements import batch_modifications, validate_modification
 from behavioral_mathematics import BEHAVIOR_TRAITS, get_behavior_category, get_all_behavior_names
+from plugins import discover_plugins, load_plugins_config, list_plugins
+from config import BASE_DIR
+
+
+def check_plugin_ecosystem_health() -> dict:
+    """Check if CircleForge has adequate plugin capabilities."""
+    result = list_plugins()
+    discovered = result.get('discovered', [])
+    enabled = result.get('enabled', [])
+    
+    # Check for missing key capabilities
+    missing = []
+    
+    # Check for web interface plugin
+    has_web_interface = any(p.get('name') == 'web_interface' for p in discovered)
+    if not has_web_interface:
+        missing.append("web_interface")
+    
+    # Check for API connector plugins
+    api_plugins = [p for p in discovered if 'api' in p.get('name', '').lower()]
+    if len(api_plugins) == 0:
+        missing.append("api_connector")
+    
+    # Check for export functionality plugins
+    export_plugins = [p for p in discovered if 'export' in p.get('name', '').lower()]
+    if len(export_plugins) == 0:
+        missing.append("export_functionality")
+    
+    return {
+        "status": "healthy" if len(missing) == 0 else "needs_attention",
+        "discovered_count": len(discovered),
+        "enabled_count": len(enabled),
+        "missing_plugins": missing,
+    }
+
+
+def check_external_capabilities() -> dict:
+    """Check for missing external capabilities beyond internal traits."""
+    plugin_result = check_plugin_ecosystem_health()
+    
+    # Additional capability checks (can be expanded)
+    capabilities = {
+        "web_ui": {
+            "present": plugin_result.get('missing_plugins', []).count('web_interface') == 0,
+            "importance": "high",
+            "description": "Web-based chat interface for human interaction"
+        },
+        "api_connectors": {
+            "present": plugin_result.get('missing_plugins', []).count('api_connector') == 0,
+            "importance": "medium",
+            "description": "API connectors for third-party services"
+        },
+        "export_functionality": {
+            "present": plugin_result.get('missing_plugins', []).count('export_functionality') == 0,
+            "importance": "medium",
+            "description": "Export functionality for external tools"
+        }
+    }
+    
+    missing_caps = [k for k, v in capabilities.items() if not v.get('present')]
+    
+    return {
+        "status": "complete" if len(missing_caps) == 0 else "incomplete",
+        "capabilities": capabilities,
+        "missing": missing_caps,
+    }
 
 
 def run_self_evaluation(self_state: dict) -> dict:
@@ -47,7 +113,8 @@ def run_self_evaluation(self_state: dict) -> dict:
         })
     
     # Self-critique gaps
-    if 'self-revision' in traits and 'uncertainty-brake' not in traits:
+    # Check for both underscore and hyphen versions for compatibility
+    if 'self-revision' in traits and 'uncertainty-brake' not in traits and 'uncertainty_brake' not in traits:
         gaps.append({
             "category": "self_critique",
             "current": "self-revision present, but no uncertainty-brake",
@@ -74,6 +141,17 @@ def run_self_evaluation(self_state: dict) -> dict:
             "suggested_growth": "additional cognitive modes",
         })
     
+    # External capability gaps
+    ext_caps = check_external_capabilities()
+    if ext_caps.get('status') == 'incomplete':
+        for cap in ext_caps.get('missing', []):
+            gaps.append({
+                "category": f"external_capability_{cap}",
+                "current": f"missing={cap}",
+                "gap": f"Missing external capability: {cap.replace('_', ' ')}",
+                "suggested_growth": f"plugin system, {cap.replace('_', ' ')}, integration hooks",
+            })
+    
     # Generate self-evaluation summary
     summary_parts = []
     summary_parts.append(f"CircleForge is at phase: {identity.get('phase', 'unknown')}")
@@ -99,6 +177,7 @@ def run_self_evaluation(self_state: dict) -> dict:
         "gaps": gaps,
         "summary": " ".join(summary_parts),
         "generated_at": now_ts,
+        "external_capabilities": ext_caps,
     }
 
 

@@ -29,6 +29,10 @@ from self_eval import run_self_evaluation, run_self_directed_growth, generate_se
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
 from autonomous_expression import get_rate_expression, update_last_expression_at, generate_creation_expression, maybe_autonomous_expression
 from session_continuity import start_new_session, get_session_continuity, remember_conversation
+from plugins import (
+    discover_plugins, load_plugins_config, enable_plugin, disable_plugin,
+    load_plugin, list_plugins, create_plugin, integrate_plugins_into_core
+)
 from autonomous_intentionality import (
     create_plan, plan_progress, autonomous_intentionality_report,
     execute_plan_step, AutonomousIntentState
@@ -439,6 +443,36 @@ def cmd_autonomous_expression(_args):
     update_last_expression_at()
 
 
+def cmd_plugins_list(_args):
+    """List all plugins and their status."""
+    plugins = list_plugins()
+    emit(plugins)
+
+
+def cmd_plugins_enable(args):
+    """Enable a plugin."""
+    result = enable_plugin(args.name)
+    emit(result)
+
+
+def cmd_plugins_disable(args):
+    """Disable a plugin."""
+    result = disable_plugin(args.name)
+    emit(result)
+
+
+def cmd_plugins_create(args):
+    """Create a new plugin template."""
+    result = create_plugin(args.name, args.description)
+    emit(result)
+
+
+def cmd_plugins_integrate(_args):
+    """Integrate plugins into CircleForge core."""
+    result = integrate_plugins_into_core()
+    emit(result)
+
+
 def cmd_fetch_url(args):
     emit(fetch_url_text(args.url, max_chars=args.max_chars, project_name=PROJECT_NAME, version=VERSION))
 
@@ -790,6 +824,25 @@ def main():
     p = sub.add_parser("autonomous-expression", help="generate a direct autonomous expression (bypass tick loop)")
     p.set_defaults(func=cmd_autonomous_expression)
 
+    p = sub.add_parser("plugins-list", help="list all plugins and their status")
+    p.set_defaults(func=cmd_plugins_list)
+
+    p = sub.add_parser("plugins-enable", help="enable a plugin by name")
+    p.add_argument("name", help="plugin name")
+    p.set_defaults(func=cmd_plugins_enable)
+
+    p = sub.add_parser("plugins-disable", help="disable a plugin by name")
+    p.add_argument("name", help="plugin name")
+    p.set_defaults(func=cmd_plugins_disable)
+
+    p = sub.add_parser("plugins-create", help="create a new plugin template")
+    p.add_argument("name", help="plugin name")
+    p.add_argument("--description", "-d", default="", help="plugin description")
+    p.set_defaults(func=cmd_plugins_create)
+
+    p = sub.add_parser("plugins-integrate", help="integrate plugins into CircleForge core")
+    p.set_defaults(func=cmd_plugins_integrate)
+
     p = sub.add_parser("speak", help="print only the natural outward message")
     p.set_defaults(func=cmd_speak)
 
@@ -1043,6 +1096,43 @@ def main():
     p = sub.add_parser("self-speak", help="generate speech explaining CircleForge's self-decisions")
     p.add_argument("--gaps", default="[]", help="gaps to speak about")
     p.set_defaults(func=cmd_self_speak)
+
+    # Opportunity lifecycle management commands
+    p = sub.add_parser("opportunity-list", help="list all opportunity themes with their lifecycle states")
+    p.set_defaults(func=cmd_opportunity_list)
+
+    p = sub.add_parser("opportunity-transition", help="transition an opportunity to a new lifecycle state")
+    p.add_argument("--theme", required=True, help="theme name")
+    p.add_argument("--target", required=True, help="target state (hypothesis, validated, production, rejected, archived)")
+    p.set_defaults(func=cmd_opportunity_transition)
+
+    p = sub.add_parser("opportunity-auto-transition", help="run auto-transition checks on all opportunities")
+    p.set_defaults(func=cmd_opportunity_auto_transition)
+
+    p = sub.add_parser("opportunity-cluster", help="show cross-agent opportunity clustering")
+    p.set_defaults(func=cmd_opportunity_cluster)
+
+    p = sub.add_parser("opportunity-reject", help="record a rejection for an opportunity theme")
+    p.add_argument("--theme", required=True, help="theme name")
+    p.add_argument("--reason", required=True, help="rejection reason")
+    p.set_defaults(func=cmd_opportunity_reject)
+
+    p = sub.add_parser("opportunity-revisit", help="inspect and trigger theme revisit tracking")
+    p.set_defaults(func=cmd_opportunity_revisit)
+
+    # Variation generation commands
+    p = sub.add_parser("variation-generate", help="generate math-based variations for a rejected theme")
+    p.add_argument("--theme", required=True, help="theme name")
+    p.add_argument("--method", default="hybrid", help="method: markov, bandit, entropy, gradient, hybrid")
+    p.add_argument("--count", type=int, default=3, help="maximum variations to generate")
+    p.set_defaults(func=cmd_variation_generate)
+
+    p = sub.add_parser("variation-list", help="list all themes with their generated variations and math scores")
+    p.set_defaults(func=cmd_variation_list)
+
+    p = sub.add_parser("variation-show", help="show detailed variation history for a theme")
+    p.add_argument("--theme", required=True, help="theme name")
+    p.set_defaults(func=cmd_variation_show)
 
     args = parser.parse_args()
     args.func(args)
@@ -1573,6 +1663,324 @@ def cmd_self_speak(args):
     speech = generate_self_speech(self_state, {"gaps": gaps})
     emit({"speech": speech})
     print(f"\n🗣️  CircleForge says: \"{speech}\"")
+
+
+def cmd_opportunity_list(args):
+    """List all opportunity themes with their lifecycle states."""
+    from sim import load_opportunity_board
+    board = load_opportunity_board()
+    
+    themes = board.get("themes", {})
+    result = {"opportunities": []}
+    
+    for theme, payload in themes.items():
+        lifecycle = payload.get("lifecycle", "unknown")
+        result["opportunities"].append({
+            "theme": theme,
+            "lifecycle": lifecycle,
+            "pressure": payload.get("pressure", 0),
+            "evidence": payload.get("evidence", 0),
+            "acceptances": payload.get("acceptances", 0),
+            "rejections": payload.get("rejections", 0),
+            "updated_at": payload.get("updated_at", 0),
+        })
+    
+    emit(result)
+    
+    # Print summary
+    print(f"\nOpportunity Summary:")
+    for opp in result["opportunities"]:
+        print(f"  {opp['theme']}: {opp['lifecycle']} (pressure={opp['pressure']:.3f}, evidence={opp['evidence']})")
+
+
+def cmd_opportunity_transition(args):
+    """Transition an opportunity to a new lifecycle state."""
+    from sim import load_opportunity_board, save_opportunity_board, transition_opportunity_lifecycle
+    
+    theme = args.theme
+    target = args.target
+    
+    board = load_opportunity_board()
+    result = transition_opportunity_lifecycle(theme, target, board)
+    
+    if result.get("error"):
+        emit({"error": result["error"]})
+        print(f"\n❌ Error: {result['error']}")
+        return
+    
+    save_opportunity_board(board)
+    emit(result)
+    print(f"\n✅ Transitioned '{theme}': {result['from']} → {result['to']}")
+
+
+def cmd_opportunity_auto_transition(args):
+    """Run auto-transition checks on all opportunities."""
+    from sim import load_opportunity_board, save_opportunity_board, auto_transition_opportunities
+    
+    board = load_opportunity_board()
+    results = auto_transition_opportunities(board)
+    
+    save_opportunity_board(board)
+    
+    emit({"results": results})
+    print(f"\nAuto-transitioned {len(results)} opportunity(ies):")
+    for r in results:
+        if r.get("ok"):
+            print(f"  {r['theme']}: {r['from']} → {r['to']}")
+
+
+def cmd_opportunity_reject(args):
+    """Record a rejection for an opportunity theme."""
+    from sim import load_opportunity_board, save_opportunity_board, track_rejection, decay_opportunities_by_rejections, opportunity_lifecycle_state
+    
+    theme = args.theme
+    reason = args.reason
+    
+    board = load_opportunity_board()
+    result = track_rejection(theme, reason, board)
+    
+    if result.get("error"):
+        emit({"error": result["error"]})
+        print(f"\n❌ Error: {result['error']}")
+        return
+    
+    save_opportunity_board(board)
+    emit(result)
+    
+    # Check if decay triggered
+    decay_results = decay_opportunities_by_rejections(board)
+    save_opportunity_board(board)
+    
+    if decay_results:
+        print(f"\n⚠️  Decay triggered: {len(decay_results)} opportunity(ies) transitioned to rejected")
+        for r in decay_results:
+            print(f"  {r['theme']}: {r['from']} → {r['to']} (rejections: {r['rejections']})")
+    else:
+        print(f"\n✅ Rejection recorded. Current rejection count: {result['rejection_count']}")
+
+
+def cmd_opportunity_cluster(args):
+    """Show cross-agent opportunity clustering."""
+    from sim import load_all_agent_opportunities
+    
+    result = load_all_agent_opportunities()
+    emit(result)
+    
+    print(f"\nOpportunity Clusters ({len(result['clusters'])} themes):")
+    for cluster in result['clusters']:
+        agents_str = ', '.join(cluster['agents']) if cluster['agents'] else 'none'
+        print(f"  {cluster['theme']}: {agents_str} (strength={cluster['total_strength']:.3f}, wins={cluster['total_wins']}, failures={cluster['total_failures']})")
+
+
+def cmd_opportunity_revisit(args):
+    """Inspect and trigger theme revisit tracking."""
+    from sim import load_opportunity_board
+    import json as _json
+    import os
+
+    REVISIT_TRACKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "revisit_tracker.json")
+
+    board = load_opportunity_board()
+
+    try:
+        tracker = _json.loads(open(REVISIT_TRACKER_PATH, "r").read()) if os.path.exists(REVISIT_TRACKER_PATH) else {}
+    except Exception:
+        tracker = {}
+
+    print("\n=== Revisit Tracker Status ===\n")
+
+    print("Global Settings:")
+    print(f"  revisit_threshold: {tracker.get('global_settings', {}).get('revisit_threshold', 3)}")
+    print(f"  min_revision_wait_ticks: {tracker.get('global_settings', {}).get('min_revision_wait_ticks', 10)}")
+    print(f"  decay_rate: {tracker.get('global_settings', {}).get('decay_rate', 0.1)}")
+
+    print("\nRejection Counts by Theme:")
+    for theme, data in board.get("themes", {}).items():
+        count = int(data.get("rejections", 0))
+        print(f"  {theme}: {count} rejections")
+
+    print("\nRevisit Activity:")
+    revisits = tracker.get("revisits_by_theme", {})
+    for theme, data in revisits.items():
+        print(f"  {theme}:")
+        print(f"    times_revisited: {data.get('times_revisited', 0)}")
+        print(f"    last_revisit_tick: {data.get('last_revisit_tick')}")
+        for note in data.get('self_correction_notes', [])[-3:]:
+            print(f"    note: {note[:80]}..." if len(note) > 80 else f"    note: {note}")
+
+    print("\nRejection History by Theme:")
+    rejections = tracker.get("rejections_by_theme", {})
+    for theme, data in rejections.items():
+        print(f"  {theme}:")
+        print(f"    count: {data.get('count', 0)}")
+        print(f"    last_rejection_tick: {data.get('last_rejection_tick')}")
+        for hint in data.get('revision_hints', [])[-3:]:
+            print(f"    hint: {hint[:80]}..." if len(hint) > 80 else f"    hint: {hint}")
+
+
+# ============================================================================
+# Variation Generation Commands
+# ============================================================================
+
+def cmd_variation_generate(args):
+    """Generate math-based variations for a rejected opportunity theme."""
+    from variation_generator import generate_variations_for_theme
+    import json
+
+    theme = args.theme
+    method = args.method
+    max_variations = args.count
+
+    if not theme:
+        emit({"error": "No theme specified. Use --theme to specify the opportunity theme."})
+        return
+
+    try:
+        variations = generate_variations_for_theme(
+            theme,
+            methods=[method],
+            max_variations=max_variations
+        )
+
+        emit({
+            "ok": True,
+            "theme": theme,
+            "method": method,
+            "variations": [
+                {
+                    "variation": v.variation,
+                    "method": v.method,
+                    "confidence": round(v.confidence, 3),
+                    "score": round(v.score, 3)
+                }
+                for v in variations
+            ]
+        })
+
+        print(f"\n=== Generated Variations for '{theme}' ===\n")
+        for i, v in enumerate(variations, 1):
+            print(f"{i}. {v.variation}")
+            print(f"   Method: {v.method}")
+            print(f"   Confidence: {v.confidence:.2%}")
+            print(f"   Score: {v.score:.3f}")
+            if v.metadata:
+                print(f"   Metadata: {json.dumps(v.metadata, indent=6)}")
+            print()
+
+    except ImportError:
+        emit({"error": "variation_generator.py not available"})
+        print("\n⚠️  variation_generator.py not found. Math-based variations are disabled.")
+    except Exception as e:
+        emit({"error": str(e)})
+        print(f"\n❌ Error: {e}")
+
+
+def cmd_variation_list(args):
+    """List all themes with their generated variations and math scores."""
+    import json
+    import os
+
+    REVISIT_TRACKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "revisit_tracker.json")
+    OPPORTUNITY_BOARD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "opportunity_board.json")
+
+    try:
+        tracker = json.loads(open(REVISIT_TRACKER_PATH, "r").read()) if os.path.exists(REVISIT_TRACKER_PATH) else {}
+    except Exception as e:
+        emit({"error": f"Could not load tracker: {e}"})
+        return
+
+    try:
+        board = json.loads(open(OPPORTUNITY_BOARD_PATH, "r").read()) if os.path.exists(OPPORTUNITY_BOARD_PATH) else {"themes": {}}
+    except Exception as e:
+        emit({"error": f"Could not load opportunity board: {e}"})
+        return
+
+    revisits = tracker.get("revisits_by_theme", {})
+    rejections = tracker.get("rejections_by_theme", {})
+
+    emit({
+        "ok": True,
+        "themes": len(revisits),
+        "data": [
+            {
+                "theme": theme,
+                "rejections": rejections.get(theme, {}).get("count", 0),
+                "revisits": data.get("times_revisited", 0),
+                "variations": data.get("generated_variations", [])[-3:],
+                "math_scores": data.get("math_scores", {})
+            }
+            for theme, data in revisits.items()
+        ]
+    })
+
+    print("\n=== All Themes with Generated Variations ===\n")
+    for theme, data in revisits.items():
+        rejections_count = rejections.get(theme, {}).get("count", 0)
+        print(f"{theme} (rejections: {rejections_count}, revisits: {data.get('times_revisited', 0)})")
+        print(f"  Variations: {data.get('generated_variations', [])[-3:]}")
+        print(f"  Math Scores: {data.get('math_scores', {})}")
+        print()
+
+
+def cmd_variation_show(args):
+    """Show detailed variation history and math scores for a specific theme."""
+    import json
+    import os
+
+    theme = args.theme
+    if not theme:
+        emit({"error": "No theme specified. Use --theme to specify the opportunity theme."})
+        return
+
+    REVISIT_TRACKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "revisit_tracker.json")
+
+    try:
+        tracker = json.loads(open(REVISIT_TRACKER_PATH, "r").read()) if os.path.exists(REVISIT_TRACKER_PATH) else {}
+    except Exception as e:
+        emit({"error": f"Could not load tracker: {e}"})
+        return
+
+    revisits = tracker.get("revisits_by_theme", {})
+    rejections = tracker.get("rejections_by_theme", {})
+
+    if theme not in revisits:
+        emit({"error": f"Theme '{theme}' not found in tracker"})
+        print(f"\n❌ No variation history for theme '{theme}'")
+        return
+
+    data = revisits[theme]
+    rej_data = rejections.get(theme, {})
+
+    emit({
+        "ok": True,
+        "theme": theme,
+        "rejections": rej_data,
+        "revisits": data
+    })
+
+    print(f"\n=== Detailed Variation History for '{theme}' ===\n")
+
+    print("Rejection History:")
+    print(f"  Total rejections: {rej_data.get('count', 0)}")
+    print(f"  Last rejection tick: {rej_data.get('last_rejection_tick', 'N/A')}")
+    print(f"  Revision hints:")
+    for hint in rej_data.get('revision_hints', [])[-5:]:
+        print(f"    - {hint}")
+
+    print("\nVariation Generation:")
+    print(f"  Times revisited: {data.get('times_revisited', 0)}")
+    print(f"  Last revisit tick: {data.get('last_revisit_tick', 'N/A')}")
+    print(f"  Generated variations:")
+    for i, v in enumerate(data.get('generated_variations', [])[-10:], 1):
+        print(f"    {i}. {v}")
+    print(f"  Self-correction notes:")
+    for note in data.get('self_correction_notes', [])[-5:]:
+        print(f"    - {note}")
+
+    print("\nMath Scores (per method):")
+    for method, score in data.get('math_scores', {}).items():
+        print(f"  {method}: {score:.3f}")
+    print(f"  Combined: {tracker.get('math_weights', {}).get('markov', 0.25) + tracker.get('math_weights', {}).get('bandit_ucb', 0.25) + tracker.get('math_weights', {}).get('entropy', 0.25) + tracker.get('math_weights', {}).get('gradient', 0.25):.3f}")
 
 
 if __name__ == "__main__":

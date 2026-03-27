@@ -1,132 +1,172 @@
 [
   {
-    "id": "proposal-observability-1774564980",
+    "id": "proposal-observability-1774616033",
     "category": "observability",
     "reason": "Agents see repeated need for observability-related artifacts.",
     "suggested_use": "Group artifacts related to observability into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564980
+    "created_at": 1774616033
   },
   {
-    "id": "proposal-packaging-1774564980",
+    "id": "proposal-packaging-1774618505",
     "category": "packaging",
     "reason": "Agents see repeated need for packaging-related artifacts.",
     "suggested_use": "Group artifacts related to packaging into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564980
+    "created_at": 1774618505
   },
   {
-    "id": "proposal-interfaces-1774564980",
+    "id": "proposal-interfaces-1774618513",
     "category": "interfaces",
     "reason": "Agents see repeated need for interfaces-related artifacts.",
     "suggested_use": "Group artifacts related to interfaces into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-4"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-3"
+    ],
     "status": "approved",
-    "created_at": 1774564980
+    "created_at": 1774618513
   },
   {
-    "id": "proposal-forecasting-1774564983",
+    "id": "proposal-forecasting-1774618516",
     "category": "forecasting",
     "reason": "Agents see repeated need for forecasting-related artifacts.",
     "suggested_use": "Group artifacts related to forecasting into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564983
+    "created_at": 1774618516
   },
   {
-    "id": "proposal-market-tools-1774564983",
+    "id": "proposal-market-tools-1774618596",
     "category": "market-tools",
     "reason": "Agents see repeated need for market-tools-related artifacts.",
     "suggested_use": "Group artifacts related to market-tools into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-3",
+      "agent-4"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-2"
+    ],
     "status": "approved",
-    "created_at": 1774564983
+    "created_at": 1774618596
   },
   {
-    "id": "proposal-replay-1774564983",
+    "id": "proposal-replay-1774618597",
     "category": "replay",
     "reason": "Agents see repeated need for replay-related artifacts.",
     "suggested_use": "Group artifacts related to replay into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-3",
+      "agent-4"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-2"
+    ],
     "status": "approved",
-    "created_at": 1774564983
+    "created_at": 1774618597
   },
   {
-    "id": "proposal-lineage-1774564990",
+    "id": "proposal-lineage-1774618597",
     "category": "lineage",
     "reason": "Agents see repeated need for lineage-related artifacts.",
     "suggested_use": "Group artifacts related to lineage into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-3",
+      "agent-4"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-2"
+    ],
     "status": "approved",
-    "created_at": 1774564990
+    "created_at": 1774618597
   },
   {
-    "id": "proposal-automation-1774564991",
+    "id": "proposal-automation-1774618597",
     "category": "automation",
     "reason": "Agents see repeated need for automation-related artifacts.",
     "suggested_use": "Group artifacts related to automation into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564991
+    "created_at": 1774618597
   },
   {
-    "id": "proposal-orchestration-1774564991",
+    "id": "proposal-orchestration-1774618598",
     "category": "orchestration",
     "reason": "Agents see repeated need for orchestration-related artifacts.",
     "suggested_use": "Group artifacts related to orchestration into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564991
+    "created_at": 1774618598
   },
   {
-    "id": "proposal-evaluation-1774564991",
+    "id": "proposal-evaluation-1774618726",
     "category": "evaluation",
     "reason": "Agents see repeated need for evaluation-related artifacts.",
     "suggested_use": "Group artifacts related to evaluation into a coherent pack.",
     "proposed_by": "agent-1",
     "votes_for": [
-      "agent-1"
+      "agent-1",
+      "agent-2",
+      "agent-3"
     ],
-    "votes_against": [],
+    "votes_against": [
+      "agent-4"
+    ],
     "status": "approved",
-    "created_at": 1774564991
+    "created_at": 1774618726
   }
 ]

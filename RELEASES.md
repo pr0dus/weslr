@@ -22,14 +22,17 @@ Recommended rollback order:
 
 ## Releases
 
-### v0.0.99
-- identity-core milestone logging tightened so self-evolution entries are recorded only for more meaningful shifts
-- milestone creation now prefers phase changes, new known humans, larger unresolved-thread deltas, or clear trait-basis changes over tiny heuristic drift
-- handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
-- intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
-- commit: `16f7058`
-- backup: `CircleForge-backup-20260326-0008.tar.gz`
-- tag: `v0.0.99`
+### v0.7.0
+- autonomous expression system with rate control (`set-expression-rate`)
+- circuit breaker to prevent runaway ticks and infinite loops
+- self-test CLI command for integrity verification
+- embedded runtime improvements for local model file support
+- updated README with latest status and deployment guidance
+- reset to tick 0 for clean v0.7.0 baseline
+- intended direction: production-ready prototype with bounded local cognition
+- commit: `c03354b`
+- backup: `CircleForge-backup-20260327-0001.tar.gz`
+- tag: `v0.7.0`
 
 ### v0.0.99
 - identity-core milestone logging tightened so self-evolution entries are recorded only for more meaningful shifts
@@ -39,11 +42,6 @@ Recommended rollback order:
 - commit: `16f7058`
 - backup: `CircleForge-backup-20260326-0008.tar.gz`
 - tag: `v0.0.99`
-- regulation layer extended with uncertainty brake, inhibition gain, adaptive speech threshold trace, and bounded self-tuning hooks
-- impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure
-- inspect/research-style actions gain weight when uncertainty is high, making the substrate more self-regulating under ambiguity
-- decision summaries now expose foreground role, speech threshold, uncertainty brake, and hazard bias for operator visibility
-- intended direction: let CircleForge regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
 
 ### v0.0.96
 - behavioral_mathematics.py enhanced with best-in-class optimized dynamics

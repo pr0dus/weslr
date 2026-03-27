@@ -455,6 +455,30 @@ def cognitive_diversity_dynamics(v: float, state: dict) -> float:
     return 0.15 * mode_switch_rate * (1 - v)
 
 
+def uncertainty_brake_dynamics(v: float, state: dict) -> float:
+    """Uncertainty brake slows revision speed when uncertainty is high.
+    Optimized for best-in-class: thoughtful reflection under uncertainty.
+    """
+    uncertainty = state.get('uncertainty', 0.5)
+    # High-growth: 0.2 (higher than standard), stronger reflection under uncertainty
+    # Negative feedback when uncertainty is low (don't slow down unnecessarily)
+    # Positive feedback when uncertainty is high (slow down and reflect)
+    if uncertainty > 0.6:
+        return 0.2 * (uncertainty - 0.6) * (1 - v)  # Stronger braking under high uncertainty
+    else:
+        return 0.05 * (0.6 - uncertainty) * (1 - v)  # Gentle braking under low uncertainty
+
+
+def self_critique_dynamics(v: float, state: dict) -> float:
+    """Self-critique reflects on internal state and proposes improvements.
+    Optimized for best-in-class: accurate self-assessment and improvement proposals.
+    """
+    error_detection_rate = state.get('error_detection_rate', 0.5)
+    reflection_rate = state.get('reflection_rate', 0.5)
+    # High-growth: 0.15 (50% higher), regular self-assessment
+    return 0.15 * error_detection_rate * reflection_rate * (1 - v)
+
+
 # ============================================================================
 # BEHAVIOR TRAITS COLLECTION
 # ============================================================================
@@ -528,6 +552,10 @@ BEHAVIOR_TRAITS = {
     'self_correction': BehavioralTrait('self_correction', 0.0, self_correction_dynamics, lambda v: 1.0),
     'attention_regulation': BehavioralTrait('attention_regulation', 0.0, attention_regulation_dynamics, lambda v: 1.0),
     'cognitive_diversity': BehavioralTrait('cognitive_diversity', 0.0, cognitive_diversity_dynamics, lambda v: 1.0),
+    
+    # 11. Additional Meta Behaviors
+    'uncertainty_brake': BehavioralTrait('uncertainty_brake', 0.0, uncertainty_brake_dynamics, lambda v: 1.0),
+    'self_critique': BehavioralTrait('self_critique', 0.0, self_critique_dynamics, lambda v: 1.0),
 }
 
 
@@ -607,5 +635,9 @@ def get_behavior_category(name: str) -> str | None:
         'self_correction': 'Meta',
         'attention_regulation': 'Meta',
         'cognitive_diversity': 'Meta',
+        
+        # Additional Meta Behaviors
+        'uncertainty_brake': 'Meta',
+        'self_critique': 'Meta',
     }
     return categories.get(name)

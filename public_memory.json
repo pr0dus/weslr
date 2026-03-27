@@ -6,8 +6,8 @@
     "content": "Prefer inspectable local artifacts, reversible changes, and visible world state over opaque autonomy.",
     "source": "system-bootstrap",
     "stability": 0.92,
-    "created_at": 1774564971,
-    "updated_at": 1774564971
+    "created_at": 1774613951,
+    "updated_at": 1774613951
   },
   {
     "id": "memory-needs-drive-change",
@@ -16,8 +16,8 @@
     "content": "Treat repeated friction, unmet coordination, and unexplained failures as first-class world signals.",
     "source": "system-bootstrap",
     "stability": 0.88,
-    "created_at": 1774564971,
-    "updated_at": 1774564971
+    "created_at": 1774613951,
+    "updated_at": 1774613951
   },
   {
     "kind": "semantic-memory",
@@ -33,117 +33,3049 @@
       "self-revision"
     ],
     "durable_lessons": [],
-    "continuity_anchors": [],
-    "last_updated_at": 1774567907
+    "continuity_anchors": [
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618597,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618598,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618726,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618727,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618728,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      },
+      {
+        "type": "self_check",
+        "timestamp": 1774618801,
+        "tensions": [
+          "many unfinished threads with low identity stability"
+        ],
+        "observation": "Self-check: I keep picking up new concerns, but nothing sticks \u2014 I feel scattered.",
+        "role_responses": [
+          {
+            "role": "memory_keeper",
+            "response": "So many threads, and none of them feel solid. I'm afraid they'll slip away entirely.",
+            "suggestion": "Close or archive threads that aren't actively pulling on us."
+          },
+          {
+            "role": "observer",
+            "response": "We're jumping between things without finishing \u2014 the pattern is clear but not useful.",
+            "suggestion": "Pick one thread and stay with it until it has a clear outcome."
+          }
+        ],
+        "corrections": []
+      }
+    ],
+    "last_updated_at": 1774619009
+  },
+  {
+    "id": "pm-communicator-1",
+    "title": "Communicator reflective decision",
+    "kind": "lesson",
+    "content": "Decision mode reconsider triggered from internal disagreement around config sanity checks validation.",
+    "source": "communicator-loop",
+    "stability": 0.58,
+    "created_at": 1774616033,
+    "updated_at": 1774616033
   },
   {
     "id": "pm-question-1",
-    "title": "Communicator question: what part of the world is still under-understood?",
+    "title": "Communicator question: What new uncertainty appeared after research on config sanity checks validation?",
     "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit enrich the local world.",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks validation.",
     "source": "communicator-question-lineage",
-    "stability": 0.48,
-    "created_at": 1774564980,
-    "updated_at": 1774564980
+    "stability": 0.56,
+    "created_at": 1774616033,
+    "updated_at": 1774618598
   },
   {
-    "id": "pm-question-2",
-    "title": "Communicator question: What new uncertainty appeared after inspect on config sanity checks?",
+    "id": "pm-signal-4",
+    "title": "Signals can redirect nearby work",
+    "kind": "lesson",
+    "content": "Successful signals should remain visible because communication becomes useful when it changes another agent's subsequent behavior.",
+    "source": "world-observation",
+    "stability": 0.81,
+    "created_at": 1774618516,
+    "updated_at": 1774619009
+  },
+  {
+    "id": "pm-question-4",
+    "title": "Communicator question: What is still unclear about config sanity checks validation?",
     "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
-    "source": "communicator-question-lineage",
-    "stability": 0.58,
-    "created_at": 1774564980,
-    "updated_at": 1774567903
-  },
-  {
-    "id": "pm-question-3",
-    "title": "Communicator question: What new uncertainty appeared after research on config sanity checks?",
-    "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
-    "source": "communicator-question-lineage",
-    "stability": 0.78,
-    "created_at": 1774564980,
-    "updated_at": 1774567907
-  },
-  {
-    "id": "web-search-note-1774564986",
-    "title": "Autonomous research: hi circleforge, i'm struggling with python lists. can you explain them simply?",
-    "kind": "research",
-    "content": "Source trigger: human-turn\nSearch results:\nPython Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing \u2014 https://diveintopython.org/learn/variables/list/basic-operations (score 1.1)\nA Comprehensive Guide to Lists in Python - PyFin.org \u2014 https://pyfin.org/python/data-structure/lists (score 0.91)\nPython Lists - GeeksforGeeks \u2014 https://www.geeksforgeeks.org/python/python-lists/ (score 0.83)\n\nSynthesis:\nWorking summary for hi circleforge, i'm struggling with python lists. can you explain them simply?: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. In Python, you can access individual elements of a list using both positive and negative indexing.\n\nEvidence:\nPython Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing: Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. They support various basic operations and methods that enable you to manipulate and work with the list elements easily.\nA Comprehensive Guide to Lists in Python - PyFin.org: In Python, you can access individual elements of a list using both positive and negative indexing. Remember that Python uses 0-based indexing, so the first element is at index 0, the second element is at index 1, and so on.",
-    "source": "search:hi circleforge, i'm struggling with python lists. can you explain them simply?",
-    "stability": 0.46,
-    "created_at": 1774564986,
-    "updated_at": 1774564986
-  },
-  {
-    "id": "web-search-raw-1774564986-1",
-    "title": "Raw excerpt 1: Python Lists Examples: Indexing, Comprehension, Filtering, Joining, Slicing",
-    "kind": "research_raw",
-    "content": "Python lists are versatile and commonly used data structures that allow you to store collections of elements, including numbers , strings , and even other lists. They support various basic operations and methods that enable you to manipulate and work with the list elements easily. Some of the commonly used operations and methods for lists include indexing, slicing, appending, inserting, deleting, sorting, and searching for elements. Let's review the basic list methods and functions step by step. A list is an ordered collection of elements that can be of any type. Each element in a list has a unique index, which represents its position in the list. List indexes start at 0, which means that the first element in a list has an index of 0, the second element has an index of 1, and so on. my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] # get first three items print(my_list[:3]) # output: [0, 1, 2] # get items 3-5 print(my_list[3:6]) # output: [3, 4, 5] # get every other item starting from the second item print(my_list[1::2]) # output: [1, 3, 5, 7, 9] # reverse the list print(my_list[::-1]) # output: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0] # Define a function to apply to each element of the list def double(x): return x * 2 # Define a list my_list = [1, 2, 3, 4, 5] # Use map() to apply the function to each element of the list new_list = map(double, my_list) # Convert the result to a list and print it print(list(new_list)) # Output: [2, 4, 6, 8, 10] The filter() function takes two arguments: a function and an iterable. The function should return True or False for each element in the iterable. The filter() function then returns a new iterable that contains only the elements for which the function returned True. In Python, the list data type is a built-in type that represents a collection of ordered items. The contains method is not a built-in method for Python lists, but you can check whether an item is in a list using the in keyword or the index method. Let's review what is list comprehension in Python. List comprehension is a concise way to create a new list in Python by applying an expression to each element of an existing list or iterable. The basic syntax of a list comprehension is: You can split a list in Python using the split() method, which is available for strings but not for lists. However, you can use slicing to extract a portion of a list and create a new list with those elements. There is no direct method called indexof() for finding the index of an element in a list. However, you can use the index() method that is built into Python to get index of item in list. where start is the index of the first item to include, end is the index of the first item to exclude, and step is the number of items to skip between each item in the slice (the default is 1). In Python, map() is a built-in function that applies a function to each element of an iterable (like a list, tuple, or set) and returns a new iterable with the transformed values. list1 = [1, 2, 3] list2 = [1, 2, 4] if list1 == list2: print(\"The two lists are equal\") elif list1 < list2: print(\"list1 is less than list2\") else: print(\"list1 is greater than list2\")",
-    "source": "https://diveintopython.org/learn/variables/list/basic-operations",
-    "stability": 0.24,
-    "created_at": 1774564986,
-    "updated_at": 1774564986
-  },
-  {
-    "id": "web-search-raw-1774564986-2",
-    "title": "Raw excerpt 2: A Comprehensive Guide to Lists in Python - PyFin.org",
-    "kind": "research_raw",
-    "content": "In Python, you can access individual elements of a list using both positive and negative indexing. Remember that Python uses 0-based indexing, so the first element is at index 0, the second element is at index 1, and so on. Therefore, positive indexing starts from 0 for the first element, while negative indexing starts from -1 for the last element. This allows you to access elements from the beginning or end of the list based on your needs. Lists are versatile and commonly used data structures in Python. They allow you to store and manipulate collections of items efficiently. In this post, we will explore lists in Python, including their creation, accessing elements, available methods, slicing and indexing, and list comprehensions. By the end of this post, you will have a solid understanding of lists and how to work with them effectively. Lists are ordered collections of items in Python. They can contain elements of different data types, such as numbers , strings , or even other lists. Lists are mutable , meaning you can modify them after creation. They are enclosed in square brackets [ ] , and elements are separated by commas. Lists offer flexibility and various operations for manipulating data efficiently. In addition to the built-in methods covered above, Python provides several list functions that operate on lists. These functions are separate from list methods and can be applied to lists as well as other iterable objects. In this section, we will explore some commonly used list functions, their purposes, and provide examples to illustrate their usage. In Python, there are multiple ways to create a copy of a list. When working with lists, it's important to understand how copying works to avoid unintended modifications to the original list. In this section, we will explore different methods to create copies of lists and provide code examples to illustrate each approach. List comprehensions provide a concise and powerful way to create new lists based on existing lists or other iterables . They allow you to combine looping and conditional statements in a single line of code. List comprehensions are widely used in Python for transforming, filtering, and manipulating data efficiently. In this example, we used slicing to access a subset of elements from the fruits list. The expression fruits[1:-1] returns a sublist from index 1 to the second-to-last element, fruits[-3:] returns a sublist from the third-to-last element to the end, and fruits[:-2] returns a sublist from the beginning to the third-to-last element. In this example, we used nested list comprehensions to create a 3x3 matrix. The outer list comprehension [x + y for x in range(columns)] generates each row of the matrix by adding x with each element of range(columns) . The inner list comprehension [y in range(rows)] creates the rows by iterating over range(rows) . List functions, such as len() , sorted() , sum() , min() , and max() , are general functions that can be applied to any iterable object , including lists. They operate on the entire list as a whole and return a value or create a new list without modifying the original list. The copy() method, list() function and slicing ( [:] ) create shallow copies. This means that if the original list contains nested objects, such as another list or dictionary, the nested objects will still be referenced and not duplicated in the copy. The index() method is used to find the index position of the first occurrence of a specified element in a list. It returns the index of the element if found, and raises a ValueError if the element is not present in the list. Here's an example: The copy module's copy() function can create both shallow and deep copies. By default, it creates a shallow copy. However, you can use the deepcopy() function from the copy module to create a deep copy that duplicates all the objects, including nested ones.",
-    "source": "https://pyfin.org/python/data-structure/lists",
-    "stability": 0.24,
-    "created_at": 1774564986,
-    "updated_at": 1774564986
-  },
-  {
-    "id": "pm-question-7",
-    "title": "Communicator question: What is still unclear about CircleForge?",
-    "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit CircleForge.",
-    "source": "communicator-question-lineage",
-    "stability": 0.48,
-    "created_at": 1774564990,
-    "updated_at": 1774564990
-  },
-  {
-    "id": "pm-question-20",
-    "title": "Communicator question: What is still unclear about config sanity checks?",
-    "kind": "question",
-    "content": "Active communicator inquiry tied to pursuit config sanity checks.",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks validation.",
     "source": "communicator-question-lineage",
     "stability": 0.5,
-    "created_at": 1774564996,
-    "updated_at": 1774564996
+    "created_at": 1774618516,
+    "updated_at": 1774618597
   },
   {
-    "id": "web-search-note-1774567903",
-    "title": "Autonomous research: config sanity checks?",
-    "kind": "research",
-    "content": "Source trigger: internal-curiosity\nSearch results:\nOpenCore Sanity Checker is a web app for validating OC's config.plist \u2014 https://github.com/ocwebutils/sanitychecker (score 1.1)\nsanitychecker/README.md at main - GitHub \u2014 https://github.com/ocwebutils/sanitychecker/blob/main/README.md (score 0.88)\nOpenCore config.plist Sanity Checker - hackintosh-forum.de \u2014 https://www.hackintosh-forum.de/attachment/224217-opencore-config-plist-sanity-checker-pdf/ (score 0.61)\n\nSynthesis:\nWorking summary for config sanity checks?: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config\n\nEvidence:\nGitHub - ocwebutils/sanitychecker: OpenCore Sanity Checker is a web app for validating OC's config.plist \u00b7 GitHub: OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License.\nsanitychecker/README.md at main \u00b7 ocwebutils/sanitychecker \u00b7 GitHub: OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
-    "source": "search:config sanity checks?",
-    "stability": 0.46,
-    "created_at": 1774567903,
-    "updated_at": 1774567903
+    "id": "pm-question-5",
+    "title": "Communicator question: What new uncertainty appeared after inspect on config sanity checks validation?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit config sanity checks validation.",
+    "source": "communicator-question-lineage",
+    "stability": 0.5,
+    "created_at": 1774618596,
+    "updated_at": 1774618597
   },
   {
-    "id": "web-search-raw-1774567903-1",
-    "title": "Raw excerpt 1: GitHub - ocwebutils/sanitychecker: OpenCore Sanity Checker is a web app for validating OC's config.plist \u00b7 GitHub",
-    "kind": "research_raw",
-    "content": "OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License. OpenCore Sanity Checker is a web app for validating OC's config.plist OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg website vue checker nuxt sanity fastify opencore sanitychecker ocsanity Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
-    "source": "https://github.com/ocwebutils/sanitychecker",
-    "stability": 0.24,
-    "created_at": 1774567903,
-    "updated_at": 1774567903
+    "id": "pm-question-10",
+    "title": "Communicator question: What new uncertainty appeared after research on log readability?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit log readability.",
+    "source": "communicator-question-lineage",
+    "stability": 0.72,
+    "created_at": 1774618726,
+    "updated_at": 1774619008
   },
   {
-    "id": "web-search-raw-1774567903-2",
-    "title": "Raw excerpt 2: sanitychecker/README.md at main \u00b7 ocwebutils/sanitychecker \u00b7 GitHub",
-    "kind": "research_raw",
-    "content": "OpenCore Sanity Checker is a checker that compares rules and validates schema against provided config.plist. OpenCore Sanity Checker is released under the GNU General Public v3.0 License. OpenCore Web Utilities isn't affiliated with the acidanthera and OpenCorePkg Notifications You must be signed in to change notification settings Fast and advanced Sanity Checker used to check OpenCore's config",
-    "source": "https://github.com/ocwebutils/sanitychecker/blob/main/README.md",
-    "stability": 0.24,
-    "created_at": 1774567903,
-    "updated_at": 1774567903
+    "id": "pm-question-12",
+    "title": "Communicator question: What new uncertainty appeared after inspect on log readability?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit log readability.",
+    "source": "communicator-question-lineage",
+    "stability": 0.58,
+    "created_at": 1774618728,
+    "updated_at": 1774619003
+  },
+  {
+    "id": "pm-question-13",
+    "title": "Communicator question: What is still unclear about log readability?",
+    "kind": "question",
+    "content": "Active communicator inquiry tied to pursuit log readability.",
+    "source": "communicator-question-lineage",
+    "stability": 0.52,
+    "created_at": 1774618728,
+    "updated_at": 1774619009
   }
 ]

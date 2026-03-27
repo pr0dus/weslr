@@ -1,9 +1,9 @@
-from __future__ import annotations
+VERSION = "0.7.0"
 
 import os
 from pathlib import Path
 
-VERSION = "0.0.100"
+VERSION = "0.7.0"
 PACK_RELEASE_CANDIDATE_THRESHOLD = 0.78
 PACK_MIN_RELEASE_ARTIFACTS = 2
 SELLABILITY_SIGNAL_THRESHOLD = 0.7

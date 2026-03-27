@@ -1,86 +1,110 @@
 {
   "themes": {
     "backup confidence": {
-      "pressure": 0.348,
+      "pressure": 0.22,
       "evidence": 0,
-      "updated_at": 0,
+      "updated_at": 1774612821,
       "acceptances": 0,
-      "rejections": 0,
+      "rejections": 91,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "stable",
-      "split_from": null
+      "lifecycle": "rejected",
+      "split_from": "config sanity checks"
     },
     "service visibility": {
-      "pressure": 0.348,
-      "evidence": 0,
-      "updated_at": 0,
+      "pressure": 0.224,
+      "evidence": 1,
+      "updated_at": 1774618726,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "stable",
+      "lifecycle": "archived",
       "split_from": null
     },
     "config sanity checks": {
-      "pressure": 0.958,
-      "evidence": 8,
-      "updated_at": 1774567906,
+      "pressure": 0.73,
+      "evidence": 31,
+      "updated_at": 1774595883,
       "acceptances": 0,
-      "rejections": 0,
+      "rejections": 7,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "stable",
-      "split_from": null
+      "lifecycle": "rejected",
+      "split_from": "config sanity checks validation"
     },
     "log readability": {
-      "pressure": 0.348,
-      "evidence": 0,
-      "updated_at": 0,
+      "pressure": 0.99,
+      "evidence": 40,
+      "updated_at": 1774619009,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "stable",
+      "lifecycle": "archived",
       "split_from": null
     },
     "workflow packaging": {
-      "pressure": 0.348,
+      "pressure": 0.227,
       "evidence": 0,
-      "updated_at": 0,
+      "updated_at": 1774591958,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "stable",
+      "lifecycle": "archived",
       "split_from": null
     },
     "config sanity checks validation": {
-      "pressure": 0.399,
+      "pressure": 0.975,
+      "evidence": 75,
+      "updated_at": 1774618597,
+      "acceptances": 0,
+      "rejections": 3,
+      "revisions": 4,
+      "aliases": [],
+      "lifecycle": "rejected",
+      "split_from": "config sanity checks"
+    },
+    "test opportunity": {
+      "pressure": 0.2,
+      "evidence": 1,
+      "updated_at": 1774618727,
+      "acceptances": 0,
+      "rejections": 11,
+      "revisions": 1,
+      "aliases": [],
+      "lifecycle": "rejected",
+      "split_from": null,
+      "last_rejection_at": 1774620629,
+      "last_rejection_reason": "test auto-generation"
+    },
+    "log readability validation": {
+      "pressure": 0.384,
       "evidence": 0,
-      "updated_at": 1774567903,
+      "updated_at": 1774618808,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
       "aliases": [],
       "lifecycle": "emergent",
-      "split_from": "config sanity checks"
+      "split_from": "log readability"
     }
   },
   "emergent_candidates": [
     {
       "theme": "backup validation",
-      "parent_theme": "config sanity checks",
+      "parent_theme": "config sanity checks validation",
       "signal_count": 2,
-      "confidence": 0.241,
-      "updated_at": 1774564991
+      "confidence": 0.229,
+      "updated_at": 1774618727
     },
     {
-      "theme": "config validation",
-      "parent_theme": "config sanity checks",
-      "signal_count": 1,
-      "confidence": 0.214,
-      "updated_at": 1774567906
+      "theme": "readable logs",
+      "parent_theme": "log readability",
+      "signal_count": 2,
+      "confidence": 0.335,
+      "updated_at": 1774619009
     }
   ],
   "clusters": []

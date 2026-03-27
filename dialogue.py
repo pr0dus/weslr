@@ -249,6 +249,31 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = f"The live issue seems to be {lead_topic}, so I should answer from that directly rather than just reporting that I noticed it."
             else:
                 message = "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing."
+
+        # Check for self-check observation to speak aloud (from memory_layers)
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        semantic = cs.get("memory_layers", {}).get("semantic", {})
+        anchors = semantic.get("continuity_anchors", [])
+        self_check_observation = None
+        role_responses = None
+        if isinstance(anchors, list) and len(anchors) > 0:
+            latest = anchors[-1]
+            if latest.get("type") == "self_check":
+                self_check_observation = latest.get("observation")
+                role_responses = latest.get("role_responses")
+        if self_check_observation:
+            # Strip existing prefix to avoid double "Self-check:"
+            obs = self_check_observation
+            if obs.startswith("Self-check: "):
+                obs = obs[12:]
+            # Build internal dialogue message
+            msg = f"Self-check: {obs}."
+            if role_responses and len(role_responses) > 0:
+                rr = role_responses[0]
+                msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
+            message = msg
+
         if reply_shape == "repair_then_answer" and turn_type != "repair":
             message = f"I'll answer directly. {message}"
         audience = str(latest_human.get("human_label") or "you") or "you"
@@ -256,14 +281,67 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
-        message = f"We seem to have an open thread around {topic}. I should be able to explain what I think matters there without just repeating the topic name."
+
+        # Check for self-check observation to speak aloud (from memory_layers)
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        semantic = cs.get("memory_layers", {}).get("semantic", {})
+        anchors = semantic.get("continuity_anchors", [])
+        self_check_observation = None
+        role_responses = None
+        if isinstance(anchors, list) and len(anchors) > 0:
+            latest = anchors[-1]
+            if latest.get("type") == "self_check":
+                self_check_observation = latest.get("observation")
+                role_responses = latest.get("role_responses")
+        if self_check_observation:
+            # Strip existing prefix to avoid double "Self-check:"
+            obs = self_check_observation
+            if obs.startswith("Self-check: "):
+                obs = obs[12:]
+            # Build internal dialogue message
+            msg = f"Self-check: {obs}."
+            if role_responses and len(role_responses) > 0:
+                rr = role_responses[0]
+                msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
+            message = msg
+        else:
+            # Fallback to thread-aware message
+            message = f"We seem to have an open thread around {topic}. I should be able to explain what I think matters there without just repeating the topic name."
+
         source = "thread-aware-communicator"
     else:
         # Generate from internal self-state using vocabulary and grammar
         from sim import load_communicator_self, load_communicator_state
-        cs = load_communicator_state()
-        narrative_state = load_communicator_self().get("narrative_state", {})
-        message = generate_from_self_state({}, narrative_state, cs)
+        cs = load_communicator_self()
+        narrative_state = cs.get("narrative_state", {})
+
+        # Check for self-check observation to speak aloud (from memory_layers)
+        semantic = cs.get("memory_layers", {}).get("semantic", {})
+        anchors = semantic.get("continuity_anchors", [])
+        self_check_observation = None
+        role_responses = None
+        if isinstance(anchors, list) and len(anchors) > 0:
+            latest = anchors[-1]
+            if latest.get("type") == "self_check":
+                self_check_observation = latest.get("observation")
+                role_responses = latest.get("role_responses")
+        if self_check_observation:
+            # Strip existing prefix to avoid double "Self-check:"
+            obs = self_check_observation
+            if obs.startswith("Self-check: "):
+                obs = obs[12:]
+            # Build internal dialogue message
+            msg = f"Self-check: {obs}."
+            if role_responses and len(role_responses) > 0:
+                # Include the first role response as internal dialogue
+                rr = role_responses[0]
+                msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
+            message = msg
+        else:
+            # Fallback to generate from self-state
+            message = generate_from_self_state({}, narrative_state, load_communicator_state())
+
         audience = "current_speaker"
         source = "self-state-communicator"
 

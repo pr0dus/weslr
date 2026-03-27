@@ -1,215 +1,5 @@
 [
   {
-    "generated_at": 1774178588,
-    "tick": 2,
-    "version": "0.0.54",
-    "theme_pressure": {
-      "backup confidence": 0.457,
-      "service visibility": 0.42,
-      "config sanity checks": 0.396,
-      "log readability": 0.418,
-      "workflow packaging": 0.495
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774178708,
-    "tick": 1,
-    "version": "0.0.54",
-    "theme_pressure": {
-      "backup confidence": 0.48,
-      "service visibility": 0.418,
-      "config sanity checks": 0.394,
-      "log readability": 0.416,
-      "workflow packaging": 0.518
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774179750,
-    "tick": 1,
-    "version": "0.0.54",
-    "theme_pressure": {
-      "backup confidence": 0.478,
-      "service visibility": 0.442,
-      "config sanity checks": 0.392,
-      "log readability": 0.414,
-      "workflow packaging": 0.54
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774180116,
-    "tick": 1,
-    "version": "0.0.55",
-    "theme_pressure": {
-      "backup confidence": 0.501,
-      "service visibility": 0.44,
-      "config sanity checks": 0.39,
-      "log readability": 0.438,
-      "workflow packaging": 0.537
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774180537,
-    "tick": 1,
-    "version": "0.0.55",
-    "theme_pressure": {
-      "backup confidence": 0.501,
-      "service visibility": 0.44,
-      "config sanity checks": 0.39,
-      "log readability": 0.438,
-      "workflow packaging": 0.537
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774180571,
-    "tick": 1,
-    "version": "0.0.56",
-    "theme_pressure": {
-      "backup confidence": 0.501,
-      "service visibility": 0.44,
-      "config sanity checks": 0.39,
-      "log readability": 0.438,
-      "workflow packaging": 0.537
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774182788,
-    "tick": 3,
-    "version": "0.0.56",
-    "theme_pressure": {
-      "backup confidence": 0.735,
-      "service visibility": 0.434,
-      "config sanity checks": 0.384,
-      "log readability": 0.432,
-      "workflow packaging": 0.664
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774184369,
-    "tick": 4,
-    "version": "0.0.58",
-    "theme_pressure": {
-      "backup confidence": 0.96,
-      "service visibility": 0.416,
-      "config sanity checks": 0.366,
-      "log readability": 0.414,
-      "workflow packaging": 0.781,
-      "backup confidence validation": 0.434
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable",
-      "backup confidence validation": "emergent"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774185403,
-    "tick": 8,
-    "version": "0.0.60",
-    "theme_pressure": {
-      "backup confidence": 0.96,
-      "service visibility": 0.4,
-      "config sanity checks": 0.35,
-      "log readability": 0.398,
-      "workflow packaging": 0.896,
-      "backup confidence validation": 0.418,
-      "workflow packaging validation": 0.403
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable",
-      "backup confidence validation": "emergent",
-      "workflow packaging validation": "emergent"
-    },
-    "pack_counts": {}
-  },
-  {
-    "generated_at": 1774185780,
-    "tick": 10,
-    "version": "0.0.61",
-    "theme_pressure": {
-      "backup confidence": 0.976,
-      "service visibility": 0.38,
-      "config sanity checks": 0.33,
-      "log readability": 0.378,
-      "workflow packaging": 0.856,
-      "backup confidence validation": 0.398,
-      "workflow packaging validation": 0.383
-    },
-    "theme_lifecycle": {
-      "backup confidence": "stable",
-      "service visibility": "stable",
-      "config sanity checks": "stable",
-      "log readability": "stable",
-      "workflow packaging": "stable",
-      "backup confidence validation": "emergent",
-      "workflow packaging validation": "emergent"
-    },
-    "pack_counts": {}
-  },
-  {
     "generated_at": 1774187666,
     "tick": 1,
     "version": "0.0.63",
@@ -1415,6 +1205,536 @@
       "identity_stability": 0.842,
       "latest_evolution_summary": "phase=enduring; traits=research, signal, rest; thread_delta=-2",
       "latest_evolution_at": 1774536047,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620881,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620892,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620899,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620909,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620919,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774620936,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "rejected",
+      "service visibility": "archived",
+      "config sanity checks": "rejected",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "rejected",
+      "test opportunity": "rejected",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774621121,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "declining",
+      "service visibility": "archived",
+      "config sanity checks": "declining",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "declining",
+      "test opportunity": "declining",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774621134,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "declining",
+      "service visibility": "archived",
+      "config sanity checks": "declining",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "declining",
+      "test opportunity": "declining",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774621716,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "declining",
+      "service visibility": "archived",
+      "config sanity checks": "declining",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "declining",
+      "test opportunity": "declining",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
+      "timeline_semantics_version": 1
+    }
+  },
+  {
+    "generated_at": 1774621788,
+    "tick": 31,
+    "version": "0.7.0",
+    "theme_pressure": {
+      "backup confidence": 0.22,
+      "service visibility": 0.224,
+      "config sanity checks": 0.73,
+      "log readability": 0.99,
+      "workflow packaging": 0.227,
+      "config sanity checks validation": 0.975,
+      "test opportunity": 0.2,
+      "log readability validation": 0.384
+    },
+    "theme_lifecycle": {
+      "backup confidence": "declining",
+      "service visibility": "archived",
+      "config sanity checks": "declining",
+      "log readability": "archived",
+      "workflow packaging": "archived",
+      "config sanity checks validation": "declining",
+      "test opportunity": "declining",
+      "log readability validation": "emergent"
+    },
+    "pack_counts": {},
+    "identity_core": {
+      "phase": "seedling",
+      "declared_name": "CircleForge",
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, self_revision; increasingly protective of continuity; actively regulating around uncertainty",
+      "traits": [
+        "research",
+        "inspect",
+        "act",
+        "uncertainty-brake",
+        "continuity",
+        "understanding"
+      ],
+      "core_values": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision",
+        "preserve meaningful unfinished threads",
+        "prefer reversible change over blind rupture"
+      ],
+      "known_humans": 0,
+      "unresolved_shared_threads": 0,
+      "identity_stability": 0.806,
+      "latest_evolution_summary": "phase=seedling; traits=research, act, uncertainty-brake; trait-basis-shift",
+      "latest_evolution_at": 1774618810,
       "timeline_semantics_version": 1
     }
   }

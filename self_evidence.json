@@ -1,50 +1,199 @@
 {
   "actions": {
     "build_module": {
-      "count": 1,
-      "follow_through": 0,
-      "question_link": 1,
+      "count": 9,
+      "follow_through": 9,
+      "question_link": 9,
       "experiment_link": 0,
       "question_narrowing": 0,
       "coordination_effect": 0,
-      "reuse_signal": 0
+      "reuse_signal": 9
     },
     "research": {
-      "count": 6,
-      "follow_through": 0,
-      "question_link": 6,
-      "experiment_link": 6,
-      "question_narrowing": 6,
+      "count": 18,
+      "follow_through": 13,
+      "question_link": 18,
+      "experiment_link": 18,
+      "question_narrowing": 18,
       "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "optimize": {
+      "count": 8,
+      "follow_through": 5,
+      "question_link": 7,
+      "experiment_link": 8,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 5
+    },
+    "signal": {
+      "count": 7,
+      "follow_through": 7,
+      "question_link": 7,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 7,
       "reuse_signal": 0
     },
     "gather": {
-      "count": 1,
-      "follow_through": 0,
-      "question_link": 1,
+      "count": 3,
+      "follow_through": 2,
+      "question_link": 2,
       "experiment_link": 0,
       "question_narrowing": 0,
       "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "trade": {
+      "count": 4,
+      "follow_through": 4,
+      "question_link": 4,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "rest": {
+      "count": 2,
+      "follow_through": 0,
+      "question_link": 2,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "inspect": {
+      "count": 3,
+      "follow_through": 2,
+      "question_link": 3,
+      "experiment_link": 3,
+      "question_narrowing": 3,
+      "coordination_effect": 2,
       "reuse_signal": 0
     }
   },
   "themes": {
-    "config sanity checks": {
+    "config sanity checks validation": {
       "build_module": {
+        "count": 5,
+        "follow_through": 5,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 5
+      },
+      "research": {
+        "count": 4,
+        "follow_through": 3,
+        "question_narrowing": 4,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "optimize": {
+        "count": 2,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 1
+      },
+      "signal": {
+        "count": 3,
+        "follow_through": 3,
+        "question_narrowing": 0,
+        "coordination_effect": 3,
+        "reuse_signal": 0
+      },
+      "gather": {
+        "count": 1,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "trade": {
+        "count": 1,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "rest": {
         "count": 1,
         "follow_through": 0,
         "question_narrowing": 0,
         "coordination_effect": 0,
         "reuse_signal": 0
-      },
-      "research": {
-        "count": 6,
+      }
+    },
+    "service visibility": {
+      "gather": {
+        "count": 1,
         "follow_through": 0,
-        "question_narrowing": 6,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      }
+    },
+    "log readability": {
+      "research": {
+        "count": 14,
+        "follow_through": 10,
+        "question_narrowing": 14,
         "coordination_effect": 0,
         "reuse_signal": 0
       },
+      "inspect": {
+        "count": 3,
+        "follow_through": 2,
+        "question_narrowing": 3,
+        "coordination_effect": 2,
+        "reuse_signal": 0
+      },
+      "optimize": {
+        "count": 5,
+        "follow_through": 4,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 4
+      },
       "gather": {
+        "count": 1,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "signal": {
+        "count": 4,
+        "follow_through": 4,
+        "question_narrowing": 0,
+        "coordination_effect": 4,
+        "reuse_signal": 0
+      },
+      "build_module": {
+        "count": 4,
+        "follow_through": 4,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 4
+      },
+      "trade": {
+        "count": 3,
+        "follow_through": 3,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "rest": {
+        "count": 1,
+        "follow_through": 0,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      }
+    },
+    "test opportunity": {
+      "optimize": {
         "count": 1,
         "follow_through": 0,
         "question_narrowing": 0,
@@ -54,21 +203,40 @@
     }
   },
   "notes": [
+    "decision_mode=reconsider chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=signal",
     "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=act chosen_action=rest",
     "decision_mode=act chosen_action=research",
     "decision_mode=act chosen_action=research",
     "decision_mode=act chosen_action=research",
-    "decision_mode=act chosen_action=research",
-    "decision_mode=act chosen_action=inspect",
     "decision_mode=act chosen_action=inspect",
     "decision_mode=act chosen_action=gather",
     "decision_mode=act chosen_action=inspect",
     "decision_mode=act chosen_action=research",
-    "decision_mode=act chosen_action=research"
+    "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=rest",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=uncertainty-brake chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=signal"
   ],
   "evidence_types": {
-    "question_link": 8,
-    "experiment_progress": 6,
-    "question_narrowing": 6
+    "follow_through": 42,
+    "question_link": 52,
+    "reuse_signal": 14,
+    "experiment_progress": 29,
+    "question_narrowing": 21,
+    "coordination_effect": 9
   }
 }

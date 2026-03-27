@@ -1,12 +1,30 @@
 [
   {
     "source_agent": "agent-1",
-    "target_agent": "agent-1",
-    "trust": 0.82,
-    "usefulness": 0.9,
+    "target_agent": "agent-2",
+    "trust": 0.7,
+    "usefulness": 0.75,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774567906
+    "updated_at": 1774619009
+  },
+  {
+    "source_agent": "agent-1",
+    "target_agent": "agent-3",
+    "trust": 0.86,
+    "usefulness": 0.95,
+    "friction": 0.0,
+    "last_event": "signal",
+    "updated_at": 1774619009
+  },
+  {
+    "source_agent": "agent-1",
+    "target_agent": "agent-4",
+    "trust": 0.74,
+    "usefulness": 0.8,
+    "friction": 0.0,
+    "last_event": "experiment-progress",
+    "updated_at": 1774619008
   },
   {
     "source_agent": "agent-2",
@@ -15,7 +33,25 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774567907
+    "updated_at": 1774619009
+  },
+  {
+    "source_agent": "agent-2",
+    "target_agent": "agent-3",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
+  },
+  {
+    "source_agent": "agent-2",
+    "target_agent": "agent-4",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
   },
   {
     "source_agent": "agent-3",
@@ -24,7 +60,25 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774567907
+    "updated_at": 1774619009
+  },
+  {
+    "source_agent": "agent-3",
+    "target_agent": "agent-2",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
+  },
+  {
+    "source_agent": "agent-3",
+    "target_agent": "agent-4",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
   },
   {
     "source_agent": "agent-4",
@@ -33,7 +87,25 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774567907
+    "updated_at": 1774619009
+  },
+  {
+    "source_agent": "agent-4",
+    "target_agent": "agent-2",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
+  },
+  {
+    "source_agent": "agent-4",
+    "target_agent": "agent-3",
+    "trust": 0.5,
+    "usefulness": 0.5,
+    "friction": 0.0,
+    "last_event": "bootstrap",
+    "updated_at": 1774613951
   },
   {
     "source_agent": "agent-5",
@@ -42,15 +114,15 @@
     "usefulness": 0.99,
     "friction": 0.0,
     "last_event": "experiment-progress",
-    "updated_at": 1774567907
+    "updated_at": 1774619009
   },
   {
     "source_agent": "agent-1",
-    "target_agent": "unknown",
-    "trust": 0.41,
-    "usefulness": 0.5,
-    "friction": 0.21,
-    "last_event": "inspect",
-    "updated_at": 1774567903
+    "target_agent": "agent-1",
+    "trust": 0.54,
+    "usefulness": 0.55,
+    "friction": 0.0,
+    "last_event": "experiment-progress",
+    "updated_at": 1774619004
   }
 ]
