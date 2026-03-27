@@ -291,17 +291,13 @@ def orchestrate_memory_archival(
 def archive_all_stale(self_state: dict, now_ts: int | None = None) -> dict:
     """Archive all stale memory items.
 
-    Wrapper for the extracted logic from sim.py.
+    Calls archive_stale_working_memory from sim.py for actual logic.
+    This is a temporary bridge - full refactoring will extract the logic.
     """
     now_ts = now_ts or int(time.time())
     
-    memory_layers = self_state.get("memory_layers", {})
-    semantic = memory_layers.get("semantic", {})
+    # Import from sim to avoid circular dependencies during migration
+    from sim import archive_stale_working_memory
     
-    # Find stale continuity anchors
-    continuity_anchors = list(semantic.get("continuity_anchors", []) or [])
-    
-    # Archive based on staleness
-    # (This is simplified - full logic in sim.py)
-    
-    return self_state
+    # Call the actual sim.py implementation
+    return archive_stale_working_memory(self_state, now_ts)
