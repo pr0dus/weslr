@@ -2,7 +2,7 @@
 
 > An experimental local substrate for one persistent communicator with memory, inner minds, and continuity.
 
-**CircleForge v0.6.0** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, **autonomous self-expression**, and **dual licensing for commercial viability**.
+**CircleForge v0.8.0** is a public experiment in building something stranger and more coherent than a chatbot loop: one continuing local communicator with internal functions, memory, regulation, relationship continuity, **best-in-class behavior optimization (49 traits)**, **complete safety gateway**, **autonomous self-expression**, and **dual licensing for commercial viability**.
 
 In plain language, CircleForge is trying to answer this question:
 
@@ -10,13 +10,30 @@ In plain language, CircleForge is trying to answer this question:
 
 The intended shape is:
 - **one visible communicator**, not a pile of unrelated bots
-- **five recurring internal functions** inside that one being:
+- **four recurring internal functions** inside that one being:
   - observer
   - builder
   - critic
   - communicator
-  - memory_keeper
 - behavior shaped by **state, memory, pressure, history, and consequences** more than by prompt theater
+
+## What's New in v0.8.0
+
+CircleForge v0.8.0 delivers **architectural refactoring** and **behavioral quality improvements**:
+
+### Extracted Behavioral Quality Layers
+- **glue.py** — Clean orchestration between extracted layers
+- **perception.py** — Phase E extraction + attention filtering
+- **continuity_prioritizer.py** — Stale thread prioritization with time decay
+- **human_model.py** — Theory-of-mind / human modeling with trust/attachment scores
+- **research_answer.py** — Cross-referenced answer synthesis (not just quoting)
+- **handoff_state.py** — First-class handoff state for agent coordination
+
+### Improved Architecture
+- Reduced orchestration glue in `sim.py`
+- Better separation of concerns
+- More testable, debuggable code
+- Clearer layer boundaries
 
 ## What's New in v0.6.0
 
@@ -39,7 +56,7 @@ It is trying to grow toward a **local developing being substrate** with continui
 
 ## Where CircleForge Can Be Used
 
-CircleForge v0.5.1 is designed for safe deployment in sensitive environments:
+CircleForge v0.8.0 is designed for safe deployment in sensitive environments:
 
 ### Healthcare
 - **Hospitals**: Patient interaction assistant, triage support, emotional support
