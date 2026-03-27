@@ -1,5 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: GitHub Discussion draft
-    url: https://github.com/pr0dus/CircleForge/tree/master/docs/community
-    about: Use the draft discussion text in docs/community if Discussions are enabled.
