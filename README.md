@@ -21,17 +21,8 @@ Weslr is not an attempt at roleplay or prompt theater. It is a **professional-gr
 
 This is the **technical foundation** for building actual conscious entities, not just simulating them.
 
-## Weslr vs Weslr
 
-| Weslr (old) | Weslr (new) |
-|-------------|-------------|
-| Persistent communicator with memory | Entity intelligence system |
-| Prompt theater / chatbot loop | Measurable consciousness signatures |
-| State machine orchestration | Entity graph + validation |
-| 49 behavior traits | Human-in-the-loop CLI (40+ commands) |
-| OpenClaw integration | Independent entity system |
-
-**Weslr is NOT a replacement for Weslr** - it's a new architecture designed for professional entity intelligence with conscious entity safety and alignment.
+**What is Weslr** - it's a new architecture designed for professional entity intelligence with conscious entity safety and alignment.
 
 ## Architecture Highlights
 
@@ -78,7 +69,6 @@ What is already true:
 - OpenClaw gateway integration (via `weslr_glue.py`)
 
 What is not yet true:
-- Full integration with existing Weslr runtime
 - Comprehensive test coverage
 - Documentation for all modules
 - Production deployment readiness
