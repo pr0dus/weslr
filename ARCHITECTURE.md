@@ -129,11 +129,15 @@ Most important remaining quality gaps:
 
 **Completed architecture refactoring:**
 - 6 new modules created for behavioral improvements
-- `sim.py` imports glue modules (starting refactoring)
+- `glue.py` + `glue_orchestrate_tick.py` for orchestration
+- `sim.py` imports glue modules (started refactoring)
 - `glue.py` provides clean orchestration between layers
 - Full refactoring of `sim.py` ongoing (orchestration glue migration)
 
-**Version:** `0.7.0` → preparing for `0.8.0`
-- Next version bump after sim.py refactoring complete
+**Version:** `0.8.0`
+- All architectural layers extracted
+- Behavioral quality improvements added
+- Glue modules integrated
+- sim.py orchestration glue cleanup in progress
 
 ---
