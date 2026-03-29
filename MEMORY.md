@@ -298,8 +298,6 @@ commands/
 - Weslr already supports plugin system — this is a new plugin creation task, not plugin system modification
 - Plugin runs in-process with full Python access, suitable for Windows integration tasks
 
----
-
 ## Session: 2026-03-30 - TIA Bridge Privacy & Commercial Handling
 
 ### Issue
@@ -334,11 +332,26 @@ Extracts engineering data from Siemens TIA Portal V20 projects:
 
 ### Files Created (moved to docs/)
 - `docs/tia-bridge/README.md` (2,232 bytes) — Commercial documentation
-- Updated `MEMORY.md` with this session
+- Updated `MEMORY.md` with TIA bridge privacy session
 - `memory/2026-03-29-weslr-reset.md` — Previous session notes
 
-- **TIA bridge is PRIVATE** — Not in main repo, separate private GitHub repo
+- **TIA bridge is PRIVATE** — Not in main repo, separate private GitHub repo (`github.com/pr0dus/weslr-tia-openness-bridge`)
 - **Commercial product** — Sold via www.weslr.de as premium feature
-- **Access control** — Only owner + invited collaborators can see
-- **Integration method** — Plugin system (runtime), not embedded
+- **Access control** — Only owner + invited collaborators can see the private repo
+- **Integration method** — Plugin system (runtime), not embedded in main repo
 - **No data leakage** — All code stays on user's local Windows PC
+
+**Main Weslr GitHub repo contains:**
+- ✅ Weslr Python modules (weslr_*.py, entity_*.py, consciousness_*.py, etc.)
+- ✅ Commands directory (commands/)
+- ✅ Documentation (docs/)
+- ❌ NO TIA bridge code (removed `tia-collector/`, `collector/tia_openness_bridge/`)
+- ❌ NO C# collector code (removed 50 .NET files)
+- ✅ Only commercial docs reference (`docs/tia-bridge/README.md`)
+- ✅ Only session memory reference (`memory/2026-03-30-tia-bridge-private.md`)
+
+**Private TIA bridge repo:**
+- `github.com/pr0dus/weslr-tia-openness-bridge` — Private, commercial
+- Contains full C#/.NET TIA collector implementation
+- Accessible only to owner and invited collaborators
+- Used for Windows-specific TIA Portal V20 integration
