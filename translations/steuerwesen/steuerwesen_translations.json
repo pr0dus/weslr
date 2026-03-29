@@ -1,0 +1,34 @@
+{
+  "de": {
+    "einkommensteuer": "Einkommensteuer",
+    "umsatzsteuer": "Umsatzsteuer",
+    "korporationssteuer": "Körperschaftsteuer",
+    "kapitalertragsteuer": "Kapitalertragsteuer",
+    "erbschaftsteuer": "Erbschaftsteuer",
+    "gewerbesteuer": "Gewerbesteuer",
+    "steuer": "Tax",
+    "rate": "Rate",
+    "exemption": "Exemption",
+    "deduction": "Deduction",
+    "deadline": "Deadline",
+    "threshold": "Threshold",
+    "declaration": "Declaration",
+    "assessment": "Assessment"
+  },
+  "en": {
+    "einkommensteuer": "Income Tax",
+    "umsatzsteuer": "VAT (Value-Added Tax)",
+    "korporationssteuer": "Corporate Income Tax",
+    "kapitalertragsteuer": "Capital Gains Tax",
+    "erbschaftsteuer": "Inheritance Tax",
+    "gewerbesteuer": "Business Tax",
+    "steuer": "Tax",
+    "rate": "Rate",
+    "exemption": "Exemption",
+    "deduction": "Deduction",
+    "deadline": "Deadline",
+    "threshold": "Threshold",
+    "declaration": "Declaration",
+    "assessment": "Assessment"
+  }
+}

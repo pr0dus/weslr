@@ -1,6 +1,6 @@
-# CircleForge Safety System Integration
+# Weslr Safety System Integration
 
-This document explains how the safety gateway integrates with CircleForge.
+This document explains how the safety gateway integrates with Weslr.
 
 ## Safety Gateway Features
 
@@ -11,7 +11,7 @@ This document explains how the safety gateway integrates with CircleForge.
 - Logs all input checks
 
 ### 2. Output Safety Check
-- Filters harmful suggestions from CircleForge output
+- Filters harmful suggestions from Weslr output
 - Truncates overly long output
 - Replaces medical/legal advice with generic warnings
 - Logs all output checks
@@ -29,7 +29,7 @@ This document explains how the safety gateway integrates with CircleForge.
 - Sanitizes before storage
 
 ### 5. Integrity Verification
-- Verifies CircleForge code hasn't been tampered with
+- Verifies Weslr code hasn't been tampered with
 - SHA256 checksums for core files
 - Fails safely if code modified
 - Prevents self-modification bypasses
@@ -197,7 +197,7 @@ Safety checks add ~1-5ms overhead per tick:
 - Network checks: ~2ms
 - Integrity checks: ~1ms (runs every 60s)
 
-This is negligible for CircleForge's operation.
+This is negligible for Weslr's operation.
 
 ## Future Enhancements
 

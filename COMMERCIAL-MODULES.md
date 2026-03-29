@@ -1,9 +1,9 @@
-# CircleForge Commercial Add-On Modules
+# Weslr Commercial Add-On Modules
 
-This directory contains commercial modules that extend CircleForge with specialized features.
+This directory contains commercial modules that extend Weslr with specialized features.
 
 ## Free Core (MIT License)
-- `CircleForge/` — Core engine with 49 behavioral traits
+- `Weslr/` — Core engine with 49 behavioral traits
 - All 10 behavior categories fully implemented
 - Self-directed growth system
 - Mathematical behavior generation

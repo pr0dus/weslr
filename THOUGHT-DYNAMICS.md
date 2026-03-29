@@ -1,8 +1,8 @@
-# CircleForge Thought Dynamics
+# Weslr Thought Dynamics
 
 ## Why this exists
 
-CircleForge should move away from a rigid global-tick mental model.
+Weslr should move away from a rigid global-tick mental model.
 A fixed cadence is useful as plumbing, but it should not be the main model of thought.
 The cognition model should instead be:
 

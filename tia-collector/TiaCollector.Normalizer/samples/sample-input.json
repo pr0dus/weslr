@@ -1,0 +1,59 @@
+{
+  "Id": "proj-123",
+  "Name": "MyTIAProject",
+  "Version": "V20",
+  "CreatedAt": "2026-03-29T10:00:00Z",
+  "Owner": "John Doe",
+  "Comment": "Production Line 1",
+  "TiaPath": "C:\\TIA Projects\\Line1.ap20",
+  "Plcs": [
+    {
+      "Id": "plc-456",
+      "Name": "PLC_Station1",
+      "Type": "S7-1500",
+      "Version": "V4.2",
+      "Rack": 0,
+      "Slot": 1
+    }
+  ],
+  "Modules": [
+    {
+      "Id": "mod-789",
+      "Name": "IM 0",
+      "Type": "6ES7 314-1AG13-0AB0",
+      "Slot": 0,
+      "SerialNumber": "12345678",
+      "PartNumber": "6ES7 314-1AG13-0AB0"
+    }
+  ],
+  "Parameters": [
+    {
+      "Id": "param-001",
+      "Name": "MaxSpeed",
+      "DataType": "Int",
+      "Value": "1000",
+      "IsReadOnly": false,
+      "IsProtected": true
+    }
+  ],
+  "Tags": [
+    {
+      "Id": "tag-001",
+      "Name": "Sensor_Status",
+      "DataType": "Bool",
+      "Address": "DB1.DBX0.0",
+      "IsRetain": false,
+      "IsPermanent": true
+    }
+  ],
+  "Blocks": [
+    {
+      "Id": "block-001",
+      "Name": "OB1",
+      "Type": "OB",
+      "Number": 1,
+      "NetworkCount": 5,
+      "LineCount": 42
+    }
+  ]
+}

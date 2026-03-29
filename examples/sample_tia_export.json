@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "collector_version": "1.2.3",
+    "export_timestamp": "2026-03-29T10:45:23Z",
+    "source_file": "C:\\Projects\\Automation\\LineControl_v20.ap20",
+    "format_version": "1.0.0",
+    "tia_portal_version": "V20",
+    "platform": "windows"
+  },
+  "project": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "LineControl-Production",
+    "type": "automation_project",
+    "path": "C:\\Projects\\Automation\\LineControl_v20",
+    "description": "Automated production line control system",
+    "last_modified": "2026-03-29T08:30:00Z",
+    "author": "Weslr-Engineer"
+  },
+  "devices": [
+    {
+      "id": "dev-001",
+      "name": "Control-Panel-A",
+      "type": "plc_device",
+      "hardware_version": "V4.2",
+      "firmware_version": "2.8.1",
+      "part_number": "6ES7613-1TB00-0AB0",
+      "order_number": "6ES7613-1TB00-0AB0",
+      "product_id": "PI 613"
+    }
+  ],
+  "plcs": [
+    {
+      "id": "plc-001",
+      "device_id": "dev-001",
+      "name": "CPU-1511-1-PN",
+      "rack": 0,
+      "slot": 1,
+      "model": "CPU 1511-1 PN",
+      "ip_address": "192.168.1.10",
+      "subnet_mask": "255.255.255.0",
+      "gateway": "192.168.1.1"
+    }
+  ],
+  "cpus": [
+    {
+      "id": "cpu-001",
+      "plc_id": "plc-001",
+      "module_type": "CPU 1511-1 PN",
+      "name": "CPU",
+      "slot": 1,
+      "serial_number": "0123456789",
+      "interface_addresses": [
+        {
+          "interface": "interface_0",
+          "ip_address": "192.168.1.10",
+          "subnet_mask": "255.255.255.0",
+          "physical_address": "00-11-22-33-44-55"
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "tag_tables": [
+    {
+      "id": "tt-001",
+      "name": "Global-Tags",
+      "plc_id": "plc-001",
+      "blocks": [
+        {
+          "db_number": 1,
+          "name": "Global-Variables",
+          "size": 256,
+          "organization_block_type": "db"
+        }
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "id": "tag-001",
+      "name": "Global-Variables.MachineSpeed",
+      "data_type": "REAL",
+      "address": "DB1.DBW0",
+      "plc_id": "plc-001",
+      "comment": "Current machine speed in rpm",
+      "initial_value": "0.0",
+      "read_write": true,
+      "direct_access": false
+    }
+  ],
+  "program_blocks": [
+    {
+      "id": "pb-001",
+      "name": "MAIN",
+      "type": "ob",
+      "plc_id": "plc-001",
+      "number": 1,
+      "networks": [
+        {
+          "network_number": 1,
+          "network_name": "Startup",
+          "network_content": "CALL #InitializeSystem\n"
+        }
+      ],
+      "interface": {
+        "input": [],
+        "output": [],
+        "in_out": [],
+        "temp": [],
+        "static": [],
+        "constant": []
+      },
+      "comment": "Main program block for machine control"
+    }
+  ],
+  "topology": [
+    {
+      "id": "topo-001",
+      "source_id": "cpu-001",
+      "target_id": "dev-001",
+      "connection_type": "profinet",
+      "interface_source": "interface_0",
+      "interface_target": "X1",
+      "ip_source": "192.168.1.10",
+      "ip_target": "192.168.1.10",
+      "subnet": "255.255.255.0"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "alm-001",
+      "name": "MACHINE_OVERLOAD",
+      "plc_id": "plc-001",
+      "type": "standard_alarm",
+      "severity": "critical",
+      "message_text": "Machine torque exceeds safe limit",
+      "acknowledge_required": true,
+      "archive_required": true,
+      "enabled": true,
+      "tag_reference": "Global-Variables.TorqueActual",
+      "delay": 2.5,
+      "deadband": 0.0,
+      "low_limit": 0.0,
+      "high_limit": 100.0
+    }
+  ],
+  "collector_diagnostics": {
+    "start_time": "2026-03-29T10:45:00Z",
+    "end_time": "2026-03-29T10:45:23Z",
+    "duration_ms": 23456,
+    "files_processed": 142,
+    "objects_extracted": 1567,
+    "errors": [],
+    "warnings": [
+      {
+        "file": "PLC_1\\Blocks\\MAIN.stl",
+        "line": 45,
+        "message": "Unknown instruction mnemonic, fallback parsing applied"
+      }
+    ]
+  }
+}

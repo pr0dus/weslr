@@ -1,0 +1,17 @@
+{
+  "collector": {
+    "timeoutSeconds": 300,
+    "readOnly": true,
+    "validateBeforeExport": true
+  },
+  "export": {
+    "format": "neutral-json",
+    "indent": true,
+    "includeMetadata": true,
+    "outputDirectory": "./exports"
+  },
+  "logging": {
+    "level": "Info",
+    "filePath": "./logs/collector.log"
+  }
+}

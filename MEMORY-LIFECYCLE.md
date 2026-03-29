@@ -1,8 +1,8 @@
-# CircleForge Memory Lifecycle
+# Weslr Memory Lifecycle
 
 ## Why this exists
 
-CircleForge should not feel like it lives in sessions.
+Weslr should not feel like it lives in sessions.
 
 The end-user target is:
 - one continuing being
@@ -319,7 +319,7 @@ Normal outward speech should retrieve only what matters now, not replay giant lo
 
 ## Anti-drift rule
 
-Future CircleForge changes should be judged against this question:
+Future Weslr changes should be judged against this question:
 
 > Does this reduce session-feel and strengthen endless continuity under bounded memory?
 

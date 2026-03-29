@@ -1,0 +1,16 @@
+{
+  "start_time": 1774816000,
+  "last_sync": 1774820805,
+  "timezone": "Europe/Berlin",
+  "ticks_elapsed": 0,
+  "current_datetime": "2026-03-29 23:11:20 CET",
+  "config": {
+    "timezone": "Europe/Berlin",
+    "auto_sync": true,
+    "start_time": 1774816000,
+    "time_initialized": true,
+    "config_version": "1.0",
+    "description": "Weslr time configuration - set to 2026 European time",
+    "dst_rules": "EU-wide: last Sunday March to last Sunday October"
+  }
+}

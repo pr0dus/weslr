@@ -1,6 +1,6 @@
-# CircleForge Opportunity Model
+# Weslr Opportunity Model
 
-CircleForge should not rely on a human to choose every artifact family up front.
+Weslr should not rely on a human to choose every artifact family up front.
 
 The more interesting target is that entities can:
 - notice friction
@@ -72,7 +72,7 @@ Or:
 > Existing validators are too generic.
 > A tighter local-first sanity checker could be a practical micro-product.
 
-That is the behavior CircleForge should cultivate.
+That is the behavior Weslr should cultivate.
 
 ## Narrowness matters
 
@@ -88,7 +88,7 @@ It should avoid drifting toward:
 - fake startups
 - generic AI platforms
 - vague orchestration stories
-- artifacts that only make sense inside CircleForge
+- artifacts that only make sense inside Weslr
 
 ## Practical v0.0.43 direction
 

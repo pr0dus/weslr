@@ -68,7 +68,8 @@ def orchestrate_weslr_tick(
         for option in tradeoff_options:
             # Call evaluate_option with proper signature: option, options, context
             option_str = option.get("type", "unknown")
-            context = {"timestamp": now_ts, "self_state": self_state}
+            # Create context without circular reference to self_state
+            context = {"timestamp": now_ts, "self_state_ref": f"<self_state dict at {id(self_state)}>"}  # Placeholder instead of direct ref
             try:
                 tradeoff = valence.evaluate_option(option_str, all_options, context)
                 # Check if it's not neutral

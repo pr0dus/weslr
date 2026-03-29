@@ -1,5 +1,5 @@
 """
-CircleForge - Premium Support Module
+Weslr - Premium Support Module
 Priority support tiers for commercial users.
 """
 

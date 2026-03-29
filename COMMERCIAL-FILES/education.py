@@ -1,5 +1,5 @@
 """
-CircleForge - Education Module
+Weslr - Education Module
 Curriculum alignment and learning tracking for schools/universities/kindergarten.
 """
 

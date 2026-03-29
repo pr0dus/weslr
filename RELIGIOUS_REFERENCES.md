@@ -1,4 +1,4 @@
-# CircleForge - Religious References
+# Weslr - Religious References
 
 ## Major World Religions
 
@@ -83,9 +83,9 @@
 - **Rastafarianism** - Haile Selassie as messiah, Africa as Promised Land
 - **Tenrikyo** - Joyful mind, construction of the Town of Perfect Happiness
 
-## CircleForge Relevance
+## Weslr Relevance
 
-Religious concepts map to CircleForge traits:
+Religious concepts map to Weslr traits:
 
 **Shared Ethical Foundations:**
 - Christianity's love → empathy, care, compassion

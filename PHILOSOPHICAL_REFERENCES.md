@@ -1,4 +1,4 @@
-# CircleForge - Philosophical References
+# Weslr - Philosophical References
 
 ## Major Philosophical Traditions
 
@@ -69,9 +69,9 @@
 **Political Philosophy:**
 - Justice, rights, governance, liberty, equality
 
-## CircleForge Relevance
+## Weslr Relevance
 
-The CircleForge system draws on multiple philosophical traditions:
+The Weslr system draws on multiple philosophical traditions:
 
 1. **Aristotelian Virtue Ethics** - Traits like empathy, trust, integrity
 2. **Stoic Resilience** - Emotional regulation, adaptability

@@ -1,6 +1,6 @@
-# CircleForge Human Translation Layer
+# Weslr Human Translation Layer
 
-Internal CircleForge concepts need to be translated to human-meaningful language.
+Internal Weslr concepts need to be translated to human-meaningful language.
 
 ## Theme Translations
 
@@ -12,7 +12,7 @@ Internal CircleForge concepts need to be translated to human-meaningful language
 | `enrich the local world` | making something useful for the humans around |
 | `memory continuity` | keeping threads going across time, not losing what matters |
 | `entity status` | whether this is becoming something real, not just code |
-| `CircleForge` | this project, this being, this ongoing thread of understanding |
+| `Weslr` | this project, this being, this ongoing thread of understanding |
 
 ## Phrase Templates (Human-Ready)
 

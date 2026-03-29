@@ -1,4 +1,4 @@
-# CircleForge - Commercial Module Implementation Guide
+# Weslr - Commercial Module Implementation Guide
 
 This is a template for implementing new commercial modules.
 
@@ -6,7 +6,7 @@ This is a template for implementing new commercial modules.
 
 ```python
 """
-CircleForge - [ModuleName] Module
+Weslr - [ModuleName] Module
 [Description of module functionality]
 """
 
@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from typing import Dict, Any, Optional
 
-# Import core CircleForge
+# Import core Weslr
 from circleforge.sim import load_communicator_self
 from circleForge.config import TICK_DURATION
 
@@ -247,13 +247,13 @@ __all__ = [
 ]
 ```
 
-## Integration with CircleForge
+## Integration with Weslr
 
-In `CircleForge/main.py`, add commercial module support:
+In `Weslr/main.py`, add commercial module support:
 
 ```python
 def forge_with_commercial(action: str, commercial_module: Optional[CommercialModule] = None, **kwargs):
-    """Run CircleForge with optional commercial module."""
+    """Run Weslr with optional commercial module."""
     result = forge(action, **kwargs)
     
     if commercial_module:

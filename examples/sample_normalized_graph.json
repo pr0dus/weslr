@@ -1,0 +1,85 @@
+{
+  "entities": [
+    {
+      "id": "plc-001",
+      "type": "plc",
+      "attributes": {
+        "name": "PLC-ControlRoom",
+        "model": "Siemens-S7-1500",
+        "ip_address": "192.168.1.10",
+        "slot": 2,
+        "rack": 0
+      },
+      "confidence": 0.95,
+      "evidence": ["device_discovery", "tcp_scan"]
+    },
+    {
+      "id": "dev-001",
+      "type": "device",
+      "attributes": {
+        "name": "Temperature-Sensor-01",
+        "manufacturer": "Siemens",
+        "product_id": "6ES7231-4HF00-0AA0",
+        "serial": "ABC123456"
+      },
+      "confidence": 0.98,
+      "evidence": ["plc_read", "device_inventory"]
+    },
+    {
+      "id": "tag-001",
+      "type": "tag",
+      "attributes": {
+        "name": "TIC-101.PV",
+        "data_type": "REAL",
+        "address": "DB42.DBW0",
+        "read_write": false
+      },
+      "confidence": 0.99,
+      "evidence": ["symbol_table", "plc_symbol_scan"]
+    },
+    {
+      "id": "alm-001",
+      "type": "alarm",
+      "attributes": {
+        "name": "HIGH_TEMP",
+        "description": "Temperature exceeds safe limit",
+        "priority": "high",
+        "enabled": true,
+        "acknowledged": false
+      },
+      "confidence": 0.90,
+      "evidence": ["alarm_log", "hmi_review"]
+    }
+  ],
+  "relations": [
+    {
+      "id": "rel-001",
+      "source_id": "plc-001",
+      "target_id": "dev-001",
+      "type": "connects",
+      "strength": 0.95,
+      "provenance": "plc_io_configuration"
+    },
+    {
+      "id": "rel-002",
+      "source_id": "dev-001",
+      "target_id": "tag-001",
+      "type": "monitors",
+      "strength": 0.99,
+      "provenance": "symbol_mapping"
+    },
+    {
+      "id": "rel-003",
+      "source_id": "tag-001",
+      "target_id": "alm-001",
+      "type": "triggers",
+      "strength": 0.85,
+      "provenance": "alarm_config"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "generated_at": "2026-03-29T08:59:00Z",
+    "source": "normalized_graph_export"
+  }
+}

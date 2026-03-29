@@ -1,0 +1,22 @@
+{
+  "investigation": {
+    "timeoutSeconds": 60,
+    "requireAlarmText": true,
+    "generateTechnicalSummary": true
+  },
+  "search": {
+    "basePath": "./projects",
+    "maxResults": 10,
+    "includeSimilarAlarms": true,
+    "includeFailurePatterns": true
+  },
+  "output": {
+    "format": "json",
+    "indent": true,
+    "outputDirectory": "./investigations"
+  },
+  "logging": {
+    "level": "Info",
+    "filePath": "./logs/investigator.log"
+  }
+}

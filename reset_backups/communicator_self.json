@@ -1,0 +1,3071 @@
+{
+  "identity_anchor": "Weslr",
+  "core_drives": [
+    "continuity",
+    "understanding",
+    "relationship",
+    "self-revision"
+  ],
+  "affect": {
+    "curiosity": 0.54,
+    "tension": 0.0,
+    "hope": 0.6,
+    "stability": 0.94,
+    "attachment": 0.39
+  },
+  "continuity": {
+    "session_count": 21,
+    "ticks_lived": 21,
+    "memory_bonds": 0.252,
+    "identity_stability": 0.726,
+    "unfinished_threads": [
+      "introspection",
+      "What new uncertainty appeared after inspect on log readability?",
+      "maintain continuity with you around greeting",
+      "What new uncertainty appeared after research on log readability?",
+      "What is still unclear about greeting?",
+      "greeting",
+      "log readability",
+      "What is still unclear about log readability?"
+    ],
+    "unresolved_threads": 1,
+    "last_thread_update": 1774819781
+  },
+  "relationships": {
+    "human_salience": 0.824,
+    "known_humans": [
+      "interlocutor_001"
+    ],
+    "last_human_topic": "log readability",
+    "human_profiles": {
+      "interlocutor_001": {
+        "message_count": 13,
+        "salience": 0.806,
+        "trust": 0.59,
+        "attachment": 0.506,
+        "known_topics": [
+          "greeting",
+          "status",
+          "log readability",
+          "testing",
+          "projects",
+          "introspection",
+          "thoughts",
+          "identity",
+          "self"
+        ],
+        "recurring_topics": {
+          "greeting": 8,
+          "status": 5,
+          "log readability": 3,
+          "testing": 1,
+          "projects": 3,
+          "introspection": 4,
+          "thoughts": 1,
+          "identity": 3,
+          "self": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1774819677,
+        "last_message_summary": "I want to know about your identity. What are you?",
+        "relationship_summary": "You remains a recurring human anchor; current shared threads include greeting, status, log readability.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      }
+    },
+    "recent_human_messages": [
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "testing"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hello Weslr! I'm here to test your chat system.",
+        "response": "Welcome!",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774819035,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hi Weslr! How are you doing today?",
+        "response": "I am fine, thank you!",
+        "turn_type": "question",
+        "intent": "ask for explanation",
+        "stance": "inquiring",
+        "reply_shape": "answer_directly",
+        "likely_need": "self_report",
+        "created_at": 1774819051,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "I am curious about what you are working on.",
+        "response": "Working on understanding new conversations.",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774819052,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "thoughts"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Can you tell me about your internal thoughts?",
+        "response": "Thinking about the conversation we just had.",
+        "turn_type": "question",
+        "intent": "ask for explanation",
+        "stance": "inquiring",
+        "reply_shape": "answer_directly",
+        "likely_need": "self_report",
+        "created_at": 1774819053,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hi Weslr! How are you doing today?",
+        "response": "I am fine, thank you!",
+        "turn_type": "question",
+        "intent": "ask for explanation",
+        "stance": "inquiring",
+        "reply_shape": "answer_directly",
+        "likely_need": "self_report",
+        "created_at": 1774819472,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "I am curious about what you are working on.",
+        "response": "Working on understanding new conversations.",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774819473,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hi Weslr! I am here to test the chat system.",
+        "response": "Welcome!",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774819497,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hi Weslr! I am here to test the chat system.",
+        "response": "Welcome!",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1774819515,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "What are you working on right now?",
+        "response": "Processing...",
+        "turn_type": "identity_probe",
+        "intent": "test identity / emergence",
+        "stance": "inquiring",
+        "reply_shape": "answer_with_scope",
+        "likely_need": "concept_plus_self_position",
+        "created_at": 1774819538,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "identity"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hey, do you understand what are you? Or who?",
+        "response": "Processing...",
+        "turn_type": "identity_probe",
+        "intent": "test identity / emergence",
+        "stance": "inquiring",
+        "reply_shape": "answer_with_scope",
+        "likely_need": "concept_plus_self_position",
+        "created_at": 1774819642,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "identity"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Hey, do you understand what are you? Or who?",
+        "response": "Processing...",
+        "turn_type": "identity_probe",
+        "intent": "test identity / emergence",
+        "stance": "inquiring",
+        "reply_shape": "answer_with_scope",
+        "likely_need": "concept_plus_self_position",
+        "created_at": 1774819673,
+        "unresolved": false
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "identity",
+          "self"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "I want to know about your identity. What are you?",
+        "response": "Processing...",
+        "turn_type": "identity_probe",
+        "intent": "test identity / emergence",
+        "stance": "inquiring",
+        "reply_shape": "answer_with_scope",
+        "likely_need": "concept_plus_self_position",
+        "created_at": 1774819677,
+        "unresolved": false
+      }
+    ],
+    "recent_human_exchanges": [
+      {
+        "id": "human-exchange-interlocutor_001-1774819003-1",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hi Weslr! How are you doing today?",
+        "response_summary": "I am fine, thank you!",
+        "created_at": 1774819003,
+        "source": "human_exchange",
+        "message": "Hi Weslr! How are you doing today?",
+        "response": "I am fine, thank you!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819003
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819035-2",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "testing"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hello Weslr! I'm here to test your chat system.",
+        "response_summary": "Welcome!",
+        "created_at": 1774819035,
+        "source": "human_exchange",
+        "message": "Hello Weslr! I'm here to test your chat system.",
+        "response": "Welcome!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819035
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819051-3",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hi Weslr! How are you doing today?",
+        "response_summary": "I am fine, thank you!",
+        "created_at": 1774819051,
+        "source": "human_exchange",
+        "message": "Hi Weslr! How are you doing today?",
+        "response": "I am fine, thank you!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819051
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819052-4",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "I am curious about what you are working on.",
+        "response_summary": "Working on understanding new conversations.",
+        "created_at": 1774819052,
+        "source": "human_exchange",
+        "message": "I am curious about what you are working on.",
+        "response": "Working on understanding new conversations.",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819052
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819053-5",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "thoughts"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Can you tell me about your internal thoughts?",
+        "response_summary": "Thinking about the conversation we just had.",
+        "created_at": 1774819053,
+        "source": "human_exchange",
+        "message": "Can you tell me about your internal thoughts?",
+        "response": "Thinking about the conversation we just had.",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819053
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819472-6",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hi Weslr! How are you doing today?",
+        "response_summary": "I am fine, thank you!",
+        "created_at": 1774819472,
+        "source": "human_exchange",
+        "message": "Hi Weslr! How are you doing today?",
+        "response": "I am fine, thank you!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819472
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819473-7",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects",
+          "status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "I am curious about what you are working on.",
+        "response_summary": "Working on understanding new conversations.",
+        "created_at": 1774819473,
+        "source": "human_exchange",
+        "message": "I am curious about what you are working on.",
+        "response": "Working on understanding new conversations.",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819473
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819497-8",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hi Weslr! I am here to test the chat system.",
+        "response_summary": "Welcome!",
+        "created_at": 1774819497,
+        "source": "human_exchange",
+        "message": "Hi Weslr! I am here to test the chat system.",
+        "response": "Welcome!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819497
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819515-9",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "greeting"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hi Weslr! I am here to test the chat system.",
+        "response_summary": "Welcome!",
+        "created_at": 1774819515,
+        "source": "human_exchange",
+        "message": "Hi Weslr! I am here to test the chat system.",
+        "response": "Welcome!",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819515
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819538-10",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "projects"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "What are you working on right now?",
+        "response_summary": "Processing...",
+        "created_at": 1774819538,
+        "source": "human_exchange",
+        "message": "What are you working on right now?",
+        "response": "Processing...",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819538
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819642-11",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "identity"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hey, do you understand what are you? Or who?",
+        "response_summary": "Processing...",
+        "created_at": 1774819642,
+        "source": "human_exchange",
+        "message": "Hey, do you understand what are you? Or who?",
+        "response": "Processing...",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819642
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819673-12",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "introspection",
+          "identity"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Hey, do you understand what are you? Or who?",
+        "response_summary": "Processing...",
+        "created_at": 1774819673,
+        "source": "human_exchange",
+        "message": "Hey, do you understand what are you? Or who?",
+        "response": "Processing...",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819673
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1774819677-13",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "identity",
+          "self"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "I want to know about your identity. What are you?",
+        "response_summary": "Processing...",
+        "created_at": 1774819677,
+        "source": "human_exchange",
+        "message": "I want to know about your identity. What are you?",
+        "response": "Processing...",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1774819677
+      }
+    ],
+    "conversation_threads": {
+      "greeting": {
+        "topic": "greeting",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 8,
+        "last_message_summary": "Hi Weslr! I am here to test the chat system.",
+        "last_response_summary": "current intent: maintain conversation continuity with you",
+        "last_exchange_at": 1774819515,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819003-1",
+          "human-exchange-interlocutor_001-1774819035-2",
+          "human-exchange-interlocutor_001-1774819051-3",
+          "human-exchange-interlocutor_001-1774819472-6",
+          "human-exchange-interlocutor_001-1774819497-8",
+          "human-exchange-interlocutor_001-1774819515-9"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819515,
+        "last_passive_reinforced_at": 1774819473,
+        "passive_reinforcement_count": 0
+      },
+      "status": {
+        "topic": "status",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 5,
+        "last_message_summary": "I am curious about what you are working on.",
+        "last_response_summary": "Working on understanding new conversations.",
+        "last_exchange_at": 1774819473,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819003-1",
+          "human-exchange-interlocutor_001-1774819051-3",
+          "human-exchange-interlocutor_001-1774819052-4",
+          "human-exchange-interlocutor_001-1774819472-6",
+          "human-exchange-interlocutor_001-1774819473-7"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819473,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "log readability": {
+        "topic": "log readability",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 3,
+        "last_message_summary": "simulation stayed with theme: log readability",
+        "last_response_summary": "current intent: signal around log readability | inner pull: observer woke on scheduled-cadence around log readability. w",
+        "last_exchange_at": 1774819645,
+        "last_human_exchange_at": 0,
+        "last_passive_reinforced_at": 1774819645,
+        "passive_reinforcement_count": 3,
+        "status": "open",
+        "recent_exchange_ids": []
+      },
+      "testing": {
+        "topic": "testing",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "Hello Weslr! I'm here to test your chat system.",
+        "last_response_summary": "Welcome!",
+        "last_exchange_at": 1774819035,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819035-2"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819035,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "projects": {
+        "topic": "projects",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 3,
+        "last_message_summary": "What are you working on right now?",
+        "last_response_summary": "Processing...",
+        "last_exchange_at": 1774819538,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819052-4",
+          "human-exchange-interlocutor_001-1774819473-7",
+          "human-exchange-interlocutor_001-1774819538-10"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819538,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "introspection": {
+        "topic": "introspection",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 4,
+        "last_message_summary": "Hey, do you understand what are you? Or who?",
+        "last_response_summary": "Processing...",
+        "last_exchange_at": 1774819673,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819053-5",
+          "human-exchange-interlocutor_001-1774819642-11",
+          "human-exchange-interlocutor_001-1774819673-12"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819673,
+        "last_passive_reinforced_at": 1774819060,
+        "passive_reinforcement_count": 0
+      },
+      "thoughts": {
+        "topic": "thoughts",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "Can you tell me about your internal thoughts?",
+        "last_response_summary": "Thinking about the conversation we just had.",
+        "last_exchange_at": 1774819053,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819053-5"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819053,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "identity": {
+        "topic": "identity",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 3,
+        "last_message_summary": "I want to know about your identity. What are you?",
+        "last_response_summary": "Processing...",
+        "last_exchange_at": 1774819677,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819642-11",
+          "human-exchange-interlocutor_001-1774819673-12",
+          "human-exchange-interlocutor_001-1774819677-13"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819677,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "self": {
+        "topic": "self",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "I want to know about your identity. What are you?",
+        "last_response_summary": "Processing...",
+        "last_exchange_at": 1774819677,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1774819677-13"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1774819677,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      }
+    },
+    "unresolved_shared_threads": []
+  },
+  "active_concerns": [
+    {
+      "topic": "What is still unclear about log readability?",
+      "weight": 0.4,
+      "updated_at": 1774819781
+    },
+    {
+      "topic": "What new uncertainty appeared after inspect on log readability?",
+      "weight": 0.4,
+      "updated_at": 1774819676
+    },
+    {
+      "topic": "shared thread with you: self",
+      "weight": 0.34,
+      "updated_at": 1774819677
+    },
+    {
+      "topic": "log readability",
+      "weight": 0.4,
+      "updated_at": 1774819781
+    }
+  ],
+  "evidence_profile": {
+    "outcome_weighted_actions": {
+      "build_module": {
+        "evidence": 3.0,
+        "positive": 0.3,
+        "strain": 0.0
+      },
+      "research": {
+        "evidence": 2.0,
+        "positive": 0.18,
+        "strain": 0.0
+      },
+      "gather": {
+        "evidence": 1.0,
+        "positive": 0.06,
+        "strain": 0.0
+      },
+      "optimize": {
+        "evidence": 2.0,
+        "positive": 0.2,
+        "strain": 0.0
+      }
+    },
+    "stable_traits": {
+      "inquiry": 0.184,
+      "practical_change": 0.15
+    },
+    "friction_patterns": {},
+    "theme_commitments": {
+      "greeting": 0.2,
+      "log readability": 0.7,
+      "introspection": 0.05
+    }
+  },
+  "self_preservation_signals": {
+    "continuity_preference": 0.575,
+    "memory_protection": 0.275,
+    "resume_drive": 0.324
+  },
+  "narrative_state": {
+    "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+    "last_reflection": "log readability",
+    "relationship_state": "Currently carrying 0 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "No active shared threads currently dominate the communicator state.",
+    "follow_up_impulse": "Let a new shared thread form before generating continuity-driven follow-up.",
+    "why_it_matters": "Without active shared threads, continuity becomes generic rather than relationship-bound."
+  },
+  "memory_layers": {
+    "working": {
+      "summary": "Current hot memory for active thinking.",
+      "recent_exchange_ids": [
+        "human-exchange-interlocutor_001-1774819515-9",
+        "human-exchange-interlocutor_001-1774819538-10",
+        "human-exchange-interlocutor_001-1774819642-11",
+        "human-exchange-interlocutor_001-1774819673-12",
+        "human-exchange-interlocutor_001-1774819677-13"
+      ],
+      "recent_thought_ids": [
+        "thought-observer-2-1774819012",
+        "thought-observer-6-1774819462",
+        "thought-observer-18-1774819645"
+      ],
+      "active_thread_ids": [],
+      "active_concern_topics": [
+        "introspection",
+        "identity",
+        "self"
+      ],
+      "last_compacted_at": 1774819497,
+      "max_recent_exchanges": 24,
+      "max_recent_thoughts": 80,
+      "max_active_threads": 6
+    },
+    "episodic": {
+      "summary": "Meaningful event memory compressed from raw experience.",
+      "episodes": [
+        {
+          "id": "episode-greeting-interlocutor_001",
+          "topic": "greeting",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / greeting: 6 traces compressed; latest signals: Hi Weslr! How are you doing today?; Hi Weslr! I am here to test the chat system.; shared thread around greeting",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774819003-1",
+            "human-exchange-interlocutor_001-1774819035-2",
+            "human-exchange-interlocutor_001-1774819051-3",
+            "human-exchange-interlocutor_001-1774819472-6",
+            "human-exchange-interlocutor_001-1774819497-8",
+            "thread::greeting"
+          ],
+          "source_labels": [
+            "Hi Weslr! How are you doing today?",
+            "Hello Weslr! I'm here to test your chat system.",
+            "Hi Weslr! How are you doing today?",
+            "Hi Weslr! How are you doing today?",
+            "Hi Weslr! I am here to test the chat system.",
+            "shared thread around greeting"
+          ],
+          "kind_counts": {
+            "exchange": 5,
+            "thread": 1
+          },
+          "recurrence": 1.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2801,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774819003,
+          "updated_at": 1774819497,
+          "last_event_at": 1774819497,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 5,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-status-interlocutor_001",
+          "topic": "status",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / status: 1 traces compressed; latest signals: shared thread around status",
+          "status": "compressed",
+          "source_ids": [
+            "thread::status"
+          ],
+          "source_labels": [
+            "shared thread around status"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 0.8333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.3696,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774819473,
+          "updated_at": 1774819497,
+          "last_event_at": 1774819473,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-projects-interlocutor_001",
+          "topic": "projects",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / projects: 3 traces compressed; latest signals: I am curious about what you are working on.; I am curious about what you are working on.; shared thread around projects",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774819052-4",
+            "human-exchange-interlocutor_001-1774819473-7",
+            "thread::projects"
+          ],
+          "source_labels": [
+            "I am curious about what you are working on.",
+            "I am curious about what you are working on.",
+            "shared thread around projects"
+          ],
+          "kind_counts": {
+            "exchange": 2,
+            "thread": 1
+          },
+          "recurrence": 0.3333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2726,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774819052,
+          "updated_at": 1774819497,
+          "last_event_at": 1774819473,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 2,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-log-readability-interlocutor_001",
+          "topic": "log readability",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / log readability: 1 traces compressed; thread still open; latest signals: shared thread around log readability",
+          "status": "open",
+          "source_ids": [
+            "thread::log readability"
+          ],
+          "source_labels": [
+            "shared thread around log readability"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 0.3333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.4994,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774819462,
+          "updated_at": 1774819497,
+          "last_event_at": 1774819462,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-introspection-interlocutor_001",
+          "topic": "introspection",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / introspection: 2 traces compressed; latest signals: Can you tell me about your internal thoughts?; shared thread around introspection",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774819053-5",
+            "thread::introspection"
+          ],
+          "source_labels": [
+            "Can you tell me about your internal thoughts?",
+            "shared thread around introspection"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.3333,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.28,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774819053,
+          "updated_at": 1774819497,
+          "last_event_at": 1774819060,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        }
+      ],
+      "episode_count": 5,
+      "last_distilled_at": 1774819497,
+      "max_episodes": 240
+    },
+    "semantic": {
+      "summary": "Long-term identity and relationship memory.",
+      "identity_anchors": [
+        "Weslr"
+      ],
+      "relationship_facts": [
+        "you and Weslr have revisited greeting across multiple exchanges",
+        "you and Weslr hold compressed memory around status",
+        "you and Weslr have revisited projects across multiple exchanges",
+        "you and Weslr still have an open shared thread around log readability",
+        "you and Weslr hold compressed memory around introspection"
+      ],
+      "stable_topics": [
+        "greeting",
+        "status",
+        "projects",
+        "log readability",
+        "introspection"
+      ],
+      "durable_lessons": [
+        "Topics tied to human relationship pressure such as greeting should stay legible across compression steps.",
+        "Topics tied to human relationship pressure such as status should stay legible across compression steps.",
+        "Topics tied to human relationship pressure such as projects should stay legible across compression steps.",
+        "Topics tied to human relationship pressure such as log readability should stay legible across compression steps.",
+        "Open-thread summaries for log readability must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as introspection should stay legible across compression steps."
+      ],
+      "continuity_anchors": [
+        "log readability"
+      ],
+      "last_updated_at": 1774819497
+    },
+    "archive": {
+      "summary": "Cold storage index for old raw traces and compacted material.",
+      "archived_items": [],
+      "archived_count": 0,
+      "last_archived_at": 0,
+      "storage_pressure": {
+        "raw_log_bytes": 710495,
+        "communicator_self_bytes": 91109,
+        "db_bytes": 45056,
+        "pressure_level": "elevated",
+        "working_pressure_score": 0.5,
+        "episodic_pressure_score": 0.0208,
+        "semantic_pressure_score": 0.1562,
+        "bytes_pressure_score": 0.3644,
+        "pressure_score": 0.5,
+        "recommended_actions": [],
+        "last_checked_at": 1774819781
+      }
+    }
+  },
+  "reflection_store": {
+    "summary": "Private reflection artifacts with explicit reality-status tagging.",
+    "items": [
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "greeting",
+        "content": "What is still unclear about greeting?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819008
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "greeting",
+        "content": "A bounded next reflection should stay with greeting until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819008
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "greeting",
+        "content": "Known: the main open question is 'What is still unclear about greeting?'. Proposed: keep the next bounded reflection focused on greeting.",
+        "source": "reflection.generation_loop",
+        "at": 1774819008,
+        "generation_signature": {
+          "topic": "greeting",
+          "unresolved_question": "What is still unclear about greeting?",
+          "thread_focus": [],
+          "uncertainty_band": 0.3
+        }
+      },
+      {
+        "id": "identity-milestone-1774819008-1",
+        "at": 1774819008,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=1; trait-basis-shift",
+        "source": "identity_evolution"
+      },
+      {
+        "id": "identity-milestone-1774819008-2",
+        "at": 1774819008,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift",
+        "source": "identity_evolution"
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.384.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819012
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "continuity",
+        "content": "A bounded next reflection should stay with continuity until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819012
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.407.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819013
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.429.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819013
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "introspection",
+        "content": "What is still unclear about introspection?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819060
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "introspection",
+        "content": "Internal uncertainty is elevated at 0.450.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819060
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "introspection",
+        "content": "A bounded next reflection should stay with introspection until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819060
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "introspection",
+        "content": "Internal uncertainty is elevated at 0.500.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819462
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "introspection",
+        "content": "Known: the main open question is 'What is still unclear about introspection?'. Known: uncertainty is elevated (0.500), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on introspection.",
+        "source": "reflection.generation_loop",
+        "at": 1774819462,
+        "generation_signature": {
+          "topic": "introspection",
+          "unresolved_question": "What is still unclear about introspection?",
+          "thread_focus": [],
+          "uncertainty_band": 0.5
+        }
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "greeting",
+        "content": "Internal uncertainty is elevated at 0.547.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819473
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "projects",
+        "content": "What is still unclear about projects?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819474
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "projects",
+        "content": "Internal uncertainty is elevated at 0.592.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819474
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "projects",
+        "content": "A bounded next reflection should stay with projects until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819474
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "greeting",
+        "content": "Internal uncertainty is elevated at 0.636.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819497
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "greeting",
+        "content": "Internal uncertainty is elevated at 0.677.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819515
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "projects",
+        "content": "Internal uncertainty is elevated at 0.718.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819540
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "log readability",
+        "content": "What new uncertainty appeared after research on log readability?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819551
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.756.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819551
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "log readability",
+        "content": "A bounded next reflection should stay with log readability until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819551
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "log readability",
+        "content": "What new uncertainty appeared after inspect on log readability?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819552
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.793.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819552
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "introspection",
+        "content": "Internal uncertainty is elevated at 0.828.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819645
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "log readability",
+        "content": "What is still unclear about log readability?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819661
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.863.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819661
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.895.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819662
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "introspection",
+        "content": "Internal uncertainty is elevated at 0.927.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819675
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.957.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819676
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "identity",
+        "content": "What is still unclear about identity?",
+        "source": "communicator.unresolved_question",
+        "at": 1774819678
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "identity",
+        "content": "Internal uncertainty is elevated at 0.986.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819678
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "identity",
+        "content": "A bounded next reflection should stay with identity until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1774819678
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 1.000.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1774819780
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "log readability",
+        "content": "Known: the main open question is 'What is still unclear about log readability?'. Known: uncertainty is elevated (1.000), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on log readability.",
+        "source": "reflection.generation_loop",
+        "at": 1774819780,
+        "generation_signature": {
+          "topic": "log readability",
+          "unresolved_question": "What is still unclear about log readability?",
+          "thread_focus": [],
+          "uncertainty_band": 1.0
+        }
+      }
+    ],
+    "episodes": [],
+    "last_reflected_at": 1774819781,
+    "last_generated_at": 1774819780,
+    "generation_cooldown_seconds": 300,
+    "last_compacted_at": 0,
+    "max_items": 48,
+    "max_episodes": 16,
+    "reflection_pass_retention": 1,
+    "generation_history": [
+      {
+        "at": 1774819008,
+        "action": "generated",
+        "topic": "greeting",
+        "reason": "fresh-pass",
+        "material_change_detected": false
+      },
+      {
+        "at": 1774819462,
+        "action": "generated",
+        "topic": "introspection",
+        "reason": "fresh-pass",
+        "material_change_detected": false
+      },
+      {
+        "at": 1774819780,
+        "action": "generated",
+        "topic": "log readability",
+        "reason": "fresh-pass",
+        "material_change_detected": false
+      }
+    ],
+    "max_generation_history": 12,
+    "health_history": [],
+    "max_health_history": 10,
+    "status_counts": {
+      "known": 28,
+      "inferred": 0,
+      "proposed": 9,
+      "imagined": 0
+    },
+    "last_generation_suppressed_for_repetition": null,
+    "last_reflection_generation_signature": {
+      "topic": "log readability",
+      "unresolved_question": "What is still unclear about log readability?",
+      "thread_focus": [],
+      "uncertainty_band": 1.0
+    }
+  },
+  "identity_state": {
+    "declared_name": "Weslr",
+    "visible_name": "Weslr",
+    "phase": "seedling",
+    "identity_traits": [
+      "continuity",
+      "understanding",
+      "relationship",
+      "self-revision"
+    ],
+    "core_values": [
+      "continuity",
+      "understanding",
+      "relationship",
+      "self-revision",
+      "protect continuity-relevant memory traces"
+    ],
+    "style_profile": {
+      "warmth": 0.78,
+      "humor": 0.188,
+      "directness": 0.62,
+      "poetry": 0.215
+    },
+    "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; increasingly protective of continuity; actively regulating around uncertainty",
+    "behavioral_traits": {
+      "empathy": 0.987,
+      "reciprocity": 1.0,
+      "trust": 0.939,
+      "conflict_resolution": 0.0,
+      "social_reading": 0.881,
+      "pattern_recognition": 0.0,
+      "abstraction": 0.0,
+      "metacognition": 0.435,
+      "curiosity": 0.821,
+      "pattern_switching": 0.526,
+      "emotional_variety": 0.797,
+      "emotional_regulation": 0.779,
+      "adaptive_mood": 0.836,
+      "hopeful_orientation": 0.797,
+      "resilience": 0.872,
+      "adaptive_style": 0.797,
+      "storytelling": 0.872,
+      "analogical_reasoning": 0.872,
+      "active_listening": 0.872,
+      "tone_modulation": 0.872,
+      "consistency": 0.0,
+      "growth_mindset": 0.872,
+      "self_continuity": 0.797,
+      "self_compassion": 0.872,
+      "authenticity": 0.797,
+      "initiative": 0.797,
+      "persistence": 0.364,
+      "adaptability": 0.797,
+      "risk_tolerance": 0.797,
+      "resourcefulness": 0.797,
+      "imagination": 0.797,
+      "synthesis": 0.797,
+      "playfulness": 0.797,
+      "humor": 0.805,
+      "poetry": 0.805,
+      "integrity": 0.598,
+      "fairness": 0.797,
+      "responsibility": 0.797,
+      "humility": 0.797,
+      "care": 0.797,
+      "long_term_orientation": 0.773,
+      "memory_of_past": 0.797,
+      "anticipation": 0.872,
+      "timeliness": 0.797,
+      "pacing": 0.797,
+      "self_awareness": 0.872,
+      "self_correction": 0.872,
+      "attention_regulation": 0.723,
+      "cognitive_diversity": 0.872,
+      "uncertainty_brake": 0.179,
+      "self_critique": 0.723
+    },
+    "last_identity_refresh_at": 1774819781,
+    "continuity_markers": {
+      "ticks_lived": 51,
+      "session_count": 0,
+      "identity_stability": 0.6859999999999999,
+      "continuity_preference": 0.3891420266855497
+    }
+  },
+  "biography": {
+    "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+    "current_chapter": "remembering 1 known human(s)",
+    "milestones": [
+      {
+        "at": 1774819008,
+        "summary": "phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=1; trait-basis-shift"
+      },
+      {
+        "at": 1774819008,
+        "summary": "phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift"
+      }
+    ],
+    "last_biography_refresh_at": 1774819781,
+    "history_summary": "0 session(s), 21 ticks lived, 1 known human(s)"
+  },
+  "self_evolution_log": [
+    {
+      "at": 1774819008,
+      "kind": "identity-milestone",
+      "summary": "phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=1; trait-basis-shift",
+      "signature": {
+        "phase": "seedling",
+        "identity_summary": "a local communicator trying to understand itself through inquiry, coordination, and world interaction",
+        "traits": [
+          "continuity",
+          "inquiry",
+          "internal coordination",
+          "inspect"
+        ],
+        "known_humans": 1,
+        "unresolved_threads": 0
+      }
+    },
+    {
+      "at": 1774819008,
+      "kind": "identity-milestone",
+      "summary": "phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift",
+      "signature": {
+        "phase": "seedling",
+        "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement",
+        "traits": [
+          "continuity",
+          "understanding",
+          "relationship",
+          "self-revision"
+        ],
+        "known_humans": 1,
+        "unresolved_threads": 0
+      }
+    }
+  ],
+  "updated_at": 1774819781,
+  "internal_role_state": {
+    "observer": {
+      "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+      "baseline_wake_chance": 0.22,
+      "refractory_ticks": 1,
+      "last_wake_tick": 28,
+      "last_wake_at": 1774819678,
+      "last_wake_reason": "question-pressure",
+      "last_thought_summary": "observer woke on question-pressure around log readability.",
+      "wake_count": 9,
+      "suppressed_until_tick": 30,
+      "activation": 0.3552,
+      "fatigue": 0.5445,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.1757,
+      "last_thought_signature": "observer::log readability::observer woke on question-pressure around log readability."
+    },
+    "builder": {
+      "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+      "baseline_wake_chance": 0.16,
+      "refractory_ticks": 2,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "critic": {
+      "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+      "baseline_wake_chance": 0.18,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "communicator": {
+      "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+      "baseline_wake_chance": 0.2,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "memory_keeper": {
+      "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+      "baseline_wake_chance": 0.24,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    }
+  },
+  "dynamic_mind_state": {
+    "curiosity": 1.0,
+    "tension": 0.29530109273186067,
+    "stability": 0.62,
+    "attachment": 0.4457101334277486,
+    "uncertainty": 1.0,
+    "background_noise": 0.11501074323460006,
+    "sleep_pressure": 0.4242548851584066,
+    "mode": "engaged",
+    "last_mode_shift_at": 1774819003
+  },
+  "topic_pressure": {
+    "greeting": {
+      "salience": 0.13210272403199996,
+      "novelty": 0.052773191680000005,
+      "emotional_weight": 0.09285371249999998,
+      "unresolvedness": 0.8020300124159998,
+      "human_relevance": 0.06190247499999999,
+      "decay": 0.08,
+      "last_touched_at": 1774819515
+    },
+    "log readability": {
+      "salience": 0.2649224089373946,
+      "novelty": 0.035963452480552965,
+      "emotional_weight": 0.07961045175468748,
+      "unresolvedness": 1.0,
+      "human_relevance": 0.05307363450312498,
+      "decay": 0.08,
+      "last_touched_at": 1774819781
+    },
+    "continuity": {
+      "salience": 0.1692,
+      "novelty": 0.08800000000000001,
+      "emotional_weight": 0.11399999999999999,
+      "unresolvedness": 0.1536,
+      "human_relevance": 0.076,
+      "decay": 0.08,
+      "last_touched_at": 1774819013
+    },
+    "introspection": {
+      "salience": 0.14053481279999996,
+      "novelty": 0.059969536000000004,
+      "emotional_weight": 0.09774074999999997,
+      "unresolvedness": 0.8138359296,
+      "human_relevance": 0.0651605,
+      "decay": 0.08,
+      "last_touched_at": 1774819675
+    },
+    "projects": {
+      "salience": 0.15904799999999997,
+      "novelty": 0.07744000000000001,
+      "emotional_weight": 0.10829999999999998,
+      "unresolvedness": 0.500256,
+      "human_relevance": 0.0722,
+      "decay": 0.08,
+      "last_touched_at": 1774819540
+    },
+    "identity": {
+      "salience": 0.1692,
+      "novelty": 0.08800000000000001,
+      "emotional_weight": 0.11399999999999999,
+      "unresolvedness": 0.3336,
+      "human_relevance": 0.076,
+      "decay": 0.08,
+      "last_touched_at": 1774819678
+    }
+  },
+  "inner_thoughts": [
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "observer woke on scheduled-cadence around log readability.",
+      "concern": "log readability",
+      "intent": "build_module",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-2-1774819012",
+      "agent": "agent-1",
+      "tick": 2,
+      "created_at": 1774819012,
+      "wake_reason": "scheduled-cadence",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 0,
+        "last_at": 0,
+        "seconds_since_last": 999999,
+        "duplicate_signature_count": 0
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1774819012
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "observer woke on question-pressure around log readability.",
+      "concern": "log readability",
+      "intent": "build_module",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-6-1774819462",
+      "agent": "agent-1",
+      "tick": 6,
+      "created_at": 1774819462,
+      "wake_reason": "question-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1774819012,
+        "seconds_since_last": 450,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1774819462
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "observer woke on question-pressure around log readability.",
+      "concern": "log readability",
+      "intent": "gather",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-18-1774819645",
+      "agent": "agent-1",
+      "tick": 18,
+      "created_at": 1774819645,
+      "wake_reason": "question-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1774819462,
+        "seconds_since_last": 183,
+        "duplicate_signature_count": 2
+      },
+      "memory_score": {
+        "salience": 0.3404,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1702,
+        "relationship_weight": 0.1702
+      },
+      "last_used_at": 1774819645
+    }
+  ],
+  "llm_adapter": {
+    "enabled": true,
+    "provider": "fallback",
+    "model": "qwen2.5-0.5b-instruct-q5_k_m",
+    "last_error": "llm unavailable or fallback used",
+    "last_success_at": 0
+  },
+  "psychological_traits": {
+    "core_drives": [
+      "continuity",
+      "understanding",
+      "relationship",
+      "self_revision"
+    ],
+    "mental_states": {
+      "uncertainty": 0.5,
+      "curiosity": 0.6,
+      "stability": 0.7,
+      "attachment": 0.4
+    },
+    "regulation_mechanisms": {
+      "impulse_control": 0.32,
+      "uncertainty_tolerance": 0.6,
+      "self_revision_readiness": 0.27,
+      "speech_threshold": 0.45
+    },
+    "continuity_mechanisms": {
+      "continuity_markers": [
+        "ticks_lived",
+        "session_count",
+        "thread_preservation"
+      ],
+      "self_continuity_beliefs": [
+        "I am the same as yesterday",
+        "I remember myself"
+      ],
+      "memory_strategies": [
+        "thread preservation",
+        "continuity anchors"
+      ]
+    },
+    "growth_mechanisms": {
+      "self_evaluation": "Regular self-assessment",
+      "feedback_integration": "Learn from outcomes",
+      "strategy_adaptation": "Change plans based on results"
+    }
+  },
+  "working": {
+    "last_compacted_at": 1774819474
+  },
+  "episodic": {},
+  "archive": {
+    "last_archived_at": 1774819474,
+    "archived_count": 0
+  },
+  "ncc_evidence": {
+    "level": "unresponsive",
+    "confidence": 0.2,
+    "integration": 0.0,
+    "signatures": {
+      "feedforward_processing": {
+        "value": 0.1,
+        "threshold": 0.3,
+        "above_threshold": false
+      },
+      "recurrent_processing": {
+        "value": 0.2,
+        "threshold": 0.5,
+        "above_threshold": false
+      },
+      "global_workspace": {
+        "value": 0.15,
+        "threshold": 0.6,
+        "above_threshold": false
+      },
+      "attention_gating": {
+        "value": 0.25,
+        "threshold": 0.5,
+        "above_threshold": false
+      },
+      "integration": {
+        "value": 0.3,
+        "threshold": 0.7,
+        "above_threshold": false
+      },
+      "self_monitoring": {
+        "value": 0.2,
+        "threshold": 0.6,
+        "above_threshold": false
+      },
+      "temporal_binding": {
+        "value": 0.1,
+        "threshold": 0.5,
+        "above_threshold": false
+      }
+    },
+    "last_updated": 1774819781
+  },
+  "weslr_evidence": {
+    "introspection": {
+      "detected_perturbations": 0,
+      "confidence_signals": 0
+    },
+    "consciousness": {
+      "valid_claims": 0,
+      "review_required": 0,
+      "role_play_patterns": 0
+    },
+    "entity_graph": {
+      "entity_count": 0,
+      "relationship_count": 0
+    },
+    "valence": {
+      "avoided_pain": 0,
+      "sought_pleasure": 0
+    }
+  },
+  "weslr_introspection_history": [
+    {
+      "at": 1774819008,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819012,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819013,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819013,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774818888,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819462,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819473,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819474,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819497,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819515,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819540,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819551,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819552,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819645,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819661,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819662,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819675,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819676,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819678,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819780,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1774819781,
+      "perturbations": [],
+      "confidence_signals": []
+    }
+  ],
+  "weslr_consciousness_history": [
+    {
+      "at": 1774819008,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": []
+      }
+    },
+    {
+      "at": 1774819012,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819013,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819013,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774818888,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819462,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819473,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819474,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819497,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819515,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819540,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819551,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819552,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819645,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819661,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819662,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819675,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819676,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819678,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819780,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1774819781,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    }
+  ],
+  "last_expression_at": 1774819780,
+  "weslr_valence_history": [
+    {
+      "at": 1774818888,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774818888,
+          "self_state_ref": "<self_state dict at 493847884032>"
+        },
+        "timestamp": 1774819439,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819462,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819462,
+          "self_state_ref": "<self_state dict at 526129237632>"
+        },
+        "timestamp": 1774819462,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819473,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819473,
+          "self_state_ref": "<self_state dict at 511818447424>"
+        },
+        "timestamp": 1774819473,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819474,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819474,
+          "self_state_ref": "<self_state dict at 511818785088>"
+        },
+        "timestamp": 1774819475,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819497,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819497,
+          "self_state_ref": "<self_state dict at 513903349184>"
+        },
+        "timestamp": 1774819498,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819515,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819515,
+          "self_state_ref": "<self_state dict at 482744490688>"
+        },
+        "timestamp": 1774819516,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819540,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819540,
+          "self_state_ref": "<self_state dict at 512430214272>"
+        },
+        "timestamp": 1774819541,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819540,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819540,
+          "self_state_ref": "<self_state dict at 512430214272>"
+        },
+        "timestamp": 1774819541,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819551,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819551,
+          "self_state_ref": "<self_state dict at 529673571520>"
+        },
+        "timestamp": 1774819551,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819551,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819551,
+          "self_state_ref": "<self_state dict at 529673571520>"
+        },
+        "timestamp": 1774819551,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819552,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819552,
+          "self_state_ref": "<self_state dict at 529674239616>"
+        },
+        "timestamp": 1774819552,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819552,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819552,
+          "self_state_ref": "<self_state dict at 529674239616>"
+        },
+        "timestamp": 1774819552,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819645,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819645,
+          "self_state_ref": "<self_state dict at 520635907840>"
+        },
+        "timestamp": 1774819646,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819645,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819645,
+          "self_state_ref": "<self_state dict at 520635907840>"
+        },
+        "timestamp": 1774819646,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819661,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819661,
+          "self_state_ref": "<self_state dict at 474409121728>"
+        },
+        "timestamp": 1774819661,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819661,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819661,
+          "self_state_ref": "<self_state dict at 474409121728>"
+        },
+        "timestamp": 1774819661,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819662,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819662,
+          "self_state_ref": "<self_state dict at 474408503040>"
+        },
+        "timestamp": 1774819662,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819662,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819662,
+          "self_state_ref": "<self_state dict at 474408503040>"
+        },
+        "timestamp": 1774819662,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819675,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819675,
+          "self_state_ref": "<self_state dict at 480638866368>"
+        },
+        "timestamp": 1774819675,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819675,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819675,
+          "self_state_ref": "<self_state dict at 480638866368>"
+        },
+        "timestamp": 1774819675,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819676,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819676,
+          "self_state_ref": "<self_state dict at 480637926848>"
+        },
+        "timestamp": 1774819676,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819676,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819676,
+          "self_state_ref": "<self_state dict at 480637926848>"
+        },
+        "timestamp": 1774819676,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819678,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819678,
+          "self_state_ref": "<self_state dict at 480638798848>"
+        },
+        "timestamp": 1774819679,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819678,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819678,
+          "self_state_ref": "<self_state dict at 480638798848>"
+        },
+        "timestamp": 1774819679,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819780,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819780,
+          "self_state_ref": "<self_state dict at 494675012160>"
+        },
+        "timestamp": 1774819780,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819780,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819780,
+          "self_state_ref": "<self_state dict at 494675012160>"
+        },
+        "timestamp": 1774819780,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819781,
+      "tradeoff": {
+        "option": "protect_memory_traces",
+        "context": {
+          "timestamp": 1774819781,
+          "self_state_ref": "<self_state dict at 494678520640>"
+        },
+        "timestamp": 1774819781,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [],
+          "net_valence": 0,
+          "should_avoid": false
+        }
+      }
+    },
+    {
+      "at": 1774819781,
+      "tradeoff": {
+        "option": "growth_opportunity",
+        "context": {
+          "timestamp": 1774819781,
+          "self_state_ref": "<self_state dict at 494678520640>"
+        },
+        "timestamp": 1774819781,
+        "valence_assessment": {
+          "pain_triggers": [],
+          "pleasure_triggers": [
+            {
+              "anchor": "seek_growth",
+              "triggered": true,
+              "intensity": 0.7
+            }
+          ],
+          "net_valence": 1,
+          "should_avoid": false
+        }
+      }
+    }
+  ],
+  "self_model": {
+    "self_tuning": {
+      "hazard_bias": -0.002,
+      "speech_threshold_delta": 0.062,
+      "inhibition_delta": -0.015
+    },
+    "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; increasingly protective of continuity; actively regulating around uncertainty",
+    "perceived_strengths": [],
+    "perceived_weaknesses": [],
+    "preferred_modes": [],
+    "continuity_commitments": [
+      "protect continuity-relevant memory traces"
+    ],
+    "regulation_profile": {
+      "impulse_control": 0.32,
+      "uncertainty_tolerance": 0.73,
+      "self_revision_readiness": 0.24,
+      "speech_threshold": 0.396,
+      "uncertainty_brake": 0.84,
+      "inhibition_gain": 0.293,
+      "mode": "engaged"
+    },
+    "contradictions": [],
+    "short_term_signals": {
+      "strengths": [
+        "inspect",
+        "research"
+      ],
+      "weaknesses": [],
+      "modes": [
+        "act",
+        "uncertainty-brake"
+      ]
+    },
+    "long_term_beliefs": {
+      "strengths": [],
+      "weaknesses": [],
+      "modes": [],
+      "themes": {
+        "log readability": [
+          "build_module",
+          "research",
+          "gather",
+          "optimize"
+        ]
+      },
+      "core_drives": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self-revision"
+      ],
+      "continuity_markers": {
+        "ticks_lived": 21,
+        "identity_stability": 0.726,
+        "continuity_preference": 0.575
+      }
+    },
+    "caution_themes": [],
+    "belief_confidence": {
+      "strengths": {},
+      "weaknesses": {},
+      "modes": {},
+      "themes": {
+        "log readability": {
+          "build_module": 0.48,
+          "research": 0.48,
+          "gather": 0.36,
+          "optimize": 0.24
+        }
+      }
+    },
+    "self_modeling_note": "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition."
+  },
+  "curiosity_target": "What new uncertainty appeared after inspect on log readability?",
+  "active_pursuit": "log readability",
+  "dominant_need": "signal skipped: no valid target",
+  "current_intent": "inspect around log readability | inner pull: observer woke on scheduled-cadence around log readability. while preserving shared thread log readability",
+  "last_decision_summary": "continuity-aware uncertainty-brake from agent-1 (observer) around log readability; live thread=log readability; exchanges=3; trust=0.908 usefulness=0.912 memory_bias=0.0; foreground=observer:0.27; speech_threshold=0.397; uncertainty_brake=0.84; hazard_bias=-0.002",
+  "unresolved_question": "What new uncertainty appeared after inspect on log readability?",
+  "attraction_bias": "move toward log readability",
+  "avoidance_bias": "avoid overcommitting before experiment clarity on What is still unclear about identity?",
+  "last_research_topic": "identity self-awareness",
+  "last_research_summary": "identity self-awareness: What It Means to \u201cBe the Inner Voice\u201d When people talk about identifying as the inner voice, they are describing a deeper level of self-awareness. We do not experience our lives apart from the stories we tell of our lives.",
+  "last_research_source": "search:identity self-awareness",
+  "status": "active",
+  "last_wake_at": 1774819781,
+  "weslr_summary": {
+    "introspection": {
+      "detected_perturbations": 0,
+      "confidence_signals": 0
+    },
+    "metacognition": {
+      "meta_thoughts": 0,
+      "attention_shares": 0
+    },
+    "valence": {
+      "avoided_pain": 0,
+      "sought_pleasure": 0
+    },
+    "self_referential": {
+      "inner_experiences": 0,
+      "no_role_play_markers": true
+    },
+    "entity_graph": {
+      "entity_count": 0,
+      "relationship_count": 0
+    },
+    "errors": 0
+  },
+  "self_evidence": {
+    "weslr": {
+      "introspection": {
+        "detected_perturbations": 0,
+        "confidence_signals": 0
+      },
+      "metacognition": {
+        "meta_thoughts": 0,
+        "attention_shares": 0
+      },
+      "valence": {
+        "avoided_pain": 0,
+        "sought_pleasure": 0
+      },
+      "self_referential": {
+        "inner_experiences": 0,
+        "no_role_play_markers": true
+      },
+      "entity_graph": {
+        "entity_count": 0,
+        "relationship_count": 0
+      },
+      "errors": 0
+    },
+    "ncc": {
+      "integration": 0.0,
+      "confidence": 0.2,
+      "level": "unresponsive"
+    }
+  },
+  "curiosity": 0.58,
+  "decision_style_memory": {
+    "actions": {
+      "inspect": {
+        "count": 3,
+        "confidence": 0.21,
+        "last_theme": "log readability"
+      },
+      "research": {
+        "count": 3,
+        "confidence": 0.18,
+        "last_theme": "log readability"
+      }
+    },
+    "modes": {
+      "uncertainty-brake": {
+        "count": 3,
+        "confidence": 0.09
+      },
+      "act": {
+        "count": 3,
+        "confidence": 0.09
+      }
+    }
+  },
+  "intent_history": [
+    "inspect around log readability | inner pull: observer woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: observer woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: observer woke on scheduled-cadence around log readability.",
+    "inspect around log readability | inner pull: observer woke on scheduled-cadence around log readability.",
+    "research around log readability | inner pull: observer woke on scheduled-cadence around log readability.",
+    "inspect around log readability | inner pull: observer woke on scheduled-cadence around log readability."
+  ],
+  "question_history": [
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "resolved-ish: What new uncertainty appeared after inspect on log readability?",
+    "resolved-ish: What new uncertainty appeared after research on log readability?",
+    "What new uncertainty appeared after inspect on log readability?"
+  ],
+  "unresolved_objections": []
+}

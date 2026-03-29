@@ -101,6 +101,29 @@ def search_web(query: str, limit: int = 5, *, project_name: str, version: str) -
     query = str(query or "").strip()
     if not query:
         return {"query": "", "results": []}
+    
+    # Get current year from Weslr time and append to query for time-sensitive searches
+    try:
+        from config import WESLR_TIME_PATH, WESLR_TIME_CONFIG_PATH
+        import json
+        if WESLR_TIME_PATH.exists():
+            with open(WESLR_TIME_PATH, 'r') as f:
+                state = json.load(f)
+                # Get year from datetime string
+                current_time_str = state.get('current_datetime', '')
+                if current_time_str:
+                    current_year = int(current_time_str[:4])
+                else:
+                    current_year = int(time.strftime("%Y"))
+        else:
+            current_year = int(time.strftime("%Y"))
+        
+        # Only append year if not already in query
+        if str(current_year) not in query and current_year >= 2024:
+            query = f"{query} {current_year}"
+    except Exception:
+        pass
+    
     encoded = urllib.parse.quote_plus(query)
     url = f"https://html.duckduckgo.com/html/?q={encoded}"
     req = urllib.request.Request(url, headers={"User-Agent": f"{project_name}/{version}"})

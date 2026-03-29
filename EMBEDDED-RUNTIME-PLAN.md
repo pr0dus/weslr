@@ -1,12 +1,12 @@
-# CircleForge embedded runtime plan
+# Weslr embedded runtime plan
 
 ## Purpose
 
-This plan makes `embedded` the preferred real cognition path for CircleForge.
+This plan makes `embedded` the preferred real cognition path for Weslr.
 
 The target is:
-- model file delivered with CircleForge
-- runtime delivered with CircleForge
+- model file delivered with Weslr
+- runtime delivered with Weslr
 - no mandatory separate Ollama-style daemon
 - bounded cognition for inner-thought generation and communicator phrasing
 
@@ -33,7 +33,7 @@ Prefer:
 - GGUF
 
 ### Default model path
-- `CircleForge/models/model.gguf`
+- `Weslr/models/model.gguf`
 
 ## Why this path
 
@@ -65,7 +65,7 @@ The first embedded model target is now fixed as:
 - expected GGUF filename:
   - `qwen2.5-0.5b-instruct.gguf`
 - expected path:
-  - `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
+  - `Weslr/models/qwen2.5-0.5b-instruct.gguf`
 
 Reason:
 - free/open
@@ -101,7 +101,7 @@ After embedded works, resume:
 
 ## User options preserved
 
-Even with embedded as the preferred path, CircleForge should keep these optional paths:
+Even with embedded as the preferred path, Weslr should keep these optional paths:
 
 ### embedded
 - preferred long-term path
@@ -110,7 +110,7 @@ Even with embedded as the preferred path, CircleForge should keep these optional
 ### openai / openai-compatible
 - optional hosted inference path
 - useful for users who prefer API-backed cognition
-- can include OAuth-backed setups as long as CircleForge receives a standard API-compatible base URL + token/key path
+- can include OAuth-backed setups as long as Weslr receives a standard API-compatible base URL + token/key path
 
 ### ollama
 - optional local development path

@@ -1,5 +1,5 @@
 """
-CircleForge - Medical Compliance Module
+Weslr - Medical Compliance Module
 HIPAA/GDPR compliance tracking and audit support for medical/elder care use.
 """
 

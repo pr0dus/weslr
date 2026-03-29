@@ -1,4 +1,4 @@
-# CircleForge embedded models
+# Weslr embedded models
 
 This directory is for **local model files**, not for normal Git-tracked source code.
 
@@ -12,7 +12,7 @@ Why:
 - they can exceed GitHub’s practical limits
 - they pollute Git history even after later cleanup
 
-So CircleForge keeps model files as **local artifacts**.
+So Weslr keeps model files as **local artifacts**.
 
 That means:
 - GitHub repo = code, docs, setup, logic
@@ -26,11 +26,11 @@ Current default target:
   - `qwen2.5-0.5b-instruct.gguf`
 
 Default expected path:
-- `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
+- `Weslr/models/qwen2.5-0.5b-instruct.gguf`
 
 ## If the file is missing
 
-CircleForge is not necessarily broken.
+Weslr is not necessarily broken.
 
 It simply means:
 - the embedded provider cannot run yet

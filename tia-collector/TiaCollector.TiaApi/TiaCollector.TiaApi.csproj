@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>TiaCollector.TiaApi</AssemblyName>
+    <RootNamespace>TiaCollector.TiaApi</RootNamespace>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TiaCollector.Core\TiaCollector.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <COMReference Include="Siemens.Engineering">
+      <Guid>584D4380-C5E4-4D5B-99B1-86ED3B3B5E5B</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperManufacturer>Visual Studio</WrapperManufacturer>
+      <WeakReference>false</WeakReference>
+    </COMReference>
+  </ItemGroup>
+
+</Project>

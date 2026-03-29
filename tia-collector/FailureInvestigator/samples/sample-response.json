@@ -1,0 +1,73 @@
+{
+  "success": true,
+  "timestamp": "2026-03-29T10:47:00.0000000Z",
+  "input": {
+    "alarmText": "druck zu niedrig auf station 3",
+    "errorCode": "0x80000001",
+    "tagName": "db10.dbd200",
+    "plcName": "plc_station3",
+    "stationName": "station_3",
+    "lineName": "production_line_1",
+    "blockName": "ob1"
+  },
+  "result": {
+    "relevant_plcs": [
+      {
+        "id": "plc-Station3",
+        "name": "PLC_Station3",
+        "type": "S7-1500",
+        "version": "V4.2"
+      }
+    ],
+    "cpu_info": {
+      "model": "CPU 1516F-3 PN/DP",
+      "firmware": "V2.6.5",
+      "status": "RUN",
+      "memory_size_mb": 1024
+    },
+    "devices": [
+      {
+        "id": "module-IM0",
+        "name": "IM 0",
+        "type": "6ES7 314-1AG13-0AB0",
+        "slot": 0
+      }
+    ],
+    "related_tags": [
+      {
+        "id": "tag-Pressure",
+        "name": "DB10.DBD200",
+        "type": "Real",
+        "address": "DB10.DBX0.0"
+      }
+    ],
+    "related_blocks": [
+      {
+        "id": "block-OB1",
+        "name": "OB1",
+        "type": "OB",
+        "number": 1
+      }
+    ],
+    "related_alarms": [
+      {
+        "id": "alarm-001",
+        "text": "Druck zu niedrig",
+        "severity": "warning",
+        "timestamp": "2026-03-29T10:00:00.0000000Z",
+        "tag_name": "DB10.DBD200",
+        "error_code": "0x80000001"
+      }
+    ],
+    "similar_failure_patterns": [
+      {
+        "id": "pattern-001",
+        "text": "Druck zu niedrig",
+        "frequency": 12,
+        "last_occurrence": "2026-03-28T08:30:00.0000000Z"
+      }
+    ],
+    "affected_section": "Production_Line_1 > Station_3 > Pressure_System",
+    "technical_summary": "Druck-Sensor (DB10.DBD200) unterhalb Sollwert. Überprüfen Sie Ventil Y10 und Druckmesser MP1."
+  }
+}

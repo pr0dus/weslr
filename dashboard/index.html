@@ -14,6 +14,19 @@
     .pill { display:inline-block; padding: 2px 8px; border-radius:999px; background:#273142; margin-right:6px; font-size:12px; }
     .bar { height: 8px; background:#263241; border-radius: 999px; overflow:hidden; margin-top:6px; }
     .bar > span { display:block; height:100%; background:#6ee7b7; }
+    .nav-btn { background: #2d333b; color: white; border: 0; border-radius: 8px; padding: 4px 12px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+    .status { margin-top: 10px; color: #9aa0a6; font-size: 14px; }
+    #chat { margin-top: 16px; background: #171a21; border: 1px solid #2a2f3a; border-radius: 14px; padding: 14px; min-height: 420px; display: flex; flex-direction: column; gap: 10px; }
+    .msg { display: inline-block; width: fit-content; max-width: min(75%, 680px); padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; }
+    .msg.user { background: #1e2a3a; align-self: flex-end; }
+    .msg.circleforge { background: #1b2a1f; align-self: flex-start; }
+    .msg-label { font-size: 12px; color: #9aa0a6; margin-bottom: 4px; }
+    .chat-input { display: flex; gap: 10px; margin-top: 14px; }
+    textarea.chat-box { flex: 1; min-height: 88px; border-radius: 10px; border: 1px solid #2a2f3a; background: #11141a; color: #fff; padding: 12px; }
+    button.chat-send { border: 0; border-radius: 10px; padding: 12px 16px; background: #4f8cff; color: white; cursor: pointer; }
+    button.chat-voice { border: 0; border-radius: 10px; padding: 12px 16px; background: #2d333b; color: white; cursor: pointer; }
+    #voice-status { color: #9aa0a6; font-size: 14px; margin-top: 8px; }
+    details { margin-top: 14px; background: #171a21; border: 1px solid #2a2f3a; border-radius: 12px; padding: 10px 12px; }
     pre { white-space: pre-wrap; word-break: break-word; background:#0c0f14; padding:12px; border-radius:10px; overflow:auto; }
     ul { margin: 8px 0 0 18px; padding: 0; }
     li { margin: 4px 0; }
@@ -37,6 +50,7 @@
       <a href="#themes">Themes</a> ·
       <a href="#packs">Packs</a> ·
       <a href="#artifacts">Artifacts</a> ·
+      <a href="#chat">Chat</a> ·
       <a href="#world-objects">World Objects</a> ·
       <a href="#events">Events</a> ·
       <a href="#ledger">Release Ledger</a>
@@ -241,6 +255,22 @@
         <ul><li class="muted">No conversation threads yet.</li></ul>
       </section>
     </div>
+
+    <section class="card" style="margin-top:16px;" id="chat">
+      <h2>Chat</h2>
+      <div class="muted">
+        <a href="SAFETY.md" target="_blank" style="color:#8dd3ff;">Privacy & Safety Info</a>
+        &nbsp;•&nbsp;Talk directly to CircleForge. Voice enabled by default.
+      </div>
+      <div id="chat-messages" style="flex:1; overflow-y:auto; min-height: 300px;"></div>
+      <div class="chat-input">
+        <textarea id="msg" class="chat-box" placeholder="Say something to CircleForge..."></textarea>
+        <button id="send" class="chat-send">Send</button>
+        <button id="voice" class="chat-voice">🎤 Voice</button>
+      </div>
+      <div id="voice-status">Voice: enabled</div>
+      <div id="status"></div>
+    </section>
 
     <div class="grid" style="margin-top:16px;" id="memory-lifecycle">
       <section class="card">
@@ -1070,6 +1100,233 @@ Recommended rollback order:
         refreshTimer = setInterval(fetchAndRender, REFRESH_SECONDS * 1000);
       }
     })();
+
+    // Chat functionality
+    let chatLog = [];
+    let voiceEnabled = localStorage.getItem('circleforge_voice_enabled') !== 'false';
+    let isListening = false;
+
+    function saveChatState() {
+      localStorage.setItem('circleforge_voice_enabled', voiceEnabled ? 'true' : 'false');
+      localStorage.setItem('circleforge_chat_log', JSON.stringify(chatLog));
+    }
+
+    function loadChatState() {
+      const savedLog = localStorage.getItem('circleforge_chat_log');
+      if (savedLog) {
+        chatLog = JSON.parse(savedLog);
+      }
+      const savedVoice = localStorage.getItem('circleforge_voice_enabled');
+      if (savedVoice !== null) {
+        voiceEnabled = savedVoice === 'true';
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c];
+      });
+    }
+
+    function renderChat() {
+      const chatEl = document.getElementById('chat-messages');
+      if (!chatEl) return;
+      if (!chatLog.length) {
+        chatEl.innerHTML = '<div class="msg circleforge"><div class="msg-label">CircleForge</div>Ready. Say something or use voice.</div>';
+        return;
+      }
+      chatEl.innerHTML = chatLog.map(item => `
+        <div class="msg ${item.role === 'user' ? 'user' : 'circleforge'}">
+          <div class="msg-label">${item.role === 'user' ? 'You' : 'CircleForge'}</div>
+          ${escapeHtml(item.text)}
+        </div>
+      `).join('');
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function refreshState() {
+      try {
+        const res = await fetch('http://127.0.0.1:8791/api/state');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.reply) {
+          const last = chatLog[chatLog.length - 1];
+          if (!last || last.role !== 'assistant' || last.text !== data.reply) {
+            chatLog.push({role: 'assistant', text: data.reply});
+            saveChatState();
+            renderChat();
+          }
+        }
+        document.getElementById('status').textContent = data.status || '';
+      } catch (e) {
+        document.getElementById('status').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function sendMessage() {
+      const msgEl = document.getElementById('msg');
+      const msg = msgEl.value.trim();
+      if (!msg) return;
+      
+      chatLog.push({role: 'user', text: msg});
+      msgEl.value = '';
+      renderChat();
+      saveChatState();
+      
+      document.getElementById('status').textContent = 'Thinking…';
+      try {
+        const res = await fetch('http://127.0.0.1:8791/api/send', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({message: msg})
+        });
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        if (data.reply) {
+          chatLog.push({role: 'assistant', text: data.reply});
+          saveChatState();
+        }
+        renderChat();
+        document.getElementById('status').textContent = data.status || 'Message processed.';
+      } catch (e) {
+        document.getElementById('status').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Voice functionality
+    function initVoice() {
+      const voiceBtn = document.getElementById('voice');
+      if (!voiceBtn) return;
+      
+      voiceBtn.onclick = toggleVoice;
+      
+      if (voiceEnabled) {
+        updateVoiceStatus(true);
+        startListening();
+      } else {
+        updateVoiceStatus(false);
+      }
+    }
+
+    function updateVoiceStatus(listening) {
+      const statusEl = document.getElementById('voice-status');
+      if (statusEl) {
+        statusEl.textContent = `Voice: ${listening ? 'listening…' : 'off'}`;
+      }
+    }
+
+    async function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      localStorage.setItem('circleforge_voice_enabled', voiceEnabled ? 'true' : 'false');
+      
+      const voiceBtn = document.getElementById('voice');
+      if (voiceBtn) voiceBtn.textContent = voiceEnabled ? '🎤 Voice' : ' microphone OFF';
+      
+      if (voiceEnabled) {
+        updateVoiceStatus(true);
+        startListening();
+      } else {
+        updateVoiceStatus(false);
+        stopListening();
+      }
+    }
+
+    let recognition = null;
+    let synth = window.speechSynthesis;
+
+    function startListening() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = () => {
+          updateVoiceStatus(true);
+        };
+        
+        recognition.onend = () => {
+          if (voiceEnabled) {
+            recognition.start();
+          } else {
+            updateVoiceStatus(false);
+          }
+        };
+        
+        recognition.onresult = (event) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          if (finalTranscript) {
+            // Use the recognized text as a message
+            chatLog.push({role: 'user', text: finalTranscript});
+            document.getElementById('msg').value = finalTranscript;
+            sendMessage();
+            if (voiceEnabled) recognition.start(); // Restart listening
+          }
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Voice recognition error:', event.error);
+          updateVoiceStatus(false);
+        };
+        
+        recognition.start();
+      } else {
+        updateVoiceStatus(false);
+        document.getElementById('status').textContent = 'Voice not supported in this browser';
+      }
+    }
+
+    function stopListening() {
+      if (recognition && recognition.stop) {
+        recognition.stop();
+      }
+    }
+
+    function speakText(text) {
+      if (!synth) return;
+      if (synth.speaking) {
+        synth.cancel();
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
+      // Try to find a good English voice
+      const voices = synth.getVoices();
+      const preferred = voices.find(v => v.name.includes('Google US English')) ||
+                       voices.find(v => v.name.includes('Samantha')) ||
+                       voices.find(v => v.name.includes('Zira'));
+      if (preferred) utterance.voice = preferred;
+      
+      synth.speak(utterance);
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadChatState();
+      renderChat();
+      initVoice();
+      
+      const sendBtn = document.getElementById('send');
+      const msgInput = document.getElementById('msg');
+      if (sendBtn) sendBtn.onclick = sendMessage;
+      if (msgInput) msgInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendMessage();
+      });
+    });
   </script>
 </body>
 </html>

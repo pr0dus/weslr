@@ -1,5 +1,5 @@
 """
-CircleForge Commercial Modules
+Weslr Commercial Modules
 All commercial modules are proprietary and require a commercial license.
 Free core: MIT License (see LICENSE file)
 Commercial add-ons: Proprietary (see COMMERCIAL-MODULES.md for pricing)

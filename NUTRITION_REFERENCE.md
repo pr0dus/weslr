@@ -1,4 +1,4 @@
-# CircleForge - Dietary & Nutrition Knowledge Base
+# Weslr - Dietary & Nutrition Knowledge Base
 
 ## Common Food Calorie Reference
 
@@ -54,7 +54,7 @@
 - **Fats**: Thumb-sized = ~10-15g fat
 - **Vegetables**: Two fists = ~4-5 servings
 
-## Behavioral Applications for CircleForge
+## Behavioral Applications for Weslr
 
 ### Dietary Tracking & Meal Planning
 - **Food logging**: Calorie and nutrient tracking from purchases

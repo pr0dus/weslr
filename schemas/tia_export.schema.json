@@ -1,0 +1,620 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "TIA Portal V20 Raw Export Schema",
+  "description": "Raw export format from TIA-Collector (Windows), read-only engineering data",
+  "required": ["metadata", "project", "devices"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["collector_version", "export_timestamp", "source_file", "format_version"],
+      "properties": {
+        "collector_version": {
+          "type": "string",
+          "description": "TIA-Collector version"
+        },
+        "export_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of export"
+        },
+        "source_file": {
+          "type": "string",
+          "description": "Path to original TIA project file (.ap16/.ap17/.ap18/.ap19/.ap20)"
+        },
+        "format_version": {
+          "type": "string",
+          "default": "1.0.0"
+        },
+        "tia_portal_version": {
+          "type": "string",
+          "description": "TIA Portal version (e.g. 'V20')"
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["windows"],
+          "default": "windows"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["automation_project", "plc_project", "robotics_project"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "last_modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "hardware_version", "firmware_version"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["plc_device", "hmi_device", "drive_device", "io_device", "network_device"]
+          },
+          "hardware_version": {
+            "type": "string"
+          },
+          "firmware_version": {
+            "type": "string"
+          },
+          "part_number": {
+            "type": "string"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "product_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "plcs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "device_id", "name", "rack", "slot"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "string",
+            "description": "References devices[].id"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rack": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "model": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "subnet_mask": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "gateway": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "cpus": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "plc_id", "module_type", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "plc_id": {
+            "type": "string",
+            "description": "References plcs[].id"
+          },
+          "module_type": {
+            "type": "string",
+            "description": "e.g. 'CPU 1511-1 PN', 'CPU 1214C', 'CPU 315-2 PN'"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "interface_addresses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "interface": {
+                  "type": "string",
+                  "enum": ["interface_0", "interface_1", "interface_2"]
+                },
+                "ip_address": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "subnet_mask": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "physical_address": {
+                  "type": "string",
+                  "format": "mac-address"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "plc_id", "module_type", "name", "position"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "plc_id": {
+            "type": "string"
+          },
+          "module_type": {
+            "type": "string",
+            "description": "e.g. 'SM 521', 'PS 522', 'IM 523'"
+          },
+          "name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Slot position in PLC rack"
+          },
+          "hardware_version": {
+            "type": "string"
+          },
+          "firmware_version": {
+            "type": "string"
+          },
+          "part_number": {
+            "type": "string"
+          },
+          "order_number": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tag_tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "plc_id", "blocks"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plc_id": {
+            "type": "string"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["db_number", "name", "size"],
+              "properties": {
+                "db_number": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer"
+                },
+                "organization_block_type": {
+                  "type": "string",
+                  "enum": ["ob", "fc", "fb", "db", "sg", "dt", "udi", "udi"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "data_type", "address", "plc_id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Fully qualified tag name (e.g. 'DB42.TemperaturePV')"
+          },
+          "data_type": {
+            "type": "string",
+            "enum": ["BOOL", "BYTE", "WORD", "DWORD", "INT", "DINT", "REAL", "S7_ANY", "STRING", "DATE", "TIME", "DATE_AND_TIME", "ARRAY"]
+          },
+          "address": {
+            "type": "string",
+            "description": "Memory address (e.g. 'DB42.DBW0', 'I0.0', 'Q4.3')"
+          },
+          "plc_id": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "initial_value": {
+            "type": "string"
+          },
+          "read_write": {
+            "type": "boolean"
+          },
+          "direct_access": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "program_blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "plc_id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["ob", "fc", "fb", "db", "sg", "dt", "udi", "udi"]
+          },
+          "plc_id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer"
+          },
+          "networks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "network_number": {
+                  "type": "integer"
+                },
+                "network_name": {
+                  "type": "string"
+                },
+                "network_content": {
+                  "type": "string",
+                  "description": "Raw network content (LAD/STL/FBD source)"
+                }
+              }
+            }
+          },
+          "interface": {
+            "type": "object",
+            "properties": {
+              "input": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    },
+                    "initial_value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "output": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    },
+                    "initial_value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "in_out": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    },
+                    "initial_value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "temp": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "static": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    },
+                    "initial_value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "constant": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data_type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "topology": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source_id", "target_id", "connection_type"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string",
+            "description": "References devices[].id or cpus[].id"
+          },
+          "target_id": {
+            "type": "string",
+            "description": "References devices[].id, cpus[].id, or network[].id"
+          },
+          "connection_type": {
+            "type": "string",
+            "enum": ["profinet", "ethernet", "mpi", "dp", "modbus", "serial", "wireless", "virtual"]
+          },
+          "interface_source": {
+            "type": "string"
+          },
+          "interface_target": {
+            "type": "string"
+          },
+          "ip_source": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "ip_target": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "subnet": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "alarms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "plc_id", "type"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plc_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["standard_alarm", "extended_alarm", "message_class_2", "message_class_3"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["fatal", "critical", "major", "minor", "warning"]
+          },
+          "message_text": {
+            "type": "string"
+          },
+          "acknowledge_required": {
+            "type": "boolean"
+          },
+          "archive_required": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "tag_reference": {
+            "type": "string",
+            "description": "Tag that triggers or represents this alarm"
+          },
+          "delay": {
+            "type": "number",
+            "description": "Alarm delay in seconds"
+          },
+          "deadband": {
+            "type": "number"
+          },
+          "low_limit": {
+            "type": "number"
+          },
+          "high_limit": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "collector_diagnostics": {
+      "type": "object",
+      "properties": {
+        "start_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_ms": {
+          "type": "integer"
+        },
+        "files_processed": {
+          "type": "integer"
+        },
+        "objects_extracted": {
+          "type": "integer"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

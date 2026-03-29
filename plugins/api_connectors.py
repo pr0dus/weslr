@@ -1,11 +1,11 @@
-# api_connectors.py - Plugin for CircleForge
+# api_connectors.py - Plugin for Weslr
 # API connectors for third-party services
 
 PLUGIN_INFO = {
     "name": "api_connectors",
     "version": "0.1.0",
     "description": "API connectors for third-party services (GitHub, Discord, etc.)",
-    "author": "CircleForge",
+    "author": "Weslr",
     "enabled": True,
 }
 
@@ -70,7 +70,7 @@ def post_data(service: str, endpoint: str, payload: dict = None) -> dict:
 
 # Optional integration hook
 def integrate_with_circleforge():
-    """Integrate this plugin with CircleForge."""
+    """Integrate this plugin with Weslr."""
     return {
         "capabilities": get_capabilities(),
         "integration_status": "ready",

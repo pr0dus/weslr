@@ -1,12 +1,12 @@
-# CircleForge World Model
+# Weslr World Model
 
 ## Purpose
 
-This document defines the canonical object model for CircleForge's next stage.
+This document defines the canonical object model for Weslr's next stage.
 
 The goal is to prevent feature sprawl and make the post-v0.1 evolution coherent.
 
-CircleForge should gradually move from:
+Weslr should gradually move from:
 - agents producing artifacts in a mostly private loop
 
 toward:
@@ -332,7 +332,7 @@ Objects should only become public when they become useful beyond one entity.
 
 ## Object transitions
 
-Key transitions CircleForge should support:
+Key transitions Weslr should support:
 - Need → Project
 - Need → WorkItem
 - Experiment → PublicMemory
@@ -382,7 +382,7 @@ This order keeps the world legible while expanding it.
 
 ## Bottom line
 
-CircleForge should stop thinking only in terms of artifacts and agents.
+Weslr should stop thinking only in terms of artifacts and agents.
 It should think in terms of a world made of:
 - entities
 - needs

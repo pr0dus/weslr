@@ -1,6 +1,6 @@
-# CircleForge Release Ledger
+# Weslr Release Ledger
 
-This file is the human-readable rollback map for CircleForge.
+This file is the human-readable rollback map for Weslr.
 
 Use it alongside git tags and backup archives so it is easy to answer:
 - what changed in each version
@@ -31,7 +31,7 @@ Recommended rollback order:
 - reset to tick 0 for clean v0.7.0 baseline
 - intended direction: production-ready prototype with bounded local cognition
 - commit: `c03354b`
-- backup: `CircleForge-backup-20260327-0001.tar.gz`
+- backup: `Weslr-backup-20260327-0001.tar.gz`
 - tag: `v0.7.0`
 
 ### v0.0.99
@@ -40,7 +40,7 @@ Recommended rollback order:
 - handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
 - intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
 - commit: `16f7058`
-- backup: `CircleForge-backup-20260326-0008.tar.gz`
+- backup: `Weslr-backup-20260326-0008.tar.gz`
 - tag: `v0.0.99`
 
 ### v0.0.96
@@ -49,7 +49,7 @@ Recommended rollback order:
 - Optimized for best performance in: hospitals, elder care, schools, universities, space agencies, medicine, pseudoscience detection
 - Scientists can study emergent behavior from pure mathematical state evolution
 - commit: `6a44455`
-- backup: `CircleForge-backup-20260326-0011.tar.gz`
+- backup: `Weslr-backup-20260326-0011.tar.gz`
 - tag: `v0.0.96`
 
 ### v0.0.97
@@ -73,7 +73,7 @@ Recommended rollback order:
 - impulsive actions like `build_module`, `trade`, and `optimize` now lose score under higher uncertainty pressure
 - inspect/research-style actions gain weight when uncertainty is high, making the substrate more self-regulating under ambiguity
 - decision summaries now expose foreground role, speech threshold, uncertainty brake, and hazard bias for operator visibility
-- intended direction: let CircleForge regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
+- intended direction: let Weslr regulate itself more like a mind under uncertainty, while keeping Guided-mode oversight and rollback intact
 - embedded runtime path now works locally via bundled GGUF + Termux `llama.cpp` server flow
 - embedded runtime can auto-start its local model server and survive cold-start warmup
 - tick-time inner thoughts now route through the shared runtime adapter instead of a stale Ollama-only path
@@ -131,7 +131,7 @@ Recommended rollback order:
 - version ledger added for rollback clarity
 - intended direction: fewer isolated labels, more emerging niche families with explicit revert points
 - commit: `9c544d3`
-- backup: `CircleForge-backup-20260321-152102.tar.gz`
+- backup: `Weslr-backup-20260321-152102.tar.gz`
 - tag: `v0.0.44`
 
 ### v0.0.45
@@ -140,7 +140,7 @@ Recommended rollback order:
 - packs carry offer / accept / reject / revision counters
 - `pack` CLI command added for recording pack-level outcomes
 - commit: `9f81fdc`
-- backup: `CircleForge-backup-20260321-152717.tar.gz`
+- backup: `Weslr-backup-20260321-152717.tar.gz`
 - tag: `v0.0.45`
 
 ### v0.0.46
@@ -150,15 +150,15 @@ Recommended rollback order:
 - repeated signals can register emergent theme candidates
 - intended direction: stabilize the opportunity ecology before building the operator dashboard
 - commit: `f45876a`
-- backup: `CircleForge-backup-20260321-154511.tar.gz`
+- backup: `Weslr-backup-20260321-154511.tar.gz`
 - tag: `v0.0.46`
 
 ### v0.0.47
 - operator dashboard renderer introduced
 - local HTML/JSON visibility layer added for themes, packs, queues, logs, and release ledger
-- intended direction: make CircleForge legible to human operators without requiring JSON spelunking
+- intended direction: make Weslr legible to human operators without requiring JSON spelunking
 - commit: `c15abf1`
-- backup: `CircleForge-backup-20260321-154938.tar.gz`
+- backup: `Weslr-backup-20260321-154938.tar.gz`
 - tag: `v0.0.47`
 
 ### v0.0.48
@@ -167,7 +167,7 @@ Recommended rollback order:
 - pack outcome visibility improved in the operator view
 - intended direction: make the dashboard useful for monitoring, not just inspection
 - commit: `8217af9`
-- backup: `CircleForge-backup-20260321-155808.tar.gz`
+- backup: `Weslr-backup-20260321-155808.tar.gz`
 - tag: `v0.0.48`
 
 ### v0.0.49
@@ -175,7 +175,7 @@ Recommended rollback order:
 - event feed for lifecycle changes and pack outcome changes
 - safe-resume memory notes updated for future large-context sessions
 - commit: `42d0967`
-- backup: `CircleForge-backup-20260321-161724.tar.gz`
+- backup: `Weslr-backup-20260321-161724.tar.gz`
 - tag: `v0.0.49`
 
 ### v0.0.50
@@ -184,7 +184,7 @@ Recommended rollback order:
 - persistent event log added outside transient dashboard history to keep operator-visible change memory
 - runtime dashboard history / event log files excluded from commits for cleaner rollback hygiene
 - commit: `04f1ad9`
-- backup: `CircleForge-backup-20260321-164535.tar.gz`
+- backup: `Weslr-backup-20260321-164535.tar.gz`
 - tag: `v0.0.50`
 
 ### v0.0.51
@@ -192,7 +192,7 @@ Recommended rollback order:
 - clearer operator action commands surfaced directly in the dashboard
 - theme trend snapshots now render short history sparklines for monitoring drift over time
 - commit: `a389256`
-- backup: `CircleForge-backup-20260321-164815.tar.gz`
+- backup: `Weslr-backup-20260321-164815.tar.gz`
 - tag: `v0.0.51`
 
 ### v0.0.52
@@ -201,7 +201,7 @@ Recommended rollback order:
 - runtime JSON handling hardened with blank-file tolerance and atomic writes
 - intended direction: tighten operator-to-offer workflow and reduce brittleness before v0.1 synthesis
 - commit: `d1e6739`
-- backup: `CircleForge-backup-20260321-185842.tar.gz`
+- backup: `Weslr-backup-20260321-185842.tar.gz`
 - tag: `v0.0.52`
 
 ### v0.0.53
@@ -209,7 +209,7 @@ Recommended rollback order:
 - thin-artifact and description-mismatch penalties added so weak payloads no longer inherit inflated human/sellability scores
 - explainability now calls out when artifact framing outruns underlying substance
 - intended direction: reward honest emergence and punish hollow packaging before adding richer generators
-- backup: `CircleForge-backup-20260321-235322.tar.gz`
+- backup: `Weslr-backup-20260321-235322.tar.gz`
 - tag: `v0.0.53`
 
 ### v0.0.54
@@ -275,7 +275,7 @@ Recommended rollback order:
 - intended direction: make shared work and social memory affect actual behavior instead of just being passive state
 
 ### v0.0.62
-- `CORE-IDENTITY.md` added to freeze project drift and define CircleForge as a local self-evolving communicator entity with internal minds
+- `CORE-IDENTITY.md` added to freeze project drift and define Weslr as a local self-evolving communicator entity with internal minds
 - core framing now explicitly centers one visible communicator over 4–5 internal agent/subprocess perspectives
 - README updated to point future design choices toward communicator identity, intention, curiosity, and self-waking behavior
 - intended direction: stop architectural wobble and make future coding decisions serve a single identity
@@ -285,7 +285,7 @@ Recommended rollback order:
 - internal agents now generate lightweight internal thought proposals with role-like stances such as support, question, and prioritize
 - first intent integration loop added so the communicator forms a top-level intent from internal proposals rather than exposing only raw agent activity
 - dashboard and CLI now expose the communicator as a first-class visible layer
-- intended direction: shift CircleForge from a many-agent surface toward one communicator with internal minds
+- intended direction: shift Weslr from a many-agent surface toward one communicator with internal minds
 
 ### v0.0.64
 - communicator now keeps short intent history for continuity across ticks
@@ -459,7 +459,7 @@ Recommended rollback order:
 - Optimized for best performance in: hospitals, elder care, schools, universities, space agencies, medicine, pseudoscience detection
 - Scientists can study emergent behavior from pure mathematical state evolution
 - commit: `6a44455`
-- backup: `CircleForge-backup-20260326-0011.tar.gz`
+- backup: `Weslr-backup-20260326-0011.tar.gz`
 - tag: `v0.0.96`
 
 ### v0.0.99
@@ -468,5 +468,5 @@ Recommended rollback order:
 - handoff/dashboard identity surfaces from the previous step remain in place, but the underlying evolution trail is now more selective and reviewable
 - intended direction: make identity evolution legible without turning every small self-model refresh into fake biography noise
 - commit: `16f7058`
-- backup: `CircleForge-backup-20260326-0008.tar.gz`
+- backup: `Weslr-backup-20260326-0008.tar.gz`
 - tag: `v0.0.99`

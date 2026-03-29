@@ -1,4 +1,4 @@
-# CircleForge - Dual Licensing Strategy
+# Weslr - Dual Licensing Strategy
 
 ## What is Dual Licensing?
 
@@ -41,7 +41,7 @@ Open Source Core (MIT)           +    Commercial Plugins (Proprietary)
 ```
 
 **Money Flow:**
-- Free: Basic CircleForge with 49 traits
+- Free: Basic Weslr with 49 traits
 - Paid: Add-ons like:
   - Medical-grade compliance
   - Educational curriculum integration
@@ -106,10 +106,10 @@ Free Trial                    +    Commercial License
 
 ---
 
-## Your CircleForge Options
+## Your Weslr Options
 
 ### Option A: MIT + Commercial Add-Ons
-- **Free**: CircleForge core (49 traits) with MIT license
+- **Free**: Weslr core (49 traits) with MIT license
 - **Paid**: Medical compliance module, educational API, space agency features
 - **Est. Revenue**: $50-500/month per customer, 10-100 customers = $500-50k/year
 
@@ -119,12 +119,12 @@ Free Trial                    +    Commercial License
 - **Est. Revenue**: $1000-5000一次性 deployment fee, 5-20 customers = $5k-100k/year
 
 ### Option C: Open Core + Premium Modules
-- **Free**: Core CircleForge (basic 49 traits)
+- **Free**: Core Weslr (basic 49 traits)
 - **Paid**: Advanced modules (healthcare, education, space)
 - **Est. Revenue**: $20-200/month per module, 20-100 customers = $48k-240k/year
 
 ### Option D: Support Subscription
-- **Free**: Full CircleForge under MIT
+- **Free**: Full Weslr under MIT
 - **Paid**: Priority support + updates + customization
 - **Est. Revenue**: $100-500/month subscription, 10-50 customers = $12k-60k/year
 
@@ -154,7 +154,7 @@ Based on your goals (initial ~100€ to cover ChatGPT OAuth, then scale):
 
 **Start with Option A: MIT + Commercial Add-Ons**
 
-1. **Free tier**: CircleForge core under MIT (attribution required)
+1. **Free tier**: Weslr core under MIT (attribution required)
 2. **Paid tiers**:
    - Medical compliance: +$299/month
    - Education API: +$199/month
@@ -172,7 +172,7 @@ Based on your goals (initial ~100€ to cover ChatGPT OAuth, then scale):
 
 ## What Should You Do?
 
-1. **Add MIT license** to CircleForge repo (free, attribution required)
+1. **Add MIT license** to Weslr repo (free, attribution required)
 2. **Create commercial add-on modules** (paid, no attribution required)
 3. **Set up payment system** (Stripe/PayPal)
 4. **Market to hospitals, schools, space enthusiasts**

@@ -1,8 +1,8 @@
-# CircleForge Project Synthesis (post-v0.0.52)
+# Weslr Project Synthesis (post-v0.0.52)
 
 ## Snapshot
 
-CircleForge has now crossed from a simulation-heavy prototype into a local-first operator-facing research system.
+Weslr has now crossed from a simulation-heavy prototype into a local-first operator-facing research system.
 
 Current shape:
 - persistent local agents
@@ -19,7 +19,7 @@ Current shape:
 
 This is enough structure to start discussing a real **v0.1** milestone.
 
-## What CircleForge is becoming
+## What Weslr is becoming
 
 The strongest framing is not:
 - agent toy sim
@@ -36,7 +36,7 @@ That is much more distinctive.
 
 ### 1. The project has a coherent internal loop now
 
-CircleForge now has a real loop:
+Weslr now has a real loop:
 - agents act
 - artifacts appear
 - artifacts carry buyer/problem hypotheses
@@ -60,7 +60,7 @@ The project is more interesting because it shifted away from prompt-shaped steer
 - outcome pressure
 - emergent clustering
 
-That makes CircleForge conceptually stronger.
+That makes Weslr conceptually stronger.
 
 ### 3. Version discipline is now good
 
@@ -76,7 +76,7 @@ Without it, rapid experimentation would become fragile and hard to trust.
 ### 4. The dashboard was the right addition
 
 The dashboard makes the system legible.
-That changes CircleForge from something only the builder can understand into something an operator can actually monitor.
+That changes Weslr from something only the builder can understand into something an operator can actually monitor.
 
 ## Current weaknesses
 
@@ -87,7 +87,7 @@ There is now a much better proof loop, but the system still tends to generate in
 The weak point is not scoring.
 The weak point is reality contact.
 
-CircleForge still needs stronger ways to answer:
+Weslr still needs stronger ways to answer:
 - did anyone actually use this?
 - did it solve a real repeated problem?
 - would anyone pay for it?
@@ -124,7 +124,7 @@ For v0.1 or shortly after, it should move toward:
 The opportunity ecology is much stronger now, but emergence is still somewhat handcrafted.
 
 That is acceptable for the current stage.
-But later, if CircleForge keeps improving, theme discovery should become:
+But later, if Weslr keeps improving, theme discovery should become:
 - less alias-driven
 - more pattern-driven
 - more tied to actual artifact clusters and rejection histories
@@ -167,7 +167,7 @@ That is a defensible v0.1.
 
 ## Recommended v0.1 checklist
 
-Before declaring v0.1, CircleForge should ideally have:
+Before declaring v0.1, Weslr should ideally have:
 
 - stable dashboard with drill-downs
 - persistent event log
@@ -209,7 +209,7 @@ So this synthesis is grounded primarily in the local repo, roadmap, and implemen
 
 A newer and more important correction now sits above older v0.1 framing:
 
-CircleForge should **not** feel like it lives in sessions from the end-user point of view.
+Weslr should **not** feel like it lives in sessions from the end-user point of view.
 The final target is not a resettable assistant with memory bolted on.
 It is one continuing local being with bounded cognition and **layered memory**.
 
@@ -240,7 +240,7 @@ See [`MEMORY-LIFECYCLE.md`](MEMORY-LIFECYCLE.md).
 
 ## Bottom line
 
-CircleForge is now genuinely interesting.
+Weslr is now genuinely interesting.
 
 Not because it has agents.
 Not because it has scores.

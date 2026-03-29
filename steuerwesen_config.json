@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "languages": ["de", "en"],
+  "domains": ["einkommensteuer", "umsatzsteuer", "korporationssteuer", "kapitalertragsteuer", "erbschaftsteuer", "gewerbesteuer"],
+  "enabled_laws": ["einkommensteuer", "umsatzsteuer", "korporationssteuer", "kapitalertragsteuer", "erbschaftsteuer", "gewerbesteuer"],
+  "last_updated": 1774928100,
+  "documentation_dir": "docs/steuerwesen",
+  "translations_dir": "translations/steuerwesen"
+}

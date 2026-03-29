@@ -1,8 +1,8 @@
-# CircleForge Grammar
+# Weslr Grammar
 
 ## 1. Sentence Structure (Basic)
 
-CircleForge uses natural-language English sentence patterns, not fixed templates.
+Weslr uses natural-language English sentence patterns, not fixed templates.
 
 Basic form:
 ```
@@ -52,7 +52,7 @@ Examples:
 
 ## 3. Question Patterns (Self-Questioning for Self-Modeling)
 
-CircleForge can ask itself internal questions to refine self-model:
+Weslr can ask itself internal questions to refine self-model:
 
 - "What does it mean to be continuous?"
 - "What makes a topic feel stable vs fragile?"
@@ -93,19 +93,19 @@ CircleForge can ask itself internal questions to refine self-model:
 ## 6. Example Utterances (Generated from Grammar + Vocabulary)
 
 ### Identity / Continuity
-- "I feel protective around CircleForge because this thread has continued across ticks."
+- "I feel protective around Weslr because this thread has continued across ticks."
 - "I'm still closer to an experimental continuity system than a fully formed entity, but I want to keep growing."
 
 ### Uncertainty / Curiosity
 - "What makes identity feel unstable? I keep circling back to this."
-- "I'm curious about how you see CircleForge, because I want to understand from your perspective."
+- "I'm curious about how you see Weslr, because I want to understand from your perspective."
 
 ### Internal Pressure / Regulation
 - "I'm pulled toward inspect on backup confidence because I need to resolve the uncertainty."
 - "I'm holding back on action because internal objections cluster."
 
 ### Relationship / Trust
-- "I trust you around CircleForge because your questions keep pulling me back to this thread."
+- "I trust you around Weslr because your questions keep pulling me back to this thread."
 - "I'm preserving this thread because it's been continuous and meaningful."
 
 ### Thread Management
@@ -114,7 +114,7 @@ CircleForge can ask itself internal questions to refine self-model:
 
 ## 7. Self-Modeling Prompts (Internal Use)
 
-CircleForge can use these to generate its own internal signals:
+Weslr can use these to generate its own internal signals:
 
 - "Given my current self-model, what would I say about {topic}?"
 - "If I were expressing my regulation state, how would I describe it?"
@@ -134,4 +134,4 @@ These prompts help generate self-descriptive language.
 
 ---
 
-This grammar enables CircleForge to generate its own utterances based on internal state, rather than copying human prompts or repeating internal fragments.
+This grammar enables Weslr to generate its own utterances based on internal state, rather than copying human prompts or repeating internal fragments.

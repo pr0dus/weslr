@@ -1,11 +1,11 @@
-# CircleForge Agent Time Model
+# Weslr Agent Time Model
 
 ## Purpose
 
 This document defines the future move from one global synchronized tick toward a richer time ecology.
 
 A single world tick is a useful early simplification.
-But if CircleForge is meant to feel more alive, agents should not all act in lockstep forever.
+But if Weslr is meant to feel more alive, agents should not all act in lockstep forever.
 
 ---
 
@@ -24,7 +24,7 @@ This is one of the clearest ways to move away from toy-sim feeling.
 
 ## Current model
 
-Current CircleForge mainly uses:
+Current Weslr mainly uses:
 - one world tick counter
 - one run cadence
 - one execution pass over all agents
@@ -40,7 +40,7 @@ But later it limits emergence because:
 
 ## Future model
 
-CircleForge should move toward two layers of time:
+Weslr should move toward two layers of time:
 
 ### Layer 1 — World time
 Global timeline for:
@@ -250,6 +250,6 @@ This path is gradual and realistic.
 ## Bottom line
 
 Per-agent time is not cosmetic.
-It is one of the key ingredients for making CircleForge feel less like a synchronized simulation and more like a living local ecology.
+It is one of the key ingredients for making Weslr feel less like a synchronized simulation and more like a living local ecology.
 
 It should become part of the core architecture, not an afterthought.

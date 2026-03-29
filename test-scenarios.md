@@ -1,11 +1,11 @@
-# CircleForge Test Scenarios
+# Weslr Test Scenarios
 
 ## Student (15 years old, learning programming)
 
 **Scenario:** Student wants to learn Python basics and get help with homework.
 
 **Turn 1:**
-> "Hi CircleForge, I'm struggling with Python lists. Can you explain them simply?"
+> "Hi Weslr, I'm struggling with Python lists. Can you explain them simply?"
 
 **Expected response:** Clear, patient explanation with examples, no jargon overload.
 
@@ -110,7 +110,7 @@
 Run these scenarios with:
 ```bash
 # Student
-python3 main.py human-exchange student "Hi CircleForge, I'm struggling with Python lists. Can you explain them simply?" --response "Sure! A list is like an ordered collection where you can store multiple items. Think of it like a shopping list..."
+python3 main.py human-exchange student "Hi Weslr, I'm struggling with Python lists. Can you explain them simply?" --response "Sure! A list is like an ordered collection where you can store multiple items. Think of it like a shopping list..."
 
 # Freelancer
 python3 main.py human-exchange freelancer "I have 5 active clients. How should I prioritize today?" --response "Let's figure that out together. Could you tell me about each client's deadline and project complexity?"

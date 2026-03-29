@@ -5,7 +5,7 @@ This document outlines the file structure for commercial add-on modules.
 ## Directory Layout
 
 ```
-CircleForge/
+Weslr/
 ├── main.py                    # Core entry point
 ├── config.py                  # Configuration
 ├── sim.py                     # Simulation engine
@@ -75,7 +75,7 @@ medical = MedicalCompliance(
     encryption_level="AES-256"
 )
 
-# Use with CircleForge
+# Use with Weslr
 circle.forge(
     action="communicator-message",
     medical_compliance=medical
@@ -102,7 +102,7 @@ curriculum = CurriculumAdapter(
     learning_objectives=["fractions", "decimals"]
 )
 
-# Use with CircleForge
+# Use with Weslr
 circle.forge(
     action="educator-assistant",
     curriculum=curriculum
@@ -130,7 +130,7 @@ mission = MissionSupport(
     emergency_protocols=True
 )
 
-# Use with CircleForge
+# Use with Weslr
 circle.forge(
     action="mission-control",
     mission=mission
@@ -158,7 +158,7 @@ support = PremiumSupport(
     priority_support=True
 )
 
-# Use with CircleForge
+# Use with Weslr
 circle.forge(
     action="support-connection",
     support_tier=support
@@ -177,13 +177,13 @@ circle.forge(
 ### Module Requirements
 - Must extend `CommercialModule` base class
 - Must have `interact()`, `get_features()`, `get_cost()` methods
-- Should integrate with CircleForge core
+- Should integrate with Weslr core
 - Must document pricing and use cases
 - Code should be clean, documented, and tested
 
 ## Licensing Notice
 
-This CircleForge installation includes commercial modules that extend the free core.
+This Weslr installation includes commercial modules that extend the free core.
 
 - **Core**: MIT License (free, attribution required)
 - **Modules**: Proprietary Commercial License (paid, no attribution)

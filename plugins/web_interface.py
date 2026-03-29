@@ -1,5 +1,5 @@
 
-# web_interface.py - Plugin for CircleForge
+# web_interface.py - Plugin for Weslr
 # Template for new plugins
 
 # Required metadata

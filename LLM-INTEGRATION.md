@@ -1,11 +1,11 @@
-# CircleForge LLM integration
+# Weslr LLM integration
 
-CircleForge now has a provider abstraction for cognition backends.
+Weslr now has a provider abstraction for cognition backends.
 
 ## Goal
 
 Support multiple cognition backends through one adapter layer:
-- **embedded** runtime bundled with CircleForge code and model files
+- **embedded** runtime bundled with Weslr code and model files
 - **ollama** as optional external local API
 - **openai-compatible** APIs, including OpenAI/OAuth-style setups
 - **fallback** when no live model is available
@@ -15,10 +15,10 @@ Support multiple cognition backends through one adapter layer:
 The preferred long-term path is **embedded**.
 
 That means:
-- runtime shipped with CircleForge
-- model file shipped with CircleForge
+- runtime shipped with Weslr
+- model file shipped with Weslr
 - no mandatory separate model daemon
-- direct inference inside CircleForge process/runtime layer
+- direct inference inside Weslr process/runtime layer
 
 ## Current first embedded target
 
@@ -29,7 +29,7 @@ The first concrete embedded target is now:
 - **format:** GGUF
 - **default model name:** `Qwen2.5-0.5B-Instruct`
 - **default expected filename:** `qwen2.5-0.5b-instruct.gguf`
-- **default expected path:** `CircleForge/models/qwen2.5-0.5b-instruct.gguf`
+- **default expected path:** `Weslr/models/qwen2.5-0.5b-instruct.gguf`
 
 ## Providers
 
@@ -40,7 +40,7 @@ Recommended shape:
 - GGUF model file
 - `llama.cpp` / `llama-cpp-python`
 - model path under:
-  - `CircleForge/models/`
+  - `Weslr/models/`
 
 Suggested candidate classes:
 - Qwen 2.5 small GGUF
@@ -57,7 +57,7 @@ Can be used when the user prefers hosted inference.
 Examples:
 - OpenAI-compatible endpoints
 - OpenRouter-style compatible providers
-- OAuth-backed hosted setup if exposed as standard API key/base URL to CircleForge
+- OAuth-backed hosted setup if exposed as standard API key/base URL to Weslr
 
 ### 4. fallback
 Used when no live backend is available.
@@ -65,7 +65,7 @@ This preserves function without pretending true model cognition is active.
 
 ## Config direction
 
-CircleForge should support env/config like:
+Weslr should support env/config like:
 - `CIRCLEFORGE_LLM_PROVIDER=embedded|ollama|openai|fallback`
 - `CIRCLEFORGE_LLM_MODEL=<model-name>`
 - `CIRCLEFORGE_EMBEDDED_MODEL_PATH=<path-to-gguf>`
@@ -75,7 +75,7 @@ CircleForge should support env/config like:
 
 ## Why this matters
 
-This keeps the rest of CircleForge independent from backend choice.
+This keeps the rest of Weslr independent from backend choice.
 The entity should ask for:
 - inner thought
 - phrasing

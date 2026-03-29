@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "siemens-to-weslr-normalizer"
+version = "0.1.0"
+description = "Normalizer: Transformiert TIA Portal V20 Raw Exports in Weslr Normalized Graphs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+  {name = "Weslr Team", email = "team@weslr.ai"}
+]
+keywords = ["siemens", "tia-portal", "weslr", "normalizer"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.dependencies]
+# Keine externen Laufzeitabhängigkeiten – nur Standard-Library
+
+[project.dev-dependencies]
+pytest = ">=7.0.0"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
+
+[tool.setuptools.package-data]
+siemens_to_weslr = ["py.typed"]

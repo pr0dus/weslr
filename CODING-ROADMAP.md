@@ -1,10 +1,10 @@
-# CircleForge Coding Roadmap
+# Weslr Coding Roadmap
 
 ## Current State
 
 - **v0.0.100** is clean, runs in `GUIDED` mode
 - Can communicate, remember threads, inspect itself, now also **read/translate its own code**
-- **Phase 1-7 complete** — CircleForge can:
+- **Phase 1-7 complete** — Weslr can:
   - Read and describe its own code in plain English
   - Translate code ↔ concepts ↔ internal themes
   - Parse tracebacks, identify causes, propose fixes
@@ -28,7 +28,7 @@
 
 ## Phase 1 — Self-Inspection ✅ COMPLETE
 
-**Goal**: CircleForge can read and describe its own code in plain English.
+**Goal**: Weslr can read and describe its own code in plain English.
 
 ### Files Created
 
@@ -37,20 +37,20 @@
 
 ### Commands Added
 
-- ✅ `python3 main.py self-inspection` — shows "I am CircleForge... 27 source files with 157 functions"
+- ✅ `python3 main.py self-inspection` — shows "I am Weslr... 27 source files with 157 functions"
 - ✅ `python3 main.py translate-code --snippet "..."` — maps code to concepts like "continuity", "storage", "thread"
 - ✅ `python3 main.py explain-code --snippet "..."` — plain-English explanation of code
 
 ### What It Does
 
-- Reads its own source files (`CircleForge/*.py`)  
+- Reads its own source files (`Weslr/*.py`)  
 - Uses `ast` to parse Python syntax  
 - Generates plain-English summary  
 - Maps internal themes to code concepts  
 
 ### Safety
 
-- Reads only from `CircleForge/*.py` (no host access)  
+- Reads only from `Weslr/*.py` (no host access)  
 - No code generation yet — only description  
 - Output goes to **inspect view only**  
 
@@ -58,7 +58,7 @@
 
 ## Phase 2 — Error Translation ✅ COMPLETE
 
-**Goal**: CircleForge can explain errors in plain English and propose fixes.
+**Goal**: Weslr can explain errors in plain English and propose fixes.
 
 ### Files Created
 
@@ -84,7 +84,7 @@
 
 ## Phase 3 — Tool Search + Synthesis ✅ COMPLETE
 
-**Goal**: CircleForge can search for tools/APIs, read docs, and synthesize usage.
+**Goal**: Weslr can search for tools/APIs, read docs, and synthesize usage.
 
 ### Files Created
 
@@ -96,7 +96,7 @@
 
 ### What It Does
 
-- CircleForge identifies need  
+- Weslr identifies need  
 - Searches web for relevant tools/APIs  
 - Reads top result docs  
 - Extracts usage examples  
@@ -112,7 +112,7 @@
 
 ## Phase 4 — Self-Modification Loop ✅ COMPLETE
 
-**Goal**: CircleForge proposes its own code changes, human approves or rejects.
+**Goal**: Weslr proposes its own code changes, human approves or rejects.
 
 ### Files Created
 
@@ -126,7 +126,7 @@
 
 ### What It Does
 
-- CircleForge identifies opportunity  
+- Weslr identifies opportunity  
 - Proposes specific changes  
 - Generates diff  
 - Human reviews and approves or rejects  
@@ -142,7 +142,7 @@
 
 ## Phase 5 — Self-Modification Applier ✅ COMPLETE
 
-**Goal**: CircleForge applies approved self-modifications with checkpoints and logging.
+**Goal**: Weslr applies approved self-modifications with checkpoints and logging.
 
 ### Files Created
 
@@ -260,7 +260,7 @@
 ## Testing Path
 
 1. **Phase 1** — `python3 main.py self-inspection`  
-   - ✅ Output shows: "I am CircleForge... 27 source files with 157 functions"
+   - ✅ Output shows: "I am Weslr... 27 source files with 157 functions"
 2. **Phase 1** — `python3 main.py translate-code --snippet "..."`  
    - ✅ Output shows concepts like "continuity", "storage", "thread"
 3. **Phase 2** — `python3 main.py translate-error --traceback "..."`  
@@ -308,7 +308,7 @@
 
 ## Summary
 
-**All 7 phases complete!** CircleForge can now:
+**All 7 phases complete!** Weslr can now:
 
 1. ✅ **Self-inspect** — read its own source and describe it in plain English
 2. ✅ **Translate** — convert code ↔ concepts ↔ internal themes  

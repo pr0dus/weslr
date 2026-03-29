@@ -1,4 +1,4 @@
-# CircleForge Continuation Notes - Final Summary
+# Weslr Continuation Notes - Final Summary
 
 ## All 49 Steps Complete (49/49 traits implemented)
 
@@ -7,8 +7,8 @@ All 49 behavioral traits from `behavioral_mathematics.py` are now fully implemen
 ### Implementation Summary
 
 **Updated Files:**
-- `CircleForge/self_model.py` - Added `update_behavioral_trait()` and full `sync_identity_state()` updates
-- `CircleForge/sim.py` - Added `get_behavioral_traits_defaults()` and bootstrap with all 49 traits
+- `Weslr/self_model.py` - Added `update_behavioral_trait()` and full `sync_identity_state()` updates
+- `Weslr/sim.py` - Added `get_behavioral_traits_defaults()` and bootstrap with all 49 traits
 
 **Verification Results:**
 - All 49 traits update each tick via `update_behavioral_trait()` in `sync_identity_state()`

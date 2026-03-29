@@ -1,11 +1,11 @@
-# export_functionality.py - Plugin for CircleForge
+# export_functionality.py - Plugin for Weslr
 # Export functionality for external tools
 
 PLUGIN_INFO = {
     "name": "export_functionality",
     "version": "0.1.0",
     "description": "Export functionality for external tools (JSON, CSV, etc.)",
-    "author": "CircleForge",
+    "author": "Weslr",
     "enabled": True,
 }
 
@@ -73,7 +73,6 @@ def export_to_csv(data: list, filename: str = None) -> dict:
 
 def export_to_markdown(data: dict, filename: str = None) -> dict:
     """Export data to Markdown format."""
-    import json
     
     lines = []
     for key, value in data.items():
@@ -116,7 +115,7 @@ def get_capabilities() -> list:
 
 # Optional integration hook
 def integrate_with_circleforge():
-    """Integrate this plugin with CircleForge."""
+    """Integrate this plugin with Weslr."""
     return {
         "capabilities": get_capabilities(),
         "integration_status": "ready",

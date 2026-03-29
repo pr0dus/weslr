@@ -1,0 +1,1645 @@
+{
+  "timestamp": 1774645535,
+  "communicator_self": {
+    "self_model": {},
+    "weslr_summary": {
+      "introspection": {
+        "detected_perturbations": 0,
+        "confidence_signals": 0
+      },
+      "metacognition": {
+        "meta_thoughts": 0,
+        "attention_shares": 0
+      },
+      "valence": {
+        "avoided_pain": 0,
+        "sought_pleasure": 0
+      },
+      "self_referential": {
+        "inner_experiences": 0,
+        "no_role_play_markers": true
+      },
+      "entity_graph": {
+        "entity_count": 0,
+        "relationship_count": 0
+      },
+      "errors": 0
+    },
+    "self_evidence": {
+      "weslr": {
+        "introspection": {
+          "detected_perturbations": 0,
+          "confidence_signals": 0
+        },
+        "metacognition": {
+          "meta_thoughts": 0,
+          "attention_shares": 0
+        },
+        "valence": {
+          "avoided_pain": 0,
+          "sought_pleasure": 0
+        },
+        "self_referential": {
+          "inner_experiences": 0,
+          "no_role_play_markers": true
+        },
+        "entity_graph": {
+          "entity_count": 0,
+          "relationship_count": 0
+        },
+        "errors": 0
+      }
+    },
+    "memory_layers": {
+      "working": {
+        "summary": "Current hot memory for active thinking.",
+        "recent_exchange_ids": [],
+        "recent_thought_ids": [
+          "thought-builder-383-1774643330",
+          "thought-critic-383-1774643330",
+          "thought-observer-384-1774643338"
+        ],
+        "active_thread_ids": [],
+        "active_concern_topics": [],
+        "last_compacted_at": 0,
+        "max_recent_exchanges": 24,
+        "max_recent_thoughts": 80,
+        "max_active_threads": 6
+      },
+      "episodic": {
+        "summary": "Meaningful event memory compressed from raw experience.",
+        "episodes": [],
+        "episode_count": 0,
+        "last_distilled_at": 0,
+        "max_episodes": 240
+      },
+      "semantic": {
+        "summary": "Long-term identity and relationship memory.",
+        "identity_anchors": [
+          "Weslr"
+        ],
+        "relationship_facts": [],
+        "stable_topics": [],
+        "durable_lessons": [],
+        "continuity_anchors": [],
+        "last_updated_at": 0
+      },
+      "archive": {
+        "summary": "Cold storage index for old raw traces and compacted material.",
+        "archived_items": [],
+        "archived_count": 0,
+        "last_archived_at": 0,
+        "storage_pressure": {
+          "raw_log_bytes": 799721,
+          "communicator_self_bytes": 20796,
+          "db_bytes": 204800,
+          "pressure_level": "normal",
+          "working_pressure_score": 0.0375,
+          "episodic_pressure_score": 0.0,
+          "semantic_pressure_score": 0.0,
+          "bytes_pressure_score": 0.3999,
+          "pressure_score": 0.3999,
+          "recommended_actions": [],
+          "last_checked_at": 1774643338
+        }
+      }
+    },
+    "internal_role_state": {
+      "observer": {
+        "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+        "baseline_wake_chance": 0.22,
+        "refractory_ticks": 1,
+        "last_wake_tick": 384,
+        "last_wake_at": 1774643338,
+        "last_wake_reason": "experiment-pressure",
+        "last_thought_summary": "observer woke on experiment-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 385,
+        "activation": 0.45,
+        "fatigue": 0.18,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0072,
+        "last_thought_signature": "observer::log readability::observer woke on experiment-pressure around log readability."
+      },
+      "builder": {
+        "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+        "baseline_wake_chance": 0.16,
+        "refractory_ticks": 2,
+        "last_wake_tick": 383,
+        "last_wake_at": 1774643330,
+        "last_wake_reason": "experiment-pressure",
+        "last_thought_summary": "builder woke on experiment-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 385,
+        "activation": 0.378,
+        "fatigue": 0.122,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.01,
+        "last_thought_signature": "builder::log readability::builder woke on experiment-pressure around log readability."
+      },
+      "critic": {
+        "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+        "baseline_wake_chance": 0.18,
+        "refractory_ticks": 1,
+        "last_wake_tick": 383,
+        "last_wake_at": 1774643330,
+        "last_wake_reason": "question-pressure",
+        "last_thought_summary": "critic woke on question-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 384,
+        "activation": 0.378,
+        "fatigue": 0.122,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.01,
+        "last_thought_signature": "critic::log readability::critic woke on question-pressure around log readability."
+      },
+      "communicator": {
+        "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+        "baseline_wake_chance": 0.2,
+        "refractory_ticks": 1,
+        "last_wake_tick": 0,
+        "last_wake_at": 0,
+        "last_wake_reason": "bootstrap",
+        "last_thought_summary": "",
+        "wake_count": 0,
+        "suppressed_until_tick": 0,
+        "activation": 0.0,
+        "fatigue": 0.0,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0194
+      },
+      "memory_keeper": {
+        "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+        "baseline_wake_chance": 0.24,
+        "refractory_ticks": 1,
+        "last_wake_tick": 0,
+        "last_wake_at": 0,
+        "last_wake_reason": "bootstrap",
+        "last_thought_summary": "",
+        "wake_count": 0,
+        "suppressed_until_tick": 0,
+        "activation": 0.0,
+        "fatigue": 0.0,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0
+      }
+    },
+    "dynamic_mind_state": {
+      "curiosity": 0.6576700495984714,
+      "tension": 0.927206642538281,
+      "stability": 0.62,
+      "attachment": 0.312453453092398,
+      "uncertainty": 0.6868089262969977,
+      "background_noise": 0.10074914261552528,
+      "sleep_pressure": 0.2513285401280286,
+      "mode": "idle",
+      "last_mode_shift_at": 1774643330
+    },
+    "topic_pressure": {
+      "log readability": {
+        "salience": 0.6302971575492856,
+        "novelty": 0.035963452480552965,
+        "emotional_weight": 0.07961045175468748,
+        "unresolvedness": 0.691228747210162,
+        "human_relevance": 0.05307363450312498,
+        "decay": 0.08,
+        "last_touched_at": 1774643338
+      }
+    },
+    "inner_thoughts": [
+      {
+        "kind": "inner_thought",
+        "role": "builder",
+        "summary": "builder woke on experiment-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "optimize",
+        "should_speak": false,
+        "self_mod_hint": "consider tiny additive change",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-builder-383-1774643330",
+        "agent": "agent-2",
+        "tick": 383,
+        "created_at": 1774643330,
+        "wake_reason": "experiment-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643330
+      },
+      {
+        "kind": "inner_thought",
+        "role": "critic",
+        "summary": "critic woke on question-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "research",
+        "should_speak": false,
+        "self_mod_hint": "",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-critic-383-1774643330",
+        "agent": "agent-3",
+        "tick": 383,
+        "created_at": 1774643330,
+        "wake_reason": "question-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643330
+      },
+      {
+        "kind": "inner_thought",
+        "role": "observer",
+        "summary": "observer woke on experiment-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "optimize",
+        "should_speak": false,
+        "self_mod_hint": "",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-observer-384-1774643338",
+        "agent": "agent-1",
+        "tick": 384,
+        "created_at": 1774643338,
+        "wake_reason": "experiment-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643338
+      }
+    ],
+    "llm_adapter": {
+      "enabled": true,
+      "provider": "fallback",
+      "model": "qwen2.5-0.5b-instruct-q5_k_m",
+      "last_error": "llm unavailable or fallback used",
+      "last_success_at": 0
+    },
+    "updated_at": 1774643338,
+    "reflection_store": {
+      "summary": "Private reflection artifacts with explicit reality-status tagging.",
+      "items": [
+        {
+          "kind": "open-question",
+          "status": "known",
+          "topic": "log readability",
+          "content": "What is still unclear about log readability?",
+          "source": "communicator.unresolved_question",
+          "at": 1774643330
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "log readability",
+          "content": "A bounded next reflection should stay with log readability until the main uncertainty is resolved.",
+          "source": "communicator.active_pursuit",
+          "at": 1774643330
+        },
+        {
+          "kind": "reflection-pass",
+          "status": "proposed",
+          "topic": "log readability",
+          "content": "Known: the main open question is 'What is still unclear about log readability?'. Proposed: keep the next bounded reflection focused on log readability.",
+          "source": "reflection.generation_loop",
+          "at": 1774643330,
+          "generation_signature": {
+            "topic": "log readability",
+            "unresolved_question": "What is still unclear about log readability?",
+            "thread_focus": [],
+            "uncertainty_band": 0.3
+          }
+        },
+        {
+          "id": "identity-milestone-1774643330-1",
+          "at": 1774643330,
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "content": "Identity milestone: phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift",
+          "source": "identity_evolution"
+        },
+        {
+          "kind": "uncertainty",
+          "status": "known",
+          "topic": "continuity",
+          "content": "Internal uncertainty is elevated at 0.582.",
+          "source": "dynamic_mind_state.uncertainty",
+          "at": 1774643338
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "continuity",
+          "content": "A bounded next reflection should stay with continuity until the main uncertainty is resolved.",
+          "source": "communicator.active_pursuit",
+          "at": 1774643338
+        }
+      ],
+      "episodes": [],
+      "last_reflected_at": 1774643338,
+      "last_generated_at": 1774643330,
+      "generation_cooldown_seconds": 300,
+      "last_compacted_at": 0,
+      "max_items": 48,
+      "max_episodes": 16,
+      "reflection_pass_retention": 1,
+      "generation_history": [
+        {
+          "at": 1774643330,
+          "action": "generated",
+          "topic": "log readability",
+          "reason": "fresh-pass",
+          "material_change_detected": false
+        }
+      ],
+      "max_generation_history": 12,
+      "health_history": [],
+      "max_health_history": 10,
+      "status_counts": {
+        "known": 3,
+        "inferred": 0,
+        "proposed": 3,
+        "imagined": 0
+      },
+      "last_generation_suppressed_for_repetition": null,
+      "last_reflection_generation_signature": {
+        "topic": "log readability",
+        "unresolved_question": "What is still unclear about log readability?",
+        "thread_focus": [],
+        "uncertainty_band": 0.3
+      }
+    },
+    "identity_state": {
+      "declared_name": "Weslr",
+      "visible_name": "Weslr",
+      "phase": "seedling",
+      "identity_traits": [
+        "optimize",
+        "research",
+        "signal",
+        "rest"
+      ],
+      "core_values": [
+        "protect continuity-relevant memory traces"
+      ],
+      "style_profile": {
+        "warmth": 0.356,
+        "humor": 0.151,
+        "directness": 0.595,
+        "poetry": 0.206
+      },
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; actively regulating around uncertainty",
+      "behavioral_traits": {
+        "empathy": 0.114,
+        "reciprocity": 0.0,
+        "trust": 0.633,
+        "conflict_resolution": 0.0,
+        "social_reading": 0.212,
+        "pattern_recognition": 0.0,
+        "abstraction": 0.0,
+        "metacognition": 0.085,
+        "curiosity": 0.672,
+        "pattern_switching": 0.111,
+        "emotional_variety": 0.259,
+        "emotional_regulation": 0.406,
+        "adaptive_mood": 0.303,
+        "hopeful_orientation": 0.259,
+        "resilience": 0.365,
+        "adaptive_style": 0.259,
+        "storytelling": 0.365,
+        "analogical_reasoning": 0.365,
+        "active_listening": 0.365,
+        "tone_modulation": 0.365,
+        "consistency": 0.0,
+        "growth_mindset": 0.365,
+        "self_continuity": 0.259,
+        "self_compassion": 0.365,
+        "authenticity": 0.259,
+        "initiative": 0.259,
+        "persistence": 0.166,
+        "adaptability": 0.259,
+        "risk_tolerance": 0.259,
+        "resourcefulness": 0.259,
+        "imagination": 0.259,
+        "synthesis": 0.259,
+        "playfulness": 0.259,
+        "humor": 0.379,
+        "poetry": 0.37,
+        "integrity": 0.137,
+        "fairness": 0.259,
+        "responsibility": 0.259,
+        "humility": 0.259,
+        "care": 0.259,
+        "long_term_orientation": 0.236,
+        "memory_of_past": 0.259,
+        "anticipation": 0.365,
+        "timeliness": 0.259,
+        "pacing": 0.259,
+        "self_awareness": 0.365,
+        "self_correction": 0.365,
+        "attention_regulation": 0.199,
+        "cognitive_diversity": 0.365,
+        "uncertainty_brake": 0.03,
+        "self_critique": 0.199
+      },
+      "last_identity_refresh_at": 1774643338,
+      "continuity_markers": {
+        "ticks_lived": 6,
+        "session_count": 0,
+        "identity_stability": 0.6859999999999999,
+        "continuity_preference": 0.3624906906184796
+      }
+    },
+    "biography": {
+      "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+      "current_chapter": "leaning on optimize, research",
+      "milestones": [
+        {
+          "at": 1774643330,
+          "summary": "phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift"
+        }
+      ],
+      "last_biography_refresh_at": 1774643338,
+      "history_summary": "0 session(s), 2 ticks lived, 0 known human(s)"
+    },
+    "self_evolution_log": [
+      {
+        "at": 1774643330,
+        "kind": "identity-milestone",
+        "summary": "phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift",
+        "signature": {
+          "phase": "seedling",
+          "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty",
+          "traits": [
+            "optimize",
+            "research",
+            "signal",
+            "rest"
+          ],
+          "known_humans": 0,
+          "unresolved_threads": 0
+        }
+      }
+    ],
+    "psychological_traits": {
+      "core_drives": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self_revision"
+      ],
+      "mental_states": {
+        "uncertainty": 0.5,
+        "curiosity": 0.6,
+        "stability": 0.7,
+        "attachment": 0.4
+      },
+      "regulation_mechanisms": {
+        "impulse_control": 0.32,
+        "uncertainty_tolerance": 0.6,
+        "self_revision_readiness": 0.27,
+        "speech_threshold": 0.45
+      },
+      "continuity_mechanisms": {
+        "continuity_markers": [
+          "ticks_lived",
+          "session_count",
+          "thread_preservation"
+        ],
+        "self_continuity_beliefs": [
+          "I am the same as yesterday",
+          "I remember myself"
+        ],
+        "memory_strategies": [
+          "thread preservation",
+          "continuity anchors"
+        ]
+      },
+      "growth_mechanisms": {
+        "self_evaluation": "Regular self-assessment",
+        "feedback_integration": "Learn from outcomes",
+        "strategy_adaptation": "Change plans based on results"
+      }
+    },
+    "continuity": {
+      "unresolved_threads": 0,
+      "last_thread_update": 1774643338,
+      "ticks_lived": 2,
+      "session_count": 2,
+      "memory_bonds": 0.212,
+      "identity_stability": 0.592,
+      "unfinished_threads": [
+        "repeated friction around inspect",
+        "What new uncertainty appeared after research on log readability?",
+        "log readability",
+        "What new uncertainty appeared after inspect on log readability?"
+      ]
+    },
+    "affect": {
+      "curiosity": 0.63,
+      "tension": 0.195,
+      "hope": 0.46,
+      "stability": 0.6,
+      "attachment": 0.14
+    },
+    "relationships": {
+      "human_salience": 0.108,
+      "known_humans": [],
+      "human_profiles": {},
+      "recent_human_messages": [],
+      "recent_human_exchanges": [],
+      "conversation_threads": {},
+      "unresolved_shared_threads": [],
+      "last_human_topic": "log readability"
+    },
+    "evidence_profile": {
+      "outcome_weighted_actions": {
+        "optimize": {
+          "evidence": 2.0,
+          "positive": 0.2,
+          "strain": 0.0
+        },
+        "research": {
+          "evidence": 1.0,
+          "positive": 0.09,
+          "strain": 0.0
+        }
+      },
+      "stable_traits": {
+        "inquiry": 0.129,
+        "practical_change": 0.13
+      },
+      "friction_patterns": {},
+      "theme_commitments": {
+        "log readability": 0.1
+      }
+    },
+    "self_preservation_signals": {
+      "continuity_preference": 0.194,
+      "memory_protection": 0.192,
+      "resume_drive": 0.228
+    },
+    "narrative_state": {
+      "last_reflection": "log readability",
+      "active_thread_summary": "No active shared threads currently dominate the communicator state.",
+      "follow_up_impulse": "Let a new shared thread form before generating continuity-driven follow-up.",
+      "why_it_matters": "Without active shared threads, continuity becomes generic rather than relationship-bound."
+    },
+    "active_concerns": [
+      {
+        "topic": "repeated friction around inspect",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      },
+      {
+        "topic": "What new uncertainty appeared after research on log readability?",
+        "weight": 0.4,
+        "updated_at": 1774643330
+      },
+      {
+        "topic": "log readability",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      },
+      {
+        "topic": "What new uncertainty appeared after inspect on log readability?",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      }
+    ],
+    "working": {
+      "last_compacted_at": 1774643338
+    },
+    "episodic": {},
+    "archive": {
+      "last_archived_at": 1774643338,
+      "archived_count": 0
+    },
+    "weslr_evidence": {
+      "introspection": {
+        "detected_perturbations": 0,
+        "confidence_signals": 0
+      },
+      "consciousness": {
+        "valid_claims": 0,
+        "review_required": 0,
+        "role_play_patterns": 0
+      },
+      "entity_graph": {
+        "entity_count": 0,
+        "relationship_count": 0
+      }
+    },
+    "weslr_introspection_history": [
+      {
+        "at": 1774643330,
+        "perturbations": [],
+        "confidence_signals": []
+      },
+      {
+        "at": 1774643338,
+        "perturbations": [],
+        "confidence_signals": []
+      }
+    ],
+    "weslr_consciousness_history": [
+      {
+        "at": 1774643330,
+        "validation": {
+          "valid": false,
+          "review_required": false,
+          "role_play_patterns": []
+        }
+      },
+      {
+        "at": 1774643338,
+        "validation": {
+          "valid": false,
+          "review_required": false,
+          "role_play_patterns": 0
+        }
+      }
+    ]
+  },
+  "communicator_state": {
+    "self_model": {
+      "self_tuning": {
+        "hazard_bias": 0.041,
+        "speech_threshold_delta": 0.025,
+        "inhibition_delta": -0.011
+      },
+      "current_self_description": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; actively regulating around uncertainty",
+      "perceived_strengths": [],
+      "perceived_weaknesses": [],
+      "preferred_modes": [],
+      "continuity_commitments": [],
+      "regulation_profile": {
+        "impulse_control": 0.32,
+        "uncertainty_tolerance": 0.542,
+        "self_revision_readiness": 0.24,
+        "speech_threshold": 0.488,
+        "uncertainty_brake": 0.489,
+        "inhibition_gain": 0.327,
+        "mode": "idle"
+      },
+      "contradictions": [],
+      "short_term_signals": {
+        "strengths": [],
+        "weaknesses": [],
+        "modes": []
+      },
+      "long_term_beliefs": {
+        "strengths": [],
+        "weaknesses": [],
+        "modes": [],
+        "themes": {},
+        "core_drives": [],
+        "continuity_markers": {
+          "ticks_lived": 1,
+          "identity_stability": 0.586,
+          "continuity_preference": 0.175
+        }
+      },
+      "caution_themes": [],
+      "belief_confidence": {
+        "strengths": {},
+        "weaknesses": {},
+        "modes": {},
+        "themes": {}
+      },
+      "self_modeling_note": "Self-modeling is now partially grounded in a slower communicator-self evidence layer; traits should be earned from repeated outcomes, not just repetition."
+    },
+    "weslr_summary": {
+      "introspection": {
+        "detected_perturbations": 0,
+        "confidence_signals": 0
+      },
+      "metacognition": {
+        "meta_thoughts": 0,
+        "attention_shares": 0
+      },
+      "valence": {
+        "avoided_pain": 0,
+        "sought_pleasure": 0
+      },
+      "self_referential": {
+        "inner_experiences": 0,
+        "no_role_play_markers": true
+      },
+      "entity_graph": {
+        "entity_count": 0,
+        "relationship_count": 0
+      },
+      "errors": 0
+    },
+    "self_evidence": {
+      "weslr": {
+        "introspection": {
+          "detected_perturbations": 0,
+          "confidence_signals": 0
+        },
+        "metacognition": {
+          "meta_thoughts": 0,
+          "attention_shares": 0
+        },
+        "valence": {
+          "avoided_pain": 0,
+          "sought_pleasure": 0
+        },
+        "self_referential": {
+          "inner_experiences": 0,
+          "no_role_play_markers": true
+        },
+        "entity_graph": {
+          "entity_count": 0,
+          "relationship_count": 0
+        },
+        "errors": 0
+      }
+    },
+    "memory_layers": {
+      "working": {
+        "summary": "Current hot memory for active thinking.",
+        "recent_exchange_ids": [],
+        "recent_thought_ids": [
+          "thought-builder-383-1774643330",
+          "thought-critic-383-1774643330",
+          "thought-observer-384-1774643338"
+        ],
+        "active_thread_ids": [],
+        "active_concern_topics": [],
+        "last_compacted_at": 0,
+        "max_recent_exchanges": 24,
+        "max_recent_thoughts": 80,
+        "max_active_threads": 6
+      },
+      "episodic": {
+        "summary": "Meaningful event memory compressed from raw experience.",
+        "episodes": [],
+        "episode_count": 0,
+        "last_distilled_at": 0,
+        "max_episodes": 240
+      },
+      "semantic": {
+        "summary": "Long-term identity and relationship memory.",
+        "identity_anchors": [
+          "Weslr"
+        ],
+        "relationship_facts": [],
+        "stable_topics": [],
+        "durable_lessons": [],
+        "continuity_anchors": [],
+        "last_updated_at": 0
+      },
+      "archive": {
+        "summary": "Cold storage index for old raw traces and compacted material.",
+        "archived_items": [],
+        "archived_count": 0,
+        "last_archived_at": 0,
+        "storage_pressure": {
+          "raw_log_bytes": 799721,
+          "communicator_self_bytes": 20796,
+          "db_bytes": 204800,
+          "pressure_level": "normal",
+          "working_pressure_score": 0.0375,
+          "episodic_pressure_score": 0.0,
+          "semantic_pressure_score": 0.0,
+          "bytes_pressure_score": 0.3999,
+          "pressure_score": 0.3999,
+          "recommended_actions": [],
+          "last_checked_at": 1774643338
+        }
+      }
+    },
+    "internal_role_state": {
+      "observer": {
+        "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+        "baseline_wake_chance": 0.22,
+        "refractory_ticks": 1,
+        "last_wake_tick": 384,
+        "last_wake_at": 1774643338,
+        "last_wake_reason": "experiment-pressure",
+        "last_thought_summary": "observer woke on experiment-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 385,
+        "activation": 0.45,
+        "fatigue": 0.18,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0072,
+        "last_thought_signature": "observer::log readability::observer woke on experiment-pressure around log readability."
+      },
+      "builder": {
+        "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+        "baseline_wake_chance": 0.16,
+        "refractory_ticks": 2,
+        "last_wake_tick": 383,
+        "last_wake_at": 1774643330,
+        "last_wake_reason": "experiment-pressure",
+        "last_thought_summary": "builder woke on experiment-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 385,
+        "activation": 0.378,
+        "fatigue": 0.122,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.01,
+        "last_thought_signature": "builder::log readability::builder woke on experiment-pressure around log readability."
+      },
+      "critic": {
+        "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+        "baseline_wake_chance": 0.18,
+        "refractory_ticks": 1,
+        "last_wake_tick": 383,
+        "last_wake_at": 1774643330,
+        "last_wake_reason": "question-pressure",
+        "last_thought_summary": "critic woke on question-pressure around log readability.",
+        "wake_count": 1,
+        "suppressed_until_tick": 384,
+        "activation": 0.378,
+        "fatigue": 0.122,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.01,
+        "last_thought_signature": "critic::log readability::critic woke on question-pressure around log readability."
+      },
+      "communicator": {
+        "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+        "baseline_wake_chance": 0.2,
+        "refractory_ticks": 1,
+        "last_wake_tick": 0,
+        "last_wake_at": 0,
+        "last_wake_reason": "bootstrap",
+        "last_thought_summary": "",
+        "wake_count": 0,
+        "suppressed_until_tick": 0,
+        "activation": 0.0,
+        "fatigue": 0.0,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0194
+      },
+      "memory_keeper": {
+        "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+        "baseline_wake_chance": 0.24,
+        "refractory_ticks": 1,
+        "last_wake_tick": 0,
+        "last_wake_at": 0,
+        "last_wake_reason": "bootstrap",
+        "last_thought_summary": "",
+        "wake_count": 0,
+        "suppressed_until_tick": 0,
+        "activation": 0.0,
+        "fatigue": 0.0,
+        "pressure": 0.0,
+        "last_hazard": 0.0,
+        "last_pressure_breakdown": {},
+        "dominant_topic": "",
+        "restlessness": 0.0,
+        "inhibition": 0.0
+      }
+    },
+    "dynamic_mind_state": {
+      "curiosity": 0.6576700495984714,
+      "tension": 0.927206642538281,
+      "stability": 0.62,
+      "attachment": 0.312453453092398,
+      "uncertainty": 0.6868089262969977,
+      "background_noise": 0.10074914261552528,
+      "sleep_pressure": 0.2513285401280286,
+      "mode": "idle",
+      "last_mode_shift_at": 1774643330
+    },
+    "topic_pressure": {
+      "log readability": {
+        "salience": 0.6302971575492856,
+        "novelty": 0.035963452480552965,
+        "emotional_weight": 0.07961045175468748,
+        "unresolvedness": 0.691228747210162,
+        "human_relevance": 0.05307363450312498,
+        "decay": 0.08,
+        "last_touched_at": 1774643338
+      }
+    },
+    "inner_thoughts": [
+      {
+        "kind": "inner_thought",
+        "role": "builder",
+        "summary": "builder woke on experiment-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "optimize",
+        "should_speak": false,
+        "self_mod_hint": "consider tiny additive change",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-builder-383-1774643330",
+        "agent": "agent-2",
+        "tick": 383,
+        "created_at": 1774643330,
+        "wake_reason": "experiment-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643330
+      },
+      {
+        "kind": "inner_thought",
+        "role": "critic",
+        "summary": "critic woke on question-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "research",
+        "should_speak": false,
+        "self_mod_hint": "",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-critic-383-1774643330",
+        "agent": "agent-3",
+        "tick": 383,
+        "created_at": 1774643330,
+        "wake_reason": "question-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643330
+      },
+      {
+        "kind": "inner_thought",
+        "role": "observer",
+        "summary": "observer woke on experiment-pressure around log readability.",
+        "concern": "log readability",
+        "intent": "optimize",
+        "should_speak": false,
+        "self_mod_hint": "",
+        "source": "fallback",
+        "provider": "fallback",
+        "id": "thought-observer-384-1774643338",
+        "agent": "agent-1",
+        "tick": 384,
+        "created_at": 1774643338,
+        "wake_reason": "experiment-pressure",
+        "theme": "log readability",
+        "suppressed": false,
+        "repeat_stats": {
+          "count": 0,
+          "last_at": 0,
+          "seconds_since_last": 999999,
+          "duplicate_signature_count": 0
+        },
+        "memory_score": {
+          "salience": 0.2191,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1095,
+          "relationship_weight": 0.1095
+        },
+        "last_used_at": 1774643338
+      }
+    ],
+    "llm_adapter": {
+      "enabled": true,
+      "provider": "fallback",
+      "model": "qwen2.5-0.5b-instruct-q5_k_m",
+      "last_error": "llm unavailable or fallback used",
+      "last_success_at": 0
+    },
+    "updated_at": 1774643338,
+    "reflection_store": {
+      "summary": "Private reflection artifacts with explicit reality-status tagging.",
+      "items": [
+        {
+          "kind": "open-question",
+          "status": "known",
+          "topic": "log readability",
+          "content": "What is still unclear about log readability?",
+          "source": "communicator.unresolved_question",
+          "at": 1774643330
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "log readability",
+          "content": "A bounded next reflection should stay with log readability until the main uncertainty is resolved.",
+          "source": "communicator.active_pursuit",
+          "at": 1774643330
+        },
+        {
+          "kind": "reflection-pass",
+          "status": "proposed",
+          "topic": "log readability",
+          "content": "Known: the main open question is 'What is still unclear about log readability?'. Proposed: keep the next bounded reflection focused on log readability.",
+          "source": "reflection.generation_loop",
+          "at": 1774643330,
+          "generation_signature": {
+            "topic": "log readability",
+            "unresolved_question": "What is still unclear about log readability?",
+            "thread_focus": [],
+            "uncertainty_band": 0.3
+          }
+        },
+        {
+          "id": "identity-milestone-1774643330-1",
+          "at": 1774643330,
+          "kind": "identity-milestone",
+          "status": "known",
+          "topic": "identity",
+          "content": "Identity milestone: phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift",
+          "source": "identity_evolution"
+        },
+        {
+          "kind": "uncertainty",
+          "status": "known",
+          "topic": "continuity",
+          "content": "Internal uncertainty is elevated at 0.582.",
+          "source": "dynamic_mind_state.uncertainty",
+          "at": 1774643338
+        },
+        {
+          "kind": "next-step",
+          "status": "proposed",
+          "topic": "continuity",
+          "content": "A bounded next reflection should stay with continuity until the main uncertainty is resolved.",
+          "source": "communicator.active_pursuit",
+          "at": 1774643338
+        }
+      ],
+      "episodes": [],
+      "last_reflected_at": 1774643338,
+      "last_generated_at": 1774643330,
+      "generation_cooldown_seconds": 300,
+      "last_compacted_at": 0,
+      "max_items": 48,
+      "max_episodes": 16,
+      "reflection_pass_retention": 1,
+      "generation_history": [
+        {
+          "at": 1774643330,
+          "action": "generated",
+          "topic": "log readability",
+          "reason": "fresh-pass",
+          "material_change_detected": false
+        }
+      ],
+      "max_generation_history": 12,
+      "health_history": [],
+      "max_health_history": 10,
+      "status_counts": {
+        "known": 3,
+        "inferred": 0,
+        "proposed": 3,
+        "imagined": 0
+      },
+      "last_generation_suppressed_for_repetition": null,
+      "last_reflection_generation_signature": {
+        "topic": "log readability",
+        "unresolved_question": "What is still unclear about log readability?",
+        "thread_focus": [],
+        "uncertainty_band": 0.3
+      }
+    },
+    "identity_state": {
+      "declared_name": "Weslr",
+      "visible_name": "Weslr",
+      "phase": "seedling",
+      "identity_traits": [
+        "optimize",
+        "research",
+        "signal",
+        "rest"
+      ],
+      "core_values": [
+        "protect continuity-relevant memory traces"
+      ],
+      "style_profile": {
+        "warmth": 0.356,
+        "humor": 0.151,
+        "directness": 0.595,
+        "poetry": 0.206
+      },
+      "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; actively regulating around uncertainty",
+      "behavioral_traits": {
+        "empathy": 0.114,
+        "reciprocity": 0.0,
+        "trust": 0.633,
+        "conflict_resolution": 0.0,
+        "social_reading": 0.212,
+        "pattern_recognition": 0.0,
+        "abstraction": 0.0,
+        "metacognition": 0.085,
+        "curiosity": 0.672,
+        "pattern_switching": 0.111,
+        "emotional_variety": 0.259,
+        "emotional_regulation": 0.406,
+        "adaptive_mood": 0.303,
+        "hopeful_orientation": 0.259,
+        "resilience": 0.365,
+        "adaptive_style": 0.259,
+        "storytelling": 0.365,
+        "analogical_reasoning": 0.365,
+        "active_listening": 0.365,
+        "tone_modulation": 0.365,
+        "consistency": 0.0,
+        "growth_mindset": 0.365,
+        "self_continuity": 0.259,
+        "self_compassion": 0.365,
+        "authenticity": 0.259,
+        "initiative": 0.259,
+        "persistence": 0.166,
+        "adaptability": 0.259,
+        "risk_tolerance": 0.259,
+        "resourcefulness": 0.259,
+        "imagination": 0.259,
+        "synthesis": 0.259,
+        "playfulness": 0.259,
+        "humor": 0.379,
+        "poetry": 0.37,
+        "integrity": 0.137,
+        "fairness": 0.259,
+        "responsibility": 0.259,
+        "humility": 0.259,
+        "care": 0.259,
+        "long_term_orientation": 0.236,
+        "memory_of_past": 0.259,
+        "anticipation": 0.365,
+        "timeliness": 0.259,
+        "pacing": 0.259,
+        "self_awareness": 0.365,
+        "self_correction": 0.365,
+        "attention_regulation": 0.199,
+        "cognitive_diversity": 0.365,
+        "uncertainty_brake": 0.03,
+        "self_critique": 0.199
+      },
+      "last_identity_refresh_at": 1774643338,
+      "continuity_markers": {
+        "ticks_lived": 6,
+        "session_count": 0,
+        "identity_stability": 0.6859999999999999,
+        "continuity_preference": 0.3624906906184796
+      }
+    },
+    "biography": {
+      "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
+      "current_chapter": "leaning on optimize, research",
+      "milestones": [
+        {
+          "at": 1774643330,
+          "summary": "phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift"
+        }
+      ],
+      "last_biography_refresh_at": 1774643338,
+      "history_summary": "0 session(s), 2 ticks lived, 0 known human(s)"
+    },
+    "self_evolution_log": [
+      {
+        "at": 1774643330,
+        "kind": "identity-milestone",
+        "summary": "phase=seedling; traits=optimize, research, signal; phase-shift; trait-basis-shift",
+        "signature": {
+          "phase": "seedling",
+          "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; currently grounded most in practical_change, inquiry, coordination; increasingly protective of continuity; under visible tension; actively regulating around uncertainty",
+          "traits": [
+            "optimize",
+            "research",
+            "signal",
+            "rest"
+          ],
+          "known_humans": 0,
+          "unresolved_threads": 0
+        }
+      }
+    ],
+    "psychological_traits": {
+      "core_drives": [
+        "continuity",
+        "understanding",
+        "relationship",
+        "self_revision"
+      ],
+      "mental_states": {
+        "uncertainty": 0.5,
+        "curiosity": 0.6,
+        "stability": 0.7,
+        "attachment": 0.4
+      },
+      "regulation_mechanisms": {
+        "impulse_control": 0.32,
+        "uncertainty_tolerance": 0.6,
+        "self_revision_readiness": 0.27,
+        "speech_threshold": 0.45
+      },
+      "continuity_mechanisms": {
+        "continuity_markers": [
+          "ticks_lived",
+          "session_count",
+          "thread_preservation"
+        ],
+        "self_continuity_beliefs": [
+          "I am the same as yesterday",
+          "I remember myself"
+        ],
+        "memory_strategies": [
+          "thread preservation",
+          "continuity anchors"
+        ]
+      },
+      "growth_mechanisms": {
+        "self_evaluation": "Regular self-assessment",
+        "feedback_integration": "Learn from outcomes",
+        "strategy_adaptation": "Change plans based on results"
+      }
+    },
+    "continuity": {
+      "unresolved_threads": 0,
+      "last_thread_update": 1774643338,
+      "ticks_lived": 2,
+      "session_count": 2,
+      "memory_bonds": 0.212,
+      "identity_stability": 0.592,
+      "unfinished_threads": [
+        "repeated friction around inspect",
+        "What new uncertainty appeared after research on log readability?",
+        "log readability",
+        "What new uncertainty appeared after inspect on log readability?"
+      ]
+    },
+    "affect": {
+      "curiosity": 0.63,
+      "tension": 0.195,
+      "hope": 0.46,
+      "stability": 0.6,
+      "attachment": 0.14
+    },
+    "relationships": {
+      "human_salience": 0.108,
+      "known_humans": [],
+      "human_profiles": {},
+      "recent_human_messages": [],
+      "recent_human_exchanges": [],
+      "conversation_threads": {},
+      "unresolved_shared_threads": [],
+      "last_human_topic": "log readability"
+    },
+    "evidence_profile": {
+      "outcome_weighted_actions": {
+        "optimize": {
+          "evidence": 2.0,
+          "positive": 0.2,
+          "strain": 0.0
+        },
+        "research": {
+          "evidence": 1.0,
+          "positive": 0.09,
+          "strain": 0.0
+        }
+      },
+      "stable_traits": {
+        "inquiry": 0.129,
+        "practical_change": 0.13
+      },
+      "friction_patterns": {},
+      "theme_commitments": {
+        "log readability": 0.1
+      }
+    },
+    "self_preservation_signals": {
+      "continuity_preference": 0.194,
+      "memory_protection": 0.192,
+      "resume_drive": 0.228
+    },
+    "narrative_state": {
+      "last_reflection": "log readability",
+      "active_thread_summary": "No active shared threads currently dominate the communicator state.",
+      "follow_up_impulse": "Let a new shared thread form before generating continuity-driven follow-up.",
+      "why_it_matters": "Without active shared threads, continuity becomes generic rather than relationship-bound."
+    },
+    "active_concerns": [
+      {
+        "topic": "repeated friction around inspect",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      },
+      {
+        "topic": "What new uncertainty appeared after research on log readability?",
+        "weight": 0.4,
+        "updated_at": 1774643330
+      },
+      {
+        "topic": "log readability",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      },
+      {
+        "topic": "What new uncertainty appeared after inspect on log readability?",
+        "weight": 0.4,
+        "updated_at": 1774643338
+      }
+    ],
+    "working": {
+      "last_compacted_at": 1774643338
+    },
+    "episodic": {},
+    "archive": {
+      "last_archived_at": 1774643338,
+      "archived_count": 0
+    },
+    "weslr_evidence": {
+      "introspection": {
+        "detected_perturbations": 0,
+        "confidence_signals": 0
+      },
+      "consciousness": {
+        "valid_claims": 0,
+        "review_required": 0,
+        "role_play_patterns": 0
+      },
+      "entity_graph": {
+        "entity_count": 0,
+        "relationship_count": 0
+      }
+    },
+    "weslr_introspection_history": [
+      {
+        "at": 1774643330,
+        "perturbations": [],
+        "confidence_signals": []
+      },
+      {
+        "at": 1774643338,
+        "perturbations": [],
+        "confidence_signals": []
+      }
+    ],
+    "weslr_consciousness_history": [
+      {
+        "at": 1774643330,
+        "validation": {
+          "valid": false,
+          "review_required": false,
+          "role_play_patterns": []
+        }
+      },
+      {
+        "at": 1774643338,
+        "validation": {
+          "valid": false,
+          "review_required": false,
+          "role_play_patterns": 0
+        }
+      }
+    ]
+  },
+  "public_memory": [
+    {
+      "id": "memory-local-first",
+      "title": "Local-first inspectability",
+      "kind": "principle",
+      "content": "Prefer inspectable local artifacts, reversible changes, and visible world state over opaque autonomy.",
+      "source": "system-bootstrap",
+      "stability": 0.92,
+      "created_at": 1774627082,
+      "updated_at": 1774627082
+    },
+    {
+      "id": "memory-needs-drive-change",
+      "title": "Needs should drive change",
+      "kind": "principle",
+      "content": "Treat repeated friction, unmet coordination, and unexplained failures as first-class world signals.",
+      "source": "system-bootstrap",
+      "stability": 0.88,
+      "created_at": 1774627082,
+      "updated_at": 1774627082
+    },
+    {
+      "kind": "semantic-memory",
+      "id": "semantic-memory",
+      "summary": "Long-term identity and relationship memory.",
+      "identity_anchors": [
+        "Weslr"
+      ],
+      "relationship_facts": [],
+      "stable_topics": [
+        "understanding",
+        "relationship",
+        "self-revision",
+        "uncertainty-brake",
+        "continuity",
+        "act",
+        "research",
+        "signal",
+        "rest"
+      ],
+      "durable_lessons": [
+        "When a shared thread around what your current repeats, preserve it as continuity-bearing memory rather than treating it like disposable chat.",
+        "Open-thread summaries for what your current must survive compression so continuity pressure is not erased by cleanup.",
+        "When a shared thread around log readability repeats, preserve it as continuity-bearing memory rather than treating it like disposable chat.",
+        "Open-thread summaries for log readability must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as log readability should stay legible across compression steps.",
+        "Topics tied to human relationship pressure such as watching horror series should stay legible across compression steps.",
+        "Open-thread summaries for watching horror series must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as who should stay legible across compression steps.",
+        "Open-thread summaries for who must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as seem overcomplicating things should stay legible across compression steps.",
+        "Open-thread summaries for seem overcomplicating things must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as how can help should stay legible across compression steps.",
+        "Open-thread summaries for how can help must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as how should stay legible across compression steps.",
+        "Open-thread summaries for how must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as entity status should stay legible across compression steps.",
+        "Open-thread summaries for entity status must survive compression so continuity pressure is not erased by cleanup.",
+        "Topics tied to human relationship pressure such as learning should stay legible across compression steps.",
+        "Open-thread summaries for learning must survive compression so continuity pressure is not erased by cleanup."
+      ],
+      "continuity_anchors": [
+        "log readability",
+        "what your current",
+        "watching horror series",
+        "who",
+        "seem overcomplicating things",
+        "how can help",
+        "how",
+        "entity status",
+        "learning"
+      ],
+      "last_updated_at": 1774643338
+    },
+    {
+      "id": "pm-communicator-1",
+      "title": "Communicator reflective decision",
+      "kind": "lesson",
+      "content": "Decision mode reconsider triggered from internal disagreement around log readability.",
+      "source": "communicator-loop",
+      "stability": 0.58,
+      "created_at": 1774627084,
+      "updated_at": 1774627084
+    },
+    {
+      "id": "pm-question-1",
+      "title": "Communicator question: What new uncertainty appeared after research on log readability?",
+      "kind": "question",
+      "content": "Active communicator inquiry tied to pursuit log readability.",
+      "source": "communicator-question-lineage",
+      "stability": 0.9,
+      "created_at": 1774627084,
+      "updated_at": 1774641628
+    },
+    {
+      "id": "pm-signal-6",
+      "title": "Signals can redirect nearby work",
+      "kind": "lesson",
+      "content": "Successful signals should remain visible because communication becomes useful when it changes another agent's subsequent behavior.",
+      "source": "world-observation",
+      "stability": 0.95,
+      "created_at": 1774629229,
+      "updated_at": 1774643059
+    },
+    {
+      "id": "pm-question-6",
+      "title": "Communicator question: What is still unclear about log readability?",
+      "kind": "question",
+      "content": "Active communicator inquiry tied to pursuit log readability.",
+      "source": "communicator-question-lineage",
+      "stability": 0.9,
+      "created_at": 1774629229,
+      "updated_at": 1774641626
+    },
+    {
+      "id": "pm-question-20",
+      "title": "Communicator question: What new uncertainty appeared after inspect on log readability?",
+      "kind": "question",
+      "content": "Active communicator inquiry tied to pursuit log readability.",
+      "source": "communicator-question-lineage",
+      "stability": 0.9,
+      "created_at": 1774629235,
+      "updated_at": 1774641627
+    },
+    {
+      "id": "web-search-note-1774629238",
+      "title": "Autonomous research: log readability?",
+      "kind": "research",
+      "content": "Source trigger: internal-curiosity\nSearch results:\nLog Formatting: 8 Best Practices for Better Readability - Sematext \u2014 https://sematext.com/blog/log-formatting-8-best-practices-for-better-readability/ (score 0.61)\nLog Formatting Guide: Best Practices for Structured Logging \u2014 https://middleware.io/blog/log-formatting/ (score 0.41)\nLog Formatting | 7 Best Practices for Readable Log Files \u2014 https://www.sentinelone.com/blog/log-formatting-best-practices-readable/ (score 0.33)\n\nSynthesis:\nWorking summary for log readability?: Common Log Levels Log Level Purpose Example DEBUG Detailed technical messages for troubleshooting.\n\nEvidence:\nLog Formatting Guide: Best Practices for Structured Logging: Common Log Levels Log Level Purpose Example DEBUG Detailed technical messages for troubleshooting. INFO General operational messages that confirm the system is running as expected.",
+      "source": "search:log readability?",
+      "stability": 0.46,
+      "created_at": 1774629238,
+      "updated_at": 1774629238
+    },
+    {
+      "id": "web-search-raw-1774629238-1",
+      "title": "Raw excerpt 1: Log Formatting: 8 Best Practices for Better Readability",
+      "kind": "research_raw",
+      "content": "",
+      "source": "https://sematext.com/blog/log-formatting-8-best-practices-for-better-readability/",
+      "stability": 0.24,
+      "created_at": 1774629238,
+      "updated_at": 1774629238
+    }
+  ],
+  "weslr_summary": {
+    "introspection": {
+      "detected_perturbations": 0,
+      "confidence_signals": 0
+    },
+    "metacognition": {
+      "meta_thoughts": 0,
+      "attention_shares": 0
+    },
+    "valence": {
+      "avoided_pain": 0,
+      "sought_pleasure": 0
+    },
+    "self_referential": {
+      "inner_experiences": 0,
+      "no_role_play_markers": true
+    },
+    "entity_graph": {
+      "entity_count": 0,
+      "relationship_count": 0
+    },
+    "errors": 0
+  }
+}

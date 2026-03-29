@@ -39,6 +39,8 @@ EVAL_METRICS_PATH = BASE_DIR / "evaluation_metrics.json"
 SELF_EVIDENCE_PATH = BASE_DIR / "self_evidence.json"
 CONTINUATION_NOTES_PATH = BASE_DIR / "continuation_notes.json"
 CHECKPOINT_DIR = BASE_DIR / "checkpoints"
+WESLR_TIME_PATH = BASE_DIR / "weslr_time_state.json"
+WESLR_TIME_CONFIG_PATH = BASE_DIR / "weslr_time_config.json"
 
 TICK_SECONDS = 60
 

@@ -11,12 +11,17 @@
     "web_interface": {
       "enabled": true,
       "enabled_at": 1774590770
+    },
+    "steuerwesen": {
+      "enabled": true,
+      "enabled_at": 1774928100
     }
   },
   "enabled": [
     "api_connectors",
     "export_functionality",
-    "web_interface"
+    "web_interface",
+    "steuerwesen"
   ],
   "disabled": []
 }

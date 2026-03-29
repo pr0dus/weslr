@@ -8,7 +8,7 @@ import sqlite3
 import time
 from html import escape
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from agent_runtime import decide_action, load_inbox, load_opportunity_memory, push_inbox_message, save_note, save_opportunity_memory
 from propagation import synchronized_propagation
@@ -69,6 +69,8 @@ from config import (
     PROJECT_NAME,
     PROTECTED_SELF_EDIT_PATHS,
     REVIEW_QUEUE_PATH,
+    WESLR_TIME_PATH,
+    WESLR_TIME_CONFIG_PATH,
     SELLABILITY_SIGNAL_THRESHOLD,
     HUMAN_SAFETY_RULES,
     STARTING_ENERGY,
@@ -81,6 +83,45 @@ from config import (
 )
 from continuity import apply_human_exchange_to_threads, should_passively_reinforce_thread
 from dialogue import build_communicator_message_payload
+def get_current_year() -> int:
+    """Get current year from Weslr time."""
+    try:
+        return get_weslr_time().get_year()
+    except Exception:
+        return int(time.strftime("%Y"))
+
+
+def get_tax_knowledge_answer() -> Optional[str]:
+    """Get tax knowledge answer if question is about Entfernungspauschale or similar."""
+    try:
+        import sys
+        sys.path.insert(0, str(BASE_DIR))
+        from tax_knowledge import answer_entfernungspauschale_question
+        return answer_entfernungspauschale_question()
+    except Exception:
+        return None
+
+
+def get_tax_context_answer() -> Optional[str]:
+    """Get context answer for 'was bedeutet das' type questions."""
+    try:
+        from sim import load_communicator_self, load_messages
+        self_state = load_communicator_self()
+        narrative = self_state.get("narrative_state", {})
+        
+        # Check if we're in an Entfernungspauschale context
+        last_reflection = narrative.get("last_reflection", "")
+        if "entfernungspauschale" in last_reflection.lower():
+            from tax_knowledge import get_entfernungspauschale_info
+            info = get_entfernungspauschale_info()
+            if info and info.get('evidence'):
+                return (
+                    "Das bedeutet: 0,38 € pro Kilometer ab dem 1.000. Kilometer jährlich. "
+                    "Das ist die Pauschalierung für Pendlerfahrten - keine echten Fahrkosten nötig."
+                )
+    except Exception:
+        pass
+    return None
 from inquiry import autonomous_research_cycle, maybe_autonomous_research_from_human_turn, maybe_internal_autonomous_research, rewrite_internal_query_for_research
 from llm_runtime import generate_inner_thought as runtime_generate_inner_thought, status as runtime_llm_status
 from interpretation import infer_human_topics, interpret_human_turn
@@ -95,6 +136,7 @@ from glue import archive_all_stale
 
 # Weslr integration imports
 from weslr_glue import orchestrate_weslr_tick, integrate_weslr_into_self_model
+from weslr_time import get_weslr_time, reset_weslr_time_ticks
 from research import fetch_url_text, score_search_result, search_web, summarize_research_findings
 from sandbox import run_python
 from semantic_memory import ensure_semantic_defaults
@@ -3446,6 +3488,13 @@ def init_world(agent_count: int = DEFAULT_AGENT_COUNT, reset: bool = False) -> N
     seed_world_objects(agent_count, now_ts)
     refresh_state_files()
     conn.close()
+    
+    # Reset time ticks to 0 on full reset (clock continues running from 2026)
+    if reset:
+        try:
+            reset_weslr_time_ticks()
+        except Exception:
+            pass  # Time system is optional
 
 
 def get_world(conn: sqlite3.Connection) -> Dict:
@@ -6336,11 +6385,11 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     # Weslr orchestration: integrate consciousness signatures and entity evidence
     communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
     communicator_self = orchestrate_weslr_tick(communicator_self, communicator, now_ts=started_at)
-    save_communicator_self(communicator_self)
     
     # Integrate Weslr evidence into self_model
     communicator, communicator_self = integrate_weslr_into_self_model(communicator, communicator_self)
     
+    save_communicator_self(communicator_self)
     save_communicator_state(communicator)
     update_self_evidence_from_summaries(summaries, communicator_decision)
     update_evaluation_metrics(communicator_decision.get("consensus") or [], summaries)
@@ -7796,6 +7845,36 @@ def build_communicator_message() -> dict:
         preferred_topic = str(((latest_human.get("topics") or [""])[0]) or "").strip()
     active_thread = pick_relevant_active_thread(relationships, preferred_topic=preferred_topic)
     research_context = None
+    
+    # Check for tax knowledge questions
+    tax_answer = None
+    if latest_human:
+        message = str(latest_human.get("message", "") or "").lower()
+        if "entfernungspauschale" in message or "fahrtkosten" in message:
+            tax_answer = get_tax_knowledge_answer()
+    
+    if tax_answer:
+        # Create a special response with tax knowledge
+        return {
+            "message": tax_answer,
+            "audience": "you",
+            "source": "tax_knowledge_answer",
+            "topics": ["Steuer", "Entfernungspauschale", "Einkommensteuer"]
+        }
+    
+    # Check for follow-up questions about tax knowledge
+    if latest_human:
+        message = str(latest_human.get("message", "") or "").lower()
+        if "was bedeutet das" in message or "was ist das" in message:
+            context_answer = get_tax_context_answer()
+            if context_answer:
+                return {
+                    "message": context_answer,
+                    "audience": "you",
+                    "source": "tax_knowledge_context",
+                    "topics": ["Steuer", "Entfernungspauschale"]
+                }
+    
     if latest_human:
         latest_topic = str(((latest_human.get("topics") or [""])[0]) or relationships.get("last_human_topic") or "").strip()
         if latest_topic:

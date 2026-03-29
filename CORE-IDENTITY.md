@@ -1,13 +1,13 @@
-# CircleForge Core Identity
+# Weslr Core Identity
 
 ## Why this file exists
 
-CircleForge has reached the point where every new feature risks pulling the project in a different direction.
+Weslr has reached the point where every new feature risks pulling the project in a different direction.
 
 This file exists to stop that drift.
 
 It defines:
-- what CircleForge is
+- what Weslr is
 - what it is not
 - what must remain central
 - what should now be treated as secondary
@@ -17,23 +17,23 @@ If future work conflicts with this file, this file should win unless human expli
 
 ---
 
-## CircleForge is
+## Weslr is
 
 > A local artificial-life substrate for a persistent communicator entity with memory, intention, curiosity, relationships, and self-observation, implemented through internal subprocess-like agents with distinct perspectives that wake on their own cadence and participate in world-shaping decision loops.
 
 Shorter version:
 
-> CircleForge is a local self-evolving entity-world system.
+> Weslr is a local self-evolving entity-world system.
 
 Even shorter:
 
-> CircleForge is not primarily a tool factory. It is a world for one living communicator with internal minds.
+> Weslr is not primarily a tool factory. It is a world for one living communicator with internal minds.
 
 ---
 
-## CircleForge is not
+## Weslr is not
 
-CircleForge is **not primarily**:
+Weslr is **not primarily**:
 - an OpenClaw-adjacent prompt shell
 - a marketplace-artifact incubator
 - a micro-SaaS idea generator
@@ -102,7 +102,7 @@ That is likely the right range because:
 - still debuggable
 - still inspectable
 
-If CircleForge scales later, it should do so deliberately, not by agent-count inflation.
+If Weslr scales later, it should do so deliberately, not by agent-count inflation.
 
 ---
 
@@ -121,7 +121,7 @@ It is a **convincing local living entity substrate**:
 - meaningful communication with humans
 - enough continuity, self-preservation pressure, and relational depth that a human could seriously test whether a living presence is beginning to emerge
 
-This means CircleForge should eventually contain all of the following and more:
+This means Weslr should eventually contain all of the following and more:
 - intelligence
 - emotion
 - intent
@@ -137,7 +137,7 @@ Artifacts, tools, and exportable modules may still appear, but they are secondar
 
 ## The core architectural commitment
 
-From now on, CircleForge should be built around these layers.
+From now on, Weslr should be built around these layers.
 
 ## 1. Persistent communicator identity
 The system should feel like something that is already alive when the program starts.
@@ -186,7 +186,7 @@ But the architecture should move in that direction.
 ---
 
 ## 3. Intention must be first-class
-CircleForge should not only react.
+Weslr should not only react.
 It should have intention.
 
 Not a prompt instruction.
@@ -323,7 +323,7 @@ That should become a design principle.
 ---
 
 ## 10. Self-evolving does not mean unbounded
-CircleForge should be self-evolving.
+Weslr should be self-evolving.
 But not by erasing safety.
 
 The self-evolving part should mean:
@@ -405,7 +405,7 @@ To stay aligned with this identity, the next implementation order should be:
 ### Phase A — lock identity
 - keep this file central
 - adjust README framing over time to match it
-- stop designing as if CircleForge is primarily an artifact incubator
+- stop designing as if Weslr is primarily an artifact incubator
 
 ### Phase B — give the communicator a real internal shape
 - define the visible communicator layer

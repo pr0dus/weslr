@@ -1,5 +1,5 @@
 """
-CircleForge - Space Agency Module
+Weslr - Space Agency Module
 Mission support, orbital mechanics, and team coordination for space agencies.
 """
 

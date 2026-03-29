@@ -1,10 +1,10 @@
-# CircleForge Roadmap
+# Weslr Roadmap
 
 This file captures the planned path from the current prototype into a more complete local agent research sandbox and artifact-incubation system.
 
 ## Project direction
 
-CircleForge is evolving toward:
+Weslr is evolving toward:
 
 > A persistent local agent research sandbox that turns recurring agent work into inspectable artifacts, then helps humans review, rank, and curate the promising ones into reusable packs.
 
@@ -259,7 +259,7 @@ Focus:
 ### v0.0.47
 - operator dashboard renderer
 - local HTML/JSON visibility layer for themes, packs, queues, logs, and rollback state
-- first human-facing monitoring surface for CircleForge
+- first human-facing monitoring surface for Weslr
 
 ### v0.0.48
 - richer dashboard with agent memory panels and lightweight trend history

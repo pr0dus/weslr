@@ -1,4 +1,4 @@
-# CircleForge - Advanced Mathematics Reference
+# Weslr - Advanced Mathematics Reference
 
 ## Core Mathematical Frameworks
 
@@ -74,7 +74,7 @@ dx/dt = f(t, x)
 
 **Phase Space**: Space of all possible states of a system
 
-## Behavior Trait Dynamics in CircleForge
+## Behavior Trait Dynamics in Weslr
 
 ### Logistic Growth Model
 ```
@@ -434,7 +434,7 @@ dv/dt = r * f1(v) * f2(v) * ... * fn(v) * (1 - v)
 - **Space-Based Power**: Solar power transmission, energy beaming
 - **Interstellar Concepts**: Propulsion, navigation, mission duration challenges
 
-### CircleForge - Knowledge Integration Framework
+### Weslr - Knowledge Integration Framework
 
 | Domain | Key Knowledge Areas | Associated Traits |
 |--------|---------------------|-------------------|

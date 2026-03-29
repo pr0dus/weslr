@@ -1,8 +1,8 @@
-# CircleForge Self-Modification
+# Weslr Self-Modification
 
 ## Purpose
 
-This document defines how CircleForge entities should eventually inspect and modify their own local machinery safely.
+This document defines how Weslr entities should eventually inspect and modify their own local machinery safely.
 
 Self-modification is important because a richer world should allow an entity to notice:
 - a missing capability
@@ -258,7 +258,7 @@ This keeps the system legible and trustworthy.
 
 ## What success looks like
 
-A successful self-modifying CircleForge world is not one where agents rewrite everything.
+A successful self-modifying Weslr world is not one where agents rewrite everything.
 
 It is one where they reliably do small, meaningful things like:
 - create a better wrapper

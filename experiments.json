@@ -1,14 +1,1 @@
-[
-  {
-    "id": "exp-1",
-    "title": "What new uncertainty appeared after research on log readability?",
-    "hypothesis": "A short inspect/research loop around log readability will reduce uncertainty.",
-    "owner": "agent-1",
-    "status": "proposed",
-    "created_at": 1774627084,
-    "related_need": "need-question-1",
-    "project_id": "project-backup-confidence",
-    "observations": "",
-    "follow_up": "Run inspect or research and compare whether the question changes."
-  }
-]
+[]

@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "timestamp": 1774639271,
+      "test_type": "entity_extraction",
+      "ground_truth": {
+        "public_memory": 32,
+        "messages": 90,
+        "relationships": 14,
+        "total_expected_entities": 77
+      },
+      "extracted": {
+        "entities": 77,
+        "relationships": 19
+      },
+      "scores": {
+        "entity_accuracy": 1.0,
+        "rel_accuracy": 1.0,
+        "overall": 1.0
+      }
+    },
+    {
+      "timestamp": 1774639271,
+      "test_type": "introspection",
+      "detections": {
+        "perturbations": 0,
+        "confidence_signals": 0
+      },
+      "reliability_score": 0.3
+    },
+    {
+      "timestamp": 1774639271,
+      "test_type": "valence",
+      "tradeoffs": 0,
+      "pain_avoidance_ratio": 0.0,
+      "consistency_score": 0.3
+    },
+    {
+      "timestamp": 1774639271,
+      "test_type": "self_referential",
+      "events": 0,
+      "events_with_markers": 0,
+      "self_ref_ratio": 0.0,
+      "self_ref_score": 0.2,
+      "no_role_play": true
+    }
+  ],
+  "last_run": 1774639271
+}

@@ -1,4 +1,4 @@
-# CircleForge architecture status
+# Weslr architecture status
 
 This file tracks the current layer extraction state so the codebase does not drift back into an unstructured monolith.
 

@@ -5,6 +5,5 @@
   "debugging",
   "memory",
   "exports",
-  "benchmarks",
-  "observability"
+  "benchmarks"
 ]

@@ -1,10 +1,10 @@
 # GitHub Discussion Draft
 
 ## Title
-Looking for feedback and testers before CircleForge v0.1
+Looking for feedback and testers before Weslr v0.1
 
 ## Body
-Hi — I’m building **CircleForge**, a local agent research sandbox that tries to discover recurring operator pain, turn it into inspectable artifacts, cluster those into opportunity-themed packs, and help humans judge what might actually be reusable or sellable.
+Hi — I’m building **Weslr**, a local agent research sandbox that tries to discover recurring operator pain, turn it into inspectable artifacts, cluster those into opportunity-themed packs, and help humans judge what might actually be reusable or sellable.
 
 It currently includes:
 - persistent local agents
