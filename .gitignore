@@ -1,16 +1,36 @@
+# Python cache and bytecode
 __pycache__/
 *.pyc
+
+# Large simulation and state files
+sim.py
+workspace_state.json
 world.db
+
+# Weslr runtime data (keep local only)
+weslr_time_state.json
+extraction_history.json
+introspection_history.json
+valence_history.json
+
+# Agent storage (unless Weslr-specific)
 agents/
+.memory/
+
+# OpenClaw config files (keep local only)
 .circleforge-repo.json
+communicator_state.json
+experiments.json
+evaluation_metrics.json
+
+# OpenClaw data files (keep local only)
 demand_board.json
 export_queue.json
 review_queue.json
-exports/
+offers/
 dashboard/
 dashboard_history.json
 event_log.json
-offers/
 categories.json
 category_proposals.json
 artifact_packs.json
@@ -23,15 +43,8 @@ projects.json
 relationships.json
 self_mod_proposals.json
 work_items.json
-communicator_state.json
-experiments.json
-evaluation_metrics.json
-self_evidence.json
-models/*.gguf
-models/*.bin
-models/*.backup.*
 
-# OpenClaw agent config files
+# OpenClaw agent config files (keep local only)
 AGENTS.md
 SOUL.md
 USER.md
@@ -43,8 +56,40 @@ MEMORY.md
 
 # OpenClaw internal directories
 .openclaw/
-.memory/
 .learnings/
 
 # Language modules (can be configured per user)
 languages/
+
+# Backup files
+main_backup.py
+*.backup.*
+
+# Model files (large binaries)
+models/*.gguf
+models/*.bin
+models/*.backup.*
+
+# Submodules (keep in separate repos)
+weslr-tia-openness-bridge/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TIA bridge plugin (private, commercial repo)
+collector/tia_openness_bridge/
+weslr-tia-openness-bridge/
+collector/*.csproj
+collector/*.cs
+collector/*.csproj
+collector/*.sln
+collector/bin/
+collector/obj/
