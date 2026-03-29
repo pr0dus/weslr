@@ -131,7 +131,10 @@ def generate_self_report() -> Dict[str, Any]:
             "documentation_loaded": list(documentation.keys()),
             "session_memory_files": len(memory),
             "last_session": memory[-1]["file"] if memory else None,
-            "self_evidence_loaded": len(evidence) > 0
+            "self_evidence_loaded": len(evidence) > 0,
+            "knows_about_uploading": any("UPLOAD" in d for d in documentation.keys()),
+            "knows_about_tia_bridge": any("TIA" in d for d in documentation.keys()),
+            "knows_self_health": any("WESLR" in d and "HEALTH" in d for d in documentation.keys())
         },
         "entity_graph": {
             "entities": entity_count,
