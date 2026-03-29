@@ -430,6 +430,22 @@ def cli_introspect():
         evidence = monitor.get_self_evidence()
         print(json.dumps(evidence, indent=2))
 
+    elif command == "self-knowledge":
+        """Process self-knowledge and generate reflection."""
+        try:
+            from self_knowledge import reflect_on_self, generate_self_report
+            reflection = reflect_on_self()
+            report = generate_self_report()
+            print("=== Self-Knowledge Report ===")
+            print(f"Entities: {report['entity_graph']['entities']}")
+            print(f"Active Modules: {report['modules']}")
+            print()
+            print("=== Self-Reflection ===")
+            print(f"Awareness: {reflection['awareness']}")
+            print(f"Knows it knows: {reflection['self_reflection']['knows_it_knows']}")
+        except Exception as e:
+            print(f"Self-knowledge error: {e}")
+
 
 if __name__ == "__main__":
     cli_introspect()
