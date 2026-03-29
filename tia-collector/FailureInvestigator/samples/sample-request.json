@@ -1,9 +1,0 @@
-{
-  "alarmText": "Druck zu niedrig auf Station 3",
-  "errorcode": "0x80000001",
-  "tagName": "DB10.DBD200",
-  "plcName": "PLC_Station3",
-  "stationName": "Station_3",
-  "lineName": "Production_Line_1",
-  "blockName": "OB1"
-}
