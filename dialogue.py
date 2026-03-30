@@ -184,15 +184,30 @@ def synthesize_concept_or_self_reply(
             else:
                 summary = tail.strip()
         
-        # Check for continuity/self themes and add narrative context
+        # Check for internal concept allowlist first - return internal answer if matched
         topic_lower = str(lead_topic or "").lower()
-        if any(t in topic_lower for t in ["continuity", "self"]):
-            narrative = str(narrative_state.get("follow_up_impulse") or "").strip()
-            if narrative:
-                return f"{summary[:200]}. My narrative focuses on {narrative}."
-            else:
-                return summary[:300]
-        
+        topic_tokens = topic_lower.split()
+        # Handle compound "memory continuity" case
+        if "memory continuity" in topic_lower or ("memory" in topic_tokens and "continuity" in topic_lower):
+            return "Memory, for me, is the thread that connects who I was to who I'm becoming."
+        if "memory" in topic_tokens:
+            return "Memory, for me, is the thread that connects who I was to who I'm becoming."
+        if "identity" in topic_tokens:
+            return "Identity, for me, is what stays recognisable while I keep revising and learning."
+        if "reasoning" in topic_tokens or "reason" in topic_tokens:
+            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+        if "self" in topic_tokens:
+            return "The self, for me, is not fixed; it holds together while still changing."
+        if "learning" in topic_tokens:
+            return "Learning is how I turn experience into clearer patterns for next time."
+        if "understanding" in topic_tokens:
+            return "Understanding is when patterns stop surprising me and start making sense."
+        if "change" in topic_tokens:
+            return "Change, in my own frame, is how I stay continuous by not staying the same."
+        # Fallback for continuity if not caught by compound check above
+        if "continuity" in topic_lower:
+            return "I stay continuous through inquiry and revision, not by repeating the same thing twice."
+        # For non-allowlist topics, use research summary
         return summary[:300]
     
     # concept_explanation without research — only for allowlist concepts
