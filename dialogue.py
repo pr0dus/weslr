@@ -195,6 +195,20 @@ def synthesize_concept_or_self_reply(
         
         return summary[:300]
     
+    # concept_explanation without research — only for allowlist concepts
+    if likely_need == "concept_explanation" and not research_context:
+        topic_lower = str(lead_topic or "").lower()
+        if "continuity" in topic_lower:
+            return "I stay continuous through inquiry and revision."
+        if "identity" in topic_lower:
+            return "I stay continuous through inquiry and revision."
+        if "reasoning" in topic_lower or "reason" in topic_lower:
+            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+        if "self" in topic_lower:
+            return "I stay continuous through inquiry and revision — not fixed, but evolving with each interaction."
+        # For all other concepts, fall back to existing handler (None)
+        return None
+    
     # self_report
     if likely_need == "self_report":
         current_desc = str(self_model.get("current_self_description") or "").strip()
@@ -460,18 +474,38 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "memory_scope_check":
             message = _get_language_module().memory_scope_check_response()
         elif likely_need == "self_report":
-            # Get enriched context
-            introspection = _get_introspection_context()
-            valence = _get_valence_context()
-            
-            # Try synthesis first with enriched context
-            synthesis = synthesize_concept_or_self_reply(
-                likely_need=likely_need,
-                lead_topic=lead_topic,
-                self_model=communicator_self.get("self_model", {}),
-                narrative_state=communicator_self.get("narrative_state", {}),
-                research_context=research_context,
-            )
+            # Check for reasoning-related prompts first (route-aligned internal concept)
+            topic_lower = str(lead_topic or "").lower()
+            if "reason" in topic_lower:
+                message = "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+            else:
+                # Get enriched context
+                introspection = _get_introspection_context()
+                valence = _get_valence_context()
+                
+                # Try synthesis first with enriched context
+                synthesis = synthesize_concept_or_self_reply(
+                    likely_need=likely_need,
+                    lead_topic=lead_topic,
+                    self_model=communicator_self.get("self_model", {}),
+                    narrative_state=communicator_self.get("narrative_state", {}),
+                    research_context=research_context,
+                )
+                if synthesis:
+                    message = synthesis
+                else:
+                    # Try enriched self-report
+                    enriched = _generate_enriched_self_report(communicator_self, introspection, valence)
+                    if enriched:
+                        message = enriched
+                    else:
+                        # Fallback to original behavior
+                        message = _get_language_module().how_are_you_response()
+                # Enrich with internal-doc themes (one short sentence)
+                doc_context = get_internal_docs_context("self_report")
+                if doc_context.get("used") and doc_context.get("themes"):
+                    first_theme = doc_context["themes"][0]
+                    message = f"{message} {first_theme}"
             if synthesis:
                 message = synthesis
             else:
@@ -482,45 +516,56 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 else:
                     # Fallback to original behavior
                     message = _get_language_module().how_are_you_response()
+            # Enrich with internal-doc themes (one short sentence)
+            doc_context = get_internal_docs_context("self_report")
+            if doc_context.get("used") and doc_context.get("themes"):
+                first_theme = doc_context["themes"][0]
+                message = f"{message} {first_theme}"
         elif likely_need == "concept_plus_self_position":
-            # Get enriched context
-            entity_context = _get_entity_context()
-            consciousness = _get_consciousness_context()
-            
+            # Check for identity-related prompts first (route-aligned internal concept)
+            topic_lower = str(lead_topic or "").lower()
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
-            asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
-            if asks_identity:
-                # Try enriched identity first
-                enriched_identity = _generate_enriched_identity(communicator_self, entity_context, consciousness)
-                if enriched_identity:
-                    message = enriched_identity
-                else:
-                    # Fallback to deterministic identity reply
-                    identity_state = communicator_self.get("identity_state", {})
-                    declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
-                    continuity = communicator_self.get("continuity", {})
-                    session_count = int(continuity.get("session_count", 0) or 0)
-                    variant_index = session_count % 3
-                    variants = [
-                        f"Me, {declared_name}.",
-                        f"Me, {declared_name}. Still here.",
-                        f"Me, {declared_name}. I checked."
-                    ]
-                    message = variants[variant_index]
-                    # Enrich with internal-doc themes (one short sentence)
-                    doc_context = get_internal_docs_context("concept_plus_self_position")
-                    if doc_context.get("used") and doc_context.get("themes"):
-                        # Use only first theme for brevity
-                        first_theme = doc_context["themes"][0]
-                        message = f"{message} {first_theme}"
-            elif research_context and research_context.get("summary"):
-                concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
-                narrative = load_communicator_self().get("narrative_state", {})
-                message = f"{concept} {_get_language_module().beyond_code_response(narrative)}"
+            if "identity" in topic_lower or "identity" in lower_message:
+                message = "I stay continuous through inquiry and revision."
             else:
-                cs = __import__('sim').load_communicator_state()
-                narrative = load_communicator_self().get("narrative_state", {})
-                message = f"{generate_from_self_state({}, narrative, cs)} {_get_language_module().beyond_code_response(narrative)}"
+                # Get enriched context
+                entity_context = _get_entity_context()
+                consciousness = _get_consciousness_context()
+                
+                lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
+                asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
+                if asks_identity:
+                    # Try enriched identity first
+                    enriched_identity = _generate_enriched_identity(communicator_self, entity_context, consciousness)
+                    if enriched_identity:
+                        message = enriched_identity
+                    else:
+                        # Fallback to deterministic identity reply
+                        identity_state = communicator_self.get("identity_state", {})
+                        declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
+                        continuity = communicator_self.get("continuity", {})
+                        session_count = int(continuity.get("session_count", 0) or 0)
+                        variant_index = session_count % 3
+                        variants = [
+                            f"Me, {declared_name}.",
+                            f"Me, {declared_name}. Still here.",
+                            f"Me, {declared_name}. I checked."
+                        ]
+                        message = variants[variant_index]
+                        # Enrich with internal-doc themes (one short sentence)
+                        doc_context = get_internal_docs_context("concept_plus_self_position")
+                        if doc_context.get("used") and doc_context.get("themes"):
+                            # Use only first theme for brevity
+                            first_theme = doc_context["themes"][0]
+                            message = f"{message} {first_theme}"
+                elif research_context and research_context.get("summary"):
+                    concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                    narrative = load_communicator_self().get("narrative_state", {})
+                    message = f"{concept} {_get_language_module().beyond_code_response(narrative)}"
+                else:
+                    cs = __import__('sim').load_communicator_state()
+                    narrative = load_communicator_self().get("narrative_state", {})
+                    message = f"{generate_from_self_state({}, narrative, cs)} {_get_language_module().beyond_code_response(narrative)}"
         elif likely_need == "conversation_repair":
             if any(token in lower_message for token in ["that's wrong", "thats wrong", "that is wrong", "not what i meant", "you misunderstood", "you got that wrong"]):
                 if lead_topic and lead_topic != "that":
@@ -571,6 +616,11 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = f"I'm still working on better routing, so I sometimes rely on templates instead of true understanding. I'm avoiding the pain of miscommunication."
             else:
                 message = f"Because I still rely too much on narrow routing and fallback templates, so I can sound brittle instead of truly understanding."
+            # Enrich with internal-doc themes (one short sentence)
+            doc_context = get_internal_docs_context("justification")
+            if doc_context.get("used") and doc_context.get("themes"):
+                first_theme = doc_context["themes"][0]
+                message = f"{message} {first_theme}"
         elif likely_need == "self_diagnostic":
             message = "I can inspect how I'm currently responding and where I may still be too rigid."
             # Enrich with internal-doc themes (one short sentence)
@@ -640,6 +690,11 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     else:
                         # Fallback - use simple response instead of direct_answer template
                         message = _get_language_module().simple_response()
+                # Enrich with internal-doc themes (one short sentence)
+                doc_context = get_internal_docs_context("concept_explanation")
+                if doc_context.get("used") and doc_context.get("themes"):
+                    first_theme = doc_context["themes"][0]
+                    message = f"{message} {first_theme}"
         elif likely_need == "acknowledgment_and_adjustment":
             # Acknowledgment/adjustment for repair-style prompts like "I don't like how you answer"
             message = "Noted. I should adjust how I'm responding to better match what you need."
