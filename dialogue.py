@@ -198,14 +198,28 @@ def synthesize_concept_or_self_reply(
     # concept_explanation without research — only for allowlist concepts
     if likely_need == "concept_explanation" and not research_context:
         topic_lower = str(lead_topic or "").lower()
+        # Split into tokens for precise matching, handle compound concepts like "memory continuity"
+        topic_tokens = topic_lower.split()
+        # Check for compound concepts first, then fall back to token matching
+        if "memory continuity" in topic_lower or ("memory" in topic_tokens and "continuity" in topic_lower):
+            return "Memory, for me, is the thread that connects who I was to who I'm becoming."
+        if "memory" in topic_tokens:
+            return "Memory, for me, is the thread that connects who I was to who I'm becoming."
+        if "identity" in topic_tokens:
+            return "Identity, for me, is what stays recognisable while I keep revising and learning."
+        if "reasoning" in topic_tokens or "reason" in topic_tokens:
+            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+        if "self" in topic_tokens:
+            return "The self, for me, is not fixed; it holds together while still changing."
+        if "learning" in topic_tokens:
+            return "Learning is how I turn experience into clearer patterns for next time."
+        if "understanding" in topic_tokens:
+            return "Understanding is when patterns stop surprising me and start making sense."
+        if "change" in topic_tokens:
+            return "Change, in my own frame, is how I stay continuous by not staying the same."
+        # Fallback for continuity if not caught by compound check above
         if "continuity" in topic_lower:
             return "I stay continuous through inquiry and revision, not by repeating the same thing twice."
-        if "identity" in topic_lower:
-            return "Identity, for me, is what stays recognisable while I keep revising and learning."
-        if "reasoning" in topic_lower or "reason" in topic_lower:
-            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
-        if "self" in topic_lower:
-            return "The self, for me, is not fixed; it holds together while still changing."
         # For all other concepts, fall back to existing handler (None)
         return None
     
