@@ -178,6 +178,9 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = _get_language_module().self_understanding_response()
         elif likely_need == "memory_scope_check":
             message = _get_language_module().memory_scope_check_response()
+        elif likely_need == "self_report":
+            # Self-report / wellbeing response for questions like "Are you ok?"
+            message = _get_language_module().how_are_you_response()
         elif likely_need == "concept_plus_self_position":
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
             asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
@@ -274,6 +277,9 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 else:
                     # Fallback - use simple response instead of direct_answer template
                     message = _get_language_module().simple_response()
+        elif likely_need == "acknowledgment_and_adjustment":
+            # Acknowledgment/adjustment for repair-style prompts like "I don't like how you answer"
+            message = "Noted. I should adjust how I'm responding to better match what you need."
         elif turn_type == "question":
             has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
             asks_about_its_own_learning = any(token in lower_message for token in ["learn", "would you learn", "can you learn"]) and any(token in lower_message for token in ["you", "yourself"])
