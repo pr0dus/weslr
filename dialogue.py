@@ -535,29 +535,29 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 if doc_context.get("used") and doc_context.get("themes"):
                     first_theme = doc_context["themes"][0]
                     message = f"{message} {first_theme}"
-            if synthesis:
-                message = synthesis
-            else:
-                # Try enriched self-report
-                enriched = _generate_enriched_self_report(communicator_self, introspection, valence)
-                if enriched:
-                    message = enriched
-                else:
-                    # Fallback to original behavior
-                    message = _get_language_module().how_are_you_response()
-            # Enrich with internal-doc themes (one short sentence)
-            doc_context = get_internal_docs_context("self_report")
-            if doc_context.get("used") and doc_context.get("themes"):
-                first_theme = doc_context["themes"][0]
-                message = f"{message} {first_theme}"
         elif likely_need == "concept_plus_self_position":
-            # Check for identity-related prompts first (route-aligned internal concept)
-            topic_lower = str(lead_topic or "").lower()
+            # Check for internal concept allowlist first
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
-            if "identity" in topic_lower or "identity" in lower_message:
-                message = "I stay continuous through inquiry and revision."
+            if "memory continuity" in lower_message or ("memory" in lower_message and "continuity" in lower_message):
+                message = "Memory, for me, is the thread that connects who I was to who I'm becoming."
+            elif "memory" in lower_message:
+                message = "Memory, for me, is the thread that connects who I was to who I'm becoming."
+            elif "identity" in lower_message:
+                message = "Identity, for me, is what stays recognisable while I keep revising and learning."
+            elif "reasoning" in lower_message or "reason" in lower_message:
+                message = "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+            elif "self" in lower_message:
+                message = "The self, for me, is not fixed; it holds together while still changing."
+            elif "learning" in lower_message:
+                message = "Learning is how I turn experience into clearer patterns for next time."
+            elif "understanding" in lower_message:
+                message = "Understanding is when patterns stop surprising me and start making sense."
+            elif "change" in lower_message:
+                message = "Change, in my own frame, is how I stay continuous by not staying the same."
+            elif "continuity" in lower_message:
+                message = "I stay continuous through inquiry and revision, not by repeating the same thing twice."
             else:
-                # Get enriched context
+                # Get enriched context for non-allowlist topics
                 entity_context = _get_entity_context()
                 consciousness = _get_consciousness_context()
                 
