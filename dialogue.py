@@ -231,7 +231,13 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 ]
                 message = variants[variant_index]
             else:
-                message = _get_language_module().direct_answer_response(lead_topic)
+                # Check for short single-word prompts that don't need topic-label formatting
+                if lead_topic.lower() in {"test", "ok", "yes", "no", "hi", "hello", "hey", "go", "go ahead", "start", "done"}:
+                    message = _get_language_module().simple_response()
+                else:
+                    # Use simple_response() as fallback for other cases too
+                    # This avoids the "part of the picture" meta-template from direct_answer_response
+                    message = _get_language_module().simple_response()
         elif likely_need == "clearer_explanation":
             message = _get_language_module().clearer_explanation_response()
         elif likely_need == "justification":
