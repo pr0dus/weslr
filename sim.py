@@ -86,6 +86,7 @@ from llm_runtime import generate_inner_thought as runtime_generate_inner_thought
 from interpretation import infer_human_topics, interpret_human_turn
 from integration import find_relevant_research_note, integrate_research_into_communicator
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
+from self_improvement_chat import handle_chat_intent, load_chat_context, save_chat_context, get_current_proposal_id, set_current_proposal_id
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
 from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
 from autonomous_expression import maybe_autonomous_expression
@@ -4546,6 +4547,25 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     human_name = canonical_human_slot(human_name)
     if human_name not in relationships["known_humans"]:
         relationships["known_humans"].append(human_name)
+
+    # Check for chat control layer intents first
+    chat_intent, chat_response = handle_chat_intent(message, relationships, human_name)
+    if chat_intent.get("intent") != "unknown" and chat_intent.get("intent") != "error":
+        # This was a chat control intent - return response
+        relationships.setdefault("recent_human_messages", [])
+        relationships["recent_human_messages"].append({
+            "id": f"human-exchange-{human_name}-{now_ts}",
+            "type": "chat_intent",
+            "message": message,
+            "timestamp": now_ts,
+            "chat_response": chat_response,
+            "intent": chat_intent.get("intent"),
+        })
+        # Update current_proposal_id in relationships context
+        context = load_chat_context(relationships)
+        context["current_proposal_id"] = get_current_proposal_id(relationships)
+        save_chat_context(relationships, context)
+        return relationships  # Early return for chat control intents
 
     interpreted_turn = interpret_human_turn(message)
     clarified_target = str(interpreted_turn.get("clarified_target") or "").strip()
