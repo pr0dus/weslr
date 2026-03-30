@@ -230,7 +230,15 @@ def interpret_human_turn(message: str) -> dict:
         if any(token in lowered for token in ["what is", "what are", "define", "explain", "how does", "why does"]):
             likely_need = "concept_explanation"
         elif any(token in lowered for token in ["do you", "can you", "would you", "are you"]):
-            likely_need = "self_report"
+            # Check for self-diagnostic or environmental unknowns before generic self_report
+            if any(token in lowered for token in ["change yourself", "check your processes", "check your system"]):
+                likely_need = "self_diagnostic"
+            elif any(token in lowered for token in ["system health", "how's the weather", "weather"]):
+                likely_need = "unknown_world_state"
+            else:
+                likely_need = "self_report"
+        elif any(token in lowered for token in ["system health", "how's the weather", "weather"]):
+            likely_need = "unknown_world_state"
     elif turn_type == "approval":
         likely_need = "continue_execution"
     elif turn_type == "execution_start":
@@ -239,6 +247,8 @@ def interpret_human_turn(message: str) -> dict:
         likely_need = "track_completion"
     elif turn_type == "statement" and relational_signal == "friction":
         likely_need = "acknowledgment_and_adjustment"
+    elif turn_type == "statement" and text.lower().strip() in {"test", "ok", "ready", "go", "start"}:
+        likely_need = "light_acknowledgment"
 
     return {
         "message": text,

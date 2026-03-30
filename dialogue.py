@@ -551,6 +551,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     else:
                         # Fallback - simple response for other cases
                         message = _get_language_module().simple_response()
+        elif likely_need == "light_acknowledgment":
+            message = "I'm here and responding."
         elif likely_need == "clearer_explanation":
             message = _get_language_module().clearer_explanation_response()
         elif likely_need == "justification":
@@ -562,6 +564,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = f"I'm still working on better routing, so I sometimes rely on templates instead of true understanding. I'm avoiding the pain of miscommunication."
             else:
                 message = f"Because I still rely too much on narrow routing and fallback templates, so I can sound brittle instead of truly understanding."
+        elif likely_need == "self_diagnostic":
+            message = "I can inspect how I'm currently responding and where I may still be too rigid."
+        elif likely_need == "unknown_world_state":
+            # Check for specific environmental queries
+            if "weather" in lower_message or "how's the weather" in lower_message:
+                message = "I can't directly observe live weather from here."
+            elif "health" in lower_message or "system" in lower_message:
+                message = "Core systems appear stable, but my understanding still needs refinement."
+            else:
+                message = "I can't directly observe that from here."
         elif likely_need == "concept_explanation":
             # Try synthesis first
             synthesis = synthesize_concept_or_self_reply(
