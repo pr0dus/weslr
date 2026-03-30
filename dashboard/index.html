@@ -45,6 +45,19 @@
     <p class="muted" id="dashboard-subtitle">Version 0.7.0 · local operator view · generated from current simulation state</p>
     <p class="muted" id="dashboard-refresh-note"></p>
 
+    <!-- Tiny local chat box -->
+    <section class="card" style="margin-top:16px;">
+      <h2>Chat with Weslr</h2>
+      <div id="chat-box" style="display:flex; flex-direction:column; gap:12px; max-width:600px;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="chat-input" placeholder="Type your message..." style="flex:1; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+          <button id="chat-send" style="padding:8px 16px; border:none; background:#6ee7b7; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Send</button>
+        </div>
+        <div id="chat-history" style="display:flex; flex-direction:column; gap:12px; max-height:300px; overflow-y:auto;"></div>
+        <p class="muted" style="font-size:12px; margin:0;">Local-only endpoint: POST /chat (returns JSON with message)</p>
+      </div>
+    </section>
+
     <div class="grid" id="world">
       <section class="card">
         <h2>World</h2>
@@ -1070,6 +1083,56 @@ Recommended rollback order:
         refreshTimer = setInterval(fetchAndRender, REFRESH_SECONDS * 1000);
       }
     })();
+  </script>
+
+  <!-- Tiny chat box JS -->
+  <script>
+  (function() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send');
+    const history = document.getElementById('chat-history');
+
+    function addMessage(role, text) {
+      const msg = document.createElement('div');
+      msg.style.padding = '8px 12px';
+      msg.style.borderRadius = '8px';
+      msg.style.background = role === 'user' ? '#273142' : '#171b22';
+      msg.style.border = '1px solid #28303a';
+      msg.style.whiteSpace = 'pre-wrap';
+      msg.textContent = text;
+      history.appendChild(msg);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    async function sendChat() {
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = '';
+      
+      addMessage('user', 'You: ' + message);
+      
+      try {
+        const resp = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'you', message: message })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          addMessage('weslr', data.message || '(no response)');
+        } else {
+          addMessage('weslr', 'Error: ' + resp.status);
+        }
+      } catch (e) {
+        addMessage('weslr', 'Error: ' + e.message);
+      }
+    }
+
+    sendBtn.addEventListener('click', sendChat);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendChat();
+    });
+  })();
   </script>
 </body>
 </html>

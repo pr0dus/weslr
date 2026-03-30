@@ -629,11 +629,49 @@ def _launch_dashboard_server(project_dir: Path, host: str, port: int):
 
 def cmd_serve(args):
     dashboard_dir = Path(__file__).resolve().parent / "dashboard"
-    handler = partial(SimpleHTTPRequestHandler, directory=str(dashboard_dir))
+    
+    # Custom handler that adds /chat endpoint to existing static file serving
+    class ChatHandler(SimpleHTTPRequestHandler):
+        def do_POST(self):
+            if self.path == "/chat":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    human_name = data.get("name", "human")
+                    message = data.get("message", "")
+                    
+                    payload = build_communicator_message_payload(
+                        narrative=load_communicator_self().get("narrative_state", {}),
+                        relationships=load_relationships(),
+                        active_thread="human_message",
+                        latest_human={"message": message},
+                        research_context=None,
+                    )
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(payload).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+            else:
+                self.send_error(404, "Unknown endpoint")
+        
+        def log_message(self, format, *args):
+            # Suppress default logging for cleaner output
+            pass
+    
+    handler = partial(ChatHandler, directory=str(dashboard_dir))
     server = ThreadingHTTPServer((args.host, args.port), handler)
     lan_ip = _detect_lan_ip()
     print("Dashboard server running.")
     print(f"Open locally: http://127.0.0.1:{args.port}/")
+    print(f"Chat endpoint: http://127.0.0.1:{args.port}/chat")
     if args.host == "0.0.0.0":
         print(f"Open on your LAN: http://{lan_ip}:{args.port}/")
     print("Press Ctrl+C to stop.")
