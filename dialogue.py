@@ -544,13 +544,24 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 if lead_topic.lower() in {"test", "ok", "yes", "no", "hi", "hello", "hey", "go", "go ahead", "start", "done"}:
                     message = _get_language_module().simple_response()
                 else:
-                    # Use simple_response() as fallback for other cases too
-                    # This avoids the "part of the picture" meta-template from direct_answer_response
-                    message = _get_language_module().simple_response()
+                    # Better fallback for factual questions - acknowledge limitation
+                    # Check for simple weather/ factual questions that can't be answered without live context
+                    if any(token in lower_message for token in ["is it raining", "is it raining?", "is it raining .", "is it raining."]) or lead_topic.lower() in {"rain", "raining", "weather"}:
+                        message = "I can't tell from here unless I have live weather or local context."
+                    else:
+                        # Fallback - simple response for other cases
+                        message = _get_language_module().simple_response()
         elif likely_need == "clearer_explanation":
             message = _get_language_module().clearer_explanation_response()
         elif likely_need == "justification":
-            message = _get_language_module().justification_response(lead_topic)
+            # Get enriched context
+            valence = _get_valence_context()
+            
+            # Generate a more natural, self-aware justification for self-critique/diagnostic prompts
+            if valence.get("avoided_pain", 0) > 0:
+                message = f"I'm still working on better routing, so I sometimes rely on templates instead of true understanding. I'm avoiding the pain of miscommunication."
+            else:
+                message = f"Because I still rely too much on narrow routing and fallback templates, so I can sound brittle instead of truly understanding."
         elif likely_need == "concept_explanation":
             # Try synthesis first
             synthesis = synthesize_concept_or_self_reply(
