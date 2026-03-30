@@ -199,13 +199,13 @@ def synthesize_concept_or_self_reply(
     if likely_need == "concept_explanation" and not research_context:
         topic_lower = str(lead_topic or "").lower()
         if "continuity" in topic_lower:
-            return "I stay continuous through inquiry and revision."
+            return "I stay continuous through inquiry and revision, not by repeating the same thing twice."
         if "identity" in topic_lower:
-            return "I stay continuous through inquiry and revision."
+            return "Identity, for me, is what stays recognisable while I keep revising and learning."
         if "reasoning" in topic_lower or "reason" in topic_lower:
             return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
         if "self" in topic_lower:
-            return "I stay continuous through inquiry and revision — not fixed, but evolving with each interaction."
+            return "The self, for me, is not fixed; it holds together while still changing."
         # For all other concepts, fall back to existing handler (None)
         return None
     
