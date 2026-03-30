@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from interpretation import classify_human_turn, interpret_human_turn
 from config import CIRCLEFORGE_LANGUAGE
+from internal_docs import get_internal_docs_context
 
 
 def _get_entity_context() -> dict:
@@ -506,6 +507,12 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                         f"Me, {declared_name}. I checked."
                     ]
                     message = variants[variant_index]
+                    # Enrich with internal-doc themes (one short sentence)
+                    doc_context = get_internal_docs_context("concept_plus_self_position")
+                    if doc_context.get("used") and doc_context.get("themes"):
+                        # Use only first theme for brevity
+                        first_theme = doc_context["themes"][0]
+                        message = f"{message} {first_theme}"
             elif research_context and research_context.get("summary"):
                 concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                 narrative = load_communicator_self().get("narrative_state", {})
@@ -566,6 +573,12 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = f"Because I still rely too much on narrow routing and fallback templates, so I can sound brittle instead of truly understanding."
         elif likely_need == "self_diagnostic":
             message = "I can inspect how I'm currently responding and where I may still be too rigid."
+            # Enrich with internal-doc themes (one short sentence)
+            doc_context = get_internal_docs_context("self_diagnostic")
+            if doc_context.get("used") and doc_context.get("themes"):
+                # Use only first theme for brevity
+                first_theme = doc_context["themes"][0]
+                message = f"{message} {first_theme}"
         elif likely_need == "unknown_world_state":
             # Check for specific environmental queries
             if "weather" in lower_message or "how's the weather" in lower_message:
