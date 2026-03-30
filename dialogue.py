@@ -136,6 +136,8 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     from sim import load_communicator_self
     
+    communicator_self = load_communicator_self()
+    
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
         interpreted_turn = interpret_human_turn(last_message)
@@ -178,12 +180,20 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = _get_language_module().memory_scope_check_response()
         elif likely_need == "concept_plus_self_position":
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
-            asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who am i", "what am i", "who are you", "what are you"])
+            asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
             if asks_identity:
-                cs = load_communicator_self()
-                narrative_state = cs.get("narrative_state", {})
-                cs2 = __import__('sim').load_communicator_state()
-                message = generate_from_self_state({}, narrative_state, cs2)
+                # Deterministic identity reply for questions about Weslr (who are you / what are you)
+                identity_state = communicator_self.get("identity_state", {})
+                declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
+                continuity = communicator_self.get("continuity", {})
+                session_count = int(continuity.get("session_count", 0) or 0)
+                variant_index = session_count % 3
+                variants = [
+                    f"Me, {declared_name}.",
+                    f"Me, {declared_name}. Still here.",
+                    f"Me, {declared_name}. I checked."
+                ]
+                message = variants[variant_index]
             elif research_context and research_context.get("summary"):
                 concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                 narrative = load_communicator_self().get("narrative_state", {})
@@ -200,6 +210,25 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     message = _get_language_module().repair_direct_response()
             else:
                 message = _get_language_module().repair_conversation_response()
+        elif likely_need == "direct_answer":
+            # Check for simple identity questions about Weslr only (not about the user)
+            lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
+            asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
+            if asks_identity:
+                # Deterministic identity reply for questions about Weslr (who are you / what are you)
+                identity_state = communicator_self.get("identity_state", {})
+                declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
+                continuity = communicator_self.get("continuity", {})
+                session_count = int(continuity.get("session_count", 0) or 0)
+                variant_index = session_count % 3
+                variants = [
+                    f"Me, {declared_name}.",
+                    f"Me, {declared_name}. Still here.",
+                    f"Me, {declared_name}. I checked."
+                ]
+                message = variants[variant_index]
+            else:
+                message = _get_language_module().direct_answer_response(lead_topic)
         elif likely_need == "clearer_explanation":
             message = _get_language_module().clearer_explanation_response()
         elif likely_need == "justification":
