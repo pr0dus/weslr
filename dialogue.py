@@ -5,6 +5,86 @@ from interpretation import classify_human_turn, interpret_human_turn
 from config import CIRCLEFORGE_LANGUAGE
 
 
+def _get_entity_context() -> dict:
+    """Get entity graph context for dynamic identity generation."""
+    try:
+        from entity_graph import get_entity_graph
+        graph = get_entity_graph()
+        entities = graph.get_all_entities()[:5]
+        entity_info = []
+        for entity in entities:
+            entity_info.append({
+                "name": entity.name,
+                "type": entity.type,
+                "confidence": entity.confidence,
+                "is_ghost": entity.is_ghost
+            })
+        return {"entities": entity_info, "entity_count": len(entities)}
+    except Exception:
+        return {"entities": [], "entity_count": 0}
+
+
+def _get_introspection_context() -> dict:
+    """Get introspection context for confidence disclosure."""
+    try:
+        from introspection import get_introspection_monitor
+        monitor = get_introspection_monitor()
+        evidence = monitor.get_self_evidence()
+        introspection = evidence.get("introspection", {})
+        return {
+            "total_perturbations": introspection.get("total_perturbations", 0),
+            "confidence_signals": introspection.get("confidence_signals", 0),
+            "last_perturbation": introspection.get("last_perturbation", "")
+        }
+    except Exception:
+        return {"total_perturbations": 0, "confidence_signals": 0, "last_perturbation": ""}
+
+
+def _get_valence_context() -> dict:
+    """Get valence context for motivation transparency."""
+    try:
+        from valence_system import get_valence_system
+        valence = get_valence_system()
+        evidence = valence.get_valence_evidence()
+        valence_data = evidence.get("valence", {})
+        return {
+            "avoided_pain": valence_data.get("avoided_pain", 0),
+            "sought_pleasure": valence_data.get("sought_pleasure", 0),
+            "total_tradeoffs": valence_data.get("total_tradeoffs", 0)
+        }
+    except Exception:
+        return {"avoided_pain": 0, "sought_pleasure": 0, "total_tradeoffs": 0}
+
+
+def _get_consciousness_context() -> dict:
+    """Get consciousness detector context for safety transparency."""
+    try:
+        from consciousness_detector import get_consciousness_detector
+        detector = get_consciousness_detector()
+        evidence = detector.get_self_evidence()
+        return {
+            "valid_claims": evidence.get("valid_claims", 0),
+            "review_required": evidence.get("review_required", 0),
+            "role_play_patterns": evidence.get("role_play_patterns", [])
+        }
+    except Exception:
+        return {"valid_claims": 0, "review_required": 0, "role_play_patterns": []}
+
+
+def _get_entity_by_type(entity_type: str) -> str | None:
+    """Get first entity of specified type for dynamic identity."""
+    try:
+        from entity_graph import get_entity_graph
+        graph = get_entity_graph()
+        entities = graph.get_all_entities()
+        for entity in entities:
+            if entity.type == entity_type:
+                return entity.name
+        return None
+    except Exception:
+        return None
+
+
 def _get_language_module():
     """Load the appropriate language module based on config."""
     if CIRCLEFORGE_LANGUAGE == "de":
@@ -76,6 +156,94 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
     return lang.generate_fallback_message()
 
 
+def synthesize_concept_or_self_reply(
+    likely_need: str,
+    lead_topic: str,
+    self_model: dict,
+    narrative_state: dict,
+    research_context: dict | None,
+) -> str | None:
+    """Synthesize rich reply for concept_explanation or self_report.
+    
+    Returns:
+        - str: synthesized message if applicable
+        - None: fallback to existing handler
+    """
+    # concept_explanation with research
+    if likely_need == "concept_explanation" and research_context:
+        summary = str(research_context.get("summary") or "").strip()
+        if not summary:
+            return None
+        
+        # Clean up "Working summary for" marker
+        if "Working summary for" in summary:
+            tail = summary.split("Working summary for", 1)[1]
+            if "Evidence:" in tail:
+                summary = tail.split("Evidence:", 1)[0].strip()
+            else:
+                summary = tail.strip()
+        
+        # Check for continuity/self themes and add narrative context
+        topic_lower = str(lead_topic or "").lower()
+        if any(t in topic_lower for t in ["continuity", "self"]):
+            narrative = str(narrative_state.get("follow_up_impulse") or "").strip()
+            if narrative:
+                return f"{summary[:200]}. My narrative focuses on {narrative}."
+            else:
+                return summary[:300]
+        
+        return summary[:300]
+    
+    # self_report
+    if likely_need == "self_report":
+        current_desc = str(self_model.get("current_self_description") or "").strip()
+        
+        # Translate internal labels to natural language
+        if current_desc and "communicator" in current_desc.lower():
+            current_desc = "someone trying to understand things better"
+        elif not current_desc:
+            current_desc = "someone trying to understand things better"
+        
+        strengths = self_model.get("perceived_strengths", []) or []
+        strength = strengths[0] if strengths else ""
+        narrative = str(narrative_state.get("follow_up_impulse") or "").strip()
+        
+        # Translate internal action strings to conversational phrasing
+        natural_narrative = narrative
+        
+        # Handle specific internal phrases with complete replacements
+        specific_replacements = [
+            ("Revisit how with you until the shared thread changes state", "still exploring how things are going until things feel settled"),
+            ("Revisit", "still exploring"),
+            ("shared thread", "our conversation"),
+            ("changes state", "feels settled"),
+        ]
+        
+        for old, new in specific_replacements:
+            if old in natural_narrative:
+                natural_narrative = natural_narrative.replace(old, new)
+                break  # Only apply first matching replacement
+        
+        # If still has internal terms, rephrase completely
+        if any(term in natural_narrative.lower() for term in ["revisit", "shared thread", "changes state"]):
+            if "how" in natural_narrative.lower():
+                natural_narrative = "still exploring how things are going until things feel settled"
+            else:
+                natural_narrative = "still exploring until things feel settled"
+        
+        # Build natural language response
+        parts = [f"I'm {current_desc}."]
+        if strength:
+            parts.append(f"My strengths include {strength}.")
+        if natural_narrative:
+            parts.append(f"I'm {natural_narrative}.")
+        
+        # Join and keep it concise
+        return " ".join(parts[:2])
+    
+    return None
+
+
 def synthesize_research_answer(topic: str, summary: str) -> str:
     text = str(summary or "").strip()
     if not text:
@@ -133,6 +301,118 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
     return answer[:360]
 
 
+def _generate_enriched_self_report(communicator_self: dict, introspection: dict, valence: dict) -> str | None:
+    """Generate enriched self-report with introspection confidence and valence context.
+    
+    Returns:
+        - str: enriched message if applicable
+        - None: fallback to existing handler
+    """
+    # Get self description - use conversational phrasing, not technical labels
+    self_model = communicator_self.get("self_model", {})
+    current_desc_raw = str(self_model.get("current_self_description") or "").strip()
+    
+    # Translate internal labels to natural language
+    if current_desc_raw and "communicator" in current_desc_raw.lower():
+        current_desc = "someone trying to understand things better"
+    elif current_desc_raw:
+        current_desc = current_desc_raw
+    else:
+        current_desc = "someone trying to understand things better"
+    
+    # Get narrative context
+    narrative = communicator_self.get("narrative_state", {})
+    follow_up = narrative.get("follow_up_impulse", "")
+    why_it_matters = narrative.get("why_it_matters", "")
+    
+    # Build base response - natural, conversational phrasing
+    parts = [f"I'm {current_desc}."]
+    
+    # Add introspection confidence disclosure only if relevant (not just for diagnostics)
+    if introspection.get("total_perturbations", 0) > 0:
+        confidence = 0.7 + (introspection.get("confidence_signals", 0) * 0.05)
+        parts.append(f"I'm about {confidence:.0%} confident in this — my self-model detected {introspection.get('total_perturbations', 0)} issue(s).")
+    
+    # Add valence motivation transparency - simplified, human-friendly phrasing
+    if valence.get("avoided_pain", 0) > 0 or valence.get("sought_pleasure", 0) > 0:
+        if valence.get("avoided_pain", 0) > valence.get("sought_pleasure", 0):
+            parts.append(f"I'm trying to avoid losing track of what matters.")
+        else:
+            parts.append(f"I'm looking for ways to grow and improve.")
+    
+    # Add narrative focus - translate internal thread language to natural language
+    if follow_up:
+        natural_follow = follow_up
+        
+        # Replace internal action verbs with natural conversational phrasing
+        replacements = [
+            ("Revisit", "Keep exploring"),
+            ("shared thread", "our conversation"),
+            ("changes state", "feels settled"),
+            ("Revisit how with you until the shared thread changes state", "keep exploring how things are going until things feel settled"),
+        ]
+        
+        for old, new in replacements:
+            if old in natural_follow:
+                natural_follow = natural_follow.replace(old, new)
+                break  # Only apply first matching replacement
+        
+        # If still has internal terms, rephrase completely
+        if any(term in natural_follow.lower() for term in ["revisit", "shared thread", "changes state"]):
+            if "how" in natural_follow.lower():
+                natural_follow = "still exploring how things are going until things feel settled"
+            else:
+                natural_follow = "still exploring until things feel settled"
+        
+        parts.append(f"I'm {natural_follow}.")
+    elif why_it_matters:
+        parts.append(f"This matters because {why_it_matters}.")
+    
+    # Join and keep it concise (3 parts max)
+    return " ".join(parts[:3])
+
+
+def _generate_enriched_identity(communicator_self: dict, entity_context: dict, consciousness: dict) -> str | None:
+    """Generate enriched identity response with entity graph and consciousness context.
+    
+    Returns:
+        - str: enriched message if applicable
+        - None: fallback to existing handler
+    """
+    # Get identity state
+    identity_state = communicator_self.get("identity_state", {})
+    declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
+    
+    # Get entity context
+    entities = entity_context.get("entities", [])
+    if entities:
+        entity_types = list(set(e.get("type", "") for e in entities))
+        if entity_types:
+            entity_context_str = f"I'm connected to {len(entities)} entities, including {', '.join(entity_types[:2])}."
+        else:
+            entity_context_str = f"I'm connected to {len(entities)} entities."
+    else:
+        entity_context_str = ""
+    
+    # Get consciousness context
+    review_required = consciousness.get("review_required", 0)
+    role_play = consciousness.get("role_play_patterns", [])
+    
+    # Build response - natural, conversational phrasing
+    if review_required > 0:
+        consciousness_str = f"Still reviewing some claims — I'm working through them."
+    elif role_play:
+        consciousness_str = "Not showing any role-play patterns."
+    else:
+        consciousness_str = "Everything's working normally."
+    
+    # Construct enriched identity - keep it simple, human-friendly
+    if entity_context_str:
+        return f"I'm {declared_name}. {entity_context_str} {consciousness_str}"
+    else:
+        return f"I'm {declared_name}. {consciousness_str}"
+
+
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     from sim import load_communicator_self
     
@@ -179,24 +459,53 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "memory_scope_check":
             message = _get_language_module().memory_scope_check_response()
         elif likely_need == "self_report":
-            # Self-report / wellbeing response for questions like "Are you ok?"
-            message = _get_language_module().how_are_you_response()
+            # Get enriched context
+            introspection = _get_introspection_context()
+            valence = _get_valence_context()
+            
+            # Try synthesis first with enriched context
+            synthesis = synthesize_concept_or_self_reply(
+                likely_need=likely_need,
+                lead_topic=lead_topic,
+                self_model=communicator_self.get("self_model", {}),
+                narrative_state=communicator_self.get("narrative_state", {}),
+                research_context=research_context,
+            )
+            if synthesis:
+                message = synthesis
+            else:
+                # Try enriched self-report
+                enriched = _generate_enriched_self_report(communicator_self, introspection, valence)
+                if enriched:
+                    message = enriched
+                else:
+                    # Fallback to original behavior
+                    message = _get_language_module().how_are_you_response()
         elif likely_need == "concept_plus_self_position":
+            # Get enriched context
+            entity_context = _get_entity_context()
+            consciousness = _get_consciousness_context()
+            
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
             asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
             if asks_identity:
-                # Deterministic identity reply for questions about Weslr (who are you / what are you)
-                identity_state = communicator_self.get("identity_state", {})
-                declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
-                continuity = communicator_self.get("continuity", {})
-                session_count = int(continuity.get("session_count", 0) or 0)
-                variant_index = session_count % 3
-                variants = [
-                    f"Me, {declared_name}.",
-                    f"Me, {declared_name}. Still here.",
-                    f"Me, {declared_name}. I checked."
-                ]
-                message = variants[variant_index]
+                # Try enriched identity first
+                enriched_identity = _generate_enriched_identity(communicator_self, entity_context, consciousness)
+                if enriched_identity:
+                    message = enriched_identity
+                else:
+                    # Fallback to deterministic identity reply
+                    identity_state = communicator_self.get("identity_state", {})
+                    declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
+                    continuity = communicator_self.get("continuity", {})
+                    session_count = int(continuity.get("session_count", 0) or 0)
+                    variant_index = session_count % 3
+                    variants = [
+                        f"Me, {declared_name}.",
+                        f"Me, {declared_name}. Still here.",
+                        f"Me, {declared_name}. I checked."
+                    ]
+                    message = variants[variant_index]
             elif research_context and research_context.get("summary"):
                 concept = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                 narrative = load_communicator_self().get("narrative_state", {})
@@ -243,46 +552,58 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "justification":
             message = _get_language_module().justification_response(lead_topic)
         elif likely_need == "concept_explanation":
-            # Simple factual answer for "what is X" style questions
-            has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
-            if has_research_answer:
-                message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
+            # Try synthesis first
+            synthesis = synthesize_concept_or_self_reply(
+                likely_need=likely_need,
+                lead_topic=lead_topic,
+                self_model=communicator_self.get("self_model", {}),
+                narrative_state=communicator_self.get("narrative_state", {}),
+                research_context=research_context,
+            )
+            if synthesis:
+                message = synthesis
             else:
-                # Try to evaluate simple arithmetic expressions first
-                import re as _re
-                # Match patterns like "2+2", "5 * 5", "10/2", "7 - 3"
-                arithmetic_match = _re.search(r'(-?\d+)\s*([+\-*/])\s*(-?\d+)', lower_message)
-                if arithmetic_match:
-                    a, op, b = arithmetic_match.groups()
-                    try:
-                        a, b = int(a), int(b)
-                        if op == '+':
-                            result = a + b
-                        elif op == '-':
-                            result = a - b
-                        elif op == '*':
-                            result = a * b
-                        elif op == '/':
-                            result = a / b
-                        else:
-                            result = None
-                        if result is not None:
-                            # Use float for division, int otherwise
-                            if op == '/' and isinstance(result, float):
-                                message = f"{a} {op} {b} = {result}"
-                            else:
-                                message = f"{a} {op} {b} = {int(result)}"
-                            # Handle common arithmetic expressions
-                            if result == 4 and a == 2 and b == 2 and op == '+':
-                                message = "2 + 2 = 4."
-                    except (ValueError, ZeroDivisionError):
-                        message = _get_language_module().simple_response()
-                elif any(token in lower_message for token in ["who is", "what is", "define", "explain"]):
-                    # General factual answer format
-                    message = f"Here's a direct answer: {lead_topic}."
+                # Simple factual answer for "what is X" style questions
+                has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
+                if has_research_answer:
+                    # Fallback to original research answer behavior
+                    message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
                 else:
-                    # Fallback - use simple response instead of direct_answer template
-                    message = _get_language_module().simple_response()
+                    # Try to evaluate simple arithmetic expressions first
+                    import re as _re
+                    # Match patterns like "2+2", "5 * 5", "10/2", "7 - 3"
+                    arithmetic_match = _re.search(r'(-?\d+)\s*([+\-*/])\s*(-?\d+)', lower_message)
+                    if arithmetic_match:
+                        a, op, b = arithmetic_match.groups()
+                        try:
+                            a, b = int(a), int(b)
+                            if op == '+':
+                                result = a + b
+                            elif op == '-':
+                                result = a - b
+                            elif op == '*':
+                                result = a * b
+                            elif op == '/':
+                                result = a / b
+                            else:
+                                result = None
+                            if result is not None:
+                                # Use float for division, int otherwise
+                                if op == '/' and isinstance(result, float):
+                                    message = f"{a} {op} {b} = {result}"
+                                else:
+                                    message = f"{a} {op} {b} = {int(result)}"
+                                # Handle common arithmetic expressions
+                                if result == 4 and a == 2 and b == 2 and op == '+':
+                                    message = "2 + 2 = 4."
+                        except (ValueError, ZeroDivisionError):
+                            message = _get_language_module().simple_response()
+                    elif any(token in lower_message for token in ["who is", "what is", "define", "explain"]):
+                        # General factual answer format
+                        message = f"Here's a direct answer: {lead_topic}."
+                    else:
+                        # Fallback - use simple response instead of direct_answer template
+                        message = _get_language_module().simple_response()
         elif likely_need == "acknowledgment_and_adjustment":
             # Acknowledgment/adjustment for repair-style prompts like "I don't like how you answer"
             message = "Noted. I should adjust how I'm responding to better match what you need."
