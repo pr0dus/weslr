@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from functools import partial
-from http.server import ThreadingHTTPServer
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
