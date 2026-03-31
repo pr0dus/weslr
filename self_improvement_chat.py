@@ -9,9 +9,10 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from self_improvement_proposal import load_proposals, get_proposal, approve_proposal, deny_proposal
+from self_improvement_proposal import load_proposals, get_proposal, approve_proposal, deny_proposal, create_proposal
 from self_improvement_apply import apply_proposal_with_tests, build_apply_report
 from self_improvement_observation import load_observations
+from proactive_state import load_proactive_state, save_proactive_state, load_cooldowns, save_cooldowns, get_pattern_key
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -59,12 +60,13 @@ def clear_current_proposal_id(relationships: dict) -> None:
     save_chat_context(relationships, context)
 
 
-def parse_chat_intent(message: str, relationships: dict) -> dict:
+def parse_chat_intent(message: str, relationships: dict, proactive: dict | None = None) -> dict:
     """Parse chat message into intent object.
 
     Args:
         message: User's chat message
         relationships: Current relationships state
+        proactive: Proactive pattern info (optional, for yes/no responses)
 
     Returns:
         dict with intent details
@@ -148,6 +150,70 @@ def parse_chat_intent(message: str, relationships: dict) -> dict:
             "cli_action": "show_status",
         }
 
+    # Check for "show failing proposals"
+    if msg == "show failing proposals" or ("failing" in msg and "proposals" in msg):
+        return {
+            "intent": "show_failing",
+            "cli_action": "show_failing",
+        }
+
+    # Check for "show rollback guidance for prop-123" (specific, must be first)
+    if "show rollback guidance for" in msg:
+        parts = message.split()
+        for part in parts:
+            if part.startswith("prop-"):
+                return {
+                    "intent": "show_rollback_for_id",
+                    "proposal_id": part,
+                    "cli_action": "show_rollback_for_id",
+                }
+        return {
+            "intent": "error",
+            "error": "no_proposal_id",
+            "cli_action": "error_no_proposal_id",
+        }
+    
+    # Check for "rollback guidance for prop-123" (alternative, must be before generic rollback guidance)
+    if "rollback guidance for" in msg:
+        parts = message.split()
+        for part in parts:
+            if part.startswith("prop-"):
+                return {
+                    "intent": "show_rollback_for_id",
+                    "proposal_id": part,
+                    "cli_action": "show_rollback_for_id",
+                }
+        return {
+            "intent": "error",
+            "error": "no_proposal_id",
+            "cli_action": "error_no_proposal_id",
+        }
+
+    # Check for "show rollback guidance" (generic, no specific ID)
+    if msg == "show rollback guidance" or ("rollback" in msg and "guidance" in msg and "for" not in msg):
+        current_id = get_current_proposal_id(relationships)
+        return {
+            "intent": "show_rollback",
+            "proposal_id": current_id,
+            "cli_action": "show_rollback",
+        }
+    
+    # Check for proactive "yes" response (explicit consent to create proposal)
+    if msg in ("yes", "yes show it", "show it", "prepare it", "create it", "approve"):
+        return {
+            "intent": "proactive_approve",
+            "cli_action": "proactive_approve",
+            "proactive": proactive,
+        }
+    
+    # Check for proactive "no" response (deny pattern)
+    if msg in ("no", "no thank you", "no thanks", "deny", "don't", "never mind"):
+        return {
+            "intent": "proactive_deny",
+            "cli_action": "proactive_deny",
+            "proactive": proactive,
+        }
+
     # Unknown intent
     return {
         "intent": "unknown",
@@ -155,23 +221,27 @@ def parse_chat_intent(message: str, relationships: dict) -> dict:
     }
 
 
-def execute_intent(intent: dict, relationships: dict, human_name: str = "human") -> dict:
+def execute_intent(intent: dict, relationships: dict, human_name: str = "human", proactive: dict | None = None) -> dict:
     """Execute intent via direct Python function calls.
 
     Args:
         intent: Parsed intent object
         relationships: Current relationships state
         human_name: Name of human user
+        proactive: Proactive pattern info (optional, for proactive intents)
 
     Returns:
         dict with execution result
     """
+    # If proactive data is provided in intent, prefer that
+    if not proactive and intent.get("proactive"):
+        proactive = intent.get("proactive")
+    
     intent_type = intent.get("intent")
 
     if intent_type == "show_pending":
         proposals = load_proposals()
         # Show only "proposed" proposals (pending approval)
-        # "approved" proposals should be applied, not shown in pending
         pending = [p for p in proposals if p.get("status") == "proposed"]
         return {
             "ok": True,
@@ -276,6 +346,103 @@ def execute_intent(intent: dict, relationships: dict, human_name: str = "human")
             "intent": "show_status",
         }
 
+    elif intent_type in ("show_failing", "show_rollback", "show_rollback_for_id"):
+        if intent_type == "show_failing":
+            proposals = load_proposals()
+            # Filter to applied_with_failures status
+            failing = [p for p in proposals if p.get("status") == "applied_with_failures"]
+            return {
+                "ok": True,
+                "total": len(failing),
+                "proposals": failing,
+                "intent": "show_failing",
+            }
+
+        elif intent_type == "show_rollback":
+            # For "show rollback guidance" without specific ID, show error
+            proposal_id = intent.get("proposal_id")
+            if not proposal_id:
+                return {
+                    "ok": False,
+                    "error": "No active proposal. Use 'show pending proposals' first.",
+                    "intent": intent_type,
+                }
+            prop = get_proposal(proposal_id)
+            if not prop:
+                return {
+                    "ok": False,
+                    "error": f"Proposal not found: {proposal_id}",
+                    "intent": intent_type,
+                }
+            return {
+                "ok": True,
+                "proposal": prop,
+                "intent": intent_type,
+            }
+
+        elif intent_type == "show_rollback_for_id":
+            proposal_id = intent.get("proposal_id")
+            prop = get_proposal(proposal_id)
+            if not prop:
+                return {
+                    "ok": False,
+                    "error": f"Proposal not found: {proposal_id}",
+                    "intent": intent_type,
+                }
+            return {
+                "ok": True,
+                "proposal": prop,
+                "intent": intent_type,
+            }
+
+    elif intent_type in ("proactive_approve", "proactive_deny"):
+        # Proactive intent handlers require proactive pattern data
+        proactive = intent.get("proactive")
+        if not proactive:
+            return {
+                "ok": False,
+                "error": "No proactive pattern available.",
+                "intent": intent_type,
+            }
+        
+        if intent_type == "proactive_approve":
+            # Create proposal using existing create_proposal
+            result = create_proposal(
+                observation_ids=proactive.get("observation_ids", []),
+                title=f"Fix: {proactive.get('pattern', 'repeated weakness')}",
+                problem=f"Repeated occurrence of: {proactive.get('pattern', 'weakness')}",
+                likely_cause="Pattern detected in repeated observations",
+                files_to_change=[],
+                expected_benefit=f"Reduce {proactive.get('pattern', 'repeated weakness')} by implementing automated fix",
+                risk_level="low",
+                rollback_command=None,
+            )
+            
+            # Mark as surfaced
+            from proactive_state import set_surfaced_pattern
+            set_surfaced_pattern(proactive.get("pattern"), proactive.get("source_layer"))
+            
+            return {
+                "ok": result.get("ok"),
+                "proposal_id": result.get("proposal_id"),
+                "status": "proposed",
+                "intent": "proactive_approve",
+            }
+        
+        elif intent_type == "proactive_deny":
+            # Record denial in cooldown
+            from proactive_state import set_denied_pattern, get_pattern_key
+            pattern = proactive.get("pattern")
+            source = proactive.get("source_layer")
+            if pattern and source:
+                set_denied_pattern(pattern, source)
+            return {
+                "ok": True,
+                "pattern": pattern,
+                "source_layer": source,
+                "intent": "proactive_deny",
+            }
+
     elif intent_type == "error":
         error_type = intent.get("error")
         if error_type == "no_active_proposal":
@@ -305,12 +472,13 @@ def execute_intent(intent: dict, relationships: dict, human_name: str = "human")
         }
 
 
-def format_response(result: dict, intent: dict) -> str:
+def format_response(result: dict, intent: dict, proactive: dict | None = None) -> str:
     """Format result as natural language response.
 
     Args:
         result: Execution result
         intent: Original intent object
+        proactive: Proactive pattern info (optional, for proactive messages)
 
     Returns:
         Natural language response string
@@ -429,11 +597,180 @@ def format_response(result: dict, intent: dict) -> str:
 
         return "\n".join(lines)
 
+    elif intent_type in ("show_failing", "show_rollback", "show_rollback_for_id"):
+        if intent_type == "show_failing":
+            total = result.get("total", 0)
+            proposals = result.get("proposals", [])
+            if total == 0:
+                return "No failing proposals found."
+            lines = [f"Found {total} failing proposal(s):"]
+            for prop in proposals:
+                pid = prop.get("id", "unknown")
+                title = prop.get("title", "Untitled")
+                status = prop.get("status", "unknown")
+                lines.append(f"- [{pid}] {title} (status: {status})")
+            return "\n".join(lines)
+
+        elif intent_type in ("show_rollback", "show_rollback_for_id"):
+            if not result.get("ok"):
+                return f"Error: {result.get('error', 'Unknown error')}"
+            prop = result.get("proposal", {})
+            pid = prop.get("id", "unknown")
+            title = prop.get("title", "Untitled")
+            status = prop.get("status", "unknown")
+            rollback_cmd = prop.get("rollback_command")
+            checkpoints = prop.get("checkpoint_names", [])
+
+            if not rollback_cmd:
+                return f"Proposal {pid}: No rollback command available."
+
+            lines = [
+                f"📋 Rollback Guidance for: {title}",
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                f"Proposal ID: {pid}",
+                f"Status: {status}",
+                f"Rollback Command: {rollback_cmd}",
+            ]
+
+            if checkpoints:
+                lines.append("Checkpoints Available:")
+                for cp in checkpoints:
+                    lines.append(f"  - {cp}")
+
+            lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            lines.append("Note: Execute rollback command manually.")
+            return "\n".join(lines)
+
     elif intent_type == "error":
         return result.get("error", "Unknown error")
-
+    
+    elif intent_type in ("proactive_approve", "proactive_deny"):
+        if intent_type == "proactive_approve":
+            if result.get("ok"):
+                pid = result.get("proposal_id", "unknown")
+                return f"✅ Proposal created: {pid}\nStatus: proposed\n\nYou must explicitly say 'approve it' to approve, and 'apply it' to apply."
+            else:
+                return f"Error creating proposal: {result.get('error', 'Unknown error')}"
+        elif intent_type == "proactive_deny":
+            return "Got it. Won't surface this pattern for 24h."
+    
+    # Proactive message - only if we have proactive data and no other response
+    if proactive and proactive.get("pattern"):
+        pattern = proactive.get("pattern")
+        count = proactive.get("count", 0)
+        source = proactive.get("source_layer", "")
+        source_display = source if source else "the system"
+        
+        # Natural, helpful wording - vary phrasing based on pattern type
+        pattern_lower = pattern.lower()
+        
+        if "fallback" in pattern_lower:
+            return f"I think I've been hitting the same fallback weakness a few times. I can prepare a safe proposal to fix it. Want me to show it?"
+        elif "concept mismatch" in pattern_lower or "concept" in pattern_lower:
+            return f"I seem to be repeating the same kind of concept mismatch. I can draft a bounded fix proposal if you want."
+        elif "user dissatisf" in pattern_lower or "dissatisf" in pattern_lower:
+            return f"It looks like I've been missing the mark on your questions a few times. I can put together a proposal to improve this. Want me to show it?"
+        elif "generic" in pattern_lower or "generic response" in pattern_lower:
+            return f"I think I've been giving too many generic answers lately. I can draft a proposal to make my responses more helpful. Want me to show it?"
+        else:
+            # Generic but still improved
+            return f"I've been hitting the same pattern in {source_display} a few times. I can prepare a safe proposal to fix it. Want me to show it?"
+    
     else:
         return "I didn't understand that. Try 'show pending proposals' to see available proposals."
+
+
+def find_proactive_pattern(relationships: dict) -> dict | None:
+    """Find a qualifying proactive pattern to surface.
+    
+    Returns pattern info dict if found, None otherwise.
+    
+    Criteria:
+    - Same pattern observed 3+ times
+    - First occurrence > 1 hour ago
+    - No active proposal for this pattern
+    - Not in cooldown (not denied in 24h)
+    - User hasn't disabled proactive
+    - Not recently surfaced
+    """
+    now = int(time.time())  # Current time in seconds
+    
+    # Load data
+    observations = load_observations()
+    proposals = load_proposals()
+    state = load_proactive_state()
+    cooldowns = load_cooldowns()
+    
+    # Check if user disabled
+    chat_settings = relationships.get("chat_settings", {})
+    if chat_settings.get("auto_proposal_disabled"):
+        return None
+    
+    # Group observations by pattern + source_layer
+    pattern_counts = {}
+    for obs in observations:
+        pattern = obs.get("pattern", "")
+        source = obs.get("source_layer", "")
+        if not pattern or not source:
+            continue
+        key = get_pattern_key(pattern, source)
+        if key not in pattern_counts:
+            pattern_counts[key] = {
+                "pattern": pattern,
+                "source_layer": source,
+                "count": 0,
+                "first_seen": obs.get("created_at", 0),
+                "observation_ids": []
+            }
+        pattern_counts[key]["count"] += 1
+        pattern_counts[key]["observation_ids"].append(obs.get("id"))
+    
+    # Filter for qualifying patterns
+    for key, info in pattern_counts.items():
+        # Check count >= 3
+        if info["count"] < 3:
+            continue
+        
+        # Convert first_seen from milliseconds to seconds if needed
+        first_seen = info["first_seen"]
+        if first_seen > 10000000000:  # Approximate Unix timestamp in milliseconds
+            first_seen = first_seen // 1000  # Convert ms to seconds
+        
+        # Check first occurrence > 1 hour ago
+        if (now - first_seen) < 3600:
+            continue
+        
+        # Check not recently surfaced
+        if key in state.get("last_surfaced_patterns", {}):
+            last_time = state["last_surfaced_patterns"][key]
+            if (now - last_time) < 86400:  # 24h cooldown in seconds
+                continue
+        
+        # Check not in cooldown (denied in 24h)
+        if key in cooldowns:
+            last_denial = cooldowns[key]
+            if (now - last_denial) < 86400:
+                continue
+        
+        # Check no active proposal for this pattern
+        found_proposal = False
+        for prop in proposals:
+            obs_ids = prop.get("observation_ids", [])
+            if set(info["observation_ids"]).intersection(set(obs_ids)):
+                found_proposal = True
+                break
+        if found_proposal:
+            continue
+        
+        # Found a qualifying pattern
+        return {
+            "pattern": info["pattern"],
+            "source_layer": info["source_layer"],
+            "count": info["count"],
+            "observation_ids": info["observation_ids"]
+        }
+    
+    return None
 
 
 def handle_chat_intent(message: str, relationships: dict, human_name: str = "human") -> tuple[dict, str]:
@@ -447,7 +784,18 @@ def handle_chat_intent(message: str, relationships: dict, human_name: str = "hum
     Returns:
         Tuple of (intent object, natural language response)
     """
-    intent = parse_chat_intent(message, relationships)
-    result = execute_intent(intent, relationships, human_name)
-    response = format_response(result, intent)
+    # Check for proactive pattern to surface
+    proactive = find_proactive_pattern(relationships)
+    
+    intent = parse_chat_intent(message, relationships, proactive=proactive)
+    if proactive:
+        intent["proactive"] = proactive
+    result = execute_intent(intent, relationships, human_name, proactive=proactive)
+    response = format_response(result, intent, proactive=proactive)
+    
+    # If we created a proactive proposal, mark it as surfaced
+    if proactive and result.get("intent") == "proactive_approve":
+        from proactive_state import set_surfaced_pattern
+        set_surfaced_pattern(proactive["pattern"], proactive["source_layer"])
+    
     return intent, response

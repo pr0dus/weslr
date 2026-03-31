@@ -56,9 +56,10 @@
   "approved_for_export": false,
   "export_path": null,
   "proof_signals": {
-    "first_seen_tick": 0,
+    "artifact_id": "agent-1-research_note-1774624083",
+    "first_seen_tick": 1,
     "last_seen_tick": 0,
-    "appearances": 0,
+    "appearances": 5,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,
@@ -67,7 +68,7 @@
     "handoff_acceptances": 0,
     "handoff_rejections": 0,
     "external_validation_state": "unvalidated",
-    "last_status": "unseen"
+    "last_status": "unreviewed"
   },
   "artifact_source_path": "agents/agent-1/artifacts/research.txt",
   "artifact_source_kind": "txt",
@@ -97,8 +98,8 @@
   "opportunity_score": 0.426,
   "buyer_clarity_score": 0.31,
   "pain_severity_score": 0.48,
-  "deployment_effort_score": 0.7,
-  "proof_level_score": 0.12,
+  "deployment_effort_score": 0.68,
+  "proof_level_score": 0.21,
   "support_burden_score": 0.48,
   "commercial_readiness_score": 0.01,
   "sellability_score": 0.01,

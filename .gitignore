@@ -48,3 +48,19 @@ MEMORY.md
 
 # Language modules (can be configured per user)
 languages/
+
+# Runtime and generated files
+checkpoints/*.bak
+entity_graph.json
+self_improvement_apply_log.json
+self_improvement_approval_log.json
+self_improvement_observations.json
+self_improvement_proposals.json
+self_improvement_proactive_cooldowns.json
+self_improvement_proactive_state.json
+phase1c_verification.py
+test_influence_v1.py
+
+# External feature directories
+collector/tia_openness_bridge/
+weslr-tia-openness-bridge/

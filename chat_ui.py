@@ -434,6 +434,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", 8790), Handler)
-    print("Weslr chat at http://127.0.0.1:8790")
+    server = ThreadingHTTPServer(("127.0.0.1", 8081), Handler)
+    print("Weslr chat at http://127.0.0.1:8081")
     server.serve_forever()

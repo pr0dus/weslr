@@ -820,3 +820,45 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     source = "fallback"
     
     return {"message": message, "audience": "you", "source": source}
+
+# Phase 1C apply: prop-1774880824308-3 - Apply Phase 1C test
+# Applied at: 2026-03-30 16:27:04
+
+# Phase 1C apply: prop-1774880859510-5 - Proposal with rollback command
+# Applied at: 2026-03-30 16:27:39
+
+# Phase 1C apply: prop-1774883473454-13 - Proposal with rollback_command
+# Applied at: 2026-03-30 17:11:13
+
+# Phase 1C apply: prop-1774883473465-14 - Proposal with patch_plan
+# Applied at: 2026-03-30 17:11:13
+
+# Phase 1C apply: prop-1774883490826-16 - Complete proposal with tests
+# Applied at: 2026-03-30 17:11:30
+
+# Phase 1C apply: prop-1774883667291-0 - Verify checkpoint retention - Phase 1C
+# Applied at: 2026-03-30 17:14:27
+
+# Phase 1C/1D apply: prop-1774884375146-1 - Phase 1D apply test - pass
+# Applied at: 2026-03-30 17:26:15
+
+# Phase 1C/1D apply: prop-1774884375178-2 - Phase 1D apply test - fail
+# Applied at: 2026-03-30 17:26:15
+
+# Phase 1C/1D apply: prop-1774884949338-3 - Phase 1D pass test - real pytest
+# Applied at: 2026-03-30 17:35:56
+
+# Phase 1C/1D apply: prop-1774884962050-5 - Phase 1D pass test - python file
+# Applied at: 2026-03-30 17:36:13
+
+# Phase 1C/1D apply: prop-1774884970343-6 - Phase 1D fail test - python file
+# Applied at: 2026-03-30 17:36:16
+
+# Phase 1C/1D apply: prop-1774885234166-8 - Test with tests
+# Applied at: 2026-03-30 17:40:38
+
+# Phase 1C/1D apply: prop-1774885241633-9 - Test with failing test
+# Applied at: 2026-03-30 17:40:45
+
+# Phase 1C/1D apply: prop-1774884954164-4 - Phase 1D fail test - real pytest
+# Applied at: 2026-03-30 17:49:07

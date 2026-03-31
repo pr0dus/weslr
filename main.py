@@ -21,6 +21,9 @@ from error_translator import translate_error, translate_error_to_plain_english
 from tool_search import explain_tool_usage, search_tool_and_synthesize
 from self_modifier import build_proposal_report, propose_self_modification_report
 from self_mod_applier import apply_modification, build_self_mod_report, create_checkpoint, list_checkpoints, rollback
+from self_improvement_proposal import create_proposal, list_proposals, approve_proposal, deny_proposal, get_proposal, build_proposal_report as build_sci_report, load_proposals
+from self_improvement_apply import apply_proposal, apply_proposal_with_tests, build_apply_report, rollback_proposal, load_apply_log
+from self_improvement_observation import record_observation, list_observations, load_observations
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
@@ -1126,6 +1129,68 @@ def main():
     p.add_argument("--approved-by", default="human", help="who approved the change")
     p.set_defaults(func=cmd_apply_mod)
 
+    # Phase 1E: Safe Capability Evolution Engine CLI
+    sci = sub.add_parser("sci", help="safe capability evolution engine commands")
+
+    sci_sub = sci.add_subparsers(dest="sci_cmd", required=True)
+
+    p = sci_sub.add_parser("observations-list", help="list recorded observations")
+    p.add_argument("--type", default="", help="filter by observation type")
+    p.add_argument("--source", default="", help="filter by source layer")
+    p.add_argument("--limit", type=int, default=50, help="max results")
+    p.set_defaults(func=cmd_sci_observations_list)
+
+    p = sci_sub.add_parser("observations-record", help="record a new observation")
+    p.add_argument("--type", required=True, help="observation type")
+    p.add_argument("--pattern", required=True, help="pattern description")
+    p.add_argument("--source", required=True, help="source layer")
+    p.set_defaults(func=cmd_sci_observations_record)
+
+    p = sci_sub.add_parser("proposals-create", help="create a new improvement proposal")
+    p.add_argument("--observation-ids", default="", help="comma-separated observation IDs")
+    p.add_argument("--title", required=True, help="proposal title")
+    p.add_argument("--problem", default="", help="problem description")
+    p.add_argument("--likely-cause", default="", help="root cause analysis")
+    p.add_argument("--files", required=True, help="comma-separated files to change")
+    p.add_argument("--expected-benefit", default="", help="expected improvement")
+    p.add_argument("--risk-level", default="low", help="risk level: low|medium|high")
+    p.add_argument("--test-prompts", default="", help="JSON test prompts array")
+    p.add_argument("--rollback", default="", help="rollback shell command")
+    p.add_argument("--patch-plan", default="", help="JSON patch plan")
+    p.set_defaults(func=cmd_sci_proposals_create)
+
+    p = sci_sub.add_parser("proposals-list", help="list proposals")
+    p.add_argument("--status", default="", help="filter by status")
+    p.add_argument("--limit", type=int, default=50, help="max results")
+    p.set_defaults(func=cmd_sci_proposals_list)
+
+    p = sci_sub.add_parser("proposals-approve", help="approve a proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="approving entity")
+    p.set_defaults(func=cmd_sci_proposals_approve)
+
+    p = sci_sub.add_parser("proposals-deny", help="deny a proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--reason", required=True, help="reason for denial")
+    p.set_defaults(func=cmd_sci_proposals_deny)
+
+    p = sci_sub.add_parser("apply", help="apply an approved proposal with real tests")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="applying entity")
+    p.set_defaults(func=cmd_sci_apply)
+
+    p = sci_sub.add_parser("status", help="show safe capability evolution engine status")
+    p.set_defaults(func=cmd_sci_status)
+
+    p = sci_sub.add_parser("proposal-show", help="show detailed proposal info")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.set_defaults(func=cmd_sci_proposal_show)
+
+    p = sci_sub.add_parser("proposal-rollback", help="rollback an applied proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="rolling back entity")
+    p.set_defaults(func=cmd_sci_proposal_rollback)
+
     p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
     p.add_argument("--file", required=True, help="file to checkpoint")
     p.set_defaults(func=cmd_create_checkpoint)
@@ -1409,6 +1474,283 @@ def cmd_apply_mod(args):
     })
     print(f"\n✅ Applied to {file_path}")
     print(f"Checkpoint: {result.get('checkpoint', {}).get('checkpoint_name', 'N/A')}")
+
+
+# Phase 1E: Safe Capability Evolution Engine CLI
+
+
+def cmd_sci_observations_list(args):
+    """List recorded observations."""
+    limit = args.limit or 50
+    obs_type = args.type
+    source = args.source
+
+    result = list_observations(type=obs_type, source_layer=source, limit=limit)
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Observations ({result.get('total', 0)} found) ---")
+    for obs in result.get("observations", []):
+        print(f"[{obs.get('id')}] Type: {obs.get('type')}, Source: {obs.get('source_layer')}")
+        print(f"  Pattern: {obs.get('pattern')}")
+        print(f"  Count: {obs.get('count')}, Last: {obs.get('last_seen')}")
+
+
+def cmd_sci_observations_record(args):
+    """Record a new observation of repeated weakness."""
+    obs_type = args.type
+    pattern = args.pattern
+    source = args.source
+
+    if not obs_type or not pattern or not source:
+        emit({"error": "Missing required fields: --type, --pattern, and --source are required."})
+        return
+
+    result = record_observation(type=obs_type, pattern=pattern, source_layer=source)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Observation recorded: {result.get('observation_id')}")
+
+
+def cmd_sci_proposals_create(args):
+    """Create a new improvement proposal."""
+    obs_ids = args.observation_ids.split(",") if args.observation_ids else []
+    title = args.title
+    problem = args.problem
+    likely_cause = args.likely_cause
+    files_to_change = args.files.split(",") if args.files else []
+    expected_benefit = args.expected_benefit
+    risk_level = args.risk_level or "low"
+    test_prompts = args.test_prompts
+    rollback = args.rollback
+    patch_plan = args.patch_plan
+
+    if not files_to_change or not title:
+        emit({"error": "Missing required fields: --files and --title are required."})
+        return
+
+    # Parse test prompts as JSON if provided
+    parsed_prompts = []
+    if test_prompts:
+        try:
+            parsed_prompts = json.loads(test_prompts)
+        except json.JSONDecodeError:
+            emit({"error": "Invalid JSON in --test-prompts"})
+            return
+
+    # Parse rollback command
+    rollback_cmd = None
+    if rollback:
+        rollback_cmd = rollback
+
+    # Parse patch plan as JSON if provided
+    parsed_patch = None
+    if patch_plan:
+        try:
+            parsed_patch = json.loads(patch_plan)
+        except json.JSONDecodeError:
+            emit({"error": "Invalid JSON in --patch-plan"})
+            return
+
+    result = create_proposal(
+        observation_ids=obs_ids,
+        title=title,
+        problem=problem or f"Proposed improvement: {title}",
+        likely_cause=likely_cause or "Human analysis",
+        files_to_change=files_to_change,
+        expected_benefit=expected_benefit or "Self-improvement",
+        risk_level=risk_level,
+        test_prompts=parsed_prompts,
+        rollback_command=rollback_cmd,
+        patch_plan=parsed_patch,
+    )
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal created: {result.get('proposal_id')}")
+
+
+def cmd_sci_proposals_list(args):
+    """List proposals, optionally filtered by status."""
+    limit = args.limit or 50
+    status = args.status
+
+    result = list_proposals(status=status, limit=limit)
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Proposals ({result.get('total', 0)} found) ---")
+    for prop in result.get("proposals", []):
+        print(f"[{prop.get('id')}] Status: {prop.get('status')}, Title: {prop.get('title')}")
+        print(f"  Files: {', '.join(prop.get('files_to_change', []))}")
+        print(f"  Risk: {prop.get('risk_level')}")
+
+
+def cmd_sci_proposals_approve(args):
+    """Approve a proposal."""
+    proposal_id = args.proposal_id
+    approved_by = args.by or "human"
+
+    result = approve_proposal(proposal_id=proposal_id, approved_by=approved_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal approved: {proposal_id}")
+
+
+def cmd_sci_proposals_deny(args):
+    """Deny a proposal."""
+    proposal_id = args.proposal_id
+    reason = args.reason
+
+    if not reason:
+        emit({"error": "Missing required field: --reason is required."})
+        return
+
+    result = deny_proposal(proposal_id=proposal_id, reason=reason)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal denied: {proposal_id}")
+
+
+def cmd_sci_apply(args):
+    """Apply an approved proposal with real test execution."""
+    proposal_id = args.proposal_id
+    applied_by = args.by or "human"
+
+    result = apply_proposal_with_tests(proposal_id=proposal_id, applied_by=applied_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+
+    if result.get("all_tests_passed"):
+        print(f"\n✅ Proposal applied successfully: {proposal_id}")
+        print(f"   Status: {result.get('status')}")
+    else:
+        print(f"\n⚠️  Proposal applied with failures: {proposal_id}")
+        print(f"   Status: {result.get('status')}")
+        print(f"   Failing tests: {result.get('failing_tests', [])}")
+        if result.get('rollback_guidance'):
+            print(f"   Rollback command: {result.get('rollback_guidance', {}).get('rollback_command', 'N/A')}")
+
+
+def cmd_sci_status(args):
+    """Show safe capability evolution engine status."""
+    proposals = load_proposals()
+    observations = load_observations()
+    apply_log = []
+
+    # Count by status
+    status_counts = {"proposed": 0, "approved": 0, "applied": 0, "applied_with_failures": 0, "rolled_back": 0, "rejected": 0}
+    for p in proposals:
+        status = p.get("status", "unknown")
+        if status in status_counts:
+            status_counts[status] += 1
+
+    result = {
+        "ok": True,
+        "observations": {
+            "total": len(observations),
+            "types": {}
+        },
+        "proposals": {
+            "total": len(proposals),
+            "by_status": status_counts,
+        },
+        "timestamp": int(time.time() * 1000),
+    }
+
+    # Count observation types
+    for obs in observations:
+        obs_type = obs.get("type")
+        if obs_type:
+            result["observations"]["types"][obs_type] = result["observations"]["types"].get(obs_type, 0) + 1
+
+    emit(result)
+
+    print("\n--- Safe Capability Evolution Engine Status ---")
+    print(f"Observations recorded: {result['observations']['total']}")
+    for obs_type, count in result["observations"]["types"].items():
+        print(f"  - {obs_type}: {count}")
+    print(f"\nProposals: {result['proposals']['total']} total")
+    print("  By status:")
+    for status, count in result["proposals"]["by_status"].items():
+        if count > 0:
+            print(f"    - {status}: {count}")
+
+
+def cmd_sci_proposal_show(args):
+    """Show detailed info for a specific proposal."""
+    proposal_id = args.proposal_id
+
+    prop = get_proposal(proposal_id)
+    if not prop:
+        emit({"error": f"Proposal not found: {proposal_id}"})
+        return
+
+    emit(prop)
+
+    print(f"\n--- Proposal Details: {proposal_id} ---")
+    print(f"Title: {prop.get('title')}")
+    print(f"Status: {prop.get('status')}")
+    print(f"Problem: {prop.get('problem')}")
+    print(f"Files to change: {', '.join(prop.get('files_to_change', []))}")
+    print(f"Risk level: {prop.get('risk_level')}")
+    print(f"Test prompts: {len(prop.get('test_prompts', []))}")
+
+    if prop.get('test_results'):
+        print(f"Test results:")
+        for tr in prop.get('test_results', []):
+            print(f"  [{tr.get('test_index')}] {tr.get('prompt')[:50]}... -> {tr.get('status')}")
+
+    if prop.get('rollback_command'):
+        print(f"Rollback command: {prop.get('rollback_command')}")
+
+    if prop.get('applied_at'):
+        print(f"Applied at: {prop.get('applied_at')}")
+    if prop.get('applied_by'):
+        print(f"Applied by: {prop.get('applied_by')}")
+
+
+def cmd_sci_proposal_rollback(args):
+    """Rollback an applied proposal."""
+    proposal_id = args.proposal_id
+    rolled_back_by = args.by or "human"
+
+    # Import rollback function from apply module
+    from self_improvement_apply import rollback_proposal
+    result = rollback_proposal(proposal_id=proposal_id, rolled_back_by=rolled_back_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Rollback recorded: {proposal_id}")
+    print(f"   Command to execute manually: {result.get('rollback_command', 'N/A')}")
 
 
 def cmd_create_checkpoint(args):

@@ -1,7 +1,7 @@
 {
   "themes": {
     "backup confidence": {
-      "pressure": 0.184,
+      "pressure": 0.168,
       "evidence": 0,
       "updated_at": 1774612821,
       "acceptances": 0,
@@ -12,7 +12,7 @@
       "split_from": "config sanity checks"
     },
     "service visibility": {
-      "pressure": 0.218,
+      "pressure": 0.217,
       "evidence": 1,
       "updated_at": 1774618726,
       "acceptances": 0,
@@ -23,7 +23,7 @@
       "split_from": null
     },
     "config sanity checks": {
-      "pressure": 0.429,
+      "pressure": 0.393,
       "evidence": 31,
       "updated_at": 1774595883,
       "acceptances": 0,
@@ -35,8 +35,8 @@
     },
     "log readability": {
       "pressure": 0.99,
-      "evidence": 52,
-      "updated_at": 1774627084,
+      "evidence": 55,
+      "updated_at": 1774846697,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
@@ -45,7 +45,7 @@
       "split_from": null
     },
     "workflow packaging": {
-      "pressure": 0.221,
+      "pressure": 0.22,
       "evidence": 0,
       "updated_at": 1774591958,
       "acceptances": 0,
@@ -56,7 +56,7 @@
       "split_from": null
     },
     "config sanity checks validation": {
-      "pressure": 0.945,
+      "pressure": 0.94,
       "evidence": 75,
       "updated_at": 1774618597,
       "acceptances": 0,
@@ -67,7 +67,7 @@
       "split_from": "config sanity checks"
     },
     "test opportunity": {
-      "pressure": 0.118,
+      "pressure": 0.108,
       "evidence": 1,
       "updated_at": 1774618727,
       "acceptances": 0,
@@ -78,7 +78,7 @@
       "split_from": null
     },
     "log readability validation": {
-      "pressure": 0.372,
+      "pressure": 0.37,
       "evidence": 0,
       "updated_at": 1774618808,
       "acceptances": 0,
@@ -94,15 +94,15 @@
       "theme": "readable logs",
       "parent_theme": "log readability",
       "signal_count": 1,
-      "confidence": 0.208,
+      "confidence": 0.205,
       "updated_at": 1774623471
     },
     {
       "theme": "backup validation",
       "parent_theme": "log readability",
-      "signal_count": 1,
-      "confidence": 0.217,
-      "updated_at": 1774627084
+      "signal_count": 2,
+      "confidence": 0.332,
+      "updated_at": 1774846697
     }
   ],
   "clusters": []
