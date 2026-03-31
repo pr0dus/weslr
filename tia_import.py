@@ -196,3 +196,14 @@ def normalize_tia_envelope(envelope: dict) -> dict:
             },
         },
     }
+
+
+def save_normalized_envelope(normalized: dict, output_path: str | Path) -> dict:
+    """Save normalized TIA envelope to JSON file."""
+    path = Path(output_path)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(normalized, f, indent=2)
+        return {"ok": True, "saved_to": str(path)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}

@@ -24,7 +24,12 @@ from self_mod_applier import apply_modification, build_self_mod_report, create_c
 from self_improvement_proposal import create_proposal, list_proposals, approve_proposal, deny_proposal, get_proposal, build_proposal_report as build_sci_report, load_proposals
 from self_improvement_apply import apply_proposal, apply_proposal_with_tests, build_apply_report, rollback_proposal, load_apply_log
 from self_improvement_observation import record_observation, list_observations, load_observations
-from tia_import import create_raw_import_envelope, save_import_envelope
+from tia_import import (
+    create_raw_import_envelope,
+    save_import_envelope,
+    normalize_tia_envelope,
+    save_normalized_envelope,
+)
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
@@ -1790,6 +1795,35 @@ def cmd_tia_import(args):
         print(f"\nValidation errors ({len(validation['errors'])}):")
         for e in validation["errors"]:
             print(f"  - {e}")
+
+    # Normalize and save normalized artifact
+    try:
+        normalized = normalize_tia_envelope(result)
+        output_stem = output_path.stem  # e.g., 'tia_import_result'
+        normalized_path = output_path.parent / f"{output_stem}.normalized.json"
+        normalized_save_result = save_normalized_envelope(normalized, normalized_path)
+        if normalized_save_result.get("ok"):
+            print(f"\n✅ Normalized TIA artifact saved: {normalized_save_result.get('saved_to')}")
+        else:
+            print(f"\n⚠️  Normalized output not saved: {normalized_save_result.get('error')}")
+
+        # Safe metadata printing
+        project_name = normalized.get("project", {}).get("name", "Unknown")
+        counts = normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {})
+        total = counts.get("total_items", 0)
+        devices = counts.get("devices", 0)
+        plcs = counts.get("plcs", 0)
+        cpus = counts.get("cpus", 0)
+        modules = counts.get("modules", 0)
+        tags = counts.get("tags", 0)
+        print(f"   Project: {project_name}")
+        print(f"   Items: {total} total ({devices} devices, {plcs} PLCs, {cpus} CPUs, {modules} modules, {tags} tags)")
+
+        norm_warnings = normalized.get("metadata", {}).get("normalization", {}).get("warnings", [])
+        if norm_warnings:
+            print(f"   Normalization warnings: {len(norm_warnings)}")
+    except Exception as e:
+        print(f"\n⚠️  Normalization skipped: {e}")
 
 
 def cmd_create_checkpoint(args):
