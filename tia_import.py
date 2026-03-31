@@ -341,3 +341,44 @@ def list_tia_import_history(history_path: str | Path | None = None, limit: int |
         "total_records": len(records),
         "records": recent,
     }
+
+
+def get_tia_import_record(history_path: str | Path | None = None, idx: int | None = None, source: str | None = None) -> dict | None:
+    """Fetch a single TIA import record by index or source file.
+    
+    Returns None if not found.
+    History is newest-first, so idx=1 means latest.
+    Does not use limit — reads full history to ensure all records are accessible.
+    """
+    if history_path is None:
+        history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+    else:
+        history_path = Path(history_path)
+    
+    if not history_path.exists():
+        return None
+    
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception:
+        return None
+    
+    records = history.get("records", [])
+    if not records:
+        return None
+    
+    records = list(reversed(records))
+    
+    if idx is not None:
+        if idx < 1 or idx > len(records):
+            return None
+        return records[idx - 1]
+    
+    if source is not None:
+        for r in records:
+            if r.get("source_file", "").endswith(source) or r.get("source_file") == source:
+                return r
+        return None
+    
+    return records[0]

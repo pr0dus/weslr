@@ -32,6 +32,7 @@ from tia_import import (
     save_normalized_envelope,
     record_tia_import_history,
     list_tia_import_history,
+    get_tia_import_record,
 )
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
@@ -1236,6 +1237,12 @@ def main():
     p.add_argument("--path", default="", help="override history file path")
     p.set_defaults(func=cmd_tia_history)
 
+    p = sub.add_parser("tia-show", help="show detailed summary for one TIA import")
+    p.add_argument("--path", default="", help="override history file path")
+    p.add_argument("--index", type=int, default=None, help="record index (1-based, default: latest)")
+    p.add_argument("--source", default=None, help="filter by source filename")
+    p.set_defaults(func=cmd_tia_show)
+
     p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
     p.add_argument("--file", required=True, help="file to checkpoint")
     p.set_defaults(func=cmd_create_checkpoint)
@@ -1893,6 +1900,102 @@ def cmd_tia_history(args):
         print(f"   Source: {source}")
         print(f"   Items: {items}")
         print(f"   At: {ts_str}")
+
+
+def cmd_tia_show(args):
+    """Show detailed summary for one TIA import."""
+    history_path = Path(args.path) if args.path else None
+    idx = getattr(args, 'index', None)
+    source = getattr(args, 'source', None)
+    
+    record = get_tia_import_record(history_path, idx, source)
+    if record is None:
+        emit({"error": "No TIA import history found or record not found"})
+        print("\n❌ No record found")
+        return
+    
+    ts = record.get("timestamp", 0)
+    ts_str = strftime("%Y-%m-%d %H:%M:%S", localtime(ts / 1000))
+    counts = record.get("item_counts", {})
+    
+    summary = {
+        "project_name": record.get("project_name", "Unknown"),
+        "source_file": record.get("source_file", ""),
+        "timestamp": ts,
+        "timestamp_human": ts_str,
+        "status": record.get("status", "unknown"),
+        "validation_ok": record.get("validation", {}).get("ok", False),
+        "validation_warnings": record.get("validation", {}).get("warnings", 0),
+        "validation_errors": record.get("validation", {}).get("errors", 0),
+        "devices": counts.get("devices", 0),
+        "plcs": counts.get("plcs", 0),
+        "cpus": counts.get("cpus", 0),
+        "modules": counts.get("modules", 0),
+        "tags": counts.get("tags", 0),
+        "total_items": counts.get("total_items", 0),
+        "raw_output": record.get("raw_output", ""),
+        "normalized_output": record.get("normalized_output", ""),
+    }
+    
+    emit(summary)
+    
+    print(f"\n=== TIA Import Summary ===")
+    print(f"Project: {summary['project_name']}")
+    print(f"Timestamp: {summary['timestamp_human']}")
+    status_icon = {"ok": "✅", "warning": "⚠️", "error": "❌"}.get(summary['status'], "❓")
+    print(f"Status: {status_icon} {summary['status']}")
+    print(f"Items: {summary['total_items']} total ({summary['devices']} devices, {summary['plcs']} PLCs, {summary['cpus']} CPUs, {summary['modules']} modules, {summary['tags']} tags)")
+    if summary['validation_warnings'] or summary['validation_errors']:
+        print(f"Validation: {summary['validation_warnings']} warnings, {summary['validation_errors']} errors")
+
+    # Industrial details — read promoted Siemens fields from normalized artifact
+    header_printed = False
+    try:
+        norm_path = Path(summary['normalized_output'])
+        if norm_path.exists():
+            with open(norm_path, "r", encoding="utf-8") as f:
+                norm = json.load(f)
+            # First PLC (promoted fields: rack, slot, ip)
+            plc_list = norm.get("plcs", [])
+            if plc_list:
+                plc = plc_list[0]
+                if plc.get("rack") is not None or plc.get("slot") is not None or plc.get("ip"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- PLC (first) ---")
+                    if plc.get("rack") is not None: print(f"  Rack: {plc['rack']}")
+                    if plc.get("slot") is not None: print(f"  Slot: {plc['slot']}")
+                    if plc.get("ip"): print(f"  IP: {plc['ip']}")
+            # First device (promoted fields: hw_ver, fw_ver)
+            dev_list = norm.get("devices", [])
+            if dev_list:
+                dev = dev_list[0]
+                if dev.get("hw_ver") or dev.get("fw_ver"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- Device (first) ---")
+                    if dev.get("hw_ver"): print(f"  HW: {dev['hw_ver']}")
+                    if dev.get("fw_ver"): print(f"  FW: {dev['fw_ver']}")
+            # First tag (promoted fields: type, addr, desc)
+            tag_list = norm.get("tags", [])
+            if tag_list:
+                tag = tag_list[0]
+                if tag.get("type") or tag.get("addr") or tag.get("desc"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- Tag (first) ---")
+                    if tag.get("type"): print(f"  Type: {tag['type']}")
+                    if tag.get("addr"): print(f"  Address: {tag['addr']}")
+                    if tag.get("desc"): print(f"  Desc: {tag['desc']}")
+    except Exception:
+        pass  # silently skip if loading fails
+
+    # Print raw/normalized output paths once at the end
+    print(f"\nRaw output: {summary['raw_output']}")
+    print(f"Normalized output: {summary['normalized_output']}")
 
 
 def cmd_create_checkpoint(args):
