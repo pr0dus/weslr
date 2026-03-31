@@ -273,3 +273,45 @@ def record_tia_import_history(envelope: dict, normalized: dict, raw_path: str | 
         return {"ok": True, "record": record}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def list_tia_import_history(history_path: str | Path | None = None, limit: int | None = None) -> dict:
+    """Read recent TIA import history records.
+
+    Returns records newest-first.
+    If history_path is None, defaults to tia_import_history.json in workspace root.
+    If limit is None or <= 0, uses default 10.
+    """
+    if history_path is None:
+        history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+    else:
+        history_path = Path(history_path)
+
+    if not history_path.exists():
+        return {"ok": False, "error": f"History file not found: {history_path}"}
+
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+    records = history.get("records", [])
+    if not records:
+        return {"ok": True, "history_file": str(history_path), "total_records": 0, "records": []}
+
+    # Normalize limit
+    if limit is None or limit <= 0:
+        limit = 10
+    if limit > len(records):
+        limit = len(records)
+
+    # Return newest-first, slice to limit
+    recent = list(reversed(records))[:limit]
+
+    return {
+        "ok": True,
+        "history_file": str(history_path),
+        "total_records": len(records),
+        "records": recent,
+    }

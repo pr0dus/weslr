@@ -9,6 +9,7 @@ import time
 from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from time import strftime, localtime
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
@@ -30,6 +31,7 @@ from tia_import import (
     normalize_tia_envelope,
     save_normalized_envelope,
     record_tia_import_history,
+    list_tia_import_history,
 )
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
@@ -1203,6 +1205,11 @@ def main():
     p.add_argument("--output", default="tia_import_result.json", help="output envelope JSON")
     p.set_defaults(func=cmd_tia_import)
 
+    p = sub.add_parser("tia-history", help="list recent TIA import history records")
+    p.add_argument("--limit", type=int, default=10, help="number of recent records to show")
+    p.add_argument("--path", default="", help="override history file path")
+    p.set_defaults(func=cmd_tia_history)
+
     p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
     p.add_argument("--file", required=True, help="file to checkpoint")
     p.set_defaults(func=cmd_create_checkpoint)
@@ -1833,6 +1840,33 @@ def cmd_tia_import(args):
             print(f"   ⚠️  History not recorded: {history_result.get('error')}")
     except Exception as e:
         print(f"\n⚠️  Normalization skipped: {e}")
+
+
+def cmd_tia_history(args):
+    """List recent TIA import history records."""
+    history_path = Path(args.path) if args.path else None
+    result = list_tia_import_history(history_path, args.limit)
+
+    if not result.get("ok"):
+        emit(result)
+        print(f"\n❌ Error: {result.get('error')}")
+        return
+
+    emit(result)
+    print(f"\n=== TIA Import History ({result.get('total_records', 0)} total) ===")
+    print(f"   File: {result.get('history_file')}")
+
+    for i, rec in enumerate(result.get("records", []), 1):
+        status_icon = {"ok": "✅", "warning": "⚠️", "error": "❌"}.get(rec.get("status"), "❓")
+        project = rec.get("project_name", "Unknown")
+        source = rec.get("source_file", "")
+        items = rec.get("item_counts", {}).get("total_items", 0)
+        timestamp = rec.get("timestamp", 0)
+        ts_str = strftime("%Y-%m-%d %H:%M:%S", localtime(timestamp / 1000))
+        print(f"\n{i}. {status_icon} {project}")
+        print(f"   Source: {source}")
+        print(f"   Items: {items}")
+        print(f"   At: {ts_str}")
 
 
 def cmd_create_checkpoint(args):
