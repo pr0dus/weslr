@@ -53,6 +53,70 @@
         <p>No pending modifications.</p>
     </div>
 
+    <div class="section">
+        <h2>Industrial TIA Import History</h2>
+        <div id="tia-history-list" class="history-list">
+            <p class="loading">Loading history...</p>
+        </div>
+        <style>
+        .history-list .empty, .history-list .error, .history-list .loading { color: #aaa; font-style: italic; }
+        .history-list ul { list-style: none; padding: 0; }
+        .history-list li { background: #0f3460; padding: 10px; margin: 8px 0; border-radius: 3px; border-left: 4px solid #4caf50; }
+        .history-list li.warning { border-left-color: #ff9800; }
+        .history-list li.error { border-left-color: #f44336; }
+        .history-list .status { margin-right: 8px; font-size: 1.1em; }
+        .history-list .project-name { display: inline-block; margin-right: 10px; font-weight: bold; }
+        .history-list .source { color: #888; font-size: 0.85em; }
+        .history-list .meta { display: flex; gap: 15px; font-size: 0.8em; color: #aaa; }
+        </style>
+        <script>
+        (function() {
+            async function loadTiaHistory() {
+                try {
+                    const res = await fetch('/tia-history');
+                    const data = await res.json();
+                    renderTiaHistory(data);
+                } catch (err) {
+                    document.getElementById('tia-history-list').innerHTML = '<p class="error">No history yet. Run TIA imports via `python3 main.py tia-import`.</p>';
+                }
+            }
+
+            function renderTiaHistory(data) {
+                const container = document.getElementById('tia-history-list');
+                const records = data.records || [];
+
+                if (records.length === 0) {
+                    container.innerHTML = '<p class="empty">No history records found.</p>';
+                    return;
+                }
+
+                let html = '<ul>';
+                records.forEach((rec, idx) => {
+                    const statusIcons = { 'ok': '✅', 'warning': '⚠️', 'error': '❌' };
+                    const statusIcon = statusIcons[rec.status] || '❓';
+                    const date = new Date(rec.timestamp).toLocaleString();
+                    const project = escapeHtml(rec.project_name || 'Unknown');
+                    const source = escapeHtml(rec.source_file || '');
+                    const items = rec.item_counts?.total_items || 0;
+                    const statusClass = rec.status === 'warning' ? 'warning' : (rec.status === 'error' ? 'error' : '');
+                    html += '<li class="' + statusClass + '"><div class="status">' + statusIcon + '</div><span class="project-name">' + project + '</span><span class="source">(' + source + ')</span><div class="meta"><span>Items: ' + items + '</span><span class="timestamp">At: ' + date + '</span></div></li>';
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            document.addEventListener('DOMContentLoaded', loadTiaHistory);
+        })();
+        </script>
+    </div>
+
     <p><small>Last updated: 2026-03-26 18:08:20</small></p>
 </body>
 </html>

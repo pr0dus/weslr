@@ -673,6 +673,32 @@ def cmd_serve(args):
                     self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
             else:
                 self.send_error(404, "Unknown endpoint")
+
+        def do_GET(self):
+            """Serve GET requests - add /tia-history endpoint for history JSON."""
+            if self.path == "/tia-history":
+                import json as _json
+                from pathlib import Path as _Path
+                try:
+                    workspace_root = Path(__file__).resolve().parent
+                    history_path = workspace_root / "tia_import_history.json"
+                    if history_path.exists():
+                        with open(history_path, "r", encoding="utf-8") as f:
+                            data = _json.load(f)
+                    else:
+                        data = {"records": [], "total_records": 0}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(data).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+            else:
+                # Fall back to default handler for other GET requests
+                super().do_GET()
         
         def log_message(self, format, *args):
             # Suppress default logging for cleaner output
