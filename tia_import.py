@@ -11,6 +11,52 @@ from pathlib import Path
 import time
 
 
+SIEMENS_TIA_PROMOTED_FIELDS = {
+    "device": {
+        "hardware_version": {"dst": "hw_ver", "truthy": True},
+        "firmware_version": {"dst": "fw_ver", "truthy": True},
+    },
+    "plc": {
+        "rack": {"dst": "rack", "truthy": False},
+        "slot": {"dst": "slot", "truthy": False},
+        "ip_address": {"dst": "ip", "truthy": True},
+    },
+    "tag": {
+        "data_type": {"dst": "type", "truthy": True},
+        "address": {"dst": "addr", "truthy": True},
+        "comment": {"dst": "desc", "truthy": True},
+    },
+}
+
+
+def _apply_promotions(normalized_list: list, kind: str) -> None:
+    """Apply Siemens/TIA promoted field mapping to normalized items in-place.
+    
+    Field policies:
+    - rack, slot: promote if value is not None (allows 0)
+    - hardware_version, firmware_version, ip_address, data_type, address, comment:
+      promote only if truthy (preserves current 'if raw_...:' semantics)
+    - No-op if kind has no profile defined
+    """
+    profile = SIEMENS_TIA_PROMOTED_FIELDS.get(kind, {})
+    if not profile:
+        return
+    for item in normalized_list:
+        raw = item.get("raw", {})
+        for src_key, config in profile.items():
+            dst_key = config["dst"]
+            truthy = config["truthy"]
+            src_val = raw.get(src_key)
+            if truthy:
+                # Preserve current behavior: promote only if truthy
+                if src_val:
+                    item[dst_key] = src_val
+            else:
+                # Preserve current PLC behavior: promote if not None (allows 0)
+                if src_val is not None:
+                    item[dst_key] = src_val
+
+
 def load_tia_export(filepath: str | Path) -> dict:
     """Load TIA export JSON artifact."""
     path = Path(filepath)
@@ -162,30 +208,9 @@ def normalize_tia_envelope(envelope: dict) -> dict:
     normalized_tags = [_normalize_item(t, "tag") for t in tags]
 
     # Promote Siemens/TIA fields from raw → normalized (approved list)
-    for device in normalized_devices:
-        raw_dev = device.get("raw", {})
-        if raw_dev.get("hardware_version"):
-            device["hw_ver"] = raw_dev["hardware_version"]
-        if raw_dev.get("firmware_version"):
-            device["fw_ver"] = raw_dev["firmware_version"]
-
-    for plc in normalized_plcs:
-        raw_plc = plc.get("raw", {})
-        if raw_plc.get("rack") is not None:
-            plc["rack"] = raw_plc["rack"]
-        if raw_plc.get("slot") is not None:
-            plc["slot"] = raw_plc["slot"]
-        if raw_plc.get("ip_address"):
-            plc["ip"] = raw_plc["ip_address"]
-
-    for tag in normalized_tags:
-        raw_tag = tag.get("raw", {})
-        if raw_tag.get("data_type"):
-            tag["type"] = raw_tag["data_type"]
-        if raw_tag.get("address"):
-            tag["addr"] = raw_tag["address"]
-        if raw_tag.get("comment"):
-            tag["desc"] = raw_tag["comment"]
+    _apply_promotions(normalized_devices, "device")
+    _apply_promotions(normalized_plcs, "plc")
+    _apply_promotions(normalized_tags, "tag")
 
     # Build final structure
     now_ts = int(time.time() * 1000)
