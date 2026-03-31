@@ -24,6 +24,7 @@ from self_mod_applier import apply_modification, build_self_mod_report, create_c
 from self_improvement_proposal import create_proposal, list_proposals, approve_proposal, deny_proposal, get_proposal, build_proposal_report as build_sci_report, load_proposals
 from self_improvement_apply import apply_proposal, apply_proposal_with_tests, build_apply_report, rollback_proposal, load_apply_log
 from self_improvement_observation import record_observation, list_observations, load_observations
+from tia_import import create_raw_import_envelope, save_import_envelope
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
@@ -1191,6 +1192,11 @@ def main():
     p.add_argument("--by", default="human", help="rolling back entity")
     p.set_defaults(func=cmd_sci_proposal_rollback)
 
+    p = sub.add_parser("tia-import", help="import TIA Openness export artifact")
+    p.add_argument("--file", required=True, help="path to TIA export JSON")
+    p.add_argument("--output", default="tia_import_result.json", help="output envelope JSON")
+    p.set_defaults(func=cmd_tia_import)
+
     p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
     p.add_argument("--file", required=True, help="file to checkpoint")
     p.set_defaults(func=cmd_create_checkpoint)
@@ -1751,6 +1757,39 @@ def cmd_sci_proposal_rollback(args):
     emit(result)
     print(f"\n✅ Rollback recorded: {proposal_id}")
     print(f"   Command to execute manually: {result.get('rollback_command', 'N/A')}")
+
+
+def cmd_tia_import(args):
+    """Import TIA Openness export artifact."""
+    result = create_raw_import_envelope(args.file)
+    if not result.get("ok"):
+        emit(result)
+        error_msg = result.get("error") or "Unknown error"
+        print(f"\n❌ Import failed: {error_msg}")
+        return
+
+    emit(result)
+    print(f"\n✅ TIA export imported: {args.file}")
+    print(f"   Project: {result.get('project_name')}")
+    print(f"   Collector: {result.get('collector_version') or 'unknown'}")
+
+    output_path = Path(__file__).resolve().parent / args.output
+    save_result = save_import_envelope(result, output_path)
+    if save_result.get("ok"):
+        print(f"   Envelope saved: {save_result.get('saved_to')}")
+    else:
+        print(f"   ⚠️  Envelope created but not saved: {save_result.get('error')}")
+
+    # Show validation summary
+    validation = result.get("validation", {})
+    if validation.get("warnings"):
+        print(f"\nValidation warnings ({len(validation['warnings'])}):")
+        for w in validation["warnings"]:
+            print(f"  - {w}")
+    if validation.get("errors"):
+        print(f"\nValidation errors ({len(validation['errors'])}):")
+        for e in validation["errors"]:
+            print(f"  - {e}")
 
 
 def cmd_create_checkpoint(args):
