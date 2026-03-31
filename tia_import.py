@@ -90,3 +90,109 @@ def save_import_envelope(envelope: dict, output_path: str | Path) -> dict:
         return {"ok": True, "saved_to": str(path)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def normalize_tia_envelope(envelope: dict) -> dict:
+    """Normalize raw TIA import envelope to canonical industrial structure.
+
+    Lightweight wrapper - no assumption-heavy field mapping.
+    """
+
+    def _safe_list(value: Any) -> tuple[list, str | None]:
+        """Return empty list and warning if value is missing or not a list."""
+        if not isinstance(value, list):
+            if value is None:
+                return [], "field is missing"
+            return [], "field is not a list"
+        return value, None
+
+    raw = envelope.get("raw_data", {})
+    raw_validation = envelope.get("validation", {})
+
+    warnings = []
+
+    # Safe extraction with defensive handling per section
+    project = raw.get("project", {})
+    if not isinstance(project, dict):
+        project = {}
+        warnings.append("project is not an object")
+
+    devices, dev_warn = _safe_list(raw.get("devices", []))
+    if dev_warn:
+        warnings.append(f"devices: {dev_warn}")
+
+    plcs, plc_warn = _safe_list(raw.get("plcs", []))
+    if plc_warn:
+        warnings.append(f"plcs: {plc_warn}")
+
+    cpus, cpu_warn = _safe_list(raw.get("cpus", []))
+    if cpu_warn:
+        warnings.append(f"cpus: {cpu_warn}")
+
+    modules, mod_warn = _safe_list(raw.get("modules", []))
+    if mod_warn:
+        warnings.append(f"modules: {mod_warn}")
+
+    tags, tag_warn = _safe_list(raw.get("tags", []))
+    if tag_warn:
+        warnings.append(f"tags: {tag_warn}")
+
+    # Normalize project (minimal)
+    normalized_project = {
+        "id": project.get("id", ""),
+        "name": project.get("name", "Unknown"),
+        "kind": "project",
+        "raw": project,
+    }
+
+    # Normalize collections (lightweight wrappers)
+    def _normalize_item(item: dict, kind: str) -> dict:
+        """Lightweight item wrapper: id, name, kind, raw."""
+        return {
+            "id": item.get("id", ""),
+            "name": item.get("name", ""),
+            "kind": kind,
+            "raw": item,
+        }
+
+    normalized_devices = [_normalize_item(d, "device") for d in devices]
+    normalized_plcs = [_normalize_item(p, "plc") for p in plcs]
+    normalized_cpus = [_normalize_item(c, "cpu") for c in cpus]
+    normalized_modules = [_normalize_item(m, "module") for m in modules]
+    normalized_tags = [_normalize_item(t, "tag") for t in tags]
+
+    # Build final structure
+    now_ts = int(time.time() * 1000)
+    return {
+        "ok": envelope.get("ok", False),
+        "envelope_type": "tia_normalized",
+        "project": normalized_project,
+        "devices": normalized_devices,
+        "plcs": normalized_plcs,
+        "cpus": normalized_cpus,
+        "modules": normalized_modules,
+        "tags": normalized_tags,
+        "metadata": {
+            "validation": raw_validation,
+            "source_envelope": envelope.get("filename", ""),
+            "imported_at": envelope.get("imported_at", 0),
+            "normalization": {
+                "warnings": warnings,
+                "item_counts": {
+                    "devices": len(normalized_devices),
+                    "plcs": len(normalized_plcs),
+                    "cpus": len(normalized_cpus),
+                    "modules": len(normalized_modules),
+                    "tags": len(normalized_tags),
+                    "total_items": (
+                        len(normalized_devices) +
+                        len(normalized_plcs) +
+                        len(normalized_cpus) +
+                        len(normalized_modules) +
+                        len(normalized_tags)
+                    ),
+                },
+                "normalized_at": now_ts,
+            },
+        },
+    }
