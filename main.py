@@ -29,6 +29,7 @@ from tia_import import (
     save_import_envelope,
     normalize_tia_envelope,
     save_normalized_envelope,
+    record_tia_import_history,
 )
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
@@ -1822,6 +1823,14 @@ def cmd_tia_import(args):
         norm_warnings = normalized.get("metadata", {}).get("normalization", {}).get("warnings", [])
         if norm_warnings:
             print(f"   Normalization warnings: {len(norm_warnings)}")
+
+        # Record history
+        history_path = output_path.parent / "tia_import_history.json"
+        history_result = record_tia_import_history(result, normalized, output_path, normalized_path, history_path)
+        if history_result.get("ok"):
+            print(f"   History recorded: {history_path}")
+        else:
+            print(f"   ⚠️  History not recorded: {history_result.get('error')}")
     except Exception as e:
         print(f"\n⚠️  Normalization skipped: {e}")
 

@@ -207,3 +207,69 @@ def save_normalized_envelope(normalized: dict, output_path: str | Path) -> dict:
         return {"ok": True, "saved_to": str(path)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def record_tia_import_history(envelope: dict, normalized: dict, raw_path: str | Path, norm_path: str | Path, history_path: str | Path) -> dict:
+    """Append a history record for a TIA import.
+
+    Status rules:
+    - error: if raw envelope is not ok
+    - warning: if validation warnings OR normalization warnings exist
+    - ok: otherwise
+    """
+    history_p = Path(history_path)
+
+    # Determine status
+    project_name = envelope.get("project_name", "Unknown")
+    status = "ok"
+    if not envelope.get("ok"):
+        status = "error"
+    else:
+        has_val_warnings = bool(envelope.get("validation", {}).get("warnings"))
+        has_norm_warnings = bool(normalized.get("metadata", {}).get("normalization", {}).get("warnings"))
+        if has_val_warnings or has_norm_warnings:
+            status = "warning"
+
+    # Build record
+    record = {
+        "timestamp": int(time.time() * 1000),
+        "source_file": envelope.get("filename", ""),
+        "raw_output": str(raw_path),
+        "normalized_output": str(norm_path),
+        "project_name": project_name,
+        "status": status,
+        "validation": {
+            "ok": envelope.get("validation", {}).get("ok", False),
+            "warnings": len(envelope.get("validation", {}).get("warnings", [])),
+            "errors": len(envelope.get("validation", {}).get("errors", [])),
+        },
+        "item_counts": {
+            "devices": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("devices", 0),
+            "plcs": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("plcs", 0),
+            "cpus": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("cpus", 0),
+            "modules": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("modules", 0),
+            "tags": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("tags", 0),
+            "total_items": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("total_items", 0),
+        },
+    }
+
+    # Read existing history (append-safe)
+    try:
+        if history_p.exists():
+            with open(history_p, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        else:
+            history = {"records": []}
+    except Exception:
+        history = {"records": []}
+
+    # Append record
+    history["records"].append(record)
+
+    # Save history
+    try:
+        with open(history_p, "w", encoding="utf-8") as f:
+            json.dump(history, f, indent=2)
+        return {"ok": True, "record": record}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
