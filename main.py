@@ -697,6 +697,20 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+            elif self.path == "/tia-summary":
+                import json as _json
+                try:
+                    from tia_import import get_latest_tia_summary
+                    result = get_latest_tia_summary()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(result).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "summary": None, "error": str(e)}).encode("utf-8"))
             else:
                 # Fall back to default handler for other GET requests
                 super().do_GET()

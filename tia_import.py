@@ -6,6 +6,7 @@ No normalization. No entity mapping. Just envelope wrapping.
 
 from __future__ import annotations
 
+from typing import Any
 import json
 from pathlib import Path
 import time
@@ -407,3 +408,84 @@ def get_tia_import_record(history_path: str | Path | None = None, idx: int | Non
         return None
     
     return records[0]
+
+
+def get_latest_tia_summary(history_path: str | Path | None = None) -> dict:
+    """Return a compact summary of the latest TIA import record.
+    
+    Reuses get_tia_import_record with idx=1 to ensure consistent latest-record semantics
+    across CLI (tia-show) and dashboard (self-mod/index.html).
+    
+    Returns dict with:
+      - ok: bool
+      - summary: dict or None (if ok)
+      - error: str or None (if not ok)
+    """
+    record = get_tia_import_record(history_path=history_path, idx=1)
+    if record is None:
+        if history_path is None:
+            history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+        hp_str = str(history_path)
+        try:
+            if not Path(history_path).exists():
+                return {"ok": False, "summary": None, "error": "History file not found"}
+        except Exception:
+            return {"ok": False, "summary": None, "error": "Failed to locate history file"}
+        return {"ok": False, "summary": None, "error": "No history records found"}
+    
+    summary = {
+        "project_name": record.get("project_name", "Unknown"),
+        "timestamp": record.get("timestamp", 0),
+        "status": record.get("status", "unknown"),
+        "devices": record.get("item_counts", {}).get("devices", 0),
+        "plcs": record.get("item_counts", {}).get("plcs", 0),
+        "cpus": record.get("item_counts", {}).get("cpus", 0),
+        "modules": record.get("item_counts", {}).get("modules", 0),
+        "tags": record.get("item_counts", {}).get("tags", 0),
+        "raw_output": record.get("raw_output", ""),
+        "normalized_output": record.get("normalized_output", ""),
+    }
+    
+    norm_path = record.get("normalized_output", "")
+    if norm_path:
+        try:
+            with open(norm_path, "r", encoding="utf-8") as nf:
+                norm = json.load(nf)
+                plcs = norm.get("plcs", [])
+                if plcs:
+                    plc = plcs[0]
+                    plc_info = {}
+                    if plc.get("rack") is not None:
+                        plc_info["rack"] = plc["rack"]
+                    if plc.get("slot") is not None:
+                        plc_info["slot"] = plc["slot"]
+                    if plc.get("ip"):
+                        plc_info["ip"] = plc["ip"]
+                    if plc_info:
+                        summary["first_plc"] = plc_info
+                devices = norm.get("devices", [])
+                if devices:
+                    dev = devices[0]
+                    device_info = {}
+                    if dev.get("hw_ver"):
+                        device_info["hw_ver"] = dev["hw_ver"]
+                    if dev.get("fw_ver"):
+                        device_info["fw_ver"] = dev["fw_ver"]
+                    if device_info:
+                        summary["first_device"] = device_info
+                tags = norm.get("tags", [])
+                if tags:
+                    tag = tags[0]
+                    tag_info = {}
+                    if tag.get("type"):
+                        tag_info["type"] = tag["type"]
+                    if tag.get("addr"):
+                        tag_info["addr"] = tag["addr"]
+                    if tag.get("desc"):
+                        tag_info["desc"] = tag["desc"]
+                    if tag_info:
+                        summary["first_tag"] = tag_info
+        except Exception:
+            pass
+    
+    return {"ok": True, "summary": summary, "error": None}

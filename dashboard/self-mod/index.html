@@ -55,6 +55,12 @@
 
     <div class="section">
         <h2>Industrial TIA Import History</h2>
+        <div id="tia-detail" class="detail" style="margin-bottom: 12px; padding: 10px; background: #0c0f14; border-radius: 3px; border-left: 4px solid #2196f3; font-size: 0.85em;">
+            <p class="loading">Loading detail...</p>
+        </div>
+        <div id="tia-summary" class="summary" style="margin-bottom: 12px; padding: 10px; background: #0f3460; border-radius: 3px; border-left: 4px solid #4caf50; font-size: 0.9em;">
+            <p class="loading">Loading summary...</p>
+        </div>
         <div id="tia-history-list" class="history-list">
             <p class="loading">Loading history...</p>
         </div>
@@ -71,14 +77,94 @@
         </style>
         <script>
         (function() {
-            async function loadTiaHistory() {
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            async function loadTiaSummaryAndHistory() {
                 try {
-                    const res = await fetch('/tia-history');
+                    const res = await fetch('/tia-summary');
                     const data = await res.json();
-                    renderTiaHistory(data);
+                    renderTiaSummary(data);
+                } catch (err) {
+                    const el = document.getElementById('tia-summary');
+                    if (el) el.innerHTML = '<p class="error">No summary available.</p>';
+                }
+
+                try {
+                    const res2 = await fetch('/tia-history');
+                    const data2 = await res2.json();
+                    renderTiaHistory(data2);
                 } catch (err) {
                     document.getElementById('tia-history-list').innerHTML = '<p class="error">No history yet. Run TIA imports via `python3 main.py tia-import`.</p>';
                 }
+            }
+
+            function renderTiaSummary(data) {
+                const detailContainer = document.getElementById('tia-detail');
+                const summaryContainer = document.getElementById('tia-summary');
+                if (!data.ok || !data.summary) {
+                    detailContainer.innerHTML = '<p class="error">No detail available.</p>';
+                    summaryContainer.innerHTML = '<p class="error">No summary available.</p>';
+                    return;
+                }
+                const s = data.summary;
+                const statusIcons = { 'ok': '✅', 'warning': '⚠️', 'error': '❌' };
+                const statusIcon = statusIcons[s.status] || '❓';
+                const date = new Date(s.timestamp).toLocaleString();
+
+                // Detail block content
+                let detailHtml = [];
+                detailHtml.push('<strong>' + escapeHtml(s.project_name) + '</strong> ' + statusIcon);
+                detailHtml.push('<div style="margin-top:8px;">');
+                detailHtml.push('<span>Imported: ' + date + '</span>');
+                if (s.first_plc) {
+                    const parts = [];
+                    if (s.first_plc.rack !== undefined) parts.push('Rack ' + s.first_plc.rack);
+                    if (s.first_plc.slot !== undefined) parts.push('Slot ' + s.first_plc.slot);
+                    if (s.first_plc.ip) parts.push('IP ' + s.first_plc.ip);
+                    if (parts.length) detailHtml.push('<span>PLC: ' + parts.join(', ') + '</span>');
+                }
+                if (s.first_device) {
+                    const parts = [];
+                    if (s.first_device.hw_ver) parts.push('HW: ' + escapeHtml(s.first_device.hw_ver));
+                    if (s.first_device.fw_ver) parts.push('FW: ' + escapeHtml(s.first_device.fw_ver));
+                    if (parts.length) detailHtml.push('<span>Device: ' + parts.join(', ') + '</span>');
+                }
+                if (s.first_tag) {
+                    const parts = [];
+                    if (s.first_tag.type) parts.push('Type: ' + escapeHtml(s.first_tag.type));
+                    if (s.first_tag.addr) parts.push('Addr: ' + escapeHtml(s.first_tag.addr));
+                    if (s.first_tag.desc) parts.push('Desc: ' + escapeHtml(s.first_tag.desc));
+                    if (parts.length) detailHtml.push('<span>Tag: ' + parts.join(', ') + '</span>');
+                }
+                detailHtml.push('<span>Items: ' + s.devices + ' dev, ' + s.plcs + ' plc, ' + s.cpus + ' cpu, ' + s.modules + ' mod, ' + s.tags + ' tag</span>');
+                detailHtml.push('</div>');
+                if (s.normalized_output) {
+                    detailHtml.push('<div style="margin-top:8px; font-family:monospace; color:#888; font-size:0.75em;">');
+                    detailHtml.push('<span>Raw: ' + escapeHtml(s.raw_output || '') + '</span><br/>');
+                    detailHtml.push('<span>Norm: ' + escapeHtml(s.normalized_output) + '</span>');
+                    detailHtml.push('</div>');
+                }
+                detailContainer.innerHTML = detailHtml.join('');
+
+                // Summary block content (compact)
+                let plcText = '';
+                if (s.first_plc) {
+                    const parts = [];
+                    if (s.first_plc.rack !== undefined) parts.push('Rack ' + s.first_plc.rack);
+                    if (s.first_plc.slot !== undefined) parts.push('Slot ' + s.first_plc.slot);
+                    if (s.first_plc.ip) parts.push('IP ' + s.first_plc.ip);
+                    if (parts.length) plcText = ' | PLC: ' + parts.join(', ');
+                }
+                const html = '<strong>' + escapeHtml(s.project_name) + '</strong> ' + statusIcon + ' — ' +
+                             'Imported: ' + date + plcText + ' | ' +
+                             s.devices + ' devices, ' + s.plcs + ' PLCs, ' + s.cpus + ' CPUs, ' +
+                             s.modules + ' modules, ' + s.tags + ' tags';
+                summaryContainer.innerHTML = html;
             }
 
             function renderTiaHistory(data) {
@@ -105,14 +191,7 @@
                 container.innerHTML = html;
             }
 
-            function escapeHtml(str) {
-                if (!str) return '';
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
-
-            document.addEventListener('DOMContentLoaded', loadTiaHistory);
+            document.addEventListener('DOMContentLoaded', loadTiaSummaryAndHistory);
         })();
         </script>
     </div>
