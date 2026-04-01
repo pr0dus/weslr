@@ -58,6 +58,9 @@
         <div id="tia-detail" class="detail" style="margin-bottom: 12px; padding: 10px; background: #0c0f14; border-radius: 3px; border-left: 4px solid #2196f3; font-size: 0.85em;">
             <p class="loading">Loading detail...</p>
         </div>
+        <div id="tia-diff" class="diff" style="margin-bottom: 12px; padding: 10px; background: #0a0c0e; border-radius: 3px; border-left: 4px solid #9c27b0; font-size: 0.8em;">
+            <p class="loading">Loading diff...</p>
+        </div>
         <div id="tia-summary" class="summary" style="margin-bottom: 12px; padding: 10px; background: #0f3460; border-radius: 3px; border-left: 4px solid #4caf50; font-size: 0.9em;">
             <p class="loading">Loading summary...</p>
         </div>
@@ -105,13 +108,16 @@
 
             function renderTiaSummary(data) {
                 const detailContainer = document.getElementById('tia-detail');
+                const diffContainer = document.getElementById('tia-diff');
                 const summaryContainer = document.getElementById('tia-summary');
                 if (!data.ok || !data.summary) {
                     detailContainer.innerHTML = '<p class="error">No detail available.</p>';
+                    diffContainer.innerHTML = '<p class="error">No diff available.</p>';
                     summaryContainer.innerHTML = '<p class="error">No summary available.</p>';
                     return;
                 }
                 const s = data.summary;
+                const diff = s.diff || null;
                 const statusIcons = { 'ok': '✅', 'warning': '⚠️', 'error': '❌' };
                 const statusIcon = statusIcons[s.status] || '❓';
                 const date = new Date(s.timestamp).toLocaleString();
@@ -150,6 +156,45 @@
                     detailHtml.push('</div>');
                 }
                 detailContainer.innerHTML = detailHtml.join('');
+
+                // Diff block content (NEW)
+                let diffHtml = [];
+                if (diff && (Object.keys(diff.counts || {}).length > 0 || diff.first_plc || diff.first_device || diff.first_tag)) {
+                    diffHtml.push('<strong>Changes vs Previous Import</strong>');
+                    diffHtml.push('<div style="margin-top:8px;">');
+                    if (Object.keys(diff.counts || {}).length > 0) {
+                        const parts = [];
+                        for (const [field, delta] of Object.entries(diff.counts)) {
+                            parts.push(escapeHtml(field) + ': ' + delta);
+                        }
+                        diffHtml.push('<span>Counts: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_plc) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_plc)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>PLC: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_device) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_device)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>Device: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_tag) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_tag)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>Tag: ' + parts.join(', ') + '</span>');
+                    }
+                    diffHtml.push('</div>');
+                } else {
+                    diffHtml.push('<p class="info">No previous import to compare</p>');
+                }
+                diffContainer.innerHTML = diffHtml.join('');
 
                 // Summary block content (compact)
                 let plcText = '';

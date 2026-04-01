@@ -488,4 +488,86 @@ def get_latest_tia_summary(history_path: str | Path | None = None) -> dict:
         except Exception:
             pass
     
+    # Check for previous record to compute diff
+    prev_record = get_tia_import_record(history_path=history_path, idx=2)
+    if prev_record is not None:
+        # Parse previous normalized file for first_plc/device/tag (minimal)
+        prev_norm_path = prev_record.get("normalized_output", "")
+        prev_first_plc = prev_first_device = prev_first_tag = None
+        if prev_norm_path:
+            try:
+                with open(prev_norm_path, "r", encoding="utf-8") as nf:
+                    norm = json.load(nf)
+                    # Parse first_plc
+                    plcs = norm.get("plcs", [])
+                    if plcs:
+                        plc = plcs[0]
+                        plc_info = {}
+                        if plc.get("rack") is not None: plc_info["rack"] = plc["rack"]
+                        if plc.get("slot") is not None: plc_info["slot"] = plc["slot"]
+                        if plc.get("ip"): plc_info["ip"] = plc["ip"]
+                        if plc_info: prev_first_plc = plc_info
+                    # Parse first_device
+                    devices = norm.get("devices", [])
+                    if devices:
+                        dev = devices[0]
+                        dev_info = {}
+                        if dev.get("hw_ver"): dev_info["hw_ver"] = dev["hw_ver"]
+                        if dev.get("fw_ver"): dev_info["fw_ver"] = dev["fw_ver"]
+                        if dev_info: prev_first_device = dev_info
+                    # Parse first_tag
+                    tags = norm.get("tags", [])
+                    if tags:
+                        tag = tags[0]
+                        tag_info = {}
+                        if tag.get("type"): tag_info["type"] = tag["type"]
+                        if tag.get("addr"): tag_info["addr"] = tag["addr"]
+                        if tag.get("desc"): tag_info["desc"] = tag["desc"]
+                        if tag_info: prev_first_tag = tag_info
+            except Exception:
+                pass
+        
+        # Compute diff
+        diff = {"counts": {}, "first_plc": None, "first_device": None, "first_tag": None}
+        
+        # Count deltas
+        for field in ["devices", "plcs", "cpus", "modules", "tags"]:
+            curr_val = summary.get(field, 0)
+            prev_val = prev_record.get("item_counts", {}).get(field, 0)
+            delta = curr_val - prev_val
+            if delta != 0:
+                diff["counts"][field] = f"{delta:+d}"
+        
+        # PLC deltas
+        curr_plc = summary.get("first_plc", {})
+        if prev_first_plc:
+            plc_diff = {}
+            for key in ["rack", "slot", "ip"]:
+                if curr_plc.get(key) != prev_first_plc.get(key):
+                    plc_diff[key] = f"{prev_first_plc.get(key)} → {curr_plc.get(key)}"
+            if plc_diff:
+                diff["first_plc"] = plc_diff
+        
+        # Device deltas
+        curr_dev = summary.get("first_device", {})
+        if prev_first_device:
+            dev_diff = {}
+            for key in ["hw_ver", "fw_ver"]:
+                if curr_dev.get(key) != prev_first_device.get(key):
+                    dev_diff[key] = f"{prev_first_device.get(key)} → {curr_dev.get(key)}"
+            if dev_diff:
+                diff["first_device"] = dev_diff
+        
+        # Tag deltas
+        curr_tag = summary.get("first_tag", {})
+        if prev_first_tag:
+            tag_diff = {}
+            for key in ["type", "addr", "desc"]:
+                if curr_tag.get(key) != prev_first_tag.get(key):
+                    tag_diff[key] = f"{prev_first_tag.get(key)} → {curr_tag.get(key)}"
+            if tag_diff:
+                diff["first_tag"] = tag_diff
+        
+        summary["diff"] = diff
+    
     return {"ok": True, "summary": summary, "error": None}
