@@ -6002,7 +6002,60 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
         module_name = modules[-1].name if modules else None
         artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name}, category, opportunity=opportunity)
         return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw, artifact=artifact)
-    return ActionResult(action=action, status=status, summary=f"unknown action: {reason}", raw_output=raw)
+    
+    # Handoff production: Create handoff if action failed with meaningful target
+    # Only create handoff for "delegation-error" type (action error/skipped with target)
+    if status in {"error", "skipped"} and target_name and target_name != agent["name"]:
+        try:
+            from handoff_state import create_handoff_note, save_handoff_notes
+            from pathlib import Path as PathClass
+            handoffs_path = PathClass(__file__).resolve().parent / "handoffs.json"
+            
+            # Check for duplicate/pending handoffs for same need
+            existing_handoffs = []
+            if handoffs_path.exists():
+                import json
+                try:
+                    with open(handoffs_path) as f:
+                        data = json.load(f)
+                    if isinstance(data, list):
+                        existing_handoffs = data
+                    elif isinstance(data, dict):
+                        existing_handoffs = data.get("handoffs", [])
+                except Exception:
+                    pass
+            
+            # Check if a similar handoff exists for this target and action
+            need_summary = f"{action} {target_name}" if target_name else action
+            duplicate_exists = any(
+                h.get("to_agent") == target_name and h.get("topic", "").startswith(action)
+                for h in existing_handoffs
+                if h.get("status") in {"pending", "accepted", "active"}
+            )
+            
+            if not duplicate_exists:
+                handoff = create_handoff_note(
+                    from_agent=agent["name"],
+                    to_agent=target_name,
+                    topic=f"{action} needed",
+                    context={
+                        "action": action,
+                        "reason": reason,
+                        "error_status": status,
+                        "tick": int(now_ts),
+                    },
+                    handoff_type="delegation-error",
+                    priority=0.7,
+                    timeout_seconds=3600,  # 1 hour timeout for error handoffs
+                )
+                
+                existing_handoffs.append(handoff)
+                save_handoff_notes(existing_handoffs, handoffs_path)
+        except Exception:
+            # Silent fail - handoff creation is optional and should not break ticks
+            pass
+    
+    return ActionResult(action=action, status=status, summary=f"{reason}", raw_output=raw)
 
 
 def clamp_agent(agent: Dict) -> Dict:
@@ -6353,6 +6406,10 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     if "prepare-archive" in (memory_pressure.get("recommended_actions") or []):
         archive_maintenance = archive_memory(now_ts=started_at)
     update_self_model(communicator)
+    
+    # Handoff production: create handoffs for unresolved needs that should be delegated
+    # Note: Handoffs are created during tick via cross-reference and save to handoffs.json
+    # The migration will pick them up for state_core.handoffs[]
     
     # Weslr orchestration: integrate consciousness signatures and entity evidence
     communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)

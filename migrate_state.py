@@ -129,6 +129,46 @@ def load_agent_entities() -> List[Dict[str, Any]]:
     return entities
 
 
+def load_agent_handoffs() -> List[Dict[str, Any]]:
+    """Load handoffs from handoffs.json and normalize to state_core format.
+    
+    Reads from handoffs.json if it exists, otherwise returns empty list.
+    
+    Keeps legacy handoff files untouched (READ-ONLY).
+    """
+    handoffs = []
+    
+    # Load from handoffs.json if it exists
+    handoffs_path = BASE_DIR / "handoffs.json"
+    if not handoffs_path.exists():
+        return handoffs
+    
+    data = load_json(handoffs_path)
+    if isinstance(data, list):
+        handoffs = data
+    elif isinstance(data, dict):
+        handoffs = data.get("handoffs", [])
+    
+    # Normalize to state_core format
+    normalized = []
+    for handoff in handoffs:
+        if not isinstance(handoff, dict):
+            continue
+        normalized.append({
+            "id": handoff.get("id", ""),
+            "from_agent": handoff.get("from_agent", "unknown"),
+            "to_agent": handoff.get("to_agent", "unknown"),
+            "topic": handoff.get("topic", "unspecified"),
+            "handoff_type": handoff.get("handoff_type", "task"),
+            "priority": float(handoff.get("priority", 0.5)),
+            "status": handoff.get("status", "pending"),
+            "timestamp": handoff.get("timestamp", 0),
+            "timeout_at": handoff.get("timeout_at", 0),
+            "context": handoff.get("context", {}),
+        })
+    return normalized
+
+
 def load_handoff_notes() -> List[Dict[str, Any]]:
     """Load handoffs.json or handoffs directory."""
     handoffs_path = BASE_DIR / "handoffs.json"
@@ -479,7 +519,7 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
     relationships = load_relationships()
     opportunity_board = load_opportunity_board()
     entities = load_agent_entities()  # Changed from get_entity_graph()
-    handoffs = load_handoff_notes()
+    handoffs = load_agent_handoffs()  # Changed from load_handoff_notes()
     events = load_events()
     needs = load_needs()
     artifacts = load_agent_artifacts()  # Changed from load_artifacts()
