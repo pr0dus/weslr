@@ -78,7 +78,54 @@ def load_opportunity_board() -> Dict[str, Any]:
 def get_entity_graph() -> List[Dict[str, Any]]:
     """Load entity_graph.json and extract entities."""
     data = load_json(BASE_DIR / "entity_graph.json")
+    # Handle both dict (old format) and list (new format) for backward compatibility
     entities = data.get("entities", [])
+    if isinstance(entities, dict):
+        # Convert from dict format (entities: {id: {...}}) to list format
+        entities = list(entities.values())
+    elif not isinstance(entities, list):
+        # Empty or invalid
+        entities = []
+    return entities
+
+
+def load_agent_entities() -> List[Dict[str, Any]]:
+    """Load entities from entity_graph.json and normalize to state_core format.
+    
+    Reads from entity_graph.json and converts to simplified entity objects
+    suitable for state_core.entities[].
+    
+    Uses existing cross-reference infrastructure via entity_graph module.
+    Keeps legacy entity files untouched (READ-ONLY).
+    """
+    entities = []
+    
+    # Load from entity_graph.json
+    data = load_json(BASE_DIR / "entity_graph.json")
+    raw_entities = data.get("entities", {})
+    
+    if isinstance(raw_entities, dict):
+        raw_entities = list(raw_entities.values())
+    
+    for raw_entity in raw_entities:
+        if not isinstance(raw_entity, dict):
+            continue
+        
+        entity = {
+            "id": raw_entity.get("id", ""),
+            "name": raw_entity.get("name", ""),
+            "type": raw_entity.get("type", "other"),
+            "confidence": float(raw_entity.get("confidence", 0.0)),
+            "status": "authoritative" if not raw_entity.get("is_ghost", True) else "ghost",
+            "is_ghost": raw_entity.get("is_ghost", True),
+            "created_at": raw_entity.get("created_at", 0),
+            "last_seen": raw_entity.get("last_seen", 0),
+            "relationship_count": len(raw_entity.get("relationships", [])),
+            "evidence_count": len(raw_entity.get("evidence", [])),
+            "metadata": raw_entity.get("metadata", {}),
+        }
+        entities.append(entity)
+    
     return entities
 
 
@@ -431,7 +478,7 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
     communicator_self = load_communicator_self()
     relationships = load_relationships()
     opportunity_board = load_opportunity_board()
-    entities = get_entity_graph()
+    entities = load_agent_entities()  # Changed from get_entity_graph()
     handoffs = load_handoff_notes()
     events = load_events()
     needs = load_needs()

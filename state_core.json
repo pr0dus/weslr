@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "timestamp": 1775154611,
+  "timestamp": 1775155000,
   "identity_anchor": "Weslr",
   "status": "IDLE",
   "continuity": {
@@ -291,7 +291,104 @@
     }
   ],
   "handoffs": [],
-  "entities": [],
+  "entities": [
+    {
+      "id": "4fd59e0f",
+      "name": "agent-4",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 1,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "messages.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "23ee0429",
+      "name": "agent-2",
+      "type": "person",
+      "confidence": 1.0,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 1,
+      "evidence_count": 1,
+      "metadata": {
+        "source": "messages.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "1f6a59f2",
+      "name": "agent-3",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "2fcd07cb",
+      "name": "agent-4",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "375c1ba7",
+      "name": "agent-1",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "24fdada2",
+      "name": "agent-2",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    }
+  ],
   "events": [
     {
       "id": "opportunity-log readability",
@@ -379,7 +476,7 @@
     "priority": "medium",
     "reason": "System idle. Run tick to advance workflow.",
     "source": "status",
-    "trigger_at": 1775154671
+    "trigger_at": 1775155060
   },
   "metrics": {
     "tick_count": 0,
@@ -387,7 +484,7 @@
     "memory_pressure_score": 0.0
   },
   "derived_from": {
-    "state_core_generated_at": 1775154611,
+    "state_core_generated_at": 1775155000,
     "legacy_files_read": [
       "communicator_self.json",
       "relationships.json",
