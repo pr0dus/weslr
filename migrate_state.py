@@ -337,7 +337,7 @@ def _derive_next_action(status: str, validation: dict, error_state: dict,
                         handoffs: List[Dict] = None,
                         topics: List[Dict] = None,
                         entities: List[Dict] = None) -> dict:
-    """Derive best next action based on current signals.
+    """Derive best next action based on current signals with traceability.
     
     Priority order:
     1. Error state → ERROR recovery action
@@ -346,89 +346,111 @@ def _derive_next_action(status: str, validation: dict, error_state: dict,
     4. Review-worthy artifacts → review artifact action
     5. Stale/idle system → tick action
     6. No signals → IDLE
+    
+    Returns next_action with traceability for operator understanding.
     """
     now_ts = int(time.time())
     
-    # Rule 1: If ERROR, suggest recovery
-    if status == "ERROR" and error_state.get("errors"):
-        latest_error = error_state["errors"][-1]
-        return {
-            "action": "retry_tick",
-            "priority": "high",
-            "reason": "Error state detected. Retry tick after investigation.",
-            "source": "error_state",
-            "entity_id": latest_error.get("error_id", ""),
-            "trigger_at": last_updated + 300  # 5 min cooldown
-        }
+    # Collect all considered signals with scores (for traceability)
+    all_signals = []
     
-    # Rule 2: If pending handoffs, suggest review
+    # Score error state
+    if error_state.get("errors"):
+        latest_error = error_state["errors"][-1]
+        all_signals.append({
+            "type": "error",
+            "action": "retry_tick",
+            "score": 1.0,
+            "reason": "Unresolved error detected",
+            "data": {"error_id": latest_error.get("error_id", "")}
+        })
+    
+    # Score pending handoffs
     if handoffs and len(handoffs) > 0:
         pending = [h for h in handoffs if h.get("status") in {"pending", "accepted", "active"}]
         if pending:
-            return {
+            all_signals.append({
+                "type": "handoffs",
                 "action": "review_handoffs",
-                "priority": "high",
-                "reason": f"Found {len(pending)} pending handoff(s) requiring review.",
-                "source": "handoffs",
-                "handoff_count": len(pending),
-                "trigger_at": last_updated + 60  # 1 min cooldown
-            }
+                "score": 0.9,
+                "reason": f"{len(pending)} pending handoff(s)",
+                "data": {"pending_count": len(pending)}
+            })
     
-    # Rule 3: If high-pressure topics, suggest investigation
+    # Score high-pressure topics
     if topics:
         high_pressure = [t for t in topics if t.get("pressure", 0) > 0.8]
         if high_pressure:
-            return {
+            all_signals.append({
+                "type": "topics",
                 "action": "investigate_topics",
-                "priority": "medium",
-                "reason": f"{len(high_pressure)} high-pressure topic(s) detected.",
-                "source": "topics",
-                "topic_count": len(high_pressure),
-                "trigger_at": last_updated + 120  # 2 min cooldown
-            }
+                "score": 0.8,
+                "reason": f"{len(high_pressure)} high-pressure topic(s)",
+                "data": {"high_pressure_count": len(high_pressure), "pressure_values": [t.get("pressure", 0) for t in high_pressure[:3]]}
+            })
     
-    # Rule 4: If review-worthy artifacts, suggest review
+    # Score review-worthy artifacts
     if artifacts:
         reviewable = [a for a in artifacts if a.get("sellability_score", 0) >= 0.2]
         if reviewable:
-            return {
+            all_signals.append({
+                "type": "artifacts",
                 "action": "review_artifacts",
-                "priority": "medium",
-                "reason": f"{len(reviewable)} artifact(s) ready for review.",
-                "source": "artifacts",
-                "artifact_count": len(reviewable),
-                "trigger_at": last_updated + 120  # 2 min cooldown
-            }
+                "score": 0.8,
+                "reason": f"{len(reviewable)} artifact(s) ready for review",
+                "data": {"reviewable_count": len(reviewable), "max_sellability": max(a.get("sellability_score", 0) for a in reviewable)}
+            })
     
-    # Rule 5: If memory pressure high, suggest compression
+    # Score memory pressure
     memory_pressure = metrics.get("memory_pressure_score", 0.0)
     if memory_pressure > 0.8:
-        return {
+        all_signals.append({
+            "type": "memory",
             "action": "compress_memory",
-            "priority": "high",
-            "reason": f"Memory pressure at {memory_pressure:.1%}. Consider compression.",
-            "source": "metrics",
-            "trigger_at": last_updated + 60  # 1 min cooldown
-        }
+            "score": 0.9,
+            "reason": f"Memory pressure at {memory_pressure:.1%}",
+            "data": {"pressure_score": memory_pressure}
+        })
     
-    # Rule 6: If idle, suggest tick
+    # Score idle status
     if status == "IDLE":
-        return {
+        all_signals.append({
+            "type": "status",
             "action": "tick",
-            "priority": "medium",
-            "reason": "System idle. Run tick to advance workflow.",
-            "source": "status",
-            "trigger_at": last_updated + 60  # 1 min cooldown
-        }
+            "score": 0.7,
+            "reason": "System idle",
+            "data": {"status": "IDLE", "ticks_since_last_action": 0}
+        })
     
-    # Rule 7: Default fallback
-    return {
+    # Determine which signal(s) to act on
+    selected_signal = None
+    if all_signals:
+        # Sort by score and pick highest
+        sorted_signals = sorted(all_signals, key=lambda s: s.get("score", 0), reverse=True)
+        selected_signal = sorted_signals[0]
+    
+    # Build the next_action response
+    result = {
         "action": "none",
         "priority": "low",
-        "reason": "System operating normally. No immediate action needed.",
+        "reason": "No signals require immediate action.",
         "source": "status",
-        "trigger_at": last_updated
     }
+    
+    # Add traceability fields
+    result["chosen_because"] = ""
+    result["signals_considered"] = all_signals
+    result["signals_not_selected"] = [s for s in all_signals if s != selected_signal]
+    
+    # Build chosen_because and set action if we have a selection
+    if selected_signal:
+        result["action"] = selected_signal["action"]
+        result["priority"] = "high" if selected_signal["score"] >= 0.9 else "medium"
+        result["reason"] = selected_signal["reason"]
+        result["source"] = selected_signal["type"]
+        result["chosen_because"] = f"Best signal: {selected_signal['type']} ({selected_signal['reason']})"
+    
+    return result
 
 
 def _derive_status(error_state: dict, tick_count: int, last_tick_result: dict) -> str:
