@@ -256,11 +256,47 @@
         <p><strong>Curiosity:</strong> ${data.curiosity?.toFixed(2) ?? 0} · <strong>Uncertainty:</strong> ${data.uncertainty?.toFixed(2) ?? 0}</p>
       `;
       
-      // Next action
+      // Next action - show action, priority, and why
       if (nextAction.action && nextAction.action !== 'none') {
         html += `
-          <p><strong>Next Action:</strong> <span class="pill">${nextAction.action}</span> (priority: ${nextAction.priority})</p>
-          <p><em>${nextAction.reason}</em></p>
+          <div style="margin-top:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #6ee7b7;">
+            <h3 style="font-size:14px; margin:0 0 8px;">Next Action</h3>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <span class="pill" style="background:#6ee7b7;">${nextAction.action}</span>
+              <span class="pill" style="background:#3b82f6;">Priority: ${nextAction.priority}</span>
+            </div>
+            <p style="margin:4px 0;"><strong>Why this was chosen:</strong> ${nextAction.chosen_because || 'Unknown'}</p>
+            <p style="margin:4px 0; font-size:14px;"><em>${nextAction.reason}</em></p>
+          </div>
+          
+          <div style="margin-top:16px; padding:12px; background:#1c222b; border-radius:8px;">
+            <h3 style="font-size:14px; margin:0 0 8px;">Signals Considered</h3>
+            <div style="font-size:13px;">
+              <div style="margin-bottom:8px;">
+                <strong>Other signals evaluated:</strong>
+                ${nextAction.signals_considered?.map(s => 
+                  `<div style="padding:6px 10px; background:#263241; border-radius:6px; margin:4px 0; font-size:12px;">
+                    <span class="pill" style="background:#94a3b8;">${s.type}</span>
+                    <span style="margin-left:6px;">→ ${s.action} (score: ${s.score})</span>
+                    <p style="margin:4px 0 0 0; font-style:italic; color:#9aa6b2;">${s.reason}</p>
+                  </div>`
+                ).join('') || '<p class="muted">No signals evaluated</p>'}
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-top:16px;">
+            <h3 style="font-size:14px; margin-bottom:8px;">Not Selected (but considered)</h3>
+            <div style="font-size:13px;">
+              ${nextAction.signals_not_selected?.map(s => 
+                `<div style="padding:8px; background:#263241; border-radius:6px; margin:4px 0; font-size:12px;">
+                  <span class="pill" style="background:#f87171;">Not selected</span>
+                  <span style="margin-left:6px;"><strong>${s.type}:</strong> ${s.action}</span>
+                  <p style="margin:4px 0 0 0; font-style:italic; color:#9aa6b2;">${s.reason}</p>
+                </div>`
+              ).join('') || '<p class="muted">No signals rejected</p>'}
+            </div>
+          </div>
         `;
       } else {
         html += `<p class="muted">No immediate action required.</p>`;
