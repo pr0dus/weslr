@@ -1,0 +1,218 @@
+{
+  "schema_version": "1.0.0",
+  "timestamp": 1775129385,
+  "identity_anchor": "Weslr",
+  "status": "IDLE",
+  "continuity": {
+    "session_count": 0,
+    "last_message_at": 0,
+    "known_humans": [],
+    "unresolved_shared_threads": []
+  },
+  "behavioral_traits": {
+    "empathy": 0.12,
+    "reciprocity": 0.0,
+    "trust": 0.0,
+    "conflict_resolution": 0.0,
+    "social_reading": 0.0,
+    "pattern_recognition": 0.0,
+    "abstraction": 0.0,
+    "metacognition": 0.0,
+    "curiosity": 0.6,
+    "pattern_switching": 0.0,
+    "emotional_variety": 0.0,
+    "emotional_regulation": 0.0,
+    "adaptive_mood": 0.0,
+    "hopeful_orientation": 0.0,
+    "resilience": 0.0,
+    "adaptive_style": 0.0,
+    "storytelling": 0.0,
+    "analogical_reasoning": 0.0,
+    "active_listening": 0.0,
+    "inquiry": 0.0,
+    "tone_modulation": 0.0,
+    "consistency": 0.0,
+    "growth_mindset": 0.0,
+    "self_continuity": 0.0,
+    "self_compassion": 0.0,
+    "authenticity": 0.0,
+    "initiative": 0.0,
+    "persistence": 0.0,
+    "adaptability": 0.0,
+    "risk_tolerance": 0.0,
+    "resourcefulness": 0.0,
+    "imagination": 0.0,
+    "synthesis": 0.0,
+    "playfulness": 0.0,
+    "humor": 0.175,
+    "poetry": 0.16,
+    "integrity": 0.0,
+    "fairness": 0.0,
+    "responsibility": 0.0,
+    "humility": 0.0,
+    "care": 0.0,
+    "long_term_orientation": 0.0,
+    "memory_of_past": 0.0,
+    "anticipation": 0.0,
+    "timeliness": 0.0,
+    "pacing": 0.0,
+    "self_awareness": 0.0,
+    "self_correction": 0.0,
+    "attention_regulation": 0.0,
+    "cognitive_diversity": 0.0
+  },
+  "curiosity": 0.58,
+  "uncertainty": 0.33,
+  "narrative_state": {
+    "active_thread": "",
+    "last_topic": "",
+    "last_research_topic": "",
+    "last_research_summary": "",
+    "last_research_source": "",
+    "last_decision_summary": "",
+    "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+    "last_reflection": "you: raining",
+    "relationship_state": "Currently carrying 3 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "Active shared thread: raining with you.",
+    "follow_up_impulse": "Revisit raining with you until the shared thread changes state.",
+    "why_it_matters": "raining matters because shared human context should shape what Weslr returns to instead of resetting."
+  },
+  "unresolved_shared_threads": [],
+  "memory_layers": {
+    "working": {
+      "count": 0,
+      "topics": []
+    },
+    "episodic": {
+      "count": 0
+    },
+    "semantic": {
+      "count": 0,
+      "active_concern_topics": [],
+      "continuity_anchors": [],
+      "stable_topics": []
+    },
+    "archive": {
+      "count": 0
+    }
+  },
+  "topics": [
+    {
+      "id": "topic-backup confidence",
+      "name": "backup confidence",
+      "pressure": 0.168,
+      "lifecycle": "declining",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 91,
+      "created_at": 0,
+      "updated_at": 1774612821
+    },
+    {
+      "id": "topic-service visibility",
+      "name": "service visibility",
+      "pressure": 0.217,
+      "lifecycle": "archived",
+      "evidence": 1,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774618726
+    },
+    {
+      "id": "topic-config sanity checks",
+      "name": "config sanity checks",
+      "pressure": 0.393,
+      "lifecycle": "declining",
+      "evidence": 31,
+      "acceptances": 0,
+      "rejections": 7,
+      "created_at": 0,
+      "updated_at": 1774595883
+    },
+    {
+      "id": "topic-log readability",
+      "name": "log readability",
+      "pressure": 0.99,
+      "lifecycle": "archived",
+      "evidence": 55,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774846697
+    },
+    {
+      "id": "topic-workflow packaging",
+      "name": "workflow packaging",
+      "pressure": 0.22,
+      "lifecycle": "archived",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774591958
+    },
+    {
+      "id": "topic-config sanity checks validation",
+      "name": "config sanity checks validation",
+      "pressure": 0.94,
+      "lifecycle": "declining",
+      "evidence": 75,
+      "acceptances": 0,
+      "rejections": 3,
+      "created_at": 0,
+      "updated_at": 1774618597
+    },
+    {
+      "id": "topic-test opportunity",
+      "name": "test opportunity",
+      "pressure": 0.108,
+      "lifecycle": "dormant",
+      "evidence": 1,
+      "acceptances": 0,
+      "rejections": 11,
+      "created_at": 0,
+      "updated_at": 1774618727
+    },
+    {
+      "id": "topic-log readability validation",
+      "name": "log readability validation",
+      "pressure": 0.37,
+      "lifecycle": "emergent",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774618808
+    }
+  ],
+  "artifacts": [],
+  "handoffs": [],
+  "entities": {},
+  "events": [],
+  "metrics": {
+    "tick_count": 0,
+    "last_tick_duration_ms": 0,
+    "memory_pressure_score": 0.0
+  },
+  "derived_from": {
+    "state_core_generated_at": 1775129385,
+    "legacy_files_read": [
+      "communicator_self.json",
+      "relationships.json",
+      "opportunity_board.json",
+      "entity_graph.json",
+      "handoffs.json",
+      "event_log.json",
+      "needs.json",
+      "artifacts.json"
+    ],
+    "migrated_at": 0,
+    "migrated_by": "migrate_state.py"
+  },
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  }
+}
