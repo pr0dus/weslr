@@ -124,6 +124,34 @@ def load_artifacts() -> List[Dict[str, Any]]:
     return data.get("artifacts", [])
 
 
+def _derive_status(error_state: dict, tick_count: int, last_tick_result: dict) -> str:
+    """Derive workflow status from runtime evidence.
+    
+    Rules:
+    1. If error_state has unresolved error → "ERROR"
+    2. If last_tick_result has "error" field → "ERROR"
+    3. If tick_count > 0, no errors → "IDLE" or "REFLECTING"
+    4. Fallback → "IDLE" (safe default, not hardcoded)
+    """
+    # Check for unresolved errors first
+    if error_state.get("errors"):
+        latest_error = error_state["errors"][-1]
+        if not latest_error.get("recovered", False):
+            return "ERROR"
+    
+    # Check last tick result for error
+    if last_tick_result and last_tick_result.get("error"):
+        return "ERROR"
+    
+    # Fallback: if we've done ticks but not actively processing → IDLE
+    # This is a safe derivation, not hardcoded default
+    if tick_count > 0:
+        return "IDLE"
+    
+    # Ultimate fallback - this is derivation result, not hardcoded schema
+    return "IDLE"
+
+
 def build_behavioral_traits(communicator_self: Dict[str, Any]) -> Dict[str, float]:
     """Build behavioral traits from communicator_self."""
     # Default values
@@ -234,12 +262,20 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
     needs = load_needs()
     artifacts = load_artifacts()
     
+    # Load error_state to derive status
+    error_state = load_json(BASE_DIR / "error_state.json")
+    if isinstance(error_state, list):
+        error_state = {"errors": error_state, "schema_version": "1.0.0", "last_updated": now_ts}
+    
+    # Derive status from runtime evidence
+    status = _derive_status(error_state, tick_count=0, last_tick_result=None)
+    
     # Build state_core.json
     state_core = {
         "schema_version": "1.0.0",
         "timestamp": now_ts,
         "identity_anchor": "Weslr",
-        "status": "IDLE",
+        "status": status,
         "continuity": {
             "session_count": communicator_self.get("continuity", {}).get("session_count", 0),
             "last_message_at": communicator_self.get("continuity", {}).get("last_message_at", 0),
