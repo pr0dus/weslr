@@ -124,6 +124,128 @@ def load_artifacts() -> List[Dict[str, Any]]:
     return data.get("artifacts", [])
 
 
+def load_events() -> List[Dict[str, Any]]:
+    """Load events from event_log.json."""
+    data = load_json(BASE_DIR / "event_log.json")
+    if isinstance(data, list):
+        return data
+    return data.get("events", [])
+
+
+def _derive_events(event_log: dict, opportunities: dict, handoffs: list, last_updated: int) -> List[Dict[str, Any]]:
+    """Derive normalized events from current history sources.
+    
+    Sources:
+    - event_log.json → event_log.events[]
+    - opportunity_board.json → opportunity lifecycle events
+    - handoffs.json → handoff lifecycle events
+    
+    Returns unified event list suitable for operator display.
+    """
+    events = []
+    
+    # 1. Events from event_log.json
+    for event in event_log.get("events", []):
+        events.append({
+            "id": event.get("id", f"ev-{int(time.time() * 1000)}"),
+            "timestamp": event.get("timestamp", last_updated),
+            "type": event.get("kind", "unknown"),
+            "agent": event.get("agent_name", ""),
+            "action": event.get("action", ""),
+            "status": event.get("status", "unknown"),
+            "summary": event.get("summary", ""),
+            "source": "event_log"
+        })
+    
+    # 2. Events from opportunity board
+    if opportunities:
+        for theme_name, theme_data in opportunities.get("themes", {}).items():
+            events.append({
+                "id": f"opportunity-{theme_name}",
+                "timestamp": theme_data.get("updated_at", last_updated),
+                "type": "opportunity_update",
+                "agent": "",
+                "action": "lifecycle_change",
+                "status": theme_data.get("lifecycle", "pending"),
+                "summary": f"Opportunity '{theme_name}' updated: {theme_data.get('lifecycle', 'pending')}",
+                "source": "opportunity_board"
+            })
+    
+    # 3. Events from handoffs
+    for handoff in handoffs:
+        events.append({
+            "id": handoff.get("id", f"handoff-{handoff.get('timestamp', 0)}"),
+            "timestamp": handoff.get("timestamp", last_updated),
+            "type": "handoff_update",
+            "agent": handoff.get("to_agent", ""),
+            "action": "status_change",
+            "status": handoff.get("status", "pending"),
+            "summary": f"Handoff from {handoff.get('from_agent', '')} to {handoff.get('to_agent', '')}: {handoff.get('status', 'pending')}",
+            "source": "handoffs"
+        })
+    
+    # Sort by timestamp descending (newest first)
+    events.sort(key=lambda e: e["timestamp"], reverse=True)
+    
+    # Limit to last 50 events for display
+    return events[:50]
+
+
+def _derive_next_action(status: str, validation: dict, error_state: dict, 
+                        metrics: dict, last_updated: int) -> dict:
+    """Derive best next action based on current signals.
+    
+    Priority order:
+    1. Error state → ERROR recovery action
+    2. Memory pressure → compress action
+    3. Tick idle → tick action
+    4. No signals → IDLE
+    """
+    now_ts = int(time.time())
+    
+    # Rule 1: If ERROR, suggest recovery
+    if status == "ERROR" and error_state.get("errors"):
+        latest_error = error_state["errors"][-1]
+        return {
+            "action": "retry_tick",
+            "priority": "high",
+            "reason": "Error state detected. Retry tick after investigation.",
+            "source": "error_state",
+            "entity_id": latest_error.get("error_id", ""),
+            "trigger_at": last_updated + 300  # 5 min cooldown
+        }
+    
+    # Rule 2: If memory pressure high, suggest compression
+    memory_pressure = metrics.get("memory_pressure_score", 0.0)
+    if memory_pressure > 0.8:
+        return {
+            "action": "compress_memory",
+            "priority": "high",
+            "reason": f"Memory pressure at {memory_pressure:.1%}. Consider compression.",
+            "source": "metrics",
+            "trigger_at": last_updated + 60  # 1 min cooldown
+        }
+    
+    # Rule 3: If idle, suggest tick
+    if status == "IDLE":
+        return {
+            "action": "tick",
+            "priority": "medium",
+            "reason": "System idle. Run tick to advance workflow.",
+            "source": "status",
+            "trigger_at": last_updated + 60  # 1 min cooldown
+        }
+    
+    # Rule 4: Default fallback
+    return {
+        "action": "none",
+        "priority": "low",
+        "reason": "System operating normally. No immediate action needed.",
+        "source": "status",
+        "trigger_at": last_updated
+    }
+
+
 def _derive_status(error_state: dict, tick_count: int, last_tick_result: dict) -> str:
     """Derive workflow status from runtime evidence.
     
@@ -270,6 +392,23 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
     # Derive status from runtime evidence
     status = _derive_status(error_state, tick_count=0, last_tick_result=None)
     
+    # Derive events from multiple sources
+    events = _derive_events(
+        event_log=load_json(BASE_DIR / "event_log.json"),
+        opportunities=opportunity_board,
+        handoffs=handoffs,
+        last_updated=now_ts
+    )
+    
+    # Derive next_action based on current signals
+    next_action = _derive_next_action(
+        status=status,
+        validation={"ok": True, "errors": [], "warnings": []},
+        error_state=error_state,
+        metrics={"tick_count": 0, "last_tick_duration_ms": 0, "memory_pressure_score": 0.0},
+        last_updated=now_ts
+    )
+    
     # Build state_core.json
     state_core = {
         "schema_version": "1.0.0",
@@ -291,8 +430,9 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
         "topics": build_topics(opportunity_board),
         "artifacts": artifacts,
         "handoffs": handoffs,
-        "entities": entities,
+        "entities": entities if isinstance(entities, list) else [],
         "events": events,
+        "next_action": next_action,
         "metrics": {
             "tick_count": 0,
             "last_tick_duration_ms": 0,

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "timestamp": 1775129884,
+  "timestamp": 1775130236,
   "identity_anchor": "Weslr",
   "status": "IDLE",
   "continuity": {
@@ -190,15 +190,103 @@
   ],
   "artifacts": [],
   "handoffs": [],
-  "entities": {},
-  "events": [],
+  "entities": [],
+  "events": [
+    {
+      "id": "opportunity-log readability",
+      "timestamp": 1775129648,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'log readability' updated: archived",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-log readability validation",
+      "timestamp": 1774618808,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "emergent",
+      "summary": "Opportunity 'log readability validation' updated: emergent",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-test opportunity",
+      "timestamp": 1774618727,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "dormant",
+      "summary": "Opportunity 'test opportunity' updated: dormant",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-service visibility",
+      "timestamp": 1774618726,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'service visibility' updated: archived",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-config sanity checks validation",
+      "timestamp": 1774618597,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'config sanity checks validation' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-backup confidence",
+      "timestamp": 1774612821,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'backup confidence' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-config sanity checks",
+      "timestamp": 1774595883,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'config sanity checks' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-workflow packaging",
+      "timestamp": 1774591958,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'workflow packaging' updated: archived",
+      "source": "opportunity_board"
+    }
+  ],
+  "next_action": {
+    "action": "tick",
+    "priority": "medium",
+    "reason": "System idle. Run tick to advance workflow.",
+    "source": "status",
+    "trigger_at": 1775130296
+  },
   "metrics": {
     "tick_count": 0,
     "last_tick_duration_ms": 0,
     "memory_pressure_score": 0.0
   },
   "derived_from": {
-    "state_core_generated_at": 1775129884,
+    "state_core_generated_at": 1775130236,
     "legacy_files_read": [
       "communicator_self.json",
       "relationships.json",
