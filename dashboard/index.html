@@ -99,6 +99,9 @@
     <!-- Artifacts -->
     <section class="card" id="artifacts" style="margin-top:16px;">
       <h2>Artifacts</h2>
+      <p class="muted help-text"><strong>What:</strong> Exportable items created during workflow<br>
+      <strong>Why:</strong> See what can be packaged and shared externally<br>
+      <strong>Next:</strong> Review high-sellability items or expand promising candidates</p>
       <div id="artifacts-content">
         <p class="muted">Loading from state_core.json...</p>
       </div>
@@ -126,8 +129,20 @@
     <!-- Handoffs -->
     <section class="card" id="handoffs" style="margin-top:16px;">
       <h2>Handoffs</h2>
+      <p class="muted help-text"><strong>What:</strong> Work delegated from one agent to another<br>
+      <strong>Why:</strong> See when tasks or responsibilities are handed off<br>
+      <strong>Next:</strong> Review pending handoffs or wait for agent delegation</p>
       <div id="handoffs-content">
         <p class="muted">Loading from state_core.json...</p>
+      </div>
+      <div id="handoffs-empty" class="muted" style="display:none; margin-top:16px; padding:12px; background:#1c222b; border-radius:8px;">
+        <p><strong>Why Handoffs May Be Empty:</strong></p>
+        <ul style="margin-top:6px;">
+          <li>Agents successfully complete tasks (no need to delegate)</li>
+          <li>Workflows are self-contained and don't require handoffs</li>
+          <li>No errors or blocked needs requiring delegation</li>
+        </ul>
+        <p class="muted" style="margin-top:8px;">Handoffs appear when an action fails and another agent is better positioned to handle it.</p>
       </div>
     </section>
 
@@ -312,12 +327,34 @@
       
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">';
       for (const artifact of artifacts) {
+        // Decision guidance: determine review priority based on scores
+        let guidance = '';
+        let statusCue = 'healthy';
+        
+        if (artifact.sellability_score >= 0.5) {
+          guidance = '<strong>High priority for review</strong> - sellability indicates strong export potential';
+          statusCue = 'attention';
+        } else if (artifact.sellability_score >= 0.2) {
+          guidance = '<strong>Review recommended</strong> - some export potential, worth investigating';
+          statusCue = 'review';
+        } else {
+          guidance = '<strong>No immediate action</strong> - low sellability score';
+          statusCue = 'healthy';
+        }
+        
         html += `
           <div class="card" style="padding:12px;">
-            <h3 style="font-size:14px; margin-bottom:8px;">${artifact.id || 'unnamed'}</h3>
-            <p class="muted" style="font-size:11px; margin:4px 0;">type: ${artifact.type || 'unknown'}</p>
-            <p class="muted" style="font-size:11px; margin:4px 0;">status: ${artifact.status || 'unknown'}</p>
-            <p class="muted" style="font-size:11px; margin:4px 0;">created: ${new Date(artifact.created_at * 1000).toLocaleString()}</p>
+            <h3 style="font-size:14px; margin-bottom:8px;">${artifact.title || artifact.id}</h3>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <span class="pill">${artifact.artifact_type || 'unknown'}</span>
+              <span class="pill" style="background:${getStatusColor(statusCue)}">${statusCue}</span>
+            </div>
+            <p class="muted" style="font-size:11px; margin:4px 0;">category: ${artifact.category || 'uncategorized'}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">status: ${artifact.status || 'prototype'}</p>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid #28303a;">
+              <p class="muted" style="font-size:11px;">${guidance}</p>
+              <p class="muted" style="font-size:11px; margin-top:4px;">sellability: ${artifact.sellability_score?.toFixed(2) || 0} | novelty: ${artifact.novelty_score?.toFixed(2) || 0}</p>
+            </div>
           </div>
         `;
       }
@@ -336,11 +373,29 @@
       
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">';
       for (const entity of entities) {
+        // Get meaningful name if available
+        let name = entity.name;
+        if (!name || name === 'unknown') {
+          // Try to extract from ID (e.g., "agent-1" from "agent-1-abc123")
+          const id = entity.id || '';
+          const match = id.match(/^(agent-\d+)/);
+          name = match ? match[1] : id.substring(0, 8);
+        }
+        
+        // Determine status
+        let statusCue = entity.status === 'authoritative' ? 'healthy' : 'attention';
+        let trustLabel = entity.confidence >= 0.7 ? 'High trust' : (entity.confidence >= 0.4 ? 'Medium trust' : 'Low trust');
+        
         html += `
           <div class="card" style="padding:12px;">
-            <h3 style="font-size:14px; margin-bottom:8px;">${entity.id || 'unnamed'}</h3>
-            <p class="muted" style="font-size:11px; margin:4px 0;">type: ${entity.type || 'unknown'}</p>
-            <p class="muted" style="font-size:11px; margin:4px 0;">status: ${entity.status || 'unknown'}</p>
+            <h3 style="font-size:14px; margin-bottom:8px;">${name}</h3>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <span class="pill">${entity.type || 'other'}</span>
+              <span class="pill" style="background:${getStatusColor(statusCue)}">${statusCue}</span>
+            </div>
+            <p class="muted" style="font-size:11px; margin:4px 0;">confidence: ${entity.confidence?.toFixed(2) || 0}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">${trustLabel}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">relationships: ${entity.relationship_count || 0}</p>
           </div>
         `;
       }
@@ -378,6 +433,10 @@
 
     function getStatusColor(status) {
       const colors = {
+        'healthy': '#6ee7b7',
+        'review': '#fbbf24',
+        'attention': '#fbbf24',
+        'blocked': '#f87171',
         'active': '#6ee7b7',
         'completed': '#6ee7b7',
         'pending': '#fbbf24',
@@ -390,23 +449,49 @@
       return colors[status] || '#263241';
     }
 
+    function formatTimeLeft(timeout_at) {
+      if (!timeout_at) return 'N/A';
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = timeout_at - now;
+      if (remaining <= 0) return 'expired';
+      if (remaining < 60) return `${remaining}s`;
+      if (remaining < 3600) return `${Math.floor(remaining / 60)}m`;
+      return `${Math.floor(remaining / 3600)}h`;
+    }
+
     function renderHandoffs(data) {
       const content = document.getElementById('handoffs-content');
       const handoffs = data.handoffs || [];
+      const emptySection = document.getElementById('handoffs-empty');
       
       if (handoffs.length === 0) {
-        content.innerHTML = '<p class="muted">No active handoffs.</p>';
+        content.innerHTML = '';
+        if (emptySection) emptySection.style.display = 'block';
         return;
       }
       
+      if (emptySection) emptySection.style.display = 'none';
+      
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">';
       for (const handoff of handoffs) {
+        // Determine status cue
+        let statusCue = 'healthy';
+        if (handoff.status === 'pending') statusCue = 'attention';
+        if (handoff.status === 'accepted') statusCue = 'review';
+        if (handoff.status === 'error') statusCue = 'blocked';
+        
         html += `
           <div class="card" style="padding:12px;">
             <h3 style="font-size:14px; margin-bottom:8px;">${handoff.id || 'unnamed'}</h3>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <span class="pill">${handoff.handoff_type || 'delegation'}</span>
+              <span class="pill" style="background:${getStatusColor(statusCue)}">${statusCue}</span>
+            </div>
             <p class="muted" style="font-size:11px; margin:4px 0;">from: ${handoff.from_agent || 'unknown'}</p>
             <p class="muted" style="font-size:11px; margin:4px 0;">to: ${handoff.to_agent || 'unknown'}</p>
-            <p class="muted" style="font-size:11px; margin:4px 0;">status: ${handoff.status || 'unknown'}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">topic: ${handoff.topic || 'unspecified'}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">priority: ${handoff.priority?.toFixed(2) || 0.5}</p>
+            <p class="muted" style="font-size:11px; margin:4px 0;">timeout: ${formatTimeLeft(handoff.timeout_at)}</p>
           </div>
         `;
       }
