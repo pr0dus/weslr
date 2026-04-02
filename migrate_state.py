@@ -124,6 +124,59 @@ def load_artifacts() -> List[Dict[str, Any]]:
     return data.get("artifacts", [])
 
 
+def load_agent_artifacts() -> List[Dict[str, Any]]:
+    """Aggregate artifacts from per-agent .meta.json files.
+    
+    Reads artifacts from agents/*/artifacts/*.meta.json and aggregates them
+    into a unified view suitable for state_core.artifacts[].
+    
+    Keeps legacy per-agent files untouched (READ-ONLY).
+    """
+    artifacts = []
+    
+    # Scan all agent directories
+    agents_dir = BASE_DIR / "agents"
+    if not agents_dir.exists():
+        return artifacts
+    
+    for agent_dir in sorted(agents_dir.iterdir()):
+        if not agent_dir.is_dir():
+            continue
+        
+        artifacts_dir = agent_dir / "artifacts"
+        if not artifacts_dir.exists():
+            continue
+        
+        # Load all .meta.json files
+        for meta_file in sorted(artifacts_dir.glob("*.meta.json")):
+            artifact = load_json(meta_file)
+            if artifact:
+                # Normalize artifact with source tracking
+                normalized = {
+                    "id": artifact.get("id", meta_file.stem),
+                    "agent_name": artifact.get("agent_name", "unknown"),
+                    "title": artifact.get("title", meta_file.stem.replace("_", " ").title()),
+                    "artifact_type": artifact.get("artifact_type", "unknown"),
+                    "category": artifact.get("category", "uncategorized"),
+                    "status": artifact.get("status", "prototype"),
+                    "lifecycle_stage": artifact.get("lifecycle_stage", "prototype"),
+                    "review_status": artifact.get("review_status", "unreviewed"),
+                    "clarity_score": artifact.get("clarity_score", 0.0),
+                    "reusability_score": artifact.get("reusability_score", 0.0),
+                    "novelty_score": artifact.get("novelty_score", 0.0),
+                    "sellability_score": artifact.get("sellability_score", 0.0),
+                    "human_proposed_score": artifact.get("human_proposed_score", 0.0),
+                    "commercial_readiness_score": artifact.get("commercial_readiness_score", 0.0),
+                    "price_band_guess": artifact.get("price_band_guess", "needs packaging"),
+                    "delivery_mode": artifact.get("delivery_mode", "internal_component"),
+                    "target_user": artifact.get("target_user", "technical builders"),
+                    "source_file": str(meta_file.relative_to(BASE_DIR)),
+                }
+                artifacts.append(normalized)
+    
+    return artifacts
+
+
 def load_events() -> List[Dict[str, Any]]:
     """Load events from event_log.json."""
     data = load_json(BASE_DIR / "event_log.json")
@@ -382,7 +435,7 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
     handoffs = load_handoff_notes()
     events = load_events()
     needs = load_needs()
-    artifacts = load_artifacts()
+    artifacts = load_agent_artifacts()  # Changed from load_artifacts()
     
     # Load error_state to derive status
     error_state = load_json(BASE_DIR / "error_state.json")

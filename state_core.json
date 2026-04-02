@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "timestamp": 1775130236,
+  "timestamp": 1775154611,
   "identity_anchor": "Weslr",
   "status": "IDLE",
   "continuity": {
@@ -188,7 +188,108 @@
       "updated_at": 1774618808
     }
   ],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "id": "agent-1-module_export_candidate-1775129648",
+      "agent_name": "agent-1",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "benchmarks",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-1/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-1-research_note-1774624083",
+      "agent_name": "agent-1",
+      "title": "Research Note",
+      "artifact_type": "market_hypothesis",
+      "category": "memory",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.55,
+      "novelty_score": 0.28,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.01,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "internal_reusable_component",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-1/artifacts/research_note.meta.json"
+    },
+    {
+      "id": "agent-2-module_export_candidate-1774846697",
+      "agent_name": "agent-2",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "observability",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-2/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-4-module_export_candidate-1774846697",
+      "agent_name": "agent-4",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "memory",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-4/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-4-research_note-1775129648",
+      "agent_name": "agent-4",
+      "title": "Research Note",
+      "artifact_type": "market_hypothesis",
+      "category": "modules",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.55,
+      "novelty_score": 0.28,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.01,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "internal_reusable_component",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-4/artifacts/research_note.meta.json"
+    }
+  ],
   "handoffs": [],
   "entities": [],
   "events": [
@@ -278,7 +379,7 @@
     "priority": "medium",
     "reason": "System idle. Run tick to advance workflow.",
     "source": "status",
-    "trigger_at": 1775130296
+    "trigger_at": 1775154671
   },
   "metrics": {
     "tick_count": 0,
@@ -286,7 +387,7 @@
     "memory_pressure_score": 0.0
   },
   "derived_from": {
-    "state_core_generated_at": 1775130236,
+    "state_core_generated_at": 1775154611,
     "legacy_files_read": [
       "communicator_self.json",
       "relationships.json",
