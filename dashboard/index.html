@@ -30,6 +30,8 @@
     .debug-toggle button:hover { background:#4b5666; }
     .debug-section { display:none; }
     .debug-section.visible { display:block; }
+    .help-text { font-size: 13px; background: #1c222b; border-left: 3px solid #6ee7b7; padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; }
+    .help-text strong { color: #6ee7b7; display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
@@ -69,6 +71,9 @@
     <!-- Status / Overview -->
     <section class="card" id="status" style="margin-top:16px;">
       <h2>Status / Overview</h2>
+      <p class="muted help-text"><strong>What:</strong> Current workflow state and next recommended action<br>
+      <strong>Why:</strong> Know if the system is running, idle, or needs attention<br>
+      <strong>Next:</strong> Review any errors or trigger the suggested action</p>
       <div id="status-content">
         <p class="muted">Loading from state_core.json...</p>
       </div>
@@ -83,6 +88,9 @@
     <!-- Topics -->
     <section class="card" id="topics" style="margin-top:16px;">
       <h2>Topics</h2>
+      <p class="muted help-text"><strong>What:</strong> Active opportunity themes with pressure scores<br>
+      <strong>Why:</strong> See what ideas are emerging and which need attention<br>
+      <strong>Next:</strong> Expand promising topics or archive declining ones</p>
       <div id="topics-content">
         <p class="muted">Loading from state_core.json...</p>
       </div>
@@ -107,6 +115,9 @@
     <!-- Events -->
     <section class="card" id="events" style="margin-top:16px;">
       <h2>Events</h2>
+      <p class="muted help-text"><strong>What:</strong> Recent workflow changes and lifecycle transitions<br>
+      <strong>Why:</strong> Track how topics evolve and decisions are made<br>
+      <strong>Next:</strong> Investigate any unexpected transitions or patterns</p>
       <div id="events-content">
         <p class="muted">Loading from state_core.json...</p>
       </div>
@@ -123,6 +134,9 @@
     <!-- Operators -->
     <section class="card" id="operators" style="margin-top:16px;">
       <h2>Operators</h2>
+      <p class="muted help-text"><strong>What:</strong> CLI commands for common operator tasks<br>
+      <strong>Why:</strong> Execute workflow actions without leaving the dashboard<br>
+      <strong>Next:</strong> Use the commands to explain or trigger actions</p>
       <div id="operators-content">
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
