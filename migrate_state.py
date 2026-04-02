@@ -332,14 +332,20 @@ def _derive_events(event_log: dict, opportunities: dict, handoffs: list, last_up
 
 
 def _derive_next_action(status: str, validation: dict, error_state: dict, 
-                        metrics: dict, last_updated: int) -> dict:
+                        metrics: dict, last_updated: int,
+                        artifacts: List[Dict] = None,
+                        handoffs: List[Dict] = None,
+                        topics: List[Dict] = None,
+                        entities: List[Dict] = None) -> dict:
     """Derive best next action based on current signals.
     
     Priority order:
     1. Error state → ERROR recovery action
-    2. Memory pressure → compress action
-    3. Tick idle → tick action
-    4. No signals → IDLE
+    2. Pending handoffs → review handoff action
+    3. High-pressure topics → investigate topic action
+    4. Review-worthy artifacts → review artifact action
+    5. Stale/idle system → tick action
+    6. No signals → IDLE
     """
     now_ts = int(time.time())
     
@@ -355,7 +361,46 @@ def _derive_next_action(status: str, validation: dict, error_state: dict,
             "trigger_at": last_updated + 300  # 5 min cooldown
         }
     
-    # Rule 2: If memory pressure high, suggest compression
+    # Rule 2: If pending handoffs, suggest review
+    if handoffs and len(handoffs) > 0:
+        pending = [h for h in handoffs if h.get("status") in {"pending", "accepted", "active"}]
+        if pending:
+            return {
+                "action": "review_handoffs",
+                "priority": "high",
+                "reason": f"Found {len(pending)} pending handoff(s) requiring review.",
+                "source": "handoffs",
+                "handoff_count": len(pending),
+                "trigger_at": last_updated + 60  # 1 min cooldown
+            }
+    
+    # Rule 3: If high-pressure topics, suggest investigation
+    if topics:
+        high_pressure = [t for t in topics if t.get("pressure", 0) > 0.8]
+        if high_pressure:
+            return {
+                "action": "investigate_topics",
+                "priority": "medium",
+                "reason": f"{len(high_pressure)} high-pressure topic(s) detected.",
+                "source": "topics",
+                "topic_count": len(high_pressure),
+                "trigger_at": last_updated + 120  # 2 min cooldown
+            }
+    
+    # Rule 4: If review-worthy artifacts, suggest review
+    if artifacts:
+        reviewable = [a for a in artifacts if a.get("sellability_score", 0) >= 0.2]
+        if reviewable:
+            return {
+                "action": "review_artifacts",
+                "priority": "medium",
+                "reason": f"{len(reviewable)} artifact(s) ready for review.",
+                "source": "artifacts",
+                "artifact_count": len(reviewable),
+                "trigger_at": last_updated + 120  # 2 min cooldown
+            }
+    
+    # Rule 5: If memory pressure high, suggest compression
     memory_pressure = metrics.get("memory_pressure_score", 0.0)
     if memory_pressure > 0.8:
         return {
@@ -366,7 +411,7 @@ def _derive_next_action(status: str, validation: dict, error_state: dict,
             "trigger_at": last_updated + 60  # 1 min cooldown
         }
     
-    # Rule 3: If idle, suggest tick
+    # Rule 6: If idle, suggest tick
     if status == "IDLE":
         return {
             "action": "tick",
@@ -376,7 +421,7 @@ def _derive_next_action(status: str, validation: dict, error_state: dict,
             "trigger_at": last_updated + 60  # 1 min cooldown
         }
     
-    # Rule 4: Default fallback
+    # Rule 7: Default fallback
     return {
         "action": "none",
         "priority": "low",
@@ -540,13 +585,20 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
         last_updated=now_ts
     )
     
-    # Derive next_action based on current signals
+    # Build topics list for next_action derivation
+    topics = build_topics(opportunity_board)
+    
+    # Derive next_action based on current signals (using populated core data)
     next_action = _derive_next_action(
         status=status,
         validation={"ok": True, "errors": [], "warnings": []},
         error_state=error_state,
         metrics={"tick_count": 0, "last_tick_duration_ms": 0, "memory_pressure_score": 0.0},
-        last_updated=now_ts
+        last_updated=now_ts,
+        artifacts=artifacts,
+        handoffs=handoffs,
+        topics=topics,
+        entities=entities if isinstance(entities, list) else []
     )
     
     # Build state_core.json
@@ -567,7 +619,7 @@ def derive_state_core(dry_run: bool = False) -> Dict[str, Any]:
         "narrative_state": build_narrative_state(communicator_self),
         "unresolved_shared_threads": relationships.get("unresolved_shared_threads", []),
         "memory_layers": build_memory_layers(communicator_self),
-        "topics": build_topics(opportunity_board),
+        "topics": topics,
         "artifacts": artifacts,
         "handoffs": handoffs,
         "entities": entities if isinstance(entities, list) else [],
