@@ -6,6 +6,7 @@ import re
 import shutil
 import sqlite3
 import time
+import traceback
 from html import escape
 from pathlib import Path
 from typing import Dict, List
@@ -6418,6 +6419,56 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
     }
 
 
+def perform_tick_with_error_capture(verbose: bool = False) -> List[Dict]:
+    """Run perform_tick with error_state.json capture (additive, non-breaking).
+    
+    This wrapper captures tick failures and writes them to error_state.json.
+    On success, returns the original result.
+    On failure, writes error_state.json and returns a structured error response.
+    """
+    try:
+        return perform_tick(verbose=verbose)
+    except Exception as e:
+        # Get current tick count from world
+        conn = connect()
+        world = get_world(conn)
+        current_tick = world.get("tick", 0)
+        conn.close()
+        
+        now_ts = int(time.time())
+        error_id = f"err-{now_ts}-{int(random.random() * 1000000):06d}"
+        tb_lines = traceback.format_exc().split("\n")
+        
+        error_entry = {
+            "error_id": error_id,
+            "timestamp": now_ts,
+            "status": "logged",
+            "failing_stage": "tick_processing",
+            "exception_type": type(e).__name__,
+            "exception_message": str(e)[:500],
+            "traceback_summary": "\n".join(tb_lines[:3]),
+            "tick_context": {
+                "tick_number": current_tick,
+                "agent_name": "",
+                "action": "perform_tick",
+                "verbose": verbose
+            },
+            "recovery_hint": "Retry the tick. If error persists, check logs for traceback.",
+            "recovered": False
+        }
+        
+        # Write error_state.json (additive, never overwrites success)
+        _write_error_state(error_entry)
+        
+        # Return structured error response (not breaking current flow)
+        return {
+            "summaries": [],
+            "communicator": load_communicator_state(),
+            "internal_consensus": {"halted": True, "error_id": error_id, "reason": "tick failed"},
+            "error": error_entry
+        }
+
+
 def write_pack_wrapper(pack: Dict) -> str:
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
     wrapper_dir = EXPORTS_DIR / pack.get("pack_name", "pack")
@@ -7803,6 +7854,32 @@ def load_failsafe_status() -> dict:
         "updated_at": int(payload.get("updated_at", 0) or 0),
         "last_reason": str(payload.get("last_reason", "")),
     }
+
+
+def _write_error_state(error_entry: dict) -> None:
+    """Append error entry to error_state.json (additive, non-breaking)."""
+    error_path = BASE_DIR / "error_state.json"
+    
+    # Read existing errors or initialize
+    if error_path.exists():
+        try:
+            existing = json.loads(error_path.read_text())
+            errors = existing.get("errors", [])
+        except Exception:
+            errors = []
+    else:
+        errors = []
+    
+    # Append new error
+    errors.append(error_entry)
+    
+    # Write updated state
+    state = {
+        "schema_version": "1.0.0",
+        "last_updated": int(time.time()),
+        "errors": errors
+    }
+    error_path.write_text(json.dumps(state, indent=2) + "\n")
 
 
 def build_communicator_message() -> dict:
