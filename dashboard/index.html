@@ -225,6 +225,31 @@
           </div>
         </div>
         
+        <!-- Pack Decision Section -->
+        <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #f59e0b;">
+          <h3 style="font-size:14px; margin:0 0 8px;">Pack Decision</h3>
+          <p class="muted" style="font-size:11px; margin-bottom:8px;">Record decisions for export packs (approve, reject, or update pricing)</p>
+          
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input type="text" id="pack-decision-name" placeholder="Pack Name (e.g., marketing-1)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+            <select id="pack-decision-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
+              <option value="approve">Approve</option>
+              <option value="reject">Reject</option>
+              <option value="update_price">Update Price</option>
+            </select>
+          </div>
+          
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input type="text" id="pack-decision-note" placeholder="Reason for action (required for reject)" style="flex:1; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+            <input type="text" id="pack-decision-price" placeholder="Price (required for update_price)" style="flex:1; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button id="pack-decision-submit" style="padding:8px 16px; border:none; background:#f59e0b; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Pack Decision</button>
+            <p id="pack-decision-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+        </div>
+        
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
           <li><strong>Approve artifact</strong><br><code>python3 main.py review &lt;artifact-id&gt; approve --note 'operator-approved from dashboard'</code></li>
@@ -287,6 +312,9 @@
       
       // Validation Recording UI handler
       setupValidationRecordingUI();
+      
+      // Pack Decision UI handler
+      setupPackDecisionUI();
     });
 
     function setupArtifactReviewUI() {
@@ -476,6 +504,86 @@
           validationStatus.style.color = '#f87171';
         } finally {
           validationSubmit.disabled = false;
+        }
+      });
+    }
+
+    function setupPackDecisionUI() {
+      const actionSelect = document.getElementById('pack-decision-action');
+      const noteInput = document.getElementById('pack-decision-note');
+      const priceInput = document.getElementById('pack-decision-price');
+      const decisionSubmit = document.getElementById('pack-decision-submit');
+      const decisionStatus = document.getElementById('pack-decision-status');
+      
+      // Show/hide note and price fields based on action
+      actionSelect.addEventListener('change', () => {
+        if (actionSelect.value === 'reject') {
+          noteInput.required = true;
+        } else {
+          noteInput.required = false;
+        }
+        if (actionSelect.value === 'update_price') {
+          priceInput.required = true;
+        } else {
+          priceInput.required = false;
+        }
+      });
+      
+      // Submit pack decision
+      decisionSubmit.addEventListener('click', async () => {
+        const packName = document.getElementById('pack-decision-name').value.trim();
+        const action = document.getElementById('pack-decision-action').value;
+        const note = document.getElementById('pack-decision-note').value.trim();
+        const price = document.getElementById('pack-decision-price').value.trim();
+        
+        if (!packName) {
+          decisionStatus.textContent = '❌ Pack name is required';
+          decisionStatus.style.color = '#f87171';
+          return;
+        }
+        
+        if (action === 'reject' && !note) {
+          decisionStatus.textContent = '❌ Note/reason is required for reject action';
+          decisionStatus.style.color = '#f87171';
+          return;
+        }
+        
+        if (action === 'update_price' && !price) {
+          decisionStatus.textContent = '❌ Price is required for update_price action';
+          decisionStatus.style.color = '#f87171';
+          return;
+        }
+        
+        // Disable button during request
+        decisionSubmit.disabled = true;
+        decisionStatus.textContent = '⏳ Submitting...';
+        decisionStatus.style.color = '#f59e0b';
+        
+        try {
+          const response = await fetch('/pack/decision', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({pack_name: packName, action: action, note: note, price: price})
+          });
+          
+          const result = await response.json();
+          
+          if (result.ok) {
+            decisionStatus.textContent = `✅ Pack decision submitted: ${action}`;
+            decisionStatus.style.color = '#f59e0b';
+            // Clear the fields
+            document.getElementById('pack-decision-name').value = '';
+            document.getElementById('pack-decision-note').value = '';
+            document.getElementById('pack-decision-price').value = '';
+          } else {
+            decisionStatus.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+            decisionStatus.style.color = '#f87171';
+          }
+        } catch (error) {
+          decisionStatus.textContent = `❌ Request failed: ${error.message}`;
+          decisionStatus.style.color = '#f87171';
+        } finally {
+          decisionSubmit.disabled = false;
         }
       });
     }

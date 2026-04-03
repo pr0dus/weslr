@@ -779,6 +779,57 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             
+            # Handle pack decision endpoint
+            elif self.path == "/pack/decision":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    pack_name = data.get("pack_name", "")
+                    action = data.get("action", "")
+                    note = data.get("note", "")
+                    price = data.get("price", "")
+                    
+                    # Validate input
+                    if not pack_name:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "pack name is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["approve", "reject", "update_price"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'approve', 'reject', or 'update_price'"}).encode("utf-8"))
+                        return
+                    if action == "reject" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/reason is required for reject action"}).encode("utf-8"))
+                        return
+                    if action == "update_price" and not price:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "price is required for update_price action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the pack decision using dashboard-specific function
+                    result = pack_decision_dashboard(pack_name, action, note=note, price=price)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""

@@ -2023,7 +2023,53 @@ def artifact_validate_dashboard(artifact_id: str, outcome: str, note: str = "") 
     if internal_action is None:
         conn.close()
         return {"ok": False, "message": f"Unknown outcome: {outcome}"}
+
+
+def pack_decision_dashboard(pack_name: str, action: str, note: str = "", price: str = "") -> dict:
+    """Dashboard-specific pack decision for operators.
     
+    Supports actions: approve, reject, update_price (simplified for operator UI)
+    
+    Args:
+        pack_name: Pack name
+        action: One of 'approve', 'reject', 'update_price'
+        note: Optional note for audit trail
+        price: Price value (required for update_price)
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    # Load packs
+    packs = read_json_file(PACKS_PATH, [])
+    pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
+    if pack is None:
+        return {"ok": False, "message": f"No pack found: {pack_name}"}
+    
+    now_ts = int(time.time())
+    
+    if action == "approve":
+        # Use existing apply_pack_outcome for approve
+        result = apply_pack_outcome(pack_name, "accept", note=note)
+        result["message"] = f"Pack approved: {pack_name}"
+        return result
+    elif action == "reject":
+        # Use existing apply_pack_outcome for reject
+        result = apply_pack_outcome(pack_name, "reject", note=note)
+        result["message"] = f"Pack rejected: {pack_name}"
+        return result
+    elif action == "update_price":
+        # Validate price
+        if not price:
+            return {"ok": False, "message": "Price is required for update_price action"}
+        # Update price in pack
+        pack["price_band"] = price
+        pack["updated_at"] = now_ts
+        write_json_file(PACKS_PATH, packs)
+        return {"ok": True, "message": f"Pack price updated to {price}: {pack_name}", "pack": pack}
+    else:
+        return {"ok": False, "message": f"Unknown pack action: {action}"}
+
+
     # Apply the validation using existing logic
     if internal_action == "accept":
         proof["handoff_acceptances"] = int(proof.get("handoff_acceptances", 0)) + 1
