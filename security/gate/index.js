@@ -70,7 +70,9 @@ async function logSecurityEvent(hook) {
       timestamp: hook.timestamp
     });
   } catch (err) {
-    console.error("[security/gate] Failed to log security event:", err);
+    // Audit logging may fail if .openclaw/audit doesn't exist yet
+    // This is expected in development environments
+    console.error("[security/gate] Failed to log security event:", err.message);
   }
 }
 
