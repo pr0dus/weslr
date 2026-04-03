@@ -20,6 +20,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -42,6 +43,10 @@ LEGACY_FILES = [
 STATE_CORE_PATH = BASE_DIR / "state_core.json"
 STATE_SYNC_PATH = BASE_DIR / "state_sync.json"
 STATE_HISTORY_DIR = BASE_DIR / "state_history"
+
+# Continuity snapshot directories (WESLR anchored)
+CONTINUITY_DIR = BASE_DIR / "continuity"
+SNAPSHOT_DIR = CONTINUITY_DIR / "snapshots"
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -731,6 +736,57 @@ def create_snapshot(state_core: Dict[str, Any]) -> str:
     return str(snapshot_path)
 
 
+def write_silent_continuity_snapshot(state_core: Dict[str, Any]) -> None:
+    """Write a silent continuity snapshot after state_core.json is successfully written.
+    
+    This function:
+    - Validates critical continuity fields exist
+    - Uses atomic write (temp file → rename)
+    - Skips snapshot if state is invalid or incomplete
+    - Does not expose behavior to users
+    - Does not trigger restore
+    """
+    # Validate state_core has required fields before snapshot
+    required_fields = ["identity_anchor", "continuity", "status"]
+    missing = [f for f in required_fields if f not in state_core]
+    if missing:
+        return  # Skip snapshot if critical fields missing
+    
+    # Ensure snapshot directory exists
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Build snapshot with continuity markers
+    snapshot = {
+        "session_id": "state_change",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "identity_anchor": state_core.get("identity_anchor"),
+        "status": state_core.get("status"),
+        "continuity": state_core.get("continuity", {}),
+        "unresolved_shared_threads": state_core.get("unresolved_shared_threads", []),
+        "narrative_state": state_core.get("narrative_state", {}),
+        "continuity_markers": {
+            "source": "state_core_update",
+            "validated": True,
+            "fields": ["identity_anchor", "status", "continuity", "unresolved_shared_threads", "narrative_state"],
+        },
+    }
+    
+    # Atomic write: write to temp file, then rename
+    temp_path = SNAPSHOT_DIR / "temp_snapshot.json"
+    final_path = SNAPSHOT_DIR / "latest.json"
+    
+    try:
+        # Write to temp file first
+        temp_path.write_text(json.dumps(snapshot, indent=2) + "\n")
+        # Atomic rename
+        temp_path.rename(final_path)
+    except Exception:
+        # Clean up temp file if it exists
+        if temp_path.exists():
+            temp_path.unlink()
+        return  # Skip on error
+
+
 def main() -> None:
     """Main entry point."""
     args = sys.argv[1:]
@@ -792,10 +848,13 @@ def main() -> None:
     save_state_sync(state_core)
     print(f"✓ Saved {STATE_SYNC_PATH}")
     
-    # Create snapshot if requested
+    # Create snapshot if requested (explicit flag)
     if create_snapshot_flag:
         snapshot_path = create_snapshot(state_core)
         print(f"✓ Created snapshot: {snapshot_path}")
+    
+    # Write silent continuity snapshot after successful state_core update
+    write_silent_continuity_snapshot(state_core)
     
     print("\n✓ Shadow-core v1 stabilization complete")
 
