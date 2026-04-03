@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * security/detector/index.js - Threat Detection Layer (Scaffold)
+ * security/detector/index.js - Threat Detection Layer
  * Phase 1: Detection primitives and pattern matching
  */
 
@@ -26,6 +26,7 @@ export class ThreatDetector {
   async scanCode(code, context = {}) {
     const results = {
       issues: [],
+      hasIssues: false,
       riskScore: 0,
       threatTags: []
     };
@@ -33,6 +34,7 @@ export class ThreatDetector {
     const maliciousResult = await this.detectors.maliciousCode.scan(code);
     if (maliciousResult.hasIssues) {
       results.issues.push(...maliciousResult.issues);
+      results.hasIssues = true;
       results.threatTags.push("code-injection", "malicious-pattern");
     }
 
@@ -61,34 +63,34 @@ export class ThreatDetector {
   }
 
   /**
-   * Calculate weighted risk score
+   * Calculate weighted risk score from issues directly
+   * Priority: critical (30) > high (20) > medium (10) > low (5)
    */
   calculateRiskScore(threats) {
-    // Phase 1: Simplified scoring
+    // If issues provided, use them directly
+    const issues = threats.issues || [];
+    
+    if (issues.length === 0) return 0;
+
     let score = 0;
 
-    for (const tag of threats.threatTags || []) {
-      switch (tag) {
-        case "code-injection":
-          score += 35;
-          break;
-        case "privilege-escalation":
+    for (const issue of issues) {
+      switch (issue.severity || "low") {
+        case "critical":
           score += 30;
           break;
-        case "continuity-corruption":
+        case "high":
           score += 20;
           break;
-        case "plugin-compromise":
-          score += 15;
-          break;
-        case "persistence-attack":
-          score += 25;
+        case "medium":
+          score += 10;
           break;
         default:
           score += 5;
       }
     }
 
+    // Cap at 100
     return Math.min(100, score);
   }
 }

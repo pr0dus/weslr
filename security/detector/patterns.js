@@ -21,7 +21,7 @@ export const PERSISTENCE_PATTERNS = [
   {
     name: "launchd_daemon",
     description: "macOS launchd configuration",
-    pathPattern: /(?:\/Library|~/)Launch(?:Agents|Daemons)\/.*\.plist/ 
+    pathPattern: /(?:\/Library|~\/)Launch(?:Agents|Daemons)\/.*\.plist/ 
   },
   {
     name: "startup_script",
