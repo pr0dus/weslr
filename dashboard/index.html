@@ -177,6 +177,30 @@
           </div>
         </div>
         
+        <!-- Category Management Section -->
+        <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #3b82f6;">
+          <h3 style="font-size:14px; margin:0 0 8px;">Category Management</h3>
+          <p class="muted" style="font-size:11px; margin-bottom:8px;">Create, update, or archive categories for organizing opportunities and artifacts</p>
+          
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input type="text" id="category-update-name" placeholder="Category Name (e.g., marketing)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+            <select id="category-update-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
+              <option value="create">Create</option>
+              <option value="update">Update</option>
+              <option value="archive">Archive</option>
+            </select>
+          </div>
+          
+          <div id="category-update-note-container" style="display:none; margin-bottom:8px;">
+            <input type="text" id="category-update-note" placeholder="Reason for action (required for archive)" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button id="category-update-submit" style="padding:8px 16px; border:none; background:#3b82f6; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Category Action</button>
+            <p id="category-update-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+        </div>
+        
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
           <li><strong>Approve artifact</strong><br><code>python3 main.py review &lt;artifact-id&gt; approve --note 'operator-approved from dashboard'</code></li>
@@ -233,6 +257,9 @@
       
       // Artifact Review UI handler
       setupArtifactReviewUI();
+      
+      // Category Management UI handler
+      setupCategoryManagementUI();
     });
 
     function setupArtifactReviewUI() {
@@ -299,6 +326,74 @@
           reviewStatus.style.color = '#f87171';
         } finally {
           reviewSubmit.disabled = false;
+        }
+      });
+    }
+
+    function setupCategoryManagementUI() {
+      const actionSelect = document.getElementById('category-update-action');
+      const noteContainer = document.getElementById('category-update-note-container');
+      const updateSubmit = document.getElementById('category-update-submit');
+      const updateStatus = document.getElementById('category-update-status');
+      
+      // Show note field only for archive action
+      actionSelect.addEventListener('change', () => {
+        if (actionSelect.value === 'archive') {
+          noteContainer.style.display = 'block';
+          document.getElementById('category-update-note').required = true;
+        } else {
+          noteContainer.style.display = 'none';
+          document.getElementById('category-update-note').required = false;
+        }
+      });
+      
+      // Submit category update
+      updateSubmit.addEventListener('click', async () => {
+        const categoryName = document.getElementById('category-update-name').value.trim();
+        const action = document.getElementById('category-update-action').value;
+        const note = document.getElementById('category-update-note').value.trim();
+        
+        if (!categoryName) {
+          updateStatus.textContent = '❌ Category name is required';
+          updateStatus.style.color = '#f87171';
+          return;
+        }
+        
+        if (action === 'archive' && !note) {
+          updateStatus.textContent = '❌ Note/reason is required for archive action';
+          updateStatus.style.color = '#f87171';
+          return;
+        }
+        
+        // Disable button during request
+        updateSubmit.disabled = true;
+        updateStatus.textContent = '⏳ Submitting...';
+        updateStatus.style.color = '#3b82f6';
+        
+        try {
+          const response = await fetch('/category/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: categoryName, action: action, note: note})
+          });
+          
+          const result = await response.json();
+          
+          if (result.ok) {
+            updateStatus.textContent = `✅ Category action submitted: ${action}`;
+            updateStatus.style.color = '#3b82f6';
+            // Clear the fields
+            document.getElementById('category-update-name').value = '';
+            document.getElementById('category-update-note').value = '';
+          } else {
+            updateStatus.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+            updateStatus.style.color = '#f87171';
+          }
+        } catch (error) {
+          updateStatus.textContent = `❌ Request failed: ${error.message}`;
+          updateStatus.style.color = '#f87171';
+        } finally {
+          updateSubmit.disabled = false;
         }
       });
     }

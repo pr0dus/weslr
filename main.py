@@ -690,6 +690,51 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             
+            # Handle category update endpoint
+            elif self.path == "/category/update":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    category_name = data.get("name", "")
+                    action = data.get("action", "")
+                    description = data.get("description", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not category_name:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "category name is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["create", "update", "archive"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'create', 'update', or 'archive'"}).encode("utf-8"))
+                        return
+                    if action == "archive" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/reason is required for archive action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the category action using dashboard-specific function
+                    result = category_update_dashboard(action, category_name, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""

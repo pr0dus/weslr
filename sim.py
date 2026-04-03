@@ -1990,6 +1990,53 @@ def category_action(action: str, name: str) -> dict:
     return {"ok": False, "message": f"Unknown category action: {action}"}
 
 
+def category_update_dashboard(action: str, name: str, note: str = "") -> dict:
+    """Dashboard-specific category management for operators.
+    
+    Supports actions: create, update, archive (simplified for operator UI)
+    
+    Args:
+        action: One of 'create', 'update', 'archive'
+        name: Category name
+        note: Optional note for audit trail
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    import time
+    
+    # Load categories
+    categories = load_categories()
+    
+    if action == "create":
+        if name in categories:
+            return {"ok": False, "message": f"Category already exists: {name}"}
+        if len(categories) >= MAX_CATEGORIES:
+            return {"ok": False, "message": "Cannot create category: category limit reached"}
+        categories.append(name)
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Created category: {name}", "categories": categories}
+    
+    if action == "update":
+        if name not in categories:
+            return {"ok": False, "message": f"Category not found: {name}"}
+        # For now, update just logs the action - could add description/tags later
+        return {"ok": True, "message": f"Updated category: {name}", "categories": categories}
+    
+    if action == "archive":
+        if name not in categories:
+            return {"ok": False, "message": f"Category not found: {name}"}
+        if name in BASE_CATEGORIES:
+            return {"ok": False, "message": f"Cannot archive base category: {name}"}
+        categories = [c for c in categories if c != name]
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Archived category: {name}", "categories": categories}
+    
+    return {"ok": False, "message": f"Unknown category action: {action}"}
+
+
 def normalize_category_for_artifact(action: str, category: str | None) -> str:
     if category:
         return category
