@@ -204,16 +204,32 @@
         debugSections.classList.toggle('visible');
       });
       
-      // Load dashboard data from state_core.json
+      // Load dashboard data from state_core.json and merge with communicator_self.json
       fetchStateCore();
     });
 
     async function fetchStateCore() {
       try {
-        const response = await fetch('state_core.json');
-        if (!response.ok) throw new Error('Failed to load state_core.json');
-        const data = await response.json();
-        renderDashboard(data);
+        const [stateCoreResponse, commSelfResponse] = await Promise.all([
+          fetch('state_core.json'),
+          fetch('communicator_self.json')
+        ]);
+        
+        const stateCore = await stateCoreResponse.json();
+        const commSelf = await commSelfResponse.json();
+        
+        // Merge communicator_self data into state_core for dashboard display
+        // Only merge specific fields that are useful for the operator view
+        const mergedData = {
+          ...stateCore,
+          continuity: {
+            ...(stateCore.continuity || {}),
+            confidence_score: commSelf.continuity?.confidence_score || null
+          },
+          last_communicator_outcome: commSelf.last_communicator_outcome || null
+        };
+        
+        renderDashboard(mergedData);
       } catch (error) {
         console.error('Dashboard load error:', error);
         // Fallback to legacy data if state_core.json fails
@@ -251,9 +267,55 @@
       const metrics = data.metrics || {};
       const validation = data.validation || {};
       
+      // Extract communicator quality signals from continuity and last_communicator_outcome
+      const continuity = data.continuity || {};
+      const confidenceScore = continuity.confidence_score;
+      const lastOutcome = data.last_communicator_outcome || {};
+      const outcomeLabel = lastOutcome.outcome || 'none';
+      const patternMatched = lastOutcome.pattern_matched || (lastOutcome.outcome === 'bad' ? 'explicit_negative' : (lastOutcome.outcome === 'good' ? 'explicit_positive' : 'acknowledgment'));
+      const outcomeTimestamp = lastOutcome.feedback_at ? new Date(lastOutcome.feedback_at * 1000).toLocaleString() : 'never';
+      
+      // Communicator Quality Card
+      let communicatorQualityHtml = '';
+      if (confidenceScore !== undefined) {
+        const outcomeColor = outcomeLabel === 'good' ? '#6ee7b7' : (outcomeLabel === 'bad' ? '#f87171' : '#94a3b8');
+        const outcomeBadge = outcomeLabel === 'none' ? '<span class="pill" style="background:#3a4452;">none</span>' : 
+                             outcomeLabel === 'good' ? '<span class="pill" style="background:#6ee7b7;">good</span>' :
+                             outcomeLabel === 'bad' ? '<span class="pill" style="background:#f87171;">bad</span>' :
+                             '<span class="pill" style="background:#94a3b8;">unclear</span>';
+        communicatorQualityHtml = `
+          <div style="margin-top:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #6ee7b7;">
+            <h3 style="font-size:14px; margin:0 0 8px;">Communicator Quality</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:13px;">
+              <div>
+                <p class="muted" style="margin:2px 0; font-size:11px;">Confidence</p>
+                <p style="margin:2px 0;">
+                  <strong>${confidenceScore.toFixed(2)}</strong>
+                  <div class="bar" style="height:4px; margin-top:6px;"><span style="width:${confidenceScore * 100}%"></span></div>
+                </p>
+              </div>
+              <div>
+                <p class="muted" style="margin:2px 0; font-size:11px;">Last Outcome</p>
+                <p style="margin:2px 0;">${outcomeBadge}</p>
+                <p class="muted" style="margin:2px 0; font-size:11px;">Signal: ${patternMatched}</p>
+                <p class="muted" style="margin:2px 0; font-size:11px;">Updated: ${outcomeTimestamp}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        communicatorQualityHtml = `
+          <div style="margin-top:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #3a4452;">
+            <h3 style="font-size:14px; margin:0 0 8px;">Communicator Quality</h3>
+            <p class="muted">No confidence data available yet.</p>
+          </div>
+        `;
+      }
+      
       let html = `
         <p><strong>Status:</strong> <span class="pill">${status}</span></p>
         <p><strong>Curiosity:</strong> ${data.curiosity?.toFixed(2) ?? 0} · <strong>Uncertainty:</strong> ${data.uncertainty?.toFixed(2) ?? 0}</p>
+        ${communicatorQualityHtml}
       `;
       
       // Next action - show action, priority, and why
