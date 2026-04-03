@@ -423,7 +423,14 @@ class EntityGraph:
         is_ghost: bool = True,
         metadata: Dict[str, Any] = None
     ) -> Entity:
-        """Add a new entity to the graph."""
+        """Add a new entity to the graph.
+        
+        If an entity with the same normalized name and same type already exists,
+        update it instead of creating a duplicate.
+        
+        Returns:
+            Existing entity if found, otherwise newly created entity.
+        """
         if self._validation_enabled:
             if not validate_entity_name(name):
                 raise ValueError(f"Invalid entity name: {name}")
@@ -432,6 +439,36 @@ class EntityGraph:
             if not validate_confidence(confidence):
                 raise ValueError(f"Invalid confidence: {confidence}")
 
+        # Check for existing entity with same normalized name and same type
+        normalized_name = name.strip().lower()
+        existing = self.get_entity_by_name(name)
+        
+        if existing and existing.type == entity_type:
+            # Update existing entity instead of creating duplicate
+            existing.update_last_seen()
+            existing.confidence = min(1.0, existing.confidence + confidence * 0.25)
+            
+            # Merge aliases conservatively (only if not already present)
+            for alias in aliases or []:
+                if alias.lower().strip() not in [a.lower().strip() for a in existing.aliases]:
+                    existing.aliases.append(alias)
+            
+            # Add evidence for traceability
+            source = (metadata or {}).get("source", "unknown")
+            existing.evidence.append({
+                "source": source,
+                "content": f"Name collision resolved: updated entity (type={entity_type})",
+                "timestamp": int(time.time()),
+                "confidence_boost": 0.0,
+                "traceable": True
+            })
+            
+            if self._validation_enabled:
+                self.validate_graph()
+            self.save()
+            return existing
+
+        # Create new entity (no existing match found)
         entity_id = str(uuid.uuid4())[:8]  # Short ID for readability
         aliases = aliases or []
         
