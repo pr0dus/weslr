@@ -425,8 +425,42 @@ def record_outcome_from_human_message(
     """
     msg_lower = str(human_message).lower().strip()
 
-    # Check for bad signals first (to avoid false positives from "incorrect" containing "correct")
-    if any(p in msg_lower for p in ["wrong", "not right", "incorrect", "confused", "don't understand", "i don't understand"]):
+    # Check for bad signals first with word boundary and negation handling
+    # Only trigger if the signal word appears and isn't negated
+    import re
+
+    def has_bad_signal(text: str) -> Optional[str]:
+        """Check for bad signals with word boundaries and negation exclusion."""
+        # Negation patterns that should block negative feedback (e.g., "not incorrect")
+        # BUT we still want "don't understand" and "i don't understand" to trigger
+        negation_prefixes = ["not ", "no ", "never "]
+
+        # Check for negation context - but skip if this IS the "don't understand" signal
+        for neg in negation_prefixes:
+            if neg in text:
+                # Check if this is actually "don't understand" or "i don't understand"
+                # If so, don't block - those are explicit bad signals
+                if "don't understand" not in text and "i don't understand" not in text:
+                    return None
+
+        # Bad signals with word boundaries to avoid false positives
+        bad_patterns = [
+            (r'\bwrong\b', 'wrong'),
+            (r'\bnot right\b', 'not right'),
+            (r'\bincorrect\b', 'incorrect'),
+            (r'\bconfused\b', 'confused'),
+            (r'\bdon\'t understand\b', "don't understand"),
+            (r'\bi don\'t understand\b', 'i don\'t understand'),
+        ]
+
+        for pattern, matched in bad_patterns:
+            if re.search(pattern, text):
+                return matched
+
+        return None
+
+    bad_match = has_bad_signal(msg_lower)
+    if bad_match:
         outcome_data = {
             "message_type": "unknown",
             "message_timestamp": int(time.time()),
@@ -447,8 +481,32 @@ def record_outcome_from_human_message(
 
         return outcome_data
 
-    # Check for good signals
-    if any(p in msg_lower for p in ["thanks", "thank you", "yes", "correct", "exactly", "👍", "👍🏻", "👍🏼", "👍🏽", "👍🏾", "👍🏿"]):
+    # Check for good signals with word boundaries
+    def has_good_signal(text: str) -> Optional[str]:
+        """Check for good signals with word boundaries."""
+        # Good signals with word boundaries
+        good_patterns = [
+            (r'\bthanks?\b', 'thanks'),
+            (r'\bthank you\b', 'thank you'),
+            (r'\byes\b', 'yes'),
+            (r'\bcorrect\b', 'correct'),
+            (r'\bexactly\b', 'exactly'),
+        ]
+
+        for pattern, matched in good_patterns:
+            if re.search(pattern, text):
+                return matched
+
+        # Check for thumbs-up emojis
+        emoji_patterns = ['👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿']
+        for emoji in emoji_patterns:
+            if emoji in text:
+                return '👍'
+
+        return None
+
+    good_match = has_good_signal(msg_lower)
+    if good_match:
         outcome_data = {
             "message_type": "unknown",
             "message_timestamp": int(time.time()),
@@ -469,8 +527,41 @@ def record_outcome_from_human_message(
 
         return outcome_data
 
-    # Check for unclear signals (no change, just acknowledge)
-    if any(p in msg_lower for p in ["ok", "okay", "i see", "got it"]):
+    # Check for unclear signals with stricter matching
+    # These should be standalone acknowledgments, not embedded in longer phrases
+    def has_unclear_signal(text: str) -> Optional[str]:
+        """Check for unclear/acknowledgment signals with word boundaries."""
+        import re
+
+        # Multi-word signals with stricter boundaries:
+        # "got it" - must be at end of message (no word after)
+        got_it_pattern = r'\bgot it[.!?]?\s*$'
+        if re.search(got_it_pattern, text, re.IGNORECASE):
+            return 'got it'
+
+        # "i see" - must be standalone (at start/end, with punctuation boundaries)
+        i_see_pattern = r'^(i see)[.!?]?\s*$'
+        if re.search(i_see_pattern, text, re.IGNORECASE):
+            return 'i see'
+
+        # For single-word "ok"/"okay", we need stricter boundary checking:
+        # They should appear alone (surrounded by punctuation or at sentence boundaries)
+        # NOT immediately after a word or before a word
+
+        # Pattern: preceded by punctuation/end, followed by end/punctuation
+        # This excludes "OK let me try" and "It is ok"
+        ok_word_boundary = r'(?:^|(?<=[.!?]\s))ok[.!?]?(?:\s*$|(?=[.!?]))'
+        okay_word_boundary = r'(?:^|(?<=[.!?]\s))okay[.!?]?(?:\s*$|(?=[.!?]))'
+
+        if re.search(ok_word_boundary, text, re.IGNORECASE):
+            return 'ok'
+        if re.search(okay_word_boundary, text, re.IGNORECASE):
+            return 'okay'
+
+        return None
+
+    unclear_match = has_unclear_signal(msg_lower)
+    if unclear_match:
         outcome_data = {
             "message_type": "unknown",
             "message_timestamp": int(time.time()),
