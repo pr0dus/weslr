@@ -300,6 +300,120 @@ def cli_outbox_flush() -> Dict[str, Any]:
         return {"status": "empty_or_rate_limited"}
 
 
+def record_outcome(
+    message_type: str,
+    message_timestamp: int,
+    outcome: str,
+    pattern_matched: str,
+    human: str = "unknown"
+) -> Dict[str, Any]:
+    """Record a communication outcome for feedback tracking.
+
+    Args:
+        message_type: Type of message (human_response, autonomous_expression, etc.)
+        message_timestamp: When the message was sent
+        outcome: "good", "bad", or "unclear"
+        pattern_matched: The feedback pattern that triggered this outcome
+        human: The human who provided feedback
+
+    Returns:
+        Outcome dict that can be stored in communicator_self state
+    """
+    now = int(time.time())
+
+    outcome_data = {
+        "message_type": message_type,
+        "message_timestamp": message_timestamp,
+        "outcome": outcome,
+        "pattern_matched": pattern_matched,
+        "feedback_at": now,
+        "human": human,
+    }
+
+    # Load current state
+    cs = load_communicator_self()
+
+    # Update last_communicator_outcome
+    cs["last_communicator_outcome"] = outcome_data
+
+    # Update confidence score with conservative smoothing
+    if "continuity" not in cs:
+        cs["continuity"] = {}
+    if "confidence_score" not in cs["continuity"]:
+        cs["continuity"]["confidence_score"] = 0.5  # Default
+
+    # Calculate new confidence (max change of 0.2 per outcome, bounded 0.25-0.95)
+    old_score = float(cs["continuity"]["confidence_score"])
+    if outcome == "good":
+        feedback = 0.2
+    elif outcome == "bad":
+        feedback = -0.2
+    else:  # unclear
+        feedback = 0.0
+
+    # Conservative smoothing: 80% old, 20% new
+    new_score = old_score * 0.8 + feedback * 0.2
+
+    # Clamp to valid range
+    new_score = max(0.25, min(0.95, new_score))
+
+    cs["continuity"]["confidence_score"] = round(new_score, 3)
+
+    # Save state
+    save_communicator_self(cs)
+
+    return outcome_data
+
+
+def record_outcome_from_human_message(human_message: str) -> Optional[Dict[str, Any]]:
+    """Record outcome based on a human's message content.
+
+    Looks for explicit feedback patterns in the human's message.
+
+    Args:
+        human_message: The human's message text
+
+    Returns:
+        Outcome dict if feedback detected, None otherwise
+    """
+    msg_lower = str(human_message).lower().strip()
+
+    # Check for good signals
+    if any(p in msg_lower for p in ["thanks", "thank you", "yes", "correct", "exactly", "👍", "👍🏻", "👍🏼", "👍🏽", "👍🏾", "👍🏿"]):
+        outcome_data = record_outcome(
+            message_type="unknown",
+            message_timestamp=int(time.time()),
+            outcome="good",
+            pattern_matched="explicit_positive",
+            human="human",
+        )
+        return outcome_data
+
+    # Check for bad signals
+    if any(p in msg_lower for p in ["wrong", "not right", "incorrect", "confused", "don't understand", "i don't understand"]):
+        outcome_data = record_outcome(
+            message_type="unknown",
+            message_timestamp=int(time.time()),
+            outcome="bad",
+            pattern_matched="explicit_negative",
+            human="human",
+        )
+        return outcome_data
+
+    # Check for unclear signals (no change, just acknowledge)
+    if any(p in msg_lower for p in ["ok", "okay", "i see", "got it"]):
+        outcome_data = record_outcome(
+            message_type="unknown",
+            message_timestamp=int(time.time()),
+            outcome="unclear",
+            pattern_matched="acknowledgment",
+            human="human",
+        )
+        return outcome_data
+
+    return None
+
+
 def main():
     """CLI entry point."""
     import sys
@@ -310,6 +424,7 @@ def main():
         print("  status                - Show outbox status")
         print("  enqueue <msg> <type> <priority> - Enqueue message")
         print("  flush                 - Flush and send highest priority message")
+        print("  feedback <message>    - Record outcome from human message")
         return
 
     command = sys.argv[1]
@@ -334,6 +449,15 @@ def main():
 
     elif command == "flush":
         result = cli_outbox_flush()
+        import json
+        print(json.dumps(result, indent=2))
+
+    elif command == "feedback":
+        if len(sys.argv) < 3:
+            print("Usage: python3 outbox.py feedback <human_message>")
+            return
+        message = sys.argv[2]
+        result = record_outcome_from_human_message(message)
         import json
         print(json.dumps(result, indent=2))
 

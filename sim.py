@@ -94,6 +94,7 @@ from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from glue import archive_all_stale
+from outbox import record_outcome_from_human_message
 
 # Weslr integration imports
 from weslr_glue import orchestrate_weslr_tick, integrate_weslr_into_self_model
@@ -4685,6 +4686,20 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships["recent_human_messages"] = relationships["recent_human_messages"][-12:]
     relationships["recent_human_exchanges"].append(exchange)
     relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
+
+    # Capture communicator feedback from human message
+    try:
+        outcome = record_outcome_from_human_message(message)
+        if outcome:
+            # Log feedback outcome (lightweight - just record in state)
+            self_state["last_communicator_outcome"] = outcome
+            if "continuity" not in self_state:
+                self_state["continuity"] = {}
+            self_state["continuity"]["confidence_score"] = self_state.get("continuity", {}).get("confidence_score", 0.5)
+            save_communicator_self(self_state)
+    except Exception:
+        # Feedback capture is not critical - don't break processing
+        pass
 
     layers = (self_state.get("memory_layers") or {}).get("working", {})
     # Score and attach memory layer to exchange
