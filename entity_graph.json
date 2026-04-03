@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "1f6a59f2": {
+      "id": "1f6a59f2",
+      "name": "agent-3",
+      "aliases": [],
+      "type": "person",
+      "confidence": 0.9,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationships": [
+        "5d0c8268",
+        "7079d633",
+        "d9613e80",
+        "59a39720",
+        "281fe038",
+        "6f83e737"
+      ],
+      "evidence": [],
+      "is_ghost": false,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    "375c1ba7": {
+      "id": "375c1ba7",
+      "name": "agent-1",
+      "aliases": [],
+      "type": "person",
+      "confidence": 0.9,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationships": [
+        "6f83e737"
+      ],
+      "evidence": [],
+      "is_ghost": false,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    "4fd59e0f": {
+      "id": "4fd59e0f",
+      "name": "agent-4",
+      "aliases": [
+        "test"
+      ],
+      "type": "person",
+      "confidence": 1.0,
+      "created_at": 1775154982,
+      "last_seen": 1775196945,
+      "relationships": [
+        "24c2a89d"
+      ],
+      "evidence": [
+        {
+          "source": "new-message",
+          "content": "Name collision resolved: updated entity (type=person)",
+          "timestamp": 1775195891,
+          "confidence_boost": 0.0,
+          "traceable": true
+        },
+        {
+          "source": "unknown",
+          "content": "Name collision resolved: updated entity (type=person)",
+          "timestamp": 1775196945,
+          "confidence_boost": 0.0,
+          "traceable": true
+        }
+      ],
+      "is_ghost": false,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    "23ee0429": {
+      "id": "23ee0429",
+      "name": "agent-2",
+      "aliases": [
+        "old_alias",
+        "test2"
+      ],
+      "type": "person",
+      "confidence": 1.0,
+      "created_at": 1775154982,
+      "last_seen": 1775196945,
+      "relationships": [
+        "24c2a89d"
+      ],
+      "evidence": [
+        {
+          "source": "messages.json",
+          "content": "Active participant in 1 messages",
+          "timestamp": 1775154982,
+          "confidence_boost": 0.1,
+          "traceable": true
+        },
+        {
+          "source": "new-message-2",
+          "content": "Name collision resolved: updated entity (type=person)",
+          "timestamp": 1775195891,
+          "confidence_boost": 0.0,
+          "traceable": true
+        },
+        {
+          "source": "unknown",
+          "content": "Name collision resolved: updated entity (type=person)",
+          "timestamp": 1775196945,
+          "confidence_boost": 0.0,
+          "traceable": true
+        }
+      ],
+      "is_ghost": false,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    }
+  },
+  "relationships": {},
+  "created_at": 1775195891,
+  "updated_at": 1775196945,
+  "version": "1.0",
+  "validation_enabled": false
+}
