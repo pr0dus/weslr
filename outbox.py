@@ -351,8 +351,11 @@ def record_outcome(
     else:  # unclear
         feedback = 0.0
 
-    # Conservative smoothing: 80% old, 20% new
-    new_score = old_score * 0.8 + feedback * 0.2
+    # Conservative smoothing: max change of 0.2 per outcome
+    # Good feedback (+0.2) means: new = old + 0.2 * 0.2 = old + 0.04
+    # Bad feedback (-0.2) means: new = old + (-0.2) * 0.2 = old - 0.04
+    # Unclear (0.0) means: no change
+    new_score = old_score + (feedback * 0.2)
 
     # Clamp to valid range
     new_score = max(0.25, min(0.95, new_score))
@@ -365,50 +368,127 @@ def record_outcome(
     return outcome_data
 
 
-def record_outcome_from_human_message(human_message: str) -> Optional[Dict[str, Any]]:
+def update_feedback_in_state(
+    cs: Dict[str, Any],
+    outcome: str
+) -> Dict[str, Any]:
+    """Update feedback score in a given state dict and return it.
+    
+    This allows sim.py to pass its own state dict and have it updated in-place,
+    avoiding the issue of separate state instances.
+    
+    Args:
+        cs: The communicator_self state dict (to modify in-place)
+        outcome: "good", "bad", or "unclear"
+    
+    Returns:
+        The modified state dict
+    """
+    # Update confidence score with conservative smoothing
+    if "continuity" not in cs:
+        cs["continuity"] = {}
+    if "confidence_score" not in cs["continuity"]:
+        cs["continuity"]["confidence_score"] = 0.5  # Default
+
+    # Calculate new confidence (max change of 0.2 per outcome, bounded 0.25-0.95)
+    old_score = float(cs["continuity"]["confidence_score"])
+    if outcome == "good":
+        feedback = 0.2
+    elif outcome == "bad":
+        feedback = -0.2
+    else:  # unclear
+        feedback = 0.0
+
+    # Conservative smoothing: max change of 0.2 per outcome
+    new_score = old_score + (feedback * 0.2)
+
+    # Clamp to valid range
+    cs["continuity"]["confidence_score"] = round(max(0.25, min(0.95, new_score)), 3)
+
+    return cs
+
+
+def record_outcome_from_human_message(
+    human_message: str,
+    state: Dict[str, Any] = None
+) -> Optional[Dict[str, Any]]:
     """Record outcome based on a human's message content.
 
     Looks for explicit feedback patterns in the human's message.
 
     Args:
         human_message: The human's message text
+        state: Optional state dict to update with confidence score (in-place)
 
     Returns:
         Outcome dict if feedback detected, None otherwise
     """
     msg_lower = str(human_message).lower().strip()
 
-    # Check for good signals
-    if any(p in msg_lower for p in ["thanks", "thank you", "yes", "correct", "exactly", "👍", "👍🏻", "👍🏼", "👍🏽", "👍🏾", "👍🏿"]):
-        outcome_data = record_outcome(
-            message_type="unknown",
-            message_timestamp=int(time.time()),
-            outcome="good",
-            pattern_matched="explicit_positive",
-            human="human",
-        )
+    # Check for bad signals first (to avoid false positives from "incorrect" containing "correct")
+    if any(p in msg_lower for p in ["wrong", "not right", "incorrect", "confused", "don't understand", "i don't understand"]):
+        outcome_data = {
+            "message_type": "unknown",
+            "message_timestamp": int(time.time()),
+            "outcome": "bad",
+            "pattern_matched": "explicit_negative",
+            "feedback_at": int(time.time()),
+            "human": "human",
+        }
+
+        # Update confidence score in state if provided
+        if state is not None:
+            update_feedback_in_state(state, "bad")
+        else:
+            # Load state and update if no state passed
+            cs = load_communicator_self()
+            update_feedback_in_state(cs, "bad")
+            save_communicator_self(cs)
+
         return outcome_data
 
-    # Check for bad signals
-    if any(p in msg_lower for p in ["wrong", "not right", "incorrect", "confused", "don't understand", "i don't understand"]):
-        outcome_data = record_outcome(
-            message_type="unknown",
-            message_timestamp=int(time.time()),
-            outcome="bad",
-            pattern_matched="explicit_negative",
-            human="human",
-        )
+    # Check for good signals
+    if any(p in msg_lower for p in ["thanks", "thank you", "yes", "correct", "exactly", "👍", "👍🏻", "👍🏼", "👍🏽", "👍🏾", "👍🏿"]):
+        outcome_data = {
+            "message_type": "unknown",
+            "message_timestamp": int(time.time()),
+            "outcome": "good",
+            "pattern_matched": "explicit_positive",
+            "feedback_at": int(time.time()),
+            "human": "human",
+        }
+
+        # Update confidence score in state if provided
+        if state is not None:
+            update_feedback_in_state(state, "good")
+        else:
+            # Load state and update if no state passed
+            cs = load_communicator_self()
+            update_feedback_in_state(cs, "good")
+            save_communicator_self(cs)
+
         return outcome_data
 
     # Check for unclear signals (no change, just acknowledge)
     if any(p in msg_lower for p in ["ok", "okay", "i see", "got it"]):
-        outcome_data = record_outcome(
-            message_type="unknown",
-            message_timestamp=int(time.time()),
-            outcome="unclear",
-            pattern_matched="acknowledgment",
-            human="human",
-        )
+        outcome_data = {
+            "message_type": "unknown",
+            "message_timestamp": int(time.time()),
+            "outcome": "unclear",
+            "pattern_matched": "acknowledgment",
+            "feedback_at": int(time.time()),
+            "human": "human",
+        }
+
+        # Update confidence score in state if provided
+        if state is not None:
+            update_feedback_in_state(state, "unclear")
+        else:
+            # Load state and update if no state passed
+            cs = load_communicator_self()
+            update_feedback_in_state(cs, "unclear")
+            save_communicator_self(cs)
+
         return outcome_data
 
     return None

@@ -4689,14 +4689,10 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
 
     # Capture communicator feedback from human message
     try:
-        outcome = record_outcome_from_human_message(message)
+        outcome = record_outcome_from_human_message(message, state=self_state)
         if outcome:
-            # Log feedback outcome (lightweight - just record in state)
+            # Log feedback outcome in the state we already have
             self_state["last_communicator_outcome"] = outcome
-            if "continuity" not in self_state:
-                self_state["continuity"] = {}
-            self_state["continuity"]["confidence_score"] = self_state.get("continuity", {}).get("confidence_score", 0.5)
-            save_communicator_self(self_state)
     except Exception:
         # Feedback capture is not critical - don't break processing
         pass
