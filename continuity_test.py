@@ -17,6 +17,13 @@ from continuity_orchestrator import (
     restore_from_plan,
     get_current_snapshot_info,
     load_weslr_continuity_state,
+    should_attempt_restore,
+    check_restore_conditions,
+    apply_partial_restore,
+    RESTORE_NO_RESTORE,
+    RESTORE_PARTIAL_RESTORE,
+    RESTORE_BLOCKED,
+    RESTORE_SKIPPED_STALE,
 )
 
 
@@ -135,15 +142,48 @@ def test_restore_plan():
     print(f"✓ Dry-run restore executed")
 
 
+def test_restore_decision_logic():
+    """Test restore decision logic and conservative partial restore."""
+    print("\n=== Test: Restore Decision Logic (v1) ===")
+
+    # Test should_attempt_restore
+    should = should_attempt_restore()
+    print(f"✓ should_attempt_restore: {should} (state_core validity check)")
+
+    # Test check_restore_conditions
+    decision = check_restore_conditions()
+    assert "decision" in decision
+    assert "reason" in decision
+    print(f"✓ check_restore_conditions: {decision['decision']} - {decision['reason']}")
+
+    # Test apply_partial_restore
+    result = apply_partial_restore()
+    assert "status" in result
+    assert "fields_restored" in result
+    print(f"✓ apply_partial_restore: status={result['status']}")
+    if result["status"] == "success":
+        print(f"  Restored: {result['fields_restored']}")
+    elif result["status"] == "skipped":
+        print(f"  Skipped: {result.get('reason', 'unknown')}")
+
+    # Test decision constants
+    assert RESTORE_NO_RESTORE == "no_restore"
+    assert RESTORE_PARTIAL_RESTORE == "partial_restore"
+    assert RESTORE_BLOCKED == "restore_blocked"
+    assert RESTORE_SKIPPED_STALE == "restore_skipped_stale"
+    print(f"✓ Restore decision constants verified")
+
+
 def run_all_tests():
     """Run all tests."""
-    print("Continuity Orchestrator v1 Phase 1 — WESLR Anchored Test Suite")
+    print("Continuity Orchestrator v1 Phase 1+2+3 — WESLR Anchored Test Suite")
     print("=" * 60)
 
     test_weslr_state_loading()
     test_snapshot_fields()
     test_confidence_debt()
     test_restore_plan()
+    test_restore_decision_logic()
 
     print("\n" + "=" * 60)
     print("All tests passed ✓")

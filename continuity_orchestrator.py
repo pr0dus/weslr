@@ -1,12 +1,17 @@
-"""Silent Continuity Orchestrator v1 Phase 1 — WESLR anchored.
+"""Silent Continuity Orchestrator v1 Phase 1+2+3 — WESLR anchored.
 
-Foundation: snapshot load/write, confidence/debt calculation, restore plan builder.
+Phase 1: Foundation (snapshot load/write, confidence/debt, restore plans)
+Phase 2: Live snapshot integration (auto-write after state_core.json)
+Phase 3: Restore decision logic (conservative partial restore)
+
 Tied explicitly to WESLR continuity architecture:
 - identity_anchor, communicator_self, state_core
 - unresolved_shared_threads, opportunity_board, categories, review_queue, export_queue
 - session_continuity state (session_count, threads_continued, etc.)
 - operator_work continuity (work_items.json)
+
 No automatic restore yet. No user-facing flows.
+Restoration is conservative, not heroic.
 """
 
 from __future__ import annotations
@@ -310,3 +315,232 @@ def restore_from_plan(snapshot: Dict[str, Any], dry_run: bool = False) -> Dict[s
             result["actions"].append({"key": key, "action": "failed", "reason": item.get("reason")})
 
     return result
+
+
+# ===== PHASE 3: RESTORE DECISION LOGIC (CONSERVATIVE, NOT HEROIC) =====
+
+# Result states for restore decisions
+RESTORE_NO_RESTORE = "no_restore"
+RESTORE_PARTIAL_RESTORE = "partial_restore"
+RESTORE_BLOCKED = "restore_blocked"
+RESTORE_SKIPPED_STALE = "restore_skipped_stale"
+
+
+def load_latest_snapshot() -> Optional[Dict[str, Any]]:
+    """Load the most recent snapshot."""
+    try:
+        return load_snapshot("latest.json")
+    except Exception:
+        return None
+
+
+def get_snapshot_age_hours(snapshot: Dict[str, Any]) -> float:
+    """Calculate snapshot age in hours."""
+    try:
+        timestamp = snapshot.get("timestamp", "")
+        if not timestamp:
+            return float("inf")
+        # Parse ISO format timestamp
+        snapshot_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        now = datetime.now(snapshot_time.tzinfo)
+        delta = now - snapshot_time
+        return delta.total_seconds() / 3600.0
+    except Exception:
+        return float("inf")
+
+
+def should_attempt_restore() -> bool:
+    """Check if restore should be attempted based on state_core.json validity.
+    
+    Returns False if:
+    - state_core.json exists and has valid identity_anchor, status, continuity
+    - Otherwise returns True (restore needed)
+    """
+    try:
+        with open(os.path.join(BASE_DIR, "state_core.json")) as f:
+            state = json.load(f)
+        
+        # Valid state has all critical fields
+        if all(state.get(f) for f in ["identity_anchor", "status", "continuity"]):
+            return False
+        return True
+    except Exception:
+        return True
+
+
+def check_restore_conditions() -> Dict[str, Any]:
+    """Check restore conditions and return decision.
+    
+    Returns dict with:
+    - decision: one of RESTORE_* constants
+    - reason: human-readable explanation
+    - confidence: snapshot confidence (if applicable)
+    - age_hours: snapshot age in hours (if applicable)
+    """
+    # Check if state_core.json is valid
+    if not should_attempt_restore():
+        return {
+            "decision": RESTORE_NO_RESTORE,
+            "reason": "state_core.json is valid (has identity_anchor, status, continuity)",
+        }
+    
+    # Load latest snapshot
+    snapshot = load_latest_snapshot()
+    if snapshot is None:
+        return {
+            "decision": RESTORE_NO_RESTORE,
+            "reason": "no snapshot exists",
+        }
+    
+    # Check snapshot age
+    age_hours = get_snapshot_age_hours(snapshot)
+    if age_hours > 24:
+        return {
+            "decision": RESTORE_SKIPPED_STALE,
+            "reason": f"snapshot too old ({age_hours:.1f} hours > 24h limit)",
+            "age_hours": age_hours,
+        }
+    
+    # Check confidence
+    markers = snapshot.get("continuity_markers", {})
+    confidence = markers.get("confidence", 100.0)
+    if confidence < 50:
+        return {
+            "decision": RESTORE_BLOCKED,
+            "reason": f"low confidence ({confidence:.1f} < 50%)",
+            "confidence": confidence,
+            "age_hours": age_hours,
+        }
+    
+    # Check debt
+    debt = markers.get("debt", 0.0)
+    if debt >= 50:
+        return {
+            "decision": RESTORE_BLOCKED,
+            "reason": f"high debt ({debt:.1f} >= 50)",
+            "confidence": confidence,
+            "debt": debt,
+            "age_hours": age_hours,
+        }
+    
+    # All checks passed - partial restore is safe
+    return {
+        "decision": RESTORE_PARTIAL_RESTORE,
+        "reason": "snapshot validated (confidence sufficient, debt low, age acceptable)",
+        "confidence": confidence,
+        "debt": debt,
+        "age_hours": age_hours,
+    }
+
+
+def apply_partial_restore() -> Dict[str, Any]:
+    """Apply conservative partial restore from latest snapshot.
+    
+    Restores only the safest fields:
+    - identity_anchor (bootstrap anchor)
+    - continuity.session_count (session context marker)
+    - unresolved_shared_threads (human thread context)
+    - narrative_state (if safe)
+    
+    Defers:
+    - review_queue, export_queue, operator_work (operator workload)
+    - communicator_self, session_continuity (external modules)
+    - opportunity_board, categories (next action signals)
+    
+    Returns result dict with restore details.
+    """
+    result = {
+        "status": "success",
+        "fields_restored": [],
+        "fields_skipped": [],
+        "actions": [],
+    }
+    
+    snapshot = load_latest_snapshot()
+    if snapshot is None:
+        result["status"] = "error"
+        result["reason"] = "no snapshot available"
+        return result
+    
+    decision_info = check_restore_conditions()
+    if decision_info["decision"] != RESTORE_PARTIAL_RESTORE:
+        result["status"] = "skipped"
+        result["reason"] = decision_info["reason"]
+        return result
+    
+    # Load target state files
+    state_core_path = os.path.join(BASE_DIR, "state_core.json")
+    communicator_self_path = os.path.join(BASE_DIR, "communicator_self.json")
+    
+    try:
+        with open(state_core_path) as f:
+            state_core = json.load(f)
+    except Exception:
+        state_core = {
+            "schema_version": "1.0.0",
+            "timestamp": int(datetime.now().timestamp()),
+            "identity_anchor": "",
+            "status": "IDLE",
+            "continuity": {},
+            "unresolved_shared_threads": [],
+            "narrative_state": {},
+        }
+    
+    try:
+        with open(communicator_self_path) as f:
+            comm_self = json.load(f)
+    except Exception:
+        comm_self = {}
+    
+    # 1. Restore identity_anchor (critical)
+    if "identity_anchor" in snapshot:
+        state_core["identity_anchor"] = snapshot["identity_anchor"]
+        result["fields_restored"].append("identity_anchor")
+        result["actions"].append({"field": "identity_anchor", "action": "restored", "from": "snapshot"})
+    
+    # 2. Restore continuity (session_count)
+    if "continuity" in snapshot:
+        if "continuity" not in state_core:
+            state_core["continuity"] = {}
+        state_core["continuity"]["session_count"] = snapshot["continuity"].get("session_count", 0)
+        result["fields_restored"].append("continuity.session_count")
+        result["actions"].append({"field": "continuity.session_count", "action": "restored", "from": "snapshot"})
+    
+    # 3. Restore unresolved_shared_threads
+    if "unresolved_shared_threads" in snapshot:
+        state_core["unresolved_shared_threads"] = snapshot["unresolved_shared_threads"]
+        result["fields_restored"].append("unresolved_shared_threads")
+        result["actions"].append({"field": "unresolved_shared_threads", "action": "restored", "from": "snapshot"})
+    
+    # 4. Restore narrative_state (if present and safe)
+    if "narrative_state" in snapshot and snapshot["narrative_state"]:
+        state_core["narrative_state"] = snapshot["narrative_state"]
+        result["fields_restored"].append("narrative_state")
+        result["actions"].append({"field": "narrative_state", "action": "restored", "from": "snapshot"})
+    
+    # Save updated state_core.json
+    try:
+        with open(state_core_path, "w") as f:
+            json.dump(state_core, f, indent=2)
+        result["state_core_saved"] = True
+    except Exception as e:
+        result["state_core_saved"] = False
+        result["state_core_error"] = str(e)
+    
+    # Update communicator_self with restored context if needed
+    if "continuity" not in comm_self:
+        comm_self["continuity"] = {}
+    comm_self["continuity"]["session_count"] = snapshot.get("continuity", {}).get("session_count", 0)
+    
+    try:
+        with open(communicator_self_path, "w") as f:
+            json.dump(comm_self, f, indent=2)
+        result["communicator_saved"] = True
+    except Exception as e:
+        result["communicator_saved"] = False
+        result["communicator_error"] = str(e)
+    
+    return result
+
+
+# ===== UTILS =====
