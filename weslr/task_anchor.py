@@ -24,17 +24,28 @@ except ImportError:
 
 # Default paths (override via adapter parameter in functions)
 # The adapter will provide paths - this is just a fallback for testing
-DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
+DEFAULT_BASE_DIR = None  # adapter will provide this; None means "auto-detect"
 DEFAULT_CONTINUITY_DIR = "continuity"
 TASK_ANCHOR_FILE = "task_anchor.json"
 
 
 def get_paths(base_dir: str = None, adapter: "OpenClawPaths" = None) -> tuple[str, str, str]:
-    """Get task anchor paths, configurable via adapter or base_dir."""
+    """Get task anchor paths, configurable via adapter or base_dir.
+    
+    Priority:
+    1. adapter.base_dir() if adapter provided
+    2. base_dir if provided (for direct use without adapter)
+    3. OpenClawPaths auto-detection if both are None
+    """
     if adapter is not None:
         base_dir = adapter.base_dir()
-    else:
-        base_dir = base_dir or DEFAULT_BASE_DIR
+    # base_dir can be None here - OpenClawPaths will auto-detect
+    if base_dir is None:
+        paths = OpenClawPaths() if OpenClawPaths else None
+        if paths:
+            base_dir = paths.base_dir()
+        else:
+            base_dir = DEFAULT_BASE_DIR
     continuity_dir = os.path.join(base_dir, DEFAULT_CONTINUITY_DIR)
     task_anchor_path = os.path.join(continuity_dir, TASK_ANCHOR_FILE)
     return base_dir, continuity_dir, task_anchor_path

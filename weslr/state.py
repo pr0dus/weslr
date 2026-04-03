@@ -27,7 +27,8 @@ except ImportError:
 
 # Default paths (override via adapter parameter in functions)
 # The adapter will provide base_dir - this is just a fallback for testing
-DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
+# Note: This default should match the most common runtime environment
+DEFAULT_BASE_DIR = None  # adapter will provide this; None means "auto-detect"
 
 # Legacy file paths (READ-ONLY)
 LEGACY_FILES = [
@@ -52,11 +53,18 @@ SNAPSHOT_DIR = os.path.join(CONTINUITY_DIR, "snapshots")
 
 
 def get_paths(base_dir: str = None, adapter: "OpenClawPaths" = None) -> tuple[str, str, str, str, str, str]:
-    """Get state derivation paths, configurable via adapter or base_dir."""
+    """Get state derivation paths, configurable via adapter or base_dir.
+    
+    Priority:
+    1. adapter.base_dir() if adapter provided
+    2. base_dir if provided (for direct use without adapter)
+    3. None (let OpenClawPaths auto-detect via _detect_runtime_dir)
+    """
     if adapter is not None:
         base_dir = adapter.base_dir()
-    else:
-        base_dir = base_dir or DEFAULT_BASE_DIR
+    # base_dir can be None here - OpenClawPaths will auto-detect
+    if base_dir is None:
+        base_dir = DEFAULT_BASE_DIR
     state_history_dir = os.path.join(base_dir, STATE_HISTORY_DIR)
     continuity_dir = os.path.join(base_dir, CONTINUITY_DIR)
     snapshot_dir = os.path.join(continuity_dir, SNAPSHOT_DIR)
@@ -70,11 +78,19 @@ def load_json(path: str, base_dir: str = None, adapter: "OpenClawPaths" = None) 
     
     Accepts either base_dir or adapter parameter.
     Adapter takes precedence if both are provided.
+    
+    When base_dir is None, OpenClawPaths will auto-detect the runtime directory.
     """
     if adapter is not None:
         base_dir = adapter.base_dir()
+    # base_dir can be None here - OpenClawPaths will auto-detect
     if base_dir is None:
-        base_dir = DEFAULT_BASE_DIR
+        # Create a temporary adapter to get the detected base_dir
+        paths = OpenClawPaths() if OpenClawPaths else None
+        if paths:
+            base_dir = paths.base_dir()
+        else:
+            base_dir = DEFAULT_BASE_DIR
     full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
         return {}
@@ -161,8 +177,13 @@ def load_agent_handoffs(base_dir: str = None, adapter: "OpenClawPaths" = None) -
     handoffs = []
     if adapter is not None:
         base_dir = adapter.base_dir()
-    elif base_dir is None:
-        base_dir = DEFAULT_BASE_DIR
+    # base_dir can be None here - OpenClawPaths will auto-detect
+    if base_dir is None:
+        paths = OpenClawPaths() if OpenClawPaths else None
+        if paths:
+            base_dir = paths.base_dir()
+        else:
+            base_dir = DEFAULT_BASE_DIR
     handoffs_path = os.path.join(base_dir, "handoffs.json")
     if not os.path.exists(handoffs_path):
         return handoffs
@@ -196,8 +217,13 @@ def load_handoff_notes(base_dir: str = None, adapter: "OpenClawPaths" = None) ->
     """Load handoffs.json or handoffs directory."""
     if adapter is not None:
         base_dir = adapter.base_dir()
-    elif base_dir is None:
-        base_dir = DEFAULT_BASE_DIR
+    # base_dir can be None here - OpenClawPaths will auto-detect
+    if base_dir is None:
+        paths = OpenClawPaths() if OpenClawPaths else None
+        if paths:
+            base_dir = paths.base_dir()
+        else:
+            base_dir = DEFAULT_BASE_DIR
     handoffs_path = os.path.join(base_dir, "handoffs.json")
     if os.path.exists(handoffs_path):
         data = load_json("handoffs.json", base_dir, adapter)
@@ -249,8 +275,13 @@ def load_agent_artifacts(base_dir: str = None, adapter: "OpenClawPaths" = None) 
     artifacts = []
     if adapter is not None:
         base_dir = adapter.base_dir()
-    elif base_dir is None:
-        base_dir = DEFAULT_BASE_DIR
+    # base_dir can be None here - OpenClawPaths will auto-detect
+    if base_dir is None:
+        paths = OpenClawPaths() if OpenClawPaths else None
+        if paths:
+            base_dir = paths.base_dir()
+        else:
+            base_dir = DEFAULT_BASE_DIR
     agents_dir = os.path.join(base_dir, "agents")
     if not os.path.exists(agents_dir):
         return artifacts
@@ -831,6 +862,10 @@ def main() -> None:
                     pass
             break
     
+    # Create adapter if neither base_dir nor adapter provided
+    if base_dir is None and adapter is None:
+        adapter = OpenClawPaths() if OpenClawPaths else None
+    
     # Ensure state_history directory exists
     _, state_history_dir, _, _, _, _ = get_paths(base_dir, adapter)
     Path(state_history_dir).mkdir(parents=True, exist_ok=True)
@@ -850,11 +885,18 @@ def main() -> None:
         return
     
     # Log migration (before restore to track the attempt)
+    # Use adapter base_dir if available, else fallback
+    log_base_dir = base_dir
+    if adapter:
+        log_base_dir = adapter.base_dir()
+    elif base_dir is None:
+        log_base_dir = DEFAULT_BASE_DIR
+    
     log = {
         "migration_at": now_ts,
         "migrated_by": "weslr.state",
-        "state_core_path": os.path.join(base_dir or DEFAULT_BASE_DIR, STATE_CORE_PATH),
-        "state_sync_path": os.path.join(base_dir or DEFAULT_BASE_DIR, STATE_SYNC_PATH),
+        "state_core_path": os.path.join(log_base_dir or ".", STATE_CORE_PATH),
+        "state_sync_path": os.path.join(log_base_dir or ".", STATE_SYNC_PATH),
         "snapshot_path": None,
         "legacy_files_read": LEGACY_FILES,
         "validation": {
@@ -869,9 +911,9 @@ def main() -> None:
     # Attempt conservative partial restore if needed
     # (Delegated to continuity_orchestrator for backward compatibility)
     try:
-        sys.path.insert(0, str(Path(base_dir or DEFAULT_BASE_DIR).parent))
+        sys.path.insert(0, str(Path(log_base_dir or DEFAULT_BASE_DIR).parent))
         from continuity_orchestrator import apply_partial_restore
-        restore_result = apply_partial_restore(base_dir)
+        restore_result = apply_partial_restore(log_base_dir)
         log["restore_attempted"] = True
         log["restore_result"] = {
             "status": restore_result.get("status"),
@@ -883,25 +925,25 @@ def main() -> None:
         pass
     
     # Save state_core.json
-    save_state_core(state_core, base_dir)
+    save_state_core(state_core, base_dir, adapter)
     print(f"✓ Saved state_core.json")
     
     # Save state_sync.json
-    save_state_sync(state_core, base_dir)
+    save_state_sync(state_core, base_dir, adapter)
     print(f"✓ Saved state_sync.json")
     
     # Create snapshot if requested
     if create_snapshot_flag:
-        snapshot_path = create_snapshot(state_core, base_dir)
+        snapshot_path = create_snapshot(state_core, base_dir, adapter)
         print(f"✓ Created snapshot: {snapshot_path}")
         log["snapshot_path"] = snapshot_path
     
     # Write silent continuity snapshot
-    write_silent_continuity_snapshot(state_core, base_dir)
+    write_silent_continuity_snapshot(state_core, base_dir, adapter)
     
     # Update log with final restore result and save
     if log["restore_result"]:
-        log_path = os.path.join(base_dir or DEFAULT_BASE_DIR, "migrate_state_log.json")
+        log_path = os.path.join(log_base_dir or DEFAULT_BASE_DIR, "migrate_state_log.json")
         Path(log_path).write_text(json.dumps(log, indent=2) + "\n")
         print(f"✓ Saved migration log: {log_path}")
     
