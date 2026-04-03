@@ -48,6 +48,21 @@ STATE_HISTORY_DIR = BASE_DIR / "state_history"
 CONTINUITY_DIR = BASE_DIR / "continuity"
 SNAPSHOT_DIR = CONTINUITY_DIR / "snapshots"
 
+# Import Phase 3 restore functions (from continuity_orchestrator)
+sys.path.insert(0, str(BASE_DIR))
+try:
+    from continuity_orchestrator import (
+        apply_partial_restore,
+        check_restore_conditions,
+        RESTORE_NO_RESTORE,
+        RESTORE_PARTIAL_RESTORE,
+        RESTORE_BLOCKED,
+        RESTORE_SKIPPED_STALE,
+    )
+    RESTORE_AVAILABLE = True
+except Exception:
+    RESTORE_AVAILABLE = False
+
 
 def load_json(path: Path) -> Dict[str, Any]:
     """Read JSON file (READ-ONLY). Returns empty dict if not found."""
@@ -812,7 +827,7 @@ def main() -> None:
         print("No files modified (dry-run)")
         return
     
-    # Log migration
+    # Log migration (before restore to track the attempt)
     log = {
         "migration_at": now_ts,
         "migrated_by": "migrate_state.py",
@@ -833,8 +848,24 @@ def main() -> None:
             "ok": True,
             "errors": [],
             "warnings": []
-        }
+        },
+        "restore_attempted": False,
+        "restore_result": None,
     }
+    
+    # Initialize restore_result (may be set below if RESTORE_AVAILABLE)
+    restore_result = None
+    
+    # Attempt conservative partial restore if needed (after log defined)
+    if RESTORE_AVAILABLE:
+        restore_result = apply_partial_restore()
+        log["restore_attempted"] = True
+        log["restore_result"] = {
+            "status": restore_result.get("status"),
+            "fields_restored": restore_result.get("fields_restored", []),
+            "fields_skipped": restore_result.get("fields_skipped", []),
+        }
+        print(f"  Restore: {restore_result.get('status', 'error')}")
     
     log_path = BASE_DIR / "migrate_state_log.json"
     log_path.write_text(json.dumps(log, indent=2) + "\n")
@@ -855,6 +886,15 @@ def main() -> None:
     
     # Write silent continuity snapshot after successful state_core update
     write_silent_continuity_snapshot(state_core)
+    
+    # Update log with final restore result and save
+    if restore_result:
+        log["restore_result"] = {
+            "status": restore_result.get("status"),
+            "fields_restored": restore_result.get("fields_restored", []),
+            "fields_skipped": restore_result.get("fields_skipped", []),
+        }
+        log_path.write_text(json.dumps(log, indent=2) + "\n")
     
     print("\n✓ Shadow-core v1 stabilization complete")
 
