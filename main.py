@@ -646,7 +646,51 @@ def cmd_serve(args):
     # Custom handler that adds /chat endpoint to existing static file serving
     class ChatHandler(SimpleHTTPRequestHandler):
         def do_POST(self):
-            if self.path == "/chat":
+            # Handle artifact review endpoint
+            if self.path == "/artifact-review":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    artifact_id = data.get("artifact_id", "")
+                    action = data.get("action", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not artifact_id:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "artifact_id is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["approve", "reject", "note"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'approve', 'reject', or 'note'"}).encode("utf-8"))
+                        return
+                    if action == "reject" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note is required for reject action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the review
+                    result = review_artifact(artifact_id, action, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
+            elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
                 try:

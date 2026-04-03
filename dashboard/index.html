@@ -149,10 +149,34 @@
     <!-- Operators -->
     <section class="card" id="operators" style="margin-top:16px;">
       <h2>Operators</h2>
-      <p class="muted help-text"><strong>What:</strong> CLI commands for common operator tasks<br>
+      <p class="muted help-text"><strong>What:</strong> CLI commands and dashboard actions for workflow control<br>
       <strong>Why:</strong> Execute workflow actions without leaving the dashboard<br>
-      <strong>Next:</strong> Use the commands to explain or trigger actions</p>
+      <strong>Next:</strong> Use actions to approve artifacts, manage categories, or trigger actions</p>
       <div id="operators-content">
+        <!-- Artifact Review Section -->
+        <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #6ee7b7;">
+          <h3 style="font-size:14px; margin:0 0 8px;">Artifact Review</h3>
+          <p class="muted" style="font-size:11px; margin-bottom:8px;">Review artifacts and decide whether to approve or reject them for export</p>
+          
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input type="text" id="artifact-review-id" placeholder="Artifact ID (e.g., artifact-123)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+            <select id="artifact-review-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
+              <option value="approve">Approve</option>
+              <option value="reject">Reject</option>
+              <option value="note">Note Only</option>
+            </select>
+          </div>
+          
+          <div id="artifact-review-note-container" style="display:none; margin-bottom:8px;">
+            <input type="text" id="artifact-review-note" placeholder="Reason for action (required for reject)" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button id="artifact-review-submit" style="padding:8px 16px; border:none; background:#6ee7b7; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Review</button>
+            <p id="artifact-review-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+        </div>
+        
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
           <li><strong>Approve artifact</strong><br><code>python3 main.py review &lt;artifact-id&gt; approve --note 'operator-approved from dashboard'</code></li>
@@ -206,7 +230,78 @@
       
       // Load dashboard data from state_core.json and merge with communicator_self.json
       fetchStateCore();
+      
+      // Artifact Review UI handler
+      setupArtifactReviewUI();
     });
+
+    function setupArtifactReviewUI() {
+      const actionSelect = document.getElementById('artifact-review-action');
+      const noteContainer = document.getElementById('artifact-review-note-container');
+      const reviewSubmit = document.getElementById('artifact-review-submit');
+      const reviewStatus = document.getElementById('artifact-review-status');
+      
+      // Show note field only for reject action
+      actionSelect.addEventListener('change', () => {
+        if (actionSelect.value === 'reject') {
+          noteContainer.style.display = 'block';
+          document.getElementById('artifact-review-note').required = true;
+        } else {
+          noteContainer.style.display = 'none';
+          document.getElementById('artifact-review-note').required = false;
+        }
+      });
+      
+      // Submit review
+      reviewSubmit.addEventListener('click', async () => {
+        const artifactId = document.getElementById('artifact-review-id').value.trim();
+        const action = document.getElementById('artifact-review-action').value;
+        const note = document.getElementById('artifact-review-note').value.trim();
+        
+        if (!artifactId) {
+          reviewStatus.textContent = '❌ Artifact ID is required';
+          reviewStatus.style.color = '#f87171';
+          return;
+        }
+        
+        if (action === 'reject' && !note) {
+          reviewStatus.textContent = '❌ Note is required for reject action';
+          reviewStatus.style.color = '#f87171';
+          return;
+        }
+        
+        // Disable button during request
+        reviewSubmit.disabled = true;
+        reviewStatus.textContent = '⏳ Submitting...';
+        reviewStatus.style.color = '#6ee7b7';
+        
+        try {
+          const response = await fetch('/artifact-review', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({artifact_id: artifactId, action: action, note: note})
+          });
+          
+          const result = await response.json();
+          
+          if (result.ok) {
+            reviewStatus.textContent = `✅ Review submitted: ${action}`;
+            reviewStatus.style.color = '#6ee7b7';
+            // Clear the fields
+            document.getElementById('artifact-review-id').value = '';
+            document.getElementById('artifact-review-note').value = '';
+          } else {
+            reviewStatus.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+            reviewStatus.style.color = '#f87171';
+          }
+        } catch (error) {
+          reviewStatus.textContent = `❌ Request failed: ${error.message}`;
+          reviewStatus.style.color = '#f87171';
+        } finally {
+          reviewSubmit.disabled = false;
+        }
+      });
+    }
 
     async function fetchStateCore() {
       try {
