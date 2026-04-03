@@ -3,17 +3,26 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/security/index.d.ts",
-      "default": "./dist/security/index.js"
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./gateway": {
+      "types": "./gateway.d.ts",
+      "default": "./gateway.js"
+    },
+    "./gateway-wrappers": {
+      "types": "./gateway-wrappers.d.ts",
+      "default": "./gateway-wrappers.js"
+    },
+    "./test-wrappers": {
+      "types": "./test-wrappers.d.ts",
+      "default": "./test-wrappers.js"
     }
   },
   "scripts": {
     "build": "echo 'Security extension - no build required'",
-    "test": "echo 'Security extension - tests in main repo'"
+    "test": "node test-wrappers.js"
   },
   "dependencies": {},
-  "peerDependencies": {
-    "openclaw": "workspace:*"
-  },
   "devDependencies": {}
 }
