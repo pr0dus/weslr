@@ -174,6 +174,13 @@
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="artifact-review-submit" style="padding:8px 16px; border:none; background:#6ee7b7; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Review</button>
             <p id="artifact-review-status" class="muted" style="font-size:11px; margin:0;"></p>
+            
+            <!-- Success Summary Card -->
+            <div id="artifact-review-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
+              <p style="margin:4px 0; font-size:11px;"><strong>✅ Review submitted:</strong> <span id="artifact-review-summary-id"></span> - <span id="artifact-review-summary-action"></span></p>
+              <p id="artifact-review-summary-note" style="font-size:11px; margin:4px 0; color:#374151;"></p>
+              <p id="artifact-review-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
+            </div>
           </div>
         </div>
         
@@ -199,6 +206,13 @@
             <button id="category-update-submit" style="padding:8px 16px; border:none; background:#3b82f6; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Category Action</button>
             <p id="category-update-status" class="muted" style="font-size:11px; margin:0;"></p>
           </div>
+          
+          <!-- Success Summary Card -->
+          <div id="category-update-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
+            <p style="margin:4px 0; font-size:11px;"><strong>✅ Category action:</strong> <span id="category-update-summary-name"></span> - <span id="category-update-summary-action"></span></p>
+            <p id="category-update-summary-note" style="font-size:11px; margin:4px 0; color:#374151;"></p>
+            <p id="category-update-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
+          </div>
         </div>
         
         <!-- Validation Recording Section -->
@@ -222,6 +236,13 @@
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="validation-record-submit" style="padding:8px 16px; border:none; background:#fbbf24; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Validation</button>
             <p id="validation-record-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+          
+          <!-- Success Summary Card -->
+          <div id="validation-record-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
+            <p style="margin:4px 0; font-size:11px;"><strong>✅ Validation recorded:</strong> <span id="validation-record-summary-id"></span> - <span id="validation-record-summary-outcome"></span></p>
+            <p id="validation-record-summary-note" style="font-size:11px; margin:4px 0; color:#374151;"></p>
+            <p id="validation-record-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
           </div>
         </div>
         
@@ -247,6 +268,14 @@
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="pack-decision-submit" style="padding:8px 16px; border:none; background:#f59e0b; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Pack Decision</button>
             <p id="pack-decision-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+          
+          <!-- Success Summary Card -->
+          <div id="pack-decision-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
+            <p style="margin:4px 0; font-size:11px;"><strong>✅ Pack decision:</strong> <span id="pack-decision-summary-name"></span> - <span id="pack-decision-summary-action"></span></p>
+            <p id="pack-decision-summary-note" style="font-size:11px; margin:4px 0; color:#374151;"></p>
+            <p id="pack-decision-summary-price" style="font-size:11px; margin:4px 0; color:#374151;"></p>
+            <p id="pack-decision-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
           </div>
         </div>
         
@@ -369,6 +398,15 @@
           if (result.ok) {
             reviewStatus.textContent = `✅ Review submitted: ${action}`;
             reviewStatus.style.color = '#6ee7b7';
+            
+            // Show success summary card
+            const summary = document.getElementById('artifact-review-summary');
+            document.getElementById('artifact-review-summary-id').textContent = artifactId;
+            document.getElementById('artifact-review-summary-action').textContent = action;
+            document.getElementById('artifact-review-summary-note').textContent = note ? `Note: ${note}` : '';
+            document.getElementById('artifact-review-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
+            summary.style.display = 'block';
+            
             // Clear the fields
             document.getElementById('artifact-review-id').value = '';
             document.getElementById('artifact-review-note').value = '';
@@ -437,6 +475,15 @@
           if (result.ok) {
             updateStatus.textContent = `✅ Category action submitted: ${action}`;
             updateStatus.style.color = '#3b82f6';
+            
+            // Show success summary card
+            const summary = document.getElementById('category-update-summary');
+            document.getElementById('category-update-summary-name').textContent = categoryName;
+            document.getElementById('category-update-summary-action').textContent = action;
+            document.getElementById('category-update-summary-note').textContent = note ? `Reason: ${note}` : '';
+            document.getElementById('category-update-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
+            summary.style.display = 'block';
+            
             // Clear the fields
             document.getElementById('category-update-name').value = '';
             document.getElementById('category-update-note').value = '';
@@ -492,6 +539,15 @@
           if (result.ok) {
             validationStatus.textContent = `✅ Validation recorded: ${outcome}`;
             validationStatus.style.color = '#fbbf24';
+            
+            // Show success summary card
+            const summary = document.getElementById('validation-record-summary');
+            document.getElementById('validation-record-summary-id').textContent = artifactId;
+            document.getElementById('validation-record-summary-outcome').textContent = outcome;
+            document.getElementById('validation-record-summary-note').textContent = note ? `Context: ${note}` : '';
+            document.getElementById('validation-record-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
+            summary.style.display = 'block';
+            
             // Clear the fields
             document.getElementById('validation-record-id').value = '';
             document.getElementById('validation-record-note').value = '';
@@ -571,6 +627,16 @@
           if (result.ok) {
             decisionStatus.textContent = `✅ Pack decision submitted: ${action}`;
             decisionStatus.style.color = '#f59e0b';
+            
+            // Show success summary card
+            const summary = document.getElementById('pack-decision-summary');
+            document.getElementById('pack-decision-summary-name').textContent = packName;
+            document.getElementById('pack-decision-summary-action').textContent = action;
+            document.getElementById('pack-decision-summary-note').textContent = note ? `Note: ${note}` : '';
+            document.getElementById('pack-decision-summary-price').textContent = price ? `Price: ${price}` : '';
+            document.getElementById('pack-decision-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
+            summary.style.display = 'block';
+            
             // Clear the fields
             document.getElementById('pack-decision-name').value = '';
             document.getElementById('pack-decision-note').value = '';
