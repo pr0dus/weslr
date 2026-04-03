@@ -2,10 +2,8 @@
 /**
  * security/detector/malicious-code.js - Malicious Code Detection
  * Phase 1: Pattern-based detection for eval, child_process, etc.
+ * Uses regex-based approach to avoid external dependencies
  */
-
-import * as ast from "acorn";
-import { Parser } from "acorn";
 
 /**
  * Malicious code patterns to detect
@@ -86,7 +84,7 @@ export class MaliciousCodeDetector {
    */
   async scan(code) {
     const issues = [];
-    
+
     for (const pattern of this.patterns) {
       for (const regex of pattern.patterns) {
         const match = code.match(regex);
@@ -95,19 +93,11 @@ export class MaliciousCodeDetector {
             type: pattern.name,
             severity: pattern.severity,
             pattern: pattern.description,
-            foundAt: match.index,
+            foundAt: code.search(regex),
             match: match[0]
           });
         }
       }
-    }
-
-    // AST-based detection for eval
-    try {
-      const astResult = this.analyzeAST(code);
-      issues.push(...astResult);
-    } catch (e) {
-      // AST parsing failed, skip
     }
 
     return {
@@ -118,69 +108,12 @@ export class MaliciousCodeDetector {
   }
 
   /**
-   * Analyze code AST for dangerous constructs
-   */
-  analyzeAST(code) {
-    const issues = [];
-    
-    try {
-      const ast = new Parser({
-        ecmaVersion: "latest",
-        sourceType: "module"
-      }).parse(code, { locations: true });
-      
-      const findDangerousCalls = (node) => {
-        if (!node) return;
-        
-        if (node.type === "CallExpression") {
-          // Check for eval() calls
-          if (node.callee.type === "Identifier" && node.callee.name === "eval") {
-            issues.push({
-              type: "eval_injection",
-              severity: "high",
-              pattern: "eval() call detected",
-              foundAt: node.start,
-              match: "eval(...)"
-            });
-          }
-          
-          // Check for new Function() calls
-          if (node.callee.type === "NewExpression" && 
-              node.callee.callee.type === "Identifier" && 
-              node.callee.callee.name === "Function") {
-            issues.push({
-              type: "eval_injection",
-              severity: "high",
-              pattern: "new Function() call detected",
-              foundAt: node.start,
-              match: "new Function(...)"
-            });
-          }
-        }
-        
-        // Recursively check children
-        for (const key in node) {
-          if (typeof node[key] === "object" && node[key] !== null) {
-            findDangerousCalls(node[key]);
-          }
-        }
-      };
-      
-      findDangerousCalls(ast);
-    } catch (e) {
-      // AST parsing error, return empty
-    }
-    
-    return issues;
-  }
-
-  /**
    * Check command for privilege escalation
    */
   async checkPrivilegeEscalation(command, args = []) {
     const fullCommand = [command, ...args].join(" ");
     const issues = [];
-    
+
     for (const pattern of this.patterns) {
       if (pattern.name === "setuid_sudo") {
         for (const regex of pattern.patterns) {
@@ -195,7 +128,7 @@ export class MaliciousCodeDetector {
         }
       }
     }
-    
+
     return {
       hasIssues: issues.length > 0,
       issues,
@@ -208,9 +141,9 @@ export class MaliciousCodeDetector {
    */
   calculateRisk(issues) {
     if (issues.length === 0) return 0;
-    
+
     let score = 0;
-    
+
     for (const issue of issues) {
       switch (issue.severity) {
         case "critical":
@@ -229,7 +162,7 @@ export class MaliciousCodeDetector {
           score += 5;
       }
     }
-    
+
     return Math.min(100, score);
   }
 }

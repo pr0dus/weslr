@@ -66,7 +66,7 @@ export class ThreatDetector {
   calculateRiskScore(threats) {
     // Phase 1: Simplified scoring
     let score = 0;
-    
+
     for (const tag of threats.threatTags || []) {
       switch (tag) {
         case "code-injection":
@@ -88,7 +88,7 @@ export class ThreatDetector {
           score += 5;
       }
     }
-    
+
     return Math.min(100, score);
   }
 }
