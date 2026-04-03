@@ -13,6 +13,8 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from . import contracts
+
 
 # Default paths (override via BASE_DIR parameter in functions)
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
@@ -227,12 +229,15 @@ def calculate_continuity_debt(state: Dict[str, Any]) -> float:
 # ===== RESTORE PLAN BUILDER (WESLR fields) =====
 
 def build_restore_plan(state: Dict[str, Any]) -> Dict[str, Any]:
-    """Build restore plan targeting WESLR continuity fields."""
-    plan: Dict[str, Any] = {
-        "strategy": "continuity_preservation",
-        "items": [],
-        "fallback": "state_core_restore",
-        "continuity_fields": [
+    """Build restore plan using contracts.
+    
+    This delegates to contracts.create_restore_plan
+    to maintain consistency across the platform.
+    """
+    plan = contracts.create_restore_plan(
+        strategy="continuity_preservation",
+        fallback="state_core_restore",
+        fields=[
             "identity_anchor",
             "communicator_continuity",
             "session_continuity",
@@ -242,8 +247,9 @@ def build_restore_plan(state: Dict[str, Any]) -> Dict[str, Any]:
             "review_queue",
             "export_queue",
             "operator_work",
-        ],
-    }
+        ]
+    )
+    # Fill in items based on state
     for key in plan["continuity_fields"]:
         value = state.get(key)
         if value is None:

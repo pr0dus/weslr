@@ -13,6 +13,8 @@ import json
 import os
 from typing import Any, Dict, Optional
 
+from . import contracts
+
 
 # Default paths (override via BASE_DIR parameter in functions)
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
@@ -63,17 +65,17 @@ def save_task_anchor(anchor: Dict[str, Any], base_dir: str = None) -> str:
 
 
 def validate_task_anchor(anchor: Dict[str, Any]) -> bool:
-    """Validate task anchor has required fields."""
-    required = ["task_name", "task_status", "last_commit_hash", "last_updated_at"]
-    for field in required:
-        if field not in anchor:
-            return False
-    return True
+    """Validate task anchor using contracts.
+    
+    This delegates to contracts.validate_task_anchor
+    to maintain consistency across the platform.
+    """
+    return contracts.validate_task_anchor(anchor)
 
 
 def get_required_fields() -> list[str]:
-    """Return list of required task anchor fields."""
-    return ["task_name", "task_status", "last_commit_hash", "last_updated_at"]
+    """Return list of required task anchor fields from contracts."""
+    return contracts.get_required_task_anchor_fields()
 
 
 def create_task_anchor(
@@ -82,15 +84,12 @@ def create_task_anchor(
     last_commit_hash: str,
     base_dir: str = None,
 ) -> Dict[str, Any]:
-    """Create a new task anchor with required fields."""
-    import datetime
-    anchor = {
-        "task_name": task_name,
-        "task_status": task_status,
-        "last_commit_hash": last_commit_hash,
-        "last_updated_at": datetime.datetime.utcnow().isoformat() + "Z",
-    }
-    return anchor
+    """Create a new task anchor using contracts.
+    
+    This is a thin wrapper around contracts.create_task_anchor
+    to maintain compatibility with existing code.
+    """
+    return contracts.create_task_anchor(task_name, task_status, last_commit_hash, base_dir)
 
 
 def update_task_anchor(
@@ -101,18 +100,12 @@ def update_task_anchor(
     current_step: str = None,
     base_dir: str = None,
 ) -> Dict[str, Any]:
-    """Update existing task anchor with new values."""
-    import datetime
-    if task_name is not None:
-        anchor["task_name"] = task_name
-    if task_status is not None:
-        anchor["task_status"] = task_status
-    if last_commit_hash is not None:
-        anchor["last_commit_hash"] = last_commit_hash
-    if current_step is not None:
-        anchor["current_step"] = current_step
-    anchor["last_updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
-    return anchor
+    """Update existing task anchor using contracts.
+    
+    This is a thin wrapper around contracts.update_task_anchor
+    to maintain compatibility with existing code.
+    """
+    return contracts.update_task_anchor(anchor, task_name, task_status, last_commit_hash, current_step, base_dir)
 
 
 def verify_task_anchor_commit(anchor: Dict[str, Any], current_commit: str) -> tuple[bool, str]:

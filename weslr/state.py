@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from . import contracts
+
 # Default paths (override via BASE_DIR parameter in functions)
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
 
@@ -600,6 +602,7 @@ def derive_state_core(dry_run: bool = False, base_dir: str = None) -> Dict[str, 
         entities=entities if isinstance(entities, list) else []
     )
     
+    # Build state_core using contract helpers for default structures
     state_core = {
         "schema_version": "1.0.0",
         "timestamp": now_ts,
@@ -623,22 +626,14 @@ def derive_state_core(dry_run: bool = False, base_dir: str = None) -> Dict[str, 
         "entities": entities if isinstance(entities, list) else [],
         "events": events,
         "next_action": next_action,
-        "metrics": {
-            "tick_count": 0,
-            "last_tick_duration_ms": 0,
-            "memory_pressure_score": 0.0
-        },
+        "metrics": contracts.create_empty_metrics(),
         "derived_from": {
             "state_core_generated_at": now_ts,
             "legacy_files_read": LEGACY_FILES,
             "migrated_at": 0,
             "migrated_by": "weslr.state"
         },
-        "validation": {
-            "ok": True,
-            "errors": [],
-            "warnings": []
-        }
+        "validation": contracts.create_empty_validation()
     }
     
     return state_core
