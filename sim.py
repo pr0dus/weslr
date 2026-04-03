@@ -1990,6 +1990,81 @@ def category_action(action: str, name: str) -> dict:
     return {"ok": False, "message": f"Unknown category action: {action}"}
 
 
+def artifact_validate_dashboard(artifact_id: str, outcome: str, note: str = "") -> dict:
+    """Dashboard-specific artifact validation for operators.
+    
+    Supports outcomes: valid, invalid, needs_review (simplified for operator UI)
+    
+    Args:
+        artifact_id: Artifact ID
+        outcome: One of 'valid', 'invalid', 'needs_review'
+        note: Note/context for audit trail
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    # Find the artifact
+    meta_file = find_meta_file_by_id(artifact_id)
+    if meta_file is None:
+        return {"ok": False, "message": f"No artifact found with id: {artifact_id}"}
+    
+    conn = connect()
+    meta = read_json_file(meta_file, {})
+    proof = get_artifact_proof(conn, meta.get("id"))
+    
+    # Map operator-friendly outcomes to internal actions
+    action_map = {
+        "valid": "accept",
+        "invalid": "reject", 
+        "needs_review": "revise"
+    }
+    internal_action = action_map.get(outcome)
+    
+    if internal_action is None:
+        conn.close()
+        return {"ok": False, "message": f"Unknown outcome: {outcome}"}
+    
+    # Apply the validation using existing logic
+    if internal_action == "accept":
+        proof["handoff_acceptances"] = int(proof.get("handoff_acceptances", 0)) + 1
+        proof["external_validation_state"] = "accepted_for_delivery"
+    elif internal_action == "reject":
+        proof["handoff_rejections"] = int(proof.get("handoff_rejections", 0)) + 1
+        proof["external_validation_state"] = "rejected_after_review"
+    elif internal_action == "revise":
+        proof["external_validation_state"] = "needs_revision"
+    
+    if note:
+        meta.setdefault("review_notes", []).append(f"validation:{outcome}: {note}")
+    
+    theme = meta.get("niche_theme")
+    outcome_key = {"valid": "accept", "invalid": "reject", "needs_review": "needs_revision"}.get(outcome, outcome)
+    apply_opportunity_outcome(theme, outcome_key, int(time.time()))
+    
+    proof["last_status"] = meta.get("review_status", "unreviewed")
+    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+        meta.get("id"),
+        int(proof.get("first_seen_tick", 0)),
+        int(proof.get("last_seen_tick", 0)),
+        int(proof.get("appearances", 0)),
+        int(proof.get("top_pack_hits", 0)),
+        int(proof.get("review_exports", 0)),
+        int(proof.get("human_approvals", 0)),
+        int(proof.get("real_usage_hits", 0)),
+        int(proof.get("buyer_fit_votes", 0)),
+        int(proof.get("handoff_acceptances", 0)),
+        int(proof.get("handoff_rejections", 0)),
+        proof.get("external_validation_state", "unvalidated"),
+        proof.get("last_status", "unreviewed"),
+    ))
+    conn.commit()
+    meta = update_artifact_scores(meta, conn)
+    write_json_file(meta_file, meta)
+    refresh_state_files(conn)
+    conn.close()
+    return {"ok": True, "message": f"Validation recorded: {outcome}", "artifact": meta}
+
+
 def category_update_dashboard(action: str, name: str, note: str = "") -> dict:
     """Dashboard-specific category management for operators.
     

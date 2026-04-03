@@ -201,6 +201,30 @@
           </div>
         </div>
         
+        <!-- Validation Recording Section -->
+        <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #fbbf24;">
+          <h3 style="font-size:14px; margin:0 0 8px;">Validation Recording</h3>
+          <p class="muted" style="font-size:11px; margin-bottom:8px;">Record external validation outcomes for artifacts to track real-world usage</p>
+          
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input type="text" id="validation-record-id" placeholder="Artifact ID (e.g., artifact-123)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+            <select id="validation-record-outcome" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
+              <option value="valid">Valid</option>
+              <option value="invalid">Invalid</option>
+              <option value="needs_review">Needs Review</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom:8px;">
+            <input type="text" id="validation-record-note" placeholder="Context or reason for validation outcome" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button id="validation-record-submit" style="padding:8px 16px; border:none; background:#fbbf24; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Validation</button>
+            <p id="validation-record-status" class="muted" style="font-size:11px; margin:0;"></p>
+          </div>
+        </div>
+        
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
           <li><strong>Approve artifact</strong><br><code>python3 main.py review &lt;artifact-id&gt; approve --note 'operator-approved from dashboard'</code></li>
@@ -260,6 +284,9 @@
       
       // Category Management UI handler
       setupCategoryManagementUI();
+      
+      // Validation Recording UI handler
+      setupValidationRecordingUI();
     });
 
     function setupArtifactReviewUI() {
@@ -394,6 +421,61 @@
           updateStatus.style.color = '#f87171';
         } finally {
           updateSubmit.disabled = false;
+        }
+      });
+    }
+
+    function setupValidationRecordingUI() {
+      const validationSubmit = document.getElementById('validation-record-submit');
+      const validationStatus = document.getElementById('validation-record-status');
+      
+      // Submit validation
+      validationSubmit.addEventListener('click', async () => {
+        const artifactId = document.getElementById('validation-record-id').value.trim();
+        const outcome = document.getElementById('validation-record-outcome').value;
+        const note = document.getElementById('validation-record-note').value.trim();
+        
+        if (!artifactId) {
+          validationStatus.textContent = '❌ Artifact ID is required';
+          validationStatus.style.color = '#f87171';
+          return;
+        }
+        
+        if (!note) {
+          validationStatus.textContent = '❌ Note/context is required for validation';
+          validationStatus.style.color = '#f87171';
+          return;
+        }
+        
+        // Disable button during request
+        validationSubmit.disabled = true;
+        validationStatus.textContent = '⏳ Submitting...';
+        validationStatus.style.color = '#fbbf24';
+        
+        try {
+          const response = await fetch('/artifact/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({artifact_id: artifactId, outcome: outcome, note: note})
+          });
+          
+          const result = await response.json();
+          
+          if (result.ok) {
+            validationStatus.textContent = `✅ Validation recorded: ${outcome}`;
+            validationStatus.style.color = '#fbbf24';
+            // Clear the fields
+            document.getElementById('validation-record-id').value = '';
+            document.getElementById('validation-record-note').value = '';
+          } else {
+            validationStatus.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+            validationStatus.style.color = '#f87171';
+          }
+        } catch (error) {
+          validationStatus.textContent = `❌ Request failed: ${error.message}`;
+          validationStatus.style.color = '#f87171';
+        } finally {
+          validationSubmit.disabled = false;
         }
       });
     }

@@ -735,6 +735,50 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             
+            # Handle artifact validation endpoint
+            elif self.path == "/artifact/validate":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    artifact_id = data.get("artifact_id", "")
+                    outcome = data.get("outcome", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not artifact_id:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "artifact_id is required"}).encode("utf-8"))
+                        return
+                    if not outcome or outcome not in ["valid", "invalid", "needs_review"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "outcome must be 'valid', 'invalid', or 'needs_review'"}).encode("utf-8"))
+                        return
+                    if not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/context is required for validation"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the validation using dashboard-specific function
+                    result = artifact_validate_dashboard(artifact_id, outcome, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
