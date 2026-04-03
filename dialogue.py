@@ -819,7 +819,26 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     message = _get_language_module().simple_response()
     source = "fallback"
     
-    return {"message": message, "audience": "you", "source": source}
+    result = {"message": message, "audience": "you", "source": source}
+    
+    # Route through outbox for unified communication
+    try:
+        from outbox import get_outbox, PRIORITY_HUMAN_RESPONSE, STATE_OUTBOX_STATS
+        outbox = get_outbox()
+        outbox.enqueue(message, "human_response", priority=PRIORITY_HUMAN_RESPONSE)
+        
+        # Load and update state with outbox metadata
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        if STATE_OUTBOX_STATS not in cs:
+            cs[STATE_OUTBOX_STATS] = {}
+        cs[STATE_OUTBOX_STATS]["last_outbox_type"] = "human_response"
+        # Don't persist the full outbox queue in v1 - keep it in-memory only
+    except Exception:
+        # Fallback if outbox fails - don't break communication
+        pass
+    
+    return result
 
 # Phase 1C apply: prop-1774880824308-3 - Apply Phase 1C test
 # Applied at: 2026-03-30 16:27:04
