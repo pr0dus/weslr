@@ -5,7 +5,7 @@
  */
 
 import { AuditTrail } from "./audit/index.js";
-import ThreatDetector from "./detector/index.js";
+import { MaliciousCodeDetector } from "./detector/malicious-code.js";
 import RiskEngine from "./risk-engine/index.js";
 import Gate from "./gate/index.js";
 import Rollback from "./rollback/index.js";
@@ -14,30 +14,44 @@ import SecurityPolicy from "./policy/index.js";
 import SecurityLogs from "./audit/logs/index.js";
 
 /**
+ * Main detector instance
+ */
+const threatDetector = new MaliciousCodeDetector();
+
+/**
+ * Risk engine instance
+ */
+const riskEngine = new RiskEngine(SecurityPolicy.default);
+
+/**
  * Security Self-Protection Layer - Phase 1
  */
 export const SecuritySelfProtection = {
   // Audit
   AuditTrail,
-  
+
   // Detection
-  Detector: new ThreatDetector(),
-  
+  Detector: {
+    scanCode: (code, context) => threatDetector.scanCode(code, context),
+    checkPrivilegeEscalation: (cmd, args) => threatDetector.checkPrivilegeEscalation(cmd, args),
+    calculateRisk: (issues) => threatDetector.calculateRisk(issues)
+  },
+
   // Risk
-  RiskEngine: new RiskEngine(SecurityPolicy.default),
-  
+  RiskEngine: riskEngine,
+
   // Gates
   Gate,
-  
+
   // Rollback
   Rollback,
-  
+
   // Continuity
   Continuity,
-  
+
   // Policy
   Policy: SecurityPolicy,
-  
+
   // Logs
   SecurityLogs
 };
@@ -52,7 +66,7 @@ export async function initSecurity() {
     rollback: await Rollback.init(),
     continuity: await Continuity.init()
   };
-  
+
   return results;
 }
 
@@ -65,7 +79,7 @@ export async function getSecurityStatus() {
   const summary = await SecurityLogs.summary();
   const rollbackSummary = await Rollback.summary();
   const anomalyCheck = await Continuity.checkAnomalies();
-  
+
   return {
     version: "1.0",
     enabled: true,
@@ -93,7 +107,7 @@ export async function secureWrite(filepath, data, options = {}) {
   // 4. Calculate risk score
   // 5. Block if necessary
   // 6. Create rollback artifact
-  
+
   await SecurityLogs.log({
     type: "pre_write_attempt",
     filepath,
@@ -102,13 +116,13 @@ export async function secureWrite(filepath, data, options = {}) {
     blocked: false,
     timestamp: new Date().toISOString()
   });
-  
+
   // Intended to be wrapped by actual fs.write
   const writeFn = options.writeFn || (async () => {
     const fs = await import("node:fs/promises");
     return fs.writeFile(filepath, data, options);
   });
-  
+
   return await writeFn();
 }
 
@@ -123,7 +137,7 @@ export async function secureImport(modulePath, context = {}) {
   // 3. Analyze module code
   // 4. Calculate risk score
   // 5. Block if necessary
-  
+
   await SecurityLogs.log({
     type: "pre_evolution_attempt",
     modulePath,
@@ -132,12 +146,12 @@ export async function secureImport(modulePath, context = {}) {
     blocked: false,
     timestamp: new Date().toISOString()
   });
-  
+
   // Intended to be wrapped by actual import
   const importFn = context.importFn || (async () => {
     return await import(modulePath);
   });
-  
+
   return await importFn();
 }
 

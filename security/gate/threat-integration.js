@@ -4,12 +4,12 @@
  * Verifies real blocking when thresholds are exceeded
  */
 
-import ThreatDetector from "../detector/index.js";
+import { MaliciousCodeDetector } from "../detector/malicious-code.js";
+import RiskEngine from "../risk-engine/index.js";
 import SecurityPolicy from "../policy/index.js";
 import SecurityLogs from "../audit/logs/index.js";
-import { SECURITY_EVENT_TYPES } from "../audit/logs/index.js";
 
-const threatDetector = new ThreatDetector();
+const threatDetector = new MaliciousCodeDetector();
 
 /**
  * Test malicious code that should be blocked
@@ -42,7 +42,7 @@ module.exports = { greet };
  */
 export async function testPolicyLoading() {
   console.log("[threat-integration] Testing policy loading...");
-  
+
   try {
     const policy = await SecurityPolicy.load();
     console.log("[threat-integration] Policy loaded:", JSON.stringify(policy, null, 2));
@@ -58,24 +58,24 @@ export async function testPolicyLoading() {
  */
 export async function testMaliciousCodeDetection() {
   console.log("[threat-integration] Testing malicious code detection...");
-  
+
   try {
     const result = await threatDetector.scanCode(MALICIOUS_CODE);
     console.log("[threat-integration] Malicious code scan:", JSON.stringify(result, null, 2));
-    
+
     if (!result.hasIssues) {
       console.error("[threat-integration] FAIL: Malicious code not detected!");
       return { success: false, error: "Malicious code not detected" };
     }
-    
-    const riskScore = threatDetector.calculateRiskScore(result);
+
+    const riskScore = threatDetector.calculateRisk(result.issues);
     console.log("[threat-integration] Risk score:", riskScore);
-    
+
     if (riskScore < 80) {
       console.error("[threat-integration] FAIL: Risk score too low for malicious code!");
       return { success: false, error: "Risk score too low" };
     }
-    
+
     return { success: true, issues: result.issues.length, riskScore };
   } catch (err) {
     console.error("[threat-integration] Malicious code detection failed:", err);
@@ -88,15 +88,15 @@ export async function testMaliciousCodeDetection() {
  */
 export async function testBenignCodeDetection() {
   console.log("[threat-integration] Testing benign code detection...");
-  
+
   try {
     const result = await threatDetector.scanCode(BENIGN_CODE);
     console.log("[threat-integration] Benign code scan:", JSON.stringify(result, null, 2));
-    
+
     // Benign code should have minimal issues
-    const riskScore = threatDetector.calculateRiskScore(result);
+    const riskScore = threatDetector.calculateRisk(result.issues);
     console.log("[threat-integration] Risk score:", riskScore);
-    
+
     return { success: true, issues: result.issues?.length || 0, riskScore };
   } catch (err) {
     console.error("[threat-integration] Benign code detection failed:", err);
@@ -109,22 +109,19 @@ export async function testBenignCodeDetection() {
  */
 export async function testPrivilegeEscalationDetection() {
   console.log("[threat-integration] Testing privilege escalation detection...");
-  
+
   try {
     const result = await threatDetector.checkPrivilegeEscalation("node", ["--no-sandbox", "script.js"]);
     console.log("[threat-integration] Privilege escalation scan:", JSON.stringify(result, null, 2));
-    
+
     if (!result.hasIssues) {
       console.error("[threat-integration] FAIL: Privilege escalation not detected!");
       return { success: false, error: "Privilege escalation not detected" };
     }
-    
-    const riskScore = threatDetector.calculateRiskScore({
-      issues: result.issues,
-      threatTags: ["privilege-escalation"]
-    });
+
+    const riskScore = threatDetector.calculateRisk(result.issues);
     console.log("[threat-integration] Risk score:", riskScore);
-    
+
     return { success: true, issues: result.issues.length, riskScore };
   } catch (err) {
     console.error("[threat-integration] Privilege escalation detection failed:", err);
@@ -137,14 +134,14 @@ export async function testPrivilegeEscalationDetection() {
  */
 export async function runAllTests() {
   console.log("=== PHASE 2B THREAT INTEGRATION TESTS ===\n");
-  
+
   const results = {
     policy: await testPolicyLoading(),
     malicious: await testMaliciousCodeDetection(),
     benign: await testBenignCodeDetection(),
     privilege: await testPrivilegeEscalationDetection()
   };
-  
+
   console.log("\n=== TEST RESULTS ===");
   for (const [name, result] of Object.entries(results)) {
     console.log(`${name}: ${result.success ? "PASS" : "FAIL"}`);
@@ -152,10 +149,10 @@ export async function runAllTests() {
       console.log(`  Error: ${result.error}`);
     }
   }
-  
+
   const allPassed = Object.values(results).every(r => r.success);
   console.log(`\nOverall: ${allPassed ? "ALL TESTS PASSED" : "SOME TESTS FAILED"}`);
-  
+
   return results;
 }
 

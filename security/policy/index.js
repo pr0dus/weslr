@@ -6,11 +6,12 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { resolveStateDir } from "../../../dist/paths-dQ_clcF4.js";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-const STATE_DIR = resolveStateDir();
-const POLICY_DIR = path.join(STATE_DIR, ".openclaw", "config", "security");
-const POLICY_FILE = path.join(POLICY_DIR, "security-policy.json");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, "..", "..");
 
 /**
  * Policy schema validation
@@ -73,6 +74,12 @@ export const DEFAULT_POLICY = {
 };
 
 /**
+ * Policy directory path
+ */
+const POLICY_DIR = path.join(projectRoot, ".openclaw", "config", "security");
+const POLICY_FILE = path.join(POLICY_DIR, "security-policy.json");
+
+/**
  * Load policy from file
  */
 export async function loadPolicy() {
@@ -93,10 +100,10 @@ export async function savePolicy(policy) {
   if (!validatePolicy(policy)) {
     throw new Error("Invalid policy configuration");
   }
-  
+
   await fs.mkdir(POLICY_DIR, { recursive: true });
   await fs.writeFile(POLICY_FILE, JSON.stringify(policy, null, 2));
-  
+
   return policy;
 }
 
@@ -108,29 +115,29 @@ export function validatePolicy(policy) {
   if (!policy.selfEvolution || !policy.riskThresholds || !policy.audit) {
     return false;
   }
-  
+
   // Check required fields
   if (!policy.selfEvolution.maxAdditiveLines || !policy.selfEvolution.forbiddenPatterns) {
     return false;
   }
-  
+
   if (!policy.riskThresholds.autoBlock || !policy.riskThresholds.alertOnly) {
     return false;
   }
-  
+
   if (!policy.audit.enabled || !policy.audit.retentionDays) {
     return false;
   }
-  
+
   // Check values are in range
   if (policy.riskThresholds.autoBlock < policy.riskThresholds.alertOnly) {
     return false;
   }
-  
+
   if (policy.selfEvolution.maxModificativeLines > policy.selfEvolution.maxAdditiveLines) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -148,11 +155,11 @@ export async function getPolicy(name = "default") {
 export async function updatePolicy(updates) {
   const current = await loadPolicy();
   const updated = { ...current, ...updates };
-  
+
   if (!validatePolicy(updated)) {
     throw new Error("Invalid policy updates");
   }
-  
+
   return await savePolicy(updated);
 }
 

@@ -7,10 +7,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import { resolveStateDir } from "../../../dist/paths-dQ_clcF4.js";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-const STATE_DIR = resolveStateDir();
-const ROLLBACK_DIR = path.join(STATE_DIR, ".openclaw", "rollback");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, "..", "..");
+
+const ROLLBACK_DIR = path.join(projectRoot, ".openclaw", "rollback");
 const ROLLBACK_INDEX = path.join(ROLLBACK_DIR, "index.json");
 
 /**
@@ -19,7 +23,7 @@ const ROLLBACK_INDEX = path.join(ROLLBACK_DIR, "index.json");
 export async function initRollback() {
   try {
     await fs.mkdir(ROLLBACK_DIR, { recursive: true });
-    
+
     // Initialize index if not exists
     try {
       await fs.access(ROLLBACK_INDEX);
@@ -30,7 +34,7 @@ export async function initRollback() {
         lastUpdated: new Date().toISOString()
       }, null, 2));
     }
-    
+
     return true;
   } catch (err) {
     console.error("[security/rollback] Failed to initialize:", err);
@@ -44,7 +48,7 @@ export async function initRollback() {
 export async function createRollbackPoint(event, snapshot) {
   const rollbackId = `rollback-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
   const timestamp = new Date().toISOString();
-  
+
   const rollback = {
     id: rollbackId,
     timestamp,
@@ -55,16 +59,16 @@ export async function createRollbackPoint(event, snapshot) {
     status: "pending",
     createdAt: timestamp
   };
-  
+
   // Update index
   await updateRollbackIndex(rollback);
-  
+
   // Create artifact if provided
   if (snapshot.artifactPath) {
     await fs.mkdir(path.join(ROLLBACK_DIR, rollbackId), { recursive: true });
     await fs.copyFile(snapshot.artifactPath, path.join(ROLLBACK_DIR, rollbackId, "artifact"));
   }
-  
+
   return rollback;
 }
 
@@ -75,12 +79,12 @@ async function updateRollbackIndex(rollback) {
   try {
     const content = await fs.readFile(ROLLBACK_INDEX, "utf8");
     const index = JSON.parse(content);
-    
+
     index.rollbacks.push(rollback);
     index.lastUpdated = new Date().toISOString();
-    
+
     await fs.writeFile(ROLLBACK_INDEX, JSON.stringify(index, null, 2));
-    
+
     return index;
   } catch (err) {
     // Create new index
@@ -89,7 +93,7 @@ async function updateRollbackIndex(rollback) {
       rollbacks: [rollback],
       lastUpdated: new Date().toISOString()
     }, null, 2));
-    
+
     return { rollbacks: [rollback] };
   }
 }
@@ -101,9 +105,9 @@ export async function getRollbackPoints(options = {}) {
   try {
     const content = await fs.readFile(ROLLBACK_INDEX, "utf8");
     const index = JSON.parse(content);
-    
+
     let rollbacks = index.rollbacks || [];
-    
+
     // Apply filters
     if (options.limit) {
       rollbacks = rollbacks.slice(-options.limit);
@@ -114,10 +118,10 @@ export async function getRollbackPoints(options = {}) {
     if (options.eventId) {
       rollbacks = rollbacks.filter(r => r.eventId === options.eventId);
     }
-    
+
     // Sort by timestamp (newest first)
     rollbacks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
+
     return rollbacks;
   } catch (err) {
     return [];
@@ -141,24 +145,24 @@ export async function getRollback(rollbackId) {
  */
 export async function executeRollback(rollbackId, dryRun = false) {
   const rollback = await getRollback(rollbackId);
-  
+
   if (!rollback) {
     return {
       success: false,
       error: `Rollback not found: ${rollbackId}`
     };
   }
-  
+
   if (!dryRun) {
     // In full implementation, this would:
     // 1. Verify rollback integrity
     // 2. Execute recovery procedure
     // 3. Update state
     // 4. Log completion
-    
+
     await updateRollbackStatus(rollbackId, "executed");
   }
-  
+
   return {
     success: true,
     rollbackId,
@@ -174,13 +178,13 @@ async function updateRollbackStatus(rollbackId, status) {
   try {
     const content = await fs.readFile(ROLLBACK_INDEX, "utf8");
     const index = JSON.parse(content);
-    
+
     const rollback = index.rollbacks.find(r => r.id === rollbackId);
     if (rollback) {
       rollback.status = status;
       rollback.statusChangedAt = new Date().toISOString();
     }
-    
+
     await fs.writeFile(ROLLBACK_INDEX, JSON.stringify(index, null, 2));
   } catch (err) {
     // Ignore
@@ -194,16 +198,16 @@ export async function deleteRollback(rollbackId) {
   try {
     const content = await fs.readFile(ROLLBACK_INDEX, "utf8");
     const index = JSON.parse(content);
-    
+
     index.rollbacks = index.rollbacks.filter(r => r.id !== rollbackId);
     index.lastUpdated = new Date().toISOString();
-    
+
     await fs.writeFile(ROLLBACK_INDEX, JSON.stringify(index, null, 2));
-    
+
     // Delete artifact directory
     const rollbackDir = path.join(ROLLBACK_DIR, rollbackId);
     await fs.rm(rollbackDir, { recursive: true, force: true });
-    
+
     return true;
   } catch (err) {
     return false;
@@ -215,7 +219,7 @@ export async function deleteRollback(rollbackId) {
  */
 export async function getRollbackSummary() {
   const rollbacks = await getRollbackPoints();
-  
+
   const summary = {
     total: rollbacks.length,
     byStatus: {},
@@ -223,15 +227,15 @@ export async function getRollbackSummary() {
     oldest: rollbacks.length > 0 ? rollbacks[rollbacks.length - 1].timestamp : null,
     newest: rollbacks.length > 0 ? rollbacks[0].timestamp : null
   };
-  
+
   for (const r of rollbacks) {
     summary.byStatus[r.status] = (summary.byStatus[r.status] || 0) + 1;
-    
+
     if (new Date(r.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
       summary.last24h++;
     }
   }
-  
+
   return summary;
 }
 

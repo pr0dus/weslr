@@ -5,13 +5,23 @@
  */
 
 import { AuditTrail } from "../security/audit/index.js";
-import ThreatDetector from "../security/detector/index.js";
+import { MaliciousCodeDetector } from "../security/detector/malicious-code.js";
 import RiskEngine from "../security/risk-engine/index.js";
 import Gate from "../security/gate/index.js";
 import Rollback from "../security/rollback/index.js";
 import Continuity from "../security/continuity/index.js";
 import SecurityPolicy from "../security/policy/index.js";
 import SecurityLogs from "../security/audit/logs/index.js";
+
+/**
+ * Main detector instance
+ */
+const threatDetector = new MaliciousCodeDetector();
+
+/**
+ * Risk engine instance
+ */
+const riskEngine = new RiskEngine(SecurityPolicy.default);
 
 /**
  * Platform-facing Security API
@@ -31,10 +41,14 @@ export const SecurityAPI = {
   },
 
   // Detection - generic (platform-neutral)
-  Detector: new ThreatDetector(),
+  Detector: {
+    scanCode: (code, context) => threatDetector.scanCode(code, context),
+    checkPrivilegeEscalation: (cmd, args) => threatDetector.checkPrivilegeEscalation(cmd, args),
+    calculateRisk: (issues) => threatDetector.calculateRisk(issues)
+  },
 
   // Risk Engine - generic (platform-neutral)
-  RiskEngine: new RiskEngine(SecurityPolicy.default),
+  RiskEngine: riskEngine,
 
   // Gate hooks - generic (platform-neutral signatures)
   Gate,
@@ -91,11 +105,11 @@ export const SecurityAPI = {
       return true;
     },
     status: async () => {
-      const policy = await SecurityAPI.Policy.load();
+      const policy = await SecurityPolicy.load();
       const auditStats = await SecurityAPI.Audit.stats();
-      const logsSummary = await SecurityAPI.Logs.summary();
-      const rollbackSummary = await SecurityAPI.Rollback.summary();
-      const anomalyCheck = await SecurityAPI.Continuity.checkAnomalies();
+      const logsSummary = await SecurityLogs.summary();
+      const rollbackSummary = await Rollback.summary();
+      const anomalyCheck = await Continuity.checkAnomalies();
 
       return {
         version: "2.0",

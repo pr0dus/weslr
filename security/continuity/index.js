@@ -6,14 +6,17 @@
 
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
-import { resolveStateDir } from "../../../dist/paths-dQ_clcF4.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-const STATE_DIR = resolveStateDir();
-const CONTINUITY_DIR = path.join(STATE_DIR, ".openclaw", "continuity");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, "..", "..");
+
+const CONTINUITY_DIR = path.join(projectRoot, ".openclaw", "continuity");
 const BASELINE_FILE = path.join(CONTINUITY_DIR, "baseline.json");
 const CHECKSUM_FILE = path.join(CONTINUITY_DIR, "checksums.json");
-
-import path from "node:path";
 
 /**
  * Initialize continuity infrastructure
@@ -21,7 +24,7 @@ import path from "node:path";
 export async function initContinuity() {
   try {
     await fs.mkdir(CONTINUITY_DIR, { recursive: true });
-    
+
     // Create baseline if not exists
     try {
       await fs.access(BASELINE_FILE);
@@ -32,7 +35,7 @@ export async function initContinuity() {
         modules: {}
       }, null, 2));
     }
-    
+
     // Create checksums file
     try {
       await fs.access(CHECKSUM_FILE);
@@ -43,7 +46,7 @@ export async function initContinuity() {
         modules: {}
       }, null, 2));
     }
-    
+
     return true;
   } catch (err) {
     console.error("[security/continuity] Failed to initialize:", err);
@@ -67,15 +70,15 @@ export async function storeBaseline(modulePath, content) {
   try {
     const contentStr = typeof content === "string" ? content : fs.readFileSync(modulePath, "utf8");
     const checksum = calculateModuleChecksum(modulePath, contentStr);
-    
+
     const baseline = await getBaseline();
     baseline.modules[modulePath] = {
       checksum,
       lastModified: new Date().toISOString()
     };
-    
+
     await fs.writeFile(BASELINE_FILE, JSON.stringify(baseline, null, 2));
-    
+
     return { success: true, checksum };
   } catch (err) {
     return { success: false, error: err.message };
@@ -101,16 +104,16 @@ export async function storeChecksum(modulePath, content) {
   try {
     const contentStr = typeof content === "string" ? content : fs.readFileSync(modulePath, "utf8");
     const checksum = calculateModuleChecksum(modulePath, contentStr);
-    
+
     const checksums = await getChecksums();
     checksums.modules[modulePath] = {
       checksum,
       lastChecked: new Date().toISOString()
     };
     checksums.lastChecked = new Date().toISOString();
-    
+
     await fs.writeFile(CHECKSUM_FILE, JSON.stringify(checksums, null, 2));
-    
+
     return { success: true, checksum };
   } catch (err) {
     return { success: false, error: err.message };
@@ -135,13 +138,13 @@ export async function getChecksums() {
 export async function checkAnomalies() {
   const baseline = await getBaseline();
   const checksums = await getChecksums();
-  
+
   const anomalies = [];
-  
+
   // Check all baseline modules
   for (const [modulePath, baselineData] of Object.entries(baseline.modules || {})) {
     const currentChecksum = checksums.modules?.[modulePath]?.checksum;
-    
+
     if (!currentChecksum) {
       anomalies.push({
         type: "missing",
@@ -157,7 +160,7 @@ export async function checkAnomalies() {
       });
     }
   }
-  
+
   // Check for new modules not in baseline
   if (checksums.modules) {
     for (const modulePath of Object.keys(checksums.modules)) {
@@ -170,7 +173,7 @@ export async function checkAnomalies() {
       }
     }
   }
-  
+
   return {
     hasAnomalies: anomalies.length > 0,
     anomalies,
@@ -188,13 +191,13 @@ export async function resetContinuity() {
       createdAt: new Date().toISOString(),
       modules: {}
     }, null, 2));
-    
+
     await fs.writeFile(CHECKSUM_FILE, JSON.stringify({
       version: "1.0",
       lastChecked: null,
       modules: {}
     }, null, 2));
-    
+
     return true;
   } catch (err) {
     return false;

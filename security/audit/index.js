@@ -7,14 +7,14 @@
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import fs from "node:fs/promises";
-import { resolveStateDir, resolveGatewayLockDir } from "../../dist/paths-dQ_clcF4.js";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, "..", "..");
 
-const STATE_DIR = resolveStateDir();
-const AUDIT_DIR = path.join(STATE_DIR, ".openclaw", "audit");
+const AUDIT_DIR = path.join(projectRoot, ".openclaw", "audit");
 const AUDIT_LOG = path.join(AUDIT_DIR, "entries.log");
 const AUDIT_CHAIN = path.join(AUDIT_DIR, "chain.json");
 
@@ -24,7 +24,7 @@ const AUDIT_CHAIN = path.join(AUDIT_DIR, "chain.json");
 export async function initAuditTrail() {
   try {
     await fs.mkdir(AUDIT_DIR, { recursive: true });
-    
+
     // Initialize chain file if not exists
     const chainExists = await fs.access(AUDIT_CHAIN).then(() => true).catch(() => false);
     if (!chainExists) {
@@ -34,13 +34,13 @@ export async function initAuditTrail() {
         createdAt: new Date().toISOString()
       }, null, 2));
     }
-    
+
     // Initialize log file if not exists
     const logExists = await fs.access(AUDIT_LOG).then(() => true).catch(() => false);
     if (!logExists) {
       await fs.writeFile(AUDIT_LOG, "");
     }
-    
+
     return true;
   } catch (err) {
     console.error("[security/audit] Failed to initialize audit trail:", err);
@@ -76,7 +76,7 @@ export async function readChainState() {
 export async function writeAuditEntry(entry) {
   const timestamp = new Date().toISOString();
   const prevChain = await readChainState();
-  
+
   // Prepare entry with chaining metadata
   const fullEntry = {
     ...entry,
@@ -84,17 +84,17 @@ export async function writeAuditEntry(entry) {
     prevHash: prevChain.headHash || null,
     dataHash: hashData(JSON.stringify(entry))
   };
-  
+
   // Calculate chain hash
   const chainHashInput = JSON.stringify({
     ...fullEntry,
     chainIndex: prevChain.entryCount + 1
   });
   const currentHash = hashData(chainHashInput);
-  
+
   // Append to log (append-only, no overwrite)
   await fs.appendFile(AUDIT_LOG, JSON.stringify(fullEntry) + "\n");
-  
+
   // Update chain state
   await fs.writeFile(AUDIT_CHAIN, JSON.stringify({
     headHash: currentHash,
@@ -102,7 +102,7 @@ export async function writeAuditEntry(entry) {
     createdAt: prevChain.createdAt,
     lastEntryAt: timestamp
   }, null, 2));
-  
+
   return {
     success: true,
     hash: currentHash,
@@ -117,7 +117,7 @@ export async function readAuditEntries(limit = 100) {
   try {
     const content = await fs.readFile(AUDIT_LOG, "utf8");
     const lines = content.trim().split("\n").filter(l => l.length > 0);
-    
+
     return lines.slice(-limit).map(line => JSON.parse(line)).reverse();
   } catch (err) {
     return [];
@@ -131,28 +131,28 @@ export async function verifyAuditChain() {
   const entries = await readAuditEntries(1000);
   let currentPrevHash = null;
   let integrity = true;
-  
+
   for (const entry of entries) {
     if (entry.prevHash !== currentPrevHash) {
       integrity = false;
       console.error(`[security/audit] Chain break at entry:`, entry);
     }
-    
+
     // Verify data hash
     const computedDataHash = hashData(JSON.stringify({
       ...entry,
       prevHash: undefined,
       dataHash: undefined
     }));
-    
+
     if (entry.dataHash !== computedDataHash) {
       integrity = false;
       console.error(`[security/audit] Data tamper detected at entry:`, entry);
     }
-    
+
     currentPrevHash = entry.dataHash;
   }
-  
+
   return integrity;
 }
 
@@ -162,7 +162,7 @@ export async function verifyAuditChain() {
 export async function getAuditStats() {
   const chain = await readChainState();
   const entries = await readAuditEntries(1000);
-  
+
   return {
     entryCount: chain.entryCount,
     headHash: chain.headHash,
