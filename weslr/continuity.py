@@ -16,14 +16,24 @@ from typing import Any, Dict, List, Optional
 from . import contracts
 
 
-# Default paths (override via BASE_DIR parameter in functions)
+# Try to import adapter, fall back to None if not available
+try:
+    from .adapters.openclaw import OpenClawPaths
+except ImportError:
+    OpenClawPaths = None
+
+# Default paths (override via adapter parameter in functions)
+# The adapter will provide paths - this is just a fallback for testing
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
 DEFAULT_CONTINUITY_DIR = "continuity"
 
 
-def get_paths(base_dir: str = None) -> tuple[str, str, str]:
-    """Get continuity paths, configurable via base_dir."""
-    base_dir = base_dir or DEFAULT_BASE_DIR
+def get_paths(base_dir: str = None, adapter: "OpenClawPaths" = None) -> tuple[str, str, str, str]:
+    """Get continuity paths, configurable via adapter or base_dir."""
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    else:
+        base_dir = base_dir or DEFAULT_BASE_DIR
     continuity_dir = os.path.join(base_dir, DEFAULT_CONTINUITY_DIR)
     snapshot_dir = os.path.join(continuity_dir, "snapshots")
     metrics_file = os.path.join(continuity_dir, "metrics.json")
@@ -32,9 +42,13 @@ def get_paths(base_dir: str = None) -> tuple[str, str, str]:
 
 # ===== WESLRContinuityState — the actual state we snapshot =====
 
-def load_weslr_continuity_state(base_dir: str = None) -> Dict[str, Any]:
-    """Load the real WESLR continuity state from source files."""
-    base_dir, _, _, _ = get_paths(base_dir)
+def load_weslr_continuity_state(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Load the real WESLR continuity state from source files.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    base_dir, _, _, _ = get_paths(base_dir, adapter)
     state = {
         "identity_anchor": None,
         "communicator_continuity": {},
@@ -153,9 +167,13 @@ def build_snapshot(session_id: str, state_or_base_dir: Any = None, state: Dict[s
     }
 
 
-def save_snapshot(snapshot: Dict[str, Any], base_dir: str = None, overwrite: bool = False) -> str:
-    """Save snapshot to continuity/snapshots/."""
-    _, _, snapshot_dir, _ = get_paths(base_dir)
+def save_snapshot(snapshot: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None, overwrite: bool = False) -> str:
+    """Save snapshot to continuity/snapshots/.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, snapshot_dir, _ = get_paths(base_dir, adapter)
     os.makedirs(snapshot_dir, exist_ok=True)
     ts = snapshot["timestamp"].replace(":", "-").replace(".", "-")
     filename = f"snapshot_{ts}_{snapshot['session_id'][:8]}.json"
@@ -167,17 +185,25 @@ def save_snapshot(snapshot: Dict[str, Any], base_dir: str = None, overwrite: boo
     return filename
 
 
-def load_snapshot(filename: str, base_dir: str = None) -> Dict[str, Any]:
-    """Load snapshot from continuity/snapshots/."""
-    _, _, snapshot_dir, _ = get_paths(base_dir)
+def load_snapshot(filename: str, base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Load snapshot from continuity/snapshots/.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, snapshot_dir, _ = get_paths(base_dir, adapter)
     path = os.path.join(snapshot_dir, filename)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def list_snapshots(base_dir: str = None) -> List[str]:
-    """List snapshot filenames in continuity/snapshots/."""
-    _, _, snapshot_dir, _ = get_paths(base_dir)
+def list_snapshots(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[str]:
+    """List snapshot filenames in continuity/snapshots/.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, snapshot_dir, _ = get_paths(base_dir, adapter)
     if not os.path.exists(snapshot_dir):
         return []
     return sorted([f for f in os.listdir(snapshot_dir) if f.startswith("snapshot_")])
@@ -267,13 +293,17 @@ def build_restore_plan(state: Dict[str, Any]) -> Dict[str, Any]:
 
 # ===== UTILS =====
 
-def get_current_snapshot_info(base_dir: str = None) -> Optional[Dict[str, Any]]:
-    """Get info about the most recent snapshot."""
-    snapshots = list_snapshots(base_dir)
+def get_current_snapshot_info(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Optional[Dict[str, Any]]:
+    """Get info about the most recent snapshot.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    snapshots = list_snapshots(base_dir, adapter)
     if not snapshots:
         return None
     try:
-        return load_snapshot(snapshots[-1], base_dir)
+        return load_snapshot(snapshots[-1], base_dir, adapter)
     except Exception:
         return None
 
@@ -313,10 +343,14 @@ RESTORE_BLOCKED = "restore_blocked"
 RESTORE_SKIPPED_STALE = "restore_skipped_stale"
 
 
-def load_latest_snapshot(base_dir: str = None) -> Optional[Dict[str, Any]]:
-    """Load the most recent snapshot."""
+def load_latest_snapshot(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Optional[Dict[str, Any]]:
+    """Load the most recent snapshot.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
     try:
-        return load_snapshot("latest.json", base_dir)
+        return load_snapshot("latest.json", base_dir, adapter)
     except Exception:
         return None
 
@@ -335,9 +369,13 @@ def get_snapshot_age_hours(snapshot: Dict[str, Any]) -> float:
         return float("inf")
 
 
-def should_attempt_restore(base_dir: str = None) -> bool:
-    """Check if restore should be attempted based on state_core.json validity."""
-    base_dir, _, _, _ = get_paths(base_dir)
+def should_attempt_restore(base_dir: str = None, adapter: "OpenClawPaths" = None) -> bool:
+    """Check if restore should be attempted based on state_core.json validity.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    base_dir, _, _, _ = get_paths(base_dir, adapter)
     try:
         with open(os.path.join(base_dir, "state_core.json")) as f:
             state = json.load(f)
@@ -348,11 +386,15 @@ def should_attempt_restore(base_dir: str = None) -> bool:
         return True
 
 
-def check_restore_conditions(base_dir: str = None) -> Dict[str, Any]:
-    """Check restore conditions and return decision."""
-    if not should_attempt_restore(base_dir):
+def check_restore_conditions(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Check restore conditions and return decision.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    if not should_attempt_restore(base_dir, adapter):
         return {"decision": RESTORE_NO_RESTORE, "reason": "state_core.json is valid"}
-    snapshot = load_latest_snapshot(base_dir)
+    snapshot = load_latest_snapshot(base_dir, adapter)
     if snapshot is None:
         return {"decision": RESTORE_NO_RESTORE, "reason": "no snapshot exists"}
     age_hours = get_snapshot_age_hours(snapshot)
@@ -368,8 +410,12 @@ def check_restore_conditions(base_dir: str = None) -> Dict[str, Any]:
     return {"decision": RESTORE_PARTIAL_RESTORE, "reason": "snapshot validated", "confidence": confidence, "debt": debt, "age_hours": age_hours}
 
 
-def apply_partial_restore(base_dir: str = None) -> Dict[str, Any]:
-    """Apply conservative partial restore from latest snapshot."""
+def apply_partial_restore(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Apply conservative partial restore from latest snapshot.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
     result = {"status": "success", "fields_restored": [], "fields_skipped": [], "actions": []}
     snapshot = load_latest_snapshot(base_dir)
     if snapshot is None:
@@ -434,9 +480,13 @@ def apply_partial_restore(base_dir: str = None) -> Dict[str, Any]:
 
 # ===== PHASE 5: OBSERVABILITY METRICS (INTERNAL ONLY) =====
 
-def load_continuity_metrics(base_dir: str = None) -> Dict[str, Any]:
-    """Load continuity metrics from metrics.json."""
-    _, _, _, metrics_file = get_paths(base_dir)
+def load_continuity_metrics(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Load continuity metrics from metrics.json.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, _, metrics_file = get_paths(base_dir, adapter)
     try:
         with open(metrics_file) as f:
             return json.load(f)
@@ -454,27 +504,39 @@ def load_continuity_metrics(base_dir: str = None) -> Dict[str, Any]:
         }
 
 
-def save_continuity_metrics(metrics: Dict[str, Any], base_dir: str = None) -> None:
-    """Save continuity metrics to metrics.json."""
-    _, continuity_dir, _, _ = get_paths(base_dir)
+def save_continuity_metrics(metrics: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> None:
+    """Save continuity metrics to metrics.json.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, continuity_dir, _, _ = get_paths(base_dir, adapter)
     os.makedirs(continuity_dir, exist_ok=True)
     with open(os.path.join(continuity_dir, "metrics.json"), "w") as f:
         json.dump(metrics, f, indent=2)
 
 
-def update_metrics_after_snapshot(confidence: float, debt: float, base_dir: str = None) -> None:
-    """Update metrics after a snapshot write."""
-    metrics = load_continuity_metrics(base_dir)
+def update_metrics_after_snapshot(confidence: float, debt: float, base_dir: str = None, adapter: "OpenClawPaths" = None) -> None:
+    """Update metrics after a snapshot write.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    metrics = load_continuity_metrics(base_dir, adapter)
     metrics["snapshot_count"] = metrics.get("snapshot_count", 0) + 1
     metrics["last_snapshot_at"] = datetime.utcnow().isoformat() + "Z"
     metrics["latest_confidence"] = confidence
     metrics["latest_debt"] = debt
-    save_continuity_metrics(metrics, base_dir)
+    save_continuity_metrics(metrics, base_dir, adapter)
 
 
-def update_metrics_after_restore(result: Dict[str, Any], base_dir: str = None) -> None:
-    """Update metrics after a restore attempt."""
-    metrics = load_continuity_metrics(base_dir)
+def update_metrics_after_restore(result: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> None:
+    """Update metrics after a restore attempt.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    metrics = load_continuity_metrics(base_dir, adapter)
     metrics["restore_attempts"] = metrics.get("restore_attempts", 0) + 1
     status = result.get("status", "error")
     if status == "success":
@@ -485,4 +547,4 @@ def update_metrics_after_restore(result: Dict[str, Any], base_dir: str = None) -
         metrics["restore_blocked_count"] = metrics.get("restore_blocked_count", 0) + 1
     else:
         metrics["restore_error_count"] = metrics.get("restore_error_count", 0) + 1
-    save_continuity_metrics(metrics, base_dir)
+    save_continuity_metrics(metrics, base_dir, adapter)

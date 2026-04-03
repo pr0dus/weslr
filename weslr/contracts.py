@@ -399,3 +399,16 @@ def validate_task_anchor_schema(anchor: Dict[str, Any]) -> bool:
         if field not in anchor or not anchor[field]:
             return False
     return True
+
+
+# ============================================================================
+# RUNTIME ADAPTER CONTRACT
+# ============================================================================
+
+class RunResult(TypedDict):
+    """Result of a command execution."""
+    stdout: str
+    stderr: str
+    return_code: int
+    duration_ms: int
+

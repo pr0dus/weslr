@@ -19,7 +19,14 @@ from typing import Any, Dict, List, Optional
 
 from . import contracts
 
-# Default paths (override via BASE_DIR parameter in functions)
+# Try to import adapter, fall back to None if not available
+try:
+    from .adapters.openclaw import OpenClawPaths
+except ImportError:
+    OpenClawPaths = None
+
+# Default paths (override via adapter parameter in functions)
+# The adapter will provide base_dir - this is just a fallback for testing
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
 
 # Legacy file paths (READ-ONLY)
@@ -44,9 +51,12 @@ CONTINUITY_DIR = "continuity"
 SNAPSHOT_DIR = os.path.join(CONTINUITY_DIR, "snapshots")
 
 
-def get_paths(base_dir: str = None) -> tuple[str, str, str, str, str]:
-    """Get state derivation paths, configurable via base_dir."""
-    base_dir = base_dir or DEFAULT_BASE_DIR
+def get_paths(base_dir: str = None, adapter: "OpenClawPaths" = None) -> tuple[str, str, str, str, str, str]:
+    """Get state derivation paths, configurable via adapter or base_dir."""
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    else:
+        base_dir = base_dir or DEFAULT_BASE_DIR
     state_history_dir = os.path.join(base_dir, STATE_HISTORY_DIR)
     continuity_dir = os.path.join(base_dir, CONTINUITY_DIR)
     snapshot_dir = os.path.join(continuity_dir, SNAPSHOT_DIR)
@@ -55,9 +65,17 @@ def get_paths(base_dir: str = None) -> tuple[str, str, str, str, str]:
     return base_dir, state_history_dir, continuity_dir, snapshot_dir, state_core_path, state_sync_path
 
 
-def load_json(path: str, base_dir: str = None) -> Dict[str, Any]:
-    """Read JSON file (READ-ONLY). Returns empty dict if not found."""
-    full_path = os.path.join(base_dir or DEFAULT_BASE_DIR, path)
+def load_json(path: str, base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Read JSON file (READ-ONLY). Returns empty dict if not found.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    if base_dir is None:
+        base_dir = DEFAULT_BASE_DIR
+    full_path = os.path.join(base_dir, path)
     if not os.path.exists(full_path):
         return {}
     try:
@@ -67,27 +85,27 @@ def load_json(path: str, base_dir: str = None) -> Dict[str, Any]:
         return {}
 
 
-def load_communicator_self(base_dir: str = None) -> Dict[str, Any]:
+def load_communicator_self(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
     """Load communicator_self.json."""
-    return load_json("communicator_self.json", base_dir)
+    return load_json("communicator_self.json", base_dir, adapter)
 
 
-def load_relationships(base_dir: str = None) -> Dict[str, Any]:
+def load_relationships(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
     """Load relationships.json."""
-    data = load_json("relationships.json", base_dir)
+    data = load_json("relationships.json", base_dir, adapter)
     if isinstance(data, list):
         return {"known_humans": [], "unresolved_shared_threads": []}
     return data
 
 
-def load_opportunity_board(base_dir: str = None) -> Dict[str, Any]:
+def load_opportunity_board(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
     """Load opportunity_board.json."""
-    return load_json("opportunity_board.json", base_dir)
+    return load_json("opportunity_board.json", base_dir, adapter)
 
 
-def get_entity_graph(base_dir: str = None) -> List[Dict[str, Any]]:
+def get_entity_graph(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load entity_graph.json and extract entities."""
-    data = load_json("entity_graph.json", base_dir)
+    data = load_json("entity_graph.json", base_dir, adapter)
     entities = data.get("entities", [])
     if isinstance(entities, dict):
         entities = list(entities.values())
@@ -96,7 +114,7 @@ def get_entity_graph(base_dir: str = None) -> List[Dict[str, Any]]:
     return entities
 
 
-def load_agent_entities(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_agent_entities(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load entities from entity_graph.json and normalize to state_core format.
     
     Reads from entity_graph.json and converts to simplified entity objects
@@ -105,7 +123,7 @@ def load_agent_entities(base_dir: str = None) -> List[Dict[str, Any]]:
     Keeps legacy entity files untouched (READ-ONLY).
     """
     entities = []
-    data = load_json("entity_graph.json", base_dir)
+    data = load_json("entity_graph.json", base_dir, adapter)
     raw_entities = data.get("entities", {})
     
     if isinstance(raw_entities, dict):
@@ -133,7 +151,7 @@ def load_agent_entities(base_dir: str = None) -> List[Dict[str, Any]]:
     return entities
 
 
-def load_agent_handoffs(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_agent_handoffs(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load handoffs from handoffs.json and normalize to state_core format.
     
     Reads from handoffs.json if it exists, otherwise returns empty list.
@@ -141,11 +159,15 @@ def load_agent_handoffs(base_dir: str = None) -> List[Dict[str, Any]]:
     Keeps legacy handoff files untouched (READ-ONLY).
     """
     handoffs = []
-    handoffs_path = os.path.join(base_dir or DEFAULT_BASE_DIR, "handoffs.json")
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    elif base_dir is None:
+        base_dir = DEFAULT_BASE_DIR
+    handoffs_path = os.path.join(base_dir, "handoffs.json")
     if not os.path.exists(handoffs_path):
         return handoffs
     
-    data = load_json("handoffs.json", base_dir)
+    data = load_json("handoffs.json", base_dir, adapter)
     if isinstance(data, list):
         handoffs = data
     elif isinstance(data, dict):
@@ -170,49 +192,53 @@ def load_agent_handoffs(base_dir: str = None) -> List[Dict[str, Any]]:
     return normalized
 
 
-def load_handoff_notes(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_handoff_notes(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load handoffs.json or handoffs directory."""
-    handoffs_path = os.path.join(base_dir or DEFAULT_BASE_DIR, "handoffs.json")
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    elif base_dir is None:
+        base_dir = DEFAULT_BASE_DIR
+    handoffs_path = os.path.join(base_dir, "handoffs.json")
     if os.path.exists(handoffs_path):
-        data = load_json("handoffs.json", base_dir)
+        data = load_json("handoffs.json", base_dir, adapter)
         if isinstance(data, list):
             return data
         return data.get("handoffs", [])
     
     # Check for handoffs/ directory
-    handoffs_dir = os.path.join(base_dir or DEFAULT_BASE_DIR, "handoffs")
+    handoffs_dir = os.path.join(base_dir, "handoffs")
     if os.path.exists(handoffs_dir):
         handoffs = []
         for f in Path(handoffs_dir).glob("*.json"):
-            handoffs.extend(load_json(str(f), base_dir))
+            handoffs.extend(load_json(str(f), base_dir, adapter))
         return handoffs
     
     return []
 
 
-def load_events(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_events(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load event_log.json."""
-    data = load_json("event_log.json", base_dir)
+    data = load_json("event_log.json", base_dir, adapter)
     return data.get("events", [])
 
 
-def load_needs(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_needs(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load needs.json."""
-    data = load_json("needs.json", base_dir)
+    data = load_json("needs.json", base_dir, adapter)
     if isinstance(data, list):
         return data
     return data.get("needs", [])
 
 
-def load_artifacts(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_artifacts(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Load artifacts.json."""
-    data = load_json("artifacts.json", base_dir)
+    data = load_json("artifacts.json", base_dir, adapter)
     if isinstance(data, list):
         return data
     return data.get("artifacts", [])
 
 
-def load_agent_artifacts(base_dir: str = None) -> List[Dict[str, Any]]:
+def load_agent_artifacts(base_dir: str = None, adapter: "OpenClawPaths" = None) -> List[Dict[str, Any]]:
     """Aggregate artifacts from per-agent .meta.json files.
     
     Reads artifacts from agents/*/artifacts/*.meta.json and aggregates them
@@ -221,7 +247,11 @@ def load_agent_artifacts(base_dir: str = None) -> List[Dict[str, Any]]:
     Keeps legacy per-agent files untouched (READ-ONLY).
     """
     artifacts = []
-    agents_dir = os.path.join(base_dir or DEFAULT_BASE_DIR, "agents")
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    elif base_dir is None:
+        base_dir = DEFAULT_BASE_DIR
+    agents_dir = os.path.join(base_dir, "agents")
     if not os.path.exists(agents_dir):
         return artifacts
     
@@ -552,26 +582,34 @@ def build_topics(opportunity_board: Dict[str, Any]) -> List[Dict[str, Any]]:
     return topics
 
 
-def derive_state_core(dry_run: bool = False, base_dir: str = None) -> Dict[str, Any]:
+def derive_state_core(
+    dry_run: bool = False,
+    base_dir: str = None,
+    adapter: "OpenClawPaths" = None
+) -> Dict[str, Any]:
     """Derive state_core.json from legacy files.
     
     This is a READ-ONLY operation on legacy files.
     No legacy file is modified or deleted.
-    Base-dir aware for runtime-agnostic operation.
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    
+    For backward compatibility, adapter is optional and defaults to OpenClawPaths.
     """
     now_ts = int(time.time())
     
     # Read legacy files (READ-ONLY)
-    communicator_self = load_communicator_self(base_dir)
-    relationships = load_relationships(base_dir)
-    opportunity_board = load_opportunity_board(base_dir)
-    entities = load_agent_entities(base_dir)
-    handoffs = load_agent_handoffs(base_dir)
-    events = load_events(base_dir)
-    artifacts = load_agent_artifacts(base_dir)
+    # Use adapter if provided, otherwise fall back to base_dir
+    communicator_self = load_communicator_self(base_dir, adapter)
+    relationships = load_relationships(base_dir, adapter)
+    opportunity_board = load_opportunity_board(base_dir, adapter)
+    entities = load_agent_entities(base_dir, adapter)
+    handoffs = load_agent_handoffs(base_dir, adapter)
+    events = load_events(base_dir, adapter)
+    artifacts = load_agent_artifacts(base_dir, adapter)
     
     # Load error_state to derive status
-    error_state = load_json("error_state.json", base_dir)
+    error_state = load_json("error_state.json", base_dir, adapter)
     if isinstance(error_state, list):
         error_state = {"errors": error_state, "schema_version": "1.0.0", "last_updated": now_ts}
     
@@ -580,7 +618,7 @@ def derive_state_core(dry_run: bool = False, base_dir: str = None) -> Dict[str, 
     
     # Derive events from multiple sources
     events = _derive_events(
-        event_log=load_json("event_log.json", base_dir),
+        event_log=load_json("event_log.json", base_dir, adapter),
         opportunities=opportunity_board,
         handoffs=handoffs,
         last_updated=now_ts
@@ -639,16 +677,24 @@ def derive_state_core(dry_run: bool = False, base_dir: str = None) -> Dict[str, 
     return state_core
 
 
-def save_state_core(state_core: Dict[str, Any], base_dir: str = None) -> str:
-    """Save state_core.json."""
-    _, _, _, _, state_core_path, _ = get_paths(base_dir)
+def save_state_core(state_core: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> str:
+    """Save state_core.json.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, _, _, state_core_path, _ = get_paths(base_dir, adapter)
     Path(state_core_path).write_text(json.dumps(state_core, indent=2) + "\n")
     return state_core_path
 
 
-def save_state_sync(state_core: Dict[str, Any], base_dir: str = None) -> str:
-    """Update state_sync.json as a mirror."""
-    _, _, _, _, _, state_sync_path = get_paths(base_dir)
+def save_state_sync(state_core: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> str:
+    """Update state_sync.json as a mirror.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, _, _, _, state_sync_path = get_paths(base_dir, adapter)
     checksum = hash(json.dumps(state_core, sort_keys=True))
     
     state_sync = {
@@ -664,9 +710,13 @@ def save_state_sync(state_core: Dict[str, Any], base_dir: str = None) -> str:
     return state_sync_path
 
 
-def create_snapshot(state_core: Dict[str, Any], base_dir: str = None) -> str:
-    """Create a timestamped snapshot in state_history/."""
-    _, state_history_dir, _, _, _, _ = get_paths(base_dir)
+def create_snapshot(state_core: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> str:
+    """Create a timestamped snapshot in state_history/.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, state_history_dir, _, _, _, _ = get_paths(base_dir, adapter)
     Path(state_history_dir).mkdir(parents=True, exist_ok=True)
     
     now_ts = int(time.time())
@@ -696,8 +746,11 @@ def create_snapshot(state_core: Dict[str, Any], base_dir: str = None) -> str:
     return snapshot_path
 
 
-def write_silent_continuity_snapshot(state_core: Dict[str, Any], base_dir: str = None) -> None:
+def write_silent_continuity_snapshot(state_core: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> None:
     """Write a silent continuity snapshot after state_core.json is successfully written.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
     
     This function:
     - Validates critical continuity fields exist
@@ -711,7 +764,7 @@ def write_silent_continuity_snapshot(state_core: Dict[str, Any], base_dir: str =
     if missing:
         return
     
-    _, continuity_dir, snapshot_dir, _, _, _ = get_paths(base_dir)
+    _, continuity_dir, snapshot_dir, _, _, _ = get_paths(base_dir, adapter)
     Path(snapshot_dir).mkdir(parents=True, exist_ok=True)
     
     snapshot = {
@@ -742,7 +795,14 @@ def write_silent_continuity_snapshot(state_core: Dict[str, Any], base_dir: str =
 
 
 def main() -> None:
-    """Main entry point for CLI usage."""
+    """Main entry point for CLI usage.
+    
+    Usage:
+        python3 weslr/state.py           # Generate state_core.json
+        python3 weslr/state.py --dry-run # Show what would be done
+        python3 weslr/state.py --snapshot # Create snapshot in state_history/
+        python3 weslr/state.py --base-dir /path/to/workspace # Override base dir
+    """
     import sys
     args = sys.argv[1:]
     
@@ -751,17 +811,32 @@ def main() -> None:
     now_ts = int(time.time())
     
     base_dir = None
+    adapter = None
     for i, arg in enumerate(args):
         if arg == "--base-dir" and i + 1 < len(args):
             base_dir = args[i + 1]
             break
+        if arg == "--adapter":
+            # For future adapter support
+            adapter_path = args[i + 1] if i + 1 < len(args) else None
+            if adapter_path:
+                # Import and instantiate adapter
+                try:
+                    parts = adapter_path.rsplit(".", 1)
+                    if len(parts) == 2:
+                        module_path, class_name = parts
+                        module = __import__(module_path, fromlist=[class_name])
+                        adapter = getattr(module, class_name)()
+                except Exception:
+                    pass
+            break
     
     # Ensure state_history directory exists
-    _, state_history_dir, _, _, _, _ = get_paths(base_dir)
+    _, state_history_dir, _, _, _, _ = get_paths(base_dir, adapter)
     Path(state_history_dir).mkdir(parents=True, exist_ok=True)
     
     # Derive state_core.json
-    state_core = derive_state_core(dry_run=dry_run, base_dir=base_dir)
+    state_core = derive_state_core(dry_run=dry_run, base_dir=base_dir, adapter=adapter)
     
     if dry_run:
         print("=== DRY RUN ===")

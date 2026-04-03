@@ -16,15 +16,25 @@ from typing import Any, Dict, Optional
 from . import contracts
 
 
-# Default paths (override via BASE_DIR parameter in functions)
+# Try to import adapter, fall back to None if not available
+try:
+    from .adapters.openclaw import OpenClawPaths
+except ImportError:
+    OpenClawPaths = None
+
+# Default paths (override via adapter parameter in functions)
+# The adapter will provide paths - this is just a fallback for testing
 DEFAULT_BASE_DIR = "/data/data/com.termux/files/home/.openclaw/workspace"
 DEFAULT_CONTINUITY_DIR = "continuity"
 TASK_ANCHOR_FILE = "task_anchor.json"
 
 
-def get_paths(base_dir: str = None) -> tuple[str, str, str]:
-    """Get task anchor paths, configurable via base_dir."""
-    base_dir = base_dir or DEFAULT_BASE_DIR
+def get_paths(base_dir: str = None, adapter: "OpenClawPaths" = None) -> tuple[str, str, str]:
+    """Get task anchor paths, configurable via adapter or base_dir."""
+    if adapter is not None:
+        base_dir = adapter.base_dir()
+    else:
+        base_dir = base_dir or DEFAULT_BASE_DIR
     continuity_dir = os.path.join(base_dir, DEFAULT_CONTINUITY_DIR)
     task_anchor_path = os.path.join(continuity_dir, TASK_ANCHOR_FILE)
     return base_dir, continuity_dir, task_anchor_path
@@ -45,9 +55,13 @@ def get_paths(base_dir: str = None) -> tuple[str, str, str]:
 # related_context: dict with commit_range, open_issues
 
 
-def load_task_anchor(base_dir: str = None) -> Dict[str, Any]:
-    """Load task anchor from continuity/task_anchor.json."""
-    _, _, task_anchor_path = get_paths(base_dir)
+def load_task_anchor(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Load task anchor from continuity/task_anchor.json.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, _, task_anchor_path = get_paths(base_dir, adapter)
     try:
         with open(task_anchor_path) as f:
             return json.load(f)
@@ -55,9 +69,13 @@ def load_task_anchor(base_dir: str = None) -> Dict[str, Any]:
         return {}
 
 
-def save_task_anchor(anchor: Dict[str, Any], base_dir: str = None) -> str:
-    """Save task anchor to continuity/task_anchor.json."""
-    _, continuity_dir, task_anchor_path = get_paths(base_dir)
+def save_task_anchor(anchor: Dict[str, Any], base_dir: str = None, adapter: "OpenClawPaths" = None) -> str:
+    """Save task anchor to continuity/task_anchor.json.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    _, continuity_dir, task_anchor_path = get_paths(base_dir, adapter)
     os.makedirs(continuity_dir, exist_ok=True)
     with open(task_anchor_path, "w") as f:
         json.dump(anchor, f, indent=2)
@@ -127,10 +145,14 @@ OLD_ANCHOR_PATHS = [
 ]
 
 
-def find_task_anchor(base_dir: str = None) -> Optional[str]:
-    """Find task anchor in preferred or old locations."""
+def find_task_anchor(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Optional[str]:
+    """Find task anchor in preferred or old locations.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
     # Check preferred location first
-    _, _, preferred_path = get_paths(base_dir)
+    _, _, preferred_path = get_paths(base_dir, adapter)
     if os.path.exists(preferred_path):
         return preferred_path
     # Check old paths
@@ -140,13 +162,17 @@ def find_task_anchor(base_dir: str = None) -> Optional[str]:
     return None
 
 
-def load_task_anchor_legacy_fallback(base_dir: str = None) -> Dict[str, Any]:
-    """Load task anchor with fallback to old locations."""
-    anchor = load_task_anchor(base_dir)
+def load_task_anchor_legacy_fallback(base_dir: str = None, adapter: "OpenClawPaths" = None) -> Dict[str, Any]:
+    """Load task anchor with fallback to old locations.
+    
+    Accepts either base_dir or adapter parameter.
+    Adapter takes precedence if both are provided.
+    """
+    anchor = load_task_anchor(base_dir, adapter)
     if anchor:
         return anchor
     # Fallback to old path if exists
-    old_path = find_task_anchor(base_dir)
+    old_path = find_task_anchor(base_dir, adapter)
     if old_path:
         try:
             with open(old_path) as f:
