@@ -5,6 +5,7 @@
  */
 
 // Import from the workspace security module
-import { SecurityAPI, SecureFS, SecureImport } from "../dist/security/index.js";
+// extensions/security/ -> ../../ -> dist/security/
+import { SecurityAPI, SecureFS, SecureImport } from "../../dist/security/index.js";
 
 export { SecurityAPI, SecureFS, SecureImport };

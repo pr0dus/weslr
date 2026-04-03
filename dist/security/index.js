@@ -4,14 +4,14 @@
  * Phase 2A: Runtime-facing export layer with platform path binding
  */
 
-import { AuditTrail } from "../security/audit/index.js";
-import { MaliciousCodeDetector } from "../security/detector/malicious-code.js";
-import RiskEngine from "../security/risk-engine/index.js";
-import Gate from "../security/gate/index.js";
-import Rollback from "../security/rollback/index.js";
-import Continuity from "../security/continuity/index.js";
-import SecurityPolicy from "../security/policy/index.js";
-import SecurityLogs from "../security/audit/logs/index.js";
+import { AuditTrail } from "../../security/audit/index.js";
+import { MaliciousCodeDetector } from "../../security/detector/malicious-code.js";
+import RiskEngine from "../../security/risk-engine/index.js";
+import Gate from "../../security/gate/index.js";
+import Rollback from "../../security/rollback/index.js";
+import Continuity from "../../security/continuity/index.js";
+import SecurityPolicy from "../../security/policy/index.js";
+import SecurityLogs from "../../security/audit/logs/index.js";
 
 /**
  * Main detector instance
@@ -136,7 +136,7 @@ import fs from "node:fs/promises";
 
 async function _realFsWriteFile(filepath, data, options = {}) {
   // Run pre-write hook
-  const hookResult = await Gate.preWriteHook(filepath, {
+  const hookResult = await Gate.preWrite(filepath, {
     action: "write",
     ...options
   });
@@ -160,7 +160,7 @@ async function _realFsWriteFile(filepath, data, options = {}) {
 }
 
 async function _realFsAppendFile(filepath, data, options = {}) {
-  const hookResult = await Gate.preWriteHook(filepath, {
+  const hookResult = await Gate.preWrite(filepath, {
     action: "append",
     ...options
   });
