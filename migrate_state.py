@@ -896,6 +896,24 @@ def main() -> None:
         }
         log_path.write_text(json.dumps(log, indent=2) + "\n")
     
+    # Update observability metrics (Phase 5)
+    try:
+        sys.path.insert(0, str(BASE_DIR))
+        from continuity_orchestrator import update_metrics_after_restore, update_metrics_after_snapshot
+        if restore_result:
+            update_metrics_after_restore(restore_result)
+        # Get snapshot info for metrics
+        from continuity_orchestrator import load_snapshot, get_current_snapshot_info
+        snapshot = get_current_snapshot_info()
+        if snapshot:
+            markers = snapshot.get("continuity_markers", {})
+            update_metrics_after_snapshot(
+                confidence=markers.get("confidence", 100.0),
+                debt=markers.get("debt", 0.0)
+            )
+    except Exception:
+        pass  # Observability is additive, not critical
+    
     print("\n✓ Shadow-core v1 stabilization complete")
 
 

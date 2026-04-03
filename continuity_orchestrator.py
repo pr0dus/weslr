@@ -543,4 +543,63 @@ def apply_partial_restore() -> Dict[str, Any]:
     return result
 
 
+# ===== PHASE 5: OBSERVABILITY METRICS (INTERNAL ONLY) =====
+
+METRICS_FILE = os.path.join(BASE_DIR, "continuity", "metrics.json")
+
+
+def load_continuity_metrics() -> Dict[str, Any]:
+    """Load continuity metrics from metrics.json."""
+    try:
+        with open(METRICS_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {
+            "snapshot_count": 0,
+            "last_snapshot_at": None,
+            "restore_attempts": 0,
+            "restore_success_count": 0,
+            "restore_skipped_count": 0,
+            "restore_blocked_count": 0,
+            "restore_error_count": 0,
+            "latest_confidence": None,
+            "latest_debt": None,
+        }
+
+
+def save_continuity_metrics(metrics: Dict[str, Any]) -> None:
+    """Save continuity metrics to metrics.json."""
+    os.makedirs(os.path.dirname(METRICS_FILE), exist_ok=True)
+    with open(METRICS_FILE, "w") as f:
+        json.dump(metrics, f, indent=2)
+
+
+def update_metrics_after_snapshot(confidence: float, debt: float) -> None:
+    """Update metrics after a snapshot write."""
+    metrics = load_continuity_metrics()
+    metrics["snapshot_count"] = metrics.get("snapshot_count", 0) + 1
+    metrics["last_snapshot_at"] = datetime.utcnow().isoformat() + "Z"
+    metrics["latest_confidence"] = confidence
+    metrics["latest_debt"] = debt
+    save_continuity_metrics(metrics)
+
+
+def update_metrics_after_restore(result: Dict[str, Any]) -> None:
+    """Update metrics after a restore attempt."""
+    metrics = load_continuity_metrics()
+    metrics["restore_attempts"] = metrics.get("restore_attempts", 0) + 1
+    
+    status = result.get("status", "error")
+    if status == "success":
+        metrics["restore_success_count"] = metrics.get("restore_success_count", 0) + 1
+    elif status == "skipped":
+        metrics["restore_skipped_count"] = metrics.get("restore_skipped_count", 0) + 1
+    elif status == "blocked":
+        metrics["restore_blocked_count"] = metrics.get("restore_blocked_count", 0) + 1
+    else:
+        metrics["restore_error_count"] = metrics.get("restore_error_count", 0) + 1
+    
+    save_continuity_metrics(metrics)
+
+
 # ===== UTILS =====
