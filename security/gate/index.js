@@ -70,8 +70,6 @@ async function logSecurityEvent(hook) {
       timestamp: hook.timestamp
     });
   } catch (err) {
-    // Audit logging may fail if .openclaw/audit doesn't exist yet
-    // This is expected in development environments
     console.error("[security/gate] Failed to log security event:", err.message);
   }
 }
@@ -122,7 +120,11 @@ export async function preWriteHook(filepath, options = {}) {
 
       if (hasForbidden || hook.riskScore >= thresholds.autoBlock) {
         hook.blocked = true;
-        hook.reason = `Risk score ${hook.riskScore} >= ${thresholds.autoBlock} (autoBlock threshold)`;
+        if (hasForbidden) {
+          hook.reason = `Forbidden pattern detected in content`;
+        } else {
+          hook.reason = `Risk score ${hook.riskScore} >= ${thresholds.autoBlock} (autoBlock threshold)`;
+        }
         await logSecurityEvent(hook);
         return hook;
       }
@@ -200,7 +202,11 @@ export async function preEvolutionHook(modulePath, context = {}) {
 
       if (hasForbidden || hook.riskScore >= thresholds.autoBlock) {
         hook.blocked = true;
-        hook.reason = `Risk score ${hook.riskScore} >= ${thresholds.autoBlock} (autoBlock threshold)`;
+        if (hasForbidden) {
+          hook.reason = `Forbidden pattern detected in content`;
+        } else {
+          hook.reason = `Risk score ${hook.riskScore} >= ${thresholds.autoBlock} (autoBlock threshold)`;
+        }
         await logSecurityEvent(hook);
         return hook;
       }
