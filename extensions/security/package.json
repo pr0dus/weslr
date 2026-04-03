@@ -1,0 +1,19 @@
+{
+  "name": "security",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/security/index.d.ts",
+      "default": "./dist/security/index.js"
+    }
+  },
+  "scripts": {
+    "build": "echo 'Security extension - no build required'",
+    "test": "echo 'Security extension - tests in main repo'"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "openclaw": "workspace:*"
+  },
+  "devDependencies": {}
+}
