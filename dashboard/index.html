@@ -167,6 +167,12 @@
             </select>
           </div>
           
+          <!-- Recent Artifact IDs Suggestion -->
+          <div id="artifact-review-recent-suggestions" class="muted" style="display:none; margin-bottom:8px; font-size:11px;">
+            <strong>Recent IDs:</strong>
+            <div id="artifact-review-recent-list" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
+          </div>
+          
           <div id="artifact-review-note-container" style="display:none; margin-bottom:8px;">
             <input type="text" id="artifact-review-note" placeholder="Reason for action (required for reject)" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
           </div>
@@ -227,6 +233,12 @@
               <option value="invalid">Invalid</option>
               <option value="needs_review">Needs Review</option>
             </select>
+          </div>
+          
+          <!-- Recent Artifact IDs Suggestion -->
+          <div id="validation-record-recent-suggestions" class="muted" style="display:none; margin-bottom:8px; font-size:11px;">
+            <strong>Recent IDs:</strong>
+            <div id="validation-record-recent-list" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
           </div>
           
           <div style="margin-bottom:8px;">
@@ -333,6 +345,9 @@
       // Load dashboard data from state_core.json and merge with communicator_self.json
       fetchStateCore();
       
+      // Load recent artifact IDs
+      loadRecentArtifactIds();
+      
       // Artifact Review UI handler
       setupArtifactReviewUI();
       
@@ -345,6 +360,48 @@
       // Pack Decision UI handler
       setupPackDecisionUI();
     });
+
+    async function loadRecentArtifactIds() {
+      try {
+        const response = await fetch('state_core.json');
+        if (!response.ok) return;
+        const data = await response.json();
+        const artifacts = data.artifacts || [];
+        
+        // Get unique IDs, limit to 10 most recent (by timestamp)
+        const recentIds = [...new Set(artifacts.map(a => a.id))].slice(0, 10);
+        
+        if (recentIds.length === 0) return;
+        
+        // Update Artifact Review section
+        const reviewList = document.getElementById('artifact-review-recent-list');
+        if (reviewList) {
+          reviewList.innerHTML = recentIds.map(id => 
+            `<button onclick="fillArtifactId('${id}', 'artifact-review-id')" 
+              style="padding:2px 8px; background:#263241; color:#e7ecf3; border:none; border-radius:6px; font-size:10px; cursor:pointer; white-space:nowrap;">${id.substring(0, 20)}...</button>`
+          ).join(' ');
+          document.getElementById('artifact-review-recent-suggestions').style.display = 'block';
+        }
+        
+        // Update Validation Recording section
+        const validationList = document.getElementById('validation-record-recent-list');
+        if (validationList) {
+          validationList.innerHTML = recentIds.map(id => 
+            `<button onclick="fillArtifactId('${id}', 'validation-record-id')" 
+              style="padding:2px 8px; background:#263241; color:#e7ecf3; border:none; border-radius:6px; font-size:10px; cursor:pointer; white-space:nowrap;">${id.substring(0, 20)}...</button>`
+          ).join(' ');
+          document.getElementById('validation-record-recent-suggestions').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load recent artifact IDs:', error);
+      }
+    }
+
+    function fillArtifactId(id, inputId) {
+      document.getElementById(inputId).value = id;
+      // Remove focus to close keyboard on mobile
+      document.getElementById(inputId).blur();
+    }
 
     function setupArtifactReviewUI() {
       const actionSelect = document.getElementById('artifact-review-action');
