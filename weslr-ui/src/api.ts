@@ -65,6 +65,21 @@ export async function fetchOperatorVisibility(): Promise<OperatorVisibility> {
 // Operator Summary
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface WeslrCandidate {
+  id: string;
+  title: string;
+  domain: string;
+  requester_type: string;
+  status: string;
+  weslr_assessment?: {
+    priority: 'high' | 'medium' | 'low';
+    fit_score: number;
+    implementation_risk: 'low' | 'medium' | 'high';
+    recommended_action: string;
+    reasoning: string;
+  };
+}
+
 export interface OperatorSummary {
   active_proposals: Array<{
     id: string;
@@ -75,16 +90,21 @@ export interface OperatorSummary {
   pending_reviews: number;
   last_review?: string;
   total_proposals: number;
+  weslr_candidates?: WeslrCandidate[];
   error?: string;
 }
 
 export async function fetchOperatorSummary(): Promise<OperatorSummary> {
   // return fetch(`${API_BASE}/api/contract/operator/summary`).then(r => r.json())
   
+  // For now, return empty list — real data comes from review_queue.json via backend
+  // Weslr candidates will be filtered from review_queue.json by source.type === 'external_request'
+  
   return {
     active_proposals: [],
     pending_reviews: 0,
     total_proposals: 0,
+    weslr_candidates: [],
   };
 }
 

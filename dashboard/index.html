@@ -190,6 +190,60 @@
           </div>
         </div>
         
+        <!-- Weslr Suggestion Review Section -->
+        <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #34d399;">
+          <h3 style="font-size:14px; margin:0 0 8px;">Weslr Suggestion Review</h3>
+          <p class="muted" style="font-size:11px; margin-bottom:8px;">Review external suggestions and see Weslr's internal assessment (priority, fit, risk, reasoning)</p>
+          
+          <!-- Suggestion Review List -->
+          <div id="suggestion-review-list" class="muted" style="max-height:300px; overflow-y:auto; margin-bottom:12px; font-size:12px;">
+            <p class="muted" style="font-size:11px;">Loading suggestion candidates...</p>
+          </div>
+          
+          <!-- Selected Suggestion Details -->
+          <div id="suggestion-review-detail" class="muted" style="display:none; margin-bottom:12px; padding:12px; background:#0c0f14; border-radius:8px;">
+            <h4 style="font-size:13px; margin:0 0 8px;">Assessment Details</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:11px;">
+              <div>
+                <p class="muted" style="margin:2px 0;">Priority</p>
+                <p id="suggestion-priority" style="margin:2px 0; font-weight:bold;"></p>
+              </div>
+              <div>
+                <p class="muted" style="margin:2px 0;">Fit Score</p>
+                <p id="suggestion-fit-score" style="margin:2px 0; font-weight:bold;"></p>
+              </div>
+              <div>
+                <p class="muted" style="margin:2px 0;">Implementation Risk</p>
+                <p id="suggestion-risk" style="margin:2px 0; font-weight:bold;"></p>
+              </div>
+              <div>
+                <p class="muted" style="margin:2px 0;">Recommended Action</p>
+                <p id="suggestion-action" style="margin:2px 0; font-weight:bold;"></p>
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <p class="muted" style="margin:2px 0;">Reasoning</p>
+              <p id="suggestion-reasoning" style="margin:2px 0; font-size:10px; background:#171b22; padding:6px; border-radius:4px;"></p>
+            </div>
+          </div>
+          
+          <!-- Review Actions -->
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+            <select id="suggestion-review-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
+              <option value="approve">Approve for Review</option>
+              <option value="deny">Deny / Reject</option>
+            </select>
+            <button id="suggestion-review-submit" style="padding:8px 16px; border:none; background:#34d399; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit</button>
+            <p id="suggestion-review-status" class="muted" style="font-size:11px; margin:0;"></p>
+            
+            <!-- Success Summary Card -->
+            <div id="suggestion-review-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
+              <p style="margin:4px 0; font-size:11px;"><strong>✅ Review submitted:</strong> <span id="suggestion-review-summary-id"></span> - <span id="suggestion-review-summary-action"></span></p>
+              <p id="suggestion-review-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
+            </div>
+          </div>
+        </div>
+        
         <!-- Category Management Section -->
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #3b82f6;">
           <h3 style="font-size:14px; margin:0 0 8px;">Category Management</h3>
@@ -713,13 +767,20 @@
 
     async function fetchStateCore() {
       try {
-        const [stateCoreResponse, commSelfResponse] = await Promise.all([
+        const [stateCoreResponse, commSelfResponse, reviewQueueResponse] = await Promise.all([
           fetch('state_core.json'),
-          fetch('communicator_self.json')
+          fetch('communicator_self.json'),
+          fetch('review_queue.json')
         ]);
         
         const stateCore = await stateCoreResponse.json();
         const commSelf = await commSelfResponse.json();
+        const reviewQueue = await reviewQueueResponse.json() || [];
+        
+        // Filter for Weslr candidates (external requests)
+        const weslrCandidates = reviewQueue.filter(c => 
+          c.source?.type === 'external_request' || c.category === 'external_request'
+        );
         
         // Merge communicator_self data into state_core for dashboard display
         // Only merge specific fields that are useful for the operator view
@@ -729,7 +790,9 @@
             ...(stateCore.continuity || {}),
             confidence_score: commSelf.continuity?.confidence_score || null
           },
-          last_communicator_outcome: commSelf.last_communicator_outcome || null
+          last_communicator_outcome: commSelf.last_communicator_outcome || null,
+          // Add Weslr candidates for suggestion review panel
+          weslr_candidates: weslrCandidates
         };
         
         renderDashboard(mergedData);
@@ -759,8 +822,14 @@
       // Handoffs
       renderHandoffs(data);
       
+      // Weslr Suggestion Review (operator-only)
+      renderWeslrSuggestions(data);
+      
       // Debug sections
       renderDebug(data);
+      
+      // Operators (CLI commands)
+      renderOperators(data);
     }
 
     function renderStatus(data) {
@@ -1121,6 +1190,62 @@
       `;
       
       content.innerHTML = html;
+    }
+
+    function renderWeslrSuggestions(data) {
+      const listContent = document.getElementById('suggestion-review-list');
+      const detailContent = document.getElementById('suggestion-review-detail');
+      
+      // Get Weslr candidates from review_queue.json
+      const candidates = data.weslr_candidates || [];
+      
+      if (candidates.length === 0) {
+        listContent.innerHTML = '<p class="muted" style="font-size:11px;">No suggestion candidates available yet.</p>';
+        return;
+      }
+      
+      let html = '';
+      for (const c of candidates) {
+        const priority = c.weslr_priority || 'N/A';
+        const fitScore = c.weslr_fit_score || 'N/A';
+        const risk = c.weslr_risk || 'N/A';
+        const id = c.id || 'N/A';
+        const title = c.title || 'Untitled';
+        
+        // Status indicator
+        let statusBadge = '';
+        if (priority === 'high') statusBadge = '<span style="background:#f87171; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">HIGH PRIORITY</span>';
+        else if (priority === 'medium') statusBadge = '<span style="background:#fbbf24; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">MEDIUM</span>';
+        else statusBadge = '<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">NORMAL</span>';
+        
+        html += `
+          <div style="padding:8px; margin:4px 0; background:#171b22; border-radius:6px; border-left:3px solid #34d399; cursor:pointer;" onclick="selectWeslrSuggestion('${id}')">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:13px;">${title}</strong>
+              <span style="font-size:10px; color:#9aa6b2;">${id}</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+              ${statusBadge}
+              <span style="font-size:10px; color:#6ee7b7;">Fit: ${fitScore}</span>
+              <span style="font-size:10px; color:#fbbf24;">Risk: ${risk}</span>
+            </div>
+          </div>
+        `;
+      }
+      
+      listContent.innerHTML = html;
+      detailContent.style.display = 'none';
+    }
+
+    function selectWeslrSuggestion(id) {
+      // Find the candidate in data
+      const candidates = document.getElementById('suggestion-review-list').children;
+      // For now, just show that selection was made
+      console.log('Selected candidate:', id);
+      
+      // In a real implementation, we would fetch and display details
+      const detailContent = document.getElementById('suggestion-review-detail');
+      if (detailContent) detailContent.style.display = 'block';
     }
 
     function renderDebug(data) {

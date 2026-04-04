@@ -8,6 +8,7 @@ import {
   ContinuityStatus,
   OperatorVisibility,
   OperatorSummary,
+  WeslrCandidate,
   Conversation
 } from './api';
 
@@ -463,11 +464,100 @@ function OperatorPanel({
   summary: OperatorSummary; 
 }) {
   const [visible, setVisible] = useState(visibility.visible);
+  const [expandedCandidates, setExpandedCandidates] = useState<Record<string, boolean>>({});
 
   // Update visibility when backend returns new value
   useEffect(() => {
     setVisible(visibility.visible);
   }, [visibility.visible]);
+
+  // Helper to toggle candidate expansion
+  const toggleCandidate = (id: string) => {
+    setExpandedCandidates(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Render a single Weslr candidate card
+  const renderWeslrCandidate = (c: WeslrCandidate) => {
+    const isExpanded = expandedCandidates[c.id] || false;
+    
+    const priorityColor = {
+      high: '#ef4444',
+      medium: '#f59e0b',
+      low: '#6b7280'
+    }[c.weslr_assessment?.priority || 'low'];
+    
+    const riskColor = {
+      high: '#ef4444',
+      medium: '#f59e0b',
+      low: '#10b981'
+    }[c.weslr_assessment?.implementation_risk || 'low'];
+    
+    return (
+      <div
+        key={c.id}
+        style={{
+          padding: '0.75rem',
+          marginBottom: '0.5rem',
+          border: '1px solid #e0e0e0',
+          borderRadius: '4px',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+        }}
+        onClick={() => toggleCandidate(c.id)}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong style={{ fontSize: '0.875rem', color: '#333' }}>{c.title || c.id}</strong>
+          <span style={{ fontSize: '0.75rem', color: '#666' }}>{c.id}</span>
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.5rem', 
+          marginTop: '0.5rem',
+          fontSize: '0.75rem'
+        }}>
+          <span style={{ 
+            padding: '0.125rem 0.5rem',
+            borderRadius: '4px',
+            backgroundColor: priorityColor,
+            color: '#fff',
+            fontWeight: 'bold'
+          }}>
+            {c.weslr_assessment?.priority?.toUpperCase() || 'N/A'}
+          </span>
+          <span style={{ color: '#10b981', fontWeight: 'bold' }}>
+            Fit: {c.weslr_assessment?.fit_score || 'N/A'}
+          </span>
+          <span style={{ color: riskColor, fontWeight: 'bold' }}>
+            Risk: {c.weslr_assessment?.implementation_risk?.toUpperCase() || 'N/A'}
+          </span>
+        </div>
+        
+        {isExpanded && c.weslr_assessment && (
+          <div style={{ 
+            marginTop: '0.5rem',
+            paddingTop: '0.5rem',
+            borderTop: '1px solid #e0e0e0'
+          }}>
+            <p style={{ fontSize: '0.75rem', color: '#666', margin: '0.25rem 0' }}>
+              <strong>Recommended:</strong> {c.weslr_assessment.recommended_action}
+            </p>
+            <p style={{ 
+              fontSize: '0.7rem', 
+              color: '#888', 
+              margin: '0.25rem 0',
+              lineHeight: '1.4'
+            }}>
+              {c.weslr_assessment.reasoning}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <aside
@@ -569,6 +659,15 @@ function OperatorPanel({
               </p>
             </div>
           </section>
+
+          {summary.weslr_candidates && summary.weslr_candidates.length > 0 && (
+            <section style={{ marginTop: '1rem' }}>
+              <h4 style={{ marginBottom: '0.5rem' }}>Weslr Suggestions</h4>
+              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {summary.weslr_candidates.map(renderWeslrCandidate)}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </aside>
