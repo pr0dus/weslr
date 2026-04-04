@@ -176,6 +176,7 @@ def main():
         print("        Actions: approve, deny, mark-eligible")
         print("    Examples:")
         print("      weslr_cli.py operator list")
+        print("      weslr_cli.py operator detail prop-123")
         print("      weslr_cli.py operator review prop-123 approve")
         print("      weslr_cli.py operator review prop-123 deny 'Missing tests'")
         print("      weslr_cli.py operator review prop-123 mark-eligible")
@@ -235,8 +236,9 @@ def handle_operator_command():
         print("Operator Self-Improvement Proposal Review")
         print("")
         print("Commands:")
-        print("  list                      List all proposals")
-        print("  review <id> <action>      Review a proposal")
+        print("  list                       List all proposals")
+        print("  detail <id>                Show proposal details")
+        print("  review <id> <action>       Review a proposal")
         print("    Actions: approve, deny, mark-eligible")
         print("")
         print("Usage: python weslr_cli.py operator <command> [args]")
@@ -246,6 +248,13 @@ def handle_operator_command():
 
     if subcommand == "list":
         handle_operator_list()
+
+    elif subcommand == "detail":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_cli.py operator detail <proposal_id>")
+            return
+        proposal_id = sys.argv[3]
+        handle_operator_detail(proposal_id)
 
     elif subcommand == "review":
         if len(sys.argv) < 5:
@@ -286,6 +295,93 @@ def handle_operator_list():
     
     if not proposals:
         print("(No proposals)")
+
+
+def handle_operator_detail(proposal_id: str):
+    """Show detailed proposal info for operator review.
+    
+    This is an operator-only view that bypasses public visibility.
+    Public-facing code paths should NOT use this.
+    """
+    result = sip.get_proposal_operator(proposal_id)
+    
+    if not result:
+        print(f"✗ Proposal not found: {proposal_id}")
+        return
+    
+    print(f"{'=' * 60}")
+    print(f"PROPOSAL DETAILS: {proposal_id}")
+    print(f"{'=' * 60}")
+    
+    print(f"\nTitle: {result.get('title')}")
+    print(f"ID: {result.get('id')}")
+    print(f"\nStatus: {result.get('status', 'unknown')}")
+    print(f"Review State: {result.get('review', {}).get('state', 'unknown')}")
+    print(f"Risk Level: {result.get('risk_level', 'unknown')}")
+    
+    # Timeline
+    created_at = result.get('created_at', 0)
+    if created_at:
+        from datetime import datetime
+        dt = datetime.fromtimestamp(created_at / 1000)
+        print(f"Created: {dt.strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Review info
+    review = result.get('review', {})
+    if review.get('reviewed_by'):
+        reviewed_at = review.get('reviewed_at', 0)
+        if reviewed_at:
+            dt = datetime.fromtimestamp(reviewed_at)
+            print(f"Reviewed by: {review.get('reviewed_by')} on {dt.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            print(f"Reviewed by: {review.get('reviewed_by')}")
+    else:
+        print("Review: Pending")
+    
+    # Problem and cause
+    print(f"\nProblem:")
+    print(f"  {result.get('problem', '(none)')}")
+    print(f"\nLikely Cause:")
+    print(f"  {result.get('likely_cause', '(none)')}")
+    
+    # Files to change
+    files = result.get('files_to_change', [])
+    if files:
+        print(f"\nFiles to Change ({len(files)}):")
+        for f in files:
+            print(f"  - {f}")
+    
+    # Expected benefit
+    print(f"\nExpected Benefit:")
+    print(f"  {result.get('expected_benefit', '(none)')}")
+    
+    # Observations
+    obs_ids = result.get('observation_ids', [])
+    if obs_ids:
+        print(f"\nObservation IDs: {', '.join(obs_ids)}")
+    
+    # Phase 1B fields
+    if result.get('test_prompts'):
+        print(f"\nTest Prompts: {len(result.get('test_prompts'))} test(s)")
+    if result.get('rollback_command'):
+        print(f"\nRollback Command:")
+        print(f"  {result.get('rollback_command')}")
+    if result.get('patch_plan'):
+        print(f"\nPatch Plan: Available")
+    
+    # Test exemption
+    if result.get('test_exempt'):
+        print(f"\nTest Exempt: Yes")
+        if result.get('test_exempt_justification'):
+            print(f"  Justification: {result.get('test_exempt_justification')}")
+    
+    # Approval log
+    approval = result.get('approval', {})
+    if approval.get('denial_reason'):
+        print(f"\nDenial Reason:")
+        print(f"  {approval.get('denial_reason')}")
+    
+    print(f"\n{'=' * 60}")
 
 
 def handle_operator_review(proposal_id: str, action: str, reason: str | None = None):
