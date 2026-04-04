@@ -194,6 +194,9 @@ def main():
         print("      weslr_cli.py operator review prop-123 approve")
         print("      weslr_cli.py operator review prop-123 deny 'Missing tests'")
         print("      weslr_cli.py operator review prop-123 mark-eligible")
+        print("      weslr_cli.py weslr list               List suggestion candidates")
+        print("      weslr_cli.py weslr detail <id>        Show candidate with assessment")
+        print("      weslr_cli.py weslr format <id>        Format assessment for display")
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode summary")
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode excerpts")
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode full")
@@ -241,6 +244,9 @@ def main():
 
     elif command == "operator":
         handle_operator_command()
+
+    elif command == "weslr":
+        handle_weslr_command()
 
     elif command == "pdf-extract":
         if len(sys.argv) < 3:
@@ -598,49 +604,190 @@ def handle_file_route(file_path: str):
         return
 
 
-def handle_operator_detail(proposal_id: str):
-    print(f"  {result.get('problem', '(none)')}")
-    print(f"\nLikely Cause:")
-    print(f"  {result.get('likely_cause', '(none)')}")
+def handle_weslr_command():
+    """Handle Weslr suggestion/request review (operator-only).
     
-    # Files to change
-    files = result.get('files_to_change', [])
-    if files:
-        print(f"\nFiles to Change ({len(files)}):")
-        for f in files:
-            print(f"  - {f}")
+    Provides CLI access to Weslr assessment fields for external suggestions
+    and bridged proposal candidates. Assessment is internal-only.
+    """
+    if len(sys.argv) < 3:
+        print("Weslr Suggestion/Review CLI")
+        print("\nCommands:")
+        print("  list            List all suggestion candidates (operator-only)")
+        print("  detail <id>     Show detailed candidate info with assessment")
+        print("  format <id>     Format assessment for display")
+        print("")
+        print("Examples:")
+        print("  weslr_cli.py weslr list")
+        print("  weslr_cli.py weslr detail ext-abc123")
+        print("  weslr_cli.py weslr format ext-abc123")
+        return
     
-    # Expected benefit
-    print(f"\nExpected Benefit:")
-    print(f"  {result.get('expected_benefit', '(none)')}")
+    subcommand = sys.argv[2]
     
-    # Observations
-    obs_ids = result.get('observation_ids', [])
-    if obs_ids:
-        print(f"\nObservation IDs: {', '.join(obs_ids)}")
+    if subcommand == "list":
+        handle_weslr_list()
+    elif subcommand == "detail":
+        if len(sys.argv) < 4:
+            print("Usage: weslr_cli.py weslr detail <candidate_id>")
+            return
+        handle_weslr_detail(sys.argv[3])
+    elif subcommand == "format":
+        if len(sys.argv) < 4:
+            print("Usage: weslr_cli.py weslr format <candidate_id>")
+            return
+        handle_weslr_format(sys.argv[3])
+    else:
+        print(f"Unknown weslr command: {subcommand}")
+        print("Run 'weslr_cli.py weslr' for help")
+
+
+def handle_weslr_list():
+    """List all Weslr suggestion candidates (operator-only).
     
-    # Phase 1B fields
-    if result.get('test_prompts'):
-        print(f"\nTest Prompts: {len(result.get('test_prompts'))} test(s)")
-    if result.get('rollback_command'):
-        print(f"\nRollback Command:")
-        print(f"  {result.get('rollback_command')}")
-    if result.get('patch_plan'):
-        print(f"\nPatch Plan: Available")
+    Uses suggestion_bridge to read from review_queue.json and shows
+    basic info with Weslr assessment fields where available.
+    """
+    try:
+        from weslr.suggestion_bridge import SuggestionBridge
+        from weslr.weslr_operator_views import build_operator_review_list
+        from weslr.suggestion_assessment import WeslrAssessment
+    except ImportError as e:
+        print(f"✗ Import error: {e}")
+        return
     
-    # Test exemption
-    if result.get('test_exempt'):
-        print(f"\nTest Exempt: Yes")
-        if result.get('test_exempt_justification'):
-            print(f"  Justification: {result.get('test_exempt_justification')}")
+    bridge = SuggestionBridge()
+    candidates = bridge.list_proposal_candidates()
     
-    # Approval log
-    approval = result.get('approval', {})
-    if approval.get('denial_reason'):
-        print(f"\nDenial Reason:")
-        print(f"  {approval.get('denial_reason')}")
+    # Apply assessment to each
+    assessment = WeslrAssessment()
+    for c in candidates:
+        if 'source' in c and c['source'].get('type') == 'external_request':
+            # Apply assessment to candidates that don't have it yet
+            if 'weslr_assessment' not in c:
+                result = assessment.assess_candidate(c)
+                c['weslr_assessment'] = result['weslr_assessment']
     
+    enhanced = build_operator_review_list(candidates)
+    
+    print(f"{'=' * 60}")
+    print("WESLR SUGGESTION CANDIDATES")
+    print(f"{'=' * 60}")
+    print(f"Total: {len(enhanced)}")
+    print()
+    
+    for i, c in enumerate(enhanced, 1):
+        print(f"[{i}] {c.get('id')}")
+        print(f"    Title: {c.get('title')}")
+        print(f"    Domain: {c.get('source', {}).get('original_data', {}).get('domain', 'N/A')}")
+        if 'weslr_priority' in c:
+            print(f"    Assessment: {c['weslr_status'] or 'Normal'}")
+            print(f"      Fit Score: {c.get('weslr_fit_score', 'N/A')}")
+            print(f"      Risk: {c.get('weslr_risk', 'N/A')}")
+        print()
+    
+    print(f"{'=' * 60}")
+
+
+def handle_weslr_detail(proposal_id: str):
+    """Show detailed candidate info with assessment (operator-only).
+    
+    This is an operator-only view that bypasses public visibility.
+    Public-facing code paths should NOT use this.
+    """
+    try:
+        from weslr.suggestion_bridge import SuggestionBridge
+        from weslr.weslr_operator_views import build_operator_review_detail
+    except ImportError as e:
+        print(f"✗ Import error: {e}")
+        return
+    
+    bridge = SuggestionBridge()
+    candidates = bridge.list_proposal_candidates()
+    
+    candidate = None
+    for c in candidates:
+        if c.get('id') == proposal_id:
+            candidate = c
+            break
+    
+    if not candidate:
+        print(f"✗ Candidate not found: {proposal_id}")
+        return
+    
+    detail = build_operator_review_detail(candidate)
+    
+    print(f"{'=' * 60}")
+    print(f"WESLR CANDIDATE DETAILS: {proposal_id}")
+    print(f"{'=' * 60}")
+    
+    # Basic info
+    print(f"\nTitle: {candidate.get('title')}")
+    print(f"ID: {candidate.get('id')}")
+    print(f"\nStatus: {candidate.get('review_status', 'unknown')}")
+    
+    # Original data
+    source = candidate.get('source', {})
+    if source.get('original_data'):
+        od = source['original_data']
+        print(f"\nOriginal Request:")
+        print(f"  Domain: {od.get('domain', 'N/A')}")
+        print(f"  Requester: {od.get('requester_type', 'N/A')}")
+        print(f"  Problem: {od.get('problem_statement', 'N/A')}")
+        print(f"  Capability: {od.get('requested_capability', 'N/A')}")
+    
+    # Weslr assessment
+    assessment = candidate.get('weslr_assessment', {})
+    if assessment:
+        print(f"\n{'=' * 60}")
+        print("WESLR ASSESSMENT")
+        print(f"{'=' * 60}")
+        print(f"Priority: {assessment.get('priority', 'N/A').upper()}")
+        print(f"Fit Score: {assessment.get('fit_score', 'N/A')}")
+        print(f"Implementation Risk: {assessment.get('implementation_risk', 'N/A').upper()}")
+        print(f"Recommended Action: {assessment.get('recommended_action', 'N/A')}")
+        print(f"\nReasoning:")
+        reasoning = assessment.get('reasoning', 'N/A')
+        for line in reasoning.split('. '):
+            print(f"  - {line.strip()}")
+    
+    # Review info
     print(f"\n{'=' * 60}")
+    print(f"{'=' * 60}")
+
+
+def handle_weslr_format(proposal_id: str):
+    """Format Weslr assessment for human-readable display (operator-only)."""
+    try:
+        from weslr.suggestion_bridge import SuggestionBridge
+        from weslr.weslr_operator_views import format_assessment_for_display
+    except ImportError as e:
+        print(f"✗ Import error: {e}")
+        return
+    
+    bridge = SuggestionBridge()
+    candidates = bridge.list_proposal_candidates()
+    
+    candidate = None
+    for c in candidates:
+        if c.get('id') == proposal_id:
+            candidate = c
+            break
+    
+    if not candidate:
+        print(f"✗ Candidate not found: {proposal_id}")
+        return
+    
+    formatted = format_assessment_for_display(candidate)
+    print(formatted)
+
+
+def handle_operator_detail(proposal_id: str):
+    """Show detailed proposal info for operator review.
+    
+    This is an operator-only view that bypasses public visibility.
+    Public-facing code paths should NOT use this.
+    """
 
 
 def handle_operator_review(proposal_id: str, action: str, reason: str | None = None):
