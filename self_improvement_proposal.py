@@ -585,6 +585,86 @@ def list_eligible_proposals() -> dict:
     }
 
 
+def get_operator_summary() -> dict:
+    """Get operator-facing review summary of proposal pipeline state.
+    
+    This is an operator-only summary that shows:
+    - Total proposals
+    - Counts by review state (pending, approved, denied, applied)
+    - Counts by status (pending_review, approved, rejected, applied)
+    - Eligible-for-application count
+    - Total approvals/denials in log
+    
+    Does NOT expose proposal details in operator-only mode.
+    
+    Returns:
+        dict with summary statistics
+    """
+    proposals = load_proposals()
+    log = load_approval_log()
+    
+    # Apply visibility filter - operator-only mode returns reduced report
+    public_visible = _is_public_visible()
+    
+    # Initialize counters
+    status_counts = {"pending_review": 0, "approved": 0, "rejected": 0, "applied": 0}
+    review_state_counts = {"pending": 0, "approved": 0, "denied": 0, "applied": 0}
+    with_tests = 0
+    with_rollback = 0
+    with_patch_plan = 0
+    
+    # Eligible count
+    eligible_count = 0
+    
+    for p in proposals:
+        # Count by review_state
+        review_state = p.get("review", {}).get("state", "pending")
+        if review_state in review_state_counts:
+            review_state_counts[review_state] += 1
+        
+        # Count by status
+        status = p.get("status", "unknown")
+        if status in status_counts:
+            status_counts[status] += 1
+        
+        # Eligibility check
+        if is_eligible_for_application(p.get("id")):
+            eligible_count += 1
+        
+        # Count metadata
+        if p.get("test_prompts"):
+            with_tests += 1
+        if p.get("rollback_command"):
+            with_rollback += 1
+        if p.get("patch_plan"):
+            with_patch_plan += 1
+    
+    # Build summary - no proposal details in operator-only mode
+    result = {
+        "ok": True,
+        "public_visible": public_visible,
+        # Pipeline summary
+        "total_proposals": len(proposals),
+        "by_status": status_counts,
+        "by_review_state": review_state_counts,
+        "eligible_for_application": eligible_count,
+        "total_approvals": len(log),
+        "with_tests": with_tests,
+        "with_rollback": with_rollback,
+        "with_patch_plan": with_patch_plan,
+        "generated_at": int(time.time()),
+    }
+    
+    # Only include details if visible to public (not in public_test mode)
+    if public_visible:
+        result["proposals"] = proposals
+    else:
+        # Operator-only mode: include summary metadata
+        result["summary_only"] = True
+    
+    return result
+
+
 def build_proposal_report() -> dict:
     """Build a summary report of all proposals.
     
