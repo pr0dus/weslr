@@ -4,6 +4,7 @@ import {
   fetchOperatorVisibility, 
   fetchOperatorSummary,
   fetchConversations,
+  uploadFile as uploadFileToBackend,
   ContinuityStatus,
   OperatorVisibility,
   OperatorSummary,
@@ -62,9 +63,41 @@ function Sidebar({ conversations }: { conversations: Conversation[] }) {
   );
 }
 
-function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
+function ChatSurface({ 
+  continuity, 
+  onFileUploaded 
+}: { 
+  continuity: ContinuityStatus;
+  onFileUploaded: (result: any) => void;
+}) {
   const [message, setMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      
+      // Encode as base64 for backend
+      const base64Content = btoa(
+        Array.from(bytes).map(b => String.fromCharCode(b)).join('')
+      );
+      
+      const result = await uploadFileToBackend(file.name, base64Content);
+      
+      if (result.success) {
+        onFileUploaded(result.result);
+      } else {
+        onFileUploaded({ error: result.error, category: 'error' });
+      }
+    } catch (e) {
+      onFileUploaded({ error: String(e), category: 'error' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <main
@@ -110,7 +143,7 @@ function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
         </div>
       </section>
 
-      {/* File Drop Zone Placeholder */}
+      {/* File Drop Zone */}
       <section
         onDragOver={(e) => {
           e.preventDefault();
@@ -120,7 +153,10 @@ function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          console.log('File dropped:', e.dataTransfer.files);
+          const file = e.dataTransfer.files[0];
+          if (file) {
+            handleFileUpload(file);
+          }
         }}
         style={{
           padding: '0.75rem 1rem',
@@ -135,20 +171,27 @@ function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
           type="file"
           style={{ display: 'none' }}
           id="fileInput"
-          multiple
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleFileUpload(file);
+            }
+          }}
         />
         <button
           onClick={() => document.getElementById('fileInput')?.click()}
+          disabled={isUploading}
           style={{
             padding: '0.5rem 1rem',
             border: '1px solid #007aff',
-            backgroundColor: '#007aff',
+            backgroundColor: isUploading ? '#ccc' : '#007aff',
             color: '#ffffff',
             borderRadius: '4px',
-            cursor: 'pointer',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            opacity: isUploading ? 0.7 : 1,
           }}
         >
-          📎 Attach
+          {isUploading ? '📤 Uploading...' : '📎 Attach'}
         </button>
         <span
           style={{
@@ -158,7 +201,9 @@ function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
             textAlign: 'center',
           }}
         >
-          Drag & drop files here, or click to browse
+          {isUploading 
+            ? 'Uploading file...' 
+            : 'Drag & drop files here, or click to browse'}
         </span>
         <span
           style={{
@@ -394,6 +439,12 @@ export default function App() {
     fetchData();
   }, []);
 
+  const handleFileUploaded = (result: any) => {
+    console.log('File upload complete:', result);
+    // In a real app, this would add the result to the chat stream
+    // For now, just log it
+  };
+
   return (
     <div
       style={{
@@ -403,7 +454,10 @@ export default function App() {
       }}
     >
       <Sidebar conversations={conversations} />
-      <ChatSurface continuity={continuity} />
+      <ChatSurface 
+        continuity={continuity} 
+        onFileUploaded={handleFileUploaded}
+      />
       <OperatorPanel visibility={visibility} summary={summary} />
     </div>
   );
