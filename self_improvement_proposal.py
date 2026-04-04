@@ -452,6 +452,139 @@ def update_review_state(
     }
 
 
+def is_eligible_for_application(proposal_id: str) -> bool:
+    """Check if a proposal is eligible for application.
+    
+    Eligibility rules:
+    - Proposal must be approved (review.state == "approved")
+    - Proposal must NOT already be applied (status != "applied")
+    - Proposal must NOT be denied (review.state != "denied")
+    - Proposal must have review completed (reviewed_by != None)
+    
+    Args:
+        proposal_id: ID of proposal to check
+        
+    Returns:
+        True if eligible for application, False otherwise
+    """
+    proposal = get_proposal_operator(proposal_id)
+    if not proposal:
+        return False
+    
+    review = proposal.get("review", {})
+    review_state = review.get("state")
+    status = proposal.get("status")
+    reviewed_by = review.get("reviewed_by")
+    
+    # Must be approved
+    if review_state != "approved":
+        return False
+    
+    # Must NOT already be applied
+    if status == "applied":
+        return False
+    
+    # Must NOT be denied
+    if review_state == "denied":
+        return False
+    
+    # Must have completed review (operator must have acted)
+    if reviewed_by is None:
+        return False
+    
+    return True
+
+
+def mark_as_eligible(proposal_id: str, by: str) -> dict:
+    """Mark a proposal as eligible for application.
+    
+    This is an explicit operator gate - only approved proposals can be marked.
+    Does NOT apply changes - just marks eligibility for later application.
+    
+    Args:
+        proposal_id: ID of proposal to mark eligible
+        by: Who marked it (e.g., "human", "automated_gate")
+        
+    Returns:
+        dict with result or error
+    """
+    proposal = get_proposal_operator(proposal_id)
+    if not proposal:
+        return {
+            "ok": False,
+            "error": f"Proposal not found: {proposal_id}",
+        }
+    
+    # Check eligibility first
+    if not is_eligible_for_application(proposal_id):
+        return {
+            "ok": False,
+            "error": f"Proposal not eligible for application: {proposal_id}",
+            "reason": "Must be approved (review.state='approved') and not already applied",
+        }
+    
+    now_ts = int(time.time())
+    
+    # Mark as eligible
+    proposal["application"] = {
+        "marked_eligible_at": now_ts,
+        "marked_eligible_by": by,
+    }
+    
+    # Update review state to "applied" only when application actually happens
+    # For now, just mark eligibility
+    
+    # Save proposal
+    proposals = load_proposals()
+    for i, p in enumerate(proposals):
+        if p.get("id") == proposal_id:
+            proposals[i] = proposal
+            break
+    save_proposals(proposals)
+    
+    return {
+        "ok": True,
+        "proposal_id": proposal_id,
+        "marked_eligible_at": now_ts,
+        "marked_eligible_by": by,
+    }
+
+
+def list_eligible_proposals() -> dict:
+    """List all proposals eligible for application.
+    
+    Returns only proposals that:
+    - Are approved (review.state == "approved")
+    - Are not already applied
+    - Have completed review
+    
+    Does NOT return anything when public_visible=True (operator-only mode).
+    
+    Returns:
+        dict with eligible proposals list
+    """
+    proposals = load_proposals()
+    
+    # Apply visibility filter
+    proposals = _filter_for_visibility(proposals)
+    
+    # Filter for eligible proposals
+    eligible = []
+    for p in proposals:
+        if is_eligible_for_application(p.get("id")):
+            eligible.append(p)
+    
+    # Sort by most recent first
+    eligible = sorted(eligible, key=lambda p: p.get("created_at", 0), reverse=True)
+    
+    return {
+        "ok": True,
+        "total": len(eligible),
+        "public_visible": _is_public_visible(),
+        "proposals": eligible,
+    }
+
+
 def build_proposal_report() -> dict:
     """Build a summary report of all proposals.
     
