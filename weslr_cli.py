@@ -19,6 +19,7 @@ import belief_system as bs
 import self_improvement_proposal as sip
 import weslr.pdf_text as pdf_text
 import weslr.pdf_context as pdf_context
+import weslr.file_ingestion as file_ingestion
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -179,6 +180,10 @@ def main():
         print("")
         print("  pdf-extract <file>         Extract text from PDF (operator-only)")
         print("    --mode <summary|excerpts|full>  Output mode (default: summary)")
+        print("")
+        print("  file-ingest <file>         Ingest text-based file (operator-only)")
+        print("    Supports: .txt, .md, .json, .yaml, .yml, .py, .js, .ts, etc.")
+        print("")
         print("    Examples:")
         print("      weslr_cli.py operator list")
         print("      weslr_cli.py operator detail prop-123")
@@ -188,6 +193,8 @@ def main():
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode summary")
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode excerpts")
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode full")
+        print("      weslr_cli.py file-ingest /path/to/file.txt")
+        print("      weslr_cli.py file-ingest /path/to/file.md")
         print("")
         print("Usage: python weslr_cli.py <command> [args]")
         return
@@ -240,6 +247,13 @@ def main():
             if arg == "--mode" and i + 1 < len(sys.argv):
                 mode = sys.argv[i + 1]
         handle_pdf_extract(pdf_path, mode)
+
+    elif command == "file-ingest":
+        if len(sys.argv) < 3:
+            print("Usage: python weslr_cli.py file-ingest <file_path>")
+            return
+        file_path = sys.argv[2]
+        handle_file_ingest(file_path)
 
     else:
         print(f"Unknown command: {command}")
@@ -424,6 +438,7 @@ def handle_pdf_extract(pdf_path: str, mode: str = "summary"):
         return
 
 
+
 def handle_operator_detail(proposal_id: str):
     """Show detailed proposal info for operator review.
     
@@ -464,6 +479,58 @@ def handle_operator_detail(proposal_id: str):
             print(f"Reviewed by: {review.get('reviewed_by')}")
     else:
         print("Review: Pending")
+
+
+def handle_file_ingest(file_path: str):
+    """Ingest a text-based file (operator-only).
+    
+    This is a text-based file ingestion function that:
+    - Validates the path is within workspace
+    - Only supports text-based formats (.txt, .md, .json, .yaml, etc.)
+    - Returns formatted output with relevance assessment
+    
+    Args:
+        file_path: Path to file (must be within workspace)
+    """
+    workspace_dir = str(Path(__file__).resolve().parent)
+    
+    # Default user query for context
+    user_query = "What is in this file?"
+    task_context = {"type": "file_analysis", "focus": "content"}
+    
+    try:
+        # Create file ingestor
+        ingestor = file_ingestion.create_file_ingestor(workspace_dir=workspace_dir)
+        
+        # Ingest file
+        result = ingestor.ingest(file_path, user_query=user_query, task_context=task_context)
+        
+        print(f"{'=' * 60}")
+        print(f"FILE INGESTION RESULT")
+        print(f"{'=' * 60}")
+        print(f"File: {file_path}")
+        print(f"File Type: {result.file_type}")
+        print(f"Content Type: {result.content_type}")
+        print(f"Relevance: {result.relevance}")
+        print(f"Relevance Reason: {result.relevance_reason}")
+        print(f"Content Length: {len(result.content)} chars")
+        print(f"{'=' * 60}")
+        print()
+        
+        # Show content (truncated if needed)
+        print(result.content[:5000])
+        if len(result.content) > 5000:
+            print(f"\n... [{len(result.content)} chars total]")
+        
+        print()
+        print(f"{'=' * 60}")
+        
+    except file_ingestion.IngestionError as e:
+        print(f"✗ File ingestion error: {e}")
+        return
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
+        return
     
     # Problem and cause
     print(f"\nProblem:")
