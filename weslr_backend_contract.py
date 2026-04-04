@@ -363,6 +363,85 @@ def check_operator_visibility() -> Dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 6. WESLR SUGGESTION REVIEW (OPINIONATED, MINIMAL)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def review_suggestion(candidate_id: str, action: str, reason: str = "") -> Dict[str, Any]:
+    """Review a Weslr suggestion candidate.
+    
+    This is an internal/operator-only action that updates the candidate's
+    review state in review_queue.json. It does NOT auto-approve or auto-implement.
+    
+    Args:
+        candidate_id: The candidate ID from suggestion_bridge
+        action: One of: approve, deny, mark-eligible
+        reason: Optional reason for deny action
+        
+    Returns:
+        Dict with success status and updated candidate info
+    """
+    # Validate action
+    if action not in ("approve", "deny", "mark-eligible"):
+        return {
+            "success": False,
+            "error": f"Unknown action: {action}. Valid: approve, deny, mark-eligible"
+        }
+    
+    try:
+        from weslr.suggestion_bridge import SuggestionBridge
+        from weslr.suggestion_assessment import WeslrAssessment
+        
+        bridge = SuggestionBridge()
+        
+        # Find the candidate
+        candidates = bridge.list_proposal_candidates()
+        candidate = None
+        for c in candidates:
+            if c.get("id") == candidate_id:
+                candidate = c
+                break
+        
+        if not candidate:
+            return {
+                "success": False,
+                "error": f"Candidate not found: {candidate_id}"
+            }
+        
+        # Apply review action
+        if action == "approve":
+            # Approve for operator review (not auto-implemented)
+            bridge.mark_as_reviewed(candidate_id, "approved", reason or "Approved by operator")
+        elif action == "deny":
+            bridge.mark_as_reviewed(candidate_id, "rejected", reason or "Denied by operator")
+        elif action == "mark-eligible":
+            bridge.mark_as_reviewed(candidate_id, "approved", reason or "Marked eligible by operator")
+            # Also set eligible flag for future processing
+            candidate["eligible"] = True
+        
+        # Apply assessment to get updated info
+        assessment = WeslrAssessment()
+        assessment_result = assessment.assess_candidate(candidate)
+        
+        return {
+            "success": True,
+            "candidate_id": candidate_id,
+            "action": action,
+            "new_status": candidate.get("review_status"),
+            "weslr_assessment": assessment_result["weslr_assessment"],
+            "audit": {
+                "reviewed_by": "operator",
+                "reviewed_at": assessment_result["weslr_assessment"]["assessed_at"],
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Review failed: {e}"
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # HELPER: EXPORT FOR CLI
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -377,6 +456,8 @@ def main():
         print("  upload-file <filename> <base64_content>")
         print("  operator-summary")
         print("  operator-visibility")
+        print("  review-suggestion <id> <action> [reason]")
+        print("    Actions: approve, deny, mark-eligible")
         return
     
     command = sys.argv[1]
@@ -420,6 +501,16 @@ def main():
     elif command == "operator-visibility":
         visibility = check_operator_visibility()
         print(json.dumps(visibility, indent=2))
+    
+    elif command == "review-suggestion":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_backend_contract.py review-suggestion <candidate_id> <action> [reason]")
+            return
+        candidate_id = sys.argv[2]
+        action = sys.argv[3]
+        reason = sys.argv[4] if len(sys.argv) > 4 else ""
+        result = review_suggestion(candidate_id, action, reason)
+        print(json.dumps(result, indent=2))
     
     else:
         print(f"Unknown command: {command}")

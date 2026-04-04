@@ -479,6 +479,35 @@ function OperatorPanel({
     }));
   };
 
+  // Helper to mark candidate as reviewed
+  const markCandidateReview = async (id: string, action: 'approve' | 'deny' | 'mark-eligible') => {
+    const reason = action === 'deny' ? 'Candidate rejected by operator' : '';
+    
+    try {
+      const response = await fetch(`/weslr_backend_contract.py/review-suggestion?candidate_id=${id}&action=${action}&reason=${encodeURIComponent(reason)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          console.log(`Successfully marked ${id} as ${action}`, result);
+          // Refresh the operator summary to show updated state
+          fetchOperatorSummary();
+        } else {
+          console.error(`Failed to mark ${id} as ${action}:`, result.error);
+        }
+      } else {
+        console.error(`HTTP error marking ${id} as ${action}:`, response.statusText);
+      }
+    } catch (error) {
+      console.error(`Error marking ${id} as ${action}:`, error);
+      // Fallback: just log for now if fetch fails (development mode)
+      console.log(`Development mode: Would mark ${id} as ${action}`);
+    }
+  };
+
   // Render a single Weslr candidate card
   const renderWeslrCandidate = (c: WeslrCandidate) => {
     const isExpanded = expandedCandidates[c.id] || false;
@@ -553,6 +582,57 @@ function OperatorPanel({
             }}>
               {c.weslr_assessment.reasoning}
             </p>
+            
+            {/* Review Actions */}
+            <div style={{ 
+              marginTop: '0.5rem', 
+              display: 'flex', 
+              gap: '0.5rem',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); markCandidateReview(c.id, 'approve'); }}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  backgroundColor: '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ✓ Approve
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); markCandidateReview(c.id, 'deny'); }}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  backgroundColor: '#ef4444',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ Deny
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); markCandidateReview(c.id, 'mark-eligible'); }}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  backgroundColor: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ✔ Mark Eligible
+              </button>
+            </div>
           </div>
         )}
       </div>
