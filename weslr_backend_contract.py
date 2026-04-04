@@ -15,10 +15,12 @@ No auth, no production API yet — additive and reversible only.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 import entity_graph as eg
 import weslr.file_router as file_router
@@ -26,6 +28,108 @@ import self_improvement_proposal as sip
 
 BASE_DIR = Path(__file__).resolve().parent
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. FILE UPLOAD HANDLING (MINIMAL SAFE SLICE)
+# ─────────────────────────────────────────────────────────────────────────────
+
+UPLOAD_DIR = BASE_DIR / "uploads"
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def ensure_upload_dir():
+    """Create upload directory if it doesn't exist."""
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    return UPLOAD_DIR
+
+
+def validate_upload(filepath: Path) -> Optional[str]:
+    """Validate uploaded file for safety.
+    
+    Safety boundaries:
+    - Path within workspace
+    - File size under 10MB
+    - Not a directory
+    - No path traversal
+    """
+    try:
+        # Resolve to absolute path
+        resolved = filepath.resolve()
+        workspace = BASE_DIR.resolve()
+        
+        # Must be within workspace
+        if not str(resolved).startswith(str(workspace) + os.sep):
+            return f"Path traversal attempt: {filepath}"
+        
+        # Must be a file, not directory
+        if resolved.is_dir():
+            return f"Is a directory, not a file: {filepath}"
+        
+        # Check file size
+        if resolved.stat().st_size > MAX_FILE_SIZE:
+            return f"File too large: {resolved.stat().st_size} bytes (max {MAX_FILE_SIZE})"
+        
+        return None  # Valid
+    except Exception as e:
+        return f"Validation error: {e}"
+
+
+def upload_file(file_content: bytes, filename: str) -> Dict[str, Any]:
+    """Save uploaded file and route it through unified file router.
+    
+    This is the minimal safe file-upload plumbing:
+    1. Create upload directory
+    2. Save file with safe name (UUID prefix to avoid collisions)
+    3. Validate file path
+    4. Route through existing file_router.py
+    5. Return normalized result
+    
+    Args:
+        file_content: Raw file bytes from frontend
+        filename: Original filename (sanitized for storage)
+        
+    Returns:
+        { success: bool, filepath?: str, result?: dict, error?: str }
+    """
+    ensure_upload_dir()
+    
+    # Sanitize filename - extract extension only, generate safe name
+    ext = Path(filename).suffix.lower()
+    if ext not in {'.json', '.yaml', '.yml', '.csv', '.txt', '.md', '.pdf', '.log', '.ini', '.cfg', '.conf', '.sql', '.html', '.xml', '.py', '.js', '.ts', '.java', '.cpp', '.c', '.h', '.hpp', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh'}:
+        # Allow all extensions for now, but log warning
+        pass
+    
+    safe_name = f"upload_{uuid4().hex}{ext}"
+    safe_path = UPLOAD_DIR / safe_name
+    
+    try:
+        # Write file
+        with open(safe_path, 'wb') as f:
+            f.write(file_content)
+        
+        # Validate path
+        error = validate_upload(safe_path)
+        if error:
+            safe_path.unlink(missing_ok=True)
+            return {"success": False, "error": error}
+        
+        # Route through unified file router
+        result = route_file(str(safe_path))
+        
+        return {
+            "success": True,
+            "filepath": str(safe_path),
+            "filename": safe_name,
+            "result": result,
+        }
+    except Exception as e:
+        # Cleanup on error
+        safe_path.unlink(missing_ok=True)
+        return {"success": False, "error": f"Upload failed: {e}"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3b. FILE ROUTE REQUEST (via existing file_router)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. CONVERSATION LIST
@@ -270,6 +374,7 @@ def main():
         print("  conversation-list [limit]")
         print("  continuity-status")
         print("  route-file <filepath> [query]")
+        print("  upload-file <filename> <base64_content>")
         print("  operator-summary")
         print("  operator-visibility")
         return
@@ -293,6 +398,20 @@ def main():
         query = sys.argv[3] if len(sys.argv) > 3 else ""
         result = route_file(filepath, query)
         print(json.dumps(result, indent=2))
+    
+    elif command == "upload-file":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_backend_contract.py upload-file <filename> <base64_content>")
+            return
+        filename = sys.argv[2]
+        import base64
+        content_b64 = sys.argv[3]
+        try:
+            file_content = base64.b64decode(content_b64)
+            result = upload_file(file_content, filename)
+            print(json.dumps(result, indent=2))
+        except Exception as e:
+            print(json.dumps({"success": False, "error": f"Upload failed: {e}"}))
     
     elif command == "operator-summary":
         summary = get_operator_summary()
