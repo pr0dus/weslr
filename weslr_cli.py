@@ -20,6 +20,7 @@ import self_improvement_proposal as sip
 import weslr.pdf_text as pdf_text
 import weslr.pdf_context as pdf_context
 import weslr.file_ingestion as file_ingestion
+import weslr.file_router as file_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -184,6 +185,9 @@ def main():
         print("  file-ingest <file>         Ingest text-based file (operator-only)")
         print("    Supports: .txt, .md, .json, .yaml, .yml, .py, .js, .ts, etc.")
         print("")
+        print("  file-route <file>          Unified file routing (operator-only)")
+        print("    Routes: PDF → PDF understanding, Text → Generic ingestion")
+        print("")
         print("    Examples:")
         print("      weslr_cli.py operator list")
         print("      weslr_cli.py operator detail prop-123")
@@ -195,6 +199,8 @@ def main():
         print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode full")
         print("      weslr_cli.py file-ingest /path/to/file.txt")
         print("      weslr_cli.py file-ingest /path/to/file.md")
+        print("      weslr_cli.py file-route /path/to/file.pdf")
+        print("      weslr_cli.py file-route /path/to/file.txt")
         print("")
         print("Usage: python weslr_cli.py <command> [args]")
         return
@@ -254,6 +260,13 @@ def main():
             return
         file_path = sys.argv[2]
         handle_file_ingest(file_path)
+
+    elif command == "file-route":
+        if len(sys.argv) < 3:
+            print("Usage: python weslr_cli.py file-route <file_path>")
+            return
+        file_path = sys.argv[2]
+        handle_file_route(file_path)
 
     else:
         print(f"Unknown command: {command}")
@@ -531,9 +544,61 @@ def handle_file_ingest(file_path: str):
     except Exception as e:
         print(f"✗ Unexpected error: {e}")
         return
+
+
+def handle_file_route(file_path: str):
+    """Route a file through unified file router (operator-only).
     
-    # Problem and cause
-    print(f"\nProblem:")
+    This routes files to appropriate understanding modules:
+    - PDF files → PDF understanding
+    - Text-based files → Generic ingestion
+    
+    Args:
+        file_path: Path to file (must be within workspace)
+    """
+    workspace_dir = str(Path(__file__).resolve().parent)
+    
+    # Default user query for context
+    user_query = "What is in this file?"
+    task_context = {"type": "file_analysis", "focus": "content"}
+    
+    try:
+        # Create file router
+        router = file_router.create_file_router(workspace_dir=workspace_dir)
+        
+        # Route file
+        result = router.route(file_path, user_query=user_query, task_context=task_context)
+        
+        print(f"{'=' * 60}")
+        print(f"FILE ROUTE RESULT")
+        print(f"{'=' * 60}")
+        print(f"File: {file_path}")
+        print(f"Category: {result.category}")
+        print(f"File Type: {result.file_type}")
+        print(f"Content Type: {result.content_type}")
+        print(f"Relevance: {result.relevance}")
+        print(f"Relevance Reason: {result.relevance_reason}")
+        print(f"Content Length: {len(result.content)} chars")
+        print(f"{'=' * 60}")
+        print()
+        
+        # Show content (truncated if needed)
+        print(result.content[:5000])
+        if len(result.content) > 5000:
+            print(f"\n... [{len(result.content)} chars total]")
+        
+        print()
+        print(f"{'=' * 60}")
+        
+    except file_router.FileRouterError as e:
+        print(f"✗ File routing error: {e}")
+        return
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
+        return
+
+
+def handle_operator_detail(proposal_id: str):
     print(f"  {result.get('problem', '(none)')}")
     print(f"\nLikely Cause:")
     print(f"  {result.get('likely_cause', '(none)')}")
