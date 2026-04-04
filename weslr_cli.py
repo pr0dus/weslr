@@ -17,6 +17,8 @@ import metacognition as met
 import self_referential as sr
 import belief_system as bs
 import self_improvement_proposal as sip
+import weslr.pdf_text as pdf_text
+import weslr.pdf_context as pdf_context
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -174,12 +176,18 @@ def main():
         print("      list                       List all proposals (operator-only)")
         print("      review <id> <action>       Review a proposal")
         print("        Actions: approve, deny, mark-eligible")
+        print("")
+        print("  pdf-extract <file>         Extract text from PDF (operator-only)")
+        print("    --mode <summary|excerpts|full>  Output mode (default: summary)")
         print("    Examples:")
         print("      weslr_cli.py operator list")
         print("      weslr_cli.py operator detail prop-123")
         print("      weslr_cli.py operator review prop-123 approve")
         print("      weslr_cli.py operator review prop-123 deny 'Missing tests'")
         print("      weslr_cli.py operator review prop-123 mark-eligible")
+        print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode summary")
+        print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode excerpts")
+        print("      weslr_cli.py pdf-extract /path/to/file.pdf --mode full")
         print("")
         print("Usage: python weslr_cli.py <command> [args]")
         return
@@ -220,6 +228,18 @@ def main():
 
     elif command == "operator":
         handle_operator_command()
+
+    elif command == "pdf-extract":
+        if len(sys.argv) < 3:
+            print("Usage: python weslr_cli.py pdf-extract <pdf_file_path> [--mode summary|excerpts|full]")
+            return
+        # Parse arguments
+        pdf_path = sys.argv[2]
+        mode = "summary"  # default
+        for i, arg in enumerate(sys.argv):
+            if arg == "--mode" and i + 1 < len(sys.argv):
+                mode = sys.argv[i + 1]
+        handle_pdf_extract(pdf_path, mode)
 
     else:
         print(f"Unknown command: {command}")
@@ -295,6 +315,113 @@ def handle_operator_list():
     
     if not proposals:
         print("(No proposals)")
+
+
+def handle_pdf_extract(pdf_path: str, mode: str = "summary"):
+    """Extract and analyze PDF context (operator-only).
+    
+    This is a context-aware PDF extraction function that:
+    - Validates the path is within workspace
+    - Extracts only text content (no images, no code)
+    - Connects to user query and task context
+    - Returns formatted output with relevance assessment
+    
+    Args:
+        pdf_path: Path to PDF file (must be within workspace)
+        mode: Output mode - summary (compact), excerpts (relevant sections), full (all text)
+    """
+    workspace_dir = str(Path(__file__).resolve().parent)
+    
+    # Default user query for context (will be replaced by actual query in future)
+    user_query = "What is in this document?"
+    task_context = {"type": "document_analysis", "focus": "content"}
+    
+    # Validate mode
+    valid_modes = ["summary", "excerpts", "full"]
+    if mode not in valid_modes:
+        mode = "summary"  # Default
+    
+    try:
+        # Read PDF bytes first (for context_aware_pdf)
+        with open(pdf_path, 'rb') as f:
+            pdf_bytes = f.read()
+        
+        # Create context-aware PDF analysis using bytes
+        pdf_ctx = pdf_context.create_pdf_context(
+            pdf_bytes,
+            user_query=user_query,
+            task_context=task_context,
+            max_chars=50000,  # 50KB for chat context
+        )
+        
+        # Get formatted output
+        output = pdf_context.context_aware_pdf(
+            pdf_bytes,
+            user_query=user_query,
+            task_context=task_context,
+            max_chars=50000,
+        )
+        
+        # Generate mode-specific output
+        if mode == "summary":
+            output = pdf_context.context_aware_pdf_summary(
+                pdf_bytes,
+                user_query=user_query,
+                task_context=task_context,
+                max_chars=1500,
+            )
+        elif mode == "excerpts":
+            output = pdf_context.context_aware_pdf_excerpts(
+                pdf_bytes,
+                user_query=user_query,
+                task_context=task_context,
+                max_chars=5000,
+            )
+        else:  # full
+            output = pdf_context.context_aware_pdf(
+                pdf_bytes,
+                user_query=user_query,
+                task_context=task_context,
+                max_chars=50000,
+            )
+        
+        # Also show raw extracted text for review
+        raw_text = pdf_text.sanitize_extracted_text(pdf_ctx.extracted_text)
+        
+        print(f"{'=' * 60}")
+        print(f"PDF CONTEXT ANALYSIS")
+        print(f"{'=' * 60}")
+        print(f"File: {pdf_path}")
+        print(f"Relevance: {pdf_ctx.relevance}")
+        print(f"Relevance Reason: {pdf_ctx.relevance_reason}")
+        print(f"Content Length: {len(pdf_ctx.extracted_text)} chars")
+        print(f"{'=' * 60}")
+        print()
+        
+        # Show main output (context-aware)
+        print(output[:8000])
+        if len(output) > 8000:
+            print(f"\n... [truncated, total: {len(output)} chars]")
+        
+        print()
+        print(f"{'=' * 60}")
+        print("RAW EXTRACTED TEXT (for operator review)")
+        print(f"{'=' * 60}")
+        print(raw_text[:3000])
+        if len(raw_text) > 3000:
+            print(f"\n... [{len(raw_text)} chars total]")
+        print(f"{'=' * 60}")
+
+        
+    except pdf_context.PDFContextExtractionError as e:
+        print(f"✗ PDF context extraction error: {e}")
+        return
+    except pdf_text.PDFTextExtractionError as e:
+        print(f"✗ PDF text extraction error: {e}")
+        return
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
+        return
 
 
 def handle_operator_detail(proposal_id: str):
