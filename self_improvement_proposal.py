@@ -3,6 +3,7 @@
 Creates, lists, and manages improvement proposals.
 Handles human approval workflow for safe bounded evolution.
 Phase 1B: Added test prompts, expected outputs, rollback commands, and patch plans.
+Phase 1C: Added operator-only visibility filtering via Weslr profiles.
 """
 
 from __future__ import annotations
@@ -15,6 +16,41 @@ from pathlib import Path
 PROPOSALS_FILE = "self_improvement_proposals.json"
 APPROVAL_LOG_FILE = "self_improvement_approval_log.json"
 BASE_DIR = Path(__file__).resolve().parent
+
+
+def _is_public_visible() -> bool:
+    """Check if self-improvement proposals should be visible to public.
+    
+    In public_test mode, proposals are operator-only and hidden from public.
+    Only operators can see and interact with proposals.
+    
+    Returns:
+        True if visible to public, False if operator-only
+    """
+    try:
+        from weslr.profiles import is_self_improvement_public
+        return is_self_improvement_public()
+    except Exception:
+        # Default to private for safety
+        return False
+
+
+def _filter_for_visibility(proposals: list[dict]) -> list[dict]:
+    """Filter proposals based on visibility settings.
+    
+    When public_visible is False, return empty list to prevent exposure.
+    When public_visible is True, return all proposals.
+    
+    Args:
+        proposals: List of proposal dictionaries
+        
+    Returns:
+        Filtered list of proposals
+    """
+    if _is_public_visible():
+        return proposals
+    # Operator-only mode: return empty list to prevent exposure
+    return []
 
 
 def get_proposals_path() -> Path:
@@ -153,6 +189,8 @@ def create_proposal(
         # Phase 1C safety additions
         "test_exempt": test_exempt,
         "test_exempt_justification": test_exempt_justification,
+        # Phase 1C: visibility metadata
+        "visibility": "operator_only",  # Always operator-only in public_test
     }
 
     # Load existing, append, save
@@ -168,6 +206,7 @@ def create_proposal(
         "created_at": now_ts,
         "has_tests": len(test_prompts or []) > 0,
         "has_rollback": rollback_command is not None,
+        "visibility": "operator_only",
     }
 
 
@@ -186,8 +225,11 @@ def list_proposals(
     """
     proposals = load_proposals()
 
-    # Apply status filter
-    if status:
+    # Apply visibility filter - in public_test mode, return empty list
+    proposals = _filter_for_visibility(proposals)
+
+    # Apply status filter only if proposals are visible
+    if status and proposals:
         proposals = [p for p in proposals if p.get("status") == status]
 
     # Sort by most recent first
@@ -201,11 +243,41 @@ def list_proposals(
         "total": len(proposals),
         "limit": limit,
         "proposals": proposals,
+        # Phase 1C: indicate visibility mode
+        "public_visible": _is_public_visible(),
     }
 
 
 def get_proposal(proposal_id: str) -> dict | None:
-    """Get a specific proposal by ID."""
+    """Get a specific proposal by ID.
+    
+    In operator-only mode, returns None to prevent exposure.
+    """
+    # Check visibility first
+    if not _is_public_visible():
+        # Operator-only mode: return None to prevent exposure
+        # Operators can use internal functions to access proposals directly
+        return None
+    
+    proposals = load_proposals()
+    for p in proposals:
+        if p.get("id") == proposal_id:
+            return p
+    return None
+
+
+def get_proposal_operator(proposal_id: str) -> dict | None:
+    """Get a specific proposal by ID - operator only.
+    
+    This function bypasses visibility filtering for operator use.
+    Should only be called by operator code paths.
+    
+    Args:
+        proposal_id: ID of proposal to retrieve
+        
+    Returns:
+        dict with proposal details or None if not found
+    """
     proposals = load_proposals()
     for p in proposals:
         if p.get("id") == proposal_id:
@@ -226,7 +298,7 @@ def approve_proposal(proposal_id: str, approved_by: str) -> dict:
     Returns:
         dict with approval details or error
     """
-    proposal = get_proposal(proposal_id)
+    proposal = get_proposal_operator(proposal_id)
     if not proposal:
         return {
             "ok": False,
@@ -282,7 +354,7 @@ def deny_proposal(proposal_id: str, reason: str) -> dict:
     Returns:
         dict with denial details or error
     """
-    proposal = get_proposal(proposal_id)
+    proposal = get_proposal_operator(proposal_id)
     if not proposal:
         return {
             "ok": False,
@@ -329,10 +401,16 @@ def deny_proposal(proposal_id: str, reason: str) -> dict:
 
 
 def build_proposal_report() -> dict:
-    """Build a summary report of all proposals."""
+    """Build a summary report of all proposals.
+    
+    In operator-only mode, returns reduced report without proposal details.
+    """
     proposals = load_proposals()
     log = load_approval_log()
 
+    # Apply visibility filter - count but don't expose details
+    public_visible = _is_public_visible()
+    
     status_counts = {"proposed": 0, "approved": 0, "rejected": 0}
     with_tests = 0
     with_rollback = 0
@@ -351,7 +429,7 @@ def build_proposal_report() -> dict:
         if p.get("patch_plan"):
             with_patch_plan += 1
 
-    return {
+    result = {
         "ok": True,
         "total_proposals": len(proposals),
         "by_status": status_counts,
@@ -360,4 +438,14 @@ def build_proposal_report() -> dict:
         "with_rollback": with_rollback,
         "with_patch_plan": with_patch_plan,
         "generated_at": int(time.time()),
+        "public_visible": public_visible,
     }
+
+    # Only include proposal details if visible to public
+    if public_visible:
+        result["proposals"] = proposals
+    else:
+        # Operator-only: include summary but not full details
+        result["summary_only"] = True
+
+    return result
