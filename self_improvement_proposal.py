@@ -173,7 +173,16 @@ def create_proposal(
         "expected_benefit": expected_benefit,
         "risk_level": risk_level,
         "created_at": now_ts,
-        "status": "proposed",
+        # Phase 1D: explicit review state
+        "status": "pending_review",  # New proposals start in pending review
+        "review": {
+            "state": "pending",  # pending | approved | denied | applied
+            "requested_at": now_ts,
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "review_notes": None,
+            "review_type": "operator",  # operator | automated
+        },
         "approval": {
             "requested_at": now_ts,
             "approved_by": None,
@@ -202,22 +211,25 @@ def create_proposal(
         "ok": True,
         "proposal_id": proposal_id,
         "title": title,
-        "status": "status",
+        "status": "pending_review",  # Phase 1D: new proposals start in pending review
         "created_at": now_ts,
         "has_tests": len(test_prompts or []) > 0,
         "has_rollback": rollback_command is not None,
         "visibility": "operator_only",
+        "review_state": "pending",  # Phase 1D: explicit review state
     }
 
 
 def list_proposals(
     status: str | None = None,
+    review_state: str | None = None,
     limit: int = 50,
 ) -> dict:
-    """List proposals, optionally filtered by status.
+    """List proposals, optionally filtered by status or review state.
 
     Args:
-        status: Filter by status (proposed | approved | rejected)
+        status: Filter by status (pending_review | approved | rejected | applied)
+        review_state: Filter by review state (pending | approved | denied | applied)
         limit: Maximum results to return
 
     Returns:
@@ -228,8 +240,12 @@ def list_proposals(
     # Apply visibility filter - in public_test mode, return empty list
     proposals = _filter_for_visibility(proposals)
 
-    # Apply status filter only if proposals are visible
-    if status and proposals:
+    # Apply review_state filter first (more specific)
+    if review_state and proposals:
+        proposals = [p for p in proposals if p.get("review", {}).get("state") == review_state]
+    
+    # Apply status filter if no review_state filter and proposals are visible
+    if status and proposals and not review_state:
         proposals = [p for p in proposals if p.get("status") == status]
 
     # Sort by most recent first
@@ -298,50 +314,20 @@ def approve_proposal(proposal_id: str, approved_by: str) -> dict:
     Returns:
         dict with approval details or error
     """
-    proposal = get_proposal_operator(proposal_id)
-    if not proposal:
-        return {
-            "ok": False,
-            "error": f"Proposal not found: {proposal_id}",
-        }
-
-    now_ts = int(time.time())
-
-    # Update proposal
-    proposal["status"] = "approved"
-    proposal["approval"]["approved_by"] = approved_by
-    proposal["approval"]["approved_at"] = now_ts
-
-    # Save proposal
-    proposals = load_proposals()
-    for i, p in enumerate(proposals):
-        if p.get("id") == proposal_id:
-            proposals[i] = proposal
-            break
-    save_proposals(proposals)
-
-    # Record in approval log
-    approval_entry = {
-        "id": f"approv-{now_ts}",
-        "proposal_id": proposal_id,
-        "action": "approved",
-        "approved_by": approved_by,
-        "timestamp": now_ts,
-        "notes": f"Proposal approved in Phase 1A (no code applied)",
-    }
-
-    log = load_approval_log()
-    log.append(approval_entry)
-    save_approval_log(log)
-
-    return {
-        "ok": True,
-        "proposal_id": proposal_id,
-        "status": "approved",
-        "approved_by": approved_by,
-        "approved_at": now_ts,
-        "note": "Phase 1A: No code changes applied. Status updated to approved.",
-    }
+    # Use the new update_review_state function
+    result = update_review_state(
+        proposal_id=proposal_id,
+        new_state="approved",
+        reviewed_by=approved_by,
+        review_notes="Proposal approved - Phase 1A",
+        review_type="operator",
+    )
+    
+    if result.get("ok"):
+        # Add Phase 1A note for backwards compatibility
+        result["note"] = "Phase 1A: No code changes applied. Status updated to approved."
+    
+    return result
 
 
 def deny_proposal(proposal_id: str, reason: str) -> dict:
@@ -354,6 +340,55 @@ def deny_proposal(proposal_id: str, reason: str) -> dict:
     Returns:
         dict with denial details or error
     """
+    # Use the new update_review_state function
+    result = update_review_state(
+        proposal_id=proposal_id,
+        new_state="denied",
+        reviewed_by="human",
+        review_notes=reason,
+        review_type="operator",
+    )
+    
+    return result
+
+
+def update_review_state(
+    proposal_id: str,
+    new_state: str,
+    reviewed_by: str,
+    review_notes: str | None = None,
+    review_type: str = "operator",
+) -> dict:
+    """Update the review state of a proposal.
+    
+    This is the primary operator review state transition function.
+    It enforces explicit state transitions and tracks who reviewed.
+    
+    States:
+        - pending: New proposal awaiting review
+        - approved: Proposal approved by operator
+        - denied: Proposal denied by operator
+        - applied: Proposal applied to codebase
+    
+    Args:
+        proposal_id: ID of proposal to update
+        new_state: New review state (pending | approved | denied | applied)
+        reviewed_by: Who performed the review (e.g., "human", "automated")
+        review_notes: Optional notes about the review decision
+        review_type: Type of review (operator | automated)
+        
+    Returns:
+        dict with review update details or error
+    """
+    # Validate state
+    allowed_states = ["pending", "approved", "denied", "applied"]
+    if new_state not in allowed_states:
+        return {
+            "ok": False,
+            "error": f"Invalid review_state. Must be one of: {allowed_states}",
+        }
+    
+    # Get proposal (operator access, bypasses visibility)
     proposal = get_proposal_operator(proposal_id)
     if not proposal:
         return {
@@ -363,10 +398,26 @@ def deny_proposal(proposal_id: str, reason: str) -> dict:
 
     now_ts = int(time.time())
 
-    # Update proposal
-    proposal["status"] = "rejected"
-    proposal["approval"]["denied_at"] = now_ts
-    proposal["approval"]["denial_reason"] = reason
+    # Update review metadata
+    proposal["review"]["state"] = new_state
+    proposal["review"]["reviewed_by"] = reviewed_by
+    proposal["review"]["reviewed_at"] = now_ts
+    proposal["review"]["review_notes"] = review_notes
+    proposal["review"]["review_type"] = review_type
+    
+    # Update status based on review state
+    if new_state == "approved":
+        proposal["status"] = "approved"
+        proposal["approval"]["approved_by"] = reviewed_by
+        proposal["approval"]["approved_at"] = now_ts
+    elif new_state == "denied":
+        proposal["status"] = "rejected"
+        proposal["approval"]["denied_at"] = now_ts
+        proposal["approval"]["denial_reason"] = review_notes or "Operator denied"
+    elif new_state == "applied":
+        proposal["status"] = "applied"
+        proposal["applied_at"] = now_ts
+        proposal["applied_by"] = reviewed_by
 
     # Save proposal
     proposals = load_proposals()
@@ -376,27 +427,28 @@ def deny_proposal(proposal_id: str, reason: str) -> dict:
             break
     save_proposals(proposals)
 
-    # Record in approval log
-    approval_entry = {
-        "id": f"approv-{now_ts}",
+    # Record in review log
+    review_entry = {
+        "id": f"rev-{now_ts}",
         "proposal_id": proposal_id,
-        "action": "denied",
-        "approved_by": None,
-        "denial_reason": reason,
+        "action": f"review_{new_state}",
+        "reviewed_by": reviewed_by,
+        "review_state": new_state,
+        "review_notes": review_notes,
         "timestamp": now_ts,
-        "notes": f"Proposal denied: {reason}",
     }
 
+    # Append to approval log (shared log for simplicity)
     log = load_approval_log()
-    log.append(approval_entry)
+    log.append(review_entry)
     save_approval_log(log)
 
     return {
         "ok": True,
         "proposal_id": proposal_id,
-        "status": "rejected",
-        "denial_reason": reason,
-        "denied_at": now_ts,
+        "review_state": new_state,
+        "reviewed_by": reviewed_by,
+        "reviewed_at": now_ts,
     }
 
 
@@ -411,12 +463,20 @@ def build_proposal_report() -> dict:
     # Apply visibility filter - count but don't expose details
     public_visible = _is_public_visible()
     
-    status_counts = {"proposed": 0, "approved": 0, "rejected": 0}
+    # Phase 1D: Updated status counts to include review states
+    status_counts = {"pending_review": 0, "approved": 0, "rejected": 0, "applied": 0}
+    review_state_counts = {"pending": 0, "approved": 0, "denied": 0, "applied": 0}
     with_tests = 0
     with_rollback = 0
     with_patch_plan = 0
 
     for p in proposals:
+        # Phase 1D: Count by review_state first (more granular)
+        review_state = p.get("review", {}).get("state", "pending")
+        if review_state in review_state_counts:
+            review_state_counts[review_state] += 1
+        
+        # Also count by status for backwards compatibility
         status = p.get("status", "unknown")
         if status in status_counts:
             status_counts[status] += 1
@@ -439,6 +499,8 @@ def build_proposal_report() -> dict:
         "with_patch_plan": with_patch_plan,
         "generated_at": int(time.time()),
         "public_visible": public_visible,
+        # Phase 1D: Review state counts (more granular than status)
+        "by_review_state": review_state_counts,
     }
 
     # Only include proposal details if visible to public
