@@ -264,7 +264,7 @@ def handle_operator_command():
 
 def handle_operator_list():
     """List all proposals (operator-only, bypasses public visibility)."""
-    result = sip.list_proposals()
+    result = sip.list_proposals_operator()
     
     if not result.get("ok"):
         print(f"✗ Error: {result.get('error', 'Unknown error')}")

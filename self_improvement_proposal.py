@@ -227,6 +227,11 @@ def list_proposals(
 ) -> dict:
     """List proposals, optionally filtered by status or review state.
 
+    This function respects visibility settings and may return empty results
+    when public visibility is disabled (operator-only mode).
+    
+    For operator access, use list_proposals_operator() instead.
+
     Args:
         status: Filter by status (pending_review | approved | rejected | applied)
         review_state: Filter by review state (pending | approved | denied | applied)
@@ -261,6 +266,53 @@ def list_proposals(
         "proposals": proposals,
         # Phase 1C: indicate visibility mode
         "public_visible": _is_public_visible(),
+    }
+
+
+def list_proposals_operator(
+    status: str | None = None,
+    review_state: str | None = None,
+    limit: int = 50,
+) -> dict:
+    """List proposals for operator use - bypasses visibility filtering.
+
+    This function is for operator CLI only and always returns full proposal data
+    regardless of public visibility settings.
+
+    Args:
+        status: Filter by status (pending_review | approved | rejected | applied)
+        review_state: Filter by review state (pending | approved | denied | applied)
+        limit: Maximum results to return
+
+    Returns:
+        dict with proposals list and metadata
+    """
+    proposals = load_proposals()
+
+    # NO visibility filter - operators always see all proposals
+
+    # Apply review_state filter first (more specific)
+    if review_state and proposals:
+        proposals = [p for p in proposals if p.get("review", {}).get("state") == review_state]
+    
+    # Apply status filter if no review_state filter
+    if status and proposals and not review_state:
+        proposals = [p for p in proposals if p.get("status") == status]
+
+    # Sort by most recent first
+    proposals = sorted(proposals, key=lambda p: p.get("created_at", 0), reverse=True)
+
+    # Apply limit
+    proposals = proposals[:limit]
+
+    return {
+        "ok": True,
+        "total": len(proposals),
+        "limit": limit,
+        "proposals": proposals,
+        # Indicate operator mode
+        "public_visible": False,
+        "mode": "operator",
     }
 
 
