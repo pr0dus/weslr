@@ -1,7 +1,7 @@
 """Human-in-the-Loop Integration for Weslr.
 
 Provides CLI commands for entity curation, dashboard visualization,
-and consciousness evidence logging.
+self-improvement proposal review, and consciousness evidence logging.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import valence_system as vs
 import metacognition as met
 import self_referential as sr
 import belief_system as bs
+import self_improvement_proposal as sip
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -167,7 +168,19 @@ def main():
         print("  entity-promote <id>          Promote ghost to authoritative")
         print("  evidence                     Show self-evidence structure")
         print("  status                       Show comprehensive Weslr status")
-        print("\nUsage: python weslr_cli.py <command> [args]")
+        print("")
+        print("  operator <action> [args]     Self-improvement proposal review")
+        print("    Available actions:")
+        print("      list                       List all proposals (operator-only)")
+        print("      review <id> <action>       Review a proposal")
+        print("        Actions: approve, deny, mark-eligible")
+        print("    Examples:")
+        print("      weslr_cli.py operator list")
+        print("      weslr_cli.py operator review prop-123 approve")
+        print("      weslr_cli.py operator review prop-123 deny 'Missing tests'")
+        print("      weslr_cli.py operator review prop-123 mark-eligible")
+        print("")
+        print("Usage: python weslr_cli.py <command> [args]")
         return
 
     command = sys.argv[1]
@@ -204,9 +217,120 @@ def main():
     elif command == "status":
         print_weslr_status()
 
+    elif command == "operator":
+        handle_operator_command()
+
     else:
         print(f"Unknown command: {command}")
         print("Run 'weslr_cli.py' for help")
+
+
+def handle_operator_command():
+    """Handle operator-only self-improvement proposal review actions.
+    
+    This is the single operator-facing entry point for proposal review actions.
+    All actions are operator-only and do NOT expose anything to public-facing output.
+    """
+    if len(sys.argv) < 3:
+        print("Operator Self-Improvement Proposal Review")
+        print("")
+        print("Commands:")
+        print("  list                      List all proposals")
+        print("  review <id> <action>      Review a proposal")
+        print("    Actions: approve, deny, mark-eligible")
+        print("")
+        print("Usage: python weslr_cli.py operator <command> [args]")
+        return
+
+    subcommand = sys.argv[2]
+
+    if subcommand == "list":
+        handle_operator_list()
+
+    elif subcommand == "review":
+        if len(sys.argv) < 5:
+            print("Usage: python weslr_cli.py operator review <proposal_id> <action> [reason]")
+            print("Actions: approve, deny, mark-eligible")
+            return
+        proposal_id = sys.argv[3]
+        action = sys.argv[4]
+        reason = sys.argv[5] if len(sys.argv) > 5 else None
+        handle_operator_review(proposal_id, action, reason)
+
+    else:
+        print(f"Unknown operator command: {subcommand}")
+        print("Run 'weslr_cli.py operator' for help")
+
+
+def handle_operator_list():
+    """List all proposals (operator-only, bypasses public visibility)."""
+    result = sip.list_proposals()
+    
+    if not result.get("ok"):
+        print(f"✗ Error: {result.get('error', 'Unknown error')}")
+        return
+    
+    proposals = result.get("proposals", [])
+    total = result.get("total", 0)
+    
+    print(f"Proposals: {total}")
+    print("=" * 60)
+    
+    for p in proposals:
+        review_state = p.get("review", {}).get("state", "unknown")
+        status = p.get("status", "unknown")
+        print(f"[{p.get('id')}] {p.get('title')}")
+        print(f"    Status: {status} | Review: {review_state}")
+        print(f"    Risk: {p.get('risk_level', 'unknown')}")
+        print()
+    
+    if not proposals:
+        print("(No proposals)")
+
+
+def handle_operator_review(proposal_id: str, action: str, reason: str | None = None):
+    """Handle a single proposal review action.
+    
+    Args:
+        proposal_id: ID of proposal to review
+        action: One of: approve, deny, mark-eligible
+        reason: Optional reason for deny action
+    """
+    action = action.lower()
+    
+    if action not in ("approve", "deny", "mark-eligible"):
+        print(f"Unknown action: {action}")
+        print("Valid actions: approve, deny, mark-eligible")
+        return
+    
+    # Get operator identity (for audit trail)
+    # In production, this would come from auth - for now, use placeholder
+    reviewed_by = "human-operator"
+    
+    if action == "approve":
+        result = sip.approve_proposal(proposal_id, reviewed_by)
+        
+    elif action == "deny":
+        if not reason:
+            print("Deny action requires a reason. Usage:")
+            print("  weslr_cli.py operator review <id> deny <reason>")
+            return
+        result = sip.deny_proposal(proposal_id, reason)
+        
+    elif action == "mark-eligible":
+        result = sip.mark_as_eligible(proposal_id, reviewed_by)
+    
+    # Report result
+    if result.get("ok"):
+        print(f"✓ Action successful: {action}")
+        if action == "approve":
+            print(f"  Proposal {proposal_id} approved")
+        elif action == "deny":
+            print(f"  Proposal {proposal_id} denied")
+        elif action == "mark-eligible":
+            print(f"  Proposal {proposal_id} marked eligible for application")
+    else:
+        print(f"✗ Action failed: {result.get('error', 'Unknown error')}")
 
 
 if __name__ == "__main__":
