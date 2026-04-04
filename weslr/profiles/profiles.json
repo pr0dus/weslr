@@ -1,0 +1,58 @@
+{
+  "profiles": {
+    "public_test": {
+      "enabled": true,
+      "settings": {
+        "public_mode": true,
+        "self_improvement_visible_to_public": false,
+        "read_only_tools": true,
+        "max_input_length": 10000,
+        "max_response_size": 102400,
+        "rate_limit_requests": 10,
+        "rate_limit_window_minutes": 1,
+        "debug_mode": false
+      }
+    },
+    "managed_customer": {
+      "enabled": false,
+      "settings": {
+        "public_mode": true,
+        "self_improvement_visible_to_public": false,
+        "read_only_tools": true,
+        "max_input_length": 10000,
+        "max_response_size": 102400,
+        "rate_limit_requests": 50,
+        "rate_limit_window_minutes": 5,
+        "debug_mode": false
+      }
+    },
+    "owner_sovereign": {
+      "enabled": false,
+      "settings": {
+        "public_mode": false,
+        "self_improvement_visible_to_public": false,
+        "read_only_tools": false,
+        "max_input_length": 100000,
+        "max_response_size": 1024000,
+        "rate_limit_requests": 1000,
+        "rate_limit_window_minutes": 60,
+        "debug_mode": false
+      }
+    },
+    "development": {
+      "enabled": false,
+      "settings": {
+        "public_mode": false,
+        "self_improvement_visible_to_public": false,
+        "read_only_tools": false,
+        "max_input_length": 1000000,
+        "max_response_size": 10485760,
+        "rate_limit_requests": 10000,
+        "rate_limit_window_minutes": 60,
+        "debug_mode": true
+      }
+    }
+  },
+  "active_profile": "public_test",
+  "last_updated": "2026-04-04T10:15:00Z"
+}
