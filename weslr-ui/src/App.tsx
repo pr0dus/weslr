@@ -1,4 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  fetchContinuityStatus, 
+  fetchOperatorVisibility, 
+  fetchOperatorSummary,
+  fetchConversations,
+  ContinuityStatus,
+  OperatorVisibility,
+  OperatorSummary,
+  Conversation
+} from './api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout Components (App Shell v1)
@@ -7,7 +17,7 @@ import React, { useState } from 'react';
 const LEFT_WIDTH = 260;
 const RIGHT_WIDTH = 320;
 
-function Sidebar() {
+function Sidebar({ conversations }: { conversations: Conversation[] }) {
   return (
     <aside
       style={{
@@ -25,6 +35,11 @@ function Sidebar() {
             <button style={{ width: '100%', textAlign: 'left' }}>
               💬 Conversations
             </button>
+            <div style={{ fontSize: '0.75rem', color: '#666', marginLeft: '0.5rem', marginTop: '0.25rem' }}>
+              {conversations.length === 0 
+                ? 'No conversations yet' 
+                : `${conversations.length} conversation${conversations.length !== 1 ? 's' : ''}`}
+            </div>
           </li>
           <li style={{ marginBottom: '0.25rem' }}>
             <button style={{ width: '100%', textAlign: 'left' }}>
@@ -47,8 +62,8 @@ function Sidebar() {
   );
 }
 
-function ChatSurface() {
-  const [message, setMessage] = React.useState('');
+function ChatSurface({ continuity }: { continuity: ContinuityStatus }) {
+  const [message, setMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
   return (
@@ -216,21 +231,39 @@ function ChatSurface() {
         style={{
           padding: '0.25rem 1rem',
           fontSize: '0.75rem',
-          backgroundColor: '#f0f7ff',
+          backgroundColor: continuity.active ? '#e6ffe6' : '#ffe6e6',
           borderTop: '1px solid #e0e0e0',
           display: 'flex',
           justifyContent: 'space-between',
         }}
       >
-        <span>⏳ Continuity: active</span>
+        <span>
+          ⏳ Continuity: {continuity.active ? 'active' : 'inactive'}
+          {continuity.last_updated && (
+            <span style={{ marginLeft: '0.5rem', color: '#666' }}>
+              (last: {continuity.last_updated.slice(0, 19).replace('T', ' ')})
+            </span>
+          )}
+        </span>
         <span>📄 Structured data routing: enabled</span>
       </section>
     </main>
   );
 }
 
-function OperatorPanel() {
-  const [visible, setVisible] = useState(false);
+function OperatorPanel({ 
+  visibility, 
+  summary 
+}: { 
+  visibility: OperatorVisibility; 
+  summary: OperatorSummary; 
+}) {
+  const [visible, setVisible] = useState(visibility.visible);
+
+  // Update visibility when backend returns new value
+  useEffect(() => {
+    setVisible(visibility.visible);
+  }, [visibility.visible]);
 
   return (
     <aside
@@ -288,11 +321,27 @@ function OperatorPanel() {
                 backgroundColor: '#fff',
               }}
             >
-              <p style={{ color: '#333' }}>No active proposals.</p>
-              <p style={{ color: '#666', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                The operator pipeline is listening. When proposals arrive, they
-                will appear here.
-              </p>
+              {summary.total_proposals > 0 ? (
+                <>
+                  <p style={{ color: '#333' }}>
+                    {summary.total_proposals} total proposal{summary.total_proposals !== 1 ? 's' : ''}
+                  </p>
+                  <p style={{ color: '#666', fontSize: '0.75rem' }}>
+                    {summary.pending_reviews} pending review{summary.pending_reviews !== 1 ? 's' : ''}
+                  </p>
+                  <p style={{ color: '#666', fontSize: '0.75rem' }}>
+                    {summary.active_proposals.length} active
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: '#333' }}>No active proposals.</p>
+                  <p style={{ color: '#666', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+                    The operator pipeline is listening. When proposals arrive, they
+                    will appear here.
+                  </p>
+                </>
+              )}
             </div>
           </section>
 
@@ -306,7 +355,11 @@ function OperatorPanel() {
                 backgroundColor: '#fff',
               }}
             >
-              <p style={{ color: '#333' }}>Ready for review.</p>
+              <p style={{ color: '#333' }}>
+                {summary.pending_reviews > 0 
+                  ? `${summary.pending_reviews} item${summary.pending_reviews !== 1 ? 's' : ''} ready for review` 
+                  : 'Ready for review.'}
+              </p>
               <p style={{ color: '#666', fontSize: '0.75rem', marginTop: '0.5rem' }}>
                 Review state updates when operator proposals are received.
               </p>
@@ -319,6 +372,28 @@ function OperatorPanel() {
 }
 
 export default function App() {
+  const [continuity, setContinuity] = useState<ContinuityStatus>({ active: false });
+  const [visibility, setVisibility] = useState<OperatorVisibility>({ visible: true, reason: 'dev', can_review: true });
+  const [summary, setSummary] = useState<OperatorSummary>({ active_proposals: [], pending_reviews: 0, total_proposals: 0 });
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+
+  // Fetch data from backend contract
+  useEffect(() => {
+    const fetchData = async () => {
+      const [c, v, s, convs] = await Promise.all([
+        fetchContinuityStatus(),
+        fetchOperatorVisibility(),
+        fetchOperatorSummary(),
+        fetchConversations(20),
+      ]);
+      setContinuity(c);
+      setVisibility(v);
+      setSummary(s);
+      setConversations(convs);
+    };
+    fetchData();
+  }, []);
+
   return (
     <div
       style={{
@@ -327,9 +402,9 @@ export default function App() {
         flexDirection: 'row',
       }}
     >
-      <Sidebar />
-      <ChatSurface />
-      <OperatorPanel />
+      <Sidebar conversations={conversations} />
+      <ChatSurface continuity={continuity} />
+      <OperatorPanel visibility={visibility} summary={summary} />
     </div>
   );
 }
