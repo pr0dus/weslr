@@ -63,6 +63,113 @@ function Sidebar({ conversations }: { conversations: Conversation[] }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat Result Renderer for File Uploads
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ChatResult({ result }: { result: any }) {
+  if (!result) return null;
+
+  const isError = result.error || result.category === 'error';
+
+  return (
+    <div
+      style={{
+        padding: '0.75rem 1rem',
+        backgroundColor: isError ? '#ffe6e6' : '#e6f7ff',
+        borderRadius: '8px',
+        border: isError ? '1px solid #ff6b6b' : '1px solid #1890ff',
+        fontSize: '0.875rem',
+      }}
+    >
+      {isError ? (
+        <div>
+          <strong style={{ color: '#d93025' }}>⚠️ Upload Error</strong>
+          <p style={{ margin: '0.25rem 0 0 0', color: '#666' }}>{result.error || 'Unknown error'}</p>
+        </div>
+      ) : (
+        <>
+          <div
+            style={{
+              marginBottom: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <strong style={{ color: '#1890ff' }}>📄 File Routed:</strong>
+            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', backgroundColor: '#fff', padding: '0.125rem 0.25rem', borderRadius: '4px' }}>
+              {result.metadata?.source_file || result.filename || 'unnamed'}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              marginBottom: '0.5rem',
+            }}
+          >
+            {result.category && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.125rem 0.5rem',
+                  backgroundColor: '#e6f7ff',
+                  color: '#1890ff',
+                  borderRadius: '1rem',
+                }}
+              >
+                Category: {result.category}
+              </span>
+            )}
+            {result.relevance && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.125rem 0.5rem',
+                  backgroundColor: '#e6ffe6',
+                  color: '#52c41a',
+                  borderRadius: '1rem',
+                }}
+              >
+                Relevance: {result.relevance}
+              </span>
+            )}
+            {result.safety?.injection_risk && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.125rem 0.5rem',
+                  backgroundColor: '#f6ffed',
+                  color: '#73d13d',
+                  borderRadius: '1rem',
+                }}
+              >
+                Safe: {result.safety.injection_risk} risk
+              </span>
+            )}
+          </div>
+
+          <div
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#fff',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+              fontSize: '0.8rem',
+              overflowX: 'auto',
+            }}
+          >
+            {result.content || '[No content available]'}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ChatSurface({ 
   continuity, 
   onFileUploaded 
@@ -73,6 +180,14 @@ function ChatSurface({
   const [message, setMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome-1',
+      sender: 'weslr',
+      text: "Hello! I'm ready to help. Drop a file or start a conversation.",
+      timestamp: new Date().toISOString(),
+    },
+  ]);
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -88,11 +203,38 @@ function ChatSurface({
       const result = await uploadFileToBackend(file.name, base64Content);
       
       if (result.success) {
-        onFileUploaded(result.result);
+        const fileResult = result.result;
+        onFileUploaded(fileResult);
+        
+        // Add system message with file understanding result
+        const newMessage: ChatMessage = {
+          id: `file-${Date.now()}`,
+          sender: 'system',
+          text: `File uploaded: ${file.name}`,
+          timestamp: new Date().toISOString(),
+          result: fileResult,
+        };
+        setMessages(prev => [...prev, newMessage]);
       } else {
+        const errorMessage: ChatMessage = {
+          id: `error-${Date.now()}`,
+          sender: 'system',
+          text: `Upload failed`,
+          timestamp: new Date().toISOString(),
+          result: { error: result.error, category: 'error' },
+        };
+        setMessages(prev => [...prev, errorMessage]);
         onFileUploaded({ error: result.error, category: 'error' });
       }
     } catch (e) {
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        sender: 'system',
+        text: `Upload failed`,
+        timestamp: new Date().toISOString(),
+        result: { error: String(e), category: 'error' },
+      };
+      setMessages(prev => [...prev, errorMessage]);
       onFileUploaded({ error: String(e), category: 'error' });
     } finally {
       setIsUploading(false);
@@ -127,19 +269,24 @@ function ChatSurface({
             margin: '0 auto',
           }}
         >
-          <div style={{ padding: '0.5rem 1rem', backgroundColor: '#f0f7ff' }}>
-            <strong>🤖 Weslr:</strong> Hello! I'm ready to help. Drop a file or
-            start a conversation.
-          </div>
-          <div
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#f5f5f5',
-              alignSelf: 'flex-end',
-            }}
-          >
-            <strong>You:</strong> Can you analyze a JSON file for me?
-          </div>
+          {messages.map(msg => (
+            msg.result ? (
+              <ChatResult key={msg.id} result={msg.result} />
+            ) : (
+              <div
+                key={msg.id}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: msg.sender === 'you' ? '#f5f5f5' : '#f0f7ff',
+                  alignSelf: msg.sender === 'you' ? 'flex-end' : 'flex-start',
+                  borderRadius: msg.sender === 'you' ? '8px 8px 0 8px' : '8px 8px 8px 0',
+                }}
+              >
+                {msg.sender === 'weslr' && <strong>🤖 Weslr:</strong>}
+                <p style={{ margin: '0.25rem 0 0 0' }}>{msg.text}</p>
+              </div>
+            )
+          ))}
         </div>
       </section>
 
@@ -294,6 +441,18 @@ function ChatSurface({
       </section>
     </main>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ChatMessage {
+  id: string;
+  sender: 'weslr' | 'you' | 'system';
+  text: string;
+  timestamp: string;
+  result?: any;
 }
 
 function OperatorPanel({ 
