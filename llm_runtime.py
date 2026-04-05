@@ -12,17 +12,17 @@ from typing import Any
 
 from config import (
     BASE_DIR,
-    CIRCLEFORGE_FAILSAFE_DIR,
-    CIRCLEFORGE_LLM_ENABLED,
-    CIRCLEFORGE_LLM_PROVIDER,
-    CIRCLEFORGE_LLM_MODEL,
-    CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
-    CIRCLEFORGE_LLM_TEMPERATURE,
-    CIRCLEFORGE_LLM_MAX_TOKENS,
-    CIRCLEFORGE_EMBEDDED_MODEL_PATH,
-    CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL,
-    CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME,
-    CIRCLEFORGE_EVIDENCE_ROUTING_ENABLED,
+    WESLR_FAILSAFE_DIR,
+    WESLR_LLM_ENABLED,
+    WESLR_LLM_PROVIDER,
+    WESLR_LLM_MODEL,
+    WESLR_LLM_MAX_CONTEXT_CHARS,
+    WESLR_LLM_TEMPERATURE,
+    WESLR_LLM_MAX_TOKENS,
+    WESLR_EMBEDDED_MODEL_PATH,
+    WESLR_DEFAULT_EMBEDDED_MODEL,
+    WESLR_DEFAULT_EMBEDDED_MODEL_FILENAME,
+    WESLR_EVIDENCE_ROUTING_ENABLED,
     OLLAMA_HOST,
     OLLAMA_TIMEOUT_SECONDS,
     OPENAI_BASE_URL,
@@ -69,7 +69,7 @@ def _prompt(context: dict[str, Any]) -> dict[str, Any]:
 
 def build_role_context(context: dict[str, Any]) -> dict[str, Any]:
     text = json.dumps(context, ensure_ascii=False)
-    if len(text) <= CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS:
+    if len(text) <= WESLR_LLM_MAX_CONTEXT_CHARS:
         return context
     trimmed = dict(context)
     trimmed["proposed_reason"] = str(trimmed.get("proposed_reason", ""))[:240]
@@ -126,75 +126,74 @@ def _classify_prompt_for_routing(context: dict[str, Any]) -> tuple[str, str | No
 
 def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]:
     fallback = _fallback(role, context)
-    if not CIRCLEFORGE_LLM_ENABLED:
+    if not WESLR_LLM_ENABLED:
         return fallback
     
-    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
     
-    # Evidence-gated routing for embedded provider
-    if provider == "embedded" and CIRCLEFORGE_EVIDENCE_ROUTING_ENABLED:
-        category, location = _classify_prompt_for_routing(context)
-        
-        # Route based on category
-        if category == "TIME_SENSITIVE":
-            # Use system time API
-            try:
-                from evidence_api import get_system_time, get_cached_evidence, cache_evidence
-                cached = get_cached_evidence("system_time")
-                if cached:
-                    evidence = cached
-                else:
-                    evidence = get_system_time()
-                    cache_evidence("system_time", evidence)
-                
-                return {
-                    "kind": "inner_thought",
-                    "role": role,
-                    "summary": f"Current time: {evidence.get('date', 'unknown')} {evidence.get('time', 'unknown')}.",
-                    "concern": "Time tracking and awareness.",
-                    "intent": "To maintain temporal awareness.",
-                    "should_speak": False,
-                    "self_mod_hint": "",
-                    "source": "system_time",
-                    "provider": "embedded",
-                }
-            except Exception as e:
-                return _generate_uncertain_response(role, context, "system_time")
-        
-        if category == "WEATHER":
-            # Use weather API
-            try:
-                from evidence_api import get_weather, cache_evidence, get_cached_evidence
-                cached = get_cached_evidence("weather")
-                if cached:
-                    evidence = cached
-                else:
-                    evidence = get_weather(location)
-                    cache_evidence("weather", evidence)
-                
-                if evidence.get("kind") == "error":
-                    return _generate_uncertain_response(role, context, "weather")
-                
-                temp = evidence.get("temp_c") or evidence.get("temp_f")
-                desc = evidence.get("weather_desc") or "unknown"
-                return {
-                    "kind": "inner_thought",
-                    "role": role,
-                    "summary": f"Weather: {desc}. Temperature: {temp}C." if temp else f"Weather: {desc}.",
-                    "concern": f"Weather conditions in {evidence.get('location', 'unknown')}.",
-                    "intent": "To track current weather conditions.",
-                    "should_speak": False,
-                    "self_mod_hint": "",
-                    "source": "weather_api",
-                    "provider": "embedded",
-                }
-            except Exception as e:
-                return _generate_uncertain_response(role, context, "weather")
-        
-        if category == "UNSUPPORTED":
-            return _generate_uncertain_response(role, context, "unsupported")
+    # Evidence routing is provider-agnostic — must happen before provider selection
+    category, location = _classify_prompt_for_routing(context)
     
-    # Original routing for non-evidence or BOUNDED category
+    # Route based on category
+    if category == "TIME_SENSITIVE":
+        # Use system time API
+        try:
+            from evidence_api import get_system_time, get_cached_evidence, cache_evidence
+            cached = get_cached_evidence("system_time")
+            if cached:
+                evidence = cached
+            else:
+                evidence = get_system_time()
+                cache_evidence("system_time", evidence)
+            
+            return {
+                "kind": "inner_thought",
+                "role": role,
+                "summary": f"Current time: {evidence.get('date', 'unknown')} {evidence.get('time', 'unknown')}.",
+                "concern": "Time tracking and awareness.",
+                "intent": "To maintain temporal awareness.",
+                "should_speak": False,
+                "self_mod_hint": "",
+                "source": "system_time",
+                "provider": provider,
+            }
+        except Exception as e:
+            return _generate_uncertain_response(role, context, "system_time", provider)
+    
+    if category == "WEATHER":
+        # Use weather API
+        try:
+            from evidence_api import get_weather, cache_evidence, get_cached_evidence
+            cached = get_cached_evidence("weather")
+            if cached:
+                evidence = cached
+            else:
+                evidence = get_weather(location)
+                cache_evidence("weather", evidence)
+            
+            if evidence.get("kind") == "error":
+                return _generate_uncertain_response(role, context, "weather", provider)
+            
+            temp = evidence.get("temp_c") or evidence.get("temp_f")
+            desc = evidence.get("weather_desc") or "unknown"
+            return {
+                "kind": "inner_thought",
+                "role": role,
+                "summary": f"Weather: {desc}. Temperature: {temp}C." if temp else f"Weather: {desc}.",
+                "concern": f"Weather conditions in {evidence.get('location', 'unknown')}.",
+                "intent": "To track current weather conditions.",
+                "should_speak": False,
+                "self_mod_hint": "",
+                "source": "weather_api",
+                "provider": provider,
+            }
+        except Exception as e:
+            return _generate_uncertain_response(role, context, "weather", provider)
+    
+    if category == "UNSUPPORTED":
+        return _generate_uncertain_response(role, context, "unsupported", provider)
+    
+    # Evidence routing is complete. Now select provider for bounded reasoning.
     if provider == "embedded":
         guard_ok, guard_msg = prestart_guard()
         if not guard_ok:
@@ -267,10 +266,10 @@ def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str,
     socket.setdefaulttimeout(OLLAMA_TIMEOUT_SECONDS)
     
     prompt_data = {
-        "model": CIRCLEFORGE_LLM_MODEL,
+        "model": WESLR_LLM_MODEL,
         "prompt": json.dumps(_prompt(build_role_context(context)), ensure_ascii=False),
         "stream": False,
-        "options": {"temperature": CIRCLEFORGE_LLM_TEMPERATURE, "num_predict": CIRCLEFORGE_LLM_MAX_TOKENS},
+        "options": {"temperature": WESLR_LLM_TEMPERATURE, "num_predict": WESLR_LLM_MAX_TOKENS},
     }
     
     body = json.dumps(prompt_data).encode("utf-8")
@@ -299,13 +298,13 @@ def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback
     if not OPENAI_API_KEY:
         return fallback
     body = json.dumps({
-        "model": CIRCLEFORGE_LLM_MODEL,
+        "model": WESLR_LLM_MODEL,
         "messages": [
             {"role": "system", "content": "Return strict JSON only."},
             {"role": "user", "content": json.dumps(_prompt(build_role_context(context)), ensure_ascii=False)},
         ],
-        "temperature": CIRCLEFORGE_LLM_TEMPERATURE,
-        "max_tokens": CIRCLEFORGE_LLM_MAX_TOKENS,
+        "temperature": WESLR_LLM_TEMPERATURE,
+        "max_tokens": WESLR_LLM_MAX_TOKENS,
     }).encode("utf-8")
     req = urllib.request.Request(
         f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions",
@@ -324,7 +323,7 @@ def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback
 
 
 def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
-    model_path = CIRCLEFORGE_EMBEDDED_MODEL_PATH
+    model_path = WESLR_EMBEDDED_MODEL_PATH
     if not model_path.exists():
         return fallback
     prompt_payload = _prompt(build_role_context(context))
@@ -339,8 +338,8 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     llm = Llama(model_path=str(model_path), n_ctx=2048, verbose=False)
     out = llm.create_completion(
         prompt=prompt,
-        max_tokens=CIRCLEFORGE_LLM_MAX_TOKENS,
-        temperature=CIRCLEFORGE_LLM_TEMPERATURE,
+        max_tokens=WESLR_LLM_MAX_TOKENS,
+        temperature=WESLR_LLM_TEMPERATURE,
         stop=["\n\n"],
     )
     text = ((out.get("choices") or [{}])[0].get("text") or "{}").strip()
@@ -349,7 +348,7 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
 
 
 def _embedded_server_base() -> str:
-    return os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_URL", "http://127.0.0.1:18081/v1").rstrip("/")
+    return os.getenv("WESLR_EMBEDDED_SERVER_URL", "http://127.0.0.1:18081/v1").rstrip("/")
 
 
 def _embedded_server_host_port() -> tuple[str, int]:
@@ -375,9 +374,9 @@ def _ensure_embedded_server() -> bool:
     if _can_connect(host, port):
         return True
     llama_server = shutil.which("llama-server")
-    if not llama_server or not CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists():
+    if not llama_server or not WESLR_EMBEDDED_MODEL_PATH.exists():
         return False
-    state_dir = CIRCLEFORGE_FAILSAFE_DIR
+    state_dir = WESLR_FAILSAFE_DIR
     state_dir.mkdir(parents=True, exist_ok=True)
     log_path = state_dir / "embedded-llama-server.log"
     with open(log_path, "ab") as log_file:
@@ -385,7 +384,7 @@ def _ensure_embedded_server() -> bool:
             [
                 llama_server,
                 "-m",
-                str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+                str(WESLR_EMBEDDED_MODEL_PATH),
                 "--host",
                 host,
                 "--port",
@@ -393,9 +392,9 @@ def _ensure_embedded_server() -> bool:
                 "-c",
                 "2048",
                 "-n",
-                str(max(CIRCLEFORGE_LLM_MAX_TOKENS, 128)),
+                str(max(WESLR_LLM_MAX_TOKENS, 128)),
                 "--threads",
-                os.getenv("CIRCLEFORGE_EMBEDDED_SERVER_THREADS", "4"),
+                os.getenv("WESLR_EMBEDDED_SERVER_THREADS", "4"),
             ],
             stdout=log_file,
             stderr=subprocess.STDOUT,
@@ -427,13 +426,13 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
         error_fallback["source"] = "embedded_error"
         return error_fallback
     body = json.dumps({
-        "model": Path(CIRCLEFORGE_EMBEDDED_MODEL_PATH).name,
+        "model": Path(WESLR_EMBEDDED_MODEL_PATH).name,
         "messages": [
             {"role": "system", "content": "Return strict JSON only."},
             {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
         ],
-        "temperature": CIRCLEFORGE_LLM_TEMPERATURE,
-        "max_tokens": max(CIRCLEFORGE_LLM_MAX_TOKENS, 220),
+        "temperature": WESLR_LLM_TEMPERATURE,
+        "max_tokens": max(WESLR_LLM_MAX_TOKENS, 220),
         "response_format": {
             "type": "json_schema",
             "json_schema": {
@@ -486,13 +485,13 @@ def _generate_via_embedded_cli(role: str, prompt: str, fallback: dict[str, Any])
         "--simple-io",
         "--no-display-prompt",
         "-m",
-        str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+        str(WESLR_EMBEDDED_MODEL_PATH),
         "-c",
         "2048",
         "-n",
-        str(CIRCLEFORGE_LLM_MAX_TOKENS),
+        str(WESLR_LLM_MAX_TOKENS),
         "--temp",
-        str(CIRCLEFORGE_LLM_TEMPERATURE),
+        str(WESLR_LLM_TEMPERATURE),
         "-p",
         prompt,
     ]
@@ -536,7 +535,7 @@ def embedded_self_test() -> dict[str, Any]:
 
 
 def status() -> dict[str, Any]:
-    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
     llama_cli = shutil.which("llama-cli")
     llama_server = shutil.which("llama-server")
     server_host, server_port = _embedded_server_host_port()
@@ -548,13 +547,13 @@ def status() -> dict[str, Any]:
     except Exception:
         llama_cpp_importable = False
     result = {
-        "enabled": bool(CIRCLEFORGE_LLM_ENABLED),
+        "enabled": bool(WESLR_LLM_ENABLED),
         "provider": provider,
-        "model": CIRCLEFORGE_LLM_MODEL,
-        "embedded_default_model": CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL,
-        "embedded_default_filename": CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME,
-        "embedded_model_path": str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
-        "embedded_model_exists": CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists(),
+        "model": WESLR_LLM_MODEL,
+        "embedded_default_model": WESLR_DEFAULT_EMBEDDED_MODEL,
+        "embedded_default_filename": WESLR_DEFAULT_EMBEDDED_MODEL_FILENAME,
+        "embedded_model_path": str(WESLR_EMBEDDED_MODEL_PATH),
+        "embedded_model_exists": WESLR_EMBEDDED_MODEL_PATH.exists(),
         "embedded_llama_cpp_importable": llama_cpp_importable,
         "embedded_llama_cli": llama_cli or "",
         "embedded_llama_server": llama_server or "",
@@ -575,7 +574,7 @@ def status() -> dict[str, Any]:
 
 def health() -> dict[str, Any]:
     """Health endpoint for monitoring - returns structured status."""
-    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
     server_host, server_port = _embedded_server_host_port()
     server_reachable = _can_connect(server_host, server_port, timeout=1.0)
     model_loaded = False
@@ -590,8 +589,8 @@ def health() -> dict[str, Any]:
     return {
         "status": "healthy" if server_reachable and model_loaded else "degraded" if server_reachable else "unhealthy",
         "provider": provider,
-        "model_path": str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
-        "model_exists": CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists(),
+        "model_path": str(WESLR_EMBEDDED_MODEL_PATH),
+        "model_exists": WESLR_EMBEDDED_MODEL_PATH.exists(),
         "model_loaded": model_loaded,
         "server_host": server_host,
         "server_port": server_port,
@@ -613,7 +612,7 @@ def health_endpoint() -> tuple[int, dict[str, Any]]:
 
 def prestart_guard() -> tuple[bool, str]:
     """Guard: refuse to start if embedded configured but server unreachable."""
-    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
     if provider != "embedded":
         return True, "not embedded provider"
     h = health()
@@ -622,7 +621,7 @@ def prestart_guard() -> tuple[bool, str]:
     return False, f"embedded server not ready: {h.get('status', 'unknown')}"
 
 
-def _generate_uncertain_response(role: str, context: dict[str, Any], reason: str) -> dict[str, Any]:
+def _generate_uncertain_response(role: str, context: dict[str, Any], reason: str, provider: str = "fallback") -> dict[str, Any]:
     """Generate uncertainty response when evidence is unavailable."""
     return {
         "kind": "inner_thought",
@@ -633,5 +632,5 @@ def _generate_uncertain_response(role: str, context: dict[str, Any], reason: str
         "should_speak": False,
         "self_mod_hint": "",
         "source": "uncertain_guard",
-        "provider": "embedded",
+        "provider": provider,
     }

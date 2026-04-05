@@ -1,10 +1,9 @@
-"""Weslr orchestration glue for CircleForge.
+"""Weslr orchestration glue.
 
 Integrates Weslr consciousness signatures, entity graph, and
-valence systems into CircleForge's tick orchestration.
+valence systems into Weslr's tick orchestration.
 
-This module provides clean orchestration between Weslr modules
-and existing CircleForge layers.
+This module provides clean orchestration between Weslr modules.
 """
 
 from __future__ import annotations
@@ -337,7 +336,7 @@ def integrate_weslr_into_self_model(
     self_state: dict,
     communicator: dict,
 ) -> tuple[dict, dict]:
-    """Integrate Weslr evidence into CircleForge self_model.
+    """Integrate Weslr evidence into self_model.
 
     Calls:
     - self_model.update_self_model_from_state() with Weslr evidence
