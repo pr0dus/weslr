@@ -119,6 +119,22 @@ from .test_external_pilot import (
     TestMaterialsSciencePilot,
     TestEnterpriseManagerPilot,
     TestPublicWeakPromptPilot,
+    TestIndustrialEngineerContextFirst,
+    TestUniversityResearcherContextFirst,
+    TestAstronomyLabContextFirst,
+    TestMaterialsScienceContextFirst,
+    TestEnterpriseOperatorContextFirst,
+    TestPublicWeakPromptContextFirst,
+)
+
+# Import context-first pilot simulation tests
+from .test_context_first_pilot import (
+    TestIndustrialEngineerContextFirst,
+    TestUniversityResearcherContextFirst,
+    TestAstronomyLabContextFirst,
+    TestMaterialsScienceContextFirst,
+    TestEnterpriseOperatorContextFirst,
+    TestPublicWeakPromptContextFirst,
 )
 
 __all__ = [
@@ -207,6 +223,12 @@ __all__ = [
     "TestMaterialsSciencePilot",
     "TestEnterpriseManagerPilot",
     "TestPublicWeakPromptPilot",
+    "TestIndustrialEngineerContextFirst",
+    "TestUniversityResearcherContextFirst",
+    "TestAstronomyLabContextFirst",
+    "TestMaterialsScienceContextFirst",
+    "TestEnterpriseOperatorContextFirst",
+    "TestPublicWeakPromptContextFirst",
 ]
 
 
