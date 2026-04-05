@@ -446,6 +446,138 @@ def review_suggestion(candidate_id: str, action: str, reason: str = "") -> Dict[
 # 7. CHAT ENDPOINT (NEW - for private test deployment)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def diagnostics() -> Dict[str, Any]:
+    """Operator diagnostics endpoint - compact runtime/platform signals.
+    
+    Returns:
+        Dict with current provider, evidence routing status, backend status,
+        concept graph status, capability queue, launch gate, commit hash, warnings.
+    """
+    import os
+    import subprocess
+    
+    result = {
+        "provider": {},
+        "evidence_routing": {},
+        "backend_chat": {},
+        "concept_graph": {},
+        "capability_queue": {},
+        "launch_gate": {},
+        "system": {},
+        "warnings": [],
+    }
+    
+    # 1. Current provider (from config and runtime)
+    try:
+        from config import WESLR_LLM_PROVIDER, WESLR_LLM_ENABLED, WESLR_LLM_MODEL
+        from llm_runtime import status
+        provider_status = status()
+        result["provider"] = {
+            "configured": WESLR_LLM_PROVIDER,
+            "enabled": WESLR_LLM_ENABLED,
+            "model": WESLR_LLM_MODEL,
+            "status": provider_status,
+        }
+    except Exception as e:
+        result["provider"] = {"error": str(e)}
+        result["warnings"].append("Provider status unavailable")
+    
+    # 2. Evidence routing status
+    try:
+        from llm_runtime import _classify_prompt_for_routing
+        # Test classification
+        test_context = {
+            "proposed_theme": "weather in Rome",
+            "unresolved_question": "What is the weather?",
+        }
+        category, location = _classify_prompt_for_routing(test_context)
+        result["evidence_routing"] = {
+            "enabled": True,
+            "test_classification": category,
+            "test_location": location,
+        }
+    except Exception as e:
+        result["evidence_routing"] = {"error": str(e)}
+        result["warnings"].append("Evidence routing unavailable")
+    
+    # 3. Backend chat path status
+    try:
+        # Quick health check via chat
+        test_result = chat("Hello")
+        result["backend_chat"] = {
+            "working": test_result.get("success", False),
+            "source": test_result.get("source", "unknown"),
+        }
+    except Exception as e:
+        result["backend_chat"] = {"error": str(e)}
+        result["warnings"].append("Backend chat unavailable")
+    
+    # 4. Concept graph status
+    try:
+        import entity_graph as eg
+        graph = eg.get_entity_graph()
+        entity_count = len(graph.get_all_entities()) if hasattr(graph, 'get_all_entities') else 0
+        result["concept_graph"] = {
+            "entities": entity_count,
+            "status": "available",
+        }
+    except Exception as e:
+        result["concept_graph"] = {"error": str(e)}
+        result["warnings"].append("Concept graph unavailable")
+    
+    # 5. Capability discovery queue summary
+    try:
+        from weslr.suggestion_bridge import SuggestionBridge
+        bridge = SuggestionBridge()
+        candidates = bridge.list_proposal_candidates()
+        result["capability_queue"] = {
+            "pending": len(candidates),
+            "by_state": {},
+        }
+        # Count by state
+        for c in candidates:
+            state = c.get("state", "unknown")
+            result["capability_queue"]["by_state"][state] = result["capability_queue"]["by_state"].get(state, 0) + 1
+    except Exception as e:
+        result["capability_queue"] = {"error": str(e)}
+        result["warnings"].append("Capability queue unavailable")
+    
+    # 6. Launch gate summary
+    try:
+        from llm_runtime import prestart_guard
+        guard_ok, guard_msg = prestart_guard()
+        result["launch_gate"] = {
+            "passed": guard_ok,
+            "message": guard_msg,
+        }
+    except Exception as e:
+        result["launch_gate"] = {"error": str(e)}
+        result["warnings"].append("Launch gate unavailable")
+    
+    # 7. Current commit hash if available
+    try:
+        result["system"]["commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(BASE_DIR),
+            stderr=subprocess.DEVNULL,
+            text=True
+        ).strip()
+    except Exception:
+        result["system"]["commit"] = "unknown"
+    
+    # 8. Warnings summary
+    result["warnings_summary"] = {
+        "count": len(result["warnings"]),
+        "items": result["warnings"],
+    }
+    
+    # Clean up warnings from individual sections if empty
+    if not result["warnings"]:
+        del result["warnings"]
+    
+    return result
+
+
 def chat(message: str) -> Dict[str, Any]:
     """Process a chat message and return LLM-backed reply.
     
@@ -494,7 +626,7 @@ def chat(message: str) -> Dict[str, Any]:
                             # Set environment BEFORE llm_runtime import
                             os.environ["OPENAI_API_KEY"] = token
                             os.environ["OPENAI_BASE_URL"] = "https://chatgpt.com/backend-api"
-                            os.environ["CIRCLEFORGE_LLM_PROVIDER"] = "openai_compatible"
+                            os.environ["WESLR_LLM_PROVIDER"] = "openai_compatible"
                             print(f"[DEBUG] Using OpenAI auth from {auth_profiles_path}", file=sys.stderr)
                             break
                 except Exception as e:
@@ -576,6 +708,7 @@ def main():
         print("  operator-visibility")
         print("  review-suggestion <id> <action> [reason]")
         print("  chat <message>")
+        print("  diagnostics")
         print("    Actions: approve, deny, mark-eligible")
         return
     
@@ -637,6 +770,10 @@ def main():
             return
         message = " ".join(sys.argv[2:])
         result = chat(message)
+        print(json.dumps(result, indent=2))
+    
+    elif command == "diagnostics":
+        result = diagnostics()
         print(json.dumps(result, indent=2))
     
     else:
