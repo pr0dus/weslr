@@ -33,6 +33,7 @@ class CapabilityType(str, Enum):
     CUSTOM_WORKFLOW_HOOKS = "custom_workflow_hooks"
     VERSION_HISTORY = "version_history"
     COLLABORATIVE_ANNOTATIONS = "collaborative_annotations"
+    OTHER = "other"  # For unknown/unclassified capabilities
 
 
 class SuggestionStatus(str, Enum):

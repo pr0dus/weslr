@@ -1,9 +1,10 @@
-"""Capability Discovery Radar - Phase 1 Core.
+"""Capability Discovery Radar - Phase 1 Core, Phase 2 Ingestion.
 
 Subsystems:
 - data_model: CapabilitySuggestion type and validation
 - store: Persistence layer (SQLite)
 - api: CRUD operations and filtering
+- ingestion: Signal ingestion + normalization pipeline (Reddit, GitHub, manual)
 """
 
 from .data_model import (
@@ -22,6 +23,13 @@ from .api import (
     accept_suggestion,
     archive_suggestion,
 )
+from .ingestion import (
+    SourceSignal,
+    SourceKind,
+    SignalStatus,
+    NormalizationPipeline,
+    CapabilityIngestionPipeline,
+)
 
 __all__ = [
     "CapabilitySuggestion",
@@ -37,4 +45,9 @@ __all__ = [
     "deny_suggestion",
     "accept_suggestion",
     "archive_suggestion",
+    "SourceSignal",
+    "SourceKind",
+    "SignalStatus",
+    "NormalizationPipeline",
+    "CapabilityIngestionPipeline",
 ]
