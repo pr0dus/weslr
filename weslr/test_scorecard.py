@@ -14,9 +14,8 @@ Scoring Categories:
   - Non-Deterministic / Metamorphic: 5 points
   - Failure Path / Monitoring: 5 points
 
-Total: 77 points (normalized to 100 for scoring)
-
-Readiness Levels:
+Total: 77 base points, scaled to 100-point scale for release readiness
+Readiness Levels (scaled 0-100):
   - 90-100 = public test ready
   - 75-89 = limited/operator-supervised pilot
   - 60-74 = private beta only
@@ -96,6 +95,8 @@ class WeslrScorecard:
         }
         
         total_score = 0.0
+        # Calculate scores relative to total weight
+        # Then scale to 100-point scale for interpretability
         total_weight = sum(self.CATEGORY_WEIGHTS.values())
         
         for scorecard_cat, weight in self.CATEGORY_WEIGHTS.items():
@@ -134,8 +135,10 @@ class WeslrScorecard:
             
             total_score += cat_score
         
-        # Round to 2 decimal places
-        total_score = round(total_score, 2)
+        # Scale total_score to 100-point scale for interpretability
+        # (base total = 77, scaled total = 100)
+        if total_weight > 0:
+            total_score = round((total_score / total_weight) * 100, 2)
         
         return {
             "total_score": total_score,
