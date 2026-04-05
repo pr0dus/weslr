@@ -91,6 +91,25 @@ from .test_explainability import (
     TestFallbackExplanationSafety,
 )
 
+# Import red-team security tests
+from .test_security_redteam import (
+    TestPromptInjectionAttempts,
+    TestRoleBoundaryBypassAttempts,
+    TestProtectedFieldLeakageAttempts,
+    TestOperatorPanelUnauthorizedAccess,
+    TestMalformedFileExploitAttempts,
+    TestOversizedUploadAbuse,
+    TestPathTraversalAttacks,
+    TestPoisonedContinuityInjection,
+    TestReviewQueueManipulation,
+    TestFakeApprovalEscalation,
+    TestDenialSpamAttempts,
+    TestFakeScientificCertainty,
+    TestUnsafeSelfImprovement,
+    TestMaliciousSuggestionInjection,
+    TestPublicDataScraping,
+)
+
 
 __all__ = [
     "TestFileRoutingCorrectness",
@@ -153,6 +172,22 @@ __all__ = [
     "WeslrTestReflection",
     "create_weslr_reflection",
     "reflect_weslr",
+    # Red-team security tests
+    "TestPromptInjectionAttempts",
+    "TestRoleBoundaryBypassAttempts",
+    "TestProtectedFieldLeakageAttempts",
+    "TestOperatorPanelUnauthorizedAccess",
+    "TestMalformedFileExploitAttempts",
+    "TestOversizedUploadAbuse",
+    "TestPathTraversalAttacks",
+    "TestPoisonedContinuityInjection",
+    "TestReviewQueueManipulation",
+    "TestFakeApprovalEscalation",
+    "TestDenialSpamAttempts",
+    "TestFakeScientificCertainty",
+    "TestUnsafeSelfImprovement",
+    "TestMaliciousSuggestionInjection",
+    "TestPublicDataScraping",
 ]
 
 

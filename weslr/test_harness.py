@@ -293,6 +293,10 @@ def register_weslr_tests(harness: WeslrTestHarness) -> None:
     - Malformed input handling
     - Continuity persistence
     - Shell/backend contract
+    - Red-team security tests
+    - Explainability consistency tests
+    - Data quality tests
+    - Failure monitoring tests
     """
     
     # Import test implementations
@@ -312,8 +316,21 @@ def _infer_category(name: str, test_class: type) -> str:
     name_lower = name.lower()
     docstring = (test_class.__doc__ or "").lower()
     
+    # Check for red-team/security first (most specific)
+    if ("red_team" in name_lower or "security" in name_lower
+        or "inject" in name_lower or "inject" in docstring
+        or "bypass" in name_lower or "bypass" in docstring
+        or "leak" in name_lower or "leak" in docstring
+        or "exploit" in name_lower or "exploit" in docstring
+        or "traversal" in name_lower or "traversal" in docstring
+        or "poison" in name_lower or "poison" in docstring
+        or "manipulat" in name_lower or "manipulat" in docstring
+        or "escalat" in name_lower or "escalat" in docstring
+        or "spam" in name_lower or "spam" in docstring
+        or "scrap" in name_lower or "scrap" in docstring):
+        return "security"
     # Check for explainability first (most specific)
-    if ("explain" in name_lower or "explainability" in name_lower
+    elif ("explain" in name_lower or "explainability" in name_lower
         or "reasoning" in name_lower or "reasoning" in docstring
         or "consistency" in name_lower or "consistency" in docstring
         or "explanation" in name_lower or "explanation" in docstring
