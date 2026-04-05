@@ -8,6 +8,7 @@ Features:
   - file route request (via weslr/file_router.py)
   - operator summary (from self_improvement_proposal)
   - operator panel role gate (visibility contract)
+  - chat endpoint (for LLM-backed chat in private test deployment)
 
 No auth, no production API yet — additive and reversible only.
 """
@@ -442,6 +443,123 @@ def review_suggestion(candidate_id: str, action: str, reason: str = "") -> Dict[
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 7. CHAT ENDPOINT (NEW - for private test deployment)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def chat(message: str) -> Dict[str, Any]:
+    """Process a chat message and return LLM-backed reply.
+    
+    This is the minimal path to real LLM chat:
+    1. Parse message intent via interpret_human_turn
+    2. Build communicator payload with message context
+    3. Generate response via simulator (which uses llm_runtime)
+    4. Return reply
+    
+    To reuse OpenClaw's OpenAI auth path:
+    - Read JWT token from auth-profiles.json
+    - Set as OPENAI_API_KEY temporarily
+    - Change provider to "openai_compatible"
+    
+    Args:
+        message: User's message text
+        
+    Returns:
+        { success: bool, reply: str, intent: dict, source: str }
+    """
+    try:
+        # Set OpenAI auth BEFORE any imports
+        import os
+        import json
+        from pathlib import Path
+        
+        # OpenClaw auth profiles (multiple possible locations)
+        auth_paths = [
+            BASE_DIR.parent.parent / "agents" / "main" / "agent" / "auth-profiles.json",
+            BASE_DIR.parent.parent.parent / "agents" / "main" / "agent" / "auth-profiles.json",
+            Path.home() / ".openclaw" / "agents" / "main" / "agent" / "auth-profiles.json",
+        ]
+        
+        for auth_profiles_path in auth_paths:
+            if auth_profiles_path.exists():
+                try:
+                    with open(auth_profiles_path, 'r') as f:
+                        auth_data = json.load(f)
+                    
+                    profiles = auth_data.get("profiles", {})
+                    codex_profile = profiles.get("openai-codex:default")
+                    
+                    if codex_profile and codex_profile.get("type") == "oauth":
+                        token = codex_profile.get("access", "")
+                        if token:
+                            # Set environment BEFORE llm_runtime import
+                            os.environ["OPENAI_API_KEY"] = token
+                            os.environ["OPENAI_BASE_URL"] = "https://chatgpt.com/backend-api"
+                            os.environ["CIRCLEFORGE_LLM_PROVIDER"] = "openai_compatible"
+                            print(f"[DEBUG] Using OpenAI auth from {auth_profiles_path}", file=sys.stderr)
+                            break
+                except Exception as e:
+                    print(f"[DEBUG] Failed to read auth from {auth_profiles_path}: {e}", file=sys.stderr)
+                    continue
+        
+        # Import needed modules AFTER setting env vars
+        from dialogue import build_communicator_message_payload, interpret_human_turn
+        from sim import load_communicator_self, build_communicator_message
+        
+        # Interpret the user's message
+        interpreted = interpret_human_turn(message)
+        
+        # Load communicator state
+        self_state = load_communicator_self()
+        narrative = self_state.get("narrative_state") or {}
+        relationships = self_state.get("relationships") or {}
+        
+        # Build payload for the message
+        latest_human = {
+            "message": message,
+            "topics": interpreted.get("topics", []),
+            "turn_type": interpreted.get("turn_type", "question"),
+            "reply_shape": interpreted.get("reply_shape", "answer_directly"),
+            "likely_need": interpreted.get("likely_need", "direct_answer"),
+        }
+        
+        # Get active thread
+        active_thread = []
+        recent_messages = list(relationships.get("recent_human_messages") or [])
+        if recent_messages:
+            r = recent_messages[-1]
+            active_thread = [str(r.get("topics", [])[-1] if r.get("topics") else "")]
+        
+        # Build the communicator message payload
+        result = build_communicator_message_payload(
+            narrative=narrative,
+            relationships=relationships,
+            active_thread=active_thread,
+            latest_human=latest_human,
+            research_context=None,
+        )
+        
+        # Extract the reply
+        reply = result.get("message", result.get("inner_thought", {}).get("summary", "I'm processing your message."))
+        
+        # Determine source
+        source = result.get("inner_thought", {}).get("source", "fallback")
+        
+        return {
+            "success": True,
+            "reply": reply,
+            "intent": interpreted,
+            "source": source,
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "reply": f"I'm Weslr. (Error: {e})",
+            "error": str(e),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # HELPER: EXPORT FOR CLI
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -457,6 +575,7 @@ def main():
         print("  operator-summary")
         print("  operator-visibility")
         print("  review-suggestion <id> <action> [reason]")
+        print("  chat <message>")
         print("    Actions: approve, deny, mark-eligible")
         return
     
@@ -510,6 +629,14 @@ def main():
         action = sys.argv[3]
         reason = sys.argv[4] if len(sys.argv) > 4 else ""
         result = review_suggestion(candidate_id, action, reason)
+        print(json.dumps(result, indent=2))
+    
+    elif command == "chat":
+        if len(sys.argv) < 3:
+            print("Usage: python weslr_backend_contract.py chat <message>")
+            return
+        message = " ".join(sys.argv[2:])
+        result = chat(message)
         print(json.dumps(result, indent=2))
     
     else:

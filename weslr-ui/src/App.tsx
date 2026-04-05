@@ -5,11 +5,13 @@ import {
   fetchOperatorSummary,
   fetchConversations,
   uploadFile as uploadFileToBackend,
+  sendChatMessage,
   ContinuityStatus,
   OperatorVisibility,
   OperatorSummary,
   WeslrCandidate,
-  Conversation
+  Conversation,
+  ChatMessage
 } from './api';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,6 +191,48 @@ function ChatSurface({
       timestamp: new Date().toISOString(),
     },
   ]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    
+    const userMsg = message;
+    setMessage('');
+    
+    // Add user message to chat
+    setMessages(prev => [...prev, {
+      id: `user-${Date.now()}`,
+      sender: 'you',
+      text: userMsg,
+      timestamp: new Date().toISOString(),
+    }]);
+    
+    try {
+      const result = await sendChatMessage(userMsg);
+      
+      if (result.success && result.reply) {
+        setMessages(prev => [...prev, {
+          id: `weslr-${Date.now()}`,
+          sender: 'weslr',
+          text: result.reply,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else {
+        setMessages(prev => [...prev, {
+          id: `error-${Date.now()}`,
+          sender: 'weslr',
+          text: result.error || "I couldn't generate a reply.",
+          timestamp: new Date().toISOString(),
+        }]);
+      }
+    } catch (e) {
+      setMessages(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        sender: 'weslr',
+        text: `Error: ${String(e)}`,
+        timestamp: new Date().toISOString(),
+      }]);
+    }
+  };
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -395,8 +439,7 @@ function ChatSurface({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              console.log('Send:', message);
-              setMessage('');
+              handleSendMessage();
             }
           }}
         />
@@ -410,10 +453,7 @@ function ChatSurface({
             cursor: 'pointer',
             fontWeight: '600',
           }}
-          onClick={() => {
-            console.log('Send:', message);
-            setMessage('');
-          }}
+          onClick={handleSendMessage}
         >
           Send
         </button>

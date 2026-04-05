@@ -1,0 +1,67 @@
+{
+  "records": [
+    {
+      "timestamp": 1774953221564,
+      "source_file": "t.json",
+      "raw_output": "/data/data/com.termux/files/home/.openclaw/workspace/test_out.json",
+      "normalized_output": "/data/data/com.termux/files/home/.openclaw/workspace/test_out.normalized.json",
+      "project_name": "plc-1",
+      "status": "ok",
+      "validation": {
+        "ok": true,
+        "warnings": 0,
+        "errors": 0
+      },
+      "item_counts": {
+        "devices": 0,
+        "plcs": 0,
+        "cpus": 0,
+        "modules": 0,
+        "tags": 0,
+        "total_items": 0
+      }
+    },
+    {
+      "timestamp": 1774954709889,
+      "source_file": "tia_real_export.json",
+      "raw_output": "/data/data/com.termux/files/home/.openclaw/workspace/tia_real_result.json",
+      "normalized_output": "/data/data/com.termux/files/home/.openclaw/workspace/tia_real_result.normalized.json",
+      "project_name": "PLC-Control-Machine-A",
+      "status": "ok",
+      "validation": {
+        "ok": true,
+        "warnings": 0,
+        "errors": 0
+      },
+      "item_counts": {
+        "devices": 1,
+        "plcs": 1,
+        "cpus": 1,
+        "modules": 1,
+        "tags": 2,
+        "total_items": 6
+      }
+    },
+    {
+      "timestamp": 1774991926870,
+      "source_file": "tia_real_export.json",
+      "raw_output": "/data/data/com.termux/files/home/.openclaw/workspace/tia_import_result.json",
+      "normalized_output": "/data/data/com.termux/files/home/.openclaw/workspace/tia_import_result.normalized.json",
+      "project_name": "PLC-Control-Machine-A",
+      "status": "ok",
+      "validation": {
+        "ok": true,
+        "warnings": 0,
+        "errors": 0
+      },
+      "item_counts": {
+        "devices": 1,
+        "plcs": 1,
+        "cpus": 1,
+        "modules": 1,
+        "tags": 2,
+        "total_items": 6
+      }
+    }
+  ]
+}

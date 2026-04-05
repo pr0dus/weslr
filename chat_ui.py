@@ -400,6 +400,103 @@ class Handler(BaseHTTPRequestHandler):
                     immediate_reply = run_weslr_cmd(["entity-list", "--limit", "3"])
                 run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
             
+            # Weslr capability commands (operator-only)
+            elif message.lower().strip().startswith("capability"):
+                query = message.lower().strip()
+                # Parse capability command - extract subcommand and args
+                # Format: "capability <subcommand> [--id <id>] [--query <q>] [--json]"
+                # Also supports: "capability search query" (query after search)
+                # For create: "capability create --title <t> --type <type> --summary <s> --why <w> --improvement <i>"
+                parts = query.split()
+                
+                if len(parts) < 2:
+                    immediate_reply = "Usage: capability <list|show|search|accept|deny|snooze|archive|stats>"
+                else:
+                    subcommand = parts[1]
+                    capability_args = ["capability", subcommand]
+                    
+                    # Handle simple formats for stats and list (no flags needed)
+                    if subcommand in ["stats", "list"] and len(parts) == 2:
+                        # "capability stats" or "capability list" - no args needed
+                        pass
+                    elif subcommand == "show" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability show <id>" - get id as next arg
+                        capability_args.extend(["--id", parts[2]])
+                    elif subcommand == "search" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability search query" - query is all parts after search
+                        capability_args.extend(["--query", " ".join(parts[2:])])
+                    elif subcommand in ["deny", "snooze", "archive"] and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability deny <id> [hours]" or "capability <cmd> <id>"
+                        capability_args.extend(["--id", parts[2]])
+                        if len(parts) >= 4 and parts[3].isdigit():
+                            capability_args.extend(["--hours", parts[3]])
+                    elif subcommand == "accept" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        capability_args.extend(["--id", parts[2]])
+                    elif subcommand == "create" and len(parts) >= 2:
+                        # Create requires --flags, so just pass through
+                        pass
+                    # Additional argument parsing
+                    elif "--query" in parts:
+                        idx = parts.index("--query")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--query", parts[idx + 1]])
+                    
+                    # Handle other arguments
+                    if "--id" in parts:
+                        idx = parts.index("--id")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--id", parts[idx + 1]])
+                    if "--hours" in parts:
+                        idx = parts.index("--hours")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--hours", parts[idx + 1]])
+                    if "--json" in parts:
+                        capability_args.append("--json")
+                    if "--limit" in parts:
+                        idx = parts.index("--limit")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--limit", parts[idx + 1]])
+                    if "--offset" in parts:
+                        idx = parts.index("--offset")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--offset", parts[idx + 1]])
+                    if "--title" in parts:
+                        idx = parts.index("--title")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--title", parts[idx + 1]])
+                    if "--type" in parts:
+                        idx = parts.index("--type")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--type", parts[idx + 1]])
+                    if "--summary" in parts:
+                        idx = parts.index("--summary")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--summary", parts[idx + 1]])
+                    if "--why" in parts:
+                        idx = parts.index("--why")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--why", parts[idx + 1]])
+                    if "--improvement" in parts:
+                        idx = parts.index("--improvement")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--improvement", parts[idx + 1]])
+                    if "--confidence" in parts:
+                        idx = parts.index("--confidence")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--confidence", parts[idx + 1]])
+                    if "--tags" in parts:
+                        idx = parts.index("--tags")
+                        # Get all remaining parts as tags
+                        tags = parts[idx + 1:]
+                        if tags:
+                            capability_args.append("--tags")
+                            capability_args.extend(tags)
+                    try:
+                        immediate_reply = run_weslr_cmd(capability_args)
+                    except Exception as e:
+                        immediate_reply = f"Error: {e}"
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+            
             # Control messages (no Weslr response needed)
             elif message_requests_completion_notice(message):
                 immediate_reply = "Understood. I should report back when the current implementation step is finished."

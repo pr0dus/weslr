@@ -119,12 +119,6 @@ from .test_external_pilot import (
     TestMaterialsSciencePilot,
     TestEnterpriseManagerPilot,
     TestPublicWeakPromptPilot,
-    TestIndustrialEngineerContextFirst,
-    TestUniversityResearcherContextFirst,
-    TestAstronomyLabContextFirst,
-    TestMaterialsScienceContextFirst,
-    TestEnterpriseOperatorContextFirst,
-    TestPublicWeakPromptContextFirst,
 )
 
 # Import context-first pilot simulation tests

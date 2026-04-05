@@ -22,6 +22,7 @@ from config import (
     CIRCLEFORGE_EMBEDDED_MODEL_PATH,
     CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL,
     CIRCLEFORGE_DEFAULT_EMBEDDED_MODEL_FILENAME,
+    CIRCLEFORGE_EVIDENCE_ROUTING_ENABLED,
     OLLAMA_HOST,
     OLLAMA_TIMEOUT_SECONDS,
     OPENAI_BASE_URL,
@@ -76,11 +77,128 @@ def build_role_context(context: dict[str, Any]) -> dict[str, Any]:
     return trimmed
 
 
+def _classify_prompt_for_routing(context: dict[str, Any]) -> tuple[str, str | None]:
+    """Classify prompt and extract any evidence-required data.
+    
+    Returns (category, location_or None) where category is one of:
+    - TIME_SENSITIVE: requires system time
+    - WEATHER: requires weather data, location may be extracted
+    - BOUNDED: can be handled by 0.5B model
+    - UNSUPPORTED: requires external evidence we cannot provide
+    """
+    topic = str(context.get("proposed_theme", "")).lower()
+    question = str(context.get("unresolved_question", "")).lower()
+    action = str(context.get("proposed_action", "")).lower()
+    reason = str(context.get("proposed_reason", "")).lower()
+    
+    # Check for time-sensitive queries
+    time_keywords = ["weather", "temperature", "time", "date", "now", "currently", "today", "yesterday", "live", "实时", "天气"]
+    if any(kw in topic or kw in question or kw in reason for kw in time_keywords):
+        # Is this about weather specifically?
+        if any(kw in topic or kw in question for kw in ["weather", "temperature", "天气"]):
+            # Try to extract location from context
+            location = None
+            for key in ["proposed_theme", "unresolved_question", "proposed_reason", "why_it_matters"]:
+                val = context.get(key, "")
+                if val and "in" in str(val).lower():
+                    # Rough location extraction: look for "in <location>"
+                    parts = str(val).lower().split("in ")
+                    if len(parts) > 1:
+                        location = parts[-1].strip().strip(",")
+                        break
+            return ("WEATHER", location)
+        return ("TIME_SENSITIVE", None)
+    
+    # Check for statistical/fact-based queries
+    fact_keywords = ["population", "count", "number", "value", "price", "rate", "percentage", "score", "winner", "won"]
+    if any(kw in topic or kw in question for kw in fact_keywords):
+        return ("UNSUPPORTED", None)  # No local evidence source for these
+    
+    # Check for open-ended queries that need external facts
+    if any(q in question for q in ["who is", "what is", "tell me about", "explain", "define"]) and not any(
+        kw in topic for kw in ["role", "function", "being", "internal", "thought"]
+    ):
+        return ("UNSUPPORTED", None)
+    
+    # Default: bounded task for 0.5B model
+    return ("BOUNDED", None)
+
+
 def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]:
     fallback = _fallback(role, context)
     if not CIRCLEFORGE_LLM_ENABLED:
         return fallback
+    
     provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    
+    # Evidence-gated routing for embedded provider
+    if provider == "embedded" and CIRCLEFORGE_EVIDENCE_ROUTING_ENABLED:
+        category, location = _classify_prompt_for_routing(context)
+        
+        # Route based on category
+        if category == "TIME_SENSITIVE":
+            # Use system time API
+            try:
+                from evidence_api import get_system_time, get_cached_evidence, cache_evidence
+                cached = get_cached_evidence("system_time")
+                if cached:
+                    evidence = cached
+                else:
+                    evidence = get_system_time()
+                    cache_evidence("system_time", evidence)
+                
+                return {
+                    "kind": "inner_thought",
+                    "role": role,
+                    "summary": f"Current time: {evidence.get('date', 'unknown')} {evidence.get('time', 'unknown')}.",
+                    "concern": "Time tracking and awareness.",
+                    "intent": "To maintain temporal awareness.",
+                    "should_speak": False,
+                    "self_mod_hint": "",
+                    "source": "system_time",
+                    "provider": "embedded",
+                }
+            except Exception as e:
+                return _generate_uncertain_response(role, context, "system_time")
+        
+        if category == "WEATHER":
+            # Use weather API
+            try:
+                from evidence_api import get_weather, cache_evidence, get_cached_evidence
+                cached = get_cached_evidence("weather")
+                if cached:
+                    evidence = cached
+                else:
+                    evidence = get_weather(location)
+                    cache_evidence("weather", evidence)
+                
+                if evidence.get("kind") == "error":
+                    return _generate_uncertain_response(role, context, "weather")
+                
+                temp = evidence.get("temp_c") or evidence.get("temp_f")
+                desc = evidence.get("weather_desc") or "unknown"
+                return {
+                    "kind": "inner_thought",
+                    "role": role,
+                    "summary": f"Weather: {desc}. Temperature: {temp}C." if temp else f"Weather: {desc}.",
+                    "concern": f"Weather conditions in {evidence.get('location', 'unknown')}.",
+                    "intent": "To track current weather conditions.",
+                    "should_speak": False,
+                    "self_mod_hint": "",
+                    "source": "weather_api",
+                    "provider": "embedded",
+                }
+            except Exception as e:
+                return _generate_uncertain_response(role, context, "weather")
+        
+        if category == "UNSUPPORTED":
+            return _generate_uncertain_response(role, context, "unsupported")
+    
+    # Original routing for non-evidence or BOUNDED category
+    if provider == "embedded":
+        guard_ok, guard_msg = prestart_guard()
+        if not guard_ok:
+            return _fallback(role, {**context, "error": "embedded_prestart_failed", "error_detail": guard_msg})
     try:
         if provider == "ollama":
             return _generate_via_ollama(role, context, fallback)
@@ -302,8 +420,12 @@ def _ensure_embedded_server() -> bool:
 
 def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
     server_base = _embedded_server_base()
-    if not _ensure_embedded_server():
-        return fallback
+    server_ok = _ensure_embedded_server()
+    if not server_ok:
+        error_fallback = _fallback(role, {**prompt_payload.get("live_context", {}), "error": "embedded_server_not_ready"})
+        error_fallback["error"] = "embedded_server_not_ready"
+        error_fallback["source"] = "embedded_error"
+        return error_fallback
     body = json.dumps({
         "model": Path(CIRCLEFORGE_EMBEDDED_MODEL_PATH).name,
         "messages": [
@@ -343,9 +465,13 @@ def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fal
             content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}").strip()
             parsed = json.loads(content)
             return _normalize(parsed, role, fallback, "embedded")
-        except Exception:
+        except Exception as e:
             if attempt == 5:
-                return fallback
+                error_fallback = _fallback(role, {**prompt_payload.get("live_context", {}), "error": "api_call_failed"})
+                error_fallback["error"] = "api_call_failed"
+                error_fallback["error_detail"] = str(e)[:200]
+                error_fallback["source"] = "embedded_error"
+                return error_fallback
             time.sleep(2)
     return fallback
 
@@ -445,3 +571,67 @@ def status() -> dict[str, Any]:
     else:
         result["live"] = False
     return result
+
+
+def health() -> dict[str, Any]:
+    """Health endpoint for monitoring - returns structured status."""
+    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    server_host, server_port = _embedded_server_host_port()
+    server_reachable = _can_connect(server_host, server_port, timeout=1.0)
+    model_loaded = False
+    if server_reachable:
+        try:
+            warm_req = urllib.request.Request(f"{_embedded_server_base()}/models", method="GET")
+            with urllib.request.urlopen(warm_req, timeout=5) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+                model_loaded = bool(payload.get("data") and len(payload["data"]) > 0)
+        except Exception:
+            model_loaded = False
+    return {
+        "status": "healthy" if server_reachable and model_loaded else "degraded" if server_reachable else "unhealthy",
+        "provider": provider,
+        "model_path": str(CIRCLEFORGE_EMBEDDED_MODEL_PATH),
+        "model_exists": CIRCLEFORGE_EMBEDDED_MODEL_PATH.exists(),
+        "model_loaded": model_loaded,
+        "server_host": server_host,
+        "server_port": server_port,
+        "server_ready": server_reachable and model_loaded,
+        "timestamp": int(time.time()),
+    }
+
+
+def health_endpoint() -> tuple[int, dict[str, Any]]:
+    """HTTP health endpoint - returns (status_code, response_dict)."""
+    h = health()
+    if h["server_ready"]:
+        return 200, h
+    elif h["status"] == "degraded":
+        return 503, h
+    else:
+        return 500, h
+
+
+def prestart_guard() -> tuple[bool, str]:
+    """Guard: refuse to start if embedded configured but server unreachable."""
+    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    if provider != "embedded":
+        return True, "not embedded provider"
+    h = health()
+    if h["server_ready"]:
+        return True, "server ready"
+    return False, f"embedded server not ready: {h.get('status', 'unknown')}"
+
+
+def _generate_uncertain_response(role: str, context: dict[str, Any], reason: str) -> dict[str, Any]:
+    """Generate uncertainty response when evidence is unavailable."""
+    return {
+        "kind": "inner_thought",
+        "role": role,
+        "summary": f"Verification of {reason} facts is unavailable.",
+        "concern": "Cannot verify external current facts without evidence source.",
+        "intent": "To track the evidence gap and await verification.",
+        "should_speak": False,
+        "self_mod_hint": "",
+        "source": "uncertain_guard",
+        "provider": "embedded",
+    }

@@ -1,0 +1,33 @@
+{
+  "id": "unsupported-812030",
+  "name": "Unsupported: What is the population of Mars?",
+  "type": "concept",
+  "description": "Query cannot be answered without external evidence",
+  "aliases": [],
+  "tags": [
+    "uncertainty",
+    "unsupported",
+    "gap"
+  ],
+  "confidence": 0.56,
+  "created_at": 1775417562,
+  "last_updated": 1775417562,
+  "is_temporary": false,
+  "is_ghost": false,
+  "links": [],
+  "evidence": [
+    {
+      "source_id": "unsupported-812030",
+      "source_type": "runtime",
+      "content": "Query: What is the population of Mars?",
+      "confidence": 0.8,
+      "timestamp": 1775417562,
+      "category": "inferred",
+      "traceable": true,
+      "reason": "Unsupported outcome: No local evidence source for population data",
+      "source_file": "llm_runtime.py",
+      "source_message_id": null
+    }
+  ],
+  "metadata": {}
+}

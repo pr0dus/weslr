@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "envelope_type": "tia_raw_import",
+  "filename": "t.json",
+  "imported_at": 1774953221563,
+  "export_timestamp": "",
+  "collector_version": "",
+  "project_name": "plc-1",
+  "validation": {
+    "ok": true,
+    "warnings": [],
+    "errors": []
+  },
+  "raw_data": {
+    "project": {
+      "name": "plc-1"
+    }
+  }
+}

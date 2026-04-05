@@ -1,0 +1,17 @@
+[Unit]
+Description=Llama Server for Weslr embedded inference
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/llama-server -m /data/data/com.termux/files/home/.openclaw/workspace/models/qwen2.5-0.5b-instruct-q5_k_m.gguf --host 127.0.0.1 --port 18081 -c 2048 -n 180 --threads 4
+WorkingDirectory=/data/data/com.termux/files/home/.openclaw/workspace
+StandardOutput=append:/data/data/com.termux/files/home/.openclaw/workspace/.circleforge-failsafe/llama-server.log
+StandardError=append:/data/data/com.termux/files/home/.openclaw/workspace/.circleforge-failsafe/llama-server.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

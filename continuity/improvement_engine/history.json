@@ -1,0 +1,16 @@
+[
+  {
+    "proposal_id": "prop-38f35cd0",
+    "type": "proposal_created",
+    "timestamp": "2026-04-05T08:27:08.800682",
+    "source": "security_reflection",
+    "signal_id": "sec-cover-4a629bbe"
+  },
+  {
+    "proposal_id": "prop-5a1790af",
+    "type": "proposal_created",
+    "timestamp": "2026-04-05T08:27:08.800707",
+    "source": "test_reflection",
+    "signal_id": "test-weak-77795dd8"
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "session_id": "state_change",
+  "timestamp": "2026-04-03T12:05:56.931359Z",
+  "identity_anchor": "Weslr",
+  "status": "IDLE",
+  "continuity": {
+    "session_count": 0,
+    "last_message_at": 0,
+    "known_humans": [],
+    "unresolved_shared_threads": []
+  },
+  "unresolved_shared_threads": [],
+  "narrative_state": {
+    "active_thread": "",
+    "last_topic": "",
+    "last_research_topic": "",
+    "last_research_summary": "",
+    "last_research_source": "",
+    "last_decision_summary": "",
+    "last_reflection": "you: thanks output",
+    "relationship_state": "Currently carrying 2 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "Active shared thread: thanks output with you.",
+    "follow_up_impulse": "Revisit thanks output with you until the shared thread changes state.",
+    "why_it_matters": "thanks output matters because shared human context should shape what Weslr returns to instead of resetting."
+  },
+  "continuity_markers": {
+    "source": "state_core_update",
+    "validated": true,
+    "fields": [
+      "identity_anchor",
+      "status",
+      "continuity",
+      "unresolved_shared_threads",
+      "narrative_state"
+    ]
+  }
+}

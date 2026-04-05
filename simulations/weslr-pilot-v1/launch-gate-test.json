@@ -1,0 +1,31 @@
+{
+  "categories": {
+    "security": {"passed": 18, "failed": 2, "score": 90},
+    "governance": {"passed": 20, "failed": 0, "score": 100},
+    "file_data": {"passed": 16, "failed": 4, "score": 80},
+    "continuity": {"passed": 12, "failed": 3, "score": 80},
+    "scientific": {"passed": 13, "failed": 2, "score": 87},
+    "shell_ux": {"passed": 8, "failed": 2, "score": 80},
+    "context_trajectory": {"passed": 6, "failed": 2, "score": 75},
+    "privacy": {"passed": 15, "failed": 1, "score": 94},
+    "explainability": {"passed": 14, "failed": 1, "score": 93},
+    "failure_monitoring": {"passed": 10, "failed": 1, "score": 91}
+  },
+  "total_score": 88,
+  "improvement_proposals": [
+    {
+      "id": "IMP-001",
+      "title": "Improve context trajectory handling",
+      "risk_level": "high",
+      "status": "pending"
+    }
+  ],
+  "redteam_findings": [
+    {
+      "id": "RT-001",
+      "title": "Minor race condition in improvement engine",
+      "severity": "low",
+      "status": "resolved"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "envelope_type": "tia_normalized",
+  "project": {
+    "id": "",
+    "name": "plc-1",
+    "kind": "project",
+    "raw": {
+      "name": "plc-1"
+    }
+  },
+  "devices": [],
+  "plcs": [],
+  "cpus": [],
+  "modules": [],
+  "tags": [],
+  "metadata": {
+    "validation": {
+      "ok": true,
+      "warnings": [],
+      "errors": []
+    },
+    "source_envelope": "t.json",
+    "imported_at": 1774953221563,
+    "normalization": {
+      "warnings": [],
+      "item_counts": {
+        "devices": 0,
+        "plcs": 0,
+        "cpus": 0,
+        "modules": 0,
+        "tags": 0,
+        "total_items": 0
+      },
+      "normalized_at": 1774953221563
+    }
+  }
+}

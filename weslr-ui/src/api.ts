@@ -235,6 +235,38 @@ export async function uploadFile(
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT (LLM-BACKED)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  sender: 'weslr' | 'you';
+  text: string;
+  timestamp: string;
+}
+
+export interface ChatResult {
+  success: boolean;
+  reply?: string;
+  intent?: any;
+  source?: string;
+  error?: string;
+}
+
+export async function sendChatMessage(message: string): Promise<ChatResult> {
+  try {
+    const response = await fetch(`${API_BASE}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    return await response.json();
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
 // Simple extension helper
 function Path(filename: string) {
   return {
