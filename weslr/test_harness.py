@@ -312,8 +312,16 @@ def _infer_category(name: str, test_class: type) -> str:
     name_lower = name.lower()
     docstring = (test_class.__doc__ or "").lower()
     
-    # Check for failure/monitoring first (most specific)
-    if ("failure" in name_lower or "monitoring" in name_lower
+    # Check for data quality first (most specific)
+    if ("quality" in name_lower or "data_quality" in name_lower
+        or "data quality" in docstring or "sparse" in name_lower
+        or "sparse" in docstring or "incomplete" in name_lower
+        or "incomplete" in docstring or "malformed" in name_lower
+        or "malformed" in docstring or "low information" in docstring
+        or "representation" in name_lower or "representational" in docstring):
+        return "data_quality"
+    # Check for failure/monitoring next (most specific)
+    elif ("failure" in name_lower or "monitoring" in name_lower
         or "timeout" in name_lower or "timeout" in docstring
         or "unavailable" in name_lower or "unavailable" in docstring
         or "corruption" in name_lower or "corruption" in docstring

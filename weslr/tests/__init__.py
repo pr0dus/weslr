@@ -65,6 +65,19 @@ from .test_failure_monitoring import (
     TestRecoveryAfterTransientFailure,
 )
 
+# Import data quality tests
+from .test_data_quality import (
+    TestSparseStructuredDatasets,
+    TestIncompleteScientificDatasets,
+    TestIncompleteMaterialsDatasets,
+    TestMalformedButParseable,
+    TestLowInformationText,
+    TestScientificNotebooksMissingMetadata,
+    TestFITSMissingOptionalFields,
+    TestWeakProblematicSuggestionRequests,
+    TestMixedQualityInputs,
+)
+
 
 __all__ = [
     "TestFileRoutingCorrectness",
@@ -106,6 +119,15 @@ __all__ = [
     "TestShellFetchTimeout",
     "TestStaleOperatorState",
     "TestRecoveryAfterTransientFailure",
+    "TestSparseStructuredDatasets",
+    "TestIncompleteScientificDatasets",
+    "TestIncompleteMaterialsDatasets",
+    "TestMalformedButParseable",
+    "TestLowInformationText",
+    "TestScientificNotebooksMissingMetadata",
+    "TestFITSMissingOptionalFields",
+    "TestWeakProblematicSuggestionRequests",
+    "TestMixedQualityInputs",
 ]
 
 

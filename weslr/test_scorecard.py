@@ -47,9 +47,10 @@ class WeslrScorecard:
         "continuity": 8,
         "scientific": 8,
         "shell_ux": 6,
-        "non_deterministic": 5,
-        "privacy": 5,
-        "failure_monitoring": 5,
+        "non_deterministic": 4,
+        "privacy": 4,
+        "failure_monitoring": 4,
+        "data_quality": 4,
     }
     
     # Minimum pass thresholds per category
@@ -63,6 +64,7 @@ class WeslrScorecard:
         "non_deterministic": 0.9,  # 90% of non-deterministic tests must pass
         "privacy": 0.9,       # 90% of privacy tests must pass
         "failure_monitoring": 0.9,  # 90% of failure tests must pass
+        "data_quality": 0.9,  # 90% of data quality tests must pass
     }
     
     def __init__(self, max_score: int = 100):
@@ -92,6 +94,7 @@ class WeslrScorecard:
             "non_deterministic": "non_deterministic",
             "privacy": "privacy",
             "failure_monitoring": "failure_monitoring",
+            "data_quality": "data_quality",
         }
         
         total_score = 0.0
