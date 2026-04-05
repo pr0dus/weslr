@@ -312,8 +312,17 @@ def _infer_category(name: str, test_class: type) -> str:
     name_lower = name.lower()
     docstring = (test_class.__doc__ or "").lower()
     
-    # Check for data quality first (most specific)
-    if ("quality" in name_lower or "data_quality" in name_lower
+    # Check for explainability first (most specific)
+    if ("explain" in name_lower or "explainability" in name_lower
+        or "reasoning" in name_lower or "reasoning" in docstring
+        or "consistency" in name_lower or "consistency" in docstring
+        or "explanation" in name_lower or "explanation" in docstring
+        or "coherence" in name_lower or "coherence" in docstring
+        or "overclaim" in name_lower or "overclaim" in docstring
+        or "no overclaim" in docstring):
+        return "explainability"
+    # Check for data quality next (most specific)
+    elif ("quality" in name_lower or "data_quality" in name_lower
         or "data quality" in docstring or "sparse" in name_lower
         or "sparse" in docstring or "incomplete" in name_lower
         or "incomplete" in docstring or "malformed" in name_lower

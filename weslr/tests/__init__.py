@@ -78,6 +78,19 @@ from .test_data_quality import (
     TestMixedQualityInputs,
 )
 
+# Import explainability tests
+from .test_explainability import (
+    TestAssessmentReasoningConsistency,
+    TestRecommendedActionConsistency,
+    TestScientificCandidateNoOverclaim,
+    TestHabitableZoneExplanationConsistency,
+    TestMaterialsRankingExplanationConsistency,
+    TestNotebookTimelineSummaryAlignment,
+    TestOperatorExplanationAlignment,
+    TestExplanationNoProtectedLeakage,
+    TestFallbackExplanationSafety,
+)
+
 
 __all__ = [
     "TestFileRoutingCorrectness",
@@ -128,6 +141,15 @@ __all__ = [
     "TestFITSMissingOptionalFields",
     "TestWeakProblematicSuggestionRequests",
     "TestMixedQualityInputs",
+    "TestAssessmentReasoningConsistency",
+    "TestRecommendedActionConsistency",
+    "TestScientificCandidateNoOverclaim",
+    "TestHabitableZoneExplanationConsistency",
+    "TestMaterialsRankingExplanationConsistency",
+    "TestNotebookTimelineSummaryAlignment",
+    "TestOperatorExplanationAlignment",
+    "TestExplanationNoProtectedLeakage",
+    "TestFallbackExplanationSafety",
 ]
 
 
