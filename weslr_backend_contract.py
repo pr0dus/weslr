@@ -534,6 +534,36 @@ def diagnostics() -> Dict[str, Any]:
     except Exception as e:
         result["capability_queue"] = {"error": str(e)}
         result["warnings"].append("Capability queue unavailable")
+
+    # 5b. Capability ingestion summary (Phase 2)
+    try:
+        from weslr.capability_ingestion import CapabilityIngestionPipeline, SourceSignal, SourceKind
+        pipeline = CapabilityIngestionPipeline()
+        # Get all suggestions and categorize by source
+        all_suggestions = pipeline.radar.list(include_archived=True)
+        by_source: Dict[str, int] = {}
+        last_ingestion = None
+        for s in all_suggestions:
+            # Extract provenance from notes or tags
+            provenance = None
+            if s.notes:
+                for line in s.notes.split("\n"):
+                    if "Provenance:" in line:
+                        provenance = line.replace("Provenance:", "").strip()
+                        break
+            if provenance:
+                by_source[provenance] = by_source.get(provenance, 0) + 1
+                # Track last ingestion time
+                if s.updated_at and (last_ingestion is None or s.updated_at > last_ingestion):
+                    last_ingestion = s.updated_at
+
+        result["capability_ingestion"] = {
+            "by_provenance": by_source,
+            "last_ingestion": last_ingestion,
+        }
+    except Exception as e:
+        result["capability_ingestion"] = {"error": str(e)}
+        result["warnings"].append("Capability ingestion unavailable")
     
     # 6. Launch gate summary
     try:
@@ -685,6 +715,125 @@ def chat(message: str) -> Dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 8. CAPABILITY INGESTION API (Phase 2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def ingest_manual(
+    title: str,
+    body: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    url: Optional[str] = None,
+    detected_capability: Optional[str] = None,
+    confidence: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Ingest a manual signal into the capability discovery pipeline.
+
+    Args:
+        title: Signal title
+        body: Signal body/content
+        tags: Optional tags/keywords
+        url: Optional source URL
+        detected_capability: Optional detected capability text
+        confidence: Optional confidence score (0-1)
+
+    Returns:
+        Ingestion result dict
+    """
+    try:
+        from weslr.capability_ingestion import CapabilityIngestionPipeline, SourceKind
+
+        pipeline = CapabilityIngestionPipeline()
+        result = pipeline.ingest_manual(
+            title=title,
+            body=body,
+            source_kind=SourceKind.MANUAL,
+            tags=tags or [],
+            url=url,
+            detected_capability=detected_capability,
+            confidence=confidence,
+        )
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def ingest_reddit(
+    title: str,
+    url: str,
+    body: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    detected_capability: Optional[str] = None,
+    confidence: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Ingest a Reddit-like signal.
+
+    Args:
+        title: Reddit post title
+        url: Reddit post URL
+        body: Optional post body
+        tags: Optional tags/keywords
+        detected_capability: Optional detected capability text
+        confidence: Optional confidence score (0-1)
+
+    Returns:
+        Ingestion result dict
+    """
+    try:
+        from weslr.capability_ingestion import CapabilityIngestionPipeline
+
+        pipeline = CapabilityIngestionPipeline()
+        result = pipeline.ingest_reddit(
+            title=title,
+            url=url,
+            body=body,
+            tags=tags or [],
+            detected_capability=detected_capability,
+            confidence=confidence,
+        )
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def ingest_github(
+    title: str,
+    url: str,
+    body: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    detected_capability: Optional[str] = None,
+    confidence: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Ingest a GitHub-like signal.
+
+    Args:
+        title: GitHub issue/PR title
+        url: GitHub URL
+        body: Optional body
+        tags: Optional tags/keywords
+        detected_capability: Optional detected capability text
+        confidence: Optional confidence score (0-1)
+
+    Returns:
+        Ingestion result dict
+    """
+    try:
+        from weslr.capability_ingestion import CapabilityIngestionPipeline
+
+        pipeline = CapabilityIngestionPipeline()
+        result = pipeline.ingest_github(
+            title=title,
+            url=url,
+            body=body,
+            tags=tags or [],
+            detected_capability=detected_capability,
+            confidence=confidence,
+        )
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # HELPER: EXPORT FOR CLI
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -702,6 +851,9 @@ def main():
         print("  review-suggestion <id> <action> [reason]")
         print("  chat <message>")
         print("  diagnostics")
+        print("  ingest-manual <title> <body> [tags]")
+        print("  ingest-reddit <title> <url> [body] [tags]")
+        print("  ingest-github <title> <url> [body] [tags]")
         print("    Actions: approve, deny, mark-eligible")
         return
     
@@ -768,7 +920,45 @@ def main():
     elif command == "diagnostics":
         result = diagnostics()
         print(json.dumps(result, indent=2))
-    
+
+    elif command == "ingest-manual":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_backend_contract.py ingest-manual <title> <body> [tags]")
+            return
+        title = sys.argv[2]
+        body = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else ""
+        tags = None
+        if len(sys.argv) > 4:
+            tags = sys.argv[4].split(",")
+        result = ingest_manual(title=title, body=body, tags=tags)
+        print(json.dumps(result, indent=2))
+
+    elif command == "ingest-reddit":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_backend_contract.py ingest-reddit <title> <url> [body] [tags]")
+            return
+        title = sys.argv[2]
+        url = sys.argv[3]
+        body = " ".join(sys.argv[4:]) if len(sys.argv) > 4 else None
+        tags = None
+        if len(sys.argv) > 5:
+            tags = sys.argv[5].split(",")
+        result = ingest_reddit(title=title, url=url, body=body, tags=tags)
+        print(json.dumps(result, indent=2))
+
+    elif command == "ingest-github":
+        if len(sys.argv) < 4:
+            print("Usage: python weslr_backend_contract.py ingest-github <title> <url> [body] [tags]")
+            return
+        title = sys.argv[2]
+        url = sys.argv[3]
+        body = " ".join(sys.argv[4:]) if len(sys.argv) > 4 else None
+        tags = None
+        if len(sys.argv) > 5:
+            tags = sys.argv[5].split(",")
+        result = ingest_github(title=title, url=url, body=body, tags=tags)
+        print(json.dumps(result, indent=2))
+
     else:
         print(f"Unknown command: {command}")
 

@@ -69,6 +69,7 @@ class CapabilitySuggestion:
     context: Optional[str] = None
     tags: Optional[str] = None  # comma-separated list
     priority: int = 0  # higher = more urgent
+    confidence: Optional[float] = None
     denial_count: int = 0
     last_denied_at: Optional[str] = None
     archived_at: Optional[str] = None
@@ -370,6 +371,7 @@ class CapabilityDiscoveryRadar:
         context: Optional[str] = None,
         tags: Optional[str] = None,
         priority: int = 0,
+        confidence: Optional[float] = None,
         assigned_to: Optional[str] = None,
         notes: Optional[str] = None,
     ) -> CapabilitySuggestion:
@@ -389,6 +391,7 @@ class CapabilityDiscoveryRadar:
             context=context,
             tags=tags,
             priority=priority,
+            confidence=confidence,
             denial_count=0,
             last_denied_at=None,
             archived_at=None,
