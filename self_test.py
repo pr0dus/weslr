@@ -27,7 +27,7 @@ from config import (
     SCHEMA_VERSION,
     TICKS_PER_SECOND_LIMIT,
     TICK_TIME_LIMIT_SECONDS,
-    CIRCLEFORGE_FAILSAFE_STATE_PATH,
+    WESLR_FAILSAFE_STATE_PATH,
 )
 
 
@@ -75,7 +75,7 @@ def check_key_files() -> Dict[str, Any]:
         COMMUNICATOR_SELF_PATH,
         PUBLIC_MEMORY_PATH,
         RELATIONSHIPS_PATH,
-        CIRCLEFORGE_FAILSAFE_STATE_PATH,
+        WESLR_FAILSAFE_STATE_PATH,
     ]
     
     missing = []
@@ -171,8 +171,8 @@ def check_circuit_breakers() -> Dict[str, Any]:
     
     # Load failsafe state to check if circuit breaker is active
     try:
-        if CIRCLEFORGE_FAILSAFE_STATE_PATH.exists():
-            with open(CIRCLEFORGE_FAILSAFE_STATE_PATH, "r") as f:
+        if WESLR_FAILSAFE_STATE_PATH.exists():
+            with open(WESLR_FAILSAFE_STATE_PATH, "r") as f:
                 failsafe = json.load(f)
             result["details"]["failsafe_state"] = failsafe.get("state", "unknown")
             result["details"]["circuit_breaker_active"] = failsafe.get("circuit_breaker_active", False)

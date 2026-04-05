@@ -21,17 +21,17 @@ from config import (
     CATEGORY_PROPOSALS_PATH,
     CATEGORY_PROPOSAL_COST,
     CATEGORY_REJECTION_REPUTATION_PENALTY,
-    CIRCLEFORGE_LLM_ENABLED,
-    CIRCLEFORGE_LLM_MODEL,
-    CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
-    CIRCLEFORGE_WAKE_RANDOMNESS,
-    CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
-    CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
-    CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS,
-    CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY,
-    CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS,
-    CIRCLEFORGE_FAILSAFE_STATE_PATH,
-    CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS,
+    WESLR_LLM_ENABLED,
+    WESLR_LLM_MODEL,
+    WESLR_LLM_MAX_CONTEXT_CHARS,
+    WESLR_WAKE_RANDOMNESS,
+    WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+    WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+    WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS,
+    WESLR_THOUGHT_REPEAT_SCORE_PENALTY,
+    WESLR_MAX_SAME_THEME_THOUGHTS,
+    WESLR_FAILSAFE_STATE_PATH,
+    WESLR_MEMORY_COMPACTION_COOLDOWN_SECONDS,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -4296,7 +4296,7 @@ def update_pressure_fields(self_state: dict, communicator: dict, consumed_count:
         last_human_at = int(thread.get("last_human_exchange_at", 0) or 0)
         seconds_since = max(0, now_ts - last_human_at) if last_human_at else 999999
         matches_active = str(topic).strip().lower() == active_topic.strip().lower()
-        if matches_active or seconds_since <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+        if matches_active or seconds_since <= max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
             fresh_or_matching_threads.append(topic)
     dynamic_unresolved_threads = fresh_or_matching_threads
     payload = dict(topic_pressure.get(active_topic) or {})
@@ -4370,7 +4370,7 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
         "scheduled": 0.08 if tick >= int(agent.get("next_due_tick", 0)) else 0.0,
         "fatigue_penalty": -fatigue * 0.25,
         "inhibition_penalty": -inhibition * 0.2,
-        "noise": random.uniform(-CIRCLEFORGE_WAKE_RANDOMNESS * 0.5, CIRCLEFORGE_WAKE_RANDOMNESS * 0.5),
+        "noise": random.uniform(-WESLR_WAKE_RANDOMNESS * 0.5, WESLR_WAKE_RANDOMNESS * 0.5),
     }
     pressure = sum(pressure_breakdown.values())
     pressure = max(0.01, min(1.5, pressure))
@@ -4499,7 +4499,7 @@ def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> d
     self_state.setdefault("inner_thoughts", [])
     current_llm_status = runtime_llm_status()
     self_state.setdefault("llm_adapter", {
-        "enabled": bool(current_llm_status.get("enabled", CIRCLEFORGE_LLM_ENABLED)),
+        "enabled": bool(current_llm_status.get("enabled", WESLR_LLM_ENABLED)),
         "provider": str(current_llm_status.get("provider", "fallback")),
         "model": str(current_llm_status.get("model", "")),
         "last_error": str(current_llm_status.get("last_error", "")),
@@ -4540,7 +4540,7 @@ def build_role_context(role: str, agent: Dict, plan: Dict, wake_reason: str, com
         "agent_name": agent.get("name"),
     }
     serialized = json.dumps(context, ensure_ascii=False)
-    if len(serialized) > CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS:
+    if len(serialized) > WESLR_LLM_MAX_CONTEXT_CHARS:
         context["proposed_reason"] = str(context.get("proposed_reason", ""))[:240]
         context["why_it_matters"] = str(context.get("why_it_matters", ""))[:240]
     return context
@@ -4618,8 +4618,8 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
         "theme": theme,
     })
     signature = summarize_thought_signature(thought)
-    similar_too_soon = repeat_stats.get("count", 0) > 0 and repeat_stats.get("seconds_since_last", 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS
-    theme_overflow = repeat_stats.get("count", 0) >= CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS
+    similar_too_soon = repeat_stats.get("count", 0) > 0 and repeat_stats.get("seconds_since_last", 999999) < WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS
+    theme_overflow = repeat_stats.get("count", 0) >= WESLR_MAX_SAME_THEME_THOUGHTS
     duplicate_signature = signature in {summarize_thought_signature(item) for item in list(self_state.get("inner_thoughts") or [])[-12:]}
     should_store = not theme_overflow and not (similar_too_soon and duplicate_signature)
 
@@ -4632,8 +4632,8 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
         trimmed = thoughts[-40:]
         if theme:
             same_theme = [item for item in trimmed if str(item.get("theme") or item.get("concern") or "").strip().lower() == str(theme).strip().lower()]
-            if len(same_theme) > CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS:
-                drop_ids = {item.get("id") for item in same_theme[:-CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS]}
+            if len(same_theme) > WESLR_MAX_SAME_THEME_THOUGHTS:
+                drop_ids = {item.get("id") for item in same_theme[:-WESLR_MAX_SAME_THEME_THOUGHTS]}
                 trimmed = [item for item in trimmed if item.get("id") not in drop_ids]
         self_state["inner_thoughts"] = trimmed[-40:]
         # Score and attach memory layer to thought
@@ -4658,14 +4658,14 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     adapter = self_state.setdefault("llm_adapter", {})
     provider = str(thought.get("provider") or thought.get("source") or "fallback")
     adapter["provider"] = provider
-    adapter["model"] = CIRCLEFORGE_LLM_MODEL
+    adapter["model"] = WESLR_LLM_MODEL
     if provider != "fallback":
         adapter["last_success_at"] = now_ts
         adapter["last_error"] = ""
         adapter["enabled"] = True
     else:
-        adapter["enabled"] = CIRCLEFORGE_LLM_ENABLED
-        if CIRCLEFORGE_LLM_ENABLED:
+        adapter["enabled"] = WESLR_LLM_ENABLED
+        if WESLR_LLM_ENABLED:
             adapter["last_error"] = "llm unavailable or fallback used"
     save_communicator_self(self_state)
     return thought
@@ -5044,8 +5044,8 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
             passive_reinforced = should_passively_reinforce_thread(
                 thread,
                 now_ts,
-                cooldown_seconds=CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
-                max_passive_reinforcements=CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+                cooldown_seconds=WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+                max_passive_reinforcements=WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS,
             )
             if chosen_theme not in anchor_profile["known_topics"]:
                 anchor_profile["known_topics"].append(chosen_theme)
@@ -5076,7 +5076,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
             seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
             topic_in_live_focus = topic_key in live_focus_topics or (latest_human_topic_live and topic_key == latest_human_topic_live)
             preserve_as_newest = bool(newest_human_topic_key and topic_key == newest_human_topic_key)
-            stale_quiet_human_thread = bool(last_human_exchange_at) and seconds_since_human > max(1800, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 6)
+            stale_quiet_human_thread = bool(last_human_exchange_at) and seconds_since_human > max(1800, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 6)
             should_cool = stale_quiet_human_thread and not preserve_as_newest
             if should_cool:
                 cooled_shared_threads.append(topic_name)
@@ -5181,8 +5181,8 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
         last_human_topic_live = str(relationships.get("last_human_topic") or "").strip().lower()
         topic_matches_live_focus = bool((chosen_theme and str(topic).strip().lower() == str(chosen_theme).strip().lower()) or (last_human_topic_live and str(topic).strip().lower() == last_human_topic_live))
-        stale_thread = ((seconds_since_human > max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
-        saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
+        stale_thread = ((seconds_since_human > max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
+        saturated = passive_reinforcement_count >= WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
         if stale_thread:
             recent_human_messages = list(relationships.get("recent_human_messages") or [])
             latest_topic = ""
@@ -5226,7 +5226,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         distill_episodic_memory(self_state=self_state, now_ts=now_ts)
     else:
         # Periodic archival of stale working memory items (daily, via heartbeat-like logic)
-        if now_ts - int((working.get("last_compacted_at") or 0) or 0) >= CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS:
+        if now_ts - int((working.get("last_compacted_at") or 0) or 0) >= WESLR_MEMORY_COMPACTION_COOLDOWN_SECONDS:
             self_state = archive_stale_working_memory(self_state, now_ts)
         self_state["updated_at"] = now_ts
         save_communicator_self(self_state)
@@ -5930,9 +5930,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         repeat_stats = thought.get("repeat_stats") or {}
         repeat_penalty = 0.0
         if thought.get("suppressed"):
-            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY
-        if int(repeat_stats.get("count", 0) or 0) > 2 and int(repeat_stats.get("seconds_since_last", 999999) or 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS:
-            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY * 0.75
+            repeat_penalty += WESLR_THOUGHT_REPEAT_SCORE_PENALTY
+        if int(repeat_stats.get("count", 0) or 0) > 2 and int(repeat_stats.get("seconds_since_last", 999999) or 999999) < WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS:
+            repeat_penalty += WESLR_THOUGHT_REPEAT_SCORE_PENALTY * 0.75
         adjusted_foreground = max(0.0, base_foreground - repeat_penalty)
         thought_role_pressure[role_name] = max(thought_role_pressure.get(role_name, 0.0), adjusted_foreground)
         foreground_candidates.append((adjusted_foreground, thought))
@@ -6063,7 +6063,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         thread_last_human_at = int(thread_payload.get("last_human_exchange_at", 0) or 0)
         thread_seconds_stale = max(0, now_ts - thread_last_human_at) if thread_last_human_at else 999999
         thread_matches_focus = bool(chosen.get("niche_theme") and str(thread_topic).strip().lower() == str(chosen.get("niche_theme")).strip().lower())
-        if thread_matches_focus or thread_seconds_stale <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+        if thread_matches_focus or thread_seconds_stale <= max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
             communicator["current_intent"] = f"{communicator['current_intent']} while preserving shared thread {thread_topic}"
             communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}"
     if disagreement_count > 0:
@@ -8072,10 +8072,10 @@ def load_llm_status() -> dict:
 
 
 def load_failsafe_status() -> dict:
-    if not CIRCLEFORGE_FAILSAFE_STATE_PATH.exists():
+    if not WESLR_FAILSAFE_STATE_PATH.exists():
         return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state not initialized"}
     try:
-        payload = json.loads(CIRCLEFORGE_FAILSAFE_STATE_PATH.read_text())
+        payload = json.loads(WESLR_FAILSAFE_STATE_PATH.read_text())
     except Exception:
         return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state unreadable"}
     expires = int(payload.get("unlock_expires_at", 0) or 0)

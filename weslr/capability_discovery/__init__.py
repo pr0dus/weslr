@@ -5,6 +5,7 @@ Subsystems:
 - store: Persistence layer (SQLite)
 - api: CRUD operations and filtering
 - ingestion: Signal ingestion + normalization pipeline (Reddit, GitHub, manual)
+- seeds: Seeded source pack for controlled discovery
 """
 
 from .data_model import (
@@ -30,6 +31,21 @@ from .ingestion import (
     NormalizationPipeline,
     CapabilityIngestionPipeline,
 )
+from .seeds import (
+    SeedSource,
+    SeedKind,
+    SeedStatus,
+    get_seed_pack,
+    get_enabled_seeds,
+    get_seeds_by_kind,
+    get_seeds_by_category,
+)
+from .seed_ingestion import (
+    SeedIngestionPipeline,
+)
+from .review import (
+    OperatorReviewLoop,
+)
 
 __all__ = [
     "CapabilitySuggestion",
@@ -50,4 +66,13 @@ __all__ = [
     "SignalStatus",
     "NormalizationPipeline",
     "CapabilityIngestionPipeline",
+    "SeedSource",
+    "SeedKind",
+    "SeedStatus",
+    "get_seed_pack",
+    "get_enabled_seeds",
+    "get_seeds_by_kind",
+    "get_seeds_by_category",
+    "SeedIngestionPipeline",
+    "OperatorReviewLoop",
 ]

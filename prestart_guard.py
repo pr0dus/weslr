@@ -4,7 +4,7 @@
 
 def prestart_guard() -> tuple[bool, str]:
     """Guard: refuse to start if embedded configured but server unreachable."""
-    provider = (CIRCLEFORGE_LLM_PROVIDER or "fallback").strip().lower()
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
     if provider != "embedded":
         return True, "not embedded provider"
     h = health()

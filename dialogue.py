@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 from interpretation import classify_human_turn, interpret_human_turn
-from config import CIRCLEFORGE_LANGUAGE
+from config import WESLR_LANGUAGE
 from internal_docs import get_internal_docs_context
 
 
@@ -88,7 +88,7 @@ def _get_entity_by_type(entity_type: str) -> str | None:
 
 def _get_language_module():
     """Load the appropriate language module based on config."""
-    if CIRCLEFORGE_LANGUAGE == "de":
+    if WESLR_LANGUAGE == "de":
         from languages import de as lang
     else:
         from languages import en as lang
@@ -98,7 +98,7 @@ def _get_language_module():
 def translate_theme(theme: str) -> str:
     """Translate an internal theme to a human-readable version."""
     if not theme:
-        return "this" if CIRCLEFORGE_LANGUAGE != "de" else "dies"
+        return "this" if WESLR_LANGUAGE != "de" else "dies"
     theme_lower = theme.lower().strip()
     lang = _get_language_module()
     return lang.translate_theme(theme_lower)
