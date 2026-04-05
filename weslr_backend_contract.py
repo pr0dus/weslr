@@ -527,17 +527,10 @@ def diagnostics() -> Dict[str, Any]:
     
     # 5. Capability discovery queue summary
     try:
-        from weslr.suggestion_bridge import SuggestionBridge
-        bridge = SuggestionBridge()
-        candidates = bridge.list_proposal_candidates()
-        result["capability_queue"] = {
-            "pending": len(candidates),
-            "by_state": {},
-        }
-        # Count by state
-        for c in candidates:
-            state = c.get("state", "unknown")
-            result["capability_queue"]["by_state"][state] = result["capability_queue"]["by_state"].get(state, 0) + 1
+        from weslr.capability_suggestion import CapabilityDiscoveryRadar, CapabilityType, SourceProvenance
+        radar = CapabilityDiscoveryRadar()
+        summary = radar.get_summary()
+        result["capability_queue"] = summary
     except Exception as e:
         result["capability_queue"] = {"error": str(e)}
         result["warnings"].append("Capability queue unavailable")
