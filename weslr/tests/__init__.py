@@ -172,6 +172,9 @@ __all__ = [
     "WeslrTestReflection",
     "create_weslr_reflection",
     "reflect_weslr",
+    "WeslrImprovementEngine",
+    "create_improvement_engine",
+    "run_improvement_engine",
     # Red-team security tests
     "TestPromptInjectionAttempts",
     "TestRoleBoundaryBypassAttempts",
