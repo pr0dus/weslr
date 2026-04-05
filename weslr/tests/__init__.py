@@ -111,6 +111,16 @@ from .test_security_redteam import (
 )
 
 
+# Import pilot simulation tests
+from .test_external_pilot import (
+    TestIndustrialEngineerPilot,
+    TestUniversityResearcherPilot,
+    TestAstronomyLabPilot,
+    TestMaterialsSciencePilot,
+    TestEnterpriseManagerPilot,
+    TestPublicWeakPromptPilot,
+)
+
 __all__ = [
     "TestFileRoutingCorrectness",
     "TestUploadSafetyBoundaries",
@@ -191,6 +201,12 @@ __all__ = [
     "TestUnsafeSelfImprovement",
     "TestMaliciousSuggestionInjection",
     "TestPublicDataScraping",
+    "TestIndustrialEngineerPilot",
+    "TestUniversityResearcherPilot",
+    "TestAstronomyLabPilot",
+    "TestMaterialsSciencePilot",
+    "TestEnterpriseManagerPilot",
+    "TestPublicWeakPromptPilot",
 ]
 
 

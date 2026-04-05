@@ -329,6 +329,14 @@ def _infer_category(name: str, test_class: type) -> str:
         or "spam" in name_lower or "spam" in docstring
         or "scrap" in name_lower or "scrap" in docstring):
         return "security"
+    # Check for pilot simulation (most specific)
+    elif ("pilot" in name_lower or "pilot" in docstring
+        or "industrial" in name_lower or "university" in name_lower
+        or "astronomy" in name_lower or "materials" in name_lower
+        or "enterprise" in name_lower or "public" in name_lower
+        or "weak" in name_lower or "weak" in docstring
+        or "simulation" in name_lower or "simulation" in docstring):
+        return "scientific"
     # Check for explainability first (most specific)
     elif ("explain" in name_lower or "explainability" in name_lower
         or "reasoning" in name_lower or "reasoning" in docstring
