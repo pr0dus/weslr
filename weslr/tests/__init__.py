@@ -150,6 +150,9 @@ __all__ = [
     "TestOperatorExplanationAlignment",
     "TestExplanationNoProtectedLeakage",
     "TestFallbackExplanationSafety",
+    "WeslrTestReflection",
+    "create_weslr_reflection",
+    "reflect_weslr",
 ]
 
 
