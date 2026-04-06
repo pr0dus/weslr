@@ -319,6 +319,7 @@ class ExecutionGate:
         outcomes = suggestion_data.get("expected_outcomes", [])
         precedent = suggestion_data.get("precedent_context")
         memory_refs = suggestion_data.get("memory_references", [])
+        rationale = suggestion_data.get("rationale", f"Operator-driven improvement suggestion: {suggestion_id}")
         
         # Build validation requirements
         validation = [
@@ -348,6 +349,7 @@ class ExecutionGate:
             expected_outcomes=outcomes,
             precedent_context=precedent,
             memory_references=memory_refs,
+            rationale=rationale,
             validation_requirements=validation,
             rollback_expectations=rollback,
         )
