@@ -1,7 +1,7 @@
 # OPERATOR STATE — WESLR
 
 **Latest checkpoint**: v56  
-**Latest sealed commit**: `8683d418920ccd0a8f9be755e3088669e962db37`  
+**Latest sealed commit**: `967549f6480068ae8a6297562d59968ce3302582`  
 **Current branch**: `feature/tia-industrial-slice`  
 **Current phase**: Model-Assisted Not Model-Dependent Hardening Layer complete  
 
@@ -28,7 +28,11 @@
 ## Bottleneck Status (WESLR Core Only)
 
 ### Active Bottlenecks
-- **weslr_core_layer**: None identified
+- **weslr_core_layer**: 
+  - `scientific_knowledge_assimilation_expansion`
+  - `distributed_multi_node_deployment`
+  - `real_world_external_orchestration`
+  - `cross_instance_continuity_sync`
 - **weslr_infrastructure**: None identified
 - **operator_workflow**: None identified
 
@@ -42,7 +46,14 @@
 
 ## Next Workflow Recommendation
 
-WESLR v56 complete with model_assisted_not_model_dependent hardening and behavioral tests. All WESLR core bottleneck layers are now complete.
+**Selected Priority**: `distributed_multi_node_deployment`
+
+**Reason**: This addresses the foundational infrastructure gap for WESLR to operate across multiple nodes/instances while maintaining continuity. Unlike `scientific_knowledge_assimilation_expansion` (which adds capability discovery from papers) or `real_world_external_orchestration` (which focuses on external system integration), distributed multi-node deployment is a *prerequisite* for WESLR to scale beyond a single runtime instance. Cross-instance continuity sync (`cross_instance_continuity_sync`) is a natural companion to multi-node deployment and can be architected together.
+
+This prioritization follows TEST_DOCTRINE.md by:
+1. Adding a core infrastructure layer rather than modifying existing layers
+2. Maintaining additive-only evolution (no breaking changes)
+3. Enabling future capacity (scientific assimilation, orchestration) without blocking them
 
 ---
 
@@ -55,3 +66,13 @@ WESLR v56 complete with model_assisted_not_model_dependent hardening and behavio
 - **Architecture direction**: continuity-aware operator workflow
 - **Continuity mode**: enabled
 - **Repo truth required**: yes
+
+---
+
+## Updated Checkpoint Summary
+
+| Field | Value |
+|-------|-------|
+| `latest_sealed_commit` | `967549f6480068ae8a6297562d59968ce3302582` |
+| `latest_layer` | `v56 — Model-Assisted Not Model-Dependent Hardening` |
+| `next_priority` | `distributed_multi_node_deployment` |
