@@ -343,6 +343,73 @@ class SelfArchitecture:
         """Get all proposals with a given recommendation."""
         return [p for p in self.proposals.values() if p.recommendation == recommendation]
 
+    def get_enriched_review_output(
+        self,
+        suggestion: Any,
+    ) -> Dict[str, Any]:
+        """Get enriched review output for an operator viewing a suggestion.
+        
+        Combines:
+        - Existing suggestion data
+        - Self-architecture evaluation
+        - Decision support (from DecisionSupportEngine)
+        
+        Returns dict with operator review surface structure.
+        """
+        from capability_ingestion import DecisionSupportEngine
+        
+        # Get self-architecture evaluation
+        arch_eval = self.evaluate_suggestion(suggestion)
+        
+        # Get decision support (if available)
+        try:
+            dse = DecisionSupportEngine(self._get_suggestion_store())
+            dse.generate_explanation(suggestion)
+            
+            decision_support = {
+                "classification": getattr(suggestion, 'classification', None),
+                "risk_level": getattr(suggestion, 'risk_level', None),
+                "decision_recommendation": getattr(suggestion, 'decision_recommendation', None),
+            }
+        except Exception:
+            decision_support = {}
+        
+        # Build operator review output
+        return {
+            "suggestion_id": arch_eval["suggestion_id"],
+            "title": getattr(suggestion, 'title', 'Unknown'),
+            "description": getattr(suggestion, 'description', ''),
+            
+            # Self-architecture judgment
+            "self_architecture": {
+                "affected_subsystems": arch_eval["affected_subsystems"],
+                "architectural_fit": arch_eval["architectural_fit"],
+                "risk_level": arch_eval["risk_level"],
+                "fitness_impact": arch_eval["fitness_impact"],
+                "recommendation": arch_eval["recommendation"],
+                "rationale": arch_eval["rationale"],
+                "timing": arch_eval["timing"],
+            },
+            
+            # Classification (quick_win/strategic/speculative)
+            "classification": arch_eval["classification"],
+            
+            # Decision support
+            "decision_support": decision_support,
+            
+            # Metadata
+            "priority": getattr(suggestion, 'priority', 0),
+            "created_at": getattr(suggestion, 'created_at', None),
+        }
+    
+    def _get_suggestion_store(self) -> Any:
+        """Get suggestion store (for decision support)."""
+        try:
+            from capability_suggestion import CapabilitySuggestionStore
+            return CapabilitySuggestionStore()
+        except Exception:
+            return None
+
     def evaluate_all_suggestions(
         self,
         suggestions: Any,
