@@ -93,6 +93,11 @@ class DomainProfile:
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     author: Optional[str] = None
     
+    # v25: Cross-domain transfer metadata (additive, transparent)
+    transferable_patterns: List[str] = field(default_factory=list)  # Pattern IDs that can be transferred
+    forbidden_transfers: List[str] = field(default_factory=list)  # Domain IDs where transfer is forbidden
+    transfer_evidence_adjustment: float = 0.0  # Adjustment to evidence threshold for transfers
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
@@ -108,6 +113,10 @@ class DomainProfile:
             "max_execution_latency_ms": self.max_execution_latency_ms,
             "requires_online": self.requires_online,
             "offline_fallback_allowed": self.offline_fallback_allowed,
+            # v25: Cross-domain transfer metadata
+            "transferable_patterns": self.transferable_patterns,
+            "forbidden_transfers": self.forbidden_transfers,
+            "transfer_evidence_adjustment": self.transfer_evidence_adjustment,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "author": self.author,
@@ -118,6 +127,10 @@ class DomainProfile:
         """Create from dictionary representation."""
         data["required_evidence_types"] = data.get("required_evidence_types", [])
         data["proof_requirements"] = data.get("proof_requirements", [])
+        # v25: Cross-domain transfer metadata
+        data["transferable_patterns"] = data.get("transferable_patterns", [])
+        data["forbidden_transfers"] = data.get("forbidden_transfers", [])
+        data["transfer_evidence_adjustment"] = data.get("transfer_evidence_adjustment", 0.0)
         return cls(**data)
     
     def update(self, **kwargs) -> DomainProfile:
