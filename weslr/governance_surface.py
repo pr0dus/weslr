@@ -81,6 +81,11 @@ class ProposalGovernanceView:
     blocking_reasons: List[str] = field(default_factory=list)
     can_proceed: bool = False
     
+    # v22: Edge reliability integration (additive, reversible)
+    operation_mode: Optional[str] = None
+    reliability_status: Optional[Dict[str, Any]] = None
+    offline_mode_explanation: Optional[str] = None
+    
     # Operator actions
     approval_state: str = "pending"
     available_actions: List[str] = field(default_factory=list)
@@ -121,6 +126,10 @@ class ProposalGovernanceView:
             "domain_tag": self.domain_tag,
             "domain_profile_id": self.domain_profile_id,
             "domain_risk_override": self.domain_risk_override,
+            # v22: Reliability integration
+            "operation_mode": self.operation_mode,
+            "reliability_status": self.reliability_status,
+            "offline_mode_explanation": self.offline_mode_explanation,
             "execution_eligibility": self.execution_eligibility,
             "proof_status": self.proof_status,
             "blocking_reasons": self.blocking_reasons,
@@ -150,6 +159,10 @@ class ProposalGovernanceView:
         data["domain_tag"] = data.get("domain_tag", None)
         data["domain_profile_id"] = data.get("domain_profile_id", None)
         data["domain_risk_override"] = data.get("domain_risk_override", None)
+        # v22: Reliability integration
+        data["operation_mode"] = data.get("operation_mode", None)
+        data["reliability_status"] = data.get("reliability_status", None)
+        data["offline_mode_explanation"] = data.get("offline_mode_explanation", None)
         return cls(**data)
 
     def format_for_display(self) -> str:

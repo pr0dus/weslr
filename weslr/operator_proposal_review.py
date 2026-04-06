@@ -61,6 +61,11 @@ class OperatorReviewOutput:
     domain_tag: Optional[str] = None
     domain_profile_id: Optional[str] = None
     
+    # v22: Edge reliability integration (additive, reversible)
+    operation_mode: Optional[str] = None
+    available_capabilities: List[str] = field(default_factory=list)
+    unavailable_capabilities: List[str] = field(default_factory=list)
+    
     # State
     current_state: str = "pending_review"
     approval_state: str = "pending"
@@ -103,6 +108,10 @@ class OperatorReviewOutput:
             # v21: Domain integration
             "domain_tag": self.domain_tag,
             "domain_profile_id": self.domain_profile_id,
+            # v22: Reliability integration
+            "operation_mode": self.operation_mode,
+            "available_capabilities": self.available_capabilities,
+            "unavailable_capabilities": self.unavailable_capabilities,
             "current_state": self.current_state,
             "approval_state": self.approval_state,
             "created_at": self.created_at,
@@ -121,6 +130,10 @@ class OperatorReviewOutput:
         # v21: Domain integration
         data["domain_tag"] = data.get("domain_tag", None)
         data["domain_profile_id"] = data.get("domain_profile_id", None)
+        # v22: Reliability integration
+        data["operation_mode"] = data.get("operation_mode", None)
+        data["available_capabilities"] = data.get("available_capabilities", [])
+        data["unavailable_capabilities"] = data.get("unavailable_capabilities", [])
         return cls(**data)
 
     def format_for_display(self) -> str:
