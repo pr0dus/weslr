@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from . import contracts
+from . import operator_lifecycle
 
 # Try to import adapter, fall back to None if not available
 try:
@@ -521,6 +522,36 @@ def _derive_status(error_state: dict, tick_count: int, last_tick_result: dict) -
         return "IDLE"
     
     return "IDLE"
+
+
+def integrate_with_lifecycle(
+    state_core: Dict[str, Any],
+    lifecycle_engine: "operator_lifecycle.OperatorLifecycleEngine" = None,
+    object_id: str = None,
+) -> Dict[str, Any]:
+    """Add lifecycle context to state_core.
+    
+    This is purely additive — no migration required.
+    
+    v48: Lifecycle engine provides timeline surface for state transitions.
+    """
+    if "lifecycle_context" not in state_core:
+        state_core["lifecycle_context"] = None
+    
+    if lifecycle_engine and object_id:
+        try:
+            summary = lifecycle_engine.get_timeline_summary(object_id)
+            state_core["lifecycle_context"] = {
+                "timeline_summary": summary.get("summary", "No summary"),
+                "transition_count": summary.get("transition_count", 0),
+                "allowed_transitions": summary.get("allowed_transitions", []),
+                "rollback_count": summary.get("rollback_point_count", 0),
+                "has_rollback_points": summary.get("rollback_point_count", 0) > 0,
+            }
+        except Exception:
+            pass  # Silent fallback to default
+    
+    return state_core
 
 
 def build_behavioral_traits(communicator_self: Dict[str, Any]) -> Dict[str, float]:
