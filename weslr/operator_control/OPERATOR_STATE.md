@@ -1,9 +1,9 @@
 # OPERATOR STATE — WESLR
 
-**Latest checkpoint**: v54  
-**Latest sealed commit**: `8547d611bfe6ef4d82c4668cda7459a836ce2d13`  
+**Latest checkpoint**: v55  
+**Latest sealed commit**: `effc527d6af67d20e0dbc460a36a82b16a69fb9b`  
 **Current branch**: `feature/tia-industrial-slice`  
-**Current phase**: Final Decision Explainability Layer complete  
+**Current phase**: Domain Adaptive Reasoning Hardening Layer complete  
 
 ---
 
@@ -42,7 +42,7 @@
 
 ## Next Workflow Recommendation
 
-WESLR v54 complete with explainability layer and testing doctrine. Ready for next layer or operator workflow.
+WESLR v55 complete with domain_adaptive_reasoning hardening and behavioral tests. Ready for next layer.
 
 ---
 

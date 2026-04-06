@@ -104,6 +104,7 @@ Before any edit:
 - Apply TEST_DOCTRINE.md for all new layers
 - All new layers must include model, behavior, integration, and backward compatibility tests
 - Test failures block merge until resolved
+- Domain-adaptive reasoning hardening (v55) set as new baseline
 
 ---
 
