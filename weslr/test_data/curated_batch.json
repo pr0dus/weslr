@@ -1,0 +1,71 @@
+[
+  {
+    "subreddit": "LocalLLaMA",
+    "title": "Looking for an agent workflow tool with memory",
+    "url": "https://reddit.com/r/LocalLLaMA/comments/abc123",
+    "body": "I need something that can chain LLM calls and remember context across steps. Does anyone use LangChain alternatives?",
+    "author": "prompt_engineer",
+    "upvotes": 24,
+    "timestamp": "2026-04-05T08:15:00Z",
+    "tags": ["agents", "workflow", "memory"],
+    "detected_capability": "agent workflow orchestration"
+  },
+  {
+    "subreddit": "AI_Agents",
+    "title": "PKM tools that integrate with Obsidian",
+    "url": "https://reddit.com/r/AI_Agents/comments/def456",
+    "body": "Which AI agent tools play nicely with Obsidian as a second brain? Looking for bidirectional sync.",
+    "author": "knowledge_worker",
+    "upvotes": 18,
+    "timestamp": "2026-04-05T09:20:00Z",
+    "tags": ["pkm", "obsidian", "integration"],
+    "detected_capability": "personal knowledge management"
+  },
+  {
+    "subreddit": "ObsidianMD",
+    "title": "Automated note linking with LLMs",
+    "url": "https://reddit.com/r/ObsidianMD/comments/ghi789",
+    "body": "Using LLMs to create backlinks automatically — is this useful or noise? What patterns work best?",
+    "author": "notetaker_pro",
+    "upvotes": 31,
+    "timestamp": "2026-04-05T10:45:00Z",
+    "tags": ["obsidian", "llm", "automation"],
+    "detected_capability": "automated note linking"
+  },
+  {
+    "repo": "obsidianmd/obsidian",
+    "title": "Feature request: Agent plugins system",
+    "url": "https://github.com/obsidianmd/obsidian/issues/12345",
+    "body": "It would be great to have a plugin system that allows autonomous agents to run in the background and assist with note management.",
+    "author": "plugin_dev",
+    "labels": ["enhancement", "plugin", "agents"],
+    "stars": 42,
+    "activity": 15,
+    "timestamp": "2026-04-05T11:30:00Z",
+    "detected_capability": "agent plugin system"
+  },
+  {
+    "repo": "gristlabs/grist",
+    "title": "Autonomous workflow automation",
+    "url": "https://github.com/gristlabs/grist/issues/789",
+    "body": "Need automated workflows that trigger actions based on data changes. Similar to Zapier but internal.",
+    "author": "automation_user",
+    "labels": ["feature", "automation"],
+    "stars": 8,
+    "activity": 6,
+    "timestamp": "2026-04-05T12:00:00Z",
+    "detected_capability": "autonomous workflow automation"
+  },
+  {
+    "repo": "openai/openai-cookbook",
+    "title": "Example: Multi-step agent chain",
+    "url": "https://github.com/openai/openai-cookbook/issues/567",
+    "body": "Could use a cookbook example showing how to chain multiple LLM calls with memory.",
+    "author": "cookbook_contrib",
+    "labels": ["documentation", "example", "agents"],
+    "stars": 12,
+    "activity": 4,
+    "timestamp": "2026-04-05T13:15:00Z",
+    "detected_capability": "multi-step agent chain"
+  }
+]

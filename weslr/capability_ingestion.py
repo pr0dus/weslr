@@ -354,7 +354,7 @@ class CapabilityIngestionPipeline:
 
     def _check_duplicate(self, signal: SourceSignal) -> Optional[CapabilitySuggestion]:
         """Check if signal is a duplicate."""
-        # Check by URL if available
+        # Check by URL if available (exact match)
         if signal.url:
             # Look for existing suggestions with same URL in notes
             all_suggestions = self.store.list_all(include_archived=True)
@@ -362,20 +362,20 @@ class CapabilityIngestionPipeline:
                 if s.notes and signal.url in s.notes:
                     return s
 
-        # Check by title similarity
+        # Check by title (normalized, exact match)
         if signal.title:
-            # Normalize title
-            title_norm = re.sub(r"[^a-z0-9]", "", signal.title.lower())
+            # Normalize title: lowercase, strip non-alphanumeric, collapse whitespace
+            title_norm = re.sub(r"\s+", " ", signal.title.lower().strip())
+            # Remove punctuation for comparison
+            title_norm = re.sub(r"[^a-z0-9 ]", "", title_norm).strip()
+            
             all_suggestions = self.store.list_all(include_archived=True)
             for s in all_suggestions:
                 if s.title:
-                    s_norm = re.sub(r"[^a-z0-9]", "", s.title.lower())
-                    if title_norm and len(title_norm) > 5 and s_norm and len(s_norm) > 5:
-                        # Simple overlap check
-                        common = set(title_norm) & set(s_norm)
-                        min_len = min(len(title_norm), len(s_norm))
-                        if min_len > 0 and len(common) / min_len > 0.7:
-                            return s
+                    s_norm = re.sub(r"\s+", " ", s.title.lower().strip())
+                    s_norm = re.sub(r"[^a-z0-9 ]", "", s_norm).strip()
+                    if title_norm and s_norm and title_norm == s_norm:
+                        return s
 
         return None
 
