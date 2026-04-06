@@ -149,6 +149,9 @@ class EvidenceClaim:
             "parent_claim_id": self.parent_claim_id,
             "related_claims": self.related_claims,
             "notes": self.notes,
+            # v26: Knowledge ingestion integration (additive)
+            "knowledge_ingestion_id": self.knowledge_ingestion_id if hasattr(self, 'knowledge_ingestion_id') else None,
+            "source_class": self.source_class if hasattr(self, 'source_class') else None,
         }
     
     @classmethod
@@ -157,6 +160,9 @@ class EvidenceClaim:
         data["domain_tags"] = data.get("domain_tags", [])
         data["related_claims"] = data.get("related_claims", [])
         data["domain_profile_id"] = data.get("domain_profile_id", None)
+        # v26: Knowledge ingestion integration
+        data["knowledge_ingestion_id"] = data.get("knowledge_ingestion_id", None)
+        data["source_class"] = data.get("source_class", None)
         return cls(**data)
     
     def update(self, **kwargs) -> EvidenceClaim:
