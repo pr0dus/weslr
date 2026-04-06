@@ -1,0 +1,119 @@
+{
+  "calibrations": [
+    {
+      "calibration_id": "cal-t001",
+      "forecast_id": "fcst001",
+      "forecast_title": "",
+      "forecast_outcomes": [
+        {
+          "category": "effort",
+          "forecasted_value": 0.6,
+          "confidence": 0.8,
+          "timeline": "short_term"
+        }
+      ],
+      "actual_outcomes": [
+        {
+          "category": "effort",
+          "actual_value": 0.7,
+          "observation_timestamp": "2024-01-01T00:00:00Z",
+          "evidence": "Metrics"
+        }
+      ],
+      "mismatches": [
+        {
+          "forecast_category": "effort",
+          "forecast_value": 0.6,
+          "actual_value": 0.7,
+          "delta": -0.09999999999999998,
+          "delta_percentage": -14.29,
+          "severity": "minor",
+          "corrected_confidence": 0.743
+        }
+      ],
+      "confidence_adjustment": 0.143,
+      "recommendation_adjustment": 0.143,
+      "status": "analyzed",
+      "calibration_timestamp": "2026-04-06T08:51:39.304282Z",
+      "author": "operator",
+      "created_at": "2026-04-06T08:51:39.304163Z"
+    },
+    {
+      "calibration_id": "cal-t001",
+      "forecast_id": "fcst001",
+      "forecast_title": "",
+      "forecast_outcomes": [
+        {
+          "category": "effort",
+          "forecasted_value": 0.6,
+          "confidence": 0.8,
+          "timeline": "short_term"
+        }
+      ],
+      "actual_outcomes": [
+        {
+          "category": "effort",
+          "actual_value": 0.7,
+          "observation_timestamp": "2024-01-01T00:00:00Z",
+          "evidence": "Metrics"
+        }
+      ],
+      "mismatches": [
+        {
+          "forecast_category": "effort",
+          "forecast_value": 0.6,
+          "actual_value": 0.7,
+          "delta": -0.09999999999999998,
+          "delta_percentage": -14.29,
+          "severity": "minor",
+          "corrected_confidence": 0.743
+        }
+      ],
+      "confidence_adjustment": 0.143,
+      "recommendation_adjustment": 0.143,
+      "status": "analyzed",
+      "calibration_timestamp": "2026-04-06T08:51:45.952833Z",
+      "author": "operator",
+      "created_at": "2026-04-06T08:51:45.952803Z"
+    },
+    {
+      "calibration_id": "cal-t001",
+      "forecast_id": "fcst001",
+      "forecast_title": "",
+      "forecast_outcomes": [
+        {
+          "category": "effort",
+          "forecasted_value": 0.6,
+          "confidence": 0.8,
+          "timeline": "short_term"
+        }
+      ],
+      "actual_outcomes": [
+        {
+          "category": "effort",
+          "actual_value": 0.7,
+          "observation_timestamp": "2024-01-01T00:00:00Z",
+          "evidence": "Metrics"
+        }
+      ],
+      "mismatches": [
+        {
+          "forecast_category": "effort",
+          "forecast_value": 0.6,
+          "actual_value": 0.7,
+          "delta": -0.09999999999999998,
+          "delta_percentage": -14.29,
+          "severity": "minor",
+          "corrected_confidence": 0.743
+        }
+      ],
+      "confidence_adjustment": 0.143,
+      "recommendation_adjustment": 0.143,
+      "status": "analyzed",
+      "calibration_timestamp": "2026-04-06T08:51:50.198841Z",
+      "author": "operator",
+      "created_at": "2026-04-06T08:51:50.198815Z"
+    }
+  ],
+  "last_updated": "2026-04-06T08:51:50.198927Z"
+}
