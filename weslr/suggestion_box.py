@@ -10,6 +10,17 @@ from typing import Optional, Literal, Union
 from dataclasses import dataclass, asdict
 
 
+# Self-Architecture Core v6: Scenario comparison entry point
+from .scenario_model import (
+    Scenario,
+    ScenarioProposal,
+    RoadmapTradeoffEngine,
+    create_scenario,
+    create_quick_win_scenario,
+    create_strategic_scenario,
+)
+
+
 RequesterType = Literal["individual", "university", "laboratory", "company", "institution"]
 DomainType = str  # free-text scientific/technical domain
 Status = Literal["submitted", "reviewed", "approved", "rejected", "implemented"]
@@ -257,6 +268,7 @@ if __name__ == "__main__":
         print("  submit <type> <domain> <capability> <problem>")
         print("  list [--domain <d>] [--type <t>]")
         print("  summarize")
+        print("  scenario-compare <a_json> <b_json>  # Compare two roadmap scenarios")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -294,6 +306,26 @@ if __name__ == "__main__":
     elif command == "summarize":
         summary = box.summarize_requests()
         print(json.dumps(summary, indent=2))
+
+    elif command == "scenario-compare":
+        # Compare two roadmap scenarios
+        if len(sys.argv) < 4:
+            print("Usage: scenario-compare <scenario_a_json> <scenario_b_json>")
+            sys.exit(1)
+        try:
+            with open(sys.argv[2], "r") as f:
+                data_a = json.load(f)
+            with open(sys.argv[3], "r") as f:
+                data_b = json.load(f)
+            
+            scenario_a = Scenario.from_dict(data_a)
+            scenario_b = Scenario.from_dict(data_b)
+            
+            result = RoadmapTradeoffEngine.compare_scenarios(scenario_a, scenario_b)
+            print(json.dumps(result.to_dict(), indent=2))
+        except Exception as e:
+            print(f"Error: {e}")
+            sys.exit(1)
 
     else:
         print(f"Unknown command: {command}")

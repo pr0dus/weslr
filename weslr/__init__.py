@@ -14,6 +14,7 @@ Core modules:
 - state: WESLR state management
 - structured_data: Structured data handling
 - task_anchor: Task anchors for continuity
+- scenario_model: Self-Architecture Core v6 - Scenario comparison / Roadmap tradeoff layer
 """
 
 __version__ = "1.0.0"
@@ -26,6 +27,7 @@ from . import evidence_policy
 from . import file_ingestion
 from . import file_router
 from . import request_intelligence
+from . import scenario_model
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -39,6 +41,7 @@ __all__ = [
     "file_ingestion",
     "file_router",
     "request_intelligence",
+    "scenario_model",
     "state",
     "structured_data",
     "task_anchor",
