@@ -19,6 +19,8 @@ Core modules:
 - narrative: Self-Architecture Core v8-v9 - Operator narrative layer (memory-aware assessment)
 - forecast: Self-Architecture Core v10 - Architectural simulation / forecast layer
 - calibration: Self-Architecture Core v11 - Closed-loop governance / forecast calibration layer
+- intervention_timing: Self-Architecture Core v36 - Intervention timing / Surfacing policy layer
+- trust_dynamics: Self-Architecture Core v37 - Trust / Relationship dynamics layer
 """
 
 __version__ = "1.0.0"
@@ -36,6 +38,8 @@ from . import architecture_memory
 from . import narrative
 from . import forecast
 from . import calibration
+from . import intervention_timing
+from . import trust_dynamics
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -54,6 +58,8 @@ __all__ = [
     "narrative",
     "forecast",
     "calibration",
+    "intervention_timing",
+    "trust_dynamics",
     "state",
     "structured_data",
     "task_anchor",
