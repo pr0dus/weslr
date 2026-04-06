@@ -243,6 +243,82 @@ class SelfArchitecture:
         self.last_updated = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         return goal
 
+    def evaluate_suggestion(
+        self,
+        suggestion: Any,
+        proposal_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate a Capability Discovery Radar suggestion using self-architecture.
+
+        Returns dict with:
+        - suggestion_id: The original suggestion ID
+        - affected_subsystems: List of affected subsystems
+        - architectural_fit: "strong" / "moderate" / "weak"
+        - risk_level: "low" / "medium" / "high"
+        - fitness_impact: List of fitness goals affected
+        - recommendation: "accept" / "accept_with_conditions" / "pending" / "reject"
+        - rationale: Human-readable explanation
+        - timing: "now" / "later" / "never"
+        """
+        from self_architecture import ChangeProposal, ChangeType, ProposalEvaluator, Recommendation
+        from datetime import datetime, timezone
+        
+        # Generate proposal from suggestion
+        prop_id = proposal_id or f"suggest-{suggestion.id}"
+        prop = map_radar_suggestion_to_proposal(suggestion, prop_id)
+        
+        # Create evaluator and evaluate
+        evaluator = ProposalEvaluator(self)
+        evaluated = evaluator.evaluate(prop)
+        
+        # Determine fitness impact
+        fitness_impact = []
+        for goal in self.fitness_goals.values():
+            if goal.status == "active":
+                # Check if subsystems match
+                for sub in evaluated.affected_subsystems:
+                    if sub in goal.subsystems:
+                        fitness_impact.append(goal.name)
+        
+        # Determine recommendation timing
+        if evaluated.recommendation == Recommendation.ACCEPT.value:
+            timing = "now"
+        elif evaluated.recommendation == Recommendation.ACCEPT_WITH_CONDITIONS.value:
+            timing = "now"
+        elif evaluated.recommendation == Recommendation.PENDING.value:
+            timing = "later"
+        else:
+            timing = "never"
+        
+        # Build rationale
+        rationale_parts = []
+        if evaluated.architectural_fit:
+            rationale_parts.append(f"Architectural fit: {evaluated.architectural_fit}")
+        if evaluated.risk_context:
+            rationale_parts.append(f"Risk: {evaluated.risk_context}")
+        if fitness_impact:
+            rationale_parts.append(f"Fitness impact: {', '.join(fitness_impact)}")
+        if evaluated.affected_subsystems:
+            rationale_parts.append(f"Affects {len(evaluated.affected_subsystems)} subsystem(s)")
+        rationale = "; ".join(rationale_parts) if rationale_parts else "Standard evaluation"
+        
+        return {
+            "suggestion_id": getattr(suggestion, 'id', prop_id),
+            "affected_subsystems": evaluated.affected_subsystems,
+            "architectural_fit": evaluated.architectural_fit or "unknown",
+            "risk_level": "medium",  # Will be updated if set
+            "fitness_impact": fitness_impact,
+            "recommendation": evaluated.recommendation or "pending",
+            "rationale": rationale,
+            "timing": timing,
+            "classification": {
+                "quick_win": evaluated.quick_win,
+                "strategic": evaluated.strategic,
+                "speculative": evaluated.speculative,
+            },
+            "priority": getattr(suggestion, 'priority', 0),
+        }
+
     def get_subsystem(self, name: str) -> Optional[Subsystem]:
         """Get a subsystem by name."""
         return self.subsystems.get(name)
@@ -266,6 +342,24 @@ class SelfArchitecture:
     def get_recommendations(self, recommendation: str) -> List[ChangeProposal]:
         """Get all proposals with a given recommendation."""
         return [p for p in self.proposals.values() if p.recommendation == recommendation]
+
+    def evaluate_all_suggestions(
+        self,
+        suggestions: Any,
+    ) -> List[Dict[str, Any]]:
+        """Evaluate all suggestions using self-architecture.
+        
+        Args:
+            suggestions: List of CapabilitySuggestion objects
+            
+        Returns:
+            List of evaluation results for each suggestion
+        """
+        results = []
+        for suggestion in suggestions:
+            result = self.evaluate_suggestion(suggestion)
+            results.append(result)
+        return results
 
 
 # ============================================================================
