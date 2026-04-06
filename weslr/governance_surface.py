@@ -16,6 +16,14 @@ from operator_proposal_review import OperatorProposalReview, OperatorReviewOutpu
 from proposal_realization import RealizationEngine, RealizationPlan
 from proof_gate import ProofGateEngine, ExecutionState
 
+# v18: Benchmark integration
+try:
+    from governance_scorecard import GovernanceBenchmarkEngine
+    BENCHMARK_AVAILABLE = True
+except ImportError:
+    BENCHMARK_AVAILABLE = False
+    GovernanceBenchmarkEngine = None
+
 
 @dataclass
 class ProposalGovernanceView:
@@ -214,6 +222,9 @@ class GovernanceAggregationEngine:
         self.realization_engine = RealizationEngine(execution_gate=self.gate)
         self.proof_gate = ProofGateEngine(execution_gate=self.gate)
         self.operator_review = OperatorProposalReview(gate=self.gate)
+        
+        # v18: Initialize benchmark engine
+        self.benchmark_engine = GovernanceBenchmarkEngine(storage_path=storage_path) if BENCHMARK_AVAILABLE else None
     
     def get_governance_view(
         self,
@@ -379,9 +390,56 @@ class GovernanceAggregationEngine:
         # Limit to top 3 comparisons
         return comparisons[:3]
     
+    def get_benchmark_summary(self, proposal_id: str) -> Optional[Dict[str, Any]]:
+        """Get benchmark summary for a proposal decision.
+        
+        Returns metrics from governance scorecard if available.
+        """
+        if not BENCHMARK_AVAILABLE or not self.benchmark_engine:
+            return None
+        
+        # Get the scorecard for this proposal
+        scorecard = self.benchmark_engine.get_scorecard(proposal_id)
+        if not scorecard:
+            return None
+        
+        # Get reliability report
+        report = self.benchmark_engine.get_reliability_report(proposal_id)
+        
+        return {
+            "reliability_score": report["metrics"].get("success_rate"),
+            "total_decisions": report["total_decisions"],
+            "weak_zones": report.get("weak_zones", []),
+            "recommendations": report.get("recommendations", []),
+            "execute_count": report["metrics"].get("execute_decisions", 0),
+            "defer_count": report["metrics"].get("defer_decisions", 0),
+        }
+    
     def format_governance_view(self, view: ProposalGovernanceView) -> str:
         """Format governance view for display."""
-        return view.format_for_display()
+        lines = view.format_for_display()
+        
+        # v18: Add benchmark summary if available
+        if BENCHMARK_AVAILABLE and self.benchmark_engine:
+            benchmark = self.get_benchmark_summary(view.proposal_id)
+            if benchmark:
+                lines = lines.rstrip() + "\n\n" + "=" * 70 + "\n"
+                lines += "BENCHMARK SUMMARY:\n"
+                lines += "=" * 70 + "\n"
+                lines += f"  Reliability Score: {benchmark['reliability_score']:.1%}" if benchmark['reliability_score'] else "  Reliability Score: N/A (no outcomes recorded)\n"
+                lines += f"  Total Decisions: {benchmark['total_decisions']}\n"
+                lines += f"  Execute Count: {benchmark['execute_count']}\n"
+                lines += f"  Defer Count: {benchmark['defer_count']}\n"
+                if benchmark.get("weak_zones"):
+                    lines += "  Weak Zones:\n"
+                    for zone in benchmark["weak_zones"]:
+                        lines += f"    - {zone}\n"
+                if benchmark.get("recommendations"):
+                    lines += "  Recommendations:\n"
+                    for rec in benchmark["recommendations"]:
+                        lines += f"    - {rec}\n"
+        
+        return lines
 
 
 def get_governance_view(

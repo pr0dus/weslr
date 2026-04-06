@@ -12,6 +12,7 @@ from governance_surface import (
     GovernanceAggregationEngine,
     ProposalGovernanceView,
     get_governance_view,
+    BENCHMARK_AVAILABLE,
 )
 
 
@@ -65,7 +66,23 @@ def invoke_governance_single(
         "recommended_action_reason": view.recommended_action_reason,
         "status": status,
         "raw_view": view.to_dict(),
+        # v18: Benchmark summary
+        "benchmark_summary": _get_benchmark_summary(engine, view.proposal_id),
     }
+
+
+def _get_benchmark_summary(engine: GovernanceAggregationEngine, proposal_id: str) -> Optional[Dict[str, Any]]:
+    """Get benchmark summary for a proposal if available."""
+    if not BENCHMARK_AVAILABLE or not engine:
+        return None
+    
+    try:
+        if hasattr(engine, 'get_benchmark_summary'):
+            return engine.get_benchmark_summary(proposal_id)
+    except Exception:
+        pass
+    
+    return None
 
 
 def invoke_governance_compare(
