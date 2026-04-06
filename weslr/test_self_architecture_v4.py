@@ -8,6 +8,7 @@ import sys
 os.chdir(Path(__file__).parent)
 
 from self_architecture import (
+    SelfArchitecture,
     TradeoffEngine,
     ComparisonOption,
     ComparisonResult,
@@ -437,6 +438,8 @@ def run_all_tests():
         test_consistent_ranking,
         test_fallback_behavior,
         test_backwards_compatibility,
+        test_compare_real_pending_suggestions,
+        test_operator_output_format,
     ]
     
     results = []
@@ -458,6 +461,138 @@ def run_all_tests():
     all_pass = all("PASS" in r for _, r in results)
     print(f"\nOverall: {'ALL PASS' if all_pass else 'SOME FAILED'}")
     return all_pass
+
+
+def test_compare_real_pending_suggestions():
+    """Test comparing real pending suggestions from store."""
+    print("Test 13: Compare real pending suggestions")
+    
+    from capability_suggestion import (
+        CapabilitySuggestion,
+        SuggestionStatus,
+        CapabilityType,
+        SourceProvenance,
+    )
+    from datetime import datetime, timezone
+    
+    arch = SelfArchitecture()
+    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    
+    s1 = CapabilitySuggestion(
+        id='suggest-001',
+        title='Quick fix',
+        description='Small improvement',
+        capability_type=CapabilityType.ANALYSIS,
+        status=SuggestionStatus.NEW,
+        provenance=SourceProvenance.GITHUB,
+        created_at=now,
+        updated_at=now,
+        priority=50,
+        implementation_effort_estimate=20,
+    )
+    
+    s2 = CapabilitySuggestion(
+        id='suggest-002',
+        title='Strategic rewrite',
+        description='Major refactor',
+        capability_type=CapabilityType.INTEGRATION,
+        status=SuggestionStatus.NEW,
+        provenance=SourceProvenance.REDDIT,
+        created_at=now,
+        updated_at=now,
+        priority=60,
+        implementation_effort_estimate=80,
+        roadmap_impact_tags='strategic',
+    )
+    
+    # Compare them using SelfArchitecture
+    result = arch.compare_suggestions(s1, s2)
+    output = arch.get_live_comparison_output(s1, s2)
+    
+    # Check result structure
+    assert result.comparison_id is not None
+    assert len(result.options) == 2
+    assert result.winner_id is not None
+    assert result.tradeoff_summary != ""
+    
+    # Check output structure
+    assert 'comparison_id' in output
+    assert 'winner' in output
+    assert 'tradeoff_summary' in output
+    assert 'comparison_details' in output
+    assert 'tradeoff_reasons' in output
+    
+    print("  ✓ Real pending suggestions comparison works")
+    return True
+
+
+def test_operator_output_format():
+    """Test the operator-facing output format."""
+    print("Test 14: Operator output format")
+    
+    from capability_suggestion import (
+        CapabilitySuggestion,
+        SuggestionStatus,
+        CapabilityType,
+        SourceProvenance,
+    )
+    from datetime import datetime, timezone
+    
+    arch = SelfArchitecture()
+    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    
+    s1 = CapabilitySuggestion(
+        id='suggest-001',
+        title='Quick win',
+        description='Small improvement',
+        capability_type=CapabilityType.STORAGE,
+        status=SuggestionStatus.NEW,
+        provenance=SourceProvenance.GITHUB,
+        created_at=now,
+        updated_at=now,
+        priority=55,
+        implementation_effort_estimate=25,
+    )
+    
+    s2 = CapabilitySuggestion(
+        id='suggest-002',
+        title='Strategic option',
+        description='Big change',
+        capability_type=CapabilityType.INGESTION,
+        status=SuggestionStatus.NEW,
+        provenance=SourceProvenance.REDDIT,
+        created_at=now,
+        updated_at=now,
+        priority=65,
+        implementation_effort_estimate=70,
+        roadmap_impact_tags='strategic',
+    )
+    
+    # Get operator-facing output
+    output = arch.get_live_comparison_output(s1, s2)
+    
+    # Verify all required fields for operator
+    assert 'comparison_id' in output
+    assert 'options' in output
+    assert 'winner' in output
+    assert 'tradeoff_summary' in output
+    assert 'recommendation_timing' in output
+    assert 'comparison_details' in output
+    assert 'tradeoff_reasons' in output
+    
+    # Check winner has id and title
+    assert 'id' in output['winner']
+    assert 'title' in output['winner']
+    
+    # Check comparison details have all required fields
+    details = output['comparison_details']
+    assert 'best_for_quick_wins' in details
+    assert 'best_for_strategic' in details
+    assert 'lowest_risk' in details
+    assert 'highest_value' in details
+    
+    print("  ✓ Operator output format works")
+    return True
 
 
 if __name__ == "__main__":

@@ -429,6 +429,106 @@ class SelfArchitecture:
             results.append(result)
         return results
 
+    def compare_suggestions(
+        self,
+        suggestion1: Any,
+        suggestion2: Any,
+        comparison_id: Optional[str] = None,
+    ) -> ComparisonResult:
+        """Compare two capability suggestions using the tradeoff engine.
+        
+        Args:
+            suggestion1: First CapabilitySuggestion to compare
+            suggestion2: Second CapabilitySuggestion to compare
+            comparison_id: Optional ID for the comparison
+            
+        Returns:
+            ComparisonResult with winner and tradeoff analysis
+        """
+        # Map suggestions to ComparisonOption
+        opt1 = self._suggestion_to_comparison_option(suggestion1, "opt1")
+        opt2 = self._suggestion_to_comparison_option(suggestion2, "opt2")
+        
+        # Use TradeoffEngine to compare
+        engine = TradeoffEngine(self)
+        return engine.compare_options([opt1, opt2], comparison_id)
+    
+    def _suggestion_to_comparison_option(
+        self,
+        suggestion: Any,
+        option_id: str,
+    ) -> ComparisonOption:
+        """Map a CapabilitySuggestion to ComparisonOption."""
+        # Determine affected subsystems from capability type
+        cap_type = getattr(suggestion, 'capability_type', None)
+        cap_type_str = None
+        if cap_type and hasattr(cap_type, 'value'):
+            cap_type_str = cap_type.value
+        elif cap_type:
+            cap_type_str = str(cap_type)
+        
+        subsystems_map = {
+            "ingestion": ["capability_discovery", "file_ingestion"],
+            "analysis": ["capability_discovery"],
+            "visualization": ["capability_discovery"],
+            "automation": ["task", "state"],
+            "integration": ["state", "continuity"],
+            "storage": ["state"],
+            "security": ["state"],
+            "other": ["continuity"],
+        }
+        affected = subsystems_map.get(cap_type_str, ["continuity"])
+        
+        # Determine risk from risk_level if available
+        risk = "medium"
+        risk_level = getattr(suggestion, 'risk_level', None)
+        if risk_level:
+            risk = str(risk_level)
+        
+        # Determine effort from implementation_effort_estimate if available
+        effort = 50
+        effort_val = getattr(suggestion, 'implementation_effort_estimate', None)
+        if effort_val:
+            effort = int(effort_val)
+        
+        # Determine strategic value
+        strategic_value = "moderate"
+        if hasattr(suggestion, 'roadmap_impact_tags') and suggestion.roadmap_impact_tags:
+            if "strategic" in str(suggestion.roadmap_impact_tags).lower():
+                strategic_value = "high"
+        
+        # Classification
+        is_quick_win = effort < 30 and len(affected) <= 1
+        is_strategic = "strategic" in str(getattr(suggestion, 'roadmap_impact_tags', '')).lower()
+        is_speculative = effort > 70 and len(affected) > 2
+        
+        return ComparisonOption(
+            id=option_id,
+            title=getattr(suggestion, 'title', 'Untitled'),
+            description=getattr(suggestion, 'description', ''),
+            affected_subsystems=affected,
+            risk=risk,
+            effort=effort,
+            implementation_effort=effort,
+            strategic_value=strategic_value,
+            is_quick_win=is_quick_win,
+            is_strategic=is_strategic,
+            is_speculative=is_speculative,
+        )
+
+    def get_live_comparison_output(
+        self,
+        suggestion1: Any,
+        suggestion2: Any,
+    ) -> Dict[str, Any]:
+        """Get comparison output for two suggestions in operator-facing format.
+        
+        This is the minimal operator-facing output for live comparison flow.
+        """
+        result = self.compare_suggestions(suggestion1, suggestion2)
+        engine = TradeoffEngine(self)
+        return engine.get_comparison_output(result)
+
 
 # ============================================================================
 # RISK ASSESSOR
@@ -1057,3 +1157,103 @@ class TradeoffEngine:
         }
         
         return output
+
+    def compare_suggestions(
+        self,
+        suggestion1: Any,
+        suggestion2: Any,
+        comparison_id: Optional[str] = None,
+    ) -> ComparisonResult:
+        """Compare two capability suggestions using the tradeoff engine.
+        
+        Args:
+            suggestion1: First CapabilitySuggestion to compare
+            suggestion2: Second CapabilitySuggestion to compare
+            comparison_id: Optional ID for the comparison
+            
+        Returns:
+            ComparisonResult with winner and tradeoff analysis
+        """
+        # Map suggestions to ComparisonOption
+        opt1 = self._suggestion_to_comparison_option(suggestion1, "opt1")
+        opt2 = self._suggestion_to_comparison_option(suggestion2, "opt2")
+        
+        # Use TradeoffEngine to compare
+        engine = TradeoffEngine(self)
+        return engine.compare_options([opt1, opt2], comparison_id)
+    
+    def _suggestion_to_comparison_option(
+        self,
+        suggestion: Any,
+        option_id: str,
+    ) -> ComparisonOption:
+        """Map a CapabilitySuggestion to ComparisonOption."""
+        # Determine affected subsystems from capability type
+        cap_type = getattr(suggestion, 'capability_type', None)
+        cap_type_str = None
+        if cap_type and hasattr(cap_type, 'value'):
+            cap_type_str = cap_type.value
+        elif cap_type:
+            cap_type_str = str(cap_type)
+        
+        subsystems_map = {
+            "ingestion": ["capability_discovery", "file_ingestion"],
+            "analysis": ["capability_discovery"],
+            "visualization": ["capability_discovery"],
+            "automation": ["task", "state"],
+            "integration": ["state", "continuity"],
+            "storage": ["state"],
+            "security": ["state"],
+            "other": ["continuity"],
+        }
+        affected = subsystems_map.get(cap_type_str, ["continuity"])
+        
+        # Determine risk from risk_level if available
+        risk = "medium"
+        risk_level = getattr(suggestion, 'risk_level', None)
+        if risk_level:
+            risk = str(risk_level)
+        
+        # Determine effort from implementation_effort_estimate if available
+        effort = 50
+        effort_val = getattr(suggestion, 'implementation_effort_estimate', None)
+        if effort_val:
+            effort = int(effort_val)
+        
+        # Determine strategic value
+        strategic_value = "moderate"
+        if hasattr(suggestion, 'roadmap_impact_tags') and suggestion.roadmap_impact_tags:
+            if "strategic" in str(suggestion.roadmap_impact_tags).lower():
+                strategic_value = "high"
+        
+        # Classification
+        is_quick_win = effort < 30 and len(affected) <= 1
+        is_strategic = "strategic" in str(getattr(suggestion, 'roadmap_impact_tags', '')).lower()
+        is_speculative = effort > 70 and len(affected) > 2
+        
+        return ComparisonOption(
+            id=option_id,
+            title=getattr(suggestion, 'title', 'Untitled'),
+            description=getattr(suggestion, 'description', ''),
+            affected_subsystems=affected,
+            risk=risk,
+            effort=effort,
+            implementation_effort=effort,
+            strategic_value=strategic_value,
+            is_quick_win=is_quick_win,
+            is_strategic=is_strategic,
+            is_speculative=is_speculative,
+        )
+
+    def get_live_comparison_output(
+        self,
+        suggestion1: Any,
+        suggestion2: Any,
+    ) -> Dict[str, Any]:
+        """Get comparison output for two suggestions in operator-facing format.
+        
+        This is the minimal operator-facing output for live comparison flow.
+        """
+        result = self.compare_suggestions(suggestion1, suggestion2)
+        engine = TradeoffEngine(self)
+        return engine.get_comparison_output(result)
