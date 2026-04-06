@@ -157,6 +157,12 @@ class RealizationPlan:
     proof_status: Optional[Dict[str, Any]] = None
     blocking_reasons: List[str] = field(default_factory=list)
     
+    # v23: Safety contract integration (additive, reversible)
+    action_type: Optional[str] = None
+    safety_contract: Optional[Dict[str, Any]] = None
+    safety_approved: bool = False
+    safety_blocked_reasons: List[str] = field(default_factory=list)
+    
     # Metadata
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
@@ -188,6 +194,11 @@ class RealizationPlan:
             "approved_by": self.approved_by,
             "approved_at": self.approved_at,
             "approved_blocker_ids": self.approved_blocker_ids,
+            # v23: Safety contract integration
+            "action_type": self.action_type,
+            "safety_contract": self.safety_contract,
+            "safety_approved": self.safety_approved,
+            "safety_blocked_reasons": self.safety_blocked_reasons,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "prepared_by": self.prepared_by,
@@ -207,6 +218,11 @@ class RealizationPlan:
         data["execution_eligibility"] = data.get("execution_eligibility")
         data["proof_status"] = data.get("proof_status")
         data["blocking_reasons"] = data.get("blocking_reasons", [])
+        # v23: Safety contract integration
+        data["action_type"] = data.get("action_type", None)
+        data["safety_contract"] = data.get("safety_contract", None)
+        data["safety_approved"] = data.get("safety_approved", False)
+        data["safety_blocked_reasons"] = data.get("safety_blocked_reasons", [])
         data["approval_points"] = data.get("approval_points", [])
         data["approved_blocker_ids"] = data.get("approved_blocker_ids", [])
         return cls(**data)

@@ -75,6 +75,12 @@ class ProposalGovernanceView:
     domain_profile_id: Optional[str] = None
     domain_risk_override: Optional[str] = None
     
+    # v23: Safety contract integration (additive, reversible)
+    action_type: Optional[str] = None
+    safety_contract: Optional[Dict[str, Any]] = None
+    safety_status: Optional[str] = None
+    safety_blocked: bool = False
+    
     # Proof gate
     execution_eligibility: Optional[Dict[str, Any]] = None
     proof_status: Optional[Dict[str, Any]] = None
@@ -130,6 +136,11 @@ class ProposalGovernanceView:
             "operation_mode": self.operation_mode,
             "reliability_status": self.reliability_status,
             "offline_mode_explanation": self.offline_mode_explanation,
+            # v23: Safety contract integration
+            "action_type": self.action_type,
+            "safety_contract": self.safety_contract,
+            "safety_status": self.safety_status,
+            "safety_blocked": self.safety_blocked,
             "execution_eligibility": self.execution_eligibility,
             "proof_status": self.proof_status,
             "blocking_reasons": self.blocking_reasons,
@@ -163,6 +174,11 @@ class ProposalGovernanceView:
         data["operation_mode"] = data.get("operation_mode", None)
         data["reliability_status"] = data.get("reliability_status", None)
         data["offline_mode_explanation"] = data.get("offline_mode_explanation", None)
+        # v23: Safety contract integration
+        data["action_type"] = data.get("action_type", None)
+        data["safety_contract"] = data.get("safety_contract", None)
+        data["safety_status"] = data.get("safety_status", None)
+        data["safety_blocked"] = data.get("safety_blocked", False)
         return cls(**data)
 
     def format_for_display(self) -> str:

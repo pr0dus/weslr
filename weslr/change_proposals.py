@@ -112,6 +112,11 @@ class ChangeProposal:
     domain_context: Optional[Dict[str, Any]] = None  # DomainContext dict reference
     domain_tag: Optional[str] = None  # Single domain tag for simpler references
     
+    # v23: Safety contract integration (additive, reversible)
+    action_type: Optional[str] = None  # ActionType.value if applicable
+    safety_contract: Optional[Dict[str, Any]] = None  # SafetyContract dict reference
+    safety_contract_summary: Optional[str] = None  # Human-readable summary
+    
     # State
     state: str = ProposalState.PENDING_REVIEW.value
     approval_state: str = "pending"  # For operator clarity
@@ -153,6 +158,10 @@ class ChangeProposal:
             # v21: Domain integration
             "domain_context": self.domain_context,
             "domain_tag": self.domain_tag,
+            # v23: Safety contract integration
+            "action_type": self.action_type,
+            "safety_contract": self.safety_contract,
+            "safety_contract_summary": self.safety_contract_summary,
             "state": self.state,
             "approval_state": self.approval_state,
             "audit_history": self.audit_history,
@@ -179,6 +188,10 @@ class ChangeProposal:
         # v21: Domain integration
         data["domain_context"] = data.get("domain_context", None)
         data["domain_tag"] = data.get("domain_tag", None)
+        # v23: Safety contract integration
+        data["action_type"] = data.get("action_type", None)
+        data["safety_contract"] = data.get("safety_contract", None)
+        data["safety_contract_summary"] = data.get("safety_contract_summary", None)
         data["audit_history"] = data.get("audit_history", [])
         
         # Ensure state enum

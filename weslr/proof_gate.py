@@ -135,6 +135,11 @@ class ExecutionReadiness:
     readiness_reason: Optional[str] = None
     blocking_reasons: List[str] = field(default_factory=list)
     
+    # v23: Safety contract integration (additive, reversible)
+    safety_approved: bool = False
+    safety_blocked: bool = False
+    safety_blocked_reasons: List[str] = field(default_factory=list)
+    
     # Metadata
     assessed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     assessed_by: Optional[str] = None
@@ -158,6 +163,10 @@ class ExecutionReadiness:
             "readiness_state": self.readiness_state,
             "readiness_reason": self.readiness_reason,
             "blocking_reasons": self.blocking_reasons,
+            # v23: Safety contract integration
+            "safety_approved": self.safety_approved,
+            "safety_blocked": self.safety_blocked,
+            "safety_blocked_reasons": self.safety_blocked_reasons,
             "assessed_at": self.assessed_at,
             "assessed_by": self.assessed_by,
         }
@@ -169,6 +178,10 @@ class ExecutionReadiness:
         data["missing_proofs"] = data.get("missing_proofs", [])
         data["failed_proofs"] = data.get("failed_proofs", [])
         data["blocking_reasons"] = data.get("blocking_reasons", [])
+        # v23: Safety contract integration
+        data["safety_approved"] = data.get("safety_approved", False)
+        data["safety_blocked"] = data.get("safety_blocked", False)
+        data["safety_blocked_reasons"] = data.get("safety_blocked_reasons", [])
         return cls(**data)
 
     def update_readiness(self) -> None:
