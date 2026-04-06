@@ -1,25 +1,25 @@
 # OPERATOR STATE — WESLR
 
-**Latest checkpoint**: v52  
-**Latest sealed commit**: `fdc6b66303f00728c9857b58f2df174c6534840f`  
+**Latest checkpoint**: v53  
+**Latest sealed commit**: `80ffec11570bddd05f1699ee4c40975cc3a94d65`  
 **Current branch**: `feature/tia-industrial-slice`  
-**Current phase**: Recommendation Delivery / Presentation Mode Layer complete  
+**Current phase**: Recommendation Presentation Mode Layer complete  
 
 ---
 
-## Bottleneck Status
+## Bottleneck Status (WESLR Core Only)
 
 ### Open Bottlenecks
-- TIA-industrial-slice integration planning
+- None identified
 
 ### Remaining Major Bottlenecks
-- None identified beyond TIA integration planning
+- None identified
 
 ---
 
 ## Next Workflow Recommendation
 
-Proceed with `weslr resume` or `weslr verify` to establish continuity before implementing next layer.
+Operator state needs update after v53 commit. Next action: `weslr audit bottlenecks`.
 
 ---
 
