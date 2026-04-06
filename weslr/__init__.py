@@ -24,6 +24,7 @@ Core modules:
 - multi_timescale_planning: Self-Architecture Core v38 - Multi-timescale planning / Trajectory layer
 - deployment_persona: Self-Architecture Core v39 - Role / Deployment persona layer (additive, role-based, transparent)
 - recommendation_presentation_mode: Self-Architecture Core v53 - Recommendation presentation mode layer (context-aware, adaptive)
+- final_decision_explainability: Self-Architecture Core v54 - Final decision explainability layer (operator-readable explanation bundles)
 """
 
 __version__ = "1.0.0"
@@ -55,6 +56,7 @@ from . import operator_lifecycle
 from . import final_decision_composer
 from . import recommendation_delivery
 from . import recommendation_presentation_mode
+from . import final_decision_explainability
 
 __all__ = [
     "adapters",
@@ -84,4 +86,5 @@ __all__ = [
     "final_decision_composer",
     "recommendation_delivery",
     "recommendation_presentation_mode",
+    "final_decision_explainability",
 ]
