@@ -1,0 +1,25 @@
+{
+  "project_name": "WESLR",
+  "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
+  "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
+  "current_branch": "feature/tia-industrial-slice",
+  "latest_sealed_commit": "fdc6b66303f00728c9857b58f2df174c6534840f",
+  "latest_layer": "v52",
+  "current_phase": "recommendation_delivery",
+  "next_priority": "recommendation_presentation_mode_layer",
+  "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
+  "workflow_rules": [
+    "additive only",
+    "no repo drift",
+    "tracked in repo",
+    "compact and readable",
+    "development workflow only"
+  ],
+  "active_hotfixes": [],
+  "open_bottlenecks": [
+    "TIA-industrial-slice integration planning"
+  ],
+  "architecture_direction": "continuity-aware operator workflow",
+  "continuity_mode": "enabled",
+  "repo_truth_required": true
+}
