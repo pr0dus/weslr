@@ -20,6 +20,17 @@ from .scenario_model import (
     create_strategic_scenario,
 )
 
+# Self-Architecture Core v7: Architecture memory entry point
+from .architecture_memory import (
+    ArchitectureDecision,
+    ArchitectureMemory,
+    ConsistencyEngine,
+    ConsistencyReport,
+    DecisionStatus,
+    create_decision,
+    from_scenario,
+)
+
 
 RequesterType = Literal["individual", "university", "laboratory", "company", "institution"]
 DomainType = str  # free-text scientific/technical domain
@@ -325,6 +336,67 @@ if __name__ == "__main__":
             print(json.dumps(result.to_dict(), indent=2))
         except Exception as e:
             print(f"Error: {e}")
+            sys.exit(1)
+
+    elif command == "archmemory":
+        # Architecture memory operations
+        if len(sys.argv) < 3:
+            print("Usage: archmemory <command> [args]")
+            print("Commands:")
+            print("  add <title> <description> [subsystem...]      # Add a decision")
+            print("  list                                        # List all decisions")
+            print("  status <id>                                 # Show decision status")
+            print("  compare <decision_json>                     # Compare against prior decisions")
+            print("  drift                                       # Check for drift patterns")
+            sys.exit(1)
+        
+        arch_mem = ArchitectureMemory()
+        cmd = sys.argv[2]
+        
+        if cmd == "add":
+            title = sys.argv[3] if len(sys.argv) > 3 else "Untitled"
+            desc = sys.argv[4] if len(sys.argv) > 4 else ""
+            subsys = sys.argv[5:] if len(sys.argv) > 5 else []
+            decision = create_decision(title, desc, affected_subsystems=subsys)
+            result = arch_mem.add_decision(decision)
+            print(json.dumps(result.to_dict(), indent=2))
+        
+        elif cmd == "list":
+            history = arch_mem.get_decision_history()
+            print(json.dumps(history, indent=2))
+        
+        elif cmd == "status":
+            if len(sys.argv) < 4:
+                print("Usage: status <decision_id>")
+                sys.exit(1)
+            decision_id = sys.argv[3]
+            decision = arch_mem.get_decision(decision_id)
+            if decision:
+                print(json.dumps(decision.to_dict(), indent=2))
+            else:
+                print(f"Decision not found: {decision_id}")
+                sys.exit(1)
+        
+        elif cmd == "compare":
+            if len(sys.argv) < 4:
+                print("Usage: compare <decision_json>")
+                sys.exit(1)
+            try:
+                with open(sys.argv[3], "r") as f:
+                    data = json.load(f)
+                decision = ArchitectureDecision.from_dict(data)
+                report = ConsistencyEngine.evaluate_consistency(decision, arch_mem)
+                print(json.dumps(report.to_dict(), indent=2))
+            except Exception as e:
+                print(f"Error: {e}")
+                sys.exit(1)
+        
+        elif cmd == "drift":
+            result = ConsistencyEngine.detect_drift(arch_mem)
+            print(json.dumps(result, indent=2))
+        
+        else:
+            print(f"Unknown archmemory command: {cmd}")
             sys.exit(1)
 
     else:

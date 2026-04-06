@@ -15,6 +15,7 @@ Core modules:
 - structured_data: Structured data handling
 - task_anchor: Task anchors for continuity
 - scenario_model: Self-Architecture Core v6 - Scenario comparison / Roadmap tradeoff layer
+- architecture_memory: Self-Architecture Core v7 - Longitudinal architecture memory / consistency layer
 """
 
 __version__ = "1.0.0"
@@ -28,6 +29,7 @@ from . import file_ingestion
 from . import file_router
 from . import request_intelligence
 from . import scenario_model
+from . import architecture_memory
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -42,6 +44,7 @@ __all__ = [
     "file_router",
     "request_intelligence",
     "scenario_model",
+    "architecture_memory",
     "state",
     "structured_data",
     "task_anchor",
