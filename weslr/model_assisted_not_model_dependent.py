@@ -255,9 +255,9 @@ class ModelAssistedNotModelDependentEngine:
         """Enable degraded mode with specified capabilities."""
         self.context.degraded_mode_state.enabled = True
         self.context.degraded_mode_state.capabilities = capabilities or [
-            DegradatedModeCapability.EVALUATION.value,
-            DegradatedModeCapability.STORAGE.value,
-            DegradatedModeCapability.TIMING.value
+            DegradedModeCapability.EVALUATION.value,
+            DegradedModeCapability.STORAGE.value,
+            DegradedModeCapability.TIMING.value
         ]
         self.context.degraded_mode_state.safety_enforcement = True
         self.context.degraded_mode_state.escalation_required = True
