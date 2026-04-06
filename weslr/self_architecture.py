@@ -1257,3 +1257,146 @@ class TradeoffEngine:
         result = self.compare_suggestions(suggestion1, suggestion2)
         engine = TradeoffEngine(self)
         return engine.get_comparison_output(result)
+
+    # ============================================================================
+    # SELF-ARCHITECTURE CORE v12: CHANGE PROPOSAL INTEGRATION
+    # ============================================================================
+
+    def package_suggestion_as_proposal(
+        self,
+        suggestion: Any,
+        source_scenario: str = None,
+        proposal_id: str = None,
+    ) -> Dict[str, Any]:
+        """Package a suggestion into a change proposal using v12 ExecutionGate.
+        
+        This is the operator-integration entry point for Suggestion → Proposal conversion.
+        The proposal is created in PENDING_REVIEW state for operator approval.
+        
+        Returns dict with:
+        - proposal_id: The generated proposal ID
+        - proposal: Full ChangeProposal dict
+        - review_output: Operator-facing review format
+        - state: Current state (always "pending_review" initially)
+        """
+        try:
+            from change_proposals import ExecutionGate, ProposalState
+        except ImportError:
+            # Fallback if change_proposals module unavailable
+            return {
+                "error": "change_proposals module not available",
+                "proposal_id": None,
+                "state": None,
+            }
+        
+        # Extract suggestion data
+        suggestion_id = getattr(suggestion, 'id', None) or f"suggest-{uuid.uuid4().hex[:6]}"
+        title = getattr(suggestion, 'title', 'Untitled')
+        description = getattr(suggestion, 'description', '')
+        
+        # Get affected subsystems
+        affected = getattr(suggestion, 'affected_subsystems', [])
+        if not affected:
+            cap_type = getattr(suggestion, 'capability_type', None)
+            if cap_type:
+                cap_str = str(getattr(cap_type, 'value', cap_type)).lower()
+                subsystem_map = {
+                    "ingestion": ["capability_discovery", "file_ingestion"],
+                    "analysis": ["capability_discovery"],
+                    "visualization": ["capability_discovery"],
+                    "automation": ["task", "state"],
+                    "integration": ["state", "continuity"],
+                    "storage": ["state"],
+                    "security": ["state"],
+                    "other": ["continuity"],
+                }
+                affected = subsystem_map.get(cap_str, ["continuity"])
+        
+        # Get assessment data
+        risk = getattr(suggestion, 'risk_level', 'medium')
+        effort = getattr(suggestion, 'implementation_effort_estimate', 50)
+        confidence = getattr(suggestion, 'calibration_confidence', 0.5)
+        
+        # Get context data
+        forecast = getattr(suggestion, 'forecast_summary', None)
+        outcomes = getattr(suggestion, 'expected_outcomes', [])
+        if not outcomes and hasattr(suggestion, 'expected_improvements'):
+            outcomes = suggestion.expected_improvements
+        precedent = getattr(suggestion, 'precedent_context', None)
+        memory_refs = getattr(suggestion, 'memory_references', [])
+        
+        # Build validation requirements
+        validation = [
+            "self_architecture_review",
+            "impact_analysis",
+            "rollback_verification",
+        ]
+        
+        # Build rollback expectations
+        rollback = [
+            "revert file modifications",
+            "restore previous configuration",
+            "re-run calibration to confirm",
+        ]
+        
+        # Create proposal via ExecutionGate
+        gate = ExecutionGate()
+        proposal = gate.create_proposal(
+            proposal_id=proposal_id or f"prop-{uuid.uuid4().hex[:8]}",
+            title=str(title),
+            description=str(description),
+            affected_subsystems=affected,
+            source_suggestion=str(suggestion_id),
+            source_scenario=source_scenario,
+            risk_level=str(risk),
+            estimated_effort=int(effort),
+            calibration_confidence=float(confidence),
+            forecast_summary=str(forecast) if forecast else None,
+            expected_outcomes=list(outcomes) if outcomes else [],
+            precedent_context=str(precedent) if precedent else None,
+            memory_references=list(memory_refs) if memory_refs else [],
+            validation_requirements=validation,
+            rollback_expectations=rollback,
+        )
+        
+        # Generate review output
+        review_output = gate.generate_proposal_review_output(proposal.proposal_id)
+        
+        return {
+            "proposal_id": proposal.proposal_id,
+            "proposal": proposal.to_dict(),
+            "review_output": review_output,
+            "state": ProposalState.PENDING_REVIEW.value,
+        }
+
+    def get_proposal_review(
+        self,
+        proposal_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get operator-facing review output for a proposal.
+        
+        Args:
+            proposal_id: The proposal ID
+            
+        Returns:
+            Review output dict or None if not found
+        """
+        try:
+            from change_proposals import ExecutionGate
+            gate = ExecutionGate()
+            return gate.generate_proposal_review_output(proposal_id)
+        except (ImportError, KeyError):
+            return None
+
+    def get_pending_proposals(self) -> List[Dict[str, Any]]:
+        """Get all pending review proposals.
+        
+        Returns list of proposal dicts for operator review.
+        """
+        try:
+            from change_proposals import ExecutionGate
+            gate = ExecutionGate()
+            return [p for p in gate.get_all_proposals() 
+                   if p.get("state") == "pending_review"]
+        except ImportError:
+            return []
