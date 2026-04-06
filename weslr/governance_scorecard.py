@@ -10,8 +10,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from governance_invocation import invoke_governance_single, invoke_governance_compare
-
 
 # ============================================================================
 # DECISION RECORD

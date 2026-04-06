@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from governance_surface import (
+    BENCHMARK_AVAILABLE,
     GovernanceAggregationEngine,
     ProposalGovernanceView,
     get_governance_view,
-    BENCHMARK_AVAILABLE,
 )
 
 
