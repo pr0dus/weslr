@@ -70,6 +70,11 @@ class ProposalGovernanceView:
     evidence_confidence: float = 0.0
     evidence_claim_count: int = 0
     
+    # v21: Domain integration (additive, reversible)
+    domain_tag: Optional[str] = None
+    domain_profile_id: Optional[str] = None
+    domain_risk_override: Optional[str] = None
+    
     # Proof gate
     execution_eligibility: Optional[Dict[str, Any]] = None
     proof_status: Optional[Dict[str, Any]] = None
@@ -112,6 +117,10 @@ class ProposalGovernanceView:
             "evidence_summary": self.evidence_summary,
             "evidence_confidence": self.evidence_confidence,
             "evidence_claim_count": self.evidence_claim_count,
+            # v21: Domain integration
+            "domain_tag": self.domain_tag,
+            "domain_profile_id": self.domain_profile_id,
+            "domain_risk_override": self.domain_risk_override,
             "execution_eligibility": self.execution_eligibility,
             "proof_status": self.proof_status,
             "blocking_reasons": self.blocking_reasons,
@@ -137,6 +146,10 @@ class ProposalGovernanceView:
         data["evidence_summary"] = data.get("evidence_summary", "")
         data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
         data["evidence_claim_count"] = data.get("evidence_claim_count", 0)
+        # v21: Domain integration
+        data["domain_tag"] = data.get("domain_tag", None)
+        data["domain_profile_id"] = data.get("domain_profile_id", None)
+        data["domain_risk_override"] = data.get("domain_risk_override", None)
         return cls(**data)
 
     def format_for_display(self) -> str:

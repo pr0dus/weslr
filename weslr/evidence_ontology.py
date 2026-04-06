@@ -120,6 +120,11 @@ class EvidenceClaim:
     confidence_basis: Optional[str] = None  # Brief explanation of confidence level
     confidence_score: Optional[float] = None  # 0.0-1.0 numeric score
     
+    # v21: Domain overlay integration (additive, reversible)
+    domain_profile_id: Optional[str] = None  # Reference to domain profile if applicable
+    
+    # Metadata
+    
     # Metadata
     parent_claim_id: Optional[str] = None  # For claim chains/derivations
     related_claims: List[str] = field(default_factory=list)  # Related claim IDs
@@ -151,6 +156,7 @@ class EvidenceClaim:
         """Create from dictionary representation."""
         data["domain_tags"] = data.get("domain_tags", [])
         data["related_claims"] = data.get("related_claims", [])
+        data["domain_profile_id"] = data.get("domain_profile_id", None)
         return cls(**data)
     
     def update(self, **kwargs) -> EvidenceClaim:

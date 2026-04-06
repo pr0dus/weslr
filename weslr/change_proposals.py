@@ -108,6 +108,10 @@ class ChangeProposal:
     evidence_summary: str = ""  # Human-readable evidence summary
     evidence_confidence: float = 0.0  # 0.0-1.0 overall confidence
     
+    # v21: Domain overlay integration (additive, reversible)
+    domain_context: Optional[Dict[str, Any]] = None  # DomainContext dict reference
+    domain_tag: Optional[str] = None  # Single domain tag for simpler references
+    
     # State
     state: str = ProposalState.PENDING_REVIEW.value
     approval_state: str = "pending"  # For operator clarity
@@ -146,6 +150,9 @@ class ChangeProposal:
             "evidence_chain_ids": self.evidence_chain_ids,
             "evidence_summary": self.evidence_summary,
             "evidence_confidence": self.evidence_confidence,
+            # v21: Domain integration
+            "domain_context": self.domain_context,
+            "domain_tag": self.domain_tag,
             "state": self.state,
             "approval_state": self.approval_state,
             "audit_history": self.audit_history,
@@ -169,6 +176,9 @@ class ChangeProposal:
         data["evidence_chain_ids"] = data.get("evidence_chain_ids", [])
         data["evidence_summary"] = data.get("evidence_summary", "")
         data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
+        # v21: Domain integration
+        data["domain_context"] = data.get("domain_context", None)
+        data["domain_tag"] = data.get("domain_tag", None)
         data["audit_history"] = data.get("audit_history", [])
         
         # Ensure state enum

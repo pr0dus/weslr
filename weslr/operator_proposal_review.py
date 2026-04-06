@@ -57,6 +57,10 @@ class OperatorReviewOutput:
     evidence_summary: str = ""
     evidence_confidence: float = 0.0
     
+    # v21: Domain integration (additive, reversible)
+    domain_tag: Optional[str] = None
+    domain_profile_id: Optional[str] = None
+    
     # State
     current_state: str = "pending_review"
     approval_state: str = "pending"
@@ -96,6 +100,9 @@ class OperatorReviewOutput:
             "evidence_chain_ids": self.evidence_chain_ids,
             "evidence_summary": self.evidence_summary,
             "evidence_confidence": self.evidence_confidence,
+            # v21: Domain integration
+            "domain_tag": self.domain_tag,
+            "domain_profile_id": self.domain_profile_id,
             "current_state": self.current_state,
             "approval_state": self.approval_state,
             "created_at": self.created_at,
@@ -111,6 +118,9 @@ class OperatorReviewOutput:
         data["evidence_chain_ids"] = data.get("evidence_chain_ids", [])
         data["evidence_summary"] = data.get("evidence_summary", "")
         data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
+        # v21: Domain integration
+        data["domain_tag"] = data.get("domain_tag", None)
+        data["domain_profile_id"] = data.get("domain_profile_id", None)
         return cls(**data)
 
     def format_for_display(self) -> str:
