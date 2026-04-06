@@ -51,6 +51,7 @@ from . import constraint_invariant
 from . import alternative_path_recovery
 from . import state_transition
 from . import operator_lifecycle
+from . import final_decision_composer
 
 __all__ = [
     "adapters",
@@ -77,4 +78,5 @@ __all__ = [
     "alternative_path_recovery",
     "state_transition",
     "operator_lifecycle",
+    "final_decision_composer",
 ]

@@ -646,3 +646,29 @@ def integrate_with_operator_views(
             pass  # Silent fallback to default
     
     return operator_dict
+
+
+def integrate_with_final_decision_composer(
+    operator_dict: Dict[str, Any],
+    composer: Any = None,
+) -> Dict[str, Any]:
+    """Add final decision composer context to operator-facing views.
+    
+    This is purely additive — no migration required.
+    
+    v51: Final decision composer provides assembled recommendations for operator review.
+    """
+    if "final_decision_context" not in operator_dict:
+        operator_dict["final_decision_context"] = None
+    
+    if composer:
+        latest = composer.get_latest_recommendation() if hasattr(composer, "get_latest_recommendation") else None
+        operator_dict["final_decision_context"] = {
+            "composer_storage_path": getattr(composer, "storage_path", None),
+            "recommendation_count": len(composer.recommendations) if hasattr(composer, "recommendations") else 0,
+            "has_latest_recommendation": latest is not None,
+            "latest_recommendation_id": latest.recommendation_id if latest else None,
+            "latest_recommendation_type": latest.recommendation_type if latest else None,
+        }
+    
+    return operator_dict
