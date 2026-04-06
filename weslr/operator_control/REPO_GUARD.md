@@ -13,7 +13,12 @@ Strict rules for development operators.
 
 ## Scope Rules
 
-- WESLR Python files only (`*.py` in `weslr/`)
+- **Active scope**: WESLR Python files only (`*.py` in `weslr/`)
+- **Excluded scope** (never routed):
+  - `TIA`
+  - `collector`
+  - `industrial_slice`
+  - `product_runtime_expansion`
 - **No TIA**, **no C#**, unless explicitly requested
 - **No product runtime expansion** — internal operator workflow only
 
@@ -28,6 +33,25 @@ Before any edit:
 3. Check `git branch --show-current` and `git rev-parse HEAD`
 4. Run `git status --short` to confirm working tree state
 5. Confirm WESLR scope contains only Python files (unless explicitly requested otherwise)
+6. Verify `active_scope` in `OPERATOR_STATE.json` is `weslr` only
+7. Verify `excluded_scope` does not contain any active routing target
+
+---
+
+## Routing Discipline
+
+**Allowed next categories** (only these can be `next_priority`):
+- `weslr_core_layer`
+- `weslr_infrastructure`
+- `operator_workflow`
+
+**Excluded scopes** (never route here):
+- `TIA`
+- `collector`
+- `industrial_slice`
+- `product_runtime_expansion`
+
+**Rule**: `weslr next` must only select from allowed categories. Never route to excluded scopes.
 
 ---
 
@@ -37,6 +61,7 @@ Before any edit:
   - Tests pass
   - Commit created
   - Exact commit hash reported
+- Never report "0 bottlenecks" if WESLR core roadmap has pending items
 
 ---
 
@@ -45,6 +70,7 @@ Before any edit:
 - Always require exact commit hash
 - No partial or ambiguous seals
 - Update `OPERATOR_STATE.json` with new seal reference
+- Confirm `next_priority` belongs to allowed categories
 
 ---
 
@@ -52,6 +78,7 @@ Before any edit:
 
 - Continuity helps planning but never replaces repo truth
 - Always anchor to latest sealed commit from repo
+- Never allow excluded scopes to become active routing targets
 
 ---
 
@@ -70,3 +97,14 @@ Before any edit:
 - No direct manipulation of sealed checkpoints
 - No workflow bypass without explicit override
 - No product runtime expansion without explicit instruction
+- No routing to excluded scopes (TIA, collector, industrial_slice, product_runtime_expansion)
+
+---
+
+## Operator State Hardening Rules
+
+- `active_bottlenecks` must only include WESLR core scope items
+- `archived_or_external_bottlenecks` must include excluded scope items
+- Never mix excluded scope items into active bottleneck counts
+- `next_priority` must always belong to `allowed_next_categories`
+- `excluded_scope` must never appear in active routing decisions

@@ -3,21 +3,33 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "80ffec11570bddd05f1699ee4c40975cc3a94d65",
+  "latest_sealed_commit": "5741b6ec2ade1898decdabea283bc6d8fa0302c5",
   "latest_layer": "v53",
   "current_phase": "recommendation_presentation_mode",
-  "next_priority": "operator_state_update"
+  "next_priority": "operator_state_update",
+  "active_scope": ["weslr"],
+  "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
+  "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
+  "active_bottlenecks": {
+    "weslr_core_layer": [],
+    "weslr_infrastructure": [],
+    "operator_workflow": []
+  },
+  "archived_or_external_bottlenecks": {
+    "TIA": [],
+    "industrial_slice": []
+  },
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
     "additive only",
     "no repo drift",
     "tracked in repo",
     "compact and readable",
-    "development workflow only"
+    "development workflow only",
+    "exclude TIA/collector from all routing",
+    "never route to excluded scopes"
   ],
   "active_hotfixes": [],
-  "open_bottlenecks": [],
-  "open_bottlenecks": [],
   "architecture_direction": "continuity-aware operator workflow",
   "continuity_mode": "enabled",
   "repo_truth_required": true
