@@ -719,3 +719,33 @@ def integrate_with_unified_operator_context(
         }
     
     return operator_dict
+
+
+# ============================================================================
+# INTEGRATION HOOKS FOR v52 DELIVERY (Additive)
+# ============================================================================
+
+
+def integrate_with_recommendation_delivery(
+    recommendation_dict: Dict[str, Any],
+    delivery_composer: Any = None,
+) -> Dict[str, Any]:
+    """Add delivery composer context to final decision recommendations.
+    
+    This is purely additive — no migration required.
+    
+    v52: Delivery composer provides presentation modes for recommendations.
+    """
+    if "delivery_context" not in recommendation_dict:
+        recommendation_dict["delivery_context"] = None
+    
+    if delivery_composer:
+        latest = delivery_composer.get_latest_delivery() if hasattr(delivery_composer, "get_latest_delivery") else None
+        recommendation_dict["delivery_context"] = {
+            "delivery_storage_path": getattr(delivery_composer, "storage_path", None),
+            "delivery_count": len(delivery_composer.renderings) if hasattr(delivery_composer, "renderings") else 0,
+            "has_latest_delivery": latest is not None,
+            "latest_delivery_id": latest.delivery_id if latest else None,
+        }
+    
+    return recommendation_dict
