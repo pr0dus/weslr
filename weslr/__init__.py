@@ -47,6 +47,7 @@ from . import deployment_persona
 from . import state
 from . import structured_data
 from . import task_anchor
+from . import constraint_invariant
 
 __all__ = [
     "adapters",
@@ -69,4 +70,5 @@ __all__ = [
     "state",
     "structured_data",
     "task_anchor",
+    "constraint_invariant",
 ]
