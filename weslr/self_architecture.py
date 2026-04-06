@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
@@ -754,3 +755,305 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ============================================================================
+# COMPARISON MODEL (Self-Architecture Core v4)
+# ============================================================================
+
+@dataclass
+class ComparisonOption:
+    """A single option in an architectural comparison."""
+    id: str
+    title: str
+    description: str
+    affected_subsystems: List[str] = field(default_factory=list)
+    risk: str = "medium"  # low, medium, high
+    effort: int = 50  # 1-100
+    fitness_impact: List[str] = field(default_factory=list)  # fitness goal names
+    strategic_value: str = "moderate"  # low, moderate, high
+    implementation_effort: int = 50  # 1-100
+    strategic_value_score: float = 0.5  # 0.0-1.0
+    
+    # Classification
+    is_quick_win: bool = False
+    is_strategic: bool = False
+    is_speculative: bool = False
+    
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ComparisonOption:
+        data["affected_subsystems"] = data.get("affected_subsystems", [])
+        data["fitness_impact"] = data.get("fitness_impact", [])
+        return cls(**data)
+
+
+@dataclass
+class ComparisonResult:
+    """Result of comparing two or more options."""
+    comparison_id: str
+    options: List[ComparisonOption] = field(default_factory=list)
+    
+    # winner selection
+    winner_id: Optional[str] = None
+    winner_title: Optional[str] = None
+    
+    # comparison metrics
+    best_for_quick_wins: Optional[str] = None
+    best_for_strategic: Optional[str] = None
+    lowest_risk: Optional[str] = None
+    highest_value: Optional[str] = None
+    
+    # tradeoff analysis
+    tradeoff_summary: str = ""
+    why_option_a_beats_b: Dict[str, str] = field(default_factory=dict)  # option_id -> reason
+    recommendation_timing: str = "pending"  # now, later, never
+    
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+    evaluated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ComparisonResult:
+        data["options"] = [ComparisonOption.from_dict(o) if isinstance(o, dict) else o for o in data.get("options", [])]
+        data["why_option_a_beats_b"] = data.get("why_option_a_beats_b", {})
+        return cls(**data)
+
+
+# ============================================================================
+# TRADEOFF ENGINE (Self-Architecture Core v4)
+# ============================================================================
+
+class TradeoffEngine:
+    """Compares architectural options and determines tradeoffs."""
+    
+    def __init__(self, architecture: Optional[SelfArchitecture] = None):
+        self.architecture = architecture or SelfArchitecture()
+    
+    def compare_options(
+        self,
+        options: List[ComparisonOption],
+        comparison_id: Optional[str] = None,
+    ) -> ComparisonResult:
+        """Compare multiple architectural options and determine tradeoffs.
+        
+        Args:
+            options: List of options to compare
+            comparison_id: Optional ID for the comparison
+            
+        Returns:
+            ComparisonResult with winner and tradeoff analysis
+        """
+        comp_id = comparison_id or f"compare-{uuid.uuid4().hex[:8]}"
+        
+        if not options:
+            return ComparisonResult(
+                comparison_id=comp_id,
+                options=[],
+                tradeoff_summary="No options to compare",
+            )
+        
+        # Ensure we have at least two options
+        if len(options) == 1:
+            return ComparisonResult(
+                comparison_id=comp_id,
+                options=options,
+                winner_id=options[0].id,
+                winner_title=options[0].title,
+                tradeoff_summary=f"Only one option: {options[0].title}",
+            )
+        
+        # Calculate scores for each option
+        scored = []
+        for opt in options:
+            score = self._calculate_scores(opt)
+            scored.append((opt, score))
+        
+        # Determine winners by different criteria
+        best_quick_win = max(scored, key=lambda x: x[1]["quick_win_score"])
+        best_strategic = max(scored, key=lambda x: x[1]["strategic_score"])
+        lowest_risk = min(scored, key=lambda x: self._risk_to_score(x[0].risk))
+        highest_value = max(scored, key=lambda x: x[1]["value_score"])
+        
+        # Overall winner: best balance (strategic + value - risk)
+        overall_best = max(scored, key=lambda x: x[1]["overall_score"])
+        
+        # Build tradeoff summary
+        tradeoff_summary = self._build_tradeoff_summary(
+            best_quick_win[0], best_strategic[0], lowest_risk[0], highest_value[0], overall_best[0]
+        )
+        
+        # Build comparison reasons
+        why_beats = {}
+        for i, (opt1, score1) in enumerate(scored):
+            for j, (opt2, score2) in enumerate(scored):
+                if i >= j:
+                    continue
+                reason = self._compare_two_options(opt1, opt2, score1, score2)
+                if reason:
+                    key = f"{opt1.id} > {opt2.id}"
+                    why_beats[key] = reason
+        
+        # Determine recommendation timing
+        recommendation_timing = "now" if overall_best[1]["overall_score"] > 0.5 else "later"
+        
+        return ComparisonResult(
+            comparison_id=comp_id,
+            options=options,
+            winner_id=overall_best[0].id,
+            winner_title=overall_best[0].title,
+            best_for_quick_wins=best_quick_win[0].id,
+            best_for_strategic=best_strategic[0].id,
+            lowest_risk=lowest_risk[0].id,
+            highest_value=highest_value[0].id,
+            tradeoff_summary=tradeoff_summary,
+            why_option_a_beats_b=why_beats,
+            recommendation_timing=recommendation_timing,
+        )
+    
+    def _calculate_scores(self, option: ComparisonOption) -> Dict[str, float]:
+        """Calculate scoring metrics for an option."""
+        # Risk score (inverted - lower risk = higher score)
+        risk_score = 1.0 - self._risk_to_score(option.risk)
+        
+        # Effort score (inverted - lower effort = higher score)
+        effort_score = 1.0 - (option.implementation_effort / 100.0)
+        
+        # Strategic value score
+        strategic_score = self._strategic_value_to_score(option.strategic_value)
+        
+        # Quick win score
+        quick_win_score = 0.0
+        if option.is_quick_win:
+            quick_win_score = 0.8
+        elif option.implementation_effort < 30 and len(option.affected_subsystems) <= 1:
+            quick_win_score = 0.6
+        
+        # Overall score: weighted combination
+        # Prioritize strategic value and risk, then effort
+        overall_score = (
+            0.4 * strategic_score +
+            0.35 * risk_score +
+            0.15 * effort_score +
+            0.10 * quick_win_score
+        )
+        
+        # Value score (combination of strategic and quick win)
+        value_score = 0.5 * strategic_score + 0.5 * (1.0 if option.is_quick_win else 0.0)
+        
+        return {
+            "overall_score": overall_score,
+            "strategic_score": strategic_score,
+            "risk_score": risk_score,
+            "effort_score": effort_score,
+            "quick_win_score": quick_win_score,
+            "value_score": value_score,
+        }
+    
+    def _risk_to_score(self, risk: str) -> float:
+        """Convert risk string to numeric score (0.0-1.0)."""
+        mapping = {"low": 0.2, "medium": 0.5, "high": 0.8}
+        return mapping.get(risk, 0.5)
+    
+    def _strategic_value_to_score(self, value: str) -> float:
+        """Convert strategic value string to numeric score."""
+        mapping = {"low": 0.3, "moderate": 0.6, "high": 0.9}
+        return mapping.get(value, 0.6)
+    
+    def _build_tradeoff_summary(
+        self,
+        quick_win: ComparisonOption,
+        strategic: ComparisonOption,
+        low_risk: ComparisonOption,
+        high_value: ComparisonOption,
+        overall: ComparisonOption,
+    ) -> str:
+        """Build a human-readable tradeoff summary."""
+        parts = []
+        
+        if quick_win.id == strategic.id:
+            parts.append(f"{quick_win.title} wins on both speed and strategic value")
+        else:
+            parts.append(f"Fastest: {quick_win.title}; Strategic: {strategic.title}")
+        
+        if low_risk.id == overall.id:
+            parts.append(f"Recommended: {overall.title} (best balance)")
+        else:
+            parts.append(f"Safe option: {low_risk.title}")
+        
+        if high_value.id != overall.id:
+            parts.append(f"Value option: {high_value.title}")
+        
+        return "; ".join(parts)
+    
+    def _compare_two_options(
+        self,
+        opt1: ComparisonOption,
+        opt2: ComparisonOption,
+        score1: Dict[str, float],
+        score2: Dict[str, float],
+    ) -> Optional[str]:
+        """Compare two options and return reason why opt1 beats opt2."""
+        reasons = []
+        
+        # Compare overall scores
+        if score1["overall_score"] > score2["overall_score"]:
+            diff = score1["overall_score"] - score2["overall_score"]
+            if diff >= 0.1:
+                reasons.append("better overall balance")
+            elif diff >= 0.05:
+                reasons.append("slightly better balance")
+        
+        # Compare strategic value
+        if score1["strategic_score"] > score2["strategic_score"]:
+            reasons.append("higher strategic value")
+        
+        # Compare risk
+        if score1["risk_score"] > score2["risk_score"]:
+            diff = score1["risk_score"] - score2["risk_score"]
+            if diff >= 0.2:
+                reasons.append("significantly lower risk")
+            else:
+                reasons.append("lower risk")
+        
+        # Compare effort
+        if score1["effort_score"] > score2["effort_score"]:
+            reasons.append("less implementation effort")
+        
+        # Quick win comparison
+        if score1["quick_win_score"] > score2["quick_win_score"]:
+            reasons.append("better quick win potential")
+        
+        return "; ".join(reasons) if reasons else None
+    
+    def get_comparison_output(
+        self,
+        comparison_result: ComparisonResult,
+    ) -> Dict[str, Any]:
+        """Get comparison output in operator-facing format."""
+        output = {
+            "comparison_id": comparison_result.comparison_id,
+            "options": [o.to_dict() for o in comparison_result.options],
+            "winner": {
+                "id": comparison_result.winner_id,
+                "title": comparison_result.winner_title,
+            },
+            "tradeoff_summary": comparison_result.tradeoff_summary,
+            "recommendation_timing": comparison_result.recommendation_timing,
+            "comparison_details": {
+                "best_for_quick_wins": comparison_result.best_for_quick_wins,
+                "best_for_strategic": comparison_result.best_for_strategic,
+                "lowest_risk": comparison_result.lowest_risk,
+                "highest_value": comparison_result.highest_value,
+            },
+            "tradeoff_reasons": comparison_result.why_option_a_beats_b,
+        }
+        
+        return output
