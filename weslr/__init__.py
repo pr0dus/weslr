@@ -23,6 +23,7 @@ Core modules:
 - trust_dynamics: Self-Architecture Core v37 - Trust / Relationship dynamics layer
 - multi_timescale_planning: Self-Architecture Core v38 - Multi-timescale planning / Trajectory layer
 - deployment_persona: Self-Architecture Core v39 - Role / Deployment persona layer (additive, role-based, transparent)
+- recommendation_presentation_mode: Self-Architecture Core v53 - Recommendation presentation mode layer (context-aware, adaptive)
 """
 
 __version__ = "1.0.0"
@@ -53,6 +54,7 @@ from . import state_transition
 from . import operator_lifecycle
 from . import final_decision_composer
 from . import recommendation_delivery
+from . import recommendation_presentation_mode
 
 __all__ = [
     "adapters",
@@ -81,4 +83,5 @@ __all__ = [
     "operator_lifecycle",
     "final_decision_composer",
     "recommendation_delivery",
+    "recommendation_presentation_mode",
 ]
