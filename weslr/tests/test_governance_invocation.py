@@ -341,7 +341,58 @@ def test_backward_compatibility():
     formatted = view.format_for_display()
     assert "GOVERNANCE VIEW" in formatted
     
+    # V17 classes should still be importable
+    from governance_invocation import (
+        invoke_governance_single,
+        invoke_governance_compare,
+        format_invocation_result,
+    )
+    
     print("  ✓ Backward compatibility works")
+    return True
+
+
+def test_v18_compatibility():
+    """Test that v18 governance scorecard layer integrates without breaking v17."""
+    print("Test 9: V18 compatibility")
+    
+    # Test v18 import
+    try:
+        from governance_scorecard import (
+            GovernanceScorecard,
+            GovernanceDecisionRecord,
+            GovernanceBenchmarkEngine,
+        )
+    except ImportError as e:
+        print(f"  ⚠ V18 not available: {e}")
+        return True  # Not a failure if v18 isn't present
+    
+    # Test v18 classes work alongside v17
+    # v18 classes
+    scorecard = GovernanceScorecard(
+        card_id="v18-backward-test",
+        created_at="2026-04-06T10:00:00Z",
+    )
+    assert scorecard.card_id == "v18-backward-test"
+    
+    decision = GovernanceDecisionRecord(
+        decision_id="dec-001",
+        decision_type="execute",
+        proposal_id="prop-001",
+        timestamp="2026-04-06T10:01:00Z",
+        operator="operator",
+        reasoning="Test decision",
+        confidence=0.9,
+        status_at_decision="ready",
+    )
+    scorecard.add_decision(decision)
+    assert len(scorecard.decisions) == 1
+    
+    engine = GovernanceBenchmarkEngine()
+    scorecard2 = engine.create_scorecard("v18-engine-test")
+    assert scorecard2.card_id == "v18-engine-test"
+    
+    print("  ✓ V18 compatibility works")
     return True
 
 
@@ -402,6 +453,7 @@ def run_all_tests():
         test_comparison_format,
         test_error_handling,
         test_backward_compatibility,
+        test_v18_compatibility,
         test_operator_wrappers,
     ]
     

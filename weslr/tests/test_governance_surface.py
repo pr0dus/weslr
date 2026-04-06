@@ -238,6 +238,60 @@ def test_backward_compatibility():
     return True
 
 
+def test_v18_compatibility():
+    """Test that v18 governance scorecard layer integrates without breaking v17."""
+    print("Test 9: V18 compatibility")
+    
+    # Test v18 import
+    try:
+        from governance_scorecard import (
+            GovernanceScorecard,
+            GovernanceDecisionRecord,
+            GovernanceBenchmarkEngine,
+        )
+    except ImportError as e:
+        print(f"  ⚠ V18 not available: {e}")
+        return True  # Not a failure if v18 isn't present
+    
+    # Test v18 classes work alongside v17
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        temp_path = Path(f.name)
+    
+    try:
+        # Test v18 scorecard
+        scorecard = GovernanceScorecard(
+            card_id="v18-backward-test",
+            created_at="2026-04-06T10:00:00Z",
+        )
+        assert scorecard.card_id == "v18-backward-test"
+        
+        # Test v18 decision record
+        decision = GovernanceDecisionRecord(
+            decision_id="dec-001",
+            decision_type="execute",
+            proposal_id="prop-001",
+            timestamp="2026-04-06T10:01:00Z",
+            operator="operator",
+            reasoning="Test decision",
+            confidence=0.9,
+            status_at_decision="ready",
+        )
+        
+        scorecard.add_decision(decision)
+        assert len(scorecard.decisions) == 1
+        
+        # Test v18 engine
+        engine = GovernanceBenchmarkEngine(storage_path=temp_path)
+        scorecard2 = engine.create_scorecard("v18-engine-test")
+        assert scorecard2.card_id == "v18-engine-test"
+        
+    finally:
+        temp_path.unlink()
+    
+    print("  ✓ V18 compatibility works")
+    return True
+
+
 def test_v17_compatibility():
     """Test that v17 governance invocation layer integrates without breaking v16."""
     print("Test 7: V17 compatibility")
@@ -389,6 +443,7 @@ def run_all_tests():
         test_blocked_vs_eligible,
         test_backward_compatibility,
         test_v17_compatibility,
+        test_v18_compatibility,
         test_format_for_display,
         test_convenience_functions,
     ]
