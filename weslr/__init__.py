@@ -26,6 +26,7 @@ Core modules:
 - recommendation_presentation_mode: Self-Architecture Core v53 - Recommendation presentation mode layer (context-aware, adaptive)
 - final_decision_explainability: Self-Architecture Core v54 - Final decision explainability layer (operator-readable explanation bundles)
 - domain_adaptive_reasoning: Self-Architecture Core v55 - Domain adaptive reasoning hardening layer (domain identification, adaptation, transfer, constraints)
+- model_assisted_not_model_dependent: Self-Architecture Core v56 - Model-assisted not model-dependent hardening layer (fallback chains, deterministic logic, operator-assisted operation)
 """
 
 __version__ = "1.0.0"
@@ -59,6 +60,7 @@ from . import recommendation_delivery
 from . import recommendation_presentation_mode
 from . import final_decision_explainability
 from . import domain_adaptive_reasoning
+from . import model_assisted_not_model_dependent
 
 __all__ = [
     "adapters",
@@ -90,4 +92,5 @@ __all__ = [
     "recommendation_presentation_mode",
     "final_decision_explainability",
     "domain_adaptive_reasoning",
+    "model_assisted_not_model_dependent",
 ]
