@@ -65,6 +65,11 @@ class ProposalGovernanceView:
     current_phase: Optional[str] = None
     blockers: List[Dict[str, Any]] = field(default_factory=list)
     
+    # v20: Evidence integration
+    evidence_summary: str = ""
+    evidence_confidence: float = 0.0
+    evidence_claim_count: int = 0
+    
     # Proof gate
     execution_eligibility: Optional[Dict[str, Any]] = None
     proof_status: Optional[Dict[str, Any]] = None
@@ -103,6 +108,10 @@ class ProposalGovernanceView:
             "realization_phases": self.realization_phases,
             "current_phase": self.current_phase,
             "blockers": self.blockers,
+            # v20: Evidence integration
+            "evidence_summary": self.evidence_summary,
+            "evidence_confidence": self.evidence_confidence,
+            "evidence_claim_count": self.evidence_claim_count,
             "execution_eligibility": self.execution_eligibility,
             "proof_status": self.proof_status,
             "blocking_reasons": self.blocking_reasons,
@@ -124,6 +133,10 @@ class ProposalGovernanceView:
         data["realization_phases"] = data.get("realization_phases", [])
         data["blocking_reasons"] = data.get("blocking_reasons", [])
         data["available_actions"] = data.get("available_actions", [])
+        # v20: Evidence integration
+        data["evidence_summary"] = data.get("evidence_summary", "")
+        data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
+        data["evidence_claim_count"] = data.get("evidence_claim_count", 0)
         return cls(**data)
 
     def format_for_display(self) -> str:

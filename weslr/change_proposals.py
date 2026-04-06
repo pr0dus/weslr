@@ -102,6 +102,12 @@ class ChangeProposal:
     validation_requirements: List[str] = field(default_factory=list)
     rollback_expectations: List[str] = field(default_factory=list)
     
+    # v20: Evidence ontology integration (additive, reversible)
+    evidence_claim_ids: List[str] = field(default_factory=list)  # References to evidence claims
+    evidence_chain_ids: List[str] = field(default_factory=list)  # Evidence chain IDs for provenance
+    evidence_summary: str = ""  # Human-readable evidence summary
+    evidence_confidence: float = 0.0  # 0.0-1.0 overall confidence
+    
     # State
     state: str = ProposalState.PENDING_REVIEW.value
     approval_state: str = "pending"  # For operator clarity
@@ -135,6 +141,11 @@ class ChangeProposal:
             "calibration_confidence": self.calibration_confidence,
             "validation_requirements": self.validation_requirements,
             "rollback_expectations": self.rollback_expectations,
+            # v20: Evidence integration
+            "evidence_claim_ids": self.evidence_claim_ids,
+            "evidence_chain_ids": self.evidence_chain_ids,
+            "evidence_summary": self.evidence_summary,
+            "evidence_confidence": self.evidence_confidence,
             "state": self.state,
             "approval_state": self.approval_state,
             "audit_history": self.audit_history,
@@ -153,6 +164,11 @@ class ChangeProposal:
         data["memory_references"] = data.get("memory_references", [])
         data["validation_requirements"] = data.get("validation_requirements", [])
         data["rollback_expectations"] = data.get("rollback_expectations", [])
+        # v20: Evidence integration
+        data["evidence_claim_ids"] = data.get("evidence_claim_ids", [])
+        data["evidence_chain_ids"] = data.get("evidence_chain_ids", [])
+        data["evidence_summary"] = data.get("evidence_summary", "")
+        data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
         data["audit_history"] = data.get("audit_history", [])
         
         # Ensure state enum

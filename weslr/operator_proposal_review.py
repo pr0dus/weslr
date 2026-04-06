@@ -51,6 +51,12 @@ class OperatorReviewOutput:
     validation_requirements: List[str] = field(default_factory=list)
     rollback_expectations: List[str] = field(default_factory=list)
     
+    # v20: Evidence integration
+    evidence_claim_ids: List[str] = field(default_factory=list)
+    evidence_chain_ids: List[str] = field(default_factory=list)
+    evidence_summary: str = ""
+    evidence_confidence: float = 0.0
+    
     # State
     current_state: str = "pending_review"
     approval_state: str = "pending"
@@ -85,6 +91,11 @@ class OperatorReviewOutput:
             "memory_references": self.memory_references,
             "validation_requirements": self.validation_requirements,
             "rollback_expectations": self.rollback_expectations,
+            # v20: Evidence integration
+            "evidence_claim_ids": self.evidence_claim_ids,
+            "evidence_chain_ids": self.evidence_chain_ids,
+            "evidence_summary": self.evidence_summary,
+            "evidence_confidence": self.evidence_confidence,
             "current_state": self.current_state,
             "approval_state": self.approval_state,
             "created_at": self.created_at,
@@ -96,6 +107,10 @@ class OperatorReviewOutput:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> OperatorReviewOutput:
+        data["evidence_claim_ids"] = data.get("evidence_claim_ids", [])
+        data["evidence_chain_ids"] = data.get("evidence_chain_ids", [])
+        data["evidence_summary"] = data.get("evidence_summary", "")
+        data["evidence_confidence"] = data.get("evidence_confidence", 0.0)
         return cls(**data)
 
     def format_for_display(self) -> str:
