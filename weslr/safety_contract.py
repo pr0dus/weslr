@@ -442,7 +442,7 @@ class SafetyEngine:
 # ============================================================================
 
 
-def integrate_with_change_proposal(proposal_dict: Dict[str, Any]) -> Dict[str, Any]:
+def add_safety_to_change_proposal(proposal_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add safety contract to change proposal.
     
     This is purely additive — no migration required.
@@ -456,7 +456,7 @@ def integrate_with_change_proposal(proposal_dict: Dict[str, Any]) -> Dict[str, A
     return proposal_dict
 
 
-def integrate_with_governance_view(governance_dict: Dict[str, Any]) -> Dict[str, Any]:
+def add_safety_to_governance_view(governance_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add safety contract to governance view.
     
     This is purely additive — no migration required.
@@ -472,7 +472,7 @@ def integrate_with_governance_view(governance_dict: Dict[str, Any]) -> Dict[str,
     return governance_dict
 
 
-def integrate_with_proposal_realization(realization_dict: Dict[str, Any]) -> Dict[str, Any]:
+def add_safety_to_proposal_realization(realization_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add safety contract to proposal realization.
     
     This is purely additive — no migration required.
@@ -488,7 +488,7 @@ def integrate_with_proposal_realization(realization_dict: Dict[str, Any]) -> Dic
     return realization_dict
 
 
-def integrate_with_proof_gate(proof_dict: Dict[str, Any]) -> Dict[str, Any]:
+def add_safety_to_proof_gate(proof_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Add safety status to proof gate.
     
     This is purely additive — no migration required.

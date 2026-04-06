@@ -16,10 +16,10 @@ from weslr.safety_contract import (
     SafetyContract,
     get_safety_contract_registry,
     SafetyEngine,
-    integrate_with_change_proposal,
-    integrate_with_governance_view,
-    integrate_with_proposal_realization,
-    integrate_with_proof_gate,
+    add_safety_to_change_proposal,
+    add_safety_to_governance_view,
+    add_safety_to_proposal_realization,
+    add_safety_to_proof_gate,
 )
 
 
@@ -293,17 +293,17 @@ class TestSafetyEngine(unittest.TestCase):
         self.assertEqual(summary["execution_permission"], ExecutionPermission.PERMITTED.value)
 
 
-class TestIntegrationHooks(unittest.TestCase):
+class TestSafetyIntegrationHooks(unittest.TestCase):
     """Test integration hooks for proposals, governance, and proof gates."""
 
-    def test_integrate_with_change_proposal_adds_safety_fields(self):
+    def test_add_safety_to_change_proposal_adds_safety_fields(self):
         """Test that integration adds safety fields to change proposal."""
         proposal_dict = {
             "proposal_id": "prop-001",
             "title": "Test proposal",
         }
         
-        result = integrate_with_change_proposal(proposal_dict)
+        result = add_safety_to_change_proposal(proposal_dict)
         
         self.assertIn("action_type", result)
         self.assertIn("safety_contract", result)
@@ -312,7 +312,7 @@ class TestIntegrationHooks(unittest.TestCase):
         self.assertIsNone(result["safety_contract"])
         self.assertIsNone(result["safety_contract_summary"])
 
-    def test_integrate_with_change_proposal_preserves_existing(self):
+    def test_add_safety_to_change_proposal_preserves_existing(self):
         """Test that integration preserves existing safety fields."""
         proposal_dict = {
             "proposal_id": "prop-001",
@@ -321,19 +321,19 @@ class TestIntegrationHooks(unittest.TestCase):
             "safety_contract": {"action_type": "api_call"},
         }
         
-        result = integrate_with_change_proposal(proposal_dict)
+        result = add_safety_to_change_proposal(proposal_dict)
         
         self.assertEqual(result["action_type"], "api_call")
         self.assertEqual(result["safety_contract"], {"action_type": "api_call"})
 
-    def test_integrate_with_governance_view_adds_safety_fields(self):
+    def test_add_safety_to_governance_view_adds_safety_fields(self):
         """Test that integration adds safety fields to governance view."""
         governance_dict = {
             "proposal_id": "prop-001",
             "title": "Test proposal",
         }
         
-        result = integrate_with_governance_view(governance_dict)
+        result = add_safety_to_governance_view(governance_dict)
         
         self.assertIn("action_type", result)
         self.assertIn("safety_contract", result)
@@ -344,7 +344,7 @@ class TestIntegrationHooks(unittest.TestCase):
         self.assertIsNone(result["safety_status"])
         self.assertFalse(result["safety_blocked"])
 
-    def test_integrate_with_governance_view_preserves_existing(self):
+    def test_add_safety_to_governance_view_preserves_existing(self):
         """Test that integration preserves existing safety fields."""
         governance_dict = {
             "proposal_id": "prop-001",
@@ -354,20 +354,20 @@ class TestIntegrationHooks(unittest.TestCase):
             "safety_blocked": True,
         }
         
-        result = integrate_with_governance_view(governance_dict)
+        result = add_safety_to_governance_view(governance_dict)
         
         self.assertEqual(result["action_type"], "system_command")
         self.assertEqual(result["safety_contract"], {"action_type": "system_command"})
         self.assertTrue(result["safety_blocked"])
 
-    def test_integrate_with_proposal_realization_adds_safety_fields(self):
+    def test_add_safety_to_proposal_realization_adds_safety_fields(self):
         """Test that integration adds safety fields to proposal realization."""
         realization_dict = {
             "plan_id": "plan-001",
             "proposal_id": "prop-001",
         }
         
-        result = integrate_with_proposal_realization(realization_dict)
+        result = add_safety_to_proposal_realization(realization_dict)
         
         self.assertIn("action_type", result)
         self.assertIn("safety_contract", result)
@@ -378,7 +378,7 @@ class TestIntegrationHooks(unittest.TestCase):
         self.assertFalse(result["safety_approved"])
         self.assertEqual(result["safety_blocked_reasons"], [])
 
-    def test_integrate_with_proposal_realization_preserves_existing(self):
+    def test_add_safety_to_proposal_realization_preserves_existing(self):
         """Test that integration preserves existing safety fields."""
         realization_dict = {
             "plan_id": "plan-001",
@@ -387,19 +387,19 @@ class TestIntegrationHooks(unittest.TestCase):
             "safety_approved": True,
         }
         
-        result = integrate_with_proposal_realization(realization_dict)
+        result = add_safety_to_proposal_realization(realization_dict)
         
         self.assertEqual(result["action_type"], "http_request")
         self.assertTrue(result["safety_approved"])
 
-    def test_integrate_with_proof_gate_adds_safety_fields(self):
+    def test_add_safety_to_proof_gate_adds_safety_fields(self):
         """Test that integration adds safety fields to proof gate."""
         proof_dict = {
             "plan_id": "plan-001",
             "proposal_id": "prop-001",
         }
         
-        result = integrate_with_proof_gate(proof_dict)
+        result = add_safety_to_proof_gate(proof_dict)
         
         self.assertIn("safety_approved", result)
         self.assertIn("safety_blocked", result)
@@ -408,7 +408,7 @@ class TestIntegrationHooks(unittest.TestCase):
         self.assertFalse(result["safety_blocked"])
         self.assertEqual(result["safety_blocked_reasons"], [])
 
-    def test_integrate_with_proof_gate_preserves_existing(self):
+    def test_add_safety_to_proof_gate_preserves_existing(self):
         """Test that integration preserves existing safety fields."""
         proof_dict = {
             "plan_id": "plan-001",
@@ -417,7 +417,7 @@ class TestIntegrationHooks(unittest.TestCase):
             "safety_blocked": True,
         }
         
-        result = integrate_with_proof_gate(proof_dict)
+        result = add_safety_to_proof_gate(proof_dict)
         
         self.assertTrue(result["safety_approved"])
         self.assertTrue(result["safety_blocked"])
