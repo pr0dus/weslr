@@ -452,12 +452,15 @@ def generate_narrative(
     memory_context: Optional[Dict[str, Any]] = None,
     tradeoff_context: Optional[Dict[str, Any]] = None,
     profile_context: Optional[Dict[str, Any]] = None,  # v24: Personalization profile integration
+    guidance_context: Optional[Dict[str, Any]] = None,  # v27: Adaptive guidance integration
     suggestion_id: Optional[str] = None,
 ) -> UnifiedNarrative:
-    """Convenience function to generate a narrative with optional profile context.
+    """Convenience function to generate a narrative with optional profile and guidance context.
     
     v24: Profile context allows narrative generation to adapt to user preferences
     without hidden steering - all profile hints are visible in the narrative output.
+    
+    v27: Guidance context adds recommendation strength and explanation hints.
     """
     engine = NarrativeEngine()
     engine.set_decision_sources(decision_sources)
@@ -469,5 +472,14 @@ def generate_narrative(
     if profile_context:
         narrative.summary.content += f"\n\n[Profile Context: {profile_context.get('communication_hint', 'default style')}]"
         narrative.recommendation.content += f"\n\n[Profile Hint: {profile_context.get('planning_hint', 'default depth')}]"
+    
+    # v27: Apply guidance hints if provided (additive, transparent)
+    if guidance_context:
+        hint = guidance_context.get('recommendation_hint', None)
+        if hint:
+            narrative.recommendation.content += f"\n\n[Recommendation Hint: {hint}]"
+        explanation = guidance_context.get('explanation_basis', None)
+        if explanation:
+            narrative.summary.content += f"\n\n[Explanation: {explanation}]"
     
     return narrative
