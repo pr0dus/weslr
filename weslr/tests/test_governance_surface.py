@@ -182,7 +182,7 @@ def test_blocked_vs_eligible():
 
 
 def test_backward_compatibility():
-    """Test that v14 and v15 functionality is not broken."""
+    """Test that v14, v15, and v16 functionality is not broken."""
     print("Test 4: Backward compatibility")
     
     # V14 classes should still be importable
@@ -218,7 +218,77 @@ def test_backward_compatibility():
     v15_engine = ProofGateEngine()
     assert v15_engine is not None
     
+    # V16 classes should still be importable
+    from governance_surface import (
+        GovernanceAggregationEngine,
+        ProposalGovernanceView,
+        get_governance_view,
+        format_governance_view,
+    )
+    
+    # Test v16 view creation
+    view = ProposalGovernanceView(
+        proposal_id="prop-v16",
+        title="V16 test",
+        description="Testing v16",
+    )
+    assert view.proposal_id == "prop-v16"
+    
     print("  ✓ Backward compatibility works")
+    return True
+
+
+def test_v17_compatibility():
+    """Test that v17 governance invocation layer integrates without breaking v16."""
+    print("Test 7: V17 compatibility")
+    
+    # Test v17 import
+    try:
+        from governance_invocation import (
+            invoke_governance_single,
+            invoke_governance_compare,
+            format_invocation_result,
+        )
+    except ImportError as e:
+        print(f"  ⚠ V17 not available: {e}")
+        return True  # Not a failure if v17 isn't present
+    
+    # Test v17 classes work alongside v16
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        temp_path = Path(f.name)
+    
+    try:
+        gate = ExecutionGate(storage_path=temp_path)
+        proposal = gate.create_proposal(
+            title="V17 compatibility test",
+            description="Testing v17 integration",
+            risk_level="low",
+            calibration_confidence=0.85,
+            affected_subsystems=["state"],
+            validation_requirements=["test"],
+            rollback_expectations=["revert"],
+        )
+        gate.review_proposal(proposal.proposal_id, "approve", "operator")
+        
+        # Test v16 function still works
+        view = get_governance_view(proposal.proposal_id, storage_path=temp_path)
+        assert view is not None
+        
+        # Test v17 function works
+        result = invoke_governance_single(proposal.proposal_id, temp_path)
+        assert "error" not in result
+        assert result["proposal_id"] == proposal.proposal_id
+        
+        # Test format functions work
+        formatted = format_governance_view(view)
+        assert "GOVERNANCE VIEW" in formatted
+        formatted2 = format_invocation_result(result)
+        assert "GOVERNANCE" in formatted2
+        
+    finally:
+        temp_path.unlink()
+    
+    print("  ✓ V17 compatibility works")
     return True
 
 
@@ -318,6 +388,7 @@ def run_all_tests():
         test_governance_aggregation_engine,
         test_blocked_vs_eligible,
         test_backward_compatibility,
+        test_v17_compatibility,
         test_format_for_display,
         test_convenience_functions,
     ]

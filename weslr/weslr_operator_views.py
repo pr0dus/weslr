@@ -14,6 +14,55 @@ from typing import Any, Dict, List, Optional
 # OPERATOR VIEW ENHANCEMENTS
 # ============================================================================
 
+# v17 governance invocation integration
+try:
+    from governance_invocation import (
+        invoke_governance_single,
+        invoke_governance_compare,
+        format_invocation_result,
+    )
+    GOVERNANCE_INVOCATION_AVAILABLE = True
+except ImportError:
+    GOVERNANCE_INVOCATION_AVAILABLE = False
+
+
+# ============================================================================
+# GOVERNANCE INVOCATION WRAPPERS
+# ============================================================================
+
+def operator_invoke_governance_single(
+    proposal_id: str,
+    storage_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Operator-facing wrapper for governance single invocation."""
+    if not GOVERNANCE_INVOCATION_AVAILABLE:
+        return {"error": "Governance invocation layer not available", "proposal_id": proposal_id}
+    return invoke_governance_single(proposal_id, storage_path)
+
+
+def operator_invoke_governance_compare(
+    proposal_ids: List[str],
+    storage_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Operator-facing wrapper for governance comparison invocation."""
+    if not GOVERNANCE_INVOCATION_AVAILABLE:
+        return {"error": "Governance invocation layer not available", "proposal_ids": proposal_ids}
+    return invoke_governance_compare(proposal_ids, storage_path)
+
+
+def operator_format_governance_result(
+    result: Dict[str, Any],
+) -> str:
+    """Format governance invocation result for operator display."""
+    if not GOVERNANCE_INVOCATION_AVAILABLE:
+        return json.dumps(result, indent=2)
+    return format_invocation_result(result)
+
+
+# ============================================================================
+# OPERATOR VIEW ENHANCEMENTS
+# ============================================================================
+
 def enhance_review_candidate_with_weslr_assessment(
     candidate: Dict[str, Any]
 ) -> Dict[str, Any]:
@@ -131,6 +180,9 @@ if __name__ == "__main__":
         print("  detail <candidate_json_file>")
         print("  list <candidates_json_file>")
         print("  format <candidate_json_file>")
+        print("  governance-single <proposal_id>")
+        print("  governance-compare <proposal_id_1> <proposal_id_2>")
+        sys.exit(1)
         sys.exit(1)
 
     command = sys.argv[1]
@@ -170,6 +222,22 @@ if __name__ == "__main__":
             candidate = json.load(f)
         result = format_assessment_for_display(candidate)
         print(result)
+
+    elif command == "governance-single":
+        if len(sys.argv) < 3:
+            print("Usage: governance-single <proposal_id>")
+            sys.exit(1)
+        proposal_id = sys.argv[2]
+        result = operator_invoke_governance_single(proposal_id)
+        print(operator_format_governance_result(result))
+
+    elif command == "governance-compare":
+        if len(sys.argv) < 4:
+            print("Usage: governance-compare <proposal_id_1> <proposal_id_2>")
+            sys.exit(1)
+        proposal_ids = [sys.argv[2], sys.argv[3]]
+        result = operator_invoke_governance_compare(proposal_ids)
+        print(operator_format_governance_result(result))
 
     else:
         print(f"Unknown command: {command}")
