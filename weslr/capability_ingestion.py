@@ -998,5 +998,169 @@ class ConceptGraphLinker:
             return None
 
 
+# ============================================================================
+# DECISION SUPPORT ENGINE (Phase 7)
+# ============================================================================
+
+class DecisionSupportEngine:
+    """Decision support engine for capability suggestions.
+    
+    Generates explanations and recommendations based on:
+    - Provenance
+    - Trend score
+    - Source diversity
+    - Science relevance
+    - Concept graph links
+    - Roadmap tags
+    """
+
+    def __init__(self, store: Optional[CapabilitySuggestionStore] = None):
+        self.store = store or CapabilitySuggestionStore()
+
+    def generate_explanation(self, suggestion: CapabilitySuggestion) -> CapabilitySuggestion:
+        """Generate explanation for a suggestion.
+        
+        Updates the suggestion with:
+        - why_surfaced
+        - supporting_signals_summary
+        - improvement_targets
+        - implementation_effort_estimate
+        - risk_level
+        - classification
+        - decision_recommendation
+        
+        Returns the updated suggestion.
+        """
+        import re
+        
+        # Extract improvement targets from title/description
+        targets = []
+        if suggestion.title:
+            if "workflow" in suggestion.title.lower():
+                targets.append("automation")
+            if "memory" in suggestion.title.lower():
+                targets.append("context management")
+            if "link" in suggestion.title.lower() or "connect" in suggestion.title.lower():
+                targets.append("linked data")
+            if "agent" in suggestion.title.lower():
+                targets.append("agent orchestration")
+        if not targets:
+            targets.append("general improvement")
+        
+        suggestion.improvement_targets = ",".join(targets)
+        
+        # Generate why_surfaced based on provenance and score
+        # Compute trend score if not persisted
+        if not hasattr(suggestion, 'trend_score') or not suggestion.trend_score:
+            from capability_ingestion import TrendScoringEngine
+            engine = TrendScoringEngine(self.store)
+            engine.update_trend_metrics(suggestion)
+            score_data = engine.compute_trend_score(suggestion, 1)  # Local diversity
+            suggestion.trend_score = score_data.get("trend_score", 50)
+        
+        if suggestion.provenance:
+            source_type = str(suggestion.provenance).split(".")[-1].lower()
+            suggestion.why_surfaced = f"Detected from {source_type} source with trend score {suggestion.trend_score}"
+        
+        # Supporting signals summary
+        signals = []
+        if suggestion.science_relevance_score and suggestion.science_relevance_score > 0.6:
+            signals.append("high science relevance")
+        if suggestion.source_diversity and suggestion.source_diversity > 1:
+            signals.append(f"cross-source traction ({suggestion.source_diversity} sources)")
+        if suggestion.mention_count > 0:
+            signals.append(f"{suggestion.mention_count} mentions")
+        if suggestion.concept_link_id:
+            signals.append("linked to concept graph")
+        if not signals:
+            signals.append("standard signal detected")
+        
+        suggestion.supporting_signals_summary = "; ".join(signals)
+        
+        # Implementation effort estimate
+        effort = 30  # Base
+        if len(suggestion.title) < 50:
+            effort += 10  # Clear scope
+        if suggestion.capability_type.value in ("automation", "integration"):
+            effort += 20
+        if "Obsidian" in suggestion.title or "notion" in suggestion.title.lower():
+            effort += 15  # Integration complexity
+        suggestion.implementation_effort_estimate = min(100, effort)
+        
+        # Risk level
+        risk = "low"
+        if suggestion.capability_type.value == "security":
+            risk = "high"
+        elif suggestion.capability_type.value in ("automation", "analysis"):
+            risk = "medium"
+        suggestion.risk_level = risk
+        
+        # Classification: quick_win / strategic / speculative
+        classification = "speculative"  # Default
+        if suggestion.trend_score and suggestion.trend_score > 60:
+            if suggestion.implementation_effort_estimate and suggestion.implementation_effort_estimate < 40:
+                classification = "quick_win"
+            else:
+                classification = "strategic"
+        elif suggestion.trend_score and suggestion.trend_score > 40:
+            classification = "strategic"
+        
+        suggestion.classification = classification
+        
+        # Decision recommendation
+        recommendation = "pending"
+        if classification == "quick_win" and suggestion.risk_level != "high":
+            recommendation = "accept"
+        elif suggestion.risk_level == "high" or (suggestion.trend_score and suggestion.trend_score < 30):
+            recommendation = "denied"
+        
+        suggestion.decision_recommendation = recommendation
+        
+        return suggestion
+
+    def get_operator_review(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get top suggestions with full explanation for operator review.
+        
+        Returns list of dicts with suggestion + explanation + recommendation.
+        """
+        from capability_suggestion import SuggestionStatus
+        
+        all_suggestions = self.store.list_all(status=SuggestionStatus.NEW, include_archived=False)
+        
+        reviewed = []
+        for s in all_suggestions:
+            # Generate explanation
+            self.generate_explanation(s)
+            
+            # Build review entry
+            review = {
+                "suggestion": s.to_dict(),
+                "explanation": {
+                    "why_surfaced": s.why_surfaced,
+                    "supporting_signals": s.supporting_signals_summary,
+                    "improvement_targets": s.improvement_targets,
+                    "effort_estimate": s.implementation_effort_estimate,
+                    "risk_level": s.risk_level,
+                    "classification": s.classification,
+                },
+                "recommendation": {
+                    "decision": s.decision_recommendation,
+                    "priority": s.priority,
+                    "trend_score": getattr(s, 'trend_score', None),
+                },
+            }
+            reviewed.append(review)
+        
+        # Sort by decision_recommendation (accept first), then by priority
+        def sort_key(r):
+            rec = r["recommendation"]["decision"]
+            order = {"accept": 0, "pending": 1, "denied": 2, "snoozed": 3}
+            return (order.get(rec, 4), -r["recommendation"]["priority"])
+        
+        reviewed.sort(key=sort_key)
+        
+        return reviewed[:limit]
+
+
 if __name__ == "__main__":
     main()

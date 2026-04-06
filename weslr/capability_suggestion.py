@@ -90,6 +90,15 @@ class CapabilitySuggestion:
     aliases: Optional[str] = None  # comma-separated list of aliases
     source_variants: Optional[str] = None  # comma-separated list of source variants
     concept_link_id: Optional[str] = None  # ID of linked Concept Graph node
+    
+    # Phase 7: Explanation + Decision Support
+    why_surfaced: Optional[str] = None  # Why this suggestion was surfaced
+    supporting_signals_summary: Optional[str] = None  # Summary of supporting signals
+    improvement_targets: Optional[str] = None  # Comma-separated improvement areas
+    implementation_effort_estimate: Optional[int] = None  # Effort estimate (1-100)
+    risk_level: Optional[str] = None  # "low" / "medium" / "high"
+    classification: Optional[str] = None  # "quick_win" / "strategic" / "speculative"
+    decision_recommendation: Optional[str] = None  # "accept" / "denied" / "snoozed" / "pending"
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict (for JSON storage)."""
@@ -114,6 +123,13 @@ class CapabilitySuggestion:
         data.setdefault("aliases", None)
         data.setdefault("source_variants", None)
         data.setdefault("concept_link_id", None)
+        data.setdefault("why_surfaced", None)
+        data.setdefault("supporting_signals_summary", None)
+        data.setdefault("improvement_targets", None)
+        data.setdefault("implementation_effort_estimate", None)
+        data.setdefault("risk_level", None)
+        data.setdefault("classification", None)
+        data.setdefault("decision_recommendation", None)
         return cls(**data)
 
 
@@ -162,7 +178,14 @@ class CapabilitySuggestionStore:
                     canonical_key TEXT,
                     aliases TEXT,
                     source_variants TEXT,
-                    concept_link_id TEXT
+                    concept_link_id TEXT,
+                    why_surfaced TEXT,
+                    supporting_signals_summary TEXT,
+                    improvement_targets TEXT,
+                    implementation_effort_estimate INTEGER,
+                    risk_level TEXT,
+                    classification TEXT,
+                    decision_recommendation TEXT
                 )
             """)
             # Index for common queries
@@ -201,6 +224,13 @@ class CapabilitySuggestionStore:
                 ("aliases", "TEXT"),
                 ("source_variants", "TEXT"),
                 ("concept_link_id", "TEXT"),
+                ("why_surfaced", "TEXT"),
+                ("supporting_signals_summary", "TEXT"),
+                ("improvement_targets", "TEXT"),
+                ("implementation_effort_estimate", "INTEGER"),
+                ("risk_level", "TEXT"),
+                ("classification", "TEXT"),
+                ("decision_recommendation", "TEXT"),
             ]
             
             for col_name, col_def in new_columns:
