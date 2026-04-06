@@ -62,6 +62,16 @@ class ExplanationSection:
     section_order: int = 0  # Order in the bundle
     is_optional: bool = False  # Can be omitted if not applicable
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert section to dict."""
+        return {
+            "section_id": self.section_id,
+            "section_title": self.section_title,
+            "section_content": self.section_content,
+            "section_order": self.section_order,
+            "is_optional": self.is_optional,
+        }
+
 
 @dataclass
 class ExplanationBundle:
@@ -398,8 +408,8 @@ class FinalDecisionExplainabilityEngine:
     
     def _get_escalation_reason(self, recommendation: final_decision_composer.FinalRecommendation) -> Optional[str]:
         """Get escalation reason string."""
-        # Escalation requirement is encoded in recommendation as a string enum
-        escalation = getattr(recommendation, 'escalation_requirement', None)
+        # Escalation required field
+        escalation = getattr(recommendation, 'escalation_required', None)
         if escalation and escalation != "none":
             return f"Escalation required: {escalation}"
         return None
