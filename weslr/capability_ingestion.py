@@ -752,5 +752,251 @@ class TrendScoringEngine:
         return scored[:limit]
 
 
+# ============================================================================
+# ALIAS NORMALIZATION + CONCEPT GRAPH LINKING (Phase 6)
+# ============================================================================
+
+class AliasNormalizer:
+    """Normalizes aliases and generates canonical identities for tools/capabilities.
+    
+    Handles:
+    - Canonical key generation
+    - Alias detection across sources
+    - Source variant preservation
+    - Merging repeated identities
+    """
+
+    # Common alias patterns
+    ALIAS_PATTERNS = {
+        "obsidian": ["obsidianmd/obsidian", "obsidian.md", "obsidian md", "obsidian"],
+        "github": ["github.com", "git hub", "github"],
+        "notion": ["notion.so", "notion ai", "notion"],
+        "langchain": ["langchain", "lang chain"],
+        "openai": ["openai.com", "open ai"],
+    }
+
+    def __init__(self):
+        self.canonical_map: Dict[str, str] = {}  # alias -> canonical_key
+        self.source_variants: Dict[str, List[str]] = {}  # canonical_key -> [variants]
+        self._init_alias_map()
+
+    def _init_alias_map(self) -> None:
+        """Initialize alias mappings from patterns."""
+        for canonical, variants in self.ALIAS_PATTERNS.items():
+            for v in variants:
+                self.canonical_map[v.lower().strip()] = canonical
+            self.source_variants[canonical] = variants
+
+    def normalize(self, title: str, source_kind: Optional[SourceKind] = None) -> Dict[str, Any]:
+        """Normalize a title to its canonical identity.
+        
+        Args:
+            title: The input title
+            source_kind: Optional source kind for context
+            
+        Returns:
+            Dict with:
+            - canonical_key: The canonical identity
+            - detected_aliases: List of detected aliases
+            - source_variants: List of source-specific variants
+        """
+        title_lower = title.lower().strip()
+        
+        # Try direct match in canonical_map
+        if title_lower in self.canonical_map:
+            canonical = self.canonical_map[title_lower]
+            return {
+                "canonical_key": canonical,
+                "detected_aliases": [title_lower],
+                "source_variants": self.source_variants.get(canonical, []),
+            }
+        
+        # Try partial match
+        for canonical, variants in self.ALIAS_PATTERNS.items():
+            for variant in variants:
+                if variant.lower() in title_lower:
+                    return {
+                        "canonical_key": canonical,
+                        "detected_aliases": [variant.lower()],
+                        "source_variants": [variant.lower()],
+                    }
+        
+        # Default: use title as canonical (normalized)
+        return {
+            "canonical_key": self._normalize_to_key(title),
+            "detected_aliases": [title_lower],
+            "source_variants": [title_lower],
+        }
+
+    def _normalize_to_key(self, text: str) -> str:
+        """Convert text to a canonical key format."""
+        # Lowercase, remove special chars, collapse whitespace
+        import re
+        key = text.lower().strip()
+        key = re.sub(r"[^a-z0-9 ]", " ", key)
+        key = re.sub(r"\s+", "_", key)
+        return key.strip("_")
+
+    def merge_aliases(self, suggestions: List[CapabilitySuggestion]) -> Dict[str, List[CapabilitySuggestion]]:
+        """Group suggestions by canonical identity.
+        
+        Returns dict mapping canonical_key -> list of suggestions.
+        """
+        groups: Dict[str, List[CapabilitySuggestion]] = {}
+        
+        for s in suggestions:
+            # Use existing canonical_key if set, otherwise normalize title
+            key = s.canonical_key or self._normalize_to_key(s.title)
+            
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(s)
+        
+        return groups
+
+
+class ConceptGraphLinker:
+    """Minimal Concept Graph linking for capability suggestions.
+    
+    Creates/links:
+    - Concept nodes for tools/capabilities
+    - Evidence links from suggestions to concepts
+    - Backlinks for reverse lookup
+    """
+
+    def __init__(self, concept_store: Optional[Any] = None):
+        self.concept_store = concept_store
+        self._initialized = False
+
+    def _init_concept_store(self) -> Any:
+        """Initialize Concept Graph store if not provided."""
+        if self.concept_store:
+            return self.concept_store
+        
+        # Try to import from concept_graph module
+        try:
+            from weslr.concept_graph.store import ConceptStore
+            self.concept_store = ConceptStore()
+            return self.concept_store
+        except ImportError:
+            # Fallback: return None for minimal operation
+            return None
+
+    def link_suggestion_to_concept(
+        self,
+        suggestion: CapabilitySuggestion,
+        concept_name: Optional[str] = None,
+        concept_type: str = "tool",
+    ) -> Optional[str]:
+        """Link a suggestion to a Concept Graph node.
+        
+        Args:
+            suggestion: The capability suggestion
+            concept_name: Optional concept name (defaults to canonical_key)
+            concept_type: Type of concept ("tool", "capability", "entity")
+            
+        Returns:
+            Concept ID if linked, None otherwise
+        """
+        if not self.concept_store:
+            self.concept_store = self._init_concept_store()
+        
+        if not self.concept_store:
+            return None  # No concept store available
+        
+        # Use existing concept_link_id or create new concept
+        if suggestion.concept_link_id:
+            return suggestion.concept_link_id
+        
+        # Create or find concept
+        concept_name = concept_name or suggestion.canonical_key or suggestion.title
+        concept = self._find_or_create_concept(concept_name, concept_type)
+        
+        if concept:
+            suggestion.concept_link_id = concept.id
+            return concept.id
+        
+        return None
+
+    def _find_or_create_concept(
+        self,
+        name: str,
+        concept_type: str = "tool",
+    ) -> Optional[Any]:
+        """Find existing concept or create new one."""
+        # Try to find by name
+        try:
+            # ConceptStore.find() may not exist, try load or search
+            if hasattr(self.concept_store, "find"):
+                result = self.concept_store.find(name)
+                if result:
+                    return result
+        except Exception:
+            pass
+        
+        # Create new concept
+        try:
+            from weslr.concept_graph.models import Concept
+            import time
+            concept = Concept(
+                id=f"concept-{name.lower().replace(' ', '-')[:50]}",
+                name=name,
+                type=concept_type,
+                description=f"Detected capability: {name}",
+                aliases=[],
+                tags=["capability_discovery"],
+                confidence=0.5,
+                is_temporary=False,
+                is_ghost=False,
+            )
+            
+            if hasattr(self.concept_store, "save"):
+                self.concept_store.save(concept)
+            
+            return concept
+        except Exception:
+            return None
+
+    def link_evidence(
+        self,
+        concept_id: str,
+        suggestion: CapabilitySuggestion,
+        confidence: float = 0.8,
+    ) -> Optional[str]:
+        """Link evidence from suggestion to concept.
+        
+        Returns link ID if successful, None otherwise.
+        """
+        if not self.concept_store:
+            return None
+        
+        try:
+            from weslr.concept_graph.models import Evidence, Link, LinkType
+            import time
+            
+            # Create evidence
+            evidence = Evidence(
+                source_id=suggestion.id,
+                source_type="capability_suggestion",
+                content=f"Suggestion: {suggestion.title}",
+                confidence=confidence,
+                timestamp=int(time.time()),
+                category="source-backed",
+                traceable=True,
+                reason=f"Detected from {suggestion.provenance}",
+            )
+            
+            # Add evidence to concept
+            concept = self.concept_store.load(concept_id) if hasattr(self.concept_store, "load") else None
+            if concept:
+                concept.add_evidence(evidence)
+                if hasattr(self.concept_store, "save"):
+                    self.concept_store.save(concept)
+            
+            return evidence.source_id
+        except Exception:
+            return None
+
+
 if __name__ == "__main__":
     main()

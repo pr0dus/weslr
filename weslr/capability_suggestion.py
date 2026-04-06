@@ -84,6 +84,12 @@ class CapabilitySuggestion:
     trend_delta: Optional[float] = None  # Growth delta from previous run
     science_relevance_score: Optional[float] = None  # 0.0-1.0
     roadmap_impact_tags: Optional[str] = None  # comma-separated tags
+    
+    # Phase 6: Alias normalization + Concept Graph linking
+    canonical_key: Optional[str] = None  # Canonical identity key
+    aliases: Optional[str] = None  # comma-separated list of aliases
+    source_variants: Optional[str] = None  # comma-separated list of source variants
+    concept_link_id: Optional[str] = None  # ID of linked Concept Graph node
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict (for JSON storage)."""
@@ -104,6 +110,10 @@ class CapabilitySuggestion:
         data.setdefault("trend_delta", None)
         data.setdefault("science_relevance_score", None)
         data.setdefault("roadmap_impact_tags", None)
+        data.setdefault("canonical_key", None)
+        data.setdefault("aliases", None)
+        data.setdefault("source_variants", None)
+        data.setdefault("concept_link_id", None)
         return cls(**data)
 
 
@@ -148,7 +158,11 @@ class CapabilitySuggestionStore:
                     first_seen TEXT,
                     trend_delta REAL,
                     science_relevance_score REAL,
-                    roadmap_impact_tags TEXT
+                    roadmap_impact_tags TEXT,
+                    canonical_key TEXT,
+                    aliases TEXT,
+                    source_variants TEXT,
+                    concept_link_id TEXT
                 )
             """)
             # Index for common queries
@@ -183,6 +197,10 @@ class CapabilitySuggestionStore:
                 ("trend_delta", "REAL"),
                 ("science_relevance_score", "REAL"),
                 ("roadmap_impact_tags", "TEXT"),
+                ("canonical_key", "TEXT"),
+                ("aliases", "TEXT"),
+                ("source_variants", "TEXT"),
+                ("concept_link_id", "TEXT"),
             ]
             
             for col_name, col_def in new_columns:
