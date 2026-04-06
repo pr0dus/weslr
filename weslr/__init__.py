@@ -18,6 +18,7 @@ Core modules:
 - architecture_memory: Self-Architecture Core v7 - Longitudinal architecture memory / consistency layer
 - narrative: Self-Architecture Core v8-v9 - Operator narrative layer (memory-aware assessment)
 - forecast: Self-Architecture Core v10 - Architectural simulation / forecast layer
+- calibration: Self-Architecture Core v11 - Closed-loop governance / forecast calibration layer
 """
 
 __version__ = "1.0.0"
@@ -34,6 +35,7 @@ from . import scenario_model
 from . import architecture_memory
 from . import narrative
 from . import forecast
+from . import calibration
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -51,6 +53,7 @@ __all__ = [
     "architecture_memory",
     "narrative",
     "forecast",
+    "calibration",
     "state",
     "structured_data",
     "task_anchor",
