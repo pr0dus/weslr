@@ -17,6 +17,7 @@ Core modules:
 - scenario_model: Self-Architecture Core v6 - Scenario comparison / Roadmap tradeoff layer
 - architecture_memory: Self-Architecture Core v7 - Longitudinal architecture memory / consistency layer
 - narrative: Self-Architecture Core v8-v9 - Operator narrative layer (memory-aware assessment)
+- forecast: Self-Architecture Core v10 - Architectural simulation / forecast layer
 """
 
 __version__ = "1.0.0"
@@ -32,6 +33,7 @@ from . import request_intelligence
 from . import scenario_model
 from . import architecture_memory
 from . import narrative
+from . import forecast
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -48,6 +50,7 @@ __all__ = [
     "scenario_model",
     "architecture_memory",
     "narrative",
+    "forecast",
     "state",
     "structured_data",
     "task_anchor",
