@@ -49,6 +49,7 @@ from . import structured_data
 from . import task_anchor
 from . import constraint_invariant
 from . import alternative_path_recovery
+from . import state_transition
 
 __all__ = [
     "adapters",
@@ -73,4 +74,5 @@ __all__ = [
     "task_anchor",
     "constraint_invariant",
     "alternative_path_recovery",
+    "state_transition",
 ]
