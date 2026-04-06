@@ -508,5 +508,249 @@ def main():
         sys.exit(1)
 
 
+# ============================================================================
+# TREND SCORING ENGINE (Phase 5)
+# ============================================================================
+
+from datetime import datetime, timezone
+from typing import List, Dict, Any, Optional
+from collections import Counter
+
+
+class TrendScoringEngine:
+    """Trend scoring and radar for capability discovery.
+    
+    Scoring combines:
+    - mention count (frequency of signals)
+    - source diversity (unique provenance families)
+    - growth delta (comparative change from previous run)
+    - science relevance (content analysis)
+    - implementation impact (estimated effect)
+    """
+
+    def __init__(self, store: Optional[CapabilitySuggestionStore] = None):
+        self.store = store or CapabilitySuggestionStore()
+        self._last_run_cache: Optional[Dict[str, Any]] = None
+
+    def _now(self) -> str:
+        """Get current UTC timestamp."""
+        return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def _estimate_science_relevance(self, suggestion: CapabilitySuggestion) -> float:
+        """Estimate science/research relevance from suggestion content."""
+        score = 0.5  # Base
+        
+        # Boost for science-related keywords
+        science_keywords = [
+            "science", "research", "paper", "study", "experiment",
+            "academic", "publication", "journal", "literature",
+            "scientific", "discovery", "innovation", " breakthrough"
+        ]
+        text = f"{suggestion.title} {suggestion.description} {suggestion.suggestion_text or ''} {suggestion.context or ''}".lower()
+        
+        matches = sum(1 for kw in science_keywords if kw in text)
+        score += min(0.3, matches * 0.05)  # +0.05 per match, max +0.3
+        
+        # Boost for open source/repo mentions
+        if any(x in text for x in ["github", "repository", "repo", "open source", "library"]):
+            score += 0.1
+        
+        return round(min(1.0, score), 2)
+
+    def _estimate_implementation_impact(self, suggestion: CapabilitySuggestion) -> int:
+        """Estimate implementation effort impact (1-100)."""
+        score = 20  # Base
+        
+        # Shorter titles often indicate clearer scope
+        if len(suggestion.title) < 60:
+            score += 15
+        elif len(suggestion.title) < 100:
+            score += 5
+        
+        # Automation type implies lower implementation barrier
+        if suggestion.capability_type.value == "automation":
+            score += 20
+        
+        # Integration suggests existing tooling
+        if suggestion.capability_type.value == "integration":
+            score += 10
+        
+        # Mention of existing tools (e.g., "Obsidian", "LangChain") reduces scope
+        existing_tool_keywords = ["obsidian", "notion", "langchain", "openai", "aws", "docker"]
+        text = f"{suggestion.title} {suggestion.description}".lower()
+        if any(kw in text for kw in existing_tool_keywords):
+            score += 10
+        
+        return min(100, score)
+
+    def _count_mentions(self, suggestions: List[CapabilitySuggestion]) -> int:
+        """Count total mentions across suggestions."""
+        return sum(s.mention_count for s in suggestions)
+
+    def _count_source_diversity(self, suggestions: List[CapabilitySuggestion]) -> int:
+        """Count unique provenance families."""
+        provenances = set()
+        for s in suggestions:
+            if s.provenance:
+                provenances.add(str(s.provenance))
+        return len(provenances)
+
+    def _parse_timestamp(self, ts: Optional[str]) -> Optional[datetime]:
+        """Parse ISO timestamp to datetime."""
+        if not ts:
+            return None
+        try:
+            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return None
+
+    def update_trend_metrics(self, suggestion: CapabilitySuggestion) -> CapabilitySuggestion:
+        """Update trend metrics for a suggestion from its source signals."""
+        now = self._now()
+        
+        # Update first_seen if not set (first appearance)
+        if not suggestion.first_seen:
+            suggestion.first_seen = suggestion.created_at
+        
+        # Update last_seen to most recent
+        if not suggestion.last_seen or (suggestion.last_seen and suggestion.last_seen < now):
+            suggestion.last_seen = now
+        
+        # Calculate time delta (in hours) from first to last seen
+        first_dt = self._parse_timestamp(suggestion.first_seen)
+        last_dt = self._parse_timestamp(suggestion.last_seen)
+        if first_dt and last_dt:
+            delta_hours = (last_dt - first_dt).total_seconds() / 3600
+            # Simple growth estimate: inverse of spread (faster = more trending)
+            if delta_hours > 0:
+                # Normalize to 0-100 scale (faster spread = higher score)
+                growth_score = min(100, int(10000 / (delta_hours + 1)))
+                suggestion.trend_delta = round(growth_score / 100, 2)
+        
+        # Update science relevance
+        suggestion.science_relevance_score = self._estimate_science_relevance(suggestion)
+        
+        return suggestion
+
+    def compare_with_previous_run(self, current_suggestions: List[CapabilitySuggestion]) -> Dict[str, Any]:
+        """Compare current suggestions with previous run to compute deltas."""
+        # For simplicity, track last_seen timestamps as proxy for run timing
+        # In production, would compare against persisted snapshots
+        
+        # Count mentions in this batch
+        total_mentions = self._count_mentions(current_suggestions)
+        
+        # Source diversity
+        diversity = self._count_source_diversity(current_suggestions)
+        
+        # Priority distribution
+        priorities = [s.priority for s in current_suggestions]
+        avg_priority = sum(priorities) / len(priorities) if priorities else 0
+        
+        # Top capability types
+        type_counts = Counter(s.capability_type.value for s in current_suggestions)
+        
+        return {
+            "total_mentions": total_mentions,
+            "source_diversity": diversity,
+            "avg_priority": round(avg_priority, 2),
+            "capability_type_distribution": dict(type_counts),
+            "suggestion_count": len(current_suggestions),
+        }
+
+    def compute_trend_score(self, suggestion: CapabilitySuggestion, global_diversity: Optional[int] = None) -> Dict[str, Any]:
+        """Compute complete trend score for a suggestion.
+        
+        Args:
+            suggestion: The capability suggestion to score
+            global_diversity: Optional global source diversity (count of unique provenances)
+        
+        Returns:
+            Dict with:
+            - trend_score: 0-100 overall trend score
+            - rank_explanation: Human-readable ranking rationale
+            - confidence: 0-1 confidence in the score
+        """
+        components = {}
+        weights = {}
+        
+        # Component 1: Priority (25%)
+        priority_score = min(100, suggestion.priority * 2)  # Cap at 100
+        components["priority"] = priority_score
+        weights["priority"] = 0.25
+        
+        # Component 2: Source diversity (20%)
+        # Use global diversity if provided, otherwise use per-suggestion value
+        diversity = global_diversity if global_diversity is not None else 1
+        diversity_bonus = min(100, diversity * 25)
+        components["diversity"] = diversity_bonus
+        components["global_diversity"] = diversity  # Store for explanation
+        weights["diversity"] = 0.20
+        
+        # Component 3: Growth delta (20%)
+        if suggestion.trend_delta:
+            growth_score = int(suggestion.trend_delta * 100)
+        else:
+            growth_score = 50  # Neutral
+        components["growth"] = growth_score
+        weights["growth"] = 0.20
+        
+        # Component 4: Science relevance (15%)
+        if suggestion.science_relevance_score:
+            science_score = int(suggestion.science_relevance_score * 100)
+        else:
+            science_score = 50  # Neutral
+        components["science"] = science_score
+        weights["science"] = 0.15
+        
+        # Component 5: Implementation impact (20%)
+        impact_score = self._estimate_implementation_impact(suggestion)
+        components["impact"] = impact_score
+        weights["impact"] = 0.20
+        
+        # Weighted sum (exclude non-weighted components)
+        trend_score = sum(components[k] * weights[k] for k in weights)
+        
+        # Build explanation
+        explanations = []
+        explanations.append(f"Priority score: {components['priority']}")
+        global_div = components.get("global_diversity", 1)
+        explanations.append(f"Source diversity: {components['diversity']} ({global_div} unique provenances)")
+        if suggestion.trend_delta:
+            explanations.append(f"Growth delta: {suggestion.trend_delta:.2f}x")
+        explanations.append(f"Science relevance: {components['science']} (scored {suggestion.science_relevance_score or 0:.2f})")
+        explanations.append(f"Implementation impact: {components['impact']}/100")
+        
+        return {
+            "trend_score": round(trend_score, 1),
+            "rank_explanation": "; ".join(explanations),
+            "confidence": 0.85,  # Confidence in trend scoring methodology
+            "components": components,
+        }
+
+    def get_top_trending(self, limit: int = 10) -> List[CapabilitySuggestion]:
+        """Get top trending suggestions sorted by trend score."""
+        all_suggestions = self.store.list_all(include_archived=False)
+        
+        # Compute global source diversity first
+        global_diversity = self._count_source_diversity(all_suggestions)
+        
+        scored = []
+        for s in all_suggestions:
+            # Update metrics first
+            self.update_trend_metrics(s)
+            
+            # Compute score with global diversity
+            score_data = self.compute_trend_score(s, global_diversity)
+            s.trend_score = score_data["trend_score"]
+            s.rank_explanation = score_data["rank_explanation"]
+            scored.append(s)
+        
+        # Sort by trend_score descending
+        scored.sort(key=lambda x: x.trend_score, reverse=True)
+        
+        return scored[:limit]
+
+
 if __name__ == "__main__":
     main()

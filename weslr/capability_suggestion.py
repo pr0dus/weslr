@@ -75,6 +75,15 @@ class CapabilitySuggestion:
     archived_at: Optional[str] = None
     assigned_to: Optional[str] = None
     notes: Optional[str] = None
+    
+    # Phase 5: Trend radar fields
+    mention_count: int = 0  # Total mentions across sources
+    source_diversity: int = 0  # Unique provenance families (e.g., 2 if Reddit + GitHub)
+    last_seen: Optional[str] = None  # Most recent mention timestamp
+    first_seen: Optional[str] = None  # First mention timestamp (same as created_at typically)
+    trend_delta: Optional[float] = None  # Growth delta from previous run
+    science_relevance_score: Optional[float] = None  # 0.0-1.0
+    roadmap_impact_tags: Optional[str] = None  # comma-separated tags
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict (for JSON storage)."""
@@ -87,6 +96,14 @@ class CapabilitySuggestion:
         data["capability_type"] = CapabilityType(data.get("capability_type", "other"))
         data["status"] = SuggestionStatus(data.get("status", "new"))
         data["provenance"] = SourceProvenance(data.get("provenance", "other"))
+        # Phase 5: trend fields default to 0/None if missing
+        data.setdefault("mention_count", 0)
+        data.setdefault("source_diversity", 0)
+        data.setdefault("last_seen", None)
+        data.setdefault("first_seen", None)
+        data.setdefault("trend_delta", None)
+        data.setdefault("science_relevance_score", None)
+        data.setdefault("roadmap_impact_tags", None)
         return cls(**data)
 
 
@@ -124,7 +141,14 @@ class CapabilitySuggestionStore:
                     last_denied_at TEXT,
                     archived_at TEXT,
                     assigned_to TEXT,
-                    notes TEXT
+                    notes TEXT,
+                    mention_count INTEGER DEFAULT 0,
+                    source_diversity INTEGER DEFAULT 0,
+                    last_seen TEXT,
+                    first_seen TEXT,
+                    trend_delta REAL,
+                    science_relevance_score REAL,
+                    roadmap_impact_tags TEXT
                 )
             """)
             # Index for common queries
@@ -137,6 +161,34 @@ class CapabilitySuggestionStore:
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_provenance ON capability_suggestions(provenance)
             """)
+            conn.commit()
+        
+        # Phase 5: Migrate existing database with new columns if needed
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        """Add missing columns to existing schema."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Check existing columns
+            cursor.execute("PRAGMA table_info(capability_suggestions)")
+            existing = {row[1] for row in cursor.fetchall()}
+            
+            new_columns = [
+                ("mention_count", "INTEGER DEFAULT 0"),
+                ("source_diversity", "INTEGER DEFAULT 0"),
+                ("last_seen", "TEXT"),
+                ("first_seen", "TEXT"),
+                ("trend_delta", "REAL"),
+                ("science_relevance_score", "REAL"),
+                ("roadmap_impact_tags", "TEXT"),
+            ]
+            
+            for col_name, col_def in new_columns:
+                if col_name not in existing:
+                    cursor.execute(f"ALTER TABLE capability_suggestions ADD COLUMN {col_name} {col_def}")
+            
             conn.commit()
 
     def _now(self) -> str:
@@ -660,3 +712,22 @@ if __name__ == "__main__":
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
+
+
+# ============================================================================
+# TREND SCORING INTEGRATION (Phase 5)
+# ============================================================================
+
+def get_top_trending_radar(self, limit: int = 10) -> List[CapabilitySuggestion]:
+    """Get top trending suggestions using the trend scoring engine."""
+    from capability_ingestion import TrendScoringEngine
+    engine = TrendScoringEngine(self.store)
+    return engine.get_top_trending(limit)
+
+
+# Add method to CapabilityDiscoveryRadar class
+CapabilityDiscoveryRadar.get_top_trending = get_top_trending_radar
+
+
+if __name__ == "__main__":
+    main()
