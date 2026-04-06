@@ -66,6 +66,16 @@ class OperatorReviewOutput:
     available_capabilities: List[str] = field(default_factory=list)
     unavailable_capabilities: List[str] = field(default_factory=list)
     
+    # v23: Safety contract integration (additive, reversible)
+    action_type: Optional[str] = None
+    safety_contract_summary: Optional[str] = None
+    safety_blocked_reasons: List[str] = field(default_factory=list)
+    
+    # v24: Personalization profile integration (additive, transparent)
+    user_profile_hint: Optional[Dict[str, Any]] = None
+    communication_style_hint: Optional[str] = None
+    domain_familiarity_hint: Optional[str] = None
+    
     # State
     current_state: str = "pending_review"
     approval_state: str = "pending"

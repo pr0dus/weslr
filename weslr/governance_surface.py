@@ -81,6 +81,11 @@ class ProposalGovernanceView:
     safety_status: Optional[str] = None
     safety_blocked: bool = False
     
+    # v24: Personalization profile integration (additive, transparent)
+    user_profile_hint: Optional[Dict[str, Any]] = None
+    communication_style_hint: Optional[str] = None
+    domain_familiarity_hint: Optional[str] = None
+    
     # Proof gate
     execution_eligibility: Optional[Dict[str, Any]] = None
     proof_status: Optional[Dict[str, Any]] = None

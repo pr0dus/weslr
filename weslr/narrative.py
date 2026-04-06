@@ -1,5 +1,6 @@
-# narrative.py - Self-Architecture Core v9: Unified Operator Narrative Layer
+# narrative.py - Self-Architecture Core v24: Unified Operator Narrative Layer
 # Unifies all decision signals into one coherent operator-facing assessment.
+# v24: Integrated with Adaptive Personalization Profile Layer for profile-aware generation.
 # Additive only, operator-first, reversible, governed.
 
 from __future__ import annotations
@@ -450,11 +451,23 @@ def generate_narrative(
     decision_sources: Dict[str, Any],
     memory_context: Optional[Dict[str, Any]] = None,
     tradeoff_context: Optional[Dict[str, Any]] = None,
+    profile_context: Optional[Dict[str, Any]] = None,  # v24: Personalization profile integration
     suggestion_id: Optional[str] = None,
 ) -> UnifiedNarrative:
-    """Convenience function to generate a narrative."""
+    """Convenience function to generate a narrative with optional profile context.
+    
+    v24: Profile context allows narrative generation to adapt to user preferences
+    without hidden steering - all profile hints are visible in the narrative output.
+    """
     engine = NarrativeEngine()
     engine.set_decision_sources(decision_sources)
     engine.set_memory_context(memory_context or {})
     engine.set_tradeoff_context(tradeoff_context or {})
-    return engine.generate_narrative(title, domain, suggestion_id)
+    narrative = engine.generate_narrative(title, domain, suggestion_id)
+    
+    # v24: Apply profile hints if provided (additive, transparent)
+    if profile_context:
+        narrative.summary.content += f"\n\n[Profile Context: {profile_context.get('communication_hint', 'default style')}]"
+        narrative.recommendation.content += f"\n\n[Profile Hint: {profile_context.get('planning_hint', 'default depth')}]"
+    
+    return narrative
