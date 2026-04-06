@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "5741b6ec2ade1898decdabea283bc6d8fa0302c5",
-  "latest_layer": "v53",
-  "current_phase": "recommendation_presentation_mode",
+  "latest_sealed_commit": "8547d611bfe6ef4d82c4668cda7459a836ce2d13",
+  "latest_layer": "v54",
+  "current_phase": "final_decision_explainability",
   "next_priority": "operator_state_update",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -27,7 +27,8 @@
     "compact and readable",
     "development workflow only",
     "exclude TIA/collector from all routing",
-    "never route to excluded scopes"
+    "never route to excluded scopes",
+    "apply TEST_DOCTRINE.md for all new layers"
   ],
   "active_hotfixes": [],
   "architecture_direction": "continuity-aware operator workflow",

@@ -1,9 +1,9 @@
 # OPERATOR STATE — WESLR
 
-**Latest checkpoint**: v53  
-**Latest sealed commit**: `5741b6ec2ade1898decdabea283bc6d8fa0302c5`  
+**Latest checkpoint**: v54  
+**Latest sealed commit**: `8547d611bfe6ef4d82c4668cda7459a836ce2d13`  
 **Current branch**: `feature/tia-industrial-slice`  
-**Current phase**: Recommendation Presentation Mode Layer complete  
+**Current phase**: Final Decision Explainability Layer complete  
 
 ---
 
@@ -42,7 +42,7 @@
 
 ## Next Workflow Recommendation
 
-Operator state needs update after v53 commit. Next action: `weslr audit bottlenecks`.
+WESLR v54 complete with explainability layer and testing doctrine. Ready for next layer or operator workflow.
 
 ---
 
@@ -51,7 +51,7 @@ Operator state needs update after v53 commit. Next action: `weslr audit bottlene
 - **Active scope**: `weslr` (Python only)
 - **Excluded scope**: `TIA`, `collector`, `industrial_slice`, `product_runtime_expansion`
 - **Allowed next categories**: `weslr_core_layer`, `weslr_infrastructure`, `operator_workflow`
-- **Workflow rules**: additive only, no repo drift, tracked in repo, compact and readable, development workflow only, exclude TIA/collector from all routing, never route to excluded scopes
+- **Workflow rules**: additive only, no repo drift, tracked in repo, compact and readable, development workflow only, exclude TIA/collector from all routing, never route to excluded scopes, apply TEST_DOCTRINE.md for all new layers
 - **Architecture direction**: continuity-aware operator workflow
 - **Continuity mode**: enabled
 - **Repo truth required**: yes

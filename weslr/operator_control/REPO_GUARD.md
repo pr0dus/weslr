@@ -99,6 +99,12 @@ Before any edit:
 - No product runtime expansion without explicit instruction
 - No routing to excluded scopes (TIA, collector, industrial_slice, product_runtime_expansion)
 
+## Test Doctrine
+
+- Apply TEST_DOCTRINE.md for all new layers
+- All new layers must include model, behavior, integration, and backward compatibility tests
+- Test failures block merge until resolved
+
 ---
 
 ## Operator State Hardening Rules
