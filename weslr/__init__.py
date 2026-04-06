@@ -21,6 +21,7 @@ Core modules:
 - calibration: Self-Architecture Core v11 - Closed-loop governance / forecast calibration layer
 - intervention_timing: Self-Architecture Core v36 - Intervention timing / Surfacing policy layer
 - trust_dynamics: Self-Architecture Core v37 - Trust / Relationship dynamics layer
+- multi_timescale_planning: Self-Architecture Core v38 - Multi-timescale planning / Trajectory layer
 """
 
 __version__ = "1.0.0"
@@ -40,6 +41,7 @@ from . import forecast
 from . import calibration
 from . import intervention_timing
 from . import trust_dynamics
+from . import multi_timescale_planning
 from . import state
 from . import structured_data
 from . import task_anchor
@@ -60,6 +62,7 @@ __all__ = [
     "calibration",
     "intervention_timing",
     "trust_dynamics",
+    "multi_timescale_planning",
     "state",
     "structured_data",
     "task_anchor",
