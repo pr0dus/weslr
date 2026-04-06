@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from change_proposals import ChangeProposal, ExecutionGate, ProposalState
 
+from proof_gate import ProofGateEngine, ExecutionReadiness, ExecutionState
+
 
 class RealizationPhase(str, Enum):
     """Implementation phases for a realization plan."""
@@ -150,6 +152,11 @@ class RealizationPlan:
     approved_at: Optional[str] = None
     approved_blocker_ids: List[str] = field(default_factory=list)
     
+    # Execution eligibility (v15)
+    execution_eligibility: Optional[Dict[str, Any]] = None
+    proof_status: Optional[Dict[str, Any]] = None
+    blocking_reasons: List[str] = field(default_factory=list)
+    
     # Metadata
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
@@ -174,6 +181,9 @@ class RealizationPlan:
             "blocker_count_by_severity": self.blocker_count_by_severity,
             "readiness_state": self.readiness_state,
             "readiness_reason": self.readiness_reason,
+            "execution_eligibility": self.execution_eligibility,
+            "proof_status": self.proof_status,
+            "blocking_reasons": self.blocking_reasons,
             "approval_points": self.approval_points,
             "approved_by": self.approved_by,
             "approved_at": self.approved_at,
@@ -194,6 +204,9 @@ class RealizationPlan:
         data["rollback_checkpoints"] = data.get("rollback_checkpoints", [])
         data["blockers"] = data.get("blockers", [])
         data["blocker_count_by_severity"] = data.get("blocker_count_by_severity", {"low": 0, "medium": 0, "high": 0, "critical": 0})
+        data["execution_eligibility"] = data.get("execution_eligibility")
+        data["proof_status"] = data.get("proof_status")
+        data["blocking_reasons"] = data.get("blocking_reasons", [])
         data["approval_points"] = data.get("approval_points", [])
         data["approved_blocker_ids"] = data.get("approved_blocker_ids", [])
         return cls(**data)
@@ -412,6 +425,16 @@ class RealizationEngine:
         
         # Update readiness
         plan.update_readiness()
+        
+        # v15: Add execution eligibility via proof gate
+        proof_gate = ProofGateEngine(execution_gate=self.gate)
+        eligibility = proof_gate.get_execution_eligibility(
+            plan_id=plan.plan_id,
+            proposal_id=proposal.proposal_id,
+        )
+        plan.execution_eligibility = eligibility
+        plan.proof_status = eligibility.get("proof_status", {})
+        plan.blocking_reasons = eligibility.get("blocking_reasons", [])
         
         return plan
     

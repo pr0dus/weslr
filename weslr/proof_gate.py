@@ -9,17 +9,19 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from change_proposals import ChangeProposal, ExecutionGate
-from proposal_realization import (
-    RealizationEngine,
-    RealizationPlan,
-    Blocker,
-    BlockerType,
-    ReadinessState,
-    RealizationPhase,
-)
+
+if TYPE_CHECKING:
+    from proposal_realization import (
+        RealizationEngine,
+        RealizationPlan,
+        Blocker,
+        BlockerType,
+        ReadinessState,
+        RealizationPhase,
+    )
 
 
 class ProofType(str, Enum):
@@ -220,9 +222,8 @@ class ProofGateEngine:
     - Whether execution should remain blocked
     """
     
-    def __init__(self, execution_gate: ExecutionGate = None, realization_engine: RealizationEngine = None):
+    def __init__(self, execution_gate: ExecutionGate = None):
         self.gate = execution_gate or ExecutionGate()
-        self.realization_engine = realization_engine or RealizationEngine(execution_gate=self.gate)
         
         # Default required proofs for execution eligibility
         self.required_proofs = [
