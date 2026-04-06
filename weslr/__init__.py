@@ -25,6 +25,7 @@ Core modules:
 - deployment_persona: Self-Architecture Core v39 - Role / Deployment persona layer (additive, role-based, transparent)
 - recommendation_presentation_mode: Self-Architecture Core v53 - Recommendation presentation mode layer (context-aware, adaptive)
 - final_decision_explainability: Self-Architecture Core v54 - Final decision explainability layer (operator-readable explanation bundles)
+- domain_adaptive_reasoning: Self-Architecture Core v55 - Domain adaptive reasoning hardening layer (domain identification, adaptation, transfer, constraints)
 """
 
 __version__ = "1.0.0"
@@ -57,6 +58,7 @@ from . import final_decision_composer
 from . import recommendation_delivery
 from . import recommendation_presentation_mode
 from . import final_decision_explainability
+from . import domain_adaptive_reasoning
 
 __all__ = [
     "adapters",
@@ -87,4 +89,5 @@ __all__ = [
     "recommendation_delivery",
     "recommendation_presentation_mode",
     "final_decision_explainability",
+    "domain_adaptive_reasoning",
 ]
