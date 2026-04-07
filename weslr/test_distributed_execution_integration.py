@@ -19,6 +19,10 @@ from weslr.distributed_execution_integration import (
     IntegratedAuditTrace,
     ExecutionOrchestrator,
 )
+from weslr.execution_deadline import (
+    ExecutionDeadline,
+    ExecutionDeadlineState,
+)
 from weslr.remote_action_proposal import (
     RemoteActionProposal,
     ProposalStatus,
@@ -514,6 +518,32 @@ class TestExecutionOrchestrator(unittest.TestCase):
         # Verify audit trace
         trace = self.orchestrator.get_flow_trace(flow_id)
         self.assertGreater(len(trace), 0)
+
+    def test_deadline_created_on_flow_creation(self):
+        """Deadline created when flow is created."""
+        flow = self.orchestrator.create_flow(self.proposal)
+        
+        self.assertIsNotNone(flow.deadline_id)
+        self.assertEqual(flow.deadline_state, ExecutionDeadlineState.PENDING.value)
+        
+        correlation = self.orchestrator.get_correlation(flow.flow_id)
+        self.assertIsNotNone(correlation.deadline_id)
+
+    def test_deadline_active_marked_on_proposal_approved(self):
+        """Deadline marked as active when proposal is approved."""
+        flow = self.orchestrator.create_flow(self.proposal)
+        flow_id = flow.flow_id
+        
+        envelope, _ = self.orchestrator.approved_to_envelope(
+            flow_id=flow_id,
+            proposal=self.proposal,
+            execution_intent="Sync data",
+            skip_handshake=True
+        )
+        
+        # After approved_to_envelope, deadline should be active
+        updated_flow = self.orchestrator.get_flow(flow_id)
+        self.assertEqual(updated_flow.deadline_state, ExecutionDeadlineState.ACTIVE.value)
 
 
 if __name__ == "__main__":

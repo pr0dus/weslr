@@ -1,6 +1,6 @@
-"""Distributed Execution Integration Layer (v64-v66)
+"""Distributed Execution Integration Layer (v64-v67)
 
-Integrates v61 + v62 + v63 + v65 into one coherent distributed execution flow.
+Integrates v61 + v62 + v63 + v65 + v67 into one coherent distributed execution flow.
 Provides proposal → handshake → envelope → dispatch → receipt → acknowledgment flow
 with correlation continuity across all stages.
 
@@ -12,15 +12,18 @@ Architecture:
   - RejectionPropagation — rejection handling across stages
   - FailurePropagation — failure handling across stages
   - RollbackCoordination — rollback coordination
-  - IntegratedAuditTrace — unified audit across v61-v63-v66
+  - IntegratedAuditTrace — unified audit across v61-v63-v66-v67
   - ExecutionFlowController — single-point control
   - HandshakeIntegration — handshake validation layer (v66)
+  - DeadlineIntegration — deadline propagation layer (v67)
 
 Rules:
   - Integration only — no new orchestration logic
   - Correlation continuity mandatory
   - Audit trace continuity across all stages
   - Handshake validation required before execution
+  - Deadline propagation enforced
+  - Automatic rollback on deadline breach
   - Additive only (no breaking changes)
   - Reversible (single file removal)
   - No consensus
@@ -32,7 +35,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -77,6 +80,12 @@ from .remote_node_handshake import (
 )
 from .node_registry import NodeRegistry
 from .node_identity import NodeTrustState
+from .execution_deadline import (
+    ExecutionDeadline,
+    ExecutionDeadlineState,
+    DeadlineStatus,
+    FlowDeadlineTracker,
+)
 
 
 # ============================================================================
@@ -115,6 +124,10 @@ class ExecutionFlowState:
     handshake_id: Optional[str] = None
     request_id: Optional[str] = None
     receipt_ids: List[str] = field(default_factory=list)
+    
+    # Deadline tracking (v67)
+    deadline_id: Optional[str] = None
+    deadline_state: Optional[str] = None
     
     # Status
     is_complete: bool = False
@@ -201,6 +214,21 @@ class ExecutionFlowState:
         self.is_rolled_back = True
         self._transition_to(FlowStage.ROLLBACK_COMPLETED.value, "Rollback completed")
     
+    def mark_deadline_breached(self, reason: str) -> None:
+        """Mark deadline breached."""
+        self.deadline_state = ExecutionDeadlineState.BREACHED.value
+        self._transition_to(FlowStage.EXECUTION_REJECTED.value, f"Execution rejected: deadline breached - {reason}")
+    
+    def mark_deadline_cancelled(self) -> None:
+        """Mark execution cancelled due to deadline."""
+        self.deadline_state = ExecutionDeadlineState.CANCELLED.value
+        self._transition_to(FlowStage.EXECUTION_REJECTED.value, "Execution cancelled: deadline breached")
+    
+    def mark_rollback_completed(self) -> None:
+        """Mark rollback completed."""
+        self.is_rolled_back = True
+        self._transition_to(FlowStage.ROLLBACK_COMPLETED.value, "Rollback completed")
+    
     def to_dict(self) -> Dict[str, Any]:
         return {
             "flow_id": self.flow_id,
@@ -208,6 +236,8 @@ class ExecutionFlowState:
             "stage_history": self.stage_history,
             "proposal_id": self.proposal_id,
             "handshake_id": self.handshake_id,
+            "deadline_id": self.deadline_id,
+            "deadline_state": self.deadline_state,
             "request_id": self.request_id,
             "receipt_ids": self.receipt_ids,
             "is_complete": self.is_complete,
@@ -230,6 +260,7 @@ class StageCorrelation:
     flow_id: str
     proposal_id: Optional[str] = None
     handshake_id: Optional[str] = None
+    deadline_id: Optional[str] = None
     request_id: Optional[str] = None
     receipt_ids: List[str] = field(default_factory=list)
     correlation_map: Dict[str, str] = field(default_factory=dict)
@@ -243,6 +274,11 @@ class StageCorrelation:
         """Link handshake to flow."""
         self.handshake_id = handshake_id
         self.correlation_map["handshake"] = handshake_id
+    
+    def link_deadline(self, deadline_id: str) -> None:
+        """Link deadline to flow."""
+        self.deadline_id = deadline_id
+        self.correlation_map["deadline"] = deadline_id
     
     def link_envelope(self, request_id: str) -> None:
         """Link envelope to flow."""
@@ -262,6 +298,7 @@ class StageCorrelation:
             "flow_id": self.flow_id,
             "proposal_id": self.proposal_id,
             "handshake_id": self.handshake_id,
+            "deadline_id": self.deadline_id,
             "request_id": self.request_id,
             "receipt_ids": self.receipt_ids
         }
@@ -277,6 +314,10 @@ class StageCorrelation:
     def resolve_to_handshake_id(self) -> Optional[str]:
         """Resolve to handshake ID."""
         return self.handshake_id
+    
+    def resolve_to_deadline_id(self) -> Optional[str]:
+        """Resolve to deadline ID."""
+        return self.deadline_id
 
 
 # ============================================================================
@@ -412,12 +453,52 @@ class RollbackCoordination:
 
 
 # ============================================================================
+# DEADLINE INTEGRATION
+# ============================================================================
+
+
+@dataclass
+class DeadlineIntegration:
+    """Integrates deadline tracking into execution flow."""
+    
+    flow_id: str
+    deadline_id: Optional[str] = None
+    deadline_breached: bool = False
+    deadline_cancelled: bool = False
+    breach_reason: Optional[str] = None
+    breached_at: Optional[str] = None
+    cancelled_at: Optional[str] = None
+    
+    def mark_breached(self, reason: str) -> None:
+        """Mark deadline as breached."""
+        self.deadline_breached = True
+        self.breach_reason = reason
+        self.breached_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    def mark_cancelled(self) -> None:
+        """Mark execution cancelled due to deadline."""
+        self.deadline_cancelled = True
+        self.cancelled_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "flow_id": self.flow_id,
+            "deadline_id": self.deadline_id,
+            "deadline_breached": self.deadline_breached,
+            "deadline_cancelled": self.deadline_cancelled,
+            "breach_reason": self.breach_reason,
+            "breached_at": self.breached_at,
+            "cancelled_at": self.cancelled_at
+        }
+
+
+# ============================================================================
 # INTEGRATED AUDIT TRACE
 # ============================================================================
 
 
 class IntegratedAuditTrace:
-    """Unified audit trace across all v61-v63-v66 components."""
+    """Unified audit trace across all v61-v63-v66-v67 components."""
     
     def __init__(self, local_node_id: str):
         self.local_node_id = local_node_id
@@ -426,6 +507,7 @@ class IntegratedAuditTrace:
         self.receipt_audit = ReceiptAuditTrace(local_node_id)
         self.handshake_audit = HandshakeAuditTrace(local_node_id)
         self._integrated_events: List[Dict[str, Any]] = []
+        self._deadline_events: List[Dict[str, Any]] = []
     
     def log_flow_event(
         self,
@@ -456,11 +538,32 @@ class IntegratedAuditTrace:
         """Get audit statistics."""
         return {
             "integrated_events": len(self._integrated_events),
+            "deadline_events": len(self._deadline_events),
             "proposal_events": self.proposal_audit.get_stats()["total_events"],
             "execution_events": self.execution_audit.get_stats()["total_events"],
             "receipt_events": self.receipt_audit.get_stats()["total_events"],
             "handshake_events": self.handshake_audit.get_stats()["total_events"]
         }
+    
+    def log_deadline_event(
+        self,
+        flow_id: str,
+        event_type: str,
+        details: Optional[Dict] = None,
+        correlation: Optional[StageCorrelation] = None
+    ) -> None:
+        """Log deadline-related event."""
+        event = {
+            "event_id": str(uuid.uuid4()),
+            "flow_id": flow_id,
+            "event_type": event_type,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "node_id": self.local_node_id,
+            "details": details or {},
+            "correlation": correlation.get_correlated_ids() if correlation else {}
+        }
+        self._integrated_events.append(event)
+        self._deadline_events.append(event)
 
 
 # ============================================================================
@@ -525,6 +628,10 @@ class ExecutionOrchestrator:
         self._rejections: Dict[str, RejectionPropagation] = {}
         self._failures: Dict[str, FailurePropagation] = {}
         self._rollbacks: Dict[str, RollbackCoordination] = {}
+        
+        # Deadline tracking (v67)
+        self._deadlines: Dict[str, ExecutionDeadline] = {}
+        self._flow_to_deadline: Dict[str, str] = {}
     
     def create_flow(self, proposal: RemoteActionProposal) -> ExecutionFlowState:
         """Create new execution flow from proposal."""
@@ -535,6 +642,11 @@ class ExecutionOrchestrator:
         
         correlation = StageCorrelation(flow_id=flow_id)
         correlation.link_proposal(proposal.proposal_id)
+        
+        # Create default deadline for flow (300 seconds / 5 minutes)
+        deadline = self._create_flow_deadline(flow_id, correlation, 300)
+        flow.deadline_id = deadline.deadline_id
+        flow.deadline_state = ExecutionDeadlineState.PENDING.value
         
         self._flows[flow_id] = flow
         self._correlations[flow_id] = correlation
@@ -547,6 +659,26 @@ class ExecutionOrchestrator:
         )
         
         return flow
+    
+    def _create_flow_deadline(self, flow_id: str, correlation: StageCorrelation, seconds: int = 300) -> ExecutionDeadline:
+        """Internal method to create deadline for flow."""
+        deadline_id = str(uuid.uuid4())
+        created = datetime.now(timezone.utc)
+        absolute = created + timedelta(seconds=seconds)
+        
+        deadline = ExecutionDeadline(
+            deadline_id=deadline_id,
+            flow_id=flow_id,
+            absolute_deadline=absolute,
+            created_at=created
+        )
+        
+        self._deadlines[deadline_id] = deadline
+        self._flow_to_deadline[flow_id] = deadline_id
+        
+        correlation.link_deadline(deadline_id)
+        
+        return deadline
     
     def create_handshake_request(
         self,
@@ -582,6 +714,128 @@ class ExecutionOrchestrator:
         )
         
         return request, None
+    
+    def create_deadline(self, flow_id: str, seconds: int = 300) -> ExecutionDeadline:
+        """Create deadline for flow."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        
+        if not flow or not correlation:
+            raise ValueError("Flow not found")
+        
+        deadline_id = str(uuid.uuid4())
+        created = datetime.now(timezone.utc)
+        absolute = created + timedelta(seconds=seconds)
+        
+        deadline = ExecutionDeadline(
+            deadline_id=deadline_id,
+            flow_id=flow_id,
+            absolute_deadline=absolute,
+            created_at=created
+        )
+        
+        self._deadlines[deadline_id] = deadline
+        self._flow_to_deadline[flow_id] = deadline_id
+        
+        flow.deadline_id = deadline_id
+        flow.deadline_state = ExecutionDeadlineState.PENDING.value
+        correlation.link_deadline(deadline_id)
+        
+        self.audit.log_deadline_event(
+            flow_id=flow_id,
+            event_type="deadline_created",
+            details={"deadline_id": deadline_id, "expires_in_seconds": seconds},
+            correlation=correlation
+        )
+        
+        return deadline
+    
+    def mark_flow_deadline_active(self, flow_id: str) -> None:
+        """Mark flow deadline as active."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        deadline = self._deadlines.get(self._flow_to_deadline.get(flow_id))
+        
+        if not flow or not deadline:
+            raise ValueError("Flow or deadline not found")
+        
+        deadline.mark_active()
+        flow.deadline_state = ExecutionDeadlineState.ACTIVE.value
+        
+        self.audit.log_deadline_event(
+            flow_id=flow_id,
+            event_type="deadline_active",
+            correlation=correlation
+        )
+    
+    def check_deadline_breached(self, flow_id: str) -> Tuple[bool, Optional[str]]:
+        """Check if flow deadline has been breached."""
+        flow = self._flows.get(flow_id)
+        deadline = self._deadlines.get(self._flow_to_deadline.get(flow_id))
+        
+        if not flow or not deadline:
+            return False, None
+        
+        if deadline.is_breached():
+            return True, deadline.breach_reason
+        
+        if deadline.is_expired():
+            reason = f"Execution deadline exceeded"
+            self._mark_deadline_breached_internal(flow_id, reason)
+            return True, reason
+        
+        return False, None
+    
+    def _mark_deadline_breached_internal(self, flow_id: str, reason: str) -> None:
+        """Internal method to mark deadline breached."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        deadline = self._deadlines.get(self._flow_to_deadline.get(flow_id))
+        
+        if flow:
+            flow.mark_deadline_breached(reason)
+            flow.deadline_state = ExecutionDeadlineState.BREACHED.value
+        
+        if deadline:
+            deadline.mark_breached(reason)
+        
+        if correlation:
+            self.audit.log_deadline_event(
+                flow_id=flow_id,
+                event_type="deadline_breached",
+                details={"reason": reason},
+                correlation=correlation
+            )
+    
+    def mark_flow_deadline_breached(self, flow_id: str, reason: str) -> None:
+        """Mark flow deadline as breached."""
+        self._mark_deadline_breached_internal(flow_id, reason)
+    
+    def cancel_flow_on_deadline_breach(self, flow_id: str) -> None:
+        """Cancel flow execution due to deadline breach."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        deadline = self._deadlines.get(self._flow_to_deadline.get(flow_id))
+        
+        if not flow:
+            raise ValueError("Flow not found")
+        
+        flow.mark_deadline_cancelled()
+        
+        if deadline:
+            deadline.mark_cancelled()
+        
+        if correlation:
+            self.audit.log_deadline_event(
+                flow_id=flow_id,
+                event_type="deadline_cancelled",
+                correlation=correlation
+            )
+    
+    def remove_deadline(self, flow_id: str) -> Optional[ExecutionDeadline]:
+        """Remove deadline for flow."""
+        deadline = self._deadlines.pop(self._flow_to_deadline.pop(flow_id, None), None)
+        return deadline
     
     def validate_handshake_accepted(
         self,
@@ -657,6 +911,12 @@ class ExecutionOrchestrator:
         
         flow.mark_proposal_approved(proposal.proposal_id)
         
+        # Mark deadline as active (flow is now active)
+        flow.deadline_state = ExecutionDeadlineState.ACTIVE.value
+        deadline = self._deadlines.get(self._flow_to_deadline.get(flow_id))
+        if deadline:
+            deadline.mark_active()
+        
         # Skip handshake if requested (for tests/backward compatibility)
         if skip_handshake:
             # Create envelope directly
@@ -720,6 +980,12 @@ class ExecutionOrchestrator:
         
         if not flow or not correlation:
             return False, "Flow not found"
+        
+        # Check deadline before gates
+        breached, reason = self.check_deadline_breached(flow_id)
+        if breached:
+            flow.mark_deadline_breached(reason)
+            return False, f"Deadline breached: {reason}"
         
         if not correlation.request_id:
             return False, "No envelope created"

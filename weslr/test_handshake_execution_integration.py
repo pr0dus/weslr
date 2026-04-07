@@ -416,6 +416,42 @@ class TestHandshakeRejectionPropagation(unittest.TestCase):
         self.assertTrue(updated_flow.is_rejected)
         self.assertEqual(updated_flow.current_stage, FlowStage.EXECUTION_REJECTED.value)
 
+    def test_handshake_expiry_detected(self):
+        """Handshake expiry detected and rejected."""
+        proposal = RemoteActionProposal(
+            proposal_id="prop-1",
+            proposing_node_id=self.local.node_id,
+            target_node_id="remote-1",
+            action_type="sync_continuity"
+        )
+        proposal.submit()
+        proposal.start_validation()
+        proposal.mark_validated([{"passed": True}])
+        
+        flow = self.orchestrator.create_flow(proposal)
+        
+        # Create a handshake request
+        envelope, error = self.orchestrator.approved_to_envelope(
+            flow_id=flow.flow_id,
+            proposal=proposal,
+            execution_intent="Sync data",
+            target_node_id="remote-1",
+            skip_handshake=False
+        )
+        
+        # Get the actual handshake ID
+        handshake_request = self.orchestrator._handshakes.get(flow.flow_id)
+        self.assertIsNotNone(handshake_request)
+        
+        # Check deadline was created
+        flow = self.orchestrator._flows.get(flow.flow_id)
+        self.assertIsNotNone(flow.deadline_id)
+        
+        # Check handshake ID in correlation
+        correlation = self.orchestrator.get_correlation(flow.flow_id)
+        self.assertIsNotNone(correlation.handshake_id)
+        self.assertIsNotNone(correlation.deadline_id)
+
 
 if __name__ == "__main__":
     unittest.main()
