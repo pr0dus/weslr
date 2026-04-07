@@ -86,6 +86,11 @@ from .execution_deadline import (
     DeadlineStatus,
     FlowDeadlineTracker,
 )
+from .execution_telemetry import (
+    TelemetryEventEmitter,
+    TelemetryObserver,
+    TelemetryEventType,
+)
 
 
 # ============================================================================
@@ -574,7 +579,10 @@ class IntegratedAuditTrace:
 class ExecutionOrchestrator:
     """Main integration controller for distributed execution flow.
     
-    Integrates proposal (v61) → handshake (v65) → envelope (v62) → receipt (v63).
+    Integrates proposal (v61) → handshake (v65) → envelope (v62) → receipt (v63)
+    with telemetry (v68) and deadline propagation (v67).
+    
+    Telemetry is passive — observes execution flow without controlling it.
     """
     
     def __init__(
@@ -592,6 +600,7 @@ class ExecutionOrchestrator:
         self.local_version = local_version
         self.supported_versions = supported_versions or ["1.0.0"]
         self.audit = IntegratedAuditTrace(local_node_id)
+        self.telemetry = TelemetryEventEmitter()  # v68 - passive telemetry
         
         # Wire up sub-audits
         if proposal_audit:
@@ -656,6 +665,15 @@ class ExecutionOrchestrator:
             stage="proposal",
             event_type="flow_created",
             correlation=correlation
+        )
+        
+        # Emit telemetry event (v68)
+        self.telemetry.create_event(
+            event_type=TelemetryEventType.FLOW_CREATED.value,
+            flow_id=flow_id,
+            request_id=correlation.request_id,
+            handshake_id=correlation.handshake_id,
+            deadline_id=correlation.deadline_id
         )
         
         return flow
@@ -882,6 +900,14 @@ class ExecutionOrchestrator:
             correlation=correlation
         )
         
+        # Emit telemetry event (v68)
+        self.telemetry.create_event(
+            event_type=TelemetryEventType.HANDSHAKE_SUCCESS.value,
+            flow_id=flow_id,
+            handshake_id=response.handshake_id,
+            properties={"session_id": response.session_id} if response.session_id else {}
+        )
+        
         return True, None
     
     def approved_to_envelope(
@@ -1103,6 +1129,16 @@ class ExecutionOrchestrator:
             details={"result": result},
             correlation=correlation
         )
+        
+        # Emit telemetry event (v68)
+        self.telemetry.create_event(
+            event_type=TelemetryEventType.FLOW_COMPLETED.value,
+            flow_id=flow_id,
+            request_id=correlation.request_id,
+            handshake_id=correlation.handshake_id,
+            deadline_id=correlation.deadline_id,
+            properties={"result": result}
+        )
     
     def fail_flow(self, flow_id: str, reason: str) -> None:
         """Mark flow as failed."""
@@ -1134,6 +1170,16 @@ class ExecutionOrchestrator:
             details={"reason": reason},
             correlation=correlation
         )
+        
+        # Emit telemetry event (v68)
+        self.telemetry.create_event(
+            event_type=TelemetryEventType.FLOW_FAILED.value,
+            flow_id=flow_id,
+            request_id=correlation.request_id,
+            handshake_id=correlation.handshake_id,
+            deadline_id=correlation.deadline_id,
+            properties={"reason": reason}
+        )
     
     def initiate_rollback(self, flow_id: str, reason: str) -> bool:
         """Initiate rollback for flow."""
@@ -1158,6 +1204,15 @@ class ExecutionOrchestrator:
             event_type="rollback_initiated",
             details={"reason": reason},
             correlation=correlation
+        )
+        
+        # Emit telemetry event (v68)
+        self.telemetry.create_event(
+            event_type=TelemetryEventType.FLOW_ROLLBACK_INITIATED.value,
+            flow_id=flow_id,
+            request_id=correlation.request_id,
+            deadline_id=correlation.deadline_id,
+            properties={"reason": reason}
         )
         
         return True
@@ -1195,3 +1250,15 @@ class ExecutionOrchestrator:
     def get_flow_trace(self, flow_id: str) -> List[Dict[str, Any]]:
         """Get full audit trace for flow."""
         return self.audit.get_flow_trace(flow_id)
+    
+    def get_telemetry_export(self) -> str:
+        """Export telemetry events as JSON."""
+        return self.telemetry.export_as_json()
+    
+    def get_telemetry_metrics(self) -> Dict[str, int]:
+        """Get telemetry metrics summary."""
+        return self.telemetry.get_metrics()
+    
+    def get_telemetry_by_flow(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Get telemetry events grouped by flow."""
+        return self.telemetry.export_by_flow()

@@ -23,6 +23,9 @@ from weslr.execution_deadline import (
     ExecutionDeadline,
     ExecutionDeadlineState,
 )
+from weslr.remote_node_handshake import (
+    HandshakeResponse,
+)
 from weslr.remote_action_proposal import (
     RemoteActionProposal,
     ProposalStatus,
@@ -544,6 +547,50 @@ class TestExecutionOrchestrator(unittest.TestCase):
         # After approved_to_envelope, deadline should be active
         updated_flow = self.orchestrator.get_flow(flow_id)
         self.assertEqual(updated_flow.deadline_state, ExecutionDeadlineState.ACTIVE.value)
+
+    def test_telemetry_emitted_on_flow(self):
+        """Telemetry events emitted during flow execution."""
+        flow = self.orchestrator.create_flow(self.proposal)
+        
+        # Create flow with handshake to get complete telemetry
+        envelope, error = self.orchestrator.approved_to_envelope(
+            flow_id=flow.flow_id,
+            proposal=self.proposal,
+            execution_intent="Sync data",
+            target_node_id="remote-1",
+            skip_handshake=False
+        )
+        
+        # Get the actual handshake response
+        handshake_request = self.orchestrator._handshakes.get(flow.flow_id)
+        response = HandshakeResponse(
+            response_id="resp-1",
+            handshake_id=handshake_request.handshake_id,
+            source_node_id="remote-1",
+            target_node_id=self.local.node_id,
+            accepted=True
+        )
+        
+        # Complete the handshake flow
+        envelope, error = self.orchestrator.approved_to_envelope(
+            flow_id=flow.flow_id,
+            proposal=self.proposal,
+            execution_intent="Sync data",
+            handshake_response=response,
+            skip_handshake=False
+        )
+        
+        self.orchestrator.evaluate_and_authorize(flow.flow_id)
+        self.orchestrator.dispatch_and_receive_receipt(flow.flow_id)
+        self.orchestrator.complete_flow(flow.flow_id, {"status": "success"})
+        
+        # Get telemetry metrics
+        metrics = self.orchestrator.get_telemetry_metrics()
+        
+        # All events should be present
+        self.assertIn("flow_created", metrics)
+        self.assertIn("handshake_success", metrics)
+        self.assertIn("flow_completed", metrics)
 
 
 if __name__ == "__main__":

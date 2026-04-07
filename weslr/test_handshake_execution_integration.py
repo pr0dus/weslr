@@ -451,6 +451,30 @@ class TestHandshakeRejectionPropagation(unittest.TestCase):
         correlation = self.orchestrator.get_correlation(flow.flow_id)
         self.assertIsNotNone(correlation.handshake_id)
         self.assertIsNotNone(correlation.deadline_id)
+        
+        # Get the handshake request and create a response
+        response = HandshakeResponse(
+            response_id="resp-1",
+            handshake_id=handshake_request.handshake_id,
+            source_node_id="remote-1",
+            target_node_id=self.local.node_id,
+            accepted=True
+        )
+        
+        # Complete handshake and envelope
+        self.orchestrator.approved_to_envelope(
+            flow_id=flow.flow_id,
+            proposal=proposal,
+            execution_intent="Sync data",
+            handshake_response=response,
+            skip_handshake=False
+        )
+        
+        # Get metrics - should include handshake events
+        metrics = self.orchestrator.get_telemetry_metrics()
+        
+        # Handshake success should be present (flow_completed not emitted in this partial flow)
+        self.assertIn("handshake_success", metrics)
 
 
 if __name__ == "__main__":
