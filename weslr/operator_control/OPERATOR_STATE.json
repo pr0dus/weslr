@@ -3,10 +3,10 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "1b15711017d224dbcad43d9ddbd7ad94f9998110",
-  "latest_layer": "v83 — Recovery Pattern Comparison Layer Sealed",
-  "current_phase": "v84_planning",
-  "next_priority": "recovery_pattern_history_trend_layer",
+  "latest_sealed_commit": "07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa",
+  "latest_layer": "v84 — Recovery Pattern History / Trend Layer Sealed",
+  "current_phase": "v85_planning",
+  "next_priority": "operator_recovery_insight_layer",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
@@ -19,7 +19,7 @@
     "TIA": [],
     "industrial_slice": []
   },
-  "completed_layers_v76_v83": [
+  "completed_layers_v76_v84": [
     "recovery_recommendation_export_replay_correlation",
     "operator_recovery_review_surface",
     "operator_decision_trace_correlated_export",
@@ -27,7 +27,8 @@
     "recovery_timing_baseline_hotspot_measurement",
     "end_to_end_command_path_timing",
     "recovery_timing_interpretation_bottleneck_attribution",
-    "recovery_pattern_comparison_layer"
+    "recovery_pattern_comparison_layer",
+    "recovery_pattern_history_trend_layer"
   ],
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
@@ -39,7 +40,7 @@
     "exclude TIA/collector from all routing",
     "never route to excluded scopes",
     "apply TEST_DOCTRINE.md for all new layers",
-    "speed/latency measurements do not justify optimization-first architecture",
+    "v79-v82 timing confirmed current recovery path already fast enough — optimization-first not justified",
     "focus on response speed/latency awareness, operator trust, read-only intelligence"
   ],
   "active_hotfixes": [],
@@ -84,7 +85,7 @@
   "v79_status": {
     "status": "sealed",
     "commit_hash": "5166a66c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
-    "files": ["weslr/recovery_benchmark_timing_harness.py", "weslr/test_recovery_benchmark_timing_harness.py"],
+    "files": ["weslr/recovery_benchmark_timing.py", "weslr/test_recovery_benchmark_timing.py"],
     "test_results": "25/25 passed"
   },
   "v80_status": {
@@ -96,13 +97,13 @@
   "v81_status": {
     "status": "sealed",
     "commit_hash": "72ec166c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
-    "files": ["weslr/end_to_end_command_path_timing.py", "weslr/test_end_to_end_command_path_timing.py"],
+    "files": ["weslr/command_timing_baseline.py", "weslr/test_command_timing_baseline.py"],
     "test_results": "29/29 passed"
   },
   "v82_status": {
     "status": "sealed",
     "commit_hash": "20954ccc3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
-    "files": ["weslr/recovery_timing_interpretation.py", "weslr/test_recovery_timing_interpretation.py"],
+    "files": ["weslr/recovery_timing_attribution.py", "weslr/test_recovery_timing_attribution.py"],
     "test_results": "35/35 passed"
   },
   "v83_status": {
@@ -110,5 +111,11 @@
     "commit_hash": "1b15711017d224dbcad43d9ddbd7ad94f9998110",
     "files": ["weslr/recovery_pattern_comparison.py", "weslr/test_recovery_pattern_comparison.py"],
     "test_results": "47/47 passed"
+  },
+  "v84_status": {
+    "status": "sealed",
+    "commit_hash": "07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa",
+    "files": ["weslr/recovery_pattern_history.py", "weslr/test_recovery_pattern_history.py"],
+    "test_results": "21/21 passed"
   }
 }
