@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-07  
-**Current Sealed Commit:** `646fb958101458d151d720c15f7f0b45d8ced34a` (v74)
+**Current Sealed Commit:** `22e8011c38801cd84c0a20cacb2c07c5597c505c` (v75)
 
 ---
 
@@ -31,7 +31,7 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 
 ---
 
-## 2. Current Sealed Architecture Stack (v61-v74)
+## 2. Current Sealed Architecture Stack (v61-v75)
 
 ### Layer Sequence
 
@@ -51,6 +51,7 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 | v72 | Operator Workflow Validation | Operator-initiated workflow enforcement | ✅ Sealed |
 | v73 | Capability Boundary Hardening | Explicit scope boundaries (TIA/C# excluded) | ✅ Sealed |
 | v74 | Architecture Memory Refresh | Structured memory state management | ✅ Sealed |
+| v75 | Recovery Recommendation Service Sealed | v75 service test suite + seal | ✅ Sealed |
 
 ### Flow Lifecycle
 
@@ -154,10 +155,17 @@ The **Seal Rule** determines when a commit is ready for production release:
 
 | Bottleneck | Status | Description |
 |------------|--------|-------------|
+| Recovery Recommendation Export + Replay Correlation | Active | v76: Export recommendations into diagnostic trace chain |
 | Scientific Knowledge Assimilation Expansion | Active | Expand knowledge assimilation capabilities |
 | Distributed Multi-Node Deployment | Active | Enable true multi-node distributed operation |
 | Real World External Orchestration | Active | External system integration patterns |
 | Cross Instance Continuity Sync | Active | Continuity synchronization across instances |
+
+### v76 Next Layer Candidate
+
+| Layer | Name | Status |
+|-------|------|--------|
+| v76 | Recovery Recommendation Export + Replay Correlation | 📋 Planned - v75 complete, v76 ready for planning |
 
 ### Bottleneck Labels Refined
 

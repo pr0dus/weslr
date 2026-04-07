@@ -3,15 +3,15 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "646fb958101458d151d720c15f7f0b45d8ced34a",
-  "latest_layer": "v74 — Architecture Memory Refresh (CLI Decomposition Sealed)",
-  "current_phase": "weslr_operator_workflow",
-  "next_priority": "scientific_knowledge_assimilation_expansion",
+  "latest_sealed_commit": "22e8011c38801cd84c0a20cacb2c07c5597c505c",
+  "latest_layer": "v75 — Recovery Recommendation Service Sealed",
+  "current_phase": "v76_planning",
+  "next_priority": "recovery_recommendation_export_replay_correlation",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
   "active_bottlenecks": {
-    "weslr_core_layer": ["scientific_knowledge_assimilation_expansion", "distributed_multi_node_deployment", "real_world_external_orchestration", "cross_instance_continuity_sync"],
+    "weslr_core_layer": ["recovery_recommendation_export_replay_correlation", "scientific_knowledge_assimilation_expansion", "distributed_multi_node_deployment", "real_world_external_orchestration", "cross_instance_continuity_sync"],
     "weslr_infrastructure": [],
     "operator_workflow": []
   },
@@ -44,5 +44,11 @@
       "weslr/recovery_recommendation_service.py"
     ],
     "commit_hash": "646fb958101458d151d720c15f7f0b45d8ced34a"
+  },
+  "v75_status": {
+    "status": "sealed",
+    "commit_hash": "22e8011c38801cd84c0a20cacb2c07c5597c505c",
+    "files": ["weslr/recovery_recommendation_service.py", "weslr/test_recovery_recommendation_service.py"],
+    "test_results": "22/22 passed"
   }
 }
