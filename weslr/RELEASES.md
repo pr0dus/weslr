@@ -4,6 +4,35 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v83 — Recovery Pattern Comparison Layer Sealed (2026-04-07)
+
+**Commit:** `1b15711017d224dbcad43d9ddbd7ad94f9998110`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v83 Recovery Pattern Comparison Layer fully tested and sealed
+- Pattern comparison across recovery operations
+- Trend visibility for confidence guidance changes
+- Trend visibility for safe-next-action convergence/divergence
+- Repeated pattern history over time
+- Operator-readable history/trend summary
+- Machine-readable trend export
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 47/47 tests passed
+- Full backward compatibility with v76-v82
+
+**Files:**
+- `weslr/recovery_pattern_comparison.py` (existing, no changes needed)
+- `weslr/test_recovery_pattern_comparison.py` (new)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v82 timing and pattern layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
 ## v75 — Recovery Recommendation Service Sealed (2026-04-07)
 
 **Commit:** `22e8011c38801cd84c0a20cacb2c07c5597c505c`
