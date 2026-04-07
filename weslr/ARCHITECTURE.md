@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-07  
-**Current Sealed Commit:** `262f425c0cdd9fa424435a34907e68152f92967a` (v87)
+**Current Sealed Commit:** `7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6` (v88)
 
 ---
 
@@ -64,6 +64,7 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 | v85 | Operator Recovery Insight Layer | Insight generation from recovery patterns | ✅ Sealed |
 | v86 | Operator Insight History / Comparative Significance Layer | Comparative significance analysis across insight summaries | ✅ Sealed |
 | v87 | Operator Insight Comparison / Drift Layer | Drift detection and comparison across time windows | ✅ Sealed |
+| v88 | Operator Insight Timeline / Escalation Context Layer | Timeline context and escalation signals for operator decisions | ✅ Sealed |
 
 ### Flow Lifecycle
 
@@ -186,6 +187,9 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v83 | Recovery Pattern Comparison Layer | ✅ Sealed | Pattern comparison across recovery operations |
 | v84 | Recovery Pattern History / Trend Layer | ✅ Sealed | Pattern history/trend analysis over time |
 | v85 | Operator Recovery Insight Layer | ✅ Sealed | Insight generation from recovery patterns |
+| v86 | Operator Insight History / Comparative Significance Layer | ✅ Sealed | Comparative significance analysis across insight summaries |
+| v87 | Operator Insight Comparison / Drift Layer | ✅ Sealed | Drift detection and comparison across time windows |
+| v88 | Operator Insight Timeline / Escalation Context Layer | ✅ Sealed | Timeline context and escalation signals for operator decisions |
 
 ### Bottleneck Labels Refined
 

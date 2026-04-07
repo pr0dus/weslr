@@ -222,4 +222,35 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v88 — Operator Insight Timeline / Escalation Context Layer Sealed (2026-04-07)
+
+**Commit:** `7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v88 Operator Insight Timeline / Escalation Context Layer fully tested and sealed
+- TimelineRecord — timeline context record with timestamps, escalation signals, confidence guidance
+- EscalationSignal — escalation event with priority, urgency, operator action needed
+- TimelineSummary — operator-readable + machine-readable timeline summary
+- Escalation history tracking (high/medium/low priority)
+- Confidence guidance evolution over timeline
+- Safe-next-action tracking across timeline
+- Operator-readable timeline/escalation summary export
+- Machine-readable escalation export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 39/39 tests passed
+- Full backward compatibility with v76-v87
+
+**Files:**
+- `weslr/operator_insight_timeline.py` (new, 622 lines)
+- `weslr/test_operator_insight_timeline.py` (new, 697 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v87 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
 *WESLR Release Notes v1.0.0*

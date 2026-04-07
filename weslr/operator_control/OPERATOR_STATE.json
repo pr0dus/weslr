@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "262f425c0cdd9fa424435a34907e68152f92967a",
-  "latest_layer": "v87 — Operator Insight Comparison / Drift Layer Sealed",
-  "current_phase": "v88_planning",
+  "latest_sealed_commit": "7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6",
+  "latest_layer": "v88 — Operator Insight Timeline / Escalation Context Layer Sealed",
+  "current_phase": "v89_planning",
   "next_priority": "operator_insight_timeline_escalation_context_layer",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -19,7 +19,7 @@
     "TIA": [],
     "industrial_slice": []
   },
-  "completed_layers_v76_v85": [
+  "completed_layers_v76_v88": [
     "recovery_recommendation_export_replay_correlation",
     "operator_recovery_review_surface",
     "operator_decision_trace_correlated_export",
@@ -31,7 +31,8 @@
     "recovery_pattern_history_trend_layer",
     "operator_recovery_insight_layer",
     "operator_insight_history_comparative_significance_layer",
-    "operator_insight_comparison_drift_layer"
+    "operator_insight_comparison_drift_layer",
+    "operator_insight_timeline_escalation_context_layer"
   ],
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
@@ -138,5 +139,11 @@
     "commit_hash": "262f425c0cdd9fa424435a34907e68152f92967a",
     "files": ["weslr/operator_insight_comparison.py", "weslr/test_operator_insight_comparison.py"],
     "test_results": "31/31 passed"
+  },
+  "v88_status": {
+    "status": "sealed",
+    "commit_hash": "7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6",
+    "files": ["weslr/operator_insight_timeline.py", "weslr/test_operator_insight_timeline.py"],
+    "test_results": "39/39 passed"
   }
 }
