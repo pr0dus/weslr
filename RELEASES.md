@@ -36,6 +36,23 @@ Recommended rollback order:
 - backup: `CircleForge-backup-20260407-0001.tar.gz`
 - tag: `v0.7.1`
 
+### v0.7.2
+- distributed failure replay / diagnostic trace export hardening (v72) - WESLR Python only, additive only, read-only
+- trace export model with structured TraceExportRecord dataclass
+- replay-oriented failure trace reconstruction via FailureTraceReconstructor
+- stronger correlation validation across flow/request/handshake/deadline IDs
+- consistency score computation with timestamp ordering and stage progression checks
+- operator-readable replay summary generation
+- machine-readable replay export (JSON with full trace metadata)
+- backward compatibility with v70/v71 exports
+- CLI commands: `diagnostics-trace-export`, `diagnostics-trace-replay`, `diagnostics-replay-export`
+- comprehensive behavioral tests (60 tests covering correlation, timestamps, stage progression, consistency, replay, backward compat)
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: harden the distributed diagnostic/export stack for reliable failure trace replay across the v61–v71 chain
+- commit: `v72-trace-export`
+- backup: `CircleForge-backup-20260407-0002.tar.gz`
+- tag: `v0.7.2`
+
 ### v0.7.0
 - autonomous expression system with rate control (`set-expression-rate`)
 - circuit breaker to prevent runaway ticks and infinite loops

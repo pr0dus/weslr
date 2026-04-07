@@ -92,6 +92,13 @@ from weslr.diagnostic_export import (
     FailureChainExporter,
     RecoveryHintExporter,
 )
+from weslr.diagnostic_trace_export import (
+    TraceExporter,
+    FailureTraceReconstructor,
+    ReplaySummaryGenerator,
+    ExportVersion,
+    ExportFormat,
+)
 from weslr.distributed_diagnostic_hooks import DiagnosticHooks
 
 
@@ -1590,6 +1597,19 @@ def main():
 
     p = sub.add_parser("diagnostics-recovery-hints", help="export all recovery hints in structured format")
     p.set_defaults(func=cmd_diagnostics_recovery_hints)
+
+    # v72: Distributed Failure Replay / Diagnostic Trace Export
+    p = sub.add_parser("diagnostics-trace-export", help="export diagnostic trace with correlation validation and consistency score")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all flows if omitted)")
+    p.set_defaults(func=cmd_diagnostics_trace_export)
+
+    p = sub.add_parser("diagnostics-trace-replay", help="export replay summary for operator consumption")
+    p.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
+    p.set_defaults(func=cmd_diagnostics_trace_replay)
+
+    p = sub.add_parser("diagnostics-replay-export", help="export replayable trace format")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
+    p.set_defaults(func=cmd_diagnostics_replay_export)
 
     args = parser.parse_args()
     args.func(args)
@@ -3141,6 +3161,15 @@ _diagnostic_emitter = _MinimalTelemetryEmitter()
 _diagnostic_hooks = DiagnosticExportHooks(DiagnosticHooks(_diagnostic_emitter))
 
 
+# ============================================================================
+# Distributed Failure Replay / Diagnostic Trace Export (v72)
+# ============================================================================
+
+_trace_exporter = TraceExporter(DiagnosticHooks(_diagnostic_emitter))
+_reconstructor = FailureTraceReconstructor()
+_summary_generator = ReplaySummaryGenerator()
+
+
 def cmd_diagnostics_summary(_args):
     """Export diagnostic summary in operator-readable format."""
     result = _diagnostic_hooks.export_all_summaries()
@@ -3183,6 +3212,52 @@ def cmd_diagnostics_recovery_hints(_args):
         recovery_hint = hint.get("recovery_hint", "None")
         likely_cause = hint.get("likely_cause", "Unknown")
         print(f"  [{likely_cause.upper()}] {flow_id}: {recovery_hint}")
+
+
+# ============================================================================
+# v72: Distributed Failure Replay / Diagnostic Trace Export CLI Commands
+# ============================================================================
+
+
+def cmd_diagnostics_trace_export(args):
+    """Export diagnostic trace with correlation validation and consistency score."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _trace_exporter.export_as_dict(flow_id)
+    else:
+        result = _trace_exporter.export_all_traces()
+    
+    emit(result)
+
+
+def cmd_diagnostics_trace_replay(args):
+    """Export replay summary for operator consumption."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        trace = _trace_exporter.export_trace(flow_id)
+        if trace:
+            records = [trace]
+        else:
+            records = []
+    else:
+        records = _trace_exporter.export_all_traces()
+    
+    summary = _summary_generator.generate_summary(records)
+    print(summary)
+
+
+def cmd_diagnostics_replay_export(args):
+    """Export replayable trace format."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _trace_exporter.export_replayable(flow_id)
+    else:
+        result = _trace_exporter.export_as_dict()
+    
+    emit(result)
 
 
 if __name__ == "__main__":
