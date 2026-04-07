@@ -193,4 +193,33 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v87 — Operator Insight Comparison / Drift Layer Sealed (2026-04-07)
+
+**Commit:** `262f425c0cdd9fa424435a34907e68152f92967a`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v87 Operator Insight Comparison / Drift Layer fully tested and sealed
+- InsightDriftRecord — drift record with timestamp/comparison reference
+- DriftTrend — trend detection with direction/magnitude
+- DriftSummary — operator-readable + machine-readable summary
+- Insight count drift, significance drift, confidence-guidance drift, safe-next-action drift
+- Operator-readable drift summary export
+- Machine-readable drift export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 31/31 tests passed
+- Full backward compatibility with v76-v86
+
+**Files:**
+- `weslr/operator_insight_comparison.py` (new, 671 lines)
+- `weslr/test_operator_insight_comparison.py` (new, 703 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v86 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
 *WESLR Release Notes v1.0.0*
