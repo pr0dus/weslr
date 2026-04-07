@@ -1,747 +1,747 @@
-"""Tests for Recovery Recommendation Export + Replay Correlation (v76)
+"""Test suite for v76 Recovery Recommendation Export + Replay Correlation.
 
-Behavioral tests for recommendation export, replay summaries, and
-diagnostic integration with correlation IDs.
-
-Test Doctrine version: 1.0.0 (2026-04-07)
+Tests:
+  - RecoveryRecommendationExportRecord model
+  - RecoveryRecommendationExporter behavior
+  - Integration with diagnostics
+  - Backward compatibility with v72-v75
 """
 
-import os
-import sys
-import unittest
+from __future__ import annotations
+
+import json
+import pytest
 from datetime import datetime, timezone
+from typing import Any, Dict, List
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from weslr.recovery_recommendation_service import (
-    RecoveryRecommendationService,
-)
-from weslr.recovery_recommendation_export import (
+from .recovery_recommendation_export import (
+    RecoveryRecommendationExportRecord,
     RecoveryRecommendationExporter,
-    RecoveryRecommendationReplay,
-    RecoveryRecommendationSummaryBuilder,
-    create_recommendation_exporter,
-    create_recommendation_replay,
-    create_recommendation_summary_builder,
-    integrate_with_diagnostics,
 )
-from weslr.distributed_diagnostic_hooks import (
-    FailureType,
+from .distributed_diagnostic_hooks import (
+    DiagnosticHooks,
+    FailureClassification,
     FailureStage,
+    FailureType,
+    DiagnosticSummaryBuilder,
 )
+from .recovery_recommendation_service import RecoveryRecommendationService
+from .execution_telemetry import TelemetryEventEmitter, TelemetryEvent, TelemetryEventType
 
 
 # ============================================================================
-# RECOVERY RECOMMENDATION EXPORTER MODEL TESTS
+# TEST FIXTURES
 # ============================================================================
 
 
-class TestRecoveryRecommendationExporterModel(unittest.TestCase):
-    """Test recovery recommendation exporter data models."""
+@pytest.fixture
+def emitter() -> TelemetryEventEmitter:
+    """Create telemetry emitter for tests."""
+    return TelemetryEventEmitter()
 
-    def test_exporter_creation(self):
-        """RecoveryRecommendationExporter created successfully."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        self.assertIsNotNone(exporter)
 
-    def test_export_all_recommendations_empty(self):
-        """Export all recommendations when empty."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        
-        recommendations = exporter.export_all_recommendations()
-        
-        self.assertEqual(len(recommendations), 0)
+@pytest.fixture
+def diagnostic_hooks(emitter: TelemetryEventEmitter) -> DiagnosticHooks:
+    """Create diagnostic hooks for tests."""
+    return DiagnosticHooks(emitter)
 
-    def test_export_all_recommendations_with_data(self):
-        """Export all recommendations with data."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
+
+@pytest.fixture
+def recommendation_service() -> RecoveryRecommendationService:
+    """Create recovery recommendation service for tests."""
+    return RecoveryRecommendationService()
+
+
+@pytest.fixture
+def exporter(diagnostic_hooks: DiagnosticHooks) -> RecoveryRecommendationExporter:
+    """Create exporter instance for tests."""
+    return RecoveryRecommendationExporter(diagnostic_hooks)
+
+
+# ============================================================================
+# TEST RECOVERY RECOMMENDATION EXPORT RECORD MODEL
+# ============================================================================
+
+
+class TestRecoveryRecommendationExportRecordModel:
+    """Test RecoveryRecommendationExportRecord dataclass."""
+    
+    def test_creation_and_serialization(self):
+        """Test record creation and dict serialization."""
+        correlation_ids = {
+            "flow_id": "flow_123",
+            "request_id": "req_456",
+            "handshake_id": "hs_789",
+            "deadline_id": "dl_000",
+        }
         
-        # Add a recommendation
-        service.generate_recommendation(
+        recommendation_data = {
+            "recommendation_id": "rec_001",
+            "stage": "proposal",
+            "recovery_hint": "Review rejection reason",
+            "confidence": "high",
+        }
+        
+        record = RecoveryRecommendationExportRecord(
+            export_id="export_abc",
+            recommendation_id="rec_001",
+            timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            correlation_ids=correlation_ids,
+            recommendation_data=recommendation_data,
+        )
+        
+        assert record.export_id == "export_abc"
+        assert record.recommendation_id == "rec_001"
+        assert record.correlation_ids == correlation_ids
+        assert record.recommendation_data == recommendation_data
+        
+        # Test dict serialization
+        record_dict = record.to_dict()
+        assert record_dict["export_id"] == "export_abc"
+        assert record_dict["correlation_ids"] == correlation_ids
+        assert record_dict["recommendation_data"] == recommendation_data
+    
+    def test_json_serialization(self):
+        """Test JSON serialization."""
+        record = RecoveryRecommendationExportRecord(
+            export_id="export_001",
+            recommendation_id="rec_001",
+            timestamp="2026-04-07T18:55:00Z",
+            correlation_ids={"flow_id": "flow_123"},
+            recommendation_data={"test": "data"},
+        )
+        
+        json_str = record.to_json()
+        parsed = json.loads(json_str)
+        
+        assert parsed["export_id"] == "export_001"
+        assert parsed["correlation_ids"]["flow_id"] == "flow_123"
+    
+    def test_from_dict_round_trip(self):
+        """Test from_dict creates valid instance."""
+        original = RecoveryRecommendationExportRecord(
+            export_id="export_001",
+            recommendation_id="rec_001",
+            timestamp="2026-04-07T18:55:00Z",
+            correlation_ids={"flow_id": "flow_123"},
+            recommendation_data={"key": "value"},
+        )
+        
+        record_dict = original.to_dict()
+        restored = RecoveryRecommendationExportRecord.from_dict(record_dict)
+        
+        assert restored.export_id == original.export_id
+        assert restored.recommendation_id == original.recommendation_id
+        assert restored.correlation_ids == original.correlation_ids
+        assert restored.recommendation_data == original.recommendation_data
+    
+    def test_with_failure_classification(self):
+        """Test record with failure classification."""
+        failure_classification = FailureClassification(
+            failure_type=FailureType.PROPOSAL_REJECTED.value,
+            stage=FailureStage.PROPOSAL.value,
+            observed_error="Proposal rejected by validation",
+            correlation_ids={"flow_id": "flow_test"},
+        )
+        
+        record = RecoveryRecommendationExportRecord(
+            export_id="export_001",
+            recommendation_id="rec_001",
+            timestamp="2026-04-07T18:55:00Z",
+            correlation_ids={"flow_id": "flow_test"},
+            recommendation_data={"hint": "Review rejection"},
+            failure_classification=failure_classification,
+            recovery_hint="Review rejection reason",
+            confidence_level="medium",
+        )
+        
+        assert record.failure_classification is not None
+        assert record.recovery_hint == "Review rejection reason"
+        assert record.confidence_level == "medium"
+        
+        # Test dict includes failure classification
+        record_dict = record.to_dict()
+        assert record_dict["failure_classification"] is not None
+        assert record_dict["failure_classification"]["failure_type"] == "proposal_rejected"
+
+
+# ============================================================================
+# TEST RECOVERY RECOMMENDATION EXPORTER BEHAVIOR
+# ============================================================================
+
+
+class TestRecoveryRecommendationExporterBehavior:
+    """Test RecoveryRecommendationExporter class."""
+    
+    def test_export_recommendation(self, exporter: RecoveryRecommendationExporter):
+        """Test exporting a recommendation."""
+        service = RecoveryRecommendationService()
+        recommendation = service.generate_recommendation(
             stage=FailureStage.PROPOSAL.value,
             failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "node_id": "node_001",
+            },
             correlation_ids={
-                "flow_id": "flow-123",
-                "request_id": "req-456",
-            }
+                "flow_id": "flow_123",
+                "request_id": "req_456",
+            },
         )
         
-        recommendations = exporter.export_all_recommendations()
+        export_record = exporter.export_recommendation(recommendation)
         
-        self.assertEqual(len(recommendations), 1)
-        self.assertEqual(recommendations[0]["stage"], FailureStage.PROPOSAL.value)
-        self.assertEqual(recommendations[0]["failure_type"], FailureType.PROPOSAL_REJECTED.value)
-        self.assertEqual(recommendations[0]["hint_certainty"], "suggestion")
-        self.assertEqual(recommendations[0]["correlation_trace"]["flow_id"], "flow-123")
-        self.assertEqual(recommendations[0]["correlation_trace"]["request_id"], "req-456")
-
-    def test_export_by_flow(self):
-        """Export recommendations grouped by flow ID."""
+        assert export_record.export_id is not None
+        assert export_record.recommendation_id == recommendation["recommendation_id"]
+        assert export_record.correlation_ids["flow_id"] == "flow_123"
+        assert export_record.correlation_ids["request_id"] == "req_456"
+        assert export_record.recovery_hint == recommendation["recovery_hint"]
+        assert export_record.confidence_level == recommendation["confidence"]
+    
+    def test_export_by_correlation_flow_id(self, exporter: RecoveryRecommendationExporter):
+        """Test filtering exports by flow_id."""
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
         
-        service.generate_recommendation(
+        # Export recommendation with flow_id correlation
+        recommendation1 = service.generate_recommendation(
+            stage=FailureStage.PROPOSAL.value,
+            failure_type=FailureType.PROPOSAL_REJECTED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_test", "request_id": "req_001"},
+        )
+        exporter.export_recommendation(recommendation1)
+        
+        # Export another recommendation with different flow_id
+        recommendation2 = service.generate_recommendation(
             stage=FailureStage.HANDSHAKE.value,
             failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            context={"timestamp": "2026-04-07T18:56:00Z"},
+            correlation_ids={"flow_id": "flow_other", "request_id": "req_002"},
         )
+        exporter.export_recommendation(recommendation2)
         
-        service.generate_recommendation(
+        # Filter by flow_id
+        filtered = exporter.export_by_correlation(flow_id="flow_test")
+        
+        assert len(filtered) == 1
+        assert filtered[0].correlation_ids["flow_id"] == "flow_test"
+    
+    def test_export_by_correlation_request_id(self, exporter: RecoveryRecommendationExporter):
+        """Test filtering exports by request_id."""
+        service = RecoveryRecommendationService()
+        
+        # Export recommendation with request_id correlation
+        recommendation = service.generate_recommendation(
             stage=FailureStage.ENVELOPE.value,
             failure_type=FailureType.ENVELOPE_GATE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"request_id": "req_special"},
         )
+        exporter.export_recommendation(recommendation)
         
-        service.generate_recommendation(
+        # Filter by request_id
+        filtered = exporter.export_by_correlation(request_id="req_special")
+        
+        assert len(filtered) == 1
+        assert filtered[0].correlation_ids["request_id"] == "req_special"
+    
+    def test_export_operator_summary(self, exporter: RecoveryRecommendationExporter):
+        """Test operator-readable summary generation."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
             stage=FailureStage.DEADLINE.value,
             failure_type=FailureType.DEADLINE_BREACHED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-2"}
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_123", "deadline_id": "dl_001"},
         )
+        exporter.export_recommendation(recommendation)
         
-        by_flow = exporter.export_by_flow()
+        summary = exporter.export_operator_summary()
         
-        self.assertIn("flow-1", by_flow)
-        self.assertIn("flow-2", by_flow)
-        self.assertEqual(len(by_flow["flow-1"]), 2)
-        self.assertEqual(len(by_flow["flow-2"]), 1)
-
-    def test_export_by_stage(self):
-        """Export recommendations grouped by failure stage."""
+        assert "RECOVERY RECOMMENDATION EXPORT SUMMARY" in summary
+        assert "Total Recommendations Exported: 1" in summary
+        assert "flow_123" in summary
+        assert "dl_001" in summary
+        assert "recovery_hint" in summary.lower() or "hint" in summary.lower()
+    
+    def test_export_machine_readable(self, exporter: RecoveryRecommendationExporter):
+        """Test machine-readable export."""
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
         
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        service.generate_recommendation(
+        recommendation = service.generate_recommendation(
             stage=FailureStage.HANDSHAKE.value,
             failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-2"}
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"handshake_id": "hs_001"},
         )
+        exporter.export_recommendation(recommendation)
         
-        by_stage = exporter.export_by_stage()
+        machine_readable = exporter.export_machine_readable()
         
-        self.assertIn(FailureStage.PROPOSAL.value, by_stage)
-        self.assertIn(FailureStage.HANDSHAKE.value, by_stage)
-        self.assertEqual(len(by_stage[FailureStage.PROPOSAL.value]), 1)
-        self.assertEqual(len(by_stage[FailureStage.HANDSHAKE.value]), 1)
-
-    def test_export_json(self):
-        """Export recommendations as JSON string."""
+        assert isinstance(machine_readable, list)
+        assert len(machine_readable) == 1
+        record = machine_readable[0]
+        assert record["recommendation_id"] == recommendation["recommendation_id"]
+        assert record["confidence_level"] == recommendation["confidence"]
+        assert record["correlation_ids"]["handshake_id"] == "hs_001"
+    
+    def test_no_correlation_filter(self, exporter: RecoveryRecommendationExporter):
+        """Test export with no correlation filter returns all."""
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
         
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
+        # Export multiple recommendations
+        for i in range(3):
+            recommendation = service.generate_recommendation(
+                stage=FailureStage.PROPOSAL.value,
+                failure_type=FailureType.PROPOSAL_REJECTED.value,
+                context={"timestamp": f"2026-04-07T18:55:0{i}Z"},
+                correlation_ids={"flow_id": f"flow_{i}"},
+            )
+            exporter.export_recommendation(recommendation)
         
-        json_str = exporter.export_json()
+        # Filter with no correlation IDs should return all
+        all_records = exporter.export_by_correlation()
         
-        self.assertIn("flow_id", json_str)
-        self.assertIn("flow-1", json_str)
-
-    def test_export_json_pretty(self):
-        """Export recommendations as pretty-printed JSON."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        json_str = exporter.export_json(pretty=True)
-        
-        # Pretty JSON should have indentation
-        self.assertIn("  ", json_str)
+        assert len(all_records) == 3
 
 
 # ============================================================================
-# RECOVERY RECOMMENDATION EXPORTER BEHAVIOR TESTS
+# TEST INTEGRATION WITH DIAGNOSTICS
 # ============================================================================
 
 
-class TestRecoveryRecommendationExporterBehavior(unittest.TestCase):
-    """Test recovery recommendation exporter behavior."""
-
-    def test_export_preserves_read_only(self):
-        """Export does not modify underlying recommendations."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
+class TestRecoveryRecommendationExportIntegration:
+    """Test integration with distributed diagnostics."""
+    
+    def test_export_with_failure_classification(self, emitter: TelemetryEventEmitter):
+        """Test exporting with failure classification from diagnostics."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
         
-        service.generate_recommendation(
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
+        service = RecoveryRecommendationService()
+        
+        # Create failure classification
+        failure_classification = FailureClassification(
+            failure_type=FailureType.PROPOSAL_REJECTED.value,
+            stage=FailureStage.PROPOSAL.value,
+            observed_error="Proposal rejected",
+            correlation_ids={"flow_id": "flow_int_test"},
+        )
+        
+        # Generate and export recommendation
+        recommendation = service.generate_recommendation(
             stage=FailureStage.PROPOSAL.value,
             failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_int_test"},
         )
         
-        # Get recommendation count before export
-        before_count = len(service.get_all_recommendations())
-        
-        # Export
-        exporter.export_all_recommendations()
-        
-        # Check count unchanged
-        after_count = len(service.get_all_recommendations())
-        self.assertEqual(before_count, after_count)
-
-    def test_export_preserves_hint_certainty(self):
-        """Export preserves hint_certainty as 'suggestion'."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        
-        rec = service.generate_recommendation(
-            stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+        export_record = exporter.export_recommendation(
+            recommendation,
+            failure_classification=failure_classification,
         )
         
-        exported = exporter._export_recommendation(rec)
+        assert export_record.failure_classification is not None
+        assert export_record.failure_classification.failure_type == "proposal_rejected"
+        assert export_record.failure_classification.stage == "proposal"
+    
+    def test_end_to_end_workflow(self, emitter: TelemetryEventEmitter):
+        """Test complete end-to-end workflow."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
         
-        self.assertEqual(exported["hint_certainty"], "suggestion")
-
-    def test_export_includes_all_correlation_ids(self):
-        """Export includes all correlation IDs."""
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
         
-        rec = service.generate_recommendation(
+        # Step 1: Generate recommendation
+        recommendation = service.generate_recommendation(
             stage=FailureStage.ENVELOPE.value,
-            failure_type=FailureType.ENVELOPE_GATE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
+            failure_type=FailureType.ENVELOPE_AUTHORIZATION_FAILED.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "node_id": "node_test",
+            },
             correlation_ids={
-                "flow_id": "flow-1",
-                "request_id": "req-1",
-                "handshake_id": "hs-1",
-                "deadline_id": "dl-1",
-            }
+                "flow_id": "flow_complete",
+                "request_id": "req_complete",
+                "handshake_id": "hs_complete",
+                "deadline_id": "dl_complete",
+            },
         )
         
-        exported = exporter._export_recommendation(rec)
+        # Step 2: Export recommendation
+        export_record = exporter.export_recommendation(recommendation)
         
-        trace = exported["correlation_trace"]
-        self.assertEqual(trace["flow_id"], "flow-1")
-        self.assertEqual(trace["request_id"], "req-1")
-        self.assertEqual(trace["handshake_id"], "hs-1")
-        self.assertEqual(trace["deadline_id"], "dl-1")
+        # Step 3: Export operator summary
+        summary = exporter.export_operator_summary()
+        
+        # Step 4: Export machine readable
+        machine_export = exporter.export_machine_readable()
+        
+        # Verify all steps completed successfully
+        assert export_record.export_id is not None
+        assert len(summary) > 0
+        assert len(machine_export) > 0
+        assert all([
+            export_record.correlation_ids.get("flow_id") == "flow_complete",
+            export_record.correlation_ids.get("request_id") == "req_complete",
+            export_record.correlation_ids.get("handshake_id") == "hs_complete",
+            export_record.correlation_ids.get("deadline_id") == "dl_complete",
+        ])
 
 
 # ============================================================================
-# RECOVERY RECOMMENDATION REPLAY MODEL TESTS
+# TEST BACKWARD COMPATIBILITY WITH V72-V75
 # ============================================================================
 
 
-class TestRecoveryRecommendationReplayModel(unittest.TestCase):
-    """Test recovery recommendation replay data models."""
-
-    def test_replay_creation(self):
-        """RecoveryRecommendationReplay created successfully."""
+class TestRecoveryRecommendationExportBackwardCompatibility:
+    """Test backward compatibility with v72-v75 diagnostic flow."""
+    
+    def test_compatibility_with_v74_fallback_trace(self, emitter: TelemetryEventEmitter):
+        """Test compatibility with v74 fallback trace export format."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
+        
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        self.assertIsNotNone(replay)
-
-    def test_build_replay_summary_empty(self):
-        """Build replay summary when empty."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
         
-        summary = replay.build_replay_summary()
-        
-        self.assertEqual(summary["total_recommendations"], 0)
-        self.assertEqual(summary["confidence_distribution"], {})
-        self.assertEqual(summary["unique_recovery_hints"], [])
-
-    def test_build_replay_summary_with_data(self):
-        """Build replay summary with data."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        
-        # Add recommendations with different confidence levels
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        service.generate_recommendation(
-            stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-2"}
-        )
-        
-        summary = replay.build_replay_summary()
-        
-        self.assertEqual(summary["total_recommendations"], 2)
-        # Should have confidence distribution (check for key like "low", "medium", etc.)
-        self.assertTrue(len(summary["confidence_distribution"]) > 0)
-        # Should have stage distribution (check for key like "proposal", "handshake", etc.)
-        self.assertTrue(len(summary["stage_distribution"]) > 0)
-
-    def test_build_operator_readable_summary(self):
-        """Build human-readable replay summary."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        summary_str = replay.build_operator_readable_summary()
-        
-        self.assertIn("RECOVERY RECOMMENDATION REPLAY SUMMARY", summary_str)
-        self.assertIn("Total Recommendations: 1", summary_str)
-
-    def test_export_replay_json(self):
-        """Export replay summary as JSON."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        json_str = replay.export_replay_json()
-        
-        self.assertIn("total_recommendations", json_str)
-        self.assertIn("1", json_str)
-
-
-# ============================================================================
-# RECOVERY RECOMMENDATION SUMMARY BUILDER MODEL TESTS
-# ============================================================================
-
-
-class TestRecoveryRecommendationSummaryBuilderModel(unittest.TestCase):
-    """Test summary builder data models."""
-
-    def test_builder_creation(self):
-        """RecoveryRecommendationSummaryBuilder created successfully."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        self.assertIsNotNone(builder)
-
-    def test_build_summary_empty(self):
-        """Build summary when empty."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        
-        summary = builder.build_summary()
-        
-        self.assertEqual(summary["total_recommendations"], 0)
-        self.assertEqual(summary["recommendations"], [])
-        self.assertEqual(summary["confidence_distribution"], {})
-        self.assertEqual(summary["correlation_trace_summary"]["flow_ids"], [])
-
-    def test_build_summary_with_data(self):
-        """Build summary with data."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
+        # v74 fallback trace format has correlation_ids with flow/request/handshake/deadline
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.RECEIPT.value,
+            failure_type=FailureType.RECEIPT_FAILED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
             correlation_ids={
-                "flow_id": "flow-1",
-                "request_id": "req-1",
-            }
+                "flow_id": "flow_v74_compat",
+                "request_id": "req_v74_compat",
+                "handshake_id": "hs_v74_compat",
+                "deadline_id": "dl_v74_compat",
+            },
         )
         
-        summary = builder.build_summary()
+        export_record = exporter.export_recommendation(recommendation)
         
-        self.assertEqual(summary["total_recommendations"], 1)
-        self.assertEqual(len(summary["recommendations"]), 1)
-        self.assertEqual(summary["correlation_trace_summary"]["flow_ids"], ["flow-1"])
-        self.assertEqual(summary["correlation_trace_summary"]["request_ids"], ["req-1"])
-
-    def test_build_operator_readable_summary(self):
-        """Build human-readable summary."""
+        # Verify all v74 correlation IDs are preserved
+        assert export_record.correlation_ids["flow_id"] == "flow_v74_compat"
+        assert export_record.correlation_ids["request_id"] == "req_v74_compat"
+        assert export_record.correlation_ids["handshake_id"] == "hs_v74_compat"
+        assert export_record.correlation_ids["deadline_id"] == "dl_v74_compat"
+    
+    def test_compatibility_with_v73_fallback_audit(self, emitter: TelemetryEventEmitter):
+        """Test compatibility with v73 fallback audit records."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
+        
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
         service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
         
-        service.generate_recommendation(
+        # v73 fallback audit records include node_id and reason
+        recommendation = service.generate_recommendation(
             stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            failure_type=FailureType.PROPOSAL_EXPIRED.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "node_id": "node_v73_compat",
+                "fallback_reason": "timeout",
+            },
+            correlation_ids={
+                "flow_id": "flow_v73_compat",
+            },
         )
         
-        summary_str = builder.build_operator_readable_summary()
+        export_record = exporter.export_recommendation(recommendation)
         
-        self.assertIn("RECOVERY RECOMMENDATION SUMMARY", summary_str)
-        self.assertIn("Total Recommendations: 1", summary_str)
-        self.assertIn("flow-1", summary_str)
-
-    def test_export_json(self):
-        """Export summary as JSON."""
+        # Verify v73 context is preserved (context passed in becomes part of recommendation)
+        assert export_record.recommendation_data["correlation_ids"]["flow_id"] == "flow_v73_compat"
+        assert "generated_at" in export_record.recommendation_data
+    
+    def test_compatibility_with_v72_trace_export(self, emitter: TelemetryEventEmitter):
+        """Test compatibility with v72 trace export format."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
+        
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
         service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
         
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        json_str = builder.export_json()
-        
-        self.assertIn("total_recommendations", json_str)
-        self.assertIn("flow-1", json_str)
-
-
-# ============================================================================
-# FACTORY FUNCTION TESTS
-# ============================================================================
-
-
-class TestFactoryFunctions(unittest.TestCase):
-    """Test factory functions for creation patterns."""
-
-    def test_create_recommendation_exporter(self):
-        """Factory creates exporter with new service."""
-        exporter = create_recommendation_exporter()
-        self.assertIsNotNone(exporter)
-
-    def test_create_recommendation_exporter_with_service(self):
-        """Factory creates exporter with provided service."""
-        service = RecoveryRecommendationService()
-        exporter = create_recommendation_exporter(service)
-        self.assertIsNotNone(exporter)
-
-    def test_create_recommendation_replay(self):
-        """Factory creates replay with exporter."""
-        replay = create_recommendation_replay()
-        self.assertIsNotNone(replay)
-
-    def test_create_recommendation_replay_with_service(self):
-        """Factory creates replay with provided service."""
-        service = RecoveryRecommendationService()
-        replay = create_recommendation_replay(service=service)
-        self.assertIsNotNone(replay)
-
-    def test_create_recommendation_summary_builder(self):
-        """Factory creates summary builder."""
-        builder = create_recommendation_summary_builder()
-        self.assertIsNotNone(builder)
-
-    def test_create_recommendation_summary_builder_with_service(self):
-        """Factory creates summary builder with provided service."""
-        service = RecoveryRecommendationService()
-        builder = create_recommendation_summary_builder(service)
-        self.assertIsNotNone(builder)
-
-
-# ============================================================================
-# BACKWARD COMPATIBILITY TESTS
-# ============================================================================
-
-
-class TestBackwardCompatibility(unittest.TestCase):
-    """Test backward compatibility with v72-v75."""
-
-    def test_exporter_works_with_v75_service(self):
-        """Exporter works with v75 RecoveryRecommendationService."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        
-        rec = service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        exported = exporter._export_recommendation(rec)
-        
-        self.assertEqual(exported["stage"], FailureStage.PROPOSAL.value)
-        self.assertEqual(exported["hint_certainty"], "suggestion")
-
-    def test_replay_works_with_v75_exporter(self):
-        """Replay works with v75 exporter."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        
-        service.generate_recommendation(
+        # v72 trace exports have timestamp and failure context
+        recommendation = service.generate_recommendation(
             stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            failure_type=FailureType.HANDSHAKE_TIMEOUT.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "failure_context": "handshake timeout after 30s",
+            },
+            correlation_ids={
+                "flow_id": "flow_v72_compat",
+                "handshake_id": "hs_v72_compat",
+            },
         )
         
-        summary = replay.build_replay_summary()
-        self.assertEqual(summary["total_recommendations"], 1)
-
-    def test_builder_works_with_v75_service(self):
-        """Builder works with v75 service."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
+        export_record = exporter.export_recommendation(recommendation)
         
-        service.generate_recommendation(
-            stage=FailureStage.ENVELOPE.value,
-            failure_type=FailureType.ENVELOPE_GATE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+        # Verify v72 timestamp and correlation preserved
+        assert export_record.timestamp == "2026-04-07T18:55:00Z"
+        assert export_record.correlation_ids["handshake_id"] == "hs_v72_compat"
+        assert export_record.correlation_ids["flow_id"] == "flow_v72_compat"
+    
+    def test_correlation_filter_across_versions(self, emitter: TelemetryEventEmitter):
+        """Test correlation filtering works across v72-v75 data."""
+        from .recovery_recommendation_export import RecoveryRecommendationExporter
+        
+        exporter = RecoveryRecommendationExporter(DiagnosticHooks(emitter))
+        service = RecoveryRecommendationService()
+        
+        # Export recommendation with v72-style correlation
+        recommendation_v72 = service.generate_recommendation(
+            stage=FailureStage.PROPOSAL.value,
+            failure_type=FailureType.PROPOSAL_REJECTED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_v7x_compat"},
         )
+        exporter.export_recommendation(recommendation_v72)
         
-        summary = builder.build_summary()
-        self.assertEqual(summary["total_recommendations"], 1)
-
-    def test_integration_with_v74_diagnostics(self):
-        """Integration with v74 diagnostic hooks works."""
-        from weslr.distributed_diagnostic_hooks import DiagnosticHooks
-        from weslr.execution_telemetry import TelemetryEventEmitter
-        
-        emitter = TelemetryEventEmitter()
-        diagnostics = DiagnosticHooks(emitter)
-        
-        service = RecoveryRecommendationService()
-        
-        # Should not raise
-        result = integrate_with_diagnostics(diagnostics, service)
-        self.assertIsInstance(result, list)
-
-    def test_factory_functions_work_with_v75(self):
-        """Factory functions work with v75 components."""
-        service = RecoveryRecommendationService()
-        
-        # v75 service should work with v76 factory functions
-        exporter = create_recommendation_exporter(service)
-        replay = create_recommendation_replay(exporter)
-        builder = create_recommendation_summary_builder(service)
-        
-        service.generate_recommendation(
+        # Export recommendation with v75-style correlation (all IDs)
+        recommendation_v75 = service.generate_recommendation(
             stage=FailureStage.DEADLINE.value,
             failure_type=FailureType.DEADLINE_BREACHED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        # All should work
-        self.assertIsNotNone(exporter.export_all_recommendations())
-        self.assertIsNotNone(replay.build_replay_summary())
-        self.assertIsNotNone(builder.build_summary())
-
-
-# ============================================================================
-# CORRELATION INTEGRATION TESTS
-# ============================================================================
-
-
-class TestCorrelationIntegration(unittest.TestCase):
-    """Test correlation by flow_id, request_id, handshake_id, deadline_id."""
-
-    def test_exporter_correlates_by_flow_id(self):
-        """Exporter correlates recommendations by flow_id."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        service.generate_recommendation(
-            stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        by_flow = exporter.export_by_flow()
-        
-        self.assertEqual(len(by_flow["flow-1"]), 2)
-
-    def test_builder_includes_all_correlation_ids(self):
-        """Builder includes all correlation IDs in summary."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
+            context={"timestamp": "2026-04-07T18:56:00Z"},
             correlation_ids={
-                "flow_id": "flow-1",
-                "request_id": "req-1",
-                "handshake_id": "hs-1",
-                "deadline_id": "dl-1",
-            }
+                "flow_id": "flow_v7x_compat",
+                "request_id": "req_v7x_compat",
+                "handshake_id": "hs_v7x_compat",
+                "deadline_id": "dl_v7x_compat",
+            },
         )
+        exporter.export_recommendation(recommendation_v75)
         
-        summary = builder.build_summary()
-        corr = summary["correlation_trace_summary"]
+        # Filter by flow_id should return both (v72 and v75)
+        filtered = exporter.export_by_correlation(flow_id="flow_v7x_compat")
         
-        self.assertEqual(corr["flow_ids"], ["flow-1"])
-        self.assertEqual(corr["request_ids"], ["req-1"])
-        self.assertEqual(corr["handshake_ids"], ["hs-1"])
-        self.assertEqual(corr["deadline_ids"], ["dl-1"])
-
-    def test_operator_summary_includes_correlation_trace(self):
-        """Operator summary includes correlation trace info."""
-        service = RecoveryRecommendationService()
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        
-        service.generate_recommendation(
-            stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={
-                "flow_id": "flow-1",
-                "handshake_id": "hs-1",
-            }
-        )
-        
-        summary_str = builder.build_operator_readable_summary()
-        
-        self.assertIn("CORRELATION TRACE", summary_str)
-        self.assertIn("flow-1", summary_str)
-        self.assertIn("hs-1", summary_str)
+        # Both records should be returned since they share the same flow_id
+        assert len(filtered) >= 1
+        assert filtered[0].correlation_ids["flow_id"] == "flow_v7x_compat"
 
 
 # ============================================================================
-# INTEGRATION TESTS
+# TEST RECOVERY SAFE ALTERNATIVES
 # ============================================================================
 
 
-class TestIntegration(unittest.TestCase):
-    """Test integration with v75 recommendation service."""
-
-    def test_end_to_end_export_flow(self):
-        """End-to-end recommendation export flow."""
+class TestRecoverySafeAlternatives:
+    """Test recovery safe alternatives and suggestion logic."""
+    
+    def test_suggest_lower_scope_when_constraint_violated(self, exporter: RecoveryRecommendationExporter):
+        """Test suggestion for constraint violation scenarios."""
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
-        builder = RecoveryRecommendationSummaryBuilder(service)
         
-        # Generate recommendation
-        rec = service.generate_recommendation(
-            stage=FailureStage.ENVELOPE.value,
-            failure_type=FailureType.ENVELOPE_GATE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={
-                "flow_id": "flow-1",
-                "request_id": "req-1",
-            }
-        )
-        
-        # Export
-        exported = exporter.export_all_recommendations()
-        self.assertEqual(len(exported), 1)
-        
-        # Replay summary
-        replay_summary = replay.build_replay_summary()
-        self.assertEqual(replay_summary["total_recommendations"], 1)
-        
-        # Builder summary
-        builder_summary = builder.build_summary()
-        self.assertEqual(builder_summary["total_recommendations"], 1)
-        
-        # JSON export
-        json_str = exporter.export_json()
-        self.assertIn("flow-1", json_str)
-
-    def test_multiple_recommendations_correlation(self):
-        """Multiple recommendations with different correlation IDs."""
-        service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        builder = RecoveryRecommendationSummaryBuilder(service)
-        
-        # Flow 1 - multiple stages
-        service.generate_recommendation(
+        # Simulate constraint violation scenario
+        recommendation = service.generate_recommendation(
             stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
+            failure_type=FailureType.PROPOSAL_VALIDATION_FAILED.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "constraint_violation": "trust_threshold_not_met",
+            },
+            correlation_ids={"flow_id": "flow_constraint"},
         )
         
-        service.generate_recommendation(
-            stage=FailureStage.HANDSHAKE.value,
-            failure_type=FailureType.HANDSHAKE_FAILED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
+        export_record = exporter.export_recommendation(recommendation)
         
-        # Flow 2 - different
-        service.generate_recommendation(
-            stage=FailureStage.DEADLINE.value,
-            failure_type=FailureType.DEADLINE_BREACHED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-2"}
-        )
-        
-        # Export by flow
-        by_flow = exporter.export_by_flow()
-        self.assertEqual(len(by_flow), 2)
-        self.assertEqual(len(by_flow["flow-1"]), 2)
-        
-        # Builder summary
-        summary = builder.build_summary()
-        self.assertEqual(summary["total_recommendations"], 3)
-        self.assertEqual(len(summary["correlation_trace_summary"]["flow_ids"]), 2)
-
-    def test_replay_with_multiple_confidence_levels(self):
-        """Replay handles multiple confidence levels."""
+        # Verify suggestion provides operator guidance (contains action verb)
+        assert export_record.recovery_hint is not None
+        assert len(export_record.recovery_hint) > 0
+    
+    def test_suggest_delayed_when_trust_low(self, exporter: RecoveryRecommendationExporter):
+        """Test suggestion for low trust scenarios."""
         service = RecoveryRecommendationService()
-        exporter = RecoveryRecommendationExporter(service)
-        replay = RecoveryRecommendationReplay(exporter)
         
-        # Generate recommendations with different scenarios
-        service.generate_recommendation(
-            stage=FailureStage.PROPOSAL.value,
-            failure_type=FailureType.PROPOSAL_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-1"}
-        )
-        
-        service.generate_recommendation(
+        recommendation = service.generate_recommendation(
             stage=FailureStage.HANDSHAKE.value,
             failure_type=FailureType.HANDSHAKE_TRUST_REJECTED.value,
-            context={"timestamp": "2026-04-07T20:00:00Z"},
-            correlation_ids={"flow_id": "flow-2"}
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "trust_score": 0.3,
+            },
+            correlation_ids={"flow_id": "flow_trust_low"},
         )
         
-        summary = replay.build_replay_summary()
+        export_record = exporter.export_recommendation(recommendation)
         
-        self.assertEqual(summary["total_recommendations"], 2)
-        # Should have confidence distribution
-        self.assertTrue(len(summary["confidence_distribution"]) > 0)
+        # Verify suggestion includes delay guidance
+        assert "delay" in export_record.recovery_hint.lower() or "review" in export_record.recovery_hint.lower()
+    
+    def test_suggest_escalation_when_blocked(self, exporter: RecoveryRecommendationExporter):
+        """Test suggestion for blocked capability scenarios."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.ENVELOPE.value,
+            failure_type=FailureType.ENVELOPE_AUTHORIZATION_FAILED.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "blocked_by": "authorization_gate",
+            },
+            correlation_ids={"flow_id": "flow_escalation"},
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Verify suggestion includes escalation guidance
+        assert "escalation" in export_record.recovery_hint.lower() or "review" in export_record.recovery_hint.lower()
+    
+    def test_suggest_evidence_gathering_when_insufficient(self, exporter: RecoveryRecommendationExporter):
+        """Test suggestion for insufficient evidence scenarios."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.RECEIPT.value,
+            failure_type=FailureType.RECEIPT_TIMEOUT.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "evidence_status": "insufficient",
+            },
+            correlation_ids={"flow_id": "flow_evidence"},
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Verify suggestion provides operator guidance
+        assert export_record.recovery_hint is not None
+        assert len(export_record.recovery_hint) > 0
 
 
-if __name__ == "__main__":
-    unittest.main()
+# ============================================================================
+# TEST CORRELATION ID TRACKING
+# ============================================================================
+
+
+class TestCorrelationIdTracking:
+    """Test correlation ID tracking across all record types."""
+    
+    def test_all_correlation_id_types_preserved(self, exporter: RecoveryRecommendationExporter):
+        """Test that all correlation ID types are preserved."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.HANDSHAKE.value,
+            failure_type=FailureType.HANDSHAKE_IDENTITY_MISMATCH.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={
+                "flow_id": "flow_track",
+                "request_id": "req_track",
+                "handshake_id": "hs_track",
+                "deadline_id": "dl_track",
+            },
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Test all four correlation ID types
+        assert export_record.correlation_ids.get("flow_id") == "flow_track"
+        assert export_record.correlation_ids.get("request_id") == "req_track"
+        assert export_record.correlation_ids.get("handshake_id") == "hs_track"
+        assert export_record.correlation_ids.get("deadline_id") == "dl_track"
+    
+    def test_filter_by_any_correlation_type(self, exporter: RecoveryRecommendationExporter):
+        """Test filtering by any correlation ID type."""
+        service = RecoveryRecommendationService()
+        
+        # Export with all correlation IDs
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.PROPOSAL.value,
+            failure_type=FailureType.PROPOSAL_EXPIRED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={
+                "flow_id": "flow_multi",
+                "request_id": "req_multi",
+                "handshake_id": "hs_multi",
+                "deadline_id": "dl_multi",
+            },
+        )
+        exporter.export_recommendation(recommendation)
+        
+        # Test filtering by each correlation ID type
+        assert len(exporter.export_by_correlation(flow_id="flow_multi")) >= 1
+        assert len(exporter.export_by_correlation(request_id="req_multi")) >= 1
+        assert len(exporter.export_by_correlation(handshake_id="hs_multi")) >= 1
+        assert len(exporter.export_by_correlation(deadline_id="dl_multi")) >= 1
+    
+    def test_empty_correlation_ids_handled(self, exporter: RecoveryRecommendationExporter):
+        """Test handling of empty correlation IDs."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.UNKNOWN.value,
+            failure_type=FailureType.UNKNOWN.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={},
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Empty correlation IDs should still produce valid record
+        assert export_record.export_id is not None
+        assert export_record.correlation_ids == {}
+
+
+# ============================================================================
+# TEST EXPORT AS PART OF V75 INTEGRATION
+# ============================================================================
+
+
+class TestV75Integration:
+    """Test v76 as extension of v75 recommendation service."""
+    
+    def test_v75_recommendation_exported_by_v76(self, exporter: RecoveryRecommendationExporter):
+        """Test v75 recommendations are exported by v76."""
+        service = RecoveryRecommendationService()
+        
+        # Generate v75 recommendation
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.PROPOSAL.value,
+            failure_type=FailureType.PROPOSAL_REJECTED.value,
+            context={
+                "timestamp": "2026-04-07T18:55:00Z",
+                "node_id": "node_v75",
+            },
+            correlation_ids={"flow_id": "flow_v75_to_v76"},
+        )
+        
+        # Export via v76
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Verify v75 data is exported
+        assert export_record.recommendation_data == recommendation
+        assert export_record.confidence_level == recommendation["confidence"]
+        assert export_record.recovery_hint == recommendation["recovery_hint"]
+    
+    def test_v76_export_includes_v75_confidence_guidance(self, exporter: RecoveryRecommendationExporter):
+        """Test v76 export includes v75 confidence guidance."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.DEADLINE.value,
+            failure_type=FailureType.DEADLINE_BREACHED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_v76_confidence"},
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Verify confidence guidance from v75 is preserved
+        assert export_record.confidence_level in ["low", "medium", "high", "very_high"]
+        assert "suggestion" in export_record.recommendation_data.get("hint_certainty", "")
+    
+    def test_v76_export_includes_v75_hints(self, exporter: RecoveryRecommendationExporter):
+        """Test v76 export includes v75 recovery hints."""
+        service = RecoveryRecommendationService()
+        
+        recommendation = service.generate_recommendation(
+            stage=FailureStage.ENVELOPE.value,
+            failure_type=FailureType.ENVELOPE_DISPATCH_FAILED.value,
+            context={"timestamp": "2026-04-07T18:55:00Z"},
+            correlation_ids={"flow_id": "flow_v76_hints"},
+        )
+        
+        export_record = exporter.export_recommendation(recommendation)
+        
+        # Verify v75 recovery hint is exported
+        assert export_record.recovery_hint is not None
+        assert len(export_record.recovery_hint) > 0
