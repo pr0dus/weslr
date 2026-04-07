@@ -1,15 +1,13 @@
-"""Weslr CLI - External and diagnostic commands.
+"""Weslr CLI - External and variation commands.
 
 Commands moved here from main.py:
 - Opportunity lifecycle management commands
 - Variation generation commands
 - Entity graph commands
 - Relationship commands
-- Diagnostics commands
-- Fallback commands
-- Fallback trace commands
 
-This module holds commands that interface with external systems or provide diagnostics.
+This module holds commands that interface with external systems.
+Note: Diagnostics, fallback, and fallback_trace commands remain in main.py.
 """
 
 from __future__ import annotations
@@ -116,47 +114,6 @@ def register_commands(subparsers):
     relationship_add_parser.add_argument("--strength", "-s", type=float, default=0.5, help="relationship strength")
     relationship_add_parser.add_argument("--provenance", "-p", default="", help="JSON provenance")
     relationship_add_parser.set_defaults(func=cmd_relationship_add)
-
-    # === Diagnostics Commands ===
-    diagnostics_parser = subparsers.add_parser("diagnostics-summary", help="export diagnostic summary in operator-readable format")
-    diagnostics_parser.set_defaults(func=cmd_diagnostics_summary)
-
-    diagnostics_failure_parser = subparsers.add_parser("diagnostics-failure-chain", help="export correlated failure chain by ID")
-    diagnostics_failure_parser.add_argument("correlation_id", help="the ID to trace (flow_id, request_id, handshake_id, deadline_id)")
-    diagnostics_failure_parser.add_argument("--type", default="flow", choices=["flow", "request", "handshake", "deadline"], help="correlation type")
-    diagnostics_failure_parser.set_defaults(func=cmd_diagnostics_failure_chain)
-
-    diagnostics_recovery_parser = subparsers.add_parser("diagnostics-recovery-hints", help="export all recovery hints in structured format")
-    diagnostics_recovery_parser.set_defaults(func=cmd_diagnostics_recovery_hints)
-
-    diagnostics_trace_parser = subparsers.add_parser("diagnostics-trace-export", help="export diagnostic trace with correlation validation and consistency score")
-    diagnostics_trace_parser.add_argument("--flow-id", help="specific flow ID to export (exports all flows if omitted)")
-    diagnostics_trace_parser.set_defaults(func=cmd_diagnostics_trace_export)
-
-    diagnostics_trace_replay_parser = subparsers.add_parser("diagnostics-trace-replay", help="export replay summary for operator consumption")
-    diagnostics_trace_replay_parser.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
-    diagnostics_trace_replay_parser.set_defaults(func=cmd_diagnostics_trace_replay)
-
-    diagnostics_replay_export_parser = subparsers.add_parser("diagnostics-replay-export", help="export replayable trace format")
-    diagnostics_replay_export_parser.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
-    diagnostics_replay_export_parser.set_defaults(func=cmd_diagnostics_replay_export)
-
-    # === Fallback Commands ===
-    fallback_status_parser = subparsers.add_parser("fallback-status", help="export fallback status for a specific node or all nodes")
-    fallback_status_parser.add_argument("--node-id", help="specific node ID (exports all nodes if omitted)")
-    fallback_status_parser.set_defaults(func=cmd_fallback_status)
-
-    fallback_diagnostics_parser = subparsers.add_parser("fallback-diagnostics", help="export fallback audit/diagnostic records")
-    fallback_diagnostics_parser.set_defaults(func=cmd_fallback_diagnostics)
-
-    # === Fallback Trace Commands ===
-    fallback_trace_parser = subparsers.add_parser("fallback-trace-export", help="export fallback trace with correlation and capability visibility")
-    fallback_trace_parser.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
-    fallback_trace_parser.set_defaults(func=cmd_fallback_trace_export)
-
-    fallback_trace_replay_parser = subparsers.add_parser("fallback-trace-replay", help="export fallback trace replay summary for operator consumption")
-    fallback_trace_replay_parser.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
-    fallback_trace_replay_parser.set_defaults(func=cmd_fallback_trace_replay)
 
 
 # ============================================================================
@@ -391,135 +348,6 @@ def cmd_relationship_add(args):
             strength=args.strength,
             provenance=provenance,
         )
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-# ============================================================================
-# Diagnostics Commands
-# ============================================================================
-
-def cmd_diagnostics_summary(args):
-    """Export diagnostic summary in operator-readable format."""
-    try:
-        from weslr.diagnostic_export import DiagnosticSummaryExporter
-        exporter = DiagnosticSummaryExporter()
-        result = exporter.export()
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_diagnostics_failure_chain(args):
-    """Export correlated failure chain by ID."""
-    try:
-        from weslr.diagnostic_export import FailureChainExporter
-        exporter = FailureChainExporter()
-        result = exporter.export_by_correlation_id(
-            correlation_id=args.correlation_id,
-            correlation_type=args.type,
-        )
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_diagnostics_recovery_hints(args):
-    """Export all recovery hints in structured format."""
-    try:
-        from weslr.diagnostic_export import RecoveryHintExporter
-        exporter = RecoveryHintExporter()
-        result = exporter.export_all()
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_diagnostics_trace_export(args):
-    """Export diagnostic trace with correlation validation and consistency score."""
-    try:
-        from weslr.diagnostic_trace_export import TraceExporter
-        exporter = TraceExporter()
-        result = exporter.export_flow(flow_id=args.flow_id)
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_diagnostics_trace_replay(args):
-    """Export replay summary for operator consumption."""
-    try:
-        from weslr.diagnostic_trace_export import ReplaySummaryGenerator
-        generator = ReplaySummaryGenerator()
-        result = generator.generate_summary(flow_id=args.flow_id)
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_diagnostics_replay_export(args):
-    """Export replayable trace format."""
-    try:
-        from weslr.diagnostic_trace_export import ExportVersion, ExportFormat
-        from weslr.diagnostic_trace_export import TraceExporter
-        exporter = TraceExporter()
-        result = exporter.export_replayable(flow_id=args.flow_id)
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-# ============================================================================
-# Fallback Commands
-# ============================================================================
-
-def cmd_fallback_status(args):
-    """Export fallback status for a specific node or all nodes."""
-    try:
-        from weslr.distributed_fallback import FallbackManager, create_fallback_manager
-        manager: FallbackManager = create_fallback_manager()
-        if args.node_id:
-            result = manager.get_node_status(args.node_id)
-        else:
-            result = manager.get_all_node_statuses()
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_fallback_diagnostics(args):
-    """Export fallback audit/diagnostic records."""
-    try:
-        from weslr.distributed_fallback import FallbackManager, create_fallback_manager
-        manager: FallbackManager = create_fallback_manager()
-        result = manager.get_audit_records()
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-# ============================================================================
-# Fallback Trace Commands
-# ============================================================================
-
-def cmd_fallback_trace_export(args):
-    """Export fallback trace with correlation and capability visibility."""
-    try:
-        from weslr.fallback_trace_export import FallbackTraceExporter, create_fallback_trace_exporter
-        exporter: FallbackTraceExporter = create_fallback_trace_exporter()
-        result = exporter.export_flow(flow_id=args.flow_id)
-        emit(result)
-    except Exception as e:
-        emit({"error": str(e)})
-
-
-def cmd_fallback_trace_replay(args):
-    """Export fallback trace replay summary for operator consumption."""
-    try:
-        from weslr.fallback_trace_export import FallbackTraceReconstructor, create_fallback_trace_reconstructor
-        reconstructor: FallbackTraceReconstructor = create_fallback_trace_reconstructor()
-        result = reconstructor.generate_replay_summary(flow_id=args.flow_id)
         emit(result)
     except Exception as e:
         emit({"error": str(e)})
