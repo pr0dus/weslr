@@ -70,6 +70,23 @@ Recommended rollback order:
 - backup: `CircleForge-backup-20260407-0003.tar.gz`
 - tag: `v0.7.3`
 
+### v0.7.4
+- distributed fallback trace / replay integration (v74) - WESLR Python only, additive only, read-only diagnostic/export
+- FallbackTraceRecord with fallback state, reason, and path capability correlation
+- FallbackTraceExporter with full fallback visibility in diagnostic summaries
+- FallbackTraceReconstructor for rebuilding traces with fallback path info
+- Operator-readable fallback replay summary with recovery-safe alternatives
+- Machine-readable fallback trace exports (JSON with trace metadata)
+- Correlation with existing flow/request/session/deadline IDs where relevant
+- CLI commands: fallback-trace-export, fallback-trace-replay
+- Backward compatibility with v72/v73 exports
+- 47 behavioral tests covering correlation, capability visibility, recovery alternatives
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: integrate v73 distributed fallback behavior into existing diagnostic replay/export stack
+- commit: `v74-fallback-trace`
+- backup: `CircleForge-backup-20260407-0004.tar.gz`
+- tag: `v0.7.4`
+
 ### v0.7.0
 - autonomous expression system with rate control (`set-expression-rate`)
 - circuit breaker to prevent runaway ticks and infinite loops

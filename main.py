@@ -106,6 +106,12 @@ from weslr.distributed_fallback import (
     FallbackState,
     create_fallback_manager,
 )
+from weslr.fallback_trace_export import (
+    FallbackTraceExporter,
+    FallbackTraceReconstructor,
+    create_fallback_trace_exporter,
+    create_fallback_trace_reconstructor,
+)
 from weslr.distributed_diagnostic_hooks import DiagnosticHooks
 
 
@@ -1625,6 +1631,15 @@ def main():
 
     p = sub.add_parser("fallback-diagnostics", help="export fallback audit/diagnostic records")
     p.set_defaults(func=cmd_fallback_diagnostics)
+
+    # v74: Fallback Trace Export / Replay Integration
+    p = sub.add_parser("fallback-trace-export", help="export fallback trace with correlation and capability visibility")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
+    p.set_defaults(func=cmd_fallback_trace_export)
+
+    p = sub.add_parser("fallback-trace-replay", help="export fallback trace replay summary for operator consumption")
+    p.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
+    p.set_defaults(func=cmd_fallback_trace_replay)
 
     args = parser.parse_args()
     args.func(args)
@@ -3190,6 +3205,15 @@ _summary_generator = ReplaySummaryGenerator()
 # ============================================================================
 
 _fallback_manager = create_fallback_manager(emitter=_diagnostic_emitter, hooks=DiagnosticHooks(_diagnostic_emitter))
+_fallback_trace_exporter = FallbackTraceExporter(_fallback_manager)
+
+
+# ============================================================================
+# Fallback Trace Export / Replay Integration (v74)
+# ============================================================================
+
+_fallback_trace_reconstructor = FallbackTraceReconstructor()
+_fallback_trace_reconstructor.set_fallback_manager(_fallback_manager)
 
 
 def cmd_diagnostics_summary(_args):
@@ -3313,6 +3337,42 @@ def cmd_fallback_diagnostics(_args):
     print(f"\n--- Fallback Diagnostics ---")
     print(f"Audit Records: {len(result['audit_records'])}")
     print(f"Local Paths: {len(result['local_paths'])}")
+
+
+# ============================================================================
+# v74: Fallback Trace Export / Replay CLI Commands
+# ============================================================================
+
+
+def cmd_fallback_trace_export(args):
+    """Export fallback trace with correlation and capability visibility."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _fallback_trace_exporter.export_as_dict()
+        # Filter for specific flow if requested
+        result["traces"] = [t for t in result.get("traces", []) if t.get("flow_id") == flow_id]
+    else:
+        result = _fallback_trace_exporter.export_as_dict()
+    
+    emit(result)
+
+
+def cmd_fallback_trace_replay(args):
+    """Export fallback trace replay summary for operator consumption."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        trace = _fallback_trace_exporter.export_trace(flow_id)
+        if trace:
+            records = [trace]
+        else:
+            records = []
+    else:
+        records = _fallback_trace_exporter.export_all_traces()
+    
+    summary = _fallback_trace_exporter.get_operator_readable_summary()
+    print(summary)
 
 
 if __name__ == "__main__":
