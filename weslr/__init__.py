@@ -65,6 +65,7 @@ from . import domain_adaptive_reasoning
 from . import model_assisted_not_model_dependent
 from . import recovery_recommendation_service
 from . import recovery_recommendation_review
+from . import recovery_benchmark_timing
 
 # CLI command modules
 from . import cli_legacy
@@ -104,6 +105,7 @@ __all__ = [
     "model_assisted_not_model_dependent",
     "recovery_recommendation_service",
     "recovery_recommendation_review",
+    "recovery_benchmark_timing",
     # CLI modules
     "cli_legacy",
     "cli_self_mod",
