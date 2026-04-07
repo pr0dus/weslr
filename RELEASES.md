@@ -53,6 +53,23 @@ Recommended rollback order:
 - backup: `CircleForge-backup-20260407-0002.tar.gz`
 - tag: `v0.7.2`
 
+### v0.7.3
+- distributed fallback behavior (v73) - WESLR Python only, additive only, read-safe/execution-safe
+- node-level degraded fallback state with FallbackState enum (NORMAL, DEGRADED, REMOTE_UNAVAILABLE, LOCAL_ONLY, MODEL_REQUIRED, DETERMINISTIC_ONLY)
+- fallback reason tracking with FallbackReason enum (timeout, unavailable, degraded, handshake_failed, deadline_breached, remote_refused, model_unavailable)
+- path capability classification with PathCapability enum (model_required, deterministic_capable)
+- FallbackPathSelector for remote-unavailable fallback path selection
+- FallbackManager central layer with node status management, path selection, and audit logging
+- Correlation with existing flow/request/session/deadline IDs where relevant
+- CLI commands: `fallback-status`, `fallback-diagnostics`
+- audit/diagnostic export for fallback events
+- 45 behavioral tests covering state transitions, path selection, correlation, reason/capability separation
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: create distributed fallback layer so WESLR can continue operating safely when nodes, models, or remote dependencies become unavailable
+- commit: `v73-fallback`
+- backup: `CircleForge-backup-20260407-0003.tar.gz`
+- tag: `v0.7.3`
+
 ### v0.7.0
 - autonomous expression system with rate control (`set-expression-rate`)
 - circuit breaker to prevent runaway ticks and infinite loops

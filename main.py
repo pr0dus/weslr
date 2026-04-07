@@ -99,6 +99,13 @@ from weslr.diagnostic_trace_export import (
     ExportVersion,
     ExportFormat,
 )
+from weslr.distributed_fallback import (
+    FallbackManager,
+    FallbackReason,
+    PathCapability,
+    FallbackState,
+    create_fallback_manager,
+)
 from weslr.distributed_diagnostic_hooks import DiagnosticHooks
 
 
@@ -1610,6 +1617,14 @@ def main():
     p = sub.add_parser("diagnostics-replay-export", help="export replayable trace format")
     p.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
     p.set_defaults(func=cmd_diagnostics_replay_export)
+
+    # v73: Distributed Fallback Behavior
+    p = sub.add_parser("fallback-status", help="export fallback status for a specific node or all nodes")
+    p.add_argument("--node-id", help="specific node ID (exports all nodes if omitted)")
+    p.set_defaults(func=cmd_fallback_status)
+
+    p = sub.add_parser("fallback-diagnostics", help="export fallback audit/diagnostic records")
+    p.set_defaults(func=cmd_fallback_diagnostics)
 
     args = parser.parse_args()
     args.func(args)
@@ -3170,6 +3185,13 @@ _reconstructor = FailureTraceReconstructor()
 _summary_generator = ReplaySummaryGenerator()
 
 
+# ============================================================================
+# Distributed Fallback Behavior (v73)
+# ============================================================================
+
+_fallback_manager = create_fallback_manager(emitter=_diagnostic_emitter, hooks=DiagnosticHooks(_diagnostic_emitter))
+
+
 def cmd_diagnostics_summary(_args):
     """Export diagnostic summary in operator-readable format."""
     result = _diagnostic_hooks.export_all_summaries()
@@ -3258,6 +3280,39 @@ def cmd_diagnostics_replay_export(args):
         result = _trace_exporter.export_as_dict()
     
     emit(result)
+
+
+# ============================================================================
+# v73: Distributed Fallback Behavior CLI Commands
+# ============================================================================
+
+
+def cmd_fallback_status(args):
+    """Export fallback status for a specific node or all nodes."""
+    if args.node_id:
+        status = _fallback_manager.get_node_status(args.node_id)
+        if status:
+            result = status.to_dict()
+        else:
+            result = {"error": f"No fallback status found for node: {args.node_id}"}
+    else:
+        result = {
+            "nodes": [status.to_dict() for status in _fallback_manager._node_statuses.values()],
+            "local_paths": _fallback_manager.get_all_local_paths(),
+        }
+    emit(result)
+
+
+def cmd_fallback_diagnostics(_args):
+    """Export fallback audit/diagnostic records."""
+    result = {
+        "audit_records": _fallback_manager.export_audit_records(),
+        "local_paths": _fallback_manager.get_all_local_paths(),
+    }
+    emit(result)
+    print(f"\n--- Fallback Diagnostics ---")
+    print(f"Audit Records: {len(result['audit_records'])}")
+    print(f"Local Paths: {len(result['local_paths'])}")
 
 
 if __name__ == "__main__":
