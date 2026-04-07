@@ -27,6 +27,8 @@ Core modules:
 - final_decision_explainability: Self-Architecture Core v54 - Final decision explainability layer (operator-readable explanation bundles)
 - domain_adaptive_reasoning: Self-Architecture Core v55 - Domain adaptive reasoning hardening layer (domain identification, adaptation, transfer, constraints)
 - model_assisted_not_model_dependent: Self-Architecture Core v56 - Model-assisted not model-dependent hardening layer (fallback chains, deterministic logic, operator-assisted operation)
+- recovery_recommendation_service: Self-Architecture Core v75 - Recovery recommendation generation with confidence guidance
+- recovery_recommendation_review: Self-Architecture Core v77 - Recovery recommendation review surface (operator-facing)
 """
 
 __version__ = "1.0.0"
@@ -61,6 +63,8 @@ from . import recommendation_presentation_mode
 from . import final_decision_explainability
 from . import domain_adaptive_reasoning
 from . import model_assisted_not_model_dependent
+from . import recovery_recommendation_service
+from . import recovery_recommendation_review
 
 # CLI command modules
 from . import cli_legacy
@@ -98,6 +102,8 @@ __all__ = [
     "final_decision_explainability",
     "domain_adaptive_reasoning",
     "model_assisted_not_model_dependent",
+    "recovery_recommendation_service",
+    "recovery_recommendation_review",
     # CLI modules
     "cli_legacy",
     "cli_self_mod",
