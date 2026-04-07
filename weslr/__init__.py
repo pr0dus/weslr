@@ -68,6 +68,7 @@ from . import recovery_recommendation_review
 from . import recovery_benchmark_timing
 from . import recovery_timing_baseline
 from . import command_timing_baseline
+from . import recovery_timing_attribution
 
 # CLI command modules
 from . import cli_legacy
@@ -110,6 +111,7 @@ __all__ = [
     "recovery_benchmark_timing",
     "recovery_timing_baseline",
     "command_timing_baseline",
+    "recovery_timing_attribution",
     # CLI modules
     "cli_legacy",
     "cli_self_mod",
