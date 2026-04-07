@@ -230,6 +230,18 @@ class TelemetryEventEmitter:
         self._events.clear()
         self._events_by_flow.clear()
         self._events_by_type.clear()
+    
+    def get_all_flows(self) -> List[str]:
+        """Get all unique flow IDs."""
+        return list(self._events_by_flow.keys())
+    
+    def get_flow_count(self) -> int:
+        """Get count of tracked flows."""
+        return len(self._events_by_flow)
+    
+    def _now(self) -> datetime:
+        """Get current timestamp."""
+        return datetime.now(timezone.utc)
 
 
 # ============================================================================
