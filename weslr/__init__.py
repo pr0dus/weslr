@@ -66,6 +66,7 @@ from . import model_assisted_not_model_dependent
 from . import recovery_recommendation_service
 from . import recovery_recommendation_review
 from . import recovery_benchmark_timing
+from . import recovery_timing_baseline
 
 # CLI command modules
 from . import cli_legacy
@@ -106,6 +107,7 @@ __all__ = [
     "recovery_recommendation_service",
     "recovery_recommendation_review",
     "recovery_benchmark_timing",
+    "recovery_timing_baseline",
     # CLI modules
     "cli_legacy",
     "cli_self_mod",
