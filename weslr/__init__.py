@@ -62,6 +62,11 @@ from . import final_decision_explainability
 from . import domain_adaptive_reasoning
 from . import model_assisted_not_model_dependent
 
+# CLI command modules
+from . import cli_legacy
+from . import cli_self_mod
+from . import cli_external
+
 __all__ = [
     "adapters",
     "continuity",
@@ -93,4 +98,8 @@ __all__ = [
     "final_decision_explainability",
     "domain_adaptive_reasoning",
     "model_assisted_not_model_dependent",
+    # CLI modules
+    "cli_legacy",
+    "cli_self_mod",
+    "cli_external",
 ]
