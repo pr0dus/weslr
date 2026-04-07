@@ -1,7 +1,7 @@
-"""Distributed Execution Integration Layer (v64)
+"""Distributed Execution Integration Layer (v64-v66)
 
-Integrates v61 + v62 + v63 into one coherent distributed execution flow.
-Provides proposal → envelope → dispatch → receipt → acknowledgment flow
+Integrates v61 + v62 + v63 + v65 into one coherent distributed execution flow.
+Provides proposal → handshake → envelope → dispatch → receipt → acknowledgment flow
 with correlation continuity across all stages.
 
 Architecture:
@@ -12,18 +12,19 @@ Architecture:
   - RejectionPropagation — rejection handling across stages
   - FailurePropagation — failure handling across stages
   - RollbackCoordination — rollback coordination
-  - IntegratedAuditTrace — unified audit across v61-v63
+  - IntegratedAuditTrace — unified audit across v61-v63-v66
   - ExecutionFlowController — single-point control
+  - HandshakeIntegration — handshake validation layer (v66)
 
 Rules:
   - Integration only — no new orchestration logic
   - Correlation continuity mandatory
   - Audit trace continuity across all stages
+  - Handshake validation required before execution
   - Additive only (no breaking changes)
   - Reversible (single file removal)
   - No consensus
   - No scheduler/retry engine
-  - No handshake protocol
   - No TIA/C#
 """
 
@@ -61,6 +62,19 @@ from .remote_execution_receipt import (
     CompletionConfirmation,
     FailureConfirmation,
 )
+from .remote_node_handshake import (
+    HandshakeRequest,
+    HandshakeResponse,
+    HandshakeState,
+    HandshakeEventType,
+    NodeIdentityConfirmation,
+    TrustHealthEligibility,
+    ProtocolCompatibility,
+    SessionAcceptanceRefusal,
+    HandshakeAuditTrace,
+    HandshakeCorrelation,
+    HandshakeProtocol,
+)
 from .node_registry import NodeRegistry
 from .node_identity import NodeTrustState
 
@@ -74,6 +88,8 @@ class FlowStage(str, Enum):
     """Stages in the integrated execution flow."""
     PROPOSAL_CREATED = "proposal_created"
     PROPOSAL_APPROVED = "proposal_approved"
+    HANDSHAKE_REQUESTED = "handshake_requested"
+    HANDSHAKE_ACCEPTED = "handshake_accepted"
     ENVELOPE_CREATED = "envelope_created"
     GATES_EVALUATED = "gates_evaluated"
     ENVELOPE_AUTHORIZED = "envelope_authorized"
@@ -96,6 +112,7 @@ class ExecutionFlowState:
     
     # Component references
     proposal_id: Optional[str] = None
+    handshake_id: Optional[str] = None
     request_id: Optional[str] = None
     receipt_ids: List[str] = field(default_factory=list)
     
@@ -104,6 +121,7 @@ class ExecutionFlowState:
     is_failed: bool = False
     is_rejected: bool = False
     is_rolled_back: bool = False
+    handshake_completed: bool = False
     
     def __post_init__(self):
         """Initialize stage history."""
@@ -125,6 +143,17 @@ class ExecutionFlowState:
         """Mark proposal as approved."""
         self.proposal_id = proposal_id
         self._transition_to(FlowStage.PROPOSAL_APPROVED.value, f"Proposal {proposal_id} approved")
+    
+    def mark_handshake_requested(self, handshake_id: str) -> None:
+        """Mark handshake requested."""
+        self.handshake_id = handshake_id
+        self._transition_to(FlowStage.HANDSHAKE_REQUESTED.value, f"Handshake {handshake_id} requested")
+    
+    def mark_handshake_accepted(self, handshake_id: str) -> None:
+        """Mark handshake accepted."""
+        self.handshake_id = handshake_id
+        self.handshake_completed = True
+        self._transition_to(FlowStage.HANDSHAKE_ACCEPTED.value, f"Handshake {handshake_id} accepted")
     
     def mark_envelope_created(self, request_id: str) -> None:
         """Mark envelope created."""
@@ -178,12 +207,14 @@ class ExecutionFlowState:
             "current_stage": self.current_stage,
             "stage_history": self.stage_history,
             "proposal_id": self.proposal_id,
+            "handshake_id": self.handshake_id,
             "request_id": self.request_id,
             "receipt_ids": self.receipt_ids,
             "is_complete": self.is_complete,
             "is_failed": self.is_failed,
             "is_rejected": self.is_rejected,
-            "is_rolled_back": self.is_rolled_back
+            "is_rolled_back": self.is_rolled_back,
+            "handshake_completed": self.handshake_completed
         }
 
 
@@ -198,6 +229,7 @@ class StageCorrelation:
     
     flow_id: str
     proposal_id: Optional[str] = None
+    handshake_id: Optional[str] = None
     request_id: Optional[str] = None
     receipt_ids: List[str] = field(default_factory=list)
     correlation_map: Dict[str, str] = field(default_factory=dict)
@@ -206,6 +238,11 @@ class StageCorrelation:
         """Link proposal to flow."""
         self.proposal_id = proposal_id
         self.correlation_map["proposal"] = proposal_id
+    
+    def link_handshake(self, handshake_id: str) -> None:
+        """Link handshake to flow."""
+        self.handshake_id = handshake_id
+        self.correlation_map["handshake"] = handshake_id
     
     def link_envelope(self, request_id: str) -> None:
         """Link envelope to flow."""
@@ -224,6 +261,7 @@ class StageCorrelation:
         return {
             "flow_id": self.flow_id,
             "proposal_id": self.proposal_id,
+            "handshake_id": self.handshake_id,
             "request_id": self.request_id,
             "receipt_ids": self.receipt_ids
         }
@@ -235,6 +273,10 @@ class StageCorrelation:
     def resolve_to_proposal_id(self) -> Optional[str]:
         """Resolve to proposal ID."""
         return self.proposal_id
+    
+    def resolve_to_handshake_id(self) -> Optional[str]:
+        """Resolve to handshake ID."""
+        return self.handshake_id
 
 
 # ============================================================================
@@ -375,13 +417,14 @@ class RollbackCoordination:
 
 
 class IntegratedAuditTrace:
-    """Unified audit trace across all v61-v63 components."""
+    """Unified audit trace across all v61-v63-v66 components."""
     
     def __init__(self, local_node_id: str):
         self.local_node_id = local_node_id
         self.proposal_audit = ProposalAuditTrace(local_node_id)
         self.execution_audit = ExecutionAuditTrace(local_node_id)
         self.receipt_audit = ReceiptAuditTrace(local_node_id)
+        self.handshake_audit = HandshakeAuditTrace(local_node_id)
         self._integrated_events: List[Dict[str, Any]] = []
     
     def log_flow_event(
@@ -415,7 +458,8 @@ class IntegratedAuditTrace:
             "integrated_events": len(self._integrated_events),
             "proposal_events": self.proposal_audit.get_stats()["total_events"],
             "execution_events": self.execution_audit.get_stats()["total_events"],
-            "receipt_events": self.receipt_audit.get_stats()["total_events"]
+            "receipt_events": self.receipt_audit.get_stats()["total_events"],
+            "handshake_events": self.handshake_audit.get_stats()["total_events"]
         }
 
 
@@ -427,7 +471,7 @@ class IntegratedAuditTrace:
 class ExecutionOrchestrator:
     """Main integration controller for distributed execution flow.
     
-    Integrates proposal (v61) → envelope (v62) → receipt (v63).
+    Integrates proposal (v61) → handshake (v65) → envelope (v62) → receipt (v63).
     """
     
     def __init__(
@@ -436,10 +480,14 @@ class ExecutionOrchestrator:
         registry: NodeRegistry,
         proposal_audit: Optional[ProposalAuditTrace] = None,
         execution_audit: Optional[ExecutionAuditTrace] = None,
-        receipt_audit: Optional[ReceiptAuditTrace] = None
+        receipt_audit: Optional[ReceiptAuditTrace] = None,
+        local_version: str = "1.0.0",
+        supported_versions: Optional[List[str]] = None
     ):
         self.local_node_id = local_node_id
         self.registry = registry
+        self.local_version = local_version
+        self.supported_versions = supported_versions or ["1.0.0"]
         self.audit = IntegratedAuditTrace(local_node_id)
         
         # Wire up sub-audits
@@ -461,9 +509,19 @@ class ExecutionOrchestrator:
             audit_trace=self.audit.receipt_audit
         )
         
+        # Handshake protocol for v66
+        self.handshake_protocol = HandshakeProtocol(
+            local_node_id=local_node_id,
+            registry=self.registry,
+            local_version=self.local_version,
+            supported_versions=self.supported_versions,
+            audit_trace=self.audit.handshake_audit
+        )
+        
         # Flow tracking
         self._flows: Dict[str, ExecutionFlowState] = {}
         self._correlations: Dict[str, StageCorrelation] = {}
+        self._handshakes: Dict[str, HandshakeRequest] = {}
         self._rejections: Dict[str, RejectionPropagation] = {}
         self._failures: Dict[str, FailurePropagation] = {}
         self._rollbacks: Dict[str, RollbackCoordination] = {}
@@ -490,13 +548,103 @@ class ExecutionOrchestrator:
         
         return flow
     
+    def create_handshake_request(
+        self,
+        flow_id: str,
+        target_node_id: str,
+        message: Optional[str] = None
+    ) -> Tuple[Optional[HandshakeRequest], Optional[str]]:
+        """Create handshake request for flow. Must be called after proposal approval."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        
+        if not flow or not correlation:
+            return None, "Flow not found"
+        
+        # Create handshake request
+        request = self.handshake_protocol.create_request(
+            target_node_id=target_node_id,
+            message=message
+        )
+        
+        flow.mark_handshake_requested(request.handshake_id)
+        correlation.link_handshake(request.handshake_id)
+        
+        # Store handshake request for later validation
+        self._handshakes[flow_id] = request
+        
+        self.audit.log_flow_event(
+            flow_id=flow_id,
+            stage="handshake",
+            event_type="handshake_request_created",
+            details={"handshake_id": request.handshake_id},
+            correlation=correlation
+        )
+        
+        return request, None
+    
+    def validate_handshake_accepted(
+        self,
+        flow_id: str,
+        response: HandshakeResponse
+    ) -> Tuple[bool, Optional[str]]:
+        """Validate that handshake was accepted before envelope creation."""
+        flow = self._flows.get(flow_id)
+        correlation = self._correlations.get(flow_id)
+        
+        if not flow or not correlation:
+            return False, "Flow not found"
+        
+        # Check handshake was accepted
+        if not response.accepted:
+            rejection = RejectionPropagation(
+                flow_id=flow_id,
+                rejection_source="handshake",
+                rejection_reason=RejectionReason(
+                    category=RejectionCategory.MANUAL_REJECTION.value,
+                    description=response.reason or "Handshake not accepted"
+                )
+            )
+            self._rejections[flow_id] = rejection
+            flow.mark_execution_rejected(rejection.rejection_reason.description if rejection.rejection_reason else "Handshake not accepted")
+            
+            self.audit.log_flow_event(
+                flow_id=flow_id,
+                stage="handshake",
+                event_type="handshake_refused",
+                details={"reason": response.reason},
+                correlation=correlation
+            )
+            
+            return False, f"Handshake not accepted: {response.reason}"
+        
+        flow.mark_handshake_accepted(response.handshake_id)
+        
+        self.audit.log_flow_event(
+            flow_id=flow_id,
+            stage="handshake",
+            event_type="handshake_accepted",
+            details={"handshake_id": response.handshake_id},
+            correlation=correlation
+        )
+        
+        return True, None
+    
     def approved_to_envelope(
         self,
         flow_id: str,
         proposal: RemoteActionProposal,
-        execution_intent: str
+        execution_intent: str,
+        target_node_id: Optional[str] = None,
+        handshake_response: Optional[HandshakeResponse] = None,
+        skip_handshake: bool = False
     ) -> Tuple[Optional[ExecutionRequestEnvelope], Optional[str]]:
-        """Convert approved proposal to execution envelope."""
+        """Convert approved proposal to execution envelope.
+        
+        Integrates handshake validation between proposal approval and envelope creation.
+        If handshake_response is provided, validates acceptance before envelope creation.
+        If skip_handshake=True, skips handshake validation (for testing/backward compatibility).
+        """
         flow = self._flows.get(flow_id)
         correlation = self._correlations.get(flow_id)
         
@@ -509,7 +657,44 @@ class ExecutionOrchestrator:
         
         flow.mark_proposal_approved(proposal.proposal_id)
         
-        # Create envelope
+        # Skip handshake if requested (for tests/backward compatibility)
+        if skip_handshake:
+            # Create envelope directly
+            envelope = self.execution_controller.create_envelope(
+                proposal=proposal,
+                execution_intent=execution_intent
+            )
+            
+            flow.mark_envelope_created(envelope.request_id)
+            correlation.link_envelope(envelope.request_id)
+            
+            self.audit.log_flow_event(
+                flow_id=flow_id,
+                stage="envelope",
+                event_type="envelope_created",
+                details={"request_id": envelope.request_id},
+                correlation=correlation
+            )
+            
+            return envelope, None
+        
+        # If no handshake response provided, create handshake request
+        if not handshake_response:
+            if not target_node_id:
+                return None, "Target node ID or skip_handshake=True required"
+            
+            request, err = self.create_handshake_request(flow_id, target_node_id)
+            if err:
+                return None, err
+            # Return early - handshake request created, need user to validate response
+            return None, f"Handshake request created: {request.handshake_id}"
+        
+        # Validate handshake was accepted
+        valid, err = self.validate_handshake_accepted(flow_id, handshake_response)
+        if not valid:
+            return None, err
+        
+        # Now create envelope (handshake completed)
         envelope = self.execution_controller.create_envelope(
             proposal=proposal,
             execution_intent=execution_intent
@@ -639,6 +824,10 @@ class ExecutionOrchestrator:
         if correlation.request_id:
             self.execution_controller.complete(correlation.request_id, result)
         
+        # If handshake was part of flow, mark completed
+        if flow.handshake_id:
+            self.handshake_protocol.complete_handshake(flow.handshake_id)
+        
         flow.mark_execution_completed()
         
         self.audit.log_flow_event(
@@ -661,6 +850,14 @@ class ExecutionOrchestrator:
         failure = FailurePropagation(flow_id=flow_id, failure_source="orchestrator")
         failure.failure_reason = reason
         self._failures[flow_id] = failure
+        
+        # If handshake failed, record it
+        if flow.handshake_id:
+            self.audit.handshake_audit.log_event(
+                handshake_id=flow.handshake_id,
+                event_type=HandshakeEventType.HANDSHAKE_FAILED.value,
+                details={"reason": reason}
+            )
         
         flow.mark_execution_failed(reason)
         

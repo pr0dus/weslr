@@ -352,7 +352,8 @@ class TestExecutionOrchestrator(unittest.TestCase):
         envelope, error = self.orchestrator.approved_to_envelope(
             flow_id=flow.flow_id,
             proposal=self.proposal,
-            execution_intent="Sync continuity data"
+            execution_intent="Sync continuity data",
+            skip_handshake=True
         )
         
         self.assertIsNotNone(envelope)
@@ -391,7 +392,8 @@ class TestExecutionOrchestrator(unittest.TestCase):
         envelope, _ = self.orchestrator.approved_to_envelope(
             flow_id=flow.flow_id,
             proposal=self.proposal,
-            execution_intent="Sync data"
+            execution_intent="Sync data",
+            skip_handshake=True
         )
         
         success, error = self.orchestrator.evaluate_and_authorize(flow.flow_id)
@@ -409,7 +411,8 @@ class TestExecutionOrchestrator(unittest.TestCase):
         envelope, _ = self.orchestrator.approved_to_envelope(
             flow_id=flow.flow_id,
             proposal=self.proposal,
-            execution_intent="Sync data"
+            execution_intent="Sync data",
+            skip_handshake=True
         )
         
         self.orchestrator.evaluate_and_authorize(flow.flow_id)
@@ -429,7 +432,8 @@ class TestExecutionOrchestrator(unittest.TestCase):
         envelope, _ = self.orchestrator.approved_to_envelope(
             flow_id=flow.flow_id,
             proposal=self.proposal,
-            execution_intent="Sync data"
+            execution_intent="Sync data",
+            skip_handshake=True
         )
         
         self.orchestrator.evaluate_and_authorize(flow.flow_id)
@@ -458,7 +462,8 @@ class TestExecutionOrchestrator(unittest.TestCase):
         envelope, _ = self.orchestrator.approved_to_envelope(
             flow_id=flow.flow_id,
             proposal=self.proposal,
-            execution_intent="Sync data"
+            execution_intent="Sync data",
+            skip_handshake=True
         )
         
         success = self.orchestrator.initiate_rollback(flow.flow_id, "Execution failed")
@@ -475,11 +480,12 @@ class TestExecutionOrchestrator(unittest.TestCase):
         flow = self.orchestrator.create_flow(self.proposal)
         flow_id = flow.flow_id
         
-        # Proposal → Envelope
+        # Proposal → Envelope (skip handshake for backward compat)
         envelope, error = self.orchestrator.approved_to_envelope(
             flow_id=flow_id,
             proposal=self.proposal,
-            execution_intent="Synchronize continuity data"
+            execution_intent="Synchronize continuity data",
+            skip_handshake=True
         )
         self.assertIsNotNone(envelope)
         
