@@ -64,3 +64,6 @@ test_influence_v1.py
 # External feature directories
 collector/tia_openness_bridge/
 weslr-tia-openness-bridge/
+weslr/tests/continuity/
+weslr/tests/continuity/*
+capability_suggestions.db
