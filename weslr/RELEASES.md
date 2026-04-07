@@ -4,6 +4,38 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v85 — Operator Recovery Insight Layer Sealed (2026-04-07)
+
+**Commit:** `79a534224ddce8d5b451f2d2e30fe62190a6ed74`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v85 Operator Recovery Insight Layer fully tested and sealed
+- RecoveryInsight — insight record with interpretation, significance, guidance
+- TrendShift — trend shift detection with direction, magnitude, interpretation
+- InsightSummary — operator-readable and machine-readable insight summary
+- Notable trend shift detection (confidence, safe_action trends)
+- Confidence guidance trend interpretation
+- Safe-next-action convergence/divergence insight
+- Repeated recovery pattern significance summary
+- Operator-readable insight summary export
+- Machine-readable insight export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 27/27 tests passed
+- Full backward compatibility with v76-v84
+
+**Files:**
+- `weslr/operator_recovery_insight.py` (new, 641 lines)
+- `weslr/test_operator_recovery_insight.py` (new, 573 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v84 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
 ## v84 — Recovery Pattern History / Trend Layer Sealed (2026-04-07)
 
 **Commit:** `07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa`

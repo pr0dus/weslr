@@ -3,10 +3,10 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa",
-  "latest_layer": "v84 — Recovery Pattern History / Trend Layer Sealed",
-  "current_phase": "v85_planning",
-  "next_priority": "operator_recovery_insight_layer",
+  "latest_sealed_commit": "79a534224ddce8d5b451f2d2e30fe62190a6ed74",
+  "latest_layer": "v85 — Operator Recovery Insight Layer Sealed",
+  "current_phase": "v86_planning",
+  "next_priority": "operator_insight_history_comparative_significance_layer",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
@@ -19,7 +19,7 @@
     "TIA": [],
     "industrial_slice": []
   },
-  "completed_layers_v76_v84": [
+  "completed_layers_v76_v85": [
     "recovery_recommendation_export_replay_correlation",
     "operator_recovery_review_surface",
     "operator_decision_trace_correlated_export",
@@ -28,7 +28,8 @@
     "end_to_end_command_path_timing",
     "recovery_timing_interpretation_bottleneck_attribution",
     "recovery_pattern_comparison_layer",
-    "recovery_pattern_history_trend_layer"
+    "recovery_pattern_history_trend_layer",
+    "operator_recovery_insight_layer"
   ],
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
@@ -117,5 +118,11 @@
     "commit_hash": "07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa",
     "files": ["weslr/recovery_pattern_history.py", "weslr/test_recovery_pattern_history.py"],
     "test_results": "21/21 passed"
+  },
+  "v85_status": {
+    "status": "sealed",
+    "commit_hash": "79a534224ddce8d5b451f2d2e30fe62190a6ed74",
+    "files": ["weslr/operator_recovery_insight.py", "weslr/test_operator_recovery_insight.py"],
+    "test_results": "27/27 passed"
   }
 }
