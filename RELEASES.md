@@ -22,6 +22,20 @@ Recommended rollback order:
 
 ## Releases
 
+### v0.7.1
+- diagnostic export / observability integration (v71) - WESLR Python only, additive only, read-only
+- diagnostic summary export via `diagnostics-summary` CLI command
+- correlated failure-chain export via `diagnostics-failure-chain` CLI command with flow/request/handshake/deadline correlation
+- recovery-hint export via `diagnostics-recovery-hints` CLI command
+- correlation by flow/request/handshake/deadline IDs across queues
+- operator-readable export form (human-friendly CLI output + JSON)
+- machine-readable export form (structured JSON payloads)
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: extend v70 with structured export hooks for diagnostic summaries and correlated failure chains
+- commit: `v71-diagnostics`
+- backup: `CircleForge-backup-20260407-0001.tar.gz`
+- tag: `v0.7.1`
+
 ### v0.7.0
 - autonomous expression system with rate control (`set-expression-rate`)
 - circuit breaker to prevent runaway ticks and infinite loops

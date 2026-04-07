@@ -13,6 +13,9 @@ from time import strftime, localtime
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
+
+from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
+from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
 from llm_runtime import embedded_self_test
 from research import fetch_url_text, ingest_web_resource, search_web
@@ -61,6 +64,35 @@ from core_knowledge import (
     get_all_domains
 )
 from entity_graph import get_entity_graph
+
+# Minimal telemetry emitter for v71 diagnostics
+class _MinimalTelemetryEmitter:
+    """Minimal TelemetryEventEmitter for v71 diagnostics."""
+    def __init__(self):
+        self._events = []
+        self._events_by_flow = {}
+        self._events_by_type = {}
+    
+    def emit_event(self, event):
+        self._events.append(event)
+    
+    def get_all_events(self):
+        return self._events
+    
+    def get_all_flows(self):
+        return list(self._events_by_flow.keys())
+    
+    def get_events_by_flow(self):
+        return self._events_by_flow
+
+
+from weslr.diagnostic_export import (
+    DiagnosticExportHooks,
+    DiagnosticSummaryExporter,
+    FailureChainExporter,
+    RecoveryHintExporter,
+)
+from weslr.distributed_diagnostic_hooks import DiagnosticHooks
 
 
 def emit(data):
@@ -1546,6 +1578,18 @@ def main():
     p = sub.add_parser("variation-show", help="show detailed variation history for a theme")
     p.add_argument("--theme", required=True, help="theme name")
     p.set_defaults(func=cmd_variation_show)
+
+    # v71: Diagnostics / Observability Integration
+    p = sub.add_parser("diagnostics-summary", help="export diagnostic summary in operator-readable format")
+    p.set_defaults(func=cmd_diagnostics_summary)
+
+    p = sub.add_parser("diagnostics-failure-chain", help="export correlated failure chain by ID")
+    p.add_argument("correlation_id", help="the ID to trace (flow_id, request_id, handshake_id, deadline_id)")
+    p.add_argument("--type", default="flow", choices=["flow", "request", "handshake", "deadline"], help="correlation type")
+    p.set_defaults(func=cmd_diagnostics_failure_chain)
+
+    p = sub.add_parser("diagnostics-recovery-hints", help="export all recovery hints in structured format")
+    p.set_defaults(func=cmd_diagnostics_recovery_hints)
 
     args = parser.parse_args()
     args.func(args)
@@ -3086,6 +3130,59 @@ def cmd_relationship_add(args):
     
     print(f"\n✅ Added relationship: {source.name} --[{rel.type}]--> {target.name}")
     print(f"   Strength: {rel.strength:.2f}")
+
+
+# ============================================================================
+# Diagnostics / Observability Integration (v71)
+# ============================================================================
+
+# Create minimal emitter for diagnostics (read-only, passive observation)
+_diagnostic_emitter = _MinimalTelemetryEmitter()
+_diagnostic_hooks = DiagnosticExportHooks(DiagnosticHooks(_diagnostic_emitter))
+
+
+def cmd_diagnostics_summary(_args):
+    """Export diagnostic summary in operator-readable format."""
+    result = _diagnostic_hooks.export_all_summaries()
+    emit(result)
+    print(f"\n--- Diagnostic Summary ---")
+    print(f"Total Flows with Failures: {len(result)}")
+    print(f"Total Chains: {len(_diagnostic_hooks.export_all_chains())}")
+    print(f"Total Hints: {len(_diagnostic_hooks.export_all_hints())}")
+    
+    if result:
+        print("\n--- Flows with Failures ---")
+        for summary in result[:3]:
+            flow_id = summary.get("flow_id", "unknown")
+            status = summary.get("status", "unknown")
+            print(f"  {flow_id}: {status}")
+    
+    print(f"\n--- Operator Readable Summary ---")
+    print(_diagnostic_hooks.get_operator_readable_summary())
+
+
+def cmd_diagnostics_failure_chain(args):
+    """Export correlated failure chain by ID."""
+    result = _diagnostic_hooks.export_by_correlation(
+        args.correlation_id, args.type
+    )
+    emit(result)
+    print(f"\n--- Failure Chain: {args.correlation_id} ({args.type}) ---")
+    print(f"Matching Summaries: {len(result.get('summaries', []))}")
+    print(f"Matching Chains: {len(result.get('chains', []))}")
+    print(f"Matching Hints: {len(result.get('hints', []))}")
+
+
+def cmd_diagnostics_recovery_hints(_args):
+    """Export all recovery hints in structured format."""
+    result = _diagnostic_hooks.export_all_hints()
+    emit(result)
+    print(f"\n--- Recovery Hints ({len(result)} total) ---")
+    for hint in result[:5]:
+        flow_id = hint.get("flow_id", "unknown")
+        recovery_hint = hint.get("recovery_hint", "None")
+        likely_cause = hint.get("likely_cause", "Unknown")
+        print(f"  [{likely_cause.upper()}] {flow_id}: {recovery_hint}")
 
 
 if __name__ == "__main__":
