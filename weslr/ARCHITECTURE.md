@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-07  
-**Current Sealed Commit:** `79a534224ddce8d5b451f2d2e30fe62190a6ed74` (v85)
+**Current Sealed Commit:** `f1558d43513d68f4706abd1269ee23cf28199059` (v86)
 
 ---
 
@@ -62,6 +62,7 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 | v83 | Recovery Pattern Comparison Layer | Pattern comparison across recovery operations | ✅ Sealed |
 | v84 | Recovery Pattern History / Trend Layer | Pattern history/trend analysis over time | ✅ Sealed |
 | v85 | Operator Recovery Insight Layer | Insight generation from recovery patterns | ✅ Sealed |
+| v86 | Operator Insight History / Comparative Significance Layer | Comparative significance analysis across insight summaries | ✅ Sealed |
 
 ### Flow Lifecycle
 
