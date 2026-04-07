@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-07  
-**Current Sealed Commit:** `3a31b1b2cbfebb9e86bb905de2ca2735f51e44fb` (v69)
+**Current Sealed Commit:** `646fb958101458d151d720c15f7f0b45d8ced34a` (v74)
 
 ---
 
@@ -31,7 +31,7 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 
 ---
 
-## 2. Current Sealed Architecture Stack (v61-v69)
+## 2. Current Sealed Architecture Stack (v61-v74)
 
 ### Layer Sequence
 
@@ -46,6 +46,11 @@ WESLR is a **high-trust adaptive intelligence platform** designed for multi-node
 | v67 | Execution Timeout / Deadline Propagation | Deadline tracking and breach handling | ✅ Sealed |
 | v68 | Distributed Execution Telemetry | Passive observability for flow events | ✅ Sealed |
 | v69 | Distributed Telemetry Export Hooks | Structured export for operator-readable observability | ✅ Sealed |
+| v70 | Recovery Recommendation Service | Operator-facing recovery suggestion system | ✅ Sealed |
+| v71 | CLI Entry Surface Decomposition | Separated CLI surface (legacy/self_mod/external) | ✅ Sealed |
+| v72 | Operator Workflow Validation | Operator-initiated workflow enforcement | ✅ Sealed |
+| v73 | Capability Boundary Hardening | Explicit scope boundaries (TIA/C# excluded) | ✅ Sealed |
+| v74 | Architecture Memory Refresh | Structured memory state management | ✅ Sealed |
 
 ### Flow Lifecycle
 
@@ -112,6 +117,35 @@ Every stage maintains correlation via:
 | Dashboard/UI | No visualization layer | Operator-readable JSON/text |
 | Product Runtime Expansion | No external product binding | WESLR operator workflow only |
 
+### Seal Rule Clarified (v74)
+
+The **Seal Rule** determines when a commit is ready for production release:
+
+#### Implementation
+- All new layer code implemented and tested
+- All backward compatibility tests pass
+- All integration tests pass
+
+#### Tests
+- New tests added for each layer
+- All existing tests continue to pass
+- Test coverage maintains 100% for modified files
+
+#### Git Truth
+- Working tree is clean (no untracked files)
+- All changes are committed to the current HEAD
+- Commit includes layer name and test summary
+
+#### Clean Enough Tree
+- No memory files or operator artifacts in commit
+- No entity_graph.json changes unrelated to layer
+- No temporary/debug files included
+
+#### Operator Workflow Only
+- All operations are operator-initiated
+- No autonomous execution or background workers
+- No product runtime expansion or external binding
+
 ---
 
 ## 5. Current Remaining Bottleneck Families
@@ -124,6 +158,18 @@ Every stage maintains correlation via:
 | Distributed Multi-Node Deployment | Active | Enable true multi-node distributed operation |
 | Real World External Orchestration | Active | External system integration patterns |
 | Cross Instance Continuity Sync | Active | Continuity synchronization across instances |
+
+### Bottleneck Labels Refined
+
+| Label Type | Status | Notes |
+|-----------|--------|-------|
+| TIA | Inactive | Excluded via scope boundary (v73) |
+| Industrial Slice | Inactive | Excluded via scope boundary (v73) |
+| Orchestration | Inactive | Explicitly excluded (v70) |
+| Sharding | Inactive | Explicitly excluded (v73) |
+| Aggregation | Inactive | Explicitly excluded (v73) |
+| Scheduler/Task Engine | Inactive | Explicitly excluded (v73) |
+| Backend/Service/UI | Inactive | Operator workflow only (v70) |
 
 ### Archived/External Bottlenecks
 

@@ -3,10 +3,10 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "967549f6480068ae8a6297562d59968ce3302582",
-  "latest_layer": "v56 — Model-Assisted Not Model-Dependent Hardening",
-  "current_phase": "model_assisted_not_model_dependent",
-  "next_priority": "distributed_multi_node_deployment",
+  "latest_sealed_commit": "646fb958101458d151d720c15f7f0b45d8ced34a",
+  "latest_layer": "v74 — Architecture Memory Refresh (CLI Decomposition Sealed)",
+  "current_phase": "weslr_operator_workflow",
+  "next_priority": "scientific_knowledge_assimilation_expansion",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
@@ -33,5 +33,16 @@
   "active_hotfixes": [],
   "architecture_direction": "continuity-aware operator workflow",
   "continuity_mode": "enabled",
-  "repo_truth_required": true
+  "repo_truth_required": true,
+  "cli_decomposition": {
+    "status": "sealed",
+    "files": [
+      "weslr/cli_legacy.py",
+      "weslr/cli_self_mod.py",
+      "weslr/cli_external.py",
+      "weslr/__init__.py",
+      "weslr/recovery_recommendation_service.py"
+    ],
+    "commit_hash": "646fb958101458d151d720c15f7f0b45d8ced34a"
+  }
 }
