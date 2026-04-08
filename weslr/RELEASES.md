@@ -342,6 +342,38 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v93c — Silent Capsule Rebuild Application Boundary Sealed (2026-04-08)
+
+**Commit:** `40e0997f66f11331133a2a2e9a18938ad020a4d5`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93c Silent Capsule Rebuild Application Boundary fully tested and sealed
+- Continuity-aware capsule rebuilding with validation and freshness policy layer
+- Capsule freshness rules for stored capsules
+- Acceptance/rejection policy for restored capsule state
+- Stale capsule handling
+- Invalid capsule handling
+- Partial acceptance vs full rejection rules
+- Internal/silent policy result only, no user-visible commands
+- No /new semantic changes
+- Test suite: 144/144 tests passed
+- Full backward compatibility with v76-v93b
+
+**Files:**
+- `weslr/capsule_recovery.py` (modified, +68 lines)
+- `weslr/continuity.py` (modified, +23 lines)
+- `weslr/test_capsule_recovery.py` (modified, +68 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93b layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93a — Silent Active Work Capsule for Implementation Continuity Sealed (2026-04-08)
 
 **Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511`

@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `cae9d0f69bea8f5282779e9ef9b2d037173d1848` (v93b)
+**Current Sealed Commit:** `40e0997f66f11331133a2a2e9a18938ad020a4d5` (v93c)
 
 ---
 
@@ -196,6 +196,7 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v92 | Operator Case Window Summary / Drift Significance Layer | ✅ Sealed | Read-only case window summary with drift significance detection |
 | v93a | Silent Active Work Capsule | ✅ Sealed | First silent implementation continuity slice for active work capsule persistence |
 | v93b | Capsule Snapshot + Restore Integration | ✅ Sealed | v93a + CapsulePersister class with narrow restore boundary support for operator workflow checkpoints |
+| v93c | Silent Capsule Rebuild Application Boundary | ✅ Sealed | v93b + Continuity-aware capsule rebuilding with validation and freshness policy layer |
 
 ### Bottleneck Labels Refined
 
@@ -224,6 +225,13 @@ The focus remains on:
 - Response speed / latency awareness (for operator decision-making)
 - Operator trust (transparency, traceability)
 - Read-only recovery intelligence (diagnostics, not action)
+- Silent/internal continuity (active architecture track since v93a)
+
+**Silent Continuity Architecture Track (v93a-v93c):**
+- Silent save/restore of active work capsule without user-visible commands
+- Capsule freshness validation and acceptance policy
+- No /pause, /resume, or /new semantic changes
+- Internal/silent restoration for implementation continuity
 
 Any future performance-focused layers must maintain the operator-facing read-only constraint and cannot introduce automatic remediation, scheduler/task engine, or backend/services.
 
