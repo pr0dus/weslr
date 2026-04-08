@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "284e3bd593679c80de9ac61b4d77687faa2132e9",
-  "latest_layer": "v90 — Operator Case Comparison / Escalation Summary Layer Sealed",
-  "current_phase": "v91_planning",
+  "latest_sealed_commit": "07d62e96085c80c801a661eda4286f47ed2912f5",
+  "latest_layer": "v91 — Operator Case Timeline Comparison / Escalation Drift Layer Sealed",
+  "current_phase": "v92_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -19,7 +19,7 @@
     "TIA": [],
     "industrial_slice": []
   },
-  "completed_layers_v76_v90": [
+  "completed_layers_v76_v91": [
     "recovery_recommendation_export_replay_correlation",
     "operator_recovery_review_surface",
     "operator_decision_trace_correlated_export",
@@ -34,13 +34,14 @@
     "operator_insight_comparison_drift_layer",
     "operator_insight_timeline_escalation_context_layer",
     "operator_insight_consolidation_case_summary_layer",
-    "operator_case_comparison_escalation_summary_layer"
+    "operator_case_comparison_escalation_summary_layer",
+    "operator_case_timeline_comparison_escalation_drift_layer"
   ],
   "v91_status": {
-    "status": "planning",
-    "target_commit": null,
+    "status": "sealed",
+    "commit_hash": "07d62e96085c80c801a661eda4286f47ed2912f5",
     "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
-    "test_expectations": "25+ tests expected"
+    "test_results": "29/29 passed"
   },
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
@@ -155,9 +156,9 @@
     "test_results": "25/25 passed"
   },
   "v91_status": {
-    "status": "planning",
-    "target_commit": null,
+    "status": "sealed",
+    "commit_hash": "07d62e96085c80c801a661eda4286f47ed2912f5",
     "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
-    "test_expectations": "25+ tests expected"
+    "test_results": "29/29 passed"
   }
 }
