@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "40e0997f66f11331133a2a2e9a18938ad020a4d5",
-  "latest_layer": "v93c — Silent Capsule Rebuild Application Boundary",
-  "current_phase": "v93d_planning",
+  "latest_sealed_commit": "7e6291e228f8f6bf03fbf57ac641e00203c924c6",
+  "latest_layer": "v93d — Capsule Freshness / Acceptance Policy",
+  "current_phase": "v93e_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -70,6 +70,13 @@
     "files": ["weslr/capsule_recovery.py", "weslr/continuity.py", "weslr/test_capsule_recovery.py"],
     "test_results": "144/144 passed",
     "notes": "Continuity-aware capsule rebuilding with validation and freshness policy layer"
+  },
+  "v93d_status": {
+    "status": "sealed",
+    "commit_hash": "7e6291e228f8f6bf03fbf57ac641e00203c924c6",
+    "files": ["weslr/capsule_policy.py", "weslr/test_capsule_policy.py"],
+    "test_results": "24/24 passed",
+    "notes": "CapsuleFreshnessPolicy class with staleness and validity checks for restored capsule state"
   },
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [

@@ -374,6 +374,36 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v93d — Capsule Freshness / Acceptance Policy Sealed (2026-04-08)
+
+**Commit:** `7e6291e228f8f6bf03fbf57ac641e00203c924c6`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93d Capsule Freshness / Acceptance Policy fully tested and sealed
+- CapsuleFreshnessPolicy class with staleness and validity checks for restored capsule state
+- FreshnessResult dataclass for three-state outcome (fresh/stale/invalid)
+- Staleness enforcement (24h age threshold)
+- Invalid capsule detection (missing fields, bad format, invalid phase)
+- Conservative policy: no partial-acceptance behavior in this slice
+- Internal/silent only, no user-visible commands
+- No /new semantic changes
+- Test suite: 24/24 tests passed
+- Full backward compatibility with v76-v93c
+
+**Files:**
+- `weslr/capsule_policy.py` (new, 117 lines)
+- `weslr/test_capsule_policy.py` (new, 141 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93c layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93a — Silent Active Work Capsule for Implementation Continuity Sealed (2026-04-08)
 
 **Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511`

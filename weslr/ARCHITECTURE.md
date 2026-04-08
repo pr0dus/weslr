@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `40e0997f66f11331133a2a2e9a18938ad020a4d5` (v93c)
+**Current Sealed Commit:** `7e6291e228f8f6bf03fbf57ac641e00203c924c6` (v93d)
 
 ---
 
