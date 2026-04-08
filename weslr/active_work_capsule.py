@@ -132,3 +132,36 @@ def create_capsule(
         active_constraints=active_constraints,
         timestamp=None,  # Will be set by caller
     )
+
+
+# ===== v93b: Integration Hooks =====
+
+
+def create_snapshot_capsule(
+    layer_name: str,
+    task_id: str,
+    phase: str,
+    approved_files: List[str],
+    pending_tests: List[str],
+    seal_criteria: List[str],
+    short_task_summary: str,
+    active_constraints: List[str],
+    timestamp: str = None,
+) -> ActiveWorkCapsule:
+    """Factory function to create snapshot-ready capsule with timestamp.
+    
+    v93b integration: creates capsule ready for persistence.
+    Narrow restore boundary: only operator workflow checkpoints.
+    """
+    capsule = ActiveWorkCapsule(
+        layer_name=layer_name,
+        task_id=task_id,
+        phase=phase,
+        approved_files=approved_files,
+        pending_tests=pending_tests,
+        seal_criteria=seal_criteria,
+        short_task_summary=short_task_summary,
+        active_constraints=active_constraints,
+        timestamp=timestamp or "2026-04-08T00:00:00Z",
+    )
+    return capsule

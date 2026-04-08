@@ -14,6 +14,7 @@ from weslr.active_work_capsule import (
     ActiveWorkCapsule,
     CapsuleSerializer,
     create_capsule,
+    create_snapshot_capsule,
 )
 
 
@@ -278,6 +279,51 @@ class TestCreateCapsuleBehavior(unittest.TestCase):
         )
         capsule.timestamp = "2026-04-08T00:00:00Z"
         self.assertTrue(capsule.is_valid())
+
+
+# ===== Test v93b Integration =====
+
+
+class TestV93bIntegrationBehavior(unittest.TestCase):
+    """Integration tests for v93b Capsule Snapshot + Restore Integration."""
+
+    def test_create_snapshot_capsule(self) -> None:
+        """Test create_snapshot_capsule creates valid snapshot-ready capsule."""
+        from weslr.active_work_capsule import create_snapshot_capsule
+
+        capsule = create_snapshot_capsule(
+            layer_name="test_layer",
+            task_id="v93b",
+            phase="implementation",
+            approved_files=["weslr/test_layer.py"],
+            pending_tests=["weslr/test_test_layer.py"],
+            seal_criteria=["tests_pass"],
+            short_task_summary="Test layer",
+            active_constraints=["additive_only"],
+            timestamp="2026-04-08T00:00:00Z",
+        )
+        self.assertTrue(capsule.is_valid())
+        self.assertEqual(capsule.layer_name, "test_layer")
+        self.assertEqual(capsule.task_id, "v93b")
+        self.assertEqual(capsule.phase, "implementation")
+        self.assertEqual(capsule.timestamp, "2026-04-08T00:00:00Z")
+
+    def test_create_snapshot_capsule_default_timestamp(self) -> None:
+        """Test create_snapshot_capsule with default timestamp."""
+        from weslr.active_work_capsule import create_snapshot_capsule
+
+        capsule = create_snapshot_capsule(
+            layer_name="test_layer",
+            task_id="v93b",
+            phase="planning",
+            approved_files=["weslr/test_layer.py"],
+            pending_tests=["weslr/test_test_layer.py"],
+            seal_criteria=["tests_pass"],
+            short_task_summary="Test",
+            active_constraints=["additive_only"],
+        )
+        self.assertTrue(capsule.is_valid())
+        self.assertEqual(capsule.timestamp, "2026-04-08T00:00:00Z")
 
 
 if __name__ == "__main__":

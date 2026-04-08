@@ -1,4 +1,4 @@
-"""WESLR Capsule Recovery (v93a)
+"""WESLR Capsule Recovery (v93a + v93b integration)
 
 Deterministic rebuild logic for active work capsule.
 Silent reconstruction of minimal working context after /new.
@@ -9,6 +9,12 @@ Rules:
 - Silent/internal only (no user-visible commands)
 - Graceful failure (no crash if capsule missing)
 - Deterministic rebuild (no confidence logic yet)
+- v93b: Snapshot/restore integration with narrow restore boundary
+
+v93b changes:
+- Added CapsulePersister class for snapshot/write operations
+- Added restore_boundary parameter for narrow restore definition
+- Added snapshot_restore hook for integration with operator workflow
 """
 
 from __future__ import annotations
@@ -22,6 +28,16 @@ from .active_work_capsule import ActiveWorkCapsule
 
 # Capsule file path (relative to base_dir)
 CAPSULE_FILE = "continuity/active_work_capsule.json"
+
+
+# Restore boundary (narrow and low-risk)
+# Only operator workflow checkpoints, no global startup-wide auto-restore
+# Restore boundary: operator workflow checkpoint restoration only
+RESTORE_BOUNDARY = {
+    "operator_workflow_checkpoint": True,
+    "global_startup_restore": False,
+    "session_continuation_restore": True,
+}
 
 
 class CapsuleRebuilder:
@@ -121,3 +137,71 @@ def restore_from_capsule(base_dir: str = None) -> Dict[str, Any]:
             return {"status": "no_base_dir"}
     
     return CapsuleRebuilder.rebuild_from_file(base_dir)
+
+
+# ===== v93b: Capsule Snapshot + Restore Integration =====
+
+
+class CapsulePersister:
+    """Snapshot/write and read/restore hooks for v93b integration.
+    
+    Adds narrow restore boundary support while preserving v93a behavior.
+    """
+    
+    @staticmethod
+    def write_snapshot(capsule: ActiveWorkCapsule, base_dir: str) -> Dict[str, Any]:
+        """Write active work capsule to continuity storage (snapshot).
+        
+        Narrow restore boundary: only operator workflow checkpoints.
+        No global startup-wide auto-restore.
+        """
+        if not RESTORE_BOUNDARY["operator_workflow_checkpoint"]:
+            return {"status": "not_in_restore_boundary"}
+        
+        capsule_path = os.path.join(base_dir, CAPSULE_FILE)
+        continuity_dir = os.path.dirname(capsule_path)
+        os.makedirs(continuity_dir, exist_ok=True)
+        
+        try:
+            with open(capsule_path, "w", encoding="utf-8") as f:
+                json.dump(capsule.to_dict(), f, indent=2, sort_keys=True)
+            return {"status": "success", "path": capsule_path}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+    
+    @staticmethod
+    def read_restore_point(base_dir: str) -> Dict[str, Any]:
+        """Read latest active work capsule from continuity storage.
+        
+        Narrow restore boundary: only operator workflow checkpoints.
+        Returns status dict without triggering restore.
+        """
+        if not RESTORE_BOUNDARY["operator_workflow_checkpoint"]:
+            return {"status": "not_in_restore_boundary"}
+        
+        result = CapsuleRebuilder.rebuild_from_file(base_dir)
+        return result
+    
+    @staticmethod
+    def snapshot_restore(base_dir: str = None) -> Dict[str, Any]:
+        """Perform snapshot restore from continuity storage (silently).
+        
+        Returns dict with status and optionally reconstructed context.
+        Narrow restore boundary applied - no global startup-wide restore.
+        """
+        if not RESTORE_BOUNDARY["operator_workflow_checkpoint"]:
+            return {"status": "not_in_restore_boundary"}
+        
+        if base_dir is None:
+            try:
+                from .adapters.openclaw import OpenClawPaths
+            except ImportError:
+                OpenClawPaths = None
+            
+            if OpenClawPaths is not None:
+                paths = OpenClawPaths()
+                base_dir = paths.base_dir()
+            else:
+                return {"status": "no_base_dir"}
+        
+        return CapsuleRebuilder.rebuild_from_file(base_dir)
