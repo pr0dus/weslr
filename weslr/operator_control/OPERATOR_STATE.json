@@ -3,8 +3,8 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6",
-  "latest_layer": "v93g — Capsule End-to-End Silent Continuity Loop Verification",
+  "latest_sealed_commit": "8c25cd17338bba96cc9e53177607d15f0ea48071",
+  "latest_layer": "v93h — Silent Continuity Observability / Debug Summary",
   "current_phase": "v93g_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
@@ -202,5 +202,12 @@
     "files": ["weslr/capsule_loop_verification.py", "weslr/test_capsule_loop_verification.py"],
     "test_results": "33/33 passed",
     "notes": "End-to-end loop verification (capture→store→load→validate→decision→apply)"
+  },
+  "v93h_status": {
+    "status": "sealed",
+    "commit_hash": "8c25cd17338bba96cc9e53177607d15f0ea48071",
+    "files": ["weslr/capsule_observability.py", "weslr/test_capsule_observability.py"],
+    "test_results": "34/34 passed",
+    "notes": "Read-only operator-facing observability for silent continuity state"
   }
 }

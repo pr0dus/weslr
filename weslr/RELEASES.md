@@ -462,6 +462,37 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v93h — Silent Continuity Observability / Debug Summary Sealed (2026-04-08)
+
+**Commit:** `8c25cd17338bba96cc9e53177607d15f0ea48071`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93h Silent Continuity Observability / Debug Summary fully tested and sealed
+- CapsuleObservability class for read-only operator-facing observability
+- get_capsule_status() - capsule presence/absence check
+- get_capture_timestamp() - last capture timestamp if present
+- get_last_restore_decision() - last restore decision (applied/ignored/stale/invalid)
+- get_freshness_status() - freshness/acceptance status
+- get_last_apply_status() - last apply status (applied/ignored/stale/invalid)
+- export_debug_summary() - operator-readable + machine-readable debug export
+- Internal/silent only, no user-visible commands
+- Test suite: 34/34 tests passed
+- Full backward compatibility with v76-v93g
+
+**Files:**
+- `weslr/capsule_observability.py` (new, 360 lines)
+- `weslr/test_capsule_observability.py` (new, 655 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93g layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93f — Silent Capsule Capture Trigger Boundary Sealed (2026-04-08)
 
 **Commit:** `d4a35025da7cb2478a57fbcceaa51b73ea2194ed`
