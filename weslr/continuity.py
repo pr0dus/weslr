@@ -579,8 +579,11 @@ def restore_from_capsule(base_dir: str = None, validate: bool = True) -> Dict[st
     Accepts base_dir parameter. Returns dict with status and optionally
     reconstructed context. No breaking changes to existing continuity logic.
     v93c: Added validate parameter for boundary enforcement.
+    v93d: Added freshness policy validation layer.
     """
     from .capsule_recovery import CapsuleRebuilder, CapsuleValidator
+    from .capsule_policy import CapsuleFreshnessPolicy
+    
     result = CapsuleRebuilder.rebuild_from_file(base_dir)
     
     if result.get("status") == "success" and validate:
@@ -588,13 +591,22 @@ def restore_from_capsule(base_dir: str = None, validate: bool = True) -> Dict[st
         context = result.get("context", {})
         validation = CapsuleValidator.validate_restored_context(context)
         if validation["status"] != "valid":
-            # Return validation result with proper status and reason
             return {
                 "status": "blocked",
                 "reason": validation["status"],
                 "validation": validation
             }
-        # Update context in result with validated context
+        
+        # Apply v93d freshness policy validation
+        freshness = CapsuleFreshnessPolicy.validate_freshness(context)
+        if freshness.status != "fresh":
+            return {
+                "status": "blocked",
+                "reason": freshness.status,
+                "validation": validation,
+                "freshness": freshness.to_dict()
+            }
+        
         result["context"] = context
     
     return result
