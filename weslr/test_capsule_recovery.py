@@ -307,13 +307,79 @@ class TestCapsulePersisterBehavior(unittest.TestCase):
             self.assertEqual(result["context"]["current_layer"], "test_layer")
 
 
+# ===== Test v93c Capsule Validator =====
+
+
+class TestCapsuleValidatorBehavior(unittest.TestCase):
+    """Behavior tests for CapsuleValidator v93c validation boundary."""
+    
+    def test_validate_restored_context_valid(self) -> None:
+        """Test validate_restored_context returns valid for good context."""
+        from weslr.capsule_recovery import CapsuleValidator
+        context = {
+            "current_layer": "test_layer",
+            "current_phase": "planning",
+            "timestamp": "2026-04-08T10:00:00Z",
+        }
+        result = CapsuleValidator.validate_restored_context(context)
+        self.assertEqual(result["status"], "valid")
+    
+    def test_validate_restored_context_invalid_phase(self) -> None:
+        """Test validate_restored_context rejects invalid phase."""
+        from weslr.capsule_recovery import CapsuleValidator
+        context = {
+            "current_layer": "test_layer",
+            "current_phase": "invalid_phase",
+            "timestamp": "2026-04-08T10:00:00Z",
+        }
+        result = CapsuleValidator.validate_restored_context(context)
+        self.assertEqual(result["status"], "invalid")
+    
+    def test_validate_restored_context_missing_fields(self) -> None:
+        """Test validate_restored_context rejects missing fields."""
+        from weslr.capsule_recovery import CapsuleValidator
+        context = {
+            "current_layer": "test_layer",
+            # missing current_phase and timestamp
+        }
+        result = CapsuleValidator.validate_restored_context(context)
+        self.assertEqual(result["status"], "invalid")
+    
+    def test_validate_restored_context_empty_context(self) -> None:
+        """Test validate_restored_context rejects empty context."""
+        from weslr.capsule_recovery import CapsuleValidator
+        result = CapsuleValidator.validate_restored_context({})
+        self.assertEqual(result["status"], "invalid")
+    
+    def test_validate_restored_context_stale(self) -> None:
+        """Test validate_restored_context rejects stale capsule (>24h)."""
+        from weslr.capsule_recovery import CapsuleValidator
+        import datetime
+        from datetime import timedelta
+        now = datetime.datetime.utcnow()
+        stale_time = now - timedelta(hours=30)  # 30 hours old
+        stale_timestamp = stale_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        context = {
+            "current_layer": "test_layer",
+            "current_phase": "planning",
+            "timestamp": stale_timestamp,
+        }
+        result = CapsuleValidator.validate_restored_context(context)
+        self.assertEqual(result["status"], "stale")
+
+
 if __name__ == "__main__":
     unittest.main()
 
 """
-Test suite for Capsule Recovery - v93a + v93b integration
+Test suite for Capsule Recovery - v93a + v93b + v93c integration
 
 v93b changes:
 - TestCapsulePersisterBehavior: New tests for CapsulePersister class
 - Added narrow restore boundary tests
+
+v93c changes:
+- TestCapsuleValidatorBehavior: New tests for CapsuleValidator class
+- Added validation boundary tests
 """

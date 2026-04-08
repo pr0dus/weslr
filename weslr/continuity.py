@@ -573,11 +573,28 @@ def load_active_work_capsule(base_dir: str = None) -> Optional[Any]:
     return CapsuleRebuilder.load_capsule_file(base_dir)
 
 
-def restore_from_capsule(base_dir: str = None) -> Dict[str, Any]:
+def restore_from_capsule(base_dir: str = None, validate: bool = True) -> Dict[str, Any]:
     """Restore working context from capsule (silently, v93a, internal only).
     
     Accepts base_dir parameter. Returns dict with status and optionally
     reconstructed context. No breaking changes to existing continuity logic.
+    v93c: Added validate parameter for boundary enforcement.
     """
-    from .capsule_recovery import CapsuleRebuilder
-    return CapsuleRebuilder.rebuild_from_file(base_dir)
+    from .capsule_recovery import CapsuleRebuilder, CapsuleValidator
+    result = CapsuleRebuilder.rebuild_from_file(base_dir)
+    
+    if result.get("status") == "success" and validate:
+        # Apply v93c validation boundary
+        context = result.get("context", {})
+        validation = CapsuleValidator.validate_restored_context(context)
+        if validation["status"] != "valid":
+            # Return validation result with proper status and reason
+            return {
+                "status": "blocked",
+                "reason": validation["status"],
+                "validation": validation
+            }
+        # Update context in result with validated context
+        result["context"] = context
+    
+    return result

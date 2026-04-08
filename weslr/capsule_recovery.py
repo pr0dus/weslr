@@ -1,4 +1,4 @@
-"""WESLR Capsule Recovery (v93a + v93b integration)
+"""WESLR Capsule Recovery (v93a + v93b + v93c integration)
 
 Deterministic rebuild logic for active work capsule.
 Silent reconstruction of minimal working context after /new.
@@ -10,11 +10,18 @@ Rules:
 - Graceful failure (no crash if capsule missing)
 - Deterministic rebuild (no confidence logic yet)
 - v93b: Snapshot/restore integration with narrow restore boundary
+- v93c: Validation and boundary enforcement for restored capsule state
 
 v93b changes:
 - Added CapsulePersister class for snapshot/write operations
 - Added restore_boundary parameter for narrow restore definition
 - Added snapshot_restore hook for integration with operator workflow
+
+v93c changes:
+- Added CapsuleValidator class for restore validation
+- Added MAX_CAPSULE_AGE_SECONDS to enforce capsule staleness
+- Added VALID_RESTORE_PHASES for phase validation
+- Added validate_restored_context() method for application boundary
 """
 
 from __future__ import annotations
@@ -139,7 +146,64 @@ def restore_from_capsule(base_dir: str = None) -> Dict[str, Any]:
     return CapsuleRebuilder.rebuild_from_file(base_dir)
 
 
-# ===== v93b: Capsule Snapshot + Restore Integration =====
+# v93c: Silent Capsule Rebuild Application Boundary
+# Adds validation and conditional application of restored capsule state
+# ===== v93c: Silent Capsule Rebuild Application Boundary =====
+
+
+# Valid phases that can be restored
+VALID_RESTORE_PHASES = {"planning", "implementation", "seal"}
+
+# Maximum age of capsule in seconds (24 hours)
+MAX_CAPSULE_AGE_SECONDS = 24 * 60 * 60
+
+
+class CapsuleValidator:
+    """Validate capsule state before application.
+    
+    v93c: Silent Capsule Rebuild Application Boundary.
+    Ensures restored capsules are valid, not stale, and within restore boundary.
+    """
+    
+    @staticmethod
+    def validate_restored_context(context: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate restored context before application.
+        
+        Returns validation result dict with:
+        - status: "valid" | "invalid" | "stale" | "outside_boundary"
+        - reason: explanation for validation result
+        """
+        if not context:
+            return {"status": "invalid", "reason": "empty_context"}
+        
+        # Check required fields
+        required = {"current_layer", "current_phase", "timestamp"}
+        missing = required - set(context.keys())
+        if missing:
+            return {"status": "invalid", "reason": f"missing_fields: {missing}"}
+        
+        # Check phase is valid
+        phase = context.get("current_phase")
+        if phase not in VALID_RESTORE_PHASES:
+            return {"status": "invalid", "reason": f"invalid_phase: {phase}"}
+        
+        # Check timestamp age (staleness)
+        timestamp = context.get("timestamp")
+        try:
+            from datetime import datetime
+            capsule_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            now = datetime.now(capsule_time.tzinfo or capsule_time.utcoffset)
+            age_seconds = (now - capsule_time).total_seconds()
+            if age_seconds > MAX_CAPSULE_AGE_SECONDS:
+                return {"status": "stale", "reason": f"capsule_age: {int(age_seconds)}s > {MAX_CAPSULE_AGE_SECONDS}s"}
+        except Exception:
+            return {"status": "invalid", "reason": "invalid_timestamp_format"}
+        
+        # Check restore boundary
+        if not RESTORE_BOUNDARY.get("operator_workflow_checkpoint", False):
+            return {"status": "outside_boundary", "reason": "restore_boundary_disabled"}
+        
+        return {"status": "valid", "reason": "all_checks_passed"}
 
 
 class CapsulePersister:
