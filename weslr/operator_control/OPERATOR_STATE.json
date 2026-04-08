@@ -3,8 +3,8 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "d4a35025da7cb2478a57fbcceaa51b73ea2194ed",
-  "latest_layer": "v93f — Silent Capsule Capture Trigger Boundary",
+  "latest_sealed_commit": "5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6",
+  "latest_layer": "v93g — Capsule End-to-End Silent Continuity Loop Verification",
   "current_phase": "v93g_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
@@ -195,5 +195,12 @@
     "commit_hash": "07d62e96085c80c801a661eda4286f47ed2912f5",
     "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
     "test_results": "29/29 passed"
+  },
+  "v93g_status": {
+    "status": "sealed",
+    "commit_hash": "5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6",
+    "files": ["weslr/capsule_loop_verification.py", "weslr/test_capsule_loop_verification.py"],
+    "test_results": "33/33 passed",
+    "notes": "End-to-end loop verification (capture→store→load→validate→decision→apply)"
   }
 }

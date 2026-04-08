@@ -431,6 +431,37 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v93g — Capsule End-to-End Silent Continuity Loop Verification Sealed (2026-04-08)
+
+**Commit:** `5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93g Capsule End-to-End Silent Continuity Loop Verification fully tested and sealed
+- CapsuleLoopVerifier class for full loop verification (capture→store→load→validate→decision→apply)
+- LoopVerificationResult dataclass for verification results
+- Boundary interaction verification (capture/restore boundary integration)
+- Freshness policy integration verification
+- Stale/invalid capsule rejection verification
+- Silent decision behavior verification
+- Export verification summary for operator review
+- Internal/silent only, no user-visible commands
+- Test suite: 33/33 tests passed
+- Full backward compatibility with v76-v93f
+
+**Files:**
+- `weslr/capsule_loop_verification.py` (new, 642 lines)
+- `weslr/test_capsule_loop_verification.py` (new, 634 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93f layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93f — Silent Capsule Capture Trigger Boundary Sealed (2026-04-08)
 
 **Commit:** `d4a35025da7cb2478a57fbcceaa51b73ea2194ed`

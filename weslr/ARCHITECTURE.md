@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `d4a35025da7cb2478a57fbcceaa51b73ea2194ed` (v93f)
+**Current Sealed Commit:** `5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6` (v93g)
 
 ---
 
@@ -200,6 +200,7 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v93d | Capsule Freshness / Acceptance Policy | ✅ Sealed | v93c + CapsuleFreshnessPolicy with staleness/validity checks for restored capsule state |
 | v93e | Capsule Invocation Boundary / Silent Resume Trigger | ✅ Sealed | Capsule trigger boundary for silent resume decision flow |
 | v93f | Silent Capsule Capture Trigger Boundary | ✅ Sealed | Capsule capture boundary for end-to-end silent continuity loop |
+| v93g | Capsule End-to-End Silent Continuity Loop Verification | ✅ Sealed | End-to-end loop verification (capture→store→load→validate→decision→apply) |
 
 ### Bottleneck Labels Refined
 
