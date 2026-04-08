@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511",
-  "latest_layer": "v93a — Silent Active Work Capsule for implementation continuity",
-  "current_phase": "v93b_planning",
+  "latest_sealed_commit": "cae9d0f69bea8f5282779e9ef9b2d037173d1848",
+  "latest_layer": "v93b — Capsule Snapshot + Restore Integration",
+  "current_phase": "v93c_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -56,6 +56,13 @@
     "files": ["weslr/operator_active_work_capsule.py", "weslr/test_operator_active_work_capsule.py"],
     "test_results": "18/18 passed",
     "notes": "First silent implementation continuity slice"
+  },
+  "v93b_status": {
+    "status": "sealed",
+    "commit_hash": "cae9d0f69bea8f5282779e9ef9b2d037173d1848",
+    "files": ["weslr/active_work_capsule.py", "weslr/capsule_recovery.py", "weslr/test_active_work_capsule.py", "weslr/test_capsule_recovery.py"],
+    "test_results": "31/31 passed",
+    "notes": "CapsulePersister class with narrow restore boundary for operator workflow checkpoints"
   },
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [

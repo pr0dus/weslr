@@ -312,6 +312,36 @@ Release notes and version history for WESLR platform.
 
 *WESLR Release Notes v1.0.0*
 
+## v93b — Capsule Snapshot + Restore Integration Sealed (2026-04-08)
+
+**Commit:** `cae9d0f69bea8f5282779e9ef9b2d037173d1848`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93b Capsule Snapshot + Restore Integration fully tested and sealed
+- CapsulePersister class for snapshot/write and read/restore hooks
+- Narrow restore boundary support (operator workflow checkpoints only)
+- create_snapshot_capsule factory function for snapshot-ready capsules
+- Test suite: 31/31 tests passed
+- Full backward compatibility with v76-v93a
+- Silent/internal only, no user-visible commands
+- No /new semantic changes
+
+**Files:**
+- `weslr/active_work_capsule.py` (modified, +33 lines)
+- `weslr/capsule_recovery.py` (modified, +86 lines)
+- `weslr/test_active_work_capsule.py` (modified, +46 lines)
+- `weslr/test_capsule_recovery.py` (modified, +127 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93a layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93a — Silent Active Work Capsule for Implementation Continuity Sealed (2026-04-08)
 
 **Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511`
