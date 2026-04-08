@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `07d62e96085c80c801a661eda4286f47ed2912f5` (v91)
+**Current Sealed Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511` (v93a)
 
 ---
 
@@ -193,6 +193,8 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v89 | Operator Insight Consolidation / Case Summary Layer | ✅ Sealed | Read-only consolidation of recovery guidance, decision trace, pattern history, drift, and escalation |
 | v90 | Operator Case Comparison / Escalation Summary Layer | ✅ Sealed | Read-only comparison of consolidated cases with escalation/confidence/safe-action differences |
 | v91 | Operator Case Timeline Comparison / Escalation Drift Layer | ✅ Sealed | Read-only comparison of case comparisons over time with drift detection |
+| v92 | Operator Case Window Summary / Drift Significance Layer | ✅ Sealed | Read-only case window summary with drift significance detection |
+| v93a | Silent Active Work Capsule | ✅ Sealed | First silent implementation continuity slice for active work capsule persistence |
 
 ### Bottleneck Labels Refined
 

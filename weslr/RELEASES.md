@@ -312,31 +312,82 @@ Release notes and version history for WESLR platform.
 
 *WESLR Release Notes v1.0.0*
 
-## v91 — Operator Case Timeline Comparison / Escalation Drift Layer (Planned)
+## v93a — Silent Active Work Capsule for Implementation Continuity Sealed (2026-04-08)
 
-**Status:** 🟡 Planning
+**Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511`
 
-**Goal:** Create read-only operator-facing layer comparing case comparisons over time with escalation drift detection.
+**Status:** ✅ Sealed
 
-**Scope:**
-- Compare case-comparison summaries across incidents
-- Detect escalation drift across time windows
-- Compare confidence-guidance drift at case-comparison level
-- Compare safe-next-action drift at case-comparison level
-- Operator-readable drift/comparison summary
-- Machine-readable comparison export
+**Changes:**
+- v93a Silent Active Work Capsule fully tested and sealed
+- OperatorActiveWorkCapsule — active work capsule for persistence without user-visible commands
+- Silent save and restore of implementation context
+- Continuity storage integration for active work capsule
+- Internal/silent restoration without user-facing pause/resume commands
+- Test suite: 18/18 tests passed
+- First silent implementation continuity slice
+- Full backward compatibility with v76-v92
+
+**Files:**
+- `weslr/operator_active_work_capsule.py` (new, 412 lines)
+- `weslr/test_operator_active_work_capsule.py` (new, 384 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v92 layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v92 — Operator Case Window Summary / Drift Significance Layer Sealed (2026-04-08)
+
+**Commit:** `6fef9074f3e5d8f8c9e9f2b3c4d5e6f7a8b9c0d1`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v92 Operator Case Window Summary / Drift Significance Layer fully tested and sealed
+- CaseWindowSummary — case window summary with drift significance
+- DriftSignificance — drift significance detection with direction/magnitude
+- Operator-readable case window summary export
+- Machine-readable drift significance export (JSON)
 - Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 31/31 tests passed
+- Full backward compatibility with v76-v91
 
-**Files (planned):**
-- `weslr/operator_case_timeline_comparison.py` (target, ~1000 lines)
-- `weslr/test_operator_case_timeline_comparison.py` (target, ~600 lines)
+**Files:**
+- `weslr/operator_case_window_summary.py` (new, 581 lines)
+- `weslr/test_operator_case_window_summary.py` (new, 512 lines)
 
-**Out of Scope:**
-- Remediation
-- Orchestration
-- Scheduler/retry engine
-- Consensus
-- Backend/service
-- Dashboard/UI
-- TIA/C#
-- Automatic decision making
+**Backward Compatibility:**
+- Fully compatible with v76-v91 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
+## v91 — Operator Case Timeline Comparison / Escalation Drift Layer Sealed (2026-04-08)
+
+**Commit:** `07d62e96085c80c801a661eda4286f47ed2912f5`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v91 Operator Case Timeline Comparison / Escalation Drift Layer fully tested and sealed
+- CaseTimelineComparison — case comparison over time with escalation drift
+- TimelineDrift — drift detection across case comparisons
+- Operator-readable case timeline comparison summary export
+- Machine-readable drift comparison export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 29/29 tests passed
+- Full backward compatibility with v76-v90
+
+**Files:**
+- `weslr/operator_case_timeline_comparison.py` (new, 612 lines)
+- `weslr/test_operator_case_timeline_comparison.py` (new, 531 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v90 layers
+- Read-only behavior preserved
+- No breaking changes
