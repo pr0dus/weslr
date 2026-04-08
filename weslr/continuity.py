@@ -559,3 +559,25 @@ def update_metrics_after_restore(result: Dict[str, Any], base_dir: str = None, a
     else:
         metrics["restore_error_count"] = metrics.get("restore_error_count", 0) + 1
     save_continuity_metrics(metrics, base_dir, adapter)
+
+
+# ===== v93a: SILENT ACTIVE WORK CAPSULE (ADDITIVE ONLY, NO BREAKING CHANGES) =====
+
+def load_active_work_capsule(base_dir: str = None) -> Optional[Any]:
+    """Load latest active work capsule (silently, v93a).
+    
+    Accepts base_dir parameter. Returns None if file missing or invalid.
+    No external calls, no user-visible output.
+    """
+    from .capsule_recovery import CapsuleRebuilder
+    return CapsuleRebuilder.load_capsule_file(base_dir)
+
+
+def restore_from_capsule(base_dir: str = None) -> Dict[str, Any]:
+    """Restore working context from capsule (silently, v93a, internal only).
+    
+    Accepts base_dir parameter. Returns dict with status and optionally
+    reconstructed context. No breaking changes to existing continuity logic.
+    """
+    from .capsule_recovery import CapsuleRebuilder
+    return CapsuleRebuilder.rebuild_from_file(base_dir)
