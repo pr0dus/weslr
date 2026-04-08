@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `7e6291e228f8f6bf03fbf57ac641e00203c924c6` (v93d)
+**Current Sealed Commit:** `d4a35025da7cb2478a57fbcceaa51b73ea2194ed` (v93f)
 
 ---
 
@@ -197,6 +197,9 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v93a | Silent Active Work Capsule | ✅ Sealed | First silent implementation continuity slice for active work capsule persistence |
 | v93b | Capsule Snapshot + Restore Integration | ✅ Sealed | v93a + CapsulePersister class with narrow restore boundary support for operator workflow checkpoints |
 | v93c | Silent Capsule Rebuild Application Boundary | ✅ Sealed | v93b + Continuity-aware capsule rebuilding with validation and freshness policy layer |
+| v93d | Capsule Freshness / Acceptance Policy | ✅ Sealed | v93c + CapsuleFreshnessPolicy with staleness/validity checks for restored capsule state |
+| v93e | Capsule Invocation Boundary / Silent Resume Trigger | ✅ Sealed | Capsule trigger boundary for silent resume decision flow |
+| v93f | Silent Capsule Capture Trigger Boundary | ✅ Sealed | Capsule capture boundary for end-to-end silent continuity loop |
 
 ### Bottleneck Labels Refined
 

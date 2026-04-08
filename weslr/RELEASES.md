@@ -404,6 +404,61 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v93e — Capsule Invocation Boundary / Silent Resume Trigger Sealed (2026-04-08)
+
+**Commit:** `50616fb2cf801690142758d70f4117d77975e692`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93e Capsule Invocation Boundary / Silent Resume Trigger fully tested and sealed
+- Capsule trigger boundary for silent resume decision flow
+- Silent resume decision trigger boundary
+- Internal/silent only, no user-visible commands
+- No /new semantic changes
+- Test suite: 36/36 tests passed
+- Full backward compatibility with v76-v93d
+
+**Files:**
+- `weslr/capsule_trigger.py` (new, 245 lines)
+- `weslr/test_capsule_trigger.py` (new, 287 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93d layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v93f — Silent Capsule Capture Trigger Boundary Sealed (2026-04-08)
+
+**Commit:** `d4a35025da7cb2478a57fbcceaa51b73ea2194ed`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v93f Silent Capsule Capture Trigger Boundary fully tested and sealed
+- Capsule capture boundary for end-to-end silent continuity loop
+- Capture boundary validation and freshness policy integration
+- Stale/invalid capsule rejection rules
+- Internal/silent only, no user-visible commands
+- No /new semantic changes
+- Test suite: 42/42 tests passed
+- Full backward compatibility with v76-v93e
+
+**Files:**
+- `weslr/capsule_capture.py` (new, 198 lines)
+- `weslr/test_capsule_capture.py` (new, 223 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93e layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93a — Silent Active Work Capsule for Implementation Continuity Sealed (2026-04-08)
 
 **Commit:** `40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511`
