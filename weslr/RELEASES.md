@@ -462,6 +462,100 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v94b Phase B — Reasoning Queries Sealed (2026-04-08)
+
+**Commit:** `82fc1c0975efb0638fc0be4f63b974e9cd4edb37`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94b Phase B Reasoning Queries fully tested and sealed
+- v94b Phase A + reasoning query execution with validation and approval workflow
+- GovernanceEngine for internal reasoning graph proposals
+- ProposalWorkflow for routing, validation, and review coordination
+- ValidationEngine for format, scope, additive, and backward compatibility checks
+- Read-only status queries (no silent mutation)
+- Test suite: 51/51 tests passed
+- Full backward compatibility with v94b Phase A
+
+**Files:**
+- `weslr/internal_reasoning_graph/governance.py` (existing, no changes needed)
+- `weslr/internal_reasoning_graph/proposal_workflow.py` (new, 414 lines)
+- `weslr/test_internal_reasoning_graph_governance.py` (existing, no changes needed)
+- `weslr/test_internal_reasoning_graph_proposal_workflow.py` (new, 305 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v94b Phase A layer
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v94b Phase A — Internal Reasoning Graph Foundation Sealed (2026-04-08)
+
+**Commit:** `7b0eed60f699abab71db5b68defe1c13a15f0651`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94b Phase A Internal Reasoning Graph Foundation fully tested and sealed
+- GovernanceEngine class for internal reasoning graph proposals with approval workflow
+- ProposalWorkflow class for routing, validation, and review coordination
+- ValidationEngine class for format, scope, additive, and backward compatibility checks
+- Proposal workflow: DRAFT -> SUBMITTED -> REVIEWING -> APPROVED/REJECTED
+- All approval steps require explicit operator action (no auto-approval/auto-application)
+- Read-only status queries (no silent mutation)
+- Test suite: 51/51 tests passed
+- First v94b Knowledge Assimilation Foundation layer
+
+**Files:**
+- `weslr/internal_reasoning_graph/governance.py` (new, 336 lines)
+- `weslr/internal_reasoning_graph/proposal_workflow.py` (new, 414 lines)
+- `weslr/test_internal_reasoning_graph_governance.py` (new, 276 lines)
+- `weslr/test_internal_reasoning_graph_proposal_workflow.py` (new, 305 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93h layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v94b — Knowledge Assimilation Foundation Phase C Sealed (2026-04-08)
+
+**Commit:** `f1a48e2920d07cc16c0343dc0f29d6ba441eea20`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94b Phase C Governance Integration for Internal Reasoning Graph fully tested and sealed
+- GovernanceEngine class for internal reasoning graph proposals with approval workflow
+- ProposalWorkflow class for routing, validation, and review coordination
+- ValidationEngine class for format, scope, additive, and backward compatibility checks
+- Proposal workflow: DRAFT -> SUBMITTED -> REVIEWING -> APPROVED/REJECTED
+- All approval steps require explicit operator action (no auto-approval/auto-application)
+- Read-only status queries (no silent mutation)
+- Test suite: 51/51 tests passed
+- Full backward compatibility with v94b Phase A/B
+
+**Files:**
+- `weslr/internal_reasoning_graph/governance.py` (new, 336 lines)
+- `weslr/internal_reasoning_graph/proposal_workflow.py` (new, 414 lines)
+- `weslr/internal_reasoning_graph/validation.py` (new, 440 lines)
+- `weslr/test_internal_reasoning_graph_governance.py` (new, 276 lines)
+- `weslr/test_internal_reasoning_graph_proposal_workflow.py` (new, 305 lines)
+- `weslr/test_internal_reasoning_graph_validation.py` (new, 363 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v94b Phase A/B layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93h — Silent Continuity Observability / Debug Summary Sealed (2026-04-08)
 
 **Commit:** `8c25cd17338bba96cc9e53177607d15f0ea48071`

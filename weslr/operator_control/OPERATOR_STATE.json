@@ -3,10 +3,10 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "8c25cd17338bba96cc9e53177607d15f0ea48071",
-  "latest_layer": "v93h — Silent Continuity Observability / Debug Summary",
-  "current_phase": "v93g_planning",
-  "next_priority": "none",
+  "latest_sealed_commit": "f1a48e2920d07cc16c0343dc0f29d6ba441eea20",
+  "latest_layer": "v94b Phase C — Governance Integration for Internal Reasoning Graph",
+  "current_phase": "v94b_acceptance",
+  "next_priority": "internal_reasoning_graph_completion",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
@@ -209,5 +209,33 @@
     "files": ["weslr/capsule_observability.py", "weslr/test_capsule_observability.py"],
     "test_results": "34/34 passed",
     "notes": "Read-only operator-facing observability for silent continuity state"
+  },
+  "v94b_phase_a_status": {
+    "status": "sealed",
+    "commit_hash": "7b0eed60f699abab71db5b68defe1c13a15f0651",
+    "files": ["weslr/internal_reasoning_graph/governance.py", "weslr/test_internal_reasoning_graph_governance.py"],
+    "test_results": "51/51 passed",
+    "notes": "First v94b Phase A internal reasoning graph governance layer"
+  },
+  "v94b_phase_b_status": {
+    "status": "sealed",
+    "commit_hash": "82fc1c0975efb0638fc0be4f63b974e9cd4edb37",
+    "files": ["weslr/internal_reasoning_graph/proposal_workflow.py", "weslr/test_internal_reasoning_graph_proposal_workflow.py"],
+    "test_results": "51/51 passed",
+    "notes": "v94b Phase A + reasoning queries with validation and approval workflow"
+  },
+  "v94b_phase_c_status": {
+    "status": "sealed",
+    "commit_hash": "f1a48e2920d07cc16c0343dc0f29d6ba441eea20",
+    "files": [
+      "weslr/internal_reasoning_graph/governance.py",
+      "weslr/internal_reasoning_graph/proposal_workflow.py",
+      "weslr/internal_reasoning_graph/validation.py",
+      "weslr/test_internal_reasoning_graph_governance.py",
+      "weslr/test_internal_reasoning_graph_proposal_workflow.py",
+      "weslr/test_internal_reasoning_graph_validation.py"
+    ],
+    "test_results": "51/51 passed",
+    "notes": "v94b Phase A/B + full governance integration with proposal workflow, validation, and operator approval"
   }
 }

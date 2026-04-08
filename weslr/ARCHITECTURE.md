@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `8c25cd17338bba96cc9e53177607d15f0ea48071` (v93h)
+**Current Sealed Commit:** `f1a48e2920d07cc16c0343dc0f29d6ba441eea20` (v94b Phase C)
 
 ---
 
@@ -202,6 +202,9 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v93f | Silent Capsule Capture Trigger Boundary | ✅ Sealed | Capsule capture boundary for end-to-end silent continuity loop |
 | v93g | Capsule End-to-End Silent Continuity Loop Verification | ✅ Sealed | End-to-end loop verification (capture→store→load→validate→decision→apply) |
 | v93h | Silent Continuity Observability / Debug Summary | ✅ Sealed | Read-only operator-facing observability for silent continuity state |
+| v94b Phase A | Internal Reasoning Graph Foundation | ✅ Sealed | GovernanceEngine, ProposalWorkflow, ValidationEngine for internal reasoning graph proposals |
+| v94b Phase B | Reasoning Queries | ✅ Sealed | v94b Phase A + reasoning query execution with validation and approval workflow |
+| v94b Phase C | Governance Integration | ✅ Sealed | v94b Phase A/B + full governance integration with proposal workflow, validation, and operator approval |
 
 ### Bottleneck Labels Refined
 
