@@ -222,6 +222,63 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v90 — Operator Case Comparison / Escalation Summary Layer Sealed (2026-04-08)
+
+**Commit:** `de03cfaea6c62e1bf99e2f319ccbfa7c5b73cb25`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v90 Operator Case Comparison / Escalation Summary Layer fully tested and sealed
+- CaseComparison — comparison record with confidence, escalation, safe-action differences
+- ComparisonSummary — operator-readable + machine-readable comparison summary
+- Case comparison across incidents with escalation-context differences
+- Confidence-guidance and safe-next-action drift detection
+- Operator-readable case comparison summary export
+- Machine-readable comparison export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 25/25 tests passed
+- Full backward compatibility with v76-v89
+
+**Files:**
+- `weslr/operator_case_comparison.py` (new, 1011 lines)
+- `weslr/test_operator_case_comparison.py` (new, 593 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v89 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
+## v89 — Operator Insight Consolidation / Case Summary Layer Sealed (2026-04-08)
+
+**Commit:** `1e5520e0fd75754a84aa6a36c6c5063703f075db`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v89 Operator Insight Consolidation / Case Summary Layer fully tested and sealed
+- CaseSummary — consolidated recovery guidance with confidence, escalation, safe-action
+- DriftAnalysis — drift detection across cases with significance scores
+- Consolidated case comparison with escalation-context differences
+- Operator-readable case summary export
+- Machine-readable comparison export (JSON)
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+- Test suite: 29/29 tests passed
+- Full backward compatibility with v76-v88
+
+**Files:**
+- `weslr/operator_insight_consolidation.py` (new, 1058 lines)
+- `weslr/test_operator_insight_consolidation.py` (new, 922 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v88 layers
+- Read-only behavior preserved
+- No breaking changes
+
+---
+
 ## v88 — Operator Insight Timeline / Escalation Context Layer Sealed (2026-04-07)
 
 **Commit:** `7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6`
@@ -254,3 +311,32 @@ Release notes and version history for WESLR platform.
 ---
 
 *WESLR Release Notes v1.0.0*
+
+## v91 — Operator Case Timeline Comparison / Escalation Drift Layer (Planned)
+
+**Status:** 🟡 Planning
+
+**Goal:** Create read-only operator-facing layer comparing case comparisons over time with escalation drift detection.
+
+**Scope:**
+- Compare case-comparison summaries across incidents
+- Detect escalation drift across time windows
+- Compare confidence-guidance drift at case-comparison level
+- Compare safe-next-action drift at case-comparison level
+- Operator-readable drift/comparison summary
+- Machine-readable comparison export
+- Correlation by flow_id, request_id, handshake_id, deadline_id
+
+**Files (planned):**
+- `weslr/operator_case_timeline_comparison.py` (target, ~1000 lines)
+- `weslr/test_operator_case_timeline_comparison.py` (target, ~600 lines)
+
+**Out of Scope:**
+- Remediation
+- Orchestration
+- Scheduler/retry engine
+- Consensus
+- Backend/service
+- Dashboard/UI
+- TIA/C#
+- Automatic decision making

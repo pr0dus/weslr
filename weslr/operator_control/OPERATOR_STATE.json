@@ -3,9 +3,9 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "de03cfaea6c62e1bf99e2f319ccbfa7c5b73cb25",
+  "latest_sealed_commit": "284e3bd593679c80de9ac61b4d77687faa2132e9",
   "latest_layer": "v90 — Operator Case Comparison / Escalation Summary Layer Sealed",
-  "current_phase": "v90_completed",
+  "current_phase": "v91_planning",
   "next_priority": "none",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
@@ -36,6 +36,12 @@
     "operator_insight_consolidation_case_summary_layer",
     "operator_case_comparison_escalation_summary_layer"
   ],
+  "v91_status": {
+    "status": "planning",
+    "target_commit": null,
+    "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
+    "test_expectations": "25+ tests expected"
+  },
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
     "additive only",
@@ -147,5 +153,11 @@
     "commit_hash": "de03cfaea6c62e1bf99e2f319ccbfa7c5b73cb25",
     "files": ["weslr/operator_case_comparison.py", "weslr/test_operator_case_comparison.py"],
     "test_results": "25/25 passed"
+  },
+  "v91_status": {
+    "status": "planning",
+    "target_commit": null,
+    "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
+    "test_expectations": "25+ tests expected"
   }
 }
