@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `f1a48e2920d07cc16c0343dc0f29d6ba441eea20` (v94b Phase C)
+**Current Sealed Commit:** `7c7b5459e720b3f4207d896c6eb32c898b4fafbd` (v94c Phase C)
 
 ---
 
@@ -205,6 +205,9 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v94b Phase A | Internal Reasoning Graph Foundation | ✅ Sealed | GovernanceEngine, ProposalWorkflow, ValidationEngine for internal reasoning graph proposals |
 | v94b Phase B | Reasoning Queries | ✅ Sealed | v94b Phase A + reasoning query execution with validation and approval workflow |
 | v94b Phase C | Governance Integration | ✅ Sealed | v94b Phase A/B + full governance integration with proposal workflow, validation, and operator approval |
+| v94c Phase A | Evidence Assimilation Foundation | ✅ Sealed | Evidence intake, normalization, proposal payload generation pipeline |
+| v94c Phase B | Evidence-to-Proposal Integration | ✅ Sealed | Evidence-to-candidate mapping with candidate references |
+| v94c Phase C | Evidence-to-Governance Routing | ✅ Sealed | Evidence-to-governance routing with routing status tracking |
 
 ### Bottleneck Labels Refined
 

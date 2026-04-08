@@ -556,6 +556,99 @@ Release notes and version history for WESLR platform.
 
 ---
 
+## v94c Phase A — Evidence Assimilation Foundation Sealed (2026-04-08)
+
+**Commit:** `7de6704c93ff7293a60fab8e7e500cea570d7f65`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94c Phase A Evidence Assimilation Foundation fully tested and sealed
+- EvidenceSource: External evidence identifier and metadata
+- NormalizedEvidence: Standardized evidence format
+- EvidenceProposalPayload: Payload for internal reasoning graph proposals
+- EvidenceIngestion: parse_external → normalize → generate_proposal_payload pipeline
+- Read-only status queries (no silent mutation)
+- Test suite: 23/23 tests passed
+- First v94c Evidence Assimilation layer
+
+**Files:**
+- `weslr/evidence_intake/models.py` (new, 217 lines)
+- `weslr/evidence_intake/evidence_intake.py` (new, 412 lines)
+- `weslr/test_evidence_intake_models.py` (new, 198 lines)
+- `weslr/test_evidence_intake_ingestion.py` (new, 254 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v76-v93h layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v94c Phase B — Evidence-to-Proposal Integration Sealed (2026-04-08)
+
+**Commit:** `dd3d10f238bcd7a8834bae5e14c98a401970705d`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94c Phase B Evidence-to-Proposal Integration fully tested and sealed
+- CandidateEvidence: Extended evidence with candidate graph references
+- CandidateProvenance: Provenance tracking for candidates
+- ProposalPayloadWithCandidate: Extended proposal payload with candidate refs
+- EvidenceToCandidateMapper: Map evidence to candidate graph nodes (via ingestion)
+- EvidenceIngestion.generate_candidate_proposal(): Generate candidate proposal payloads
+- Candidate references remain clearly provisional
+- Thin extensions of existing models (no parallel model universe)
+- No governance engine modification (reuse v94b workflow)
+- No proposal submission/application (payload only)
+- Test suite: 27/27 tests passed
+- Full backward compatibility with v94c Phase A
+
+**Files:**
+- `weslr/evidence_intake/evidence_to_candidate.py` (new, 279 lines)
+- `weslr/evidence_intake/models.py` (modified, +14 lines)
+- `weslr/test_evidence_to_candidate.py` (new, 305 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v94c Phase A layer
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
+## v94c Phase C — Evidence-to-Governance Routing Sealed (2026-04-08)
+
+**Commit:** `7c7b5459e720b3f4207d896c6eb32c898b4fafbd`
+
+**Status:** ✅ Sealed
+
+**Changes:**
+- v94c Phase C Evidence-to-Governance Routing fully tested and sealed
+- EvidenceToGovernanceRouter: Route evidence to governance workflow
+- RoutingStatus: Enum for routing state transitions (GENERATED, ROUTING, ROUTES, FAILED)
+- evidence_to_proposal_payload(): Transform EvidenceProposalPayload to ProposalPayloadWithCandidate
+- evidence_to_governance_route(): Generate governance routing decision
+- Evidence assimilation pipeline extension with routing status tracking
+- Integration with v94b proposal workflow
+- Read-only routing decisions (no silent mutation)
+- Test suite: 47/47 tests passed
+- Full backward compatibility with v94c Phase A/B
+
+**Files:**
+- `weslr/evidence_to_governance_router.py` (new, 385 lines)
+- `weslr/test_evidence_to_governance_router.py` (new, 413 lines)
+
+**Backward Compatibility:**
+- Fully compatible with v94c Phase A/B layers
+- Read-only behavior preserved
+- No breaking changes
+- "/new" semantics preserved
+
+---
+
 ## v93h — Silent Continuity Observability / Debug Summary Sealed (2026-04-08)
 
 **Commit:** `8c25cd17338bba96cc9e53177607d15f0ea48071`
