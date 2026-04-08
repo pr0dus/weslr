@@ -25,6 +25,15 @@ from enum import Enum
 from typing import List, Optional, Dict, Any
 
 
+class RoutingStatus(str, Enum):
+    """Routing status for evidence-to-governance routing."""
+    GENERATED = "generated"
+    REGISTERED = "registered"
+    REVIEWING = "reviewing"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class EvidenceSourceTypeEnum(Enum):
     """Types of evidence sources supported."""
     FILE = "file"
@@ -110,12 +119,15 @@ class EvidenceProposalPayload:
     The proposal must go through GovernanceEngine for explicit approval.
     
     Phase A constraint: No submission/application path - this is pure payload.
+    
+    Phase C extension: Routing status tracking for evidence-to-governance workflow.
     """
     evidence_id: str  # Reference to NormalizedEvidence
     claim_text: str  # The claim to propose for internal reasoning
     source_summary: str  # Summary of the evidence source
     confidence: Optional[float] = None  # Optional confidence
     status: str = "DRAFT"  # Proposal status, DRAFT only in Phase A
+    routing_status: str = RoutingStatus.GENERATED.value  # Phase C: routing status
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -125,6 +137,7 @@ class EvidenceProposalPayload:
             "source_summary": self.source_summary,
             "confidence": self.confidence,
             "status": self.status,
+            "routing_status": self.routing_status,
         }
     
     @classmethod
@@ -136,4 +149,5 @@ class EvidenceProposalPayload:
             source_summary=data.get("source_summary", ""),
             confidence=data.get("confidence"),
             status=data.get("status", "DRAFT"),
+            routing_status=data.get("routing_status", RoutingStatus.GENERATED.value),
         )

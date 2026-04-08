@@ -19,7 +19,7 @@ Constraints:
 
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List
-from .models import NormalizedEvidence, EvidenceProposalPayload, EvidenceSourceTypeEnum
+from .models import NormalizedEvidence, EvidenceProposalPayload, EvidenceSourceTypeEnum, RoutingStatus
 
 
 @dataclass
@@ -129,12 +129,15 @@ class ProposalPayloadWithCandidate:
     
     This extends EvidenceProposalPayload with candidate references,
     preserving the review-gated workflow - no auto-application.
+    
+    Phase C extension: Routing status tracking for evidence-to-governance workflow.
     """
     evidence_id: str
     claim_text: str
     source_summary: str
     confidence: Optional[float] = None
     status: str = "DRAFT"
+    routing_status: str = RoutingStatus.GENERATED.value  # Phase C: routing status
     
     # Candidate-specific fields (provisional references)
     candidate_reference: Optional[str] = None  # Reference to candidate node (node_id or label)
@@ -173,6 +176,7 @@ class ProposalPayloadWithCandidate:
             source_summary=data.get("source_summary", ""),
             confidence=data.get("confidence"),
             status=data.get("status", "DRAFT"),
+            routing_status=data.get("routing_status", RoutingStatus.GENERATED.value),
             candidate_reference=data.get("candidate_reference"),
             candidate_node_type=data.get("candidate_node_type"),
             candidate_confidence=data.get("candidate_confidence"),
