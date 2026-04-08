@@ -1,4 +1,4 @@
-"""WESLR Capsule Recovery (v93a + v93b + v93c integration)
+"""WESLR Capsule Recovery (v93a + v93b + v93c + v93e integration)
 
 Deterministic rebuild logic for active work capsule.
 Silent reconstruction of minimal working context after /new.
@@ -11,6 +11,8 @@ Rules:
 - Deterministic rebuild (no confidence logic yet)
 - v93b: Snapshot/restore integration with narrow restore boundary
 - v93c: Validation and boundary enforcement for restored capsule state
+- v93e: Capsule invoke/restore boundary for silent continuity
+- v93f: Silent internal capture trigger boundary
 
 v93b changes:
 - Added CapsulePersister class for snapshot/write operations
@@ -22,6 +24,15 @@ v93c changes:
 - Added MAX_CAPSULE_AGE_SECONDS to enforce capsule staleness
 - Added VALID_RESTORE_PHASES for phase validation
 - Added validate_restored_context() method for application boundary
+
+v93e changes:
+- Added resume_from_capsule() function for silent capsule invocation
+
+v93f changes:
+- Added CapsuleCaptureTrigger class for silent internal capture
+- Added capture_if_valid_context() integration helper
+- Capture based on required fields, valid structure, capture-worthy phase
+- No user-visible output, no framework-style events
 """
 
 from __future__ import annotations
@@ -272,3 +283,141 @@ class CapsulePersister:
                 return {"status": "no_base_dir"}
         
         return CapsuleRebuilder.rebuild_from_file(base_dir)
+
+
+# ===== v93f: Silent Internal Capture Trigger Boundary =====
+
+
+class CapsuleCaptureTrigger:
+    """Silent internal capture trigger boundary for v93f.
+    
+    Defines the smallest low-risk internal boundary where validated
+    active work context becomes stable enough to silently capture.
+    
+    Capture conditions:
+    - Required fields present (layer_name, task_id, phase, short_task_summary)
+    - Structurally valid context (non-empty, proper types)
+    - Capture-worthy phase (implementation or seal)
+    
+    No user-facing output, no framework-style events. Internal only.
+    """
+    
+    @staticmethod
+    def trigger_capture(
+        layer_name: str,
+        task_id: str,
+        phase: str,
+        short_task_summary: str,
+        approved_files: List[str] = None,
+        pending_tests: List[str] = None,
+        seal_criteria: List[str] = None,
+        active_constraints: List[str] = None,
+        timestamp: str = None,
+        base_dir: str = None,
+    ) -> Dict[str, Any]:
+        """Trigger silent internal capsule capture if conditions met.
+        
+        Args:
+            layer_name: Current layer name
+            task_id: Current task ID
+            phase: Current phase (planning | implementation | seal)
+            short_task_summary: Brief description (<100 chars)
+            approved_files: Files approved for implementation
+            pending_tests: Test files pending creation
+            seal_criteria: Criteria that must pass before seal
+            active_constraints: Constraints active for this task
+            timestamp: ISO-8601 UTC timestamp
+            base_dir: Base directory for capsule storage
+            
+        Returns:
+            Dict with keys:
+            - status: "captured" | "skipped" | "error"
+            - reason: Human-readable explanation (internal only)
+            - path: (optional) Path to captured capsule file
+        """
+        from .active_work_capsule import capture_if_valid_context
+        
+        # Validate context and build capsule if stable
+        result = capture_if_valid_context(
+            layer_name=layer_name,
+            task_id=task_id,
+            phase=phase,
+            short_task_summary=short_task_summary,
+            approved_files=approved_files,
+            pending_tests=pending_tests,
+            seal_criteria=seal_criteria,
+            active_constraints=active_constraints,
+            timestamp=timestamp,
+        )
+        
+        if result["status"] == "skipped":
+            return result
+        
+        # Capture-worthy context - write to file
+        if base_dir is None:
+            try:
+                from .adapters.openclaw import OpenClawPaths
+            except ImportError:
+                OpenClawPaths = None
+            
+            if OpenClawPaths is not None:
+                paths = OpenClawPaths()
+                base_dir = paths.base_dir()
+            else:
+                return {"status": "error", "reason": "no_base_dir"}
+        
+        capsule = result["capsule"]
+        return CapsulePersister.write_snapshot(capsule, base_dir)
+
+
+def capture_work_if_stable(
+    layer_name: str,
+    task_id: str,
+    phase: str,
+    short_task_summary: str,
+    approved_files: List[str] = None,
+    pending_tests: List[str] = None,
+    seal_criteria: List[str] = None,
+    active_constraints: List[str] = None,
+    timestamp: str = None,
+    base_dir: str = None,
+) -> Dict[str, Any]:
+    """Convenience wrapper for silent internal capture trigger.
+    
+    v93f: Silent Capsule Capture Trigger Boundary.
+    
+    Internal helper only - no automatic invocation, no startup/session wiring.
+    Returns explicit structured decision:
+    - "captured" — capsule written successfully
+    - "skipped"  — context not stable enough for capture
+    - "error"    — capture failed due to missing base_dir or other error
+    
+    Silent/internal only, no user-visible behavior.
+    
+    Args:
+        layer_name: Current layer name
+        task_id: Current task ID
+        phase: Current phase
+        short_task_summary: Brief description (<100 chars)
+        approved_files: Files approved for implementation
+        pending_tests: Test files pending creation
+        seal_criteria: Criteria that must pass before seal
+        active_constraints: Constraints active for this task
+        timestamp: ISO-8601 UTC timestamp
+        base_dir: Base directory for capsule storage
+        
+    Returns:
+        Dict with status, reason, and optional path
+    """
+    return CapsuleCaptureTrigger.trigger_capture(
+        layer_name=layer_name,
+        task_id=task_id,
+        phase=phase,
+        short_task_summary=short_task_summary,
+        approved_files=approved_files,
+        pending_tests=pending_tests,
+        seal_criteria=seal_criteria,
+        active_constraints=active_constraints,
+        timestamp=timestamp,
+        base_dir=base_dir,
+    )

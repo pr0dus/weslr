@@ -1,4 +1,4 @@
-"""WESLR Capsule Freshness / Acceptance Policy (v93d)
+"""WESLR Capsule Freshness / Acceptance Policy (v93d + v93f)
 
 Conservative validation and acceptance policy for restored capsule state.
 Silent internal policy only, no user-visible commands.
@@ -11,6 +11,10 @@ Rules:
 
 v93d: Add CapsuleFreshnessPolicy class with staleness and validity checks
 for capsule state restored from persistence.
+
+v93f: Add CaptureWorthinessPolicy class for silent internal capture validation
+- Capture based on required fields, valid structure, capture-worthy phase
+- No user-facing output, no framework-style events
 """
 
 from __future__ import annotations
@@ -157,3 +161,64 @@ class CapsuleFreshnessPolicy:
         """Get rejection reason for capsule (stale or invalid)."""
         result = CapsuleFreshnessPolicy.validate_freshness(capsule)
         return result.reason
+
+
+# ===== v93f: Capture Worthiness Policy =====
+
+
+class CaptureWorthinessPolicy:
+    """Validate capsule capture worthiness for v93f.
+    
+    Silent internal capture trigger boundary.
+    Ensures captured context has required fields, valid structure, and
+    capture-worthy phase (implementation or seal).
+    
+    No user-facing output, no framework-style events. Internal only.
+    """
+    
+    # Valid phases that can be captured
+    VALID_CAPTURE_PHASES = {"implementation", "seal"}
+    
+    @staticmethod
+    def validate_capture_worthiness(context: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate if context is worth capturing.
+        
+        Returns validation result dict with:
+        - status: "captured" | "skipped"
+        - reason: Human-readable explanation (internal only)
+        """
+        if not context:
+            return {"status": "skipped", "reason": "empty_context"}
+        
+        # Check required fields exist
+        required = {"layer_name", "task_id", "phase", "short_task_summary"}
+        missing = required - set(context.keys())
+        if missing:
+            return {"status": "skipped", "reason": f"missing_required_fields: {missing}"}
+        
+        # Check required fields are non-empty strings
+        for key in required:
+            value = context.get(key)
+            if value is None:
+                return {"status": "skipped", "reason": f"null_required_field: {key}"}
+            if isinstance(value, str) and not value.strip():
+                return {"status": "skipped", "reason": f"empty_required_field: {key}"}
+        
+        # Check phase is capture-worthy
+        phase = context.get("phase")
+        if phase not in CaptureWorthinessPolicy.VALID_CAPTURE_PHASES:
+            return {"status": "skipped", "reason": f"phase_not_captureworthy: {phase}"}
+        
+        return {"status": "captured", "reason": "valid_context_reached"}
+    
+    @staticmethod
+    def is_capture_worthy(context: Dict[str, Any]) -> bool:
+        """Check if context is worth capturing."""
+        result = CaptureWorthinessPolicy.validate_capture_worthiness(context)
+        return result["status"] == "captured"
+    
+    @staticmethod
+    def get_skip_reason(context: Dict[str, Any]) -> str:
+        """Get skip reason for context (not capture-worthy)."""
+        result = CaptureWorthinessPolicy.validate_capture_worthiness(context)
+        return result["reason"]

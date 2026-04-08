@@ -165,3 +165,84 @@ def create_snapshot_capsule(
         timestamp=timestamp or "2026-04-08T00:00:00Z",
     )
     return capsule
+
+
+# ===== v93f: Silent Internal Capture Trigger Boundary =====
+
+
+def capture_if_valid_context(
+    layer_name: str,
+    task_id: str,
+    phase: str,
+    short_task_summary: str,
+    approved_files: List[str] = None,
+    pending_tests: List[str] = None,
+    seal_criteria: List[str] = None,
+    active_constraints: List[str] = None,
+    timestamp: str = None,
+) -> Dict[str, Any]:
+    """Silent internal capsule capture trigger boundary.
+    
+    v93f: Silent Capsule Capture Trigger Boundary.
+    
+    Internal trigger only - no user-visible commands or flags.
+    Capture occurs when validated active work context has:
+    - Required fields present (layer_name, task_id, phase, short_task_summary)
+    - Structurally valid context
+    - Capture-worthy phase (implementation or seal)
+    
+    Minimal capture: only required fields needed, constraints used only if present.
+    Silent/internal only - no user-facing output, no framework-style events.
+    
+    Returns:
+        Dict with keys:
+        - status: "captured" | "skipped"
+        - reason: Human-readable explanation (internal only)
+        - capsule: (optional) ActiveWorkCapsule if captured
+    """
+    # Validation: check minimum required fields are present and valid
+    required = {
+        "layer_name": layer_name,
+        "task_id": task_id,
+        "phase": phase,
+        "short_task_summary": short_task_summary,
+    }
+    
+    # Check required fields are non-empty strings
+    for key, value in required.items():
+        if value is None:
+            return {
+                "status": "skipped",
+                "reason": f"missing_required_field: {key}",
+            }
+        if isinstance(value, str) and not value.strip():
+            return {
+                "status": "skipped",
+                "reason": f"empty_required_field: {key}",
+            }
+    
+    # Check phase is capture-worthy
+    if phase not in {"implementation", "seal"}:
+        return {
+            "status": "skipped",
+            "reason": f"phase_not_captureworthy: {phase}",
+        }
+    
+    # Context passes all checks - build the capsule
+    capsule = ActiveWorkCapsule(
+        layer_name=layer_name,
+        task_id=task_id,
+        phase=phase,
+        approved_files=approved_files or [],
+        pending_tests=pending_tests or [],
+        seal_criteria=seal_criteria or [],
+        short_task_summary=short_task_summary,
+        active_constraints=active_constraints or [],
+        timestamp=timestamp or "2026-04-08T00:00:00Z",
+    )
+    
+    return {
+        "status": "captured",
+        "reason": "valid_context_reached",
+        "capsule": capsule,
+    }
