@@ -8,6 +8,11 @@ Phase A scope:
 - NormalizedEvidence: Standardized evidence format
 - EvidenceProposalPayload: Payload for internal reasoning graph proposals
 
+Phase B extensions (in evidence_to_candidate.py):
+- CandidateEvidence: Extended evidence with candidate graph references
+- CandidateProvenance: Provenance tracking for candidates
+- ProposalPayloadWithCandidate: Extended payload with candidate references
+
 Constraints:
 - Read-only or operator-facing unless explicitly changed
 - No hidden self-application

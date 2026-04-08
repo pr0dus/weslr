@@ -1,4 +1,4 @@
-"""Evidence Ingestion Pipeline - Phase A
+"""Evidence Ingestion Pipeline - Phase A/B
 
 Evidence ingestion and normalization pipeline for external evidence.
 This module provides the pipeline for parsing external sources, normalizing evidence,
@@ -9,15 +9,19 @@ Phase A scope:
 - EvidenceIngestion.normalize(): EvidenceSource → NormalizedEvidence
 - EvidenceIngestion.generate_proposal_payload(): NormalizedEvidence → EvidenceProposalPayload
 
+Phase B scope (new):
+- EvidenceIngestion.generate_candidate_proposal(): NormalizedEvidence → ProposalPayloadWithCandidate
+
 Constraints:
 - No governance engine modification (deferred to Phase B)
-- No proposal submission/application path (payload only in Phase A)
+- No proposal submission/application path (payload only)
 - Abstract source handling (no parser complexity)
 - Additive only, no breaking changes
 """
 
 from typing import List, Dict, Any, Optional
 from .models import EvidenceSource, NormalizedEvidence, EvidenceProposalPayload, EvidenceSourceTypeEnum
+from .evidence_to_candidate import CandidateEvidence, CandidateProvenance, ProposalPayloadWithCandidate
 
 
 class EvidenceIngestion:
@@ -122,4 +126,50 @@ class EvidenceIngestion:
             source_summary=f"Evidence from {normalized_evidence.source_id}",
             confidence=normalized_evidence.confidence_score,
             status="DRAFT",  # Only DRAFT in Phase A
+        )
+    
+    def generate_candidate_proposal(
+        self,
+        normalized_evidence: NormalizedEvidence,
+        candidate_reference: str,
+        candidate_node_type: str,
+        candidate_confidence: Optional[float] = None,
+        candidate_recency: Optional[str] = None,
+    ) -> ProposalPayloadWithCandidate:
+        """Generate candidate proposal payload with graph references.
+        
+        This creates a proposal payload that includes candidate graph node references.
+        The candidate references remain clearly provisional - no implication of accepted graph membership.
+        No proposal submission or application - must go through GovernanceEngine approval.
+        
+        Args:
+            normalized_evidence: Normalized evidence item
+            candidate_reference: Proposed node ID or label in graph
+            candidate_node_type: Proposed node type in graph
+            candidate_confidence: Optional confidence in candidate match
+            candidate_recency: Optional recency indicator (e.g., "recent", "old")
+            
+        Returns:
+            ProposalPayloadWithCandidate for governance review
+        """
+        # Create candidate provenance from normalization metadata if available
+        candidate_provenance = None
+        if normalized_evidence.normalized_metadata:
+            candidate_provenance = CandidateProvenance(
+                source_id=normalized_evidence.source_id,
+                source_timestamp="2026-04-08T15:05:00Z",
+                normalized_timestamp="2026-04-08T15:05:00Z",
+                confidence_score=normalized_evidence.confidence_score,
+            )
+        
+        # Base payload from Phase A
+        base_payload = self.generate_proposal_payload(normalized_evidence)
+        
+        # Extended payload with candidate references
+        return ProposalPayloadWithCandidate.from_payload_and_candidate(
+            payload=base_payload,
+            candidate_reference=candidate_reference,
+            candidate_node_type=candidate_node_type,
+            candidate_confidence=candidate_confidence,
+            candidate_recency=candidate_recency,
         )
