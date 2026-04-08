@@ -56,6 +56,9 @@ class CapsuleRebuilder:
         
         Deterministic rebuild: same capsule always produces same context.
         No external calls, no network, no confidence decay logic yet.
+        
+        v93e: Changed 'rebuild_timestamp' to 'timestamp' to align with
+        CapsuleFreshnessPolicy validation requirements.
         """
         return {
             "current_layer": capsule.layer_name,
@@ -66,7 +69,7 @@ class CapsuleRebuilder:
             "seal_criteria": capsule.seal_criteria,
             "short_task_summary": capsule.short_task_summary,
             "active_constraints": capsule.active_constraints,
-            "rebuild_timestamp": capsule.timestamp,
+            "timestamp": capsule.timestamp,
         }
     
     @staticmethod

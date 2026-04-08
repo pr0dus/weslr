@@ -49,7 +49,7 @@ class TestCapsuleRebuilderBehavior(unittest.TestCase):
         self.assertEqual(context["seal_criteria"], ["tests_pass"])
         self.assertEqual(context["short_task_summary"], "Test layer")
         self.assertEqual(context["active_constraints"], ["additive_only"])
-        self.assertEqual(context["rebuild_timestamp"], "2026-04-08T00:00:00Z")
+        self.assertEqual(context["timestamp"], "2026-04-08T00:00:00Z")
 
     def test_rebuild_from_file_no_file(self) -> None:
         """Test rebuild_from_file returns no_capsule status when file missing."""

@@ -610,3 +610,57 @@ def restore_from_capsule(base_dir: str = None, validate: bool = True) -> Dict[st
         result["context"] = context
     
     return result
+
+
+# ===== v93e: Silent Resume Trigger (Capsule Invocation Boundary) =====
+
+def resume_from_capsule(base_dir: str = None) -> Dict[str, Any]:
+    """Load and validate capsule, returning decision for silent invocation.
+    
+    v93e: Capsule Invocation Boundary / Silent Resume Trigger.
+    
+    Internal helper only - no automatic invocation, no startup/session wiring.
+    Returns explicit structured decision:
+    - "apply"    — capsule is fresh and valid, ready for silent resume
+    - "ignore"   — no capsule file exists, nothing to resume
+    - "stale"    — capsule exists but exceeds 24h age threshold
+    - "invalid"  — capsule structure/content is malformed
+    
+    Silent/internal only, no user-visible behavior, no /new semantic changes.
+    
+    Args:
+        base_dir: Base directory containing continuity/active_work_capsule.json
+        
+    Returns:
+        Dict with keys:
+        - status: "apply" | "ignore" | "stale" | "invalid"
+        - reason: Human-readable explanation for decision
+        - context: (optional) Reconstructed context if status="apply"
+    """
+    from .capsule_recovery import CapsuleRebuilder
+    from .capsule_policy import CapsuleFreshnessPolicy
+    
+    # Load capsule from file
+    capsule = CapsuleRebuilder.load_capsule_file(base_dir)
+    
+    if capsule is None:
+        return {"status": "ignore", "reason": "no_capsule_file"}
+    
+    # Build minimal context from capsule
+    context = CapsuleRebuilder.rebuild_from_capsule(capsule)
+    
+    # Validate via v93d freshness policy
+    freshness = CapsuleFreshnessPolicy.validate_freshness(context)
+    
+    if freshness.status == "fresh":
+        return {
+            "status": "apply",
+            "reason": "capsule_fresh_and_valid",
+            "context": context
+        }
+    
+    return {
+        "status": "stale" if freshness.status == "stale" else "invalid",
+        "reason": freshness.reason,
+        "freshness": freshness.to_dict()
+    }
