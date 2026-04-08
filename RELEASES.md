@@ -87,7 +87,22 @@ Recommended rollback order:
 - commit: `4c96141`
 - tag: `v0.7.5`
 
-### v0.7.4
+### v0.7.6
+- operator case comparison / escalation summary layer (v90) - WESLR Python only, additive only, read-only
+- CaseComparisonSummary dataclass with operator-readable + machine-readable output
+- CaseComparisonExporter with operator and JSON export formats
+- OperatorCaseComparison class comparing v89 consolidated cases
+- Comparison types: escalation context, confidence guidance, safe-next-action
+- Correlation by flow_id/request_id/handshake_id/deadline_id
+- Telemetry hooks (passive, descriptive only, no behavior control)
+- Backward compatibility with v89 layer
+- 25 tests covering models, behavior, integration, and backward compatibility
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: read-only comparison of consolidated cases with escalation/confidence/safe-action differences
+- commit: `de03cfa`
+- tag: `v0.7.6`
+
+### v0.7.5
 - distributed fallback trace / replay integration (v74) - WESLR Python only, additive only, read-only diagnostic/export
 - FallbackTraceRecord with fallback state, reason, and path capability correlation
 - FallbackTraceExporter with full fallback visibility in diagnostic summaries

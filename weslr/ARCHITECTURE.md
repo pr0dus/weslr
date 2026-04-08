@@ -4,7 +4,7 @@ Internal architecture anchor for implementation continuity.
 
 **Version:** 1.0.0  
 **Last Updated:** 2026-04-08  
-**Current Sealed Commit:** `4c961419a8876373db97e87407c0c260880b4c8c` (v89)
+**Current Sealed Commit:** `de03cfaea6c62e1bf99e2f319ccbfa7c5b73cb25` (v90)
 
 ---
 
@@ -191,6 +191,7 @@ The **Seal Rule** determines when a commit is ready for production release:
 | v87 | Operator Insight Comparison / Drift Layer | ✅ Sealed | Drift detection and comparison across time windows |
 | v88 | Operator Insight Timeline / Escalation Context Layer | ✅ Sealed | Timeline context and escalation signals for operator decisions |
 | v89 | Operator Insight Consolidation / Case Summary Layer | ✅ Sealed | Read-only consolidation of recovery guidance, decision trace, pattern history, drift, and escalation |
+| v90 | Operator Case Comparison / Escalation Summary Layer | ✅ Sealed | Read-only comparison of consolidated cases with escalation/confidence/safe-action differences |
 
 ### Bottleneck Labels Refined
 
