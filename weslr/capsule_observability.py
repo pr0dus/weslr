@@ -157,12 +157,14 @@ class CapsuleObservability:
         Returns observability result dict with status and details.
         Silent/internal only, no user-visible output.
         """
-        # Initialize continuity dir if not already done
+        # Check if capsule_path is available
+        if self.capsule_path is None:
+            return CapsuleObservabilityResult.absent("no_capsule_path_set").to_dict()
+        
+        # Initialize continuity dir if not already done (when base_dir is set)
         if self.base_dir:
             if self.continuity_dir is None:
                 self.continuity_dir = os.path.join(self.base_dir, "continuity")
-            if self.capsule_path is None:
-                self.capsule_path = os.path.join(self.continuity_dir, "active_work_capsule.json")
         
         # Step 1: Check if capsule file exists
         if not os.path.exists(self.capsule_path):
