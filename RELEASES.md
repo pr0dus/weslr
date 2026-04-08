@@ -70,6 +70,23 @@ Recommended rollback order:
 - backup: `CircleForge-backup-20260407-0003.tar.gz`
 - tag: `v0.7.3`
 
+- commit: `4c96141`
+- tag: `v0.7.5`
+
+### v0.7.5
+- operator insight consolidation / case summary layer (v89) - WESLR Python only, additive only, read-only
+- ConsolidatedCaseSummary dataclass with operator-readable + machine-readable output
+- ConsolidatedCaseExporter with operator and JSON export formats
+- OperatorInsightConsolidation class integrating v75-v78-v84-v87-v88 layers
+- Correlation by flow_id/request_id/handshake_id/deadline_id
+- Telemetry hooks (passive, descriptive only, no behavior control)
+- Backward compatibility with v75-v88 layers
+- 29 tests covering models, behavior, integration, and backward compatibility
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: read-only consolidation of recovery guidance, decision trace, pattern history, drift, and escalation into operator-facing summaries
+- commit: `4c96141`
+- tag: `v0.7.5`
+
 ### v0.7.4
 - distributed fallback trace / replay integration (v74) - WESLR Python only, additive only, read-only diagnostic/export
 - FallbackTraceRecord with fallback state, reason, and path capability correlation

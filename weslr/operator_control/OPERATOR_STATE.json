@@ -3,10 +3,10 @@
   "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
   "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
   "current_branch": "feature/tia-industrial-slice",
-  "latest_sealed_commit": "7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6",
-  "latest_layer": "v88 — Operator Insight Timeline / Escalation Context Layer Sealed",
-  "current_phase": "v89_planning",
-  "next_priority": "operator_insight_timeline_escalation_context_layer",
+  "latest_sealed_commit": "4c961419a8876373db97e87407c0c260880b4c8c",
+  "latest_layer": "v89 — Operator Insight Consolidation / Case Summary Layer Sealed",
+  "current_phase": "v90_planning",
+  "next_priority": "operator_case_comparison_escalation_summary_layer",
   "active_scope": ["weslr"],
   "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
   "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
@@ -19,7 +19,7 @@
     "TIA": [],
     "industrial_slice": []
   },
-  "completed_layers_v76_v88": [
+  "completed_layers_v76_v89": [
     "recovery_recommendation_export_replay_correlation",
     "operator_recovery_review_surface",
     "operator_decision_trace_correlated_export",
@@ -32,7 +32,8 @@
     "operator_recovery_insight_layer",
     "operator_insight_history_comparative_significance_layer",
     "operator_insight_comparison_drift_layer",
-    "operator_insight_timeline_escalation_context_layer"
+    "operator_insight_timeline_escalation_context_layer",
+    "operator_insight_consolidation_case_summary_layer"
   ],
   "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
   "workflow_rules": [
@@ -140,10 +141,10 @@
     "files": ["weslr/operator_insight_comparison.py", "weslr/test_operator_insight_comparison.py"],
     "test_results": "31/31 passed"
   },
-  "v88_status": {
+  "v89_status": {
     "status": "sealed",
-    "commit_hash": "7ac1b81a98fb25e73d0d5a8df77ce7876c51aab6",
-    "files": ["weslr/operator_insight_timeline.py", "weslr/test_operator_insight_timeline.py"],
-    "test_results": "39/39 passed"
+    "commit_hash": "4c961419a8876373db97e87407c0c260880b4c8c",
+    "files": ["weslr/operator_insight_consolidation.py", "weslr/test_operator_insight_consolidation.py"],
+    "test_results": "29/29 passed"
   }
 }
