@@ -217,6 +217,8 @@ function validate(license) {
  * Create license template
  */
 function createLicense(tier, workspace, hostname, openclawVersion, installId) {
+    const fingerprint = createFingerprint(hostname, workspace, installId, new Date().toISOString());
+    
     return {
         meta: {
             formatVersion: '1.0',
@@ -228,7 +230,9 @@ function createLicense(tier, workspace, hostname, openclawVersion, installId) {
             issuedAt: new Date().toISOString(),
             expiresAt: calculateExpiry(),
             renewable: true,
-            maxInstances: TIER_MAX_INSTANCES[tier]
+            maxInstances: TIER_MAX_INSTANCES[tier],
+            product: 'Website OC',
+            region: 'production'
         },
         instance: {
             id: generateId(),
@@ -238,7 +242,7 @@ function createLicense(tier, workspace, hostname, openclawVersion, installId) {
             installedAt: new Date().toISOString(),
             lastActive: new Date().toISOString(),
             installId,
-            fingerprint: null  // Will be set by caller
+            fingerprint: fingerprint
         },
         signature: {
             algorithm: 'RSA-SHA256',
