@@ -1,6 +1,10 @@
-// schema.js - Infinity Productization Phase 1A — Licensing Core
-// 
-// Canonical signed payload, deterministic serialization, and signature verification.
+/**
+ * schema.js - Infinity Productization Phase 1A — Licensing Core
+ * 
+ * Canonical signed payload, deterministic serialization, and signature verification.
+ * Binding model: installId + machineFingerprint are hard-binding.
+ * Advisory fields: workspace, hostname, openclawVersion (warn but PASS).
+ */
 
 const crypto = require('crypto');
 
@@ -21,7 +25,7 @@ const TIER_MAX_INSTANCES = {
     [LicenseTier.ONE_OC]: 1,
     [LicenseTier.THREE_OC]: 3,
     [LicenseTier.SEVEN_OC]: 7,
-    [LicenseTier.UNLIMITED]: -1  // -1 means no limit
+    [LicenseTier.UNLIMITED]: -1
 };
 
 /**
@@ -34,18 +38,12 @@ const SupportLevel = {
 };
 
 /**
- * Fields EXCLUDED from signing (signature envelope fields)
- */
-const SIGNED_PAYLOAD_EXCLUDE = ['signature'];
-
-/**
  * Canonicalize license payload - deterministic serialization
  * 
- * This function extracts only the payload fields to be signed,
- * excludes signature envelope fields, and produces stable byte output.
+ * Includes advisory fields in canonical payload for authenticity,
+ * but validator does NOT hard-fail on advisory field mismatches.
  */
 function canonicalizePayload(license) {
-    // Extract only payload fields (everything except signature)
     const payload = {
         meta: license.meta,
         license: license.license,
@@ -54,7 +52,6 @@ function canonicalizePayload(license) {
         audit: license.audit
     };
     
-    // Sort keys recursively at all levels
     return sortKeysRecursively(payload);
 }
 
@@ -97,16 +94,20 @@ function hashPayload(canonicalPayload) {
 }
 
 /**
- * Generate deterministic fingerprint for instance
- * Uses SHA256 of concatenated components
+ * Generate deterministic fingerprint from install data
+ * SHA256(installSecret + hostname + workspace + openclawVersion + installId)
  */
-function createFingerprint(hostname, workspace, installId, activationTimestamp) {
+function createMachineFingerprint(installSecret, hostname, workspace, openclawVersion, installId) {
+    if (!installSecret) {
+        throw new Error('installSecret is required for fingerprint generation');
+    }
+    
     const components = [
-        'instance-',
+        installSecret,
         hashString(hostname),
         hashString(workspace),
-        hashString(installId),
-        hashString(activationTimestamp)
+        hashString(openclawVersion),
+        hashString(installId)
     ].join('');
     
     return hashString(components);
@@ -120,7 +121,7 @@ function hashString(str) {
 }
 
 /**
- * Verify license signature
+ * Verify license signature using canonical payload
  */
 function verifySignature(license, publicKey) {
     try {
@@ -139,10 +140,10 @@ function verifySignature(license, publicKey) {
             return { valid: false, reason: 'public-key-mismatch' };
         }
         
-        // Canonicalize payload (excluding signature)
+        // Canonicalize payload (includes advisory fields for authenticity)
         const canonicalPayload = canonicalizePayload(license);
         
-        // Sign with embedded public key (for verification)
+        // Verify signature
         const verify = crypto.createVerify('RSA-SHA256');
         verify.update(payloadToBytes(canonicalPayload));
         
@@ -158,8 +159,7 @@ function verifySignature(license, publicKey) {
 }
 
 /**
- * Sign license payload
- * Returns just the signature string (not full license)
+ * Sign license payload - returns just the signature string
  */
 function signPayload(payload, privateKey) {
     const canonicalPayload = canonicalizePayload(payload);
@@ -193,11 +193,12 @@ function validate(license) {
         if (!license.license.expiresAt) errors.push('license.expiresAt required');
     }
     
-    // Instance fields
+    // Instance fields - installId is required for hard-binding
     if (license.instance) {
         if (!license.instance.id) errors.push('instance.id required');
-        if (!license.instance.workspace) errors.push('instance.workspace required');
-        if (!license.instance.installedAt) errors.push('instance.installedAt required');
+        if (!license.instance.installId) errors.push('instance.installId required');
+        if (!license.instance.machineFingerprint) errors.push('instance.machineFingerprint required');
+        if (!license.instance.workspace) errors.push('instance.workspace required (advisory but present)');
     }
     
     // Signature fields
@@ -214,9 +215,12 @@ function validate(license) {
 }
 
 /**
- * Create license template
+ * Create license template with binding fields
  */
 function createLicense(tier, workspace, hostname, openclawVersion, installId) {
+    // Note: machineFingerprint is set later with installSecret
+    // This is a template - actual fingerprint requires local installSecret
+    
     return {
         meta: {
             formatVersion: '1.0',
@@ -228,7 +232,9 @@ function createLicense(tier, workspace, hostname, openclawVersion, installId) {
             issuedAt: new Date().toISOString(),
             expiresAt: calculateExpiry(),
             renewable: true,
-            maxInstances: TIER_MAX_INSTANCES[tier]
+            maxInstances: TIER_MAX_INSTANCES[tier],
+            product: 'Website OC',
+            region: 'production'
         },
         instance: {
             id: generateId(),
@@ -238,12 +244,12 @@ function createLicense(tier, workspace, hostname, openclawVersion, installId) {
             installedAt: new Date().toISOString(),
             lastActive: new Date().toISOString(),
             installId,
-            fingerprint: null  // Will be set by caller
+            machineFingerprint: 'placeholder'  // Will be replaced with actual fingerprint
         },
         signature: {
             algorithm: 'RSA-SHA256',
-            publicKey: null,  // Will be set by caller
-            signature: null  // Will be set by caller
+            publicKey: null,
+            signature: null
         },
         entitlements: {
             updateEligibleUntil: calculateExpiry(),
@@ -272,12 +278,11 @@ module.exports = {
     LicenseTier,
     TIER_MAX_INSTANCES,
     SupportLevel,
-    SIGNED_PAYLOAD_EXCLUDE,
     canonicalizePayload,
     sortKeysRecursively,
     payloadToBytes,
     hashPayload,
-    createFingerprint,
+    createMachineFingerprint,
     hashString,
     verifySignature,
     signPayload,

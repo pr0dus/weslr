@@ -1,9 +1,10 @@
-// validator.js - Infinity Productization Phase 1A — Licensing Core
-// 
-// License validation logic.
-// Verifies signature, expiration, instance limit, entitlements.
-// Uses canonical payload (excluding signature) for verification.
-// No private key on customer machine - only public key verification.
+/**
+ * validator.js - Infinity Productization Phase 1A — Licensing Core
+ * 
+ * License validation logic with new binding model:
+ * - Hard-binding: installId + machineFingerprint
+ * - Advisory: workspace, hostname, openclawVersion (warn but PASS)
+ */
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -26,6 +27,18 @@ class LicenseValidator {
             process.env.OPENCLAW_HOME || '.openclaw',
             'keys',
             'infinity-public.pem'
+        );
+        
+        // Local install data paths
+        this.installIdPath = path.join(
+            process.env.OPENCLAW_HOME || '.openclaw',
+            'identity',
+            'install-id'
+        );
+        this.installSecretPath = path.join(
+            process.env.OPENCLAW_HOME || '.openclaw',
+            'identity',
+            'secret'
         );
     }
     
@@ -67,7 +80,6 @@ class LicenseValidator {
             
             const content = fs.readFileSync(this.publicKeyPath, 'utf8');
             
-            // Verify it's a valid PEM format
             if (!content.includes('-----BEGIN PUBLIC KEY-----')) {
                 return { valid: false, error: 'Invalid public key format' };
             }
@@ -89,7 +101,6 @@ class LicenseValidator {
                 return { valid: false, reason: 'unsupported-algorithm' };
             }
             
-            // Verify public key matches embedded key
             const keyBuffer = crypto.createPublicKey(publicKey);
             const embeddedKeyBuffer = crypto.createPublicKey(embeddedKey);
             
@@ -98,7 +109,7 @@ class LicenseValidator {
                 return { valid: false, reason: 'public-key-mismatch' };
             }
             
-            // Canonicalize payload for verification (excluding signature fields)
+            // Canonicalize payload for verification
             const canonicalPayload = canonicalizePayload(license);
             
             // Verify signature
@@ -139,7 +150,7 @@ class LicenseValidator {
         
         if (updateEligibleUntil < now) {
             return { 
-                valid: true,  // License still valid
+                valid: true,
                 reason: 'updates-expired',
                 updateEligibleUntil,
                 canUpdate: false
@@ -154,48 +165,114 @@ class LicenseValidator {
     }
     
     /**
-     * Check if instance is valid (workspace matches)
+     * Load local install data (installId and installSecret)
      */
-    checkInstanceMatch(license) {
-        const currentWorkspace = process.env.OPENCLAW_WORKSPACE;
-        const licenseWorkspace = license.instance.workspace;
-        
-        if (!currentWorkspace || currentWorkspace !== licenseWorkspace) {
-            return { valid: false, reason: 'workspace-mismatch' };
+    loadLocalInstallData() {
+        try {
+            const installId = fs.readFileSync(this.installIdPath, 'utf8').trim();
+            const installSecret = fs.readFileSync(this.installSecretPath, 'utf8').trim();
+            
+            return {
+                installId,
+                installSecret,
+                valid: true
+            };
+        } catch (e) {
+            return {
+                installId: null,
+                installSecret: null,
+                valid: false,
+                error: e.message
+            };
         }
-        
-        return { valid: true, workspace: licenseWorkspace };
     }
     
     /**
-     * Check instance limit (done by enforcer)
+     * Validate hard-binding fields: installId + machineFingerprint
      */
-    checkInstanceLimit(license, currentInstanceCount) {
-        const maxInstances = license.license.maxInstances;
-        
-        if (maxInstances === -1) {
-            return { valid: true, reason: 'unlimited' };
-        }
-        
-        if (currentInstanceCount > maxInstances) {
-            return { 
-                valid: false, 
-                reason: 'instance-limit-exceeded',
-                currentInstanceCount,
-                maxInstances
+    checkHardBinding(license, localData) {
+        // Check installId
+        if (localData.installId !== license.instance.installId) {
+            return {
+                valid: false,
+                reason: 'install-id-mismatch',
+                localInstallId: localData.installId,
+                licenseInstallId: license.instance.installId
             };
         }
         
-        return { valid: true, currentInstanceCount, maxInstances };
+        // Check machineFingerprint
+        const computedFingerprint = require('./schema').createMachineFingerprint(
+            localData.installSecret,
+            license.instance.hostname,
+            license.instance.workspace,
+            license.instance.openclawVersion,
+            license.instance.installId
+        );
+        
+        if (computedFingerprint !== license.instance.machineFingerprint) {
+            return {
+                valid: false,
+                reason: 'machine-fingerprint-mismatch',
+                computedFingerprint,
+                licenseFingerprint: license.instance.machineFingerprint
+            };
+        }
+        
+        return { valid: true };
     }
     
     /**
-     * Complete validation
+     * Check advisory fields (workspace, hostname, openclawVersion)
+     * These are logged but do NOT cause hard failure
+     */
+    checkAdvisoryFields(license) {
+        const warnings = [];
+        
+        // Check workspace
+        const currentWorkspace = process.env.OPENCLAW_WORKSPACE;
+        if (currentWorkspace && currentWorkspace !== license.instance.workspace) {
+            warnings.push({
+                type: 'workspace-mismatch',
+                local: currentWorkspace,
+                license: license.instance.workspace
+            });
+        }
+        
+        // Check hostname
+        const currentHostname = require('os').hostname();
+        if (currentHostname !== license.instance.hostname) {
+            warnings.push({
+                type: 'hostname-mismatch',
+                local: currentHostname,
+                license: license.instance.hostname
+            });
+        }
+        
+        // Check openclawVersion
+        const currentVersion = process.env.OPENCLAW_VERSION || 'unknown';
+        if (currentVersion !== license.instance.openclawVersion) {
+            warnings.push({
+                type: 'version-mismatch',
+                local: currentVersion,
+                license: license.instance.openclawVersion
+            });
+        }
+        
+        return {
+            valid: true,  // Advisory always passes
+            warnings
+        };
+    }
+    
+    /**
+     * Complete validation with new binding model
      */
     validate() {
         const result = {
             valid: true,
-            checks: {}
+            checks: {},
+            warnings: []
         };
         
         // Load license
@@ -205,10 +282,10 @@ class LicenseValidator {
                 valid: false,
                 reason: loadResult.reason,
                 error: loadResult.error,
-                checks: {}
+                checks: {},
+                warnings: []
             };
         }
-        
         result.license = loadResult.license;
         
         // Load public key
@@ -218,7 +295,8 @@ class LicenseValidator {
                 valid: false,
                 reason: 'public-key-error',
                 error: keyResult.error,
-                checks: {}
+                checks: {},
+                warnings: []
             };
         }
         result.checks.publicKey = keyResult.publicKey;
@@ -229,7 +307,8 @@ class LicenseValidator {
             return {
                 valid: false,
                 reason: sigResult.reason,
-                checks: result.checks
+                checks: result.checks,
+                warnings: []
             };
         }
         result.checks.signature = { valid: true, algorithm: 'RSA-SHA256' };
@@ -241,7 +320,8 @@ class LicenseValidator {
                 valid: false,
                 reason: expResult.reason,
                 details: { expiresAt: expResult.expiresAt },
-                checks: result.checks
+                checks: result.checks,
+                warnings: []
             };
         }
         result.checks.expiration = { valid: true, expiresAt: expResult.expiresAt };
@@ -254,32 +334,50 @@ class LicenseValidator {
             updateEligibleUntil: entResult.updateEligibleUntil
         };
         
-        // Check workspace match
-        const instResult = this.checkInstanceMatch(result.license);
-        if (!instResult.valid) {
+        // Load local install data
+        const localData = this.loadLocalInstallData();
+        if (!localData.valid) {
             return {
                 valid: false,
-                reason: instResult.reason,
-                checks: result.checks
+                reason: 'local-install-data-error',
+                error: localData.error,
+                checks: result.checks,
+                warnings: []
             };
         }
-        result.checks.instance = { valid: true, workspace: instResult.workspace };
         
-        // Instance limit check is done by enforcer
+        // Check hard-binding (installId + machineFingerprint)
+        const hardBindingResult = this.checkHardBinding(result.license, localData);
+        if (!hardBindingResult.valid) {
+            result.checks.hardBinding = {
+                valid: false,
+                reason: hardBindingResult.reason,
+                details: hardBindingResult
+            };
+            
+            return {
+                valid: false,
+                reason: hardBindingResult.reason,
+                checks: result.checks,
+                warnings: []
+            };
+        }
+        result.checks.hardBinding = { valid: true };
+        
+        // Check advisory fields (warn but PASS)
+        const advisoryResult = this.checkAdvisoryFields(result.license);
+        result.checks.advisory = { valid: true };
+        if (advisoryResult.warnings.length > 0) {
+            result.warnings = advisoryResult.warnings;
+        }
         
         return result;
     }
     
-    /**
-     * Get license path
-     */
     getLicensePath() {
         return this.licensePath;
     }
     
-    /**
-     * Get public key path
-     */
     getPublicKeyPath() {
         return this.publicKeyPath;
     }
