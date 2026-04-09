@@ -12,9 +12,12 @@ const path = require('path');
 const { 
     canonicalizePayload, 
     payloadToBytes,
-    validate as validateSchema,
+    validate,
     SupportLevel
 } = require('./schema');
+
+// Alias for clarity
+const validateSchema = validate;
 
 class LicenseValidator {
     constructor() {

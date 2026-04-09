@@ -10,9 +10,12 @@ const path = require('path');
 const { 
     canonicalizePayload, 
     payloadToBytes, 
-    signPayload as canonicalSign,
+    signPayload,
     createFingerprint 
 } = require('./schema');
+
+// Alias for clarity
+const canonicalSign = signPayload;
 
 class LicenseSigner {
     constructor() {
