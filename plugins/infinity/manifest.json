@@ -1,0 +1,12 @@
+{
+  "id": "infinity",
+  "name": "Infinity",
+  "description": "Session immortality layer - silent continuity for OpenClaw",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "kind": "plugin",
+  "enabled": false
+}
