@@ -1,67 +1,24 @@
 /**
- * License Re-Sign Script
- * 
- * Re-signs the license using a new key pair while keeping payload unchanged.
- * Fixes production license validation mismatch.
+ * License Re-Sign Script - WITH DETERMINISTIC JSON
  */
 
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-const LicenseTier = {
-    ONE_OC: '1oc',
-    THREE_OC: '3oc',
-    SEVEN_OC: '7oc',
-    UNLIMITED: 'unlimited'
-};
-
-const SupportLevel = {
-    STANDARD: 'standard',
-    PREMIUM: 'premium',
-    ENTERPRISE: 'enterprise'
-};
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-function generateId() {
-    return 'license-' + crypto.randomBytes(8).toString('hex');
+// Custom JSON.stringify with sorted keys for determinism
+function stringifySorted(obj) {
+    const replacer = (key, value) => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            const sorted = {};
+            Object.keys(value).sort().forEach((k) => {
+                sorted[k] = value[k];
+            });
+            return sorted;
+        }
+        return value;
+    };
+    return JSON.stringify(obj, replacer);
 }
-
-function calculateExpiry() {
-    const expiry = new Date();
-    expiry.setFullYear(expiry.getFullYear() + 1);
-    return expiry.toISOString();
-}
-
-function hashString(str) {
-    if (!str) {
-        str = '';
-    }
-    return crypto.createHash('sha256').update(str).digest('hex');
-}
-
-function createFingerprint(hostname, workspace, installId, activationTimestamp) {
-    const components = [
-        'instance-',
-        hashString(hostname),
-        hashString(workspace),
-        hashString(installId),
-        hashString(activationTimestamp)
-    ].join('');
-    
-    return hashString(components);
-}
-
-// ============================================================================
-// KEY GENERATION
-// ============================================================================
 
 function generateKeys() {
     return new Promise((resolve, reject) => {
@@ -79,57 +36,15 @@ function generateKeys() {
     });
 }
 
-function signLicense(license, privateKey) {
-    // Create a copy without signature
-    const licenseCopy = JSON.parse(JSON.stringify(license));
-    
-    // Ensure signature object exists
-    if (!licenseCopy.signature) {
-        licenseCopy.signature = {
-            algorithm: 'RSA-SHA256',
-            publicKey: licenseCopy.signature?.publicKey || '',
-            signature: null
-        };
-    }
-    
-    // Store original public key before nulling signature
-    const originalPublicKey = licenseCopy.signature.publicKey || '';
-    
-    // Remove signature
-    licenseCopy.signature.signature = null;
-    
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(JSON.stringify(licenseCopy, null, 2));
-    
-    const signature = sign.sign(privateKey, 'base64');
-    
-    // Reconstruct signature with new values
-    licenseCopy.signature = {
-        algorithm: 'RSA-SHA256',
-        publicKey: originalPublicKey,
-        signature: signature
-    };
-    
-    return licenseCopy;
-}
-
-// ============================================================================
-// MAIN
-// ============================================================================
-
 async function resignLicense() {
-    console.log('=== License Re-Sign Operation ===\n');
+    console.log('=== License Re-Sign Operation (DETERMINISTIC) ===\n');
     
-    // Load existing license
     const licensePath = '/data/data/com.termux/files/home/.openclaw/licenses/infinity-license.json';
     const existingLicense = JSON.parse(fs.readFileSync(licensePath, 'utf8'));
     
     console.log('Loaded existing license');
     console.log('License ID:', existingLicense.license.id);
-    console.log('License Tier:', existingLicense.license.tier);
-    console.log('Product:', existingLicense.license.product);
     
-    // Keep payload unchanged - extract key fields
     const unchangedPayload = {
         meta: existingLicense.meta,
         license: {
@@ -164,45 +79,59 @@ async function resignLicense() {
         },
     };
     
-    // Generate new key pair
     const { publicKey, privateKey } = await generateKeys();
     console.log('\nGenerated new RSA key pair (2048-bit)');
-    console.log('New public key fingerprint:', hashString(publicKey).substring(0, 16) + '...');
     
-    // Sign with new private key
-    const signedLicense = signLicense(unchangedPayload, privateKey);
+    const fullLicense = {
+        ...unchangedPayload,
+        signature: {
+            algorithm: 'RSA-SHA256',
+            publicKey: publicKey,
+            signature: ''
+        }
+    };
     
-    // Save updated license
-    fs.writeFileSync(licensePath, JSON.stringify(signedLicense, null, 2));
+    const signed = stringifySorted(fullLicense);
+    
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(signed);
+    const signature = sign.sign(privateKey, 'base64');
+    
+    fullLicense.signature.signature = signature;
+    
+    fs.writeFileSync(licensePath, JSON.stringify(fullLicense, null, 2));
     console.log('\nLicense re-signed and saved to:', licensePath);
     
-    // Save new public key
     const publicKeyPath = '/data/data/com.termux/files/home/.openclaw/keys/infinity-public.pem';
     fs.writeFileSync(publicKeyPath, publicKey, { mode: 0o644 });
     console.log('New public key saved to:', publicKeyPath);
     
-    // Report
     console.log('\n--- LICENSE DETAILS (UNCHANGED) ---');
-    console.log('License ID:', signedLicense.license.id);
-    console.log('Tier:', signedLicense.license.tier);
-    console.log('Product:', signedLicense.license.product);
-    console.log('Region:', signedLicense.license.region);
-    console.log('Max Instances:', signedLicense.license.maxInstances);
-    console.log('Issued:', signedLicense.license.issuedAt);
-    console.log('Expires:', signedLicense.license.expiresAt);
-    console.log('Hostname:', signedLicense.instance.hostname);
-    console.log('Workspace:', signedLicense.instance.workspace);
-    console.log('Fingerprint:', signedLicense.instance.fingerprint);
+    console.log('License ID:', fullLicense.license.id);
+    console.log('Tier:', fullLicense.license.tier);
+    console.log('Product:', fullLicense.license.product);
+    console.log('Region:', fullLicense.license.region);
+    console.log('Max Instances:', fullLicense.license.maxInstances);
+    console.log('Issued:', fullLicense.license.issuedAt);
+    console.log('Expires:', fullLicense.license.expiresAt);
+    console.log('Hostname:', fullLicense.instance.hostname);
+    console.log('Workspace:', fullLicense.instance.workspace);
+    console.log('Fingerprint:', fullLicense.instance.fingerprint);
     
     console.log('\n--- NEW SIGNATURE ---');
-    console.log('Algorithm:', signedLicense.signature.algorithm);
-    console.log('Signature:', signedLicense.signature.signature.substring(0, 50) + '...');
+    console.log('Algorithm:', fullLicense.signature.algorithm);
+    console.log('Signature:', fullLicense.signature.signature.substring(0, 50) + '...');
+    
+    // Verify
+    const verify = crypto.createVerify('RSA-SHA256');
+    verify.update(stringifySorted(fullLicense));
+    const isVerified = verify.verify(publicKey, Buffer.from(fullLicense.signature.signature, 'base64'));
     
     console.log('\n--- VERIFICATION ---');
     console.log('Payload unchanged: YES');
     console.log('Re-signed with new key pair: YES');
-    console.log('New public key available: YES');
-    console.log('Deployment ready: YES');
+    console.log('New public key embedded: YES');
+    console.log('Signature verified: ' + (isVerified ? 'YES' : 'NO'));
 }
 
 resignLicense().catch(console.error);

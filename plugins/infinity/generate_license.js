@@ -85,7 +85,7 @@ function signLicense(license, privateKey) {
     const licenseCopy = JSON.parse(JSON.stringify(license));
     licenseCopy.signature.signature = null;
     
-    const sign = crypto.createSign('SHA256');
+    const sign = crypto.createSign('RSA-SHA256');
     sign.update(JSON.stringify(licenseCopy, null, 2));
     
     const signature = sign.sign(privateKey, 'base64');

@@ -1,0 +1,86 @@
+// index.js - OpenClaw Infinity Plugin entry point (runtime plugin contract)
+
+const hooks = require('./hooks');
+const config = require('./config');
+
+/**
+ * OpenClaw plugin registration function.
+ * Called by runtime when the plugin is loaded.
+ * @param {Object} api - OpenClaw plugin API
+ */
+function register(api) {
+  if (!config.autoCaptureEnabled && !config.autoRestoreEnabled) {
+    console.log('[infinity] plugin initialized (no capture/restore enabled)');
+    return;
+  }
+
+  // Hook: capture before /reset, /new, or context overflow
+  if (config.autoCaptureEnabled) {
+    if (api.onReset) {
+      api.onReset(async () => {
+        try {
+          await hooks.capture.captureCapsule();
+        } catch (e) {
+          console.error('[infinity] capture failed:', e.message);
+        }
+      });
+    }
+    if (api.onNew) {
+      api.onNew(async () => {
+        try {
+          await hooks.capture.captureCapsule();
+        } catch (e) {
+          console.error('[infinity] capture failed:', e.message);
+        }
+      });
+    }
+    if (api.onContextOverflow) {
+      api.onContextOverflow(async () => {
+        try {
+          await hooks.capture.captureCapsule();
+        } catch (e) {
+          console.error('[infinity] capture failed:', e.message);
+        }
+      });
+    }
+  }
+
+  // Hook: restore on init (silent, only if safe)
+  if (config.autoRestoreEnabled && api.onInit) {
+    api.onInit(async () => {
+      try {
+        await hooks.restore.attemptRestore();
+      } catch (e) {
+        console.error('[infinity] restore failed:', e.message);
+      }
+    });
+  }
+
+  console.log('[infinity] plugin initialized');
+}
+
+// Runtime plugin export contract
+const plugin = {
+  id: 'infinity',
+  name: 'Infinity',
+  description: 'Session immortality layer - silent continuity for OpenClaw',
+  configSchema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      autoCaptureEnabled: {
+        type: 'boolean',
+        default: true,
+      },
+      autoRestoreEnabled: {
+        type: 'boolean',
+        default: true,
+      },
+    },
+  },
+  register,
+};
+
+module.exports = plugin;
+module.exports.default = plugin;
+module.exports.register = register;
