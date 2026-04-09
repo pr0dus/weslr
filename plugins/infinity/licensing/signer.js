@@ -1,14 +1,18 @@
-/**
- * Infinity Productization Phase 1A — Licensing Core
- * 
- * License signing and verification.
- * Server-side signing (private key), client-side verification (public key only).
- * No private key on customer machine.
- */
+// signer.js - Infinity Productization Phase 1A — Licensing Core
+// 
+// License signing with deterministic payload canonicalization.
+// Public key embedded in signature after signing.
+// No private key on customer machine.
 
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { 
+    canonicalizePayload, 
+    payloadToBytes, 
+    signPayload as canonicalSign,
+    createFingerprint 
+} = require('./schema');
 
 class LicenseSigner {
     constructor() {
@@ -40,50 +44,53 @@ class LicenseSigner {
     }
     
     /**
-     * Load existing public key from file
+     * Sign license with deterministic payload canonicalization
+     * The signature covers ONLY the payload (meta, license, instance, entitlements, audit)
+     * The public key is embedded AFTER signing.
      */
-    loadPublicKey() {
-        try {
-            if (!fs.existsSync(this.publicKeyPath)) {
-                return null;
+    sign(license, privateKey) {
+        // Store original public key if present
+        const originalPublicKey = license.signature?.publicKey || '';
+        
+        // Sign with canonical payload
+        const signature = canonicalSign(license, privateKey);
+        
+        // Embed the NEW public key and signature
+        return {
+            ...license,
+            signature: {
+                algorithm: 'RSA-SHA256',
+                publicKey: originalPublicKey,  // Keep original public key for verification
+                signature: signature
             }
-            
-            const content = fs.readFileSync(this.publicKeyPath, 'utf8');
-            return content;
-        } catch (e) {
-            return null;
-        }
+        };
     }
     
     /**
-     * Sign license payload
-     * This is done server-side only
-     * Customer machines only verify, never sign
+     * Sign with embedded public key
+     * This is used when generating a fresh license with a new key pair
      */
-    sign(license, privateKey) {
-        try {
-            // Remove existing signature if present
-            const licenseCopy = JSON.parse(JSON.stringify(license));
-            licenseCopy.signature.signature = null;
-            
-            // Create signature
-            const sign = crypto.createSign('SHA256');
-            sign.update(JSON.stringify(licenseCopy, null, 2));
-            
-            const signature = sign.sign(privateKey, 'base64');
-            
-            // Embed signature
-            licenseCopy.signature.signature = signature;
-            
-            return licenseCopy;
-        } catch (e) {
-            throw new Error(`Sign error: ${e.message}`);
-        }
+    signWithEmbeddedKey(license, privateKey, publicKey) {
+        // Store the public key before signing
+        const embeddedKey = license.signature?.publicKey || '';
+        
+        // Sign with canonical payload
+        const signature = canonicalSign(license, privateKey);
+        
+        // Embed the public key and signature
+        return {
+            ...license,
+            signature: {
+                algorithm: 'RSA-SHA256',
+                publicKey: embeddedKey || publicKey,
+                signature: signature
+            }
+        };
     }
     
     /**
      * Verify license signature
-     * This is done on customer machine (public key only)
+     * Uses canonical payload (excluding signature fields)
      */
     verify(license) {
         try {
@@ -94,8 +101,11 @@ class LicenseSigner {
             }
             
             // Verify signature with embedded public key
-            const verify = crypto.createVerify('SHA256');
-            verify.update(JSON.stringify(license, null, 2));
+            const verify = crypto.createVerify('RSA-SHA256');
+            
+            // Canonicalize payload for verification
+            const canonicalPayload = canonicalizePayload(license);
+            verify.update(payloadToBytes(canonicalPayload));
             
             try {
                 verify.verify(embeddedKey, Buffer.from(signature, 'base64'));
@@ -113,25 +123,7 @@ class LicenseSigner {
      * Deterministic: SHA256(hostname + workspace + installId + activationTimestamp)
      */
     static createFingerprint(hostname, workspace, installId, activationTimestamp) {
-        const components = [
-            'instance-',
-            this.hashString(hostname),
-            this.hashString(workspace),
-            this.hashString(installId),
-            this.hashString(activationTimestamp)
-        ].join('');
-        
-        return this.hashString(components);
-    }
-    
-    /**
-     * Hash string to SHA256
-     */
-    static hashString(str) {
-        if (!str) {
-            str = '';
-        }
-        return crypto.createHash('sha256').update(str).digest('hex');
+        return createFingerprint(hostname, workspace, installId, activationTimestamp);
     }
     
     /**

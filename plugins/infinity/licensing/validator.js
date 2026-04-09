@@ -1,20 +1,32 @@
-/**
- * Infinity Productization Phase 1A — Licensing Core
- * 
- * License validation logic.
- * Verifies signature, expiration, instance limit, entitlements.
- * Uses public key only (no private key on customer machine).
- */
+// validator.js - Infinity Productization Phase 1A — Licensing Core
+// 
+// License validation logic.
+// Verifies signature, expiration, instance limit, entitlements.
+// Uses canonical payload (excluding signature) for verification.
+// No private key on customer machine - only public key verification.
 
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { LicenseSchema } = require('./schema');
+const { 
+    canonicalizePayload, 
+    payloadToBytes,
+    validate as validateSchema,
+    SupportLevel
+} = require('./schema');
 
 class LicenseValidator {
     constructor() {
-        this.licensePath = LicenseSchema.getLicensePath();
-        this.publicKeyPath = LicenseSchema.getPublicKeyPath();
+        this.licensePath = path.join(
+            process.env.OPENCLAW_HOME || '.openclaw',
+            'licenses',
+            'infinity-license.json'
+        );
+        this.publicKeyPath = path.join(
+            process.env.OPENCLAW_HOME || '.openclaw',
+            'keys',
+            'infinity-public.pem'
+        );
     }
     
     /**
@@ -29,7 +41,7 @@ class LicenseValidator {
             const content = fs.readFileSync(this.licensePath, 'utf8');
             const license = JSON.parse(content);
             
-            const schemaCheck = LicenseSchema.validate(license);
+            const schemaCheck = validateSchema(license);
             if (!schemaCheck.valid) {
                 return { 
                     valid: false, 
@@ -67,7 +79,7 @@ class LicenseValidator {
     }
     
     /**
-     * Verify RSA-SHA256 signature
+     * Verify RSA-SHA256 signature using canonical payload
      */
     verifySignature(license, publicKey) {
         try {
@@ -86,9 +98,12 @@ class LicenseValidator {
                 return { valid: false, reason: 'public-key-mismatch' };
             }
             
+            // Canonicalize payload for verification (excluding signature fields)
+            const canonicalPayload = canonicalizePayload(license);
+            
             // Verify signature
-            const verify = crypto.createVerify('SHA256');
-            verify.update(JSON.stringify(license, null, 2));
+            const verify = crypto.createVerify('RSA-SHA256');
+            verify.update(payloadToBytes(canonicalPayload));
             
             try {
                 verify.verify(embeddedKeyBuffer, Buffer.from(signature, 'base64'));
@@ -153,7 +168,7 @@ class LicenseValidator {
     }
     
     /**
-     * Check instance limit
+     * Check instance limit (done by enforcer)
      */
     checkInstanceLimit(license, currentInstanceCount) {
         const maxInstances = license.license.maxInstances;
