@@ -1023,6 +1023,13 @@ def apply_background_signals(decision: dict, signals: list):
             msg_action = f"Review/reconcile conflicting signals for {target}"
             actions.append(msg_action)
             blocked.append(msg_action)
+        elif isinstance(sig, dict) and sig.get("type") == "recurring_bottleneck_detected":
+            target = sig.get("target", "bottleneck")
+            if wm and isinstance(wm[0], dict):
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Recurring bottleneck detected.").strip()
+            msg_action = f"Investigate/mitigate recurring bottleneck for {target}"
+            actions.append(msg_action)
+            blocked.append(msg_action)
         
     updated["what_matters_now"] = wm
     return updated
@@ -1074,5 +1081,16 @@ def apply_scientific_guidance(decision: dict, guidance: list):
             if wm and isinstance(wm[0], dict):
                 wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
                 wm[0]["reason"] = (wm[0].get("reason", "") + " Safety constraint required.").strip()
+        elif isinstance(sig, dict) and sig.get("type") == "causal_hypothesis_required":
+            target = sig.get("target", "signal")
+            msg_block = f"Causal hypothesis required for {target}"
+            blocked.append(msg_block)
+            msg_action = f"Run causal validation/ablation for {target}"
+            actions.append(msg_action)
+            new_conf = min(base_conf, max(0.0, base_conf - 0.1))
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Causal hypothesis required; correlation insufficient.").strip()
     updated["what_matters_now"] = wm
     return updated
