@@ -992,7 +992,21 @@ def apply_background_signals(decision: dict, signals: list):
     blocked = updated.setdefault("blocked_items", [])
     actions = updated.setdefault("next_actions", [])
     base_conf = updated.get("confidence", 1.0)
+    # Dedup/preference: collect, then reconcile
+    collected = []
     for sig in signals or []:
+        collected.append(sig)
+    # Preference: if both contradiction_detected and contradictory findings exist for same target, keep scientific conflict
+    filtered = []
+    targets_with_scientific_conflict = set()
+    for sig in collected:
+        if isinstance(sig, dict) and sig.get("type") == "contradictory_findings_reconciliation_required":
+            targets_with_scientific_conflict.add(sig.get("target"))
+    for sig in collected:
+        if isinstance(sig, dict) and sig.get("type") == "contradiction_detected" and sig.get("target") in targets_with_scientific_conflict:
+            continue
+        filtered.append(sig)
+    for sig in filtered:
         if isinstance(sig, dict) and sig.get("type") == "stale_data":
             new_conf = max(0.0, base_conf - 0.15)
             updated["confidence"] = new_conf
@@ -1019,8 +1033,8 @@ def apply_background_signals(decision: dict, signals: list):
             updated["confidence"] = new_conf
             if wm and isinstance(wm[0], dict):
                 wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.12)
-                wm[0]["reason"] = (wm[0].get("reason", "") + " Contradiction detected; reconcile signals.").strip()
-            msg_action = f"Review/reconcile conflicting signals for {target}"
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Operational contradiction detected; reconcile runtime signals.").strip()
+            msg_action = f"Review/reconcile conflicting operational signals for {target}"
             actions.append(msg_action)
             blocked.append(msg_action)
         elif isinstance(sig, dict) and sig.get("type") == "recurring_bottleneck_detected":
@@ -1112,6 +1126,8 @@ def apply_scientific_guidance(decision: dict, guidance: list):
             updated["confidence"] = new_conf
             if wm and isinstance(wm[0], dict):
                 wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
-                wm[0]["reason"] = (wm[0].get("reason", "") + " Reconcile contradictory findings.").strip()
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Reconcile contradictory findings (scientific).").strip()
+            else:
+                wm.append({"title": target, "confidence": new_conf, "reason": "Reconcile contradictory findings (scientific)."})
     updated["what_matters_now"] = wm
     return updated

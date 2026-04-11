@@ -220,3 +220,26 @@ class TestE2EMaturitySignals:
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "reconcile" in wm.lower() or "conflict" in wm.lower(), "should surface contradictory findings rationale"
         assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when findings conflict"
+
+
+    def test_dedup_same_target_prefers_scientific_conflict(self):
+        decision = _base_decision("study xyz", confidence=0.7)
+        signals = [
+            {"type": "contradiction_detected", "target": "study_xyz", "source": "ops"},
+            {"type": "contradictory_findings_reconciliation_required", "target": "study_xyz", "source": "research"},
+        ]
+        updated = apply_background_signals(decision, signals)
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        # Only scientific conflict should remain; operational contradiction suppressed
+        assert "operational contradiction" not in wm.lower(), "operational contradiction should be suppressed when scientific conflict exists"
+
+    def test_no_dedup_when_targets_differ(self):
+        decision = _base_decision("multi domain", confidence=0.7)
+        signals = [
+            {"type": "contradiction_detected", "target": "service_a", "source": "ops"},
+            {"type": "contradictory_findings_reconciliation_required", "target": "study_b", "source": "research"},
+        ]
+        updated = apply_background_signals(decision, signals)
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "operational contradiction" in wm.lower(), "operational contradiction should show for service_a"
+        assert "reconcile" in wm.lower() or "conflict" in wm.lower(), "scientific conflict should show for study_b"
