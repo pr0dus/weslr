@@ -1003,6 +1003,17 @@ def apply_background_signals(decision: dict, signals: list):
             msg = f"Refresh telemetry for {target} (freshness {sig.get('freshness_days', '?')}d)"
             actions.append(msg)
             blocked.append(msg)
+        elif isinstance(sig, dict) and sig.get("type") == "evidence_gap_unexecuted_paths":
+            target = sig.get("target", "module")
+            new_conf = max(0.0, base_conf - 0.1)
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Evidence gap: unexecuted paths.").strip()
+            msg_action = f"Run targeted tests/logs for {target}"
+            actions.append(msg_action)
+            blocked.append(msg_action)
+        
     updated["what_matters_now"] = wm
     return updated
 
@@ -1031,5 +1042,16 @@ def apply_scientific_guidance(decision: dict, guidance: list):
             if wm and isinstance(wm[0], dict):
                 wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.2)
                 wm[0]["reason"] = (wm[0].get("reason", "") + " Underpowered test detected.").strip()
+        elif isinstance(sig, dict) and sig.get("type") == "model_drift_required":
+            target = sig.get("target", "model")
+            msg_block = f"Drift check required for {target}"
+            blocked.append(msg_block)
+            msg_action = f"Run drift detection/monitoring for {target}"
+            actions.append(msg_action)
+            new_conf = min(base_conf, max(0.0, base_conf - 0.15))
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.15)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Drift check required.").strip()
     updated["what_matters_now"] = wm
     return updated
