@@ -221,6 +221,45 @@ class TestE2EMaturitySignals:
         assert "reconcile" in wm.lower() or "conflict" in wm.lower(), "should surface contradictory findings rationale"
         assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when findings conflict"
 
+    def test_unresolved_aging_item_detected(self):
+        decision = _base_decision("aging ticket", confidence=0.65)
+        signals = [
+            {
+                "type": "unresolved_aging_item_detected",
+                "target": "ticket-123",
+                "age_days": 14,
+                "source": "ops_review",
+            }
+        ]
+
+        updated = apply_background_signals(copy.deepcopy(decision), signals)
+
+        assert updated.get("confidence", 1.0) < decision["confidence"], "confidence should drop for aging item"
+        has_blocker = any("aging" in str(item).lower() or "unresolved" in str(item).lower() for item in updated.get("blocked_items", []))
+        has_action = any("review" in str(item).lower() or "resolve" in str(item).lower() for item in updated.get("next_actions", []))
+        assert has_blocker or has_action, "should add aging-item blocker/action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "aging" in wm.lower() or "unresolved" in wm.lower(), "should surface aging-item rationale"
+
+    def test_evidence_sufficiency_threshold_not_met(self):
+        decision = _base_decision("release decision", confidence=0.7)
+        guidance = [
+            {
+                "type": "evidence_sufficiency_threshold_not_met",
+                "target": "release_candidate",
+                "source": "evidence_review",
+            }
+        ]
+
+        updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
+
+        assert updated.get("confidence", 1.0) < decision["confidence"], "confidence should drop when threshold not met"
+        has_blocker = any("threshold" in str(item).lower() or "evidence" in str(item).lower() for item in updated.get("blocked_items", []))
+        has_action = any("evidence" in str(item).lower() or "gather" in str(item).lower() or "sufficiency" in str(item).lower() for item in updated.get("next_actions", []))
+        assert has_blocker or has_action, "should add evidence-threshold blocker/action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "threshold" in wm.lower() or "evidence" in wm.lower(), "should surface evidence-threshold rationale"
+
 
     def test_dedup_same_target_prefers_scientific_conflict(self):
         decision = _base_decision("study xyz", confidence=0.7)
