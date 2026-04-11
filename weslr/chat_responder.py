@@ -234,8 +234,20 @@ def format_help() -> str:
 **Need more help?** Just ask a question."""
 
 
+def _format_confidence_note(item: Dict[str, Any], fallback: float) -> str:
+    conf = item.get("confidence", fallback)
+    if conf is None:
+        return ""
+    return f" (confidence ~{conf:.2f})"
+
+
+def _format_reason(item: Dict[str, Any]) -> str:
+    reason = item.get("reason", "")
+    return f" — {reason}" if reason else ""
+
+
 def format_status_summary(decision: Dict[str, Any]) -> str:
-    """Format a conversational status summary with reasoning surface."""
+    """Format a conversational status summary with reasoning surface and provenance cues."""
     what_matters = decision.get("what_matters_now", [])
     blocked = decision.get("blocked_items", [])
     actions = decision.get("next_actions", [])
@@ -253,10 +265,9 @@ def format_status_summary(decision: Dict[str, Any]) -> str:
             lines.append(f"There are **{len(what_matters)} things** needing attention:")
         for item in what_matters[:3]:
             title = item.get("title", "Untitled")
-            # Clean up the title
             title = title.replace("_", " ").capitalize()
-            lines.append(f"• {title}")
-            
+            confidence_note = _format_confidence_note(item, decision.get("confidence", 0.6))
+            lines.append(f"• {title}{_format_reason(item)}{confidence_note}")
             # Add reasoning surface for transparency
             reasoning = format_reasoning_surface(item)
             for r in reasoning[:2]:  # Limit to 2 reasoning lines per item
@@ -268,20 +279,35 @@ def format_status_summary(decision: Dict[str, Any]) -> str:
     if blocked:
         lines.append("")
         if len(blocked) == 1:
-            lines.append("There's **1 thing blocked** right now.")
+            lines.append("There's **1 thing blocked** right now:")
         else:
-            lines.append(f"There are **{len(blocked)} things blocked**.")
-        lines.append("_Ask `blocked` for details_")
+            lines.append(f"There are **{len(blocked)} things blocked**:")
+        for item in blocked[:5]:
+            title = item.get("title", "Untitled")
+            lines.append(f"• {title}{_format_reason(item)}")
+        if len(blocked) > 5:
+            lines.append(f"• ...and {len(blocked) - 5} more")
     
     if approvals:
         lines.append("")
         if len(approvals) == 1:
-            lines.append("There's **1 item** waiting for your approval.")
+            lines.append("There's **1 item** waiting for your approval:")
         else:
-            lines.append(f"There are **{len(approvals)} items** waiting for approval.")
-        lines.append("_Ask `approvals` to see them_")
+            lines.append(f"There are **{len(approvals)} items** waiting for approval:")
+        for item in approvals[:5]:
+            lines.append(f"• {item.get('title', 'Untitled')}{_format_reason(item)}")
+        if len(approvals) > 5:
+            lines.append(f"• ...and {len(approvals) - 5} more")
     
-    return "\n".join(lines)
+    if actions:
+        lines.append("")
+        lines.append("Next actions (top 3):")
+        for i, act in enumerate(actions[:3], 1):
+            if isinstance(act, dict):
+                title = act.get("title", "Untitled")
+                lines.append(f"{i}. {title}{_format_reason(act)}")
+            else:
+                lines.append(f"{i}. {act}")
     
     return "\n".join(lines)
 
