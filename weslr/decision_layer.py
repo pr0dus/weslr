@@ -1013,6 +1013,16 @@ def apply_background_signals(decision: dict, signals: list):
             msg_action = f"Run targeted tests/logs for {target}"
             actions.append(msg_action)
             blocked.append(msg_action)
+        elif isinstance(sig, dict) and sig.get("type") == "contradiction_detected":
+            target = sig.get("target", "signal")
+            new_conf = max(0.0, base_conf - 0.12)
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.12)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Contradiction detected; reconcile signals.").strip()
+            msg_action = f"Review/reconcile conflicting signals for {target}"
+            actions.append(msg_action)
+            blocked.append(msg_action)
         
     updated["what_matters_now"] = wm
     return updated
@@ -1053,5 +1063,16 @@ def apply_scientific_guidance(decision: dict, guidance: list):
             if wm and isinstance(wm[0], dict):
                 wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.15)
                 wm[0]["reason"] = (wm[0].get("reason", "") + " Drift check required.").strip()
+        elif isinstance(sig, dict) and sig.get("type") == "domain_safety_constraint_required":
+            target = sig.get("target", "change")
+            msg_block = f"Safety constraint required for {target}"
+            blocked.append(msg_block)
+            msg_action = f"Run safety/compliance check for {target}"
+            actions.append(msg_action)
+            new_conf = min(base_conf, max(0.0, base_conf - 0.1))
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Safety constraint required.").strip()
     updated["what_matters_now"] = wm
     return updated

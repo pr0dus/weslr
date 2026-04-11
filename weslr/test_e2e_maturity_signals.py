@@ -3,8 +3,10 @@
 These tests assert desired runtime behavior for maturity signals:
 - Stale data / freshness failure (background)
 - Evidence gap / unexecuted paths (background)
+- Contradiction detected (background)
 - Underpowered test / power insufficiency (scientific)
 - Model drift required (scientific)
+- Domain safety constraint required (scientific)
 """
 
 import copy
@@ -44,13 +46,10 @@ class TestE2EMaturitySignals:
 
         updated = apply_background_signals(copy.deepcopy(decision), signals)
 
-        # Expect confidence reduction
         assert updated.get("confidence", 1.0) < decision["confidence"], "confidence should drop on stale data"
-        # Expect blocker or next action referencing refresh
         has_refresh_blocker = any("refresh" in str(item).lower() for item in updated.get("blocked_items", []))
         has_refresh_action = any("refresh" in str(item).lower() for item in updated.get("next_actions", []))
         assert has_refresh_blocker or has_refresh_action, "should add refresh telemetry action/blocker"
-        # Expect visibility message
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "stale" in wm.lower() or "fresh" in wm.lower(), "should surface stale-data warning"
 
@@ -67,15 +66,32 @@ class TestE2EMaturitySignals:
 
         updated = apply_background_signals(copy.deepcopy(decision), signals)
 
-        # Expect confidence reduction
         assert updated.get("confidence", 1.0) < decision["confidence"], "confidence should drop on evidence gap"
-        # Expect action/blocker to run targeted tests/logs
         has_action = any("test" in str(item).lower() or "log" in str(item).lower() for item in updated.get("next_actions", []))
         has_blocker = any("test" in str(item).lower() or "log" in str(item).lower() for item in updated.get("blocked_items", []))
         assert has_action or has_blocker, "should add targeted test/log action/blocker"
-        # Expect visibility message
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "gap" in wm.lower() or "unexecuted" in wm.lower(), "should surface evidence gap rationale"
+
+    def test_contradiction_detected(self):
+        decision = _base_decision("service y status", confidence=0.7)
+        signals = [
+            {
+                "type": "contradiction_detected",
+                "target": "service_y",
+                "details": "metric up but errors up",
+                "source": "monitoring",
+            }
+        ]
+
+        updated = apply_background_signals(copy.deepcopy(decision), signals)
+
+        assert updated.get("confidence", 1.0) < decision["confidence"], "confidence should drop on contradiction"
+        has_action = any("reconcile" in str(item).lower() or "review" in str(item).lower() for item in updated.get("next_actions", []))
+        has_blocker = any("reconcile" in str(item).lower() or "review" in str(item).lower() for item in updated.get("blocked_items", []))
+        assert has_action or has_blocker, "should add contradiction review/reconcile action/blocker"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "contradiction" in wm.lower() or "conflict" in wm.lower(), "should surface contradiction rationale"
 
     def test_underpowered_test_scientific_signal(self):
         decision = _base_decision("feature y experiment", confidence=0.7)
@@ -91,16 +107,12 @@ class TestE2EMaturitySignals:
 
         updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
 
-        # Expect blocker/hold
         has_blocker = any("underpowered" in str(item).lower() or "power" in str(item).lower() for item in updated.get("blocked_items", []))
         assert has_blocker, "should add underpowered blocker/hold"
-        # Expect next action to increase samples or redesign
         has_action = any("sample" in str(item).lower() or "design" in str(item).lower() for item in updated.get("next_actions", []))
         assert has_action, "should add action to increase sample size or redesign"
-        # Expect visibility message
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "power" in wm.lower() or "underpowered" in wm.lower(), "should surface underpowered rationale"
-        # Expect promotion/approval held via lowered confidence or explicit hold
         lowered_confidence = updated.get("confidence", 1.0) <= decision["confidence"]
         has_hold_flag = any("hold" in str(item).lower() for item in updated.get("blocked_items", []))
         assert lowered_confidence or has_hold_flag, "should not allow promotion until power is sufficient"
@@ -118,14 +130,31 @@ class TestE2EMaturitySignals:
 
         updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
 
-        # Expect blocker/hold for drift check
         has_blocker = any("drift" in str(item).lower() for item in updated.get("blocked_items", []))
         assert has_blocker, "should add drift-required blocker/hold"
-        # Expect next action to run drift detection
         has_action = any("drift" in str(item).lower() or "monitor" in str(item).lower() for item in updated.get("next_actions", []))
         assert has_action, "should add drift-check action"
-        # Expect visibility message
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "drift" in wm.lower(), "should surface drift rationale"
-        # Confidence should not increase; may drop or hold
         assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when drift check is required"
+
+    def test_domain_safety_constraint_required(self):
+        decision = _base_decision("pii handling change", confidence=0.7)
+        guidance = [
+            {
+                "type": "domain_safety_constraint_required",
+                "target": "pii_masking",
+                "constraint": "requires masking check",
+                "source": "safety_policy",
+            }
+        ]
+
+        updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
+
+        has_blocker = any("safety" in str(item).lower() or "constraint" in str(item).lower() or "compliance" in str(item).lower() for item in updated.get("blocked_items", []))
+        assert has_blocker, "should add safety constraint blocker/hold"
+        has_action = any("safety" in str(item).lower() or "mask" in str(item).lower() or "check" in str(item).lower() for item in updated.get("next_actions", []))
+        assert has_action, "should add safety-check action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "safety" in wm.lower() or "constraint" in wm.lower(), "should surface safety rationale"
+        assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when safety constraint is pending"
