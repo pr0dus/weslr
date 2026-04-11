@@ -1131,7 +1131,21 @@ def apply_background_signals(decision: dict, signals: list):
             msg_action = f"Review/rethink decision criteria for {target}"
             actions.append(msg_action)
             blocked.append(msg_action)
-        
+        elif isinstance(sig, dict) and sig.get("type") == "unresolved_aging_item_detected":
+            target = sig.get("target", "item")
+            age_days = sig.get("age_days")
+            msg_block = f"Aging item unresolved: {target}"
+            if age_days is not None:
+                msg_block += f" ({age_days}d)"
+            blocked.append(msg_block)
+            msg_action = f"Review/resolve aging item {target}"
+            actions.append(msg_action)
+            new_conf = max(0.0, base_conf - 0.1)
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.1)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Aging item requires resolution.").strip()
+    
     updated["what_matters_now"] = wm
     return updated
 
@@ -1206,5 +1220,18 @@ def apply_scientific_guidance(decision: dict, guidance: list):
                 wm[0]["reason"] = (wm[0].get("reason", "") + " Reconcile contradictory findings (scientific).").strip()
             else:
                 wm.append({"title": target, "confidence": new_conf, "reason": "Reconcile contradictory findings (scientific)."})
+        elif isinstance(sig, dict) and sig.get("type") == "evidence_sufficiency_threshold_not_met":
+            target = sig.get("target", "decision")
+            msg_block = f"Evidence threshold not met for {target}"
+            blocked.append(msg_block)
+            msg_action = f"Gather additional evidence for {target} to reach sufficiency threshold"
+            actions.append(msg_action)
+            new_conf = min(base_conf, max(0.0, base_conf - 0.12))
+            updated["confidence"] = new_conf
+            if wm and isinstance(wm[0], dict):
+                wm[0]["confidence"] = max(0.0, wm[0].get("confidence", base_conf) - 0.12)
+                wm[0]["reason"] = (wm[0].get("reason", "") + " Evidence threshold not met.").strip()
+            else:
+                wm.append({"title": target, "confidence": new_conf, "reason": "Evidence threshold not met."})
     updated["what_matters_now"] = wm
     return updated
