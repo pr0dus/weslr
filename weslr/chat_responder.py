@@ -385,6 +385,32 @@ def respond_to_message(message: str, decision: Dict[str, Any], escalations: List
     return responder.respond(message, decision, escalations)
 
 
+def handle_request(request: Dict[str, Any], persona: str = "general user", domain: str = "general") -> Response:
+    """Minimal live request handler: compute decision then render via adaptive explanation.
+    
+    Keeps truth/governance intact; exposes blockers/approvals/next actions to operator.
+    """
+    try:
+        from .decision_layer import DecisionLayer
+    except Exception:
+        # Fallback: no decision layer available
+        return Response(content="Decision layer unavailable", metadata=None, actions=[])
+
+    layer = DecisionLayer()
+    decision = layer.compute_with_signals(request)
+    # Render for operator
+    resp = render_decision_for_operator(
+        decision,
+        persona=persona,
+        domain=domain,
+        explanation_overrides=request.get("explanation_overrides"),
+        explanation_signals={"confidence": decision.get("confidence")},
+    )
+    # Attach actions explicitly
+    resp.actions = decision.get("next_actions", [])
+    return resp
+
+
 def compose_reply(
     messages: List[Dict[str, Any]],
     summary: str,
