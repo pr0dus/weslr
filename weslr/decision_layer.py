@@ -781,6 +781,35 @@ class DecisionLayer:
                 urgency_level=urgency,
             )
             items.append(item)
+
+        # Evidence sufficiency visibility (bounded, non-invasive)
+        evidence_state = self._get_evidence_state()
+        try:
+            evidence_count = evidence_state.get("evidence_count", 0)
+            coverage = evidence_state.get("coverage_domains", []) or []
+            has_gap = evidence_count < 3 or len(coverage) < 2
+        except Exception:
+            evidence_count = 0
+            coverage = []
+            has_gap = False
+
+        if has_gap:
+            reason_parts = []
+            if evidence_count < 3:
+                reason_parts.append(f"evidence count low ({evidence_count})")
+            if len(coverage) < 2:
+                reason_parts.append("coverage gap")
+            reason = "; ".join(reason_parts) or "evidence gap"
+            item = DecisionItem(
+                title="Evidence gap",
+                reason=reason,
+                source_modules=[self.config.source_modules.get("state", "weslr.state")],
+                confidence=0.55,
+                recommended_action="Plan targeted evidence acquisition",
+                item_id="evidence-gap",
+                urgency_level="high" if evidence_count < 2 else "normal",
+            )
+            items.append(item)
         
         # Sort items by priority score
         def get_priority_score(item: DecisionItem) -> float:
@@ -810,6 +839,25 @@ class DecisionLayer:
         """
         items = []
         
+        # Capability boundary blocks
+        capability_blocks = self._get_capability_blocks()
+        for cap in capability_blocks:
+            title = f"Capability block: {cap.get('capability', 'unknown')}"
+            reason = cap.get("reason", "Capability boundary")
+            action = cap.get("action", "restrict")
+            severity = cap.get("severity", "medium")
+            urgency_level = "critical" if severity == "critical" else "high" if severity == "high" else "normal"
+            item = DecisionItem(
+                title=title,
+                reason=f"{reason} ({action})",
+                source_modules=[self.config.source_modules.get("capability", "weslr.capability_boundary")],
+                confidence=0.50,
+                recommended_action="Operator review/override required",
+                item_id=f"cap-block-{cap.get('capability', 'unknown')}",
+                urgency_level=urgency_level,
+            )
+            items.append(item)
+
         # Check for proposals awaiting approval
         state = self._load_operator_state()
         active_bottlenecks = state.get("active_bottlenecks", {})
@@ -892,6 +940,20 @@ class DecisionLayer:
                 urgency_level="high",
             )
             items.append(item)
+
+        # Governance approvals (read-only surface)
+        governance_items = self._get_governance_review_items()
+        for gov in governance_items:
+            item = DecisionItem(
+                title=f"Approval required: {gov.get('title', 'proposal')}",
+                reason=gov.get("why_surfaced", "Operator approval required"),
+                source_modules=[self.config.source_modules.get("governance", "weslr.governance_surface")],
+                confidence=0.60,
+                recommended_action=gov.get("recommended_action", "review"),
+                item_id=gov.get("proposal_id", "governance-approval"),
+                urgency_level="high" if gov.get("risk_level") == "high" else "normal",
+            )
+            items.append(item)
         
         return items
     
@@ -972,12 +1034,27 @@ class DecisionLayer:
         Keeps default compute() unchanged; applies overlays when signals present.
         """
         output = self.compute().to_dict()
+        # Provide a baseline confidence for downstream overlays
+        if "confidence" not in output:
+            wm_conf = [i.get("confidence", 0.6) for i in output.get("what_matters_now", [])]
+            output["confidence"] = wm_conf[0] if wm_conf else 0.6
         bg = request.get("background_signals") if isinstance(request, dict) else None
         sci = request.get("scientific_guidance") if isinstance(request, dict) else None
         if bg:
             output = apply_background_signals(output, bg)
         if sci:
             output = apply_scientific_guidance(output, sci)
+
+        # If capability blocks are present, suppress execution-oriented next actions
+        blocked_titles = "\n".join(str(b.get("title", b)) if isinstance(b, dict) else str(b) for b in output.get("blocked_items", []))
+        if "Capability block" in blocked_titles:
+            filtered_actions = []
+            for act in output.get("next_actions", []):
+                text = str(act).lower()
+                if "run " in text or "execute" in text:
+                    continue
+                filtered_actions.append(act)
+            output["next_actions"] = filtered_actions
         return output
 
 
