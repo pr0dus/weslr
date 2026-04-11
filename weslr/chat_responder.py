@@ -406,11 +406,13 @@ def compose_reply(
 
     session = get_explanation_session(persona=persona, domain=domain)
     rendered_summary = summary
+    rendered_meta = None
     if session:
         if explanation_overrides:
             session.apply_user_overrides(explanation_overrides)
         rendered = session.render(summary, overrides=explanation_overrides, signals=explanation_signals or {})
         rendered_summary = rendered.content
+        rendered_meta = rendered.metadata
 
     # Build content
     if summary_format == "json":
@@ -419,4 +421,34 @@ def compose_reply(
     else:
         content = rendered_summary
 
-    return Response(content=content, metadata=None, actions=actions)
+    return Response(content=content, metadata=rendered_meta, actions=actions)
+
+
+def render_decision_for_operator(
+    decision: Dict[str, Any],
+    persona: str = "general user",
+    domain: str = "general",
+    explanation_overrides: Optional[Dict[str, Any]] = None,
+    explanation_signals: Optional[Dict[str, Any]] = None,
+) -> Response:
+    """Render decision output through adaptive explanation for operator-facing clarity.
+
+    Truth/governance unchanged; surfaces what_matters_now, blockers, and approvals via
+    the existing status formatter, then applies explanation session styling.
+    """
+    summary = format_status_summary(decision)
+    confidence = decision.get("confidence")
+    signals = explanation_signals or {}
+    if confidence is not None:
+        signals = {**signals, "confidence": confidence}
+    return compose_reply(
+        messages=[],
+        summary=summary,
+        actions=decision.get("next_actions"),
+        summary_format="text",
+        responder=None,
+        explanation_overrides=explanation_overrides,
+        explanation_signals=signals,
+        persona=persona,
+        domain=domain,
+    )
