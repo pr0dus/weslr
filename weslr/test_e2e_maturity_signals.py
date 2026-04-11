@@ -4,9 +4,13 @@ These tests assert desired runtime behavior for maturity signals:
 - Stale data / freshness failure (background)
 - Evidence gap / unexecuted paths (background)
 - Contradiction detected (background)
+- Recurring bottleneck detected (background)
+- Repeated override detected (background)
 - Underpowered test / power insufficiency (scientific)
 - Model drift required (scientific)
 - Domain safety constraint required (scientific)
+- Causal hypothesis required (scientific)
+- Contradictory findings reconciliation required (scientific)
 """
 
 import copy
@@ -93,6 +97,24 @@ class TestE2EMaturitySignals:
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "contradiction" in wm.lower() or "conflict" in wm.lower(), "should surface contradiction rationale"
 
+    def test_recurring_bottleneck_detected(self):
+        decision = _base_decision("queue latency", confidence=0.6)
+        signals = [
+            {
+                "type": "recurring_bottleneck_detected",
+                "target": "queue_service",
+                "source": "bottleneck_monitor",
+            }
+        ]
+
+        updated = apply_background_signals(copy.deepcopy(decision), signals)
+
+        has_action = any("bottleneck" in str(item).lower() or "mitigate" in str(item).lower() for item in updated.get("next_actions", []))
+        has_blocker = any("bottleneck" in str(item).lower() for item in updated.get("blocked_items", []))
+        assert has_action or has_blocker, "should add bottleneck investigation/mitigation action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "bottleneck" in wm.lower(), "should surface recurring bottleneck rationale"
+
     def test_underpowered_test_scientific_signal(self):
         decision = _base_decision("feature y experiment", confidence=0.7)
         guidance = [
@@ -158,3 +180,43 @@ class TestE2EMaturitySignals:
         wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
         assert "safety" in wm.lower() or "constraint" in wm.lower(), "should surface safety rationale"
         assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when safety constraint is pending"
+
+    def test_causal_hypothesis_required(self):
+        decision = _base_decision("feature z correlation", confidence=0.65)
+        guidance = [
+            {
+                "type": "causal_hypothesis_required",
+                "target": "feature_z",
+                "source": "analysis",
+            }
+        ]
+
+        updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
+
+        has_blocker = any("causal" in str(item).lower() or "hypothesis" in str(item).lower() for item in updated.get("blocked_items", []))
+        assert has_blocker, "should add causal hypothesis blocker/hold"
+        has_action = any("causal" in str(item).lower() or "validation" in str(item).lower() or "ablation" in str(item).lower() for item in updated.get("next_actions", []))
+        assert has_action, "should add causal validation action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "causal" in wm.lower(), "should surface causal rationale"
+        assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when causal hypothesis is pending"
+
+    def test_contradictory_findings_reconciliation_required(self):
+        decision = _base_decision("study abc results", confidence=0.7)
+        guidance = [
+            {
+                "type": "contradictory_findings_reconciliation_required",
+                "target": "study_abc",
+                "source": "research_sync",
+            }
+        ]
+
+        updated = apply_scientific_guidance(copy.deepcopy(decision), guidance)
+
+        has_blocker = any("reconcile" in str(item).lower() or "conflict" in str(item).lower() for item in updated.get("blocked_items", []))
+        assert has_blocker, "should add reconciliation blocker/hold"
+        has_action = any("reconcile" in str(item).lower() or "compare" in str(item).lower() or "resolve" in str(item).lower() for item in updated.get("next_actions", []))
+        assert has_action, "should add reconciliation action"
+        wm = "\n".join(str(x) for x in updated.get("what_matters_now", []))
+        assert "reconcile" in wm.lower() or "conflict" in wm.lower(), "should surface contradictory findings rationale"
+        assert updated.get("confidence", 1.0) <= decision["confidence"], "confidence should not increase when findings conflict"
