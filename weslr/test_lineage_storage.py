@@ -94,3 +94,19 @@ def test_lineage_reference_permission_enforced():
     storage.create_lineage(origin(), Status.PENDING)
     with pytest.raises(PermissionError):
         storage.lineage_reference("u2", "p1")
+
+def test_governed_read_uses_permissions_and_reference():
+    storage = LineageStorage(perm_backend())
+    storage.create_lineage(origin(), Status.PENDING)
+    payload = storage.governed_read("u1", "p1")
+    assert payload["proposal_id"] == "p1"
+    # Permission enforced
+    storage_denied = LineageStorage(perm_backend(view=False))
+    storage_denied.create_lineage(origin(), Status.PENDING)
+    with pytest.raises(PermissionError):
+        storage_denied.governed_read("u2", "p1")
+
+
+def test_governed_read_missing():
+    storage = LineageStorage(perm_backend())
+    assert storage.governed_read("u1", "missing") is None

@@ -130,3 +130,12 @@ class LineageStorage:
             "linked_checkpoint": rec.origin.linked_checkpoint,
             "current_status": rec.current_status.value,
         }
+
+    def governed_read(self, user_id: str, proposal_id: str) -> Optional[dict]:
+        """Permission-aware read path for operator surfaces.
+
+        - Applies view permission via existing backend.
+        - Reuses lineage_reference for payload shape (no mutation, no audit side effects).
+        - Returns None if lineage does not exist.
+        """
+        return self.lineage_reference(user_id, proposal_id)
