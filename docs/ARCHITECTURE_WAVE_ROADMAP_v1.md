@@ -18,11 +18,6 @@
 - Self-improvement loop: approval-gated doctrine defined; no active self-change beyond reflection toggle.
 
 ## SECTION 3 — IMPLIED MISSING LAYERS
-## SECTION 4 — GAP CLASSIFICATION
-## SECTION 6 — CODING WAVES
-## SECTION 7 — NEXT STEP
-- Begin Wave 1 execution from this locked roadmap (with approvals as needed for integration work).
-## SECTION 3 — IMPLIED MISSING LAYERS
 - Cognitive Dialogue Interface
 - Proposal Lineage Diff View
 - Reasoning Strategy Comparison Sandbox
@@ -43,12 +38,18 @@
 - Continuity/memory consolidation runtime wiring: existing-layer completion (doc-only).
 - Capability intake runtime realization: existing-layer completion (doc-only).
 
+## SECTION 5 — DEPENDENCY MAP
+- Cognitive Dialogue Interface depends on adequacy findings + lineage surfaces.
+- Proposal Lineage Diff View depends on lineage storage/observability linking.
+- Reasoning Strategy Comparison Sandbox depends on adequacy harness + proposal lineage to compare outcomes.
+- Adequacy→Lineage/Observability view depends on adequacy findings + observability surface.
+- Recovery/roll-forward orchestration depends on approval-gated self-improvement loop + checkpoints.
+
 ## SECTION 6 — CODING WAVES
-- Wave 1 (completion): wire Background Analysis Observability Surface, adequacy→lineage/observability view; add guard-regression tests.
-- Wave 2 (companion tooling): Proposal Lineage Diff View; recovery/roll-forward orchestration for self-changes; continuity/memory consolidation wiring; capability intake runtime realization.
-- Wave 3 (net-new): Cognitive Dialogue Interface; Reasoning Strategy Comparison Sandbox; browser UI reactivation harness when backend is stable.
+- Wave 1 (complete, validated): background observability wiring + adequacy→observability linkage; guard-regression tests.
+- Wave 2 (complete, validated/frozen): Proposal Lineage Diff View; recovery/roll-forward orchestration; continuity/memory consolidation; capability intake runtime slice.
+- Wave 3 (net-new, not started): Cognitive Dialogue Interface; Reasoning Strategy Comparison Sandbox; browser UI reactivation harness when backend is stable.
 
 ## SECTION 7 — NEXT STEP
-- Begin Wave 1 execution from this reconciled roadmap (with approvals as needed for integration work).
-
+- Freeze Wave 2; open Wave 3 only with explicit approval.
 > Reference: docs/HISTORICAL_LAYER_RECONCILIATION_AUDIT_v1.md
