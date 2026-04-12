@@ -87,6 +87,10 @@ Rollback (disable browser) if any occur:
 - Repeated E2E harness failures.
 - Checkpoint mismatch or snapshot inconsistency after activation.
 
+## Browser Reactivation Go / No-Go Gate
+- GO when: PASS checklist completed; no rollback triggers active; E2E harness passing; route_request canonical path stable; no legacy/CLI path reachable; snapshot + checkpoint traceability aligned.
+- NO-GO when: any rollback trigger active; harness fail; send/receive fail; snapshot inconsistency; backend instability; legacy route reachable.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
