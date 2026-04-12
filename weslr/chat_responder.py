@@ -112,68 +112,105 @@ def format_reasoning_surface(item: Dict[str, Any]) -> List[str]:
     return reasoning
 
 
-def format_what_matters_now(items: List[Dict[str, Any]]) -> str:
-    """Format what_matters_now items conversationally with reasoning surface."""
+def format_what_matters_now(items: List[Dict[str, Any]], mode: str = "detailed") -> str:
+    """Format what_matters_now items using contract-aligned shape."""
     if not items:
-        return "Nothing urgent right now."
-    
-    lines = ["Here's what matters now:"]
-    for item in items:
+        return "What matters now: none flagged."
+
+    lines = ["What matters now:"]
+    max_items = 2 if mode == "short" else len(items)
+    for item in items[:max_items]:
         title = item.get("title", "Untitled")
         confidence = item.get("confidence", 0)
-        lines.append(f"• **{title}** ({confidence:.0%} confidence)")
-        
-        # Add reasoning surface for transparency
-        reasoning = format_reasoning_surface(item)
-        for r in reasoning[:2]:  # Limit to 2 reasoning lines per item
-            lines.append(f"  {r}")
-    
+        reason = item.get("reason", "").strip()
+        reason_text = f" — {reason}" if reason else ""
+        lines.append(f"• {title}{reason_text} (confidence ~{confidence:.2f})")
+
+        if mode != "short":
+            provenance = format_reasoning_surface(item)
+            if provenance:
+                lines.append(f"  Provenance: {'; '.join(provenance[:2])}")
+    if len(items) > max_items:
+        lines.append(f"• ...and {len(items) - max_items} more")
+
     return "\n".join(lines)
 
 
 def format_blocked_items(items: List[Dict[str, Any]]) -> str:
-    """Format blocked items conversationally."""
+    """Format blocked items with reason and unblock path."""
     if not items:
-        return "No blocked items."
-    
-    lines = [f"Currently blocked ({len(items)} items):"]
+        return "Blocked: none."
+
+    lines = ["Blocked items (reason + unblock):"]
     for item in items:
         title = item.get("title", "Untitled")
-        reason = item.get("reason", "")
-        lines.append(f"• {title}")
+        reason = item.get("reason", "").strip()
+        source = ", ".join(item.get("source_modules", [])) if isinstance(item.get("source_modules"), list) else item.get("source")
+        unblock = item.get("unblock") or item.get("recommended_action") or item.get("next_step")
+        detail = f"• {title}"
         if reason:
-            lines.append(f"  _{reason}_")
-    
+            detail += f" — {reason}"
+        if source:
+            detail += f" (source: {source})"
+        lines.append(detail)
+        if unblock:
+            lines.append(f"  To unblock: {unblock}")
+
     return "\n".join(lines)
 
 
-def format_next_actions(items: List[Dict[str, Any]]) -> str:
-    """Format next actions conversationally."""
+def format_next_actions(items: List[Dict[str, Any]], mode: str = "detailed") -> str:
+    """Format next actions with ordering, assumptions, and gating cues."""
     if not items:
-        return "No pending actions."
-    
-    lines = ["Recommended next actions:"]
-    for i, item in enumerate(items, 1):
-        title = item.get("title", "Untitled")
-        lines.append(f"{i}. {title}")
-    
+        return "Next actions: none."
+
+    lines = ["Next actions (ordered):"]
+    max_items = 3 if mode == "short" else len(items)
+    for i, item in enumerate(items[:max_items], 1):
+        if isinstance(item, dict):
+            title = item.get("title", "Untitled")
+            assumption = item.get("assumption") or item.get("reason", "").strip()
+            gating = item.get("gated_by") or item.get("requires_approval_id")
+            detail = f"{i}. {title}"
+            if assumption:
+                detail += f" — {assumption}"
+            if gating:
+                detail += f" (gated by {gating})"
+            lines.append(detail)
+            if mode != "short":
+                provenance = format_reasoning_surface(item)
+                if provenance:
+                    lines.append(f"   Provenance: {'; '.join(provenance[:2])}")
+        else:
+            lines.append(f"{i}. {item}")
+
+    if len(items) > max_items:
+        lines.append(f"...and {len(items) - max_items} more")
+
     return "\n".join(lines)
 
 
 def format_approval_queue(items: List[Dict[str, Any]]) -> str:
-    """Format approval queue conversationally."""
+    """Format approval queue with rationale and next steps."""
     if not items:
-        return "No items awaiting approval."
-    
-    lines = [f"**{len(items)} item(s) awaiting your approval:**"]
+        return "Approval queue: empty."
+
+    lines = ["Approval queue (why + next step):"]
     for item in items:
         title = item.get("title", "Untitled")
-        reason = item.get("reason", "")
-        lines.append(f"• {title}")
+        reason = item.get("reason", "").strip()
+        risk = item.get("risk_level") or item.get("risk") or item.get("risk_rating")
+        next_step = item.get("next_step_after_approval") or item.get("recommended_action") or item.get("next_step")
+        detail = f"• {title}"
         if reason:
-            lines.append(f"  {reason}")
-    
-    lines.append("\n_Use `/approve <id>` to approve, or ask for details._")
+            detail += f" — {reason}"
+        if risk:
+            detail += f" (risk: {risk})"
+        lines.append(detail)
+        if next_step:
+            lines.append(f"  Next after approval: {next_step}")
+
+    lines.append("_Use `/approve <id>` to approve, or ask for details._")
     return "\n".join(lines)
 
 
@@ -246,69 +283,60 @@ def _format_reason(item: Dict[str, Any]) -> str:
     return f" — {reason}" if reason else ""
 
 
-def format_status_summary(decision: Dict[str, Any]) -> str:
-    """Format a conversational status summary with reasoning surface and provenance cues."""
+def format_evidence_uncertainty(decision: Dict[str, Any]) -> List[str]:
+    """Surface confidence and evidence gaps per operator contract."""
+    lines: List[str] = []
+    confidence = decision.get("confidence")
+    if confidence is not None:
+        lines.append(f"- Confidence ~{confidence:.2f} (bounded)")
+
+    evidence_gaps = (
+        decision.get("evidence_gaps")
+        or decision.get("evidence_gap_items")
+        or decision.get("evidence_gaps_detected")
+    )
+    if evidence_gaps:
+        if isinstance(evidence_gaps, list):
+            gap_list = [str(g) for g in evidence_gaps if g]
+            if gap_list:
+                lines.append(f"- Evidence gaps: {'; '.join(gap_list[:3])}")
+                if len(gap_list) > 3:
+                    lines.append(f"- ...and {len(gap_list) - 3} more gaps")
+        else:
+            lines.append(f"- Evidence gaps: {evidence_gaps}")
+    elif confidence is not None:
+        lines.append("- Evidence gaps: none flagged in this view")
+
+    return lines
+
+
+def format_status_summary(decision: Dict[str, Any], mode: str = "detailed") -> str:
+    """Contract-aligned status summary surface."""
     what_matters = decision.get("what_matters_now", [])
     blocked = decision.get("blocked_items", [])
     actions = decision.get("next_actions", [])
     approvals = decision.get("approval_queue", [])
-    
-    if not what_matters and not blocked and not approvals:
-        return "Everything looks clear. No urgent priorities or blockers right now.\n\nWant me to check anything specific?"
-    
-    lines = []
-    
-    if what_matters:
-        if len(what_matters) == 1:
-            lines.append("There's **1 thing** needing your attention:")
-        else:
-            lines.append(f"There are **{len(what_matters)} things** needing attention:")
-        for item in what_matters[:3]:
-            title = item.get("title", "Untitled")
-            title = title.replace("_", " ").capitalize()
-            confidence_note = _format_confidence_note(item, decision.get("confidence", 0.6))
-            lines.append(f"• {title}{_format_reason(item)}{confidence_note}")
-            # Add reasoning surface for transparency
-            reasoning = format_reasoning_surface(item)
-            for r in reasoning[:2]:  # Limit to 2 reasoning lines per item
-                lines.append(f"  {r}")
-        
-        if len(what_matters) > 3:
-            lines.append(f"• ...and {len(what_matters) - 3} more")
-    
-    if blocked:
+
+    lines: List[str] = ["Status summary (operator contract):"]
+
+    lines.append("")
+    lines.append(format_what_matters_now(what_matters, mode=mode))
+
+    lines.append("")
+    lines.append(format_blocked_items(blocked))
+
+    lines.append("")
+    lines.append(format_approval_queue(approvals))
+
+    lines.append("")
+    lines.append(format_next_actions(actions, mode=mode))
+
+    evidence_lines = format_evidence_uncertainty(decision)
+    if evidence_lines:
         lines.append("")
-        if len(blocked) == 1:
-            lines.append("There's **1 thing blocked** right now:")
-        else:
-            lines.append(f"There are **{len(blocked)} things blocked**:")
-        for item in blocked[:5]:
-            title = item.get("title", "Untitled")
-            lines.append(f"• {title}{_format_reason(item)}")
-        if len(blocked) > 5:
-            lines.append(f"• ...and {len(blocked) - 5} more")
-    
-    if approvals:
-        lines.append("")
-        if len(approvals) == 1:
-            lines.append("There's **1 item** waiting for your approval:")
-        else:
-            lines.append(f"There are **{len(approvals)} items** waiting for approval:")
-        for item in approvals[:5]:
-            lines.append(f"• {item.get('title', 'Untitled')}{_format_reason(item)}")
-        if len(approvals) > 5:
-            lines.append(f"• ...and {len(approvals) - 5} more")
-    
-    if actions:
-        lines.append("")
-        lines.append("Next actions (top 3):")
-        for i, act in enumerate(actions[:3], 1):
-            if isinstance(act, dict):
-                title = act.get("title", "Untitled")
-                lines.append(f"{i}. {title}{_format_reason(act)}")
-            else:
-                lines.append(f"{i}. {act}")
-    
+        lines.append("Evidence/uncertainty:")
+        lines.extend(evidence_lines)
+
     return "\n".join(lines)
 
 
@@ -482,13 +510,14 @@ def render_decision_for_operator(
     domain: str = "general",
     explanation_overrides: Optional[Dict[str, Any]] = None,
     explanation_signals: Optional[Dict[str, Any]] = None,
+    summary_mode: str = "detailed",
 ) -> Response:
     """Render decision output through adaptive explanation for operator-facing clarity.
 
     Truth/governance unchanged; surfaces what_matters_now, blockers, and approvals via
     the existing status formatter, then applies explanation session styling.
     """
-    summary = format_status_summary(decision)
+    summary = format_status_summary(decision, mode=summary_mode)
     confidence = decision.get("confidence")
     signals = explanation_signals or {}
     if confidence is not None:
