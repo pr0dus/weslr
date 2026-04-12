@@ -71,6 +71,15 @@ Refresh rules:
 - Confirms response is visible in the browser UI.
 - Pass/fail must be recorded in the runtime snapshot before enabling browser surface.
 
+## Browser Reactivation PASS Checklist
+Must pass before browser UI reactivation:
+- Canonical backend path stable (route_request/DecisionLayer/anchor).
+- route_request verified via test message (browser → backend → reply).
+- Browser send button functional; response visible in UI.
+- No legacy UI path reachable; no CLI speak path reachable.
+- Runtime snapshot updated with pass result.
+- Checkpoint + traceability updated.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
