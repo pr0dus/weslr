@@ -49,6 +49,13 @@ Refresh rules:
 - Snapshot should list/latest stable checkpoints so recovery and audits can trace back.
 - Add/update links in checkpoint docs to this snapshot where appropriate.
 
+## Canonical Startup + Status Reference
+- Core/worktree: weslr/canonical-clean-signals at /data/data/com.termux/files/home/.openclaw/workspace_clean_signals
+- Canonical path: route_request → DecisionLayer → anchor (LLM_ANCHOR=local) via thin client/service (browser deferred)
+- Startup: `WESLR_CORE_PATH=/data/data/com.termux/files/home/.openclaw/workspace_clean_signals LLM_ANCHOR=local ./scripts/weslr_thin_client.py`
+- Status/checkpoints: see PHASES_1_TO_5_ACTIVATION_SUMMARY_v1.md and CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md
+- Deferred surfaces: browser UI deferred; legacy/CLI speak prohibited (non-default)
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
