@@ -40,4 +40,5 @@ Fields (per loop):
 - Last checkpoint displayed
 
 ## Next Steps
-Pending implementation with the above schema; keep alignment with runtime snapshot and activation summary.
+- Keep alignment with runtime snapshot and activation summary: see CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md and PHASES_1_TO_5_ACTIVATION_SUMMARY_v1.md for active phases, checkpoints, recovery/deferred surfaces, and canonical path.
+- Pending implementation with the above schema.
