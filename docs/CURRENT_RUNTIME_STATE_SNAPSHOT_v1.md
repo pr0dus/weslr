@@ -56,6 +56,13 @@ Refresh rules:
 - Status/checkpoints: see PHASES_1_TO_5_ACTIVATION_SUMMARY_v1.md and CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md
 - Deferred surfaces: browser UI deferred; legacy/CLI speak prohibited (non-default)
 
+## Deferred Browser Return Conditions
+- Canonical backend path (route_request/DecisionLayer) remains stable across checkpoints.
+- Thin-client route_request path stays authoritative (no routing regressions).
+- Browser send/receive must pass end-to-end test before reactivation.
+- Legacy UI paths remain prohibited; only the canonical path may be exposed.
+- Checkpoint + snapshot traceability updated when reactivated.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
