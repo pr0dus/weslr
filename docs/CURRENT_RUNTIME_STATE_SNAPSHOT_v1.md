@@ -30,6 +30,20 @@
 - Existing follow-up (auto-sequenced): keep snapshot/recovery checklist references current after checkpoints
 - New gap/idea: Background Analysis Observability Surface (doctrine-first, approval required)
 
+## Snapshot Refresh Discipline
+Refresh the snapshot when any of the following occur:
+- Phase go-live checkpoint (activation/rollback)
+- Rollback checkpoint applied
+- New governance layer activation
+- Canonical path changes
+- Major runtime documentation changes (activation summary, recovery checklist)
+- Recovery checklist changes
+
+Refresh rules:
+- Responsibility: system-autonomous (auto-sequenced) to keep snapshot authoritative.
+- Update: active phases, checkpoints, canonical path, toggles, deferred surfaces, open items, queued follow-ups, escalated net-new items.
+- Carry-forward: queued follow-ups and net-new escalations are retained/updated in the snapshot.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
