@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from .chat_hints import get_hints
+from .chat_hints import get_hints, add_hint
 from .request_parser import parse_request, apply_request_to_decision
 from .explanation_responder import ExplanationSession
 
@@ -26,6 +26,25 @@ class Response:
 # Module-level session for adaptive explanation (presentation-only)
 _EXPLANATION_SESSION: Optional[ExplanationSession] = None
 _EXPLANATION_CTX = {"persona": None, "domain": None}
+
+
+def _maybe_promote_hints(workspace_id: Optional[str], user_id: Optional[str], msg_lower: str, chat_context: Optional[List[str]]) -> None:
+    """Promote small, allowed cues into hidden chat hints."""
+    if not user_id:
+        return
+    ctx = " ".join(chat_context or []).lower() if chat_context else ""
+    text_pool = (msg_lower or "") + " " + ctx
+    if any(k in text_pool for k in ["workout", "gym", "run", "exercise"]):
+        add_hint(workspace_id, user_id, "workout planned")
+    if "email" in text_pool:
+        add_hint(workspace_id, user_id, "email urgency")
+    if "plan" in text_pool or "schedule" in text_pool:
+        if "workout" in text_pool:
+            add_hint(workspace_id, user_id, "plan includes workout")
+        if "email" in text_pool:
+            add_hint(workspace_id, user_id, "plan includes email")
+    if "concise" in text_pool or "brief" in text_pool:
+        add_hint(workspace_id, user_id, "prefers concise")
 
 def _map_persona(persona: Optional[str]) -> str:
     if not persona:
@@ -585,6 +604,7 @@ def handle_request(
         user_id = request.get("user_id")
         chat_hints = request.get("chat_hints") or get_hints(workspace_id, user_id)
         reply = ChatResponder().respond_chat(msg, chat_context, chat_hints)
+        _maybe_promote_hints(workspace_id, user_id, msg.lower(), chat_context)
         return Response(content=reply, metadata=None, actions=[])
 
     try:
