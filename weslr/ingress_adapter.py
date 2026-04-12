@@ -15,12 +15,26 @@ def normalize_request(raw: Dict[str, Any]) -> Dict[str, Any]:
     explanation_overrides = raw.get("explanation_overrides") or raw.get("mode")
     request_mode = raw.get("request_mode") or raw.get("mode")
 
+    message = raw.get("message") or ""
+    inferred_mode = request_mode
+    if not inferred_mode:
+        lowered = message.strip().lower()
+        status_intents = {
+            "status", "status?", "what matters now", "what matters now?",
+            "anything important", "anything important?",
+            "what should i focus on", "what is blocked", "what changed",
+        }
+        if lowered in status_intents:
+            inferred_mode = "status"
+        else:
+            inferred_mode = "chat"
+
     normalized = {
-        "message": raw.get("message"),
+        "message": message,
         "persona": persona,
         "domain": domain,
         "previous_decision": previous_decision,
-        "request_mode": request_mode,
+        "request_mode": inferred_mode,
         "explanation_overrides": explanation_overrides,
         "chat_context": raw.get("chat_context"),
     }
