@@ -26,10 +26,16 @@ Fields (per loop):
 - budget_used: number
 - budget_cap: number
 - proposals_recent: array of proposal summaries
+- proposal_lineage: optional reference/lookup to lineage record(s) for proposals shown
 - paused: bool
 - stopped: bool
 - last_checkpoint: string/timestamp
 - updated_at: timestamp
+
+## Lineage Reference (proposals)
+- When proposals are rendered in observability, surface a lineage reference for each proposal (if available) so operators can jump to traceability.
+- No new controls or UI required; read-only linkage only.
+- Preserve existing proposal visibility and governance; lineage remains immutable/append-only.
 
 ## Validation Rules (first slice)
 - Per-workspace isolation: data scoped to (workspace_id,user_id); no cross-leak
