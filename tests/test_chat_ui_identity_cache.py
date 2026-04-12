@@ -123,3 +123,39 @@ def test_missing_user_id_is_stateless(monkeypatch):
     resp = chat_ui.route_request(req)
     assert resp.metadata.get("decision_snapshot") == {"from": "noid"}
     assert chat_ui.DECISION_CACHE == {}
+
+
+def test_flush_and_disable(monkeypatch):
+    """Flush clears cache; disable prevents reuse without adding leakage."""
+    chat_ui.DECISION_CACHE.clear()
+
+    def fake_route(payload):
+        # pass through snapshot so we can detect reuse
+        prev = payload.get("previous_decision")
+        assert prev is None or isinstance(prev, dict)
+        return DummyResp(snapshot={"from": payload.get("tag"), "prev": prev})
+
+    monkeypatch.setattr(chat_ui, "route_request", fake_route)
+
+    handler = types.SimpleNamespace(client_address=("1.2.3.4", 0))
+
+    # Seed continuity for userA
+    req1 = {"workspace_id": "ws1", "operator_id": "userA", "message": "hi", "tag": "first"}
+    key1, _, _ = chat_ui._compute_identity(req1, handler.client_address)
+    snap1 = chat_ui.route_request(req1).metadata["decision_snapshot"]
+    chat_ui.DECISION_CACHE[key1] = snap1
+
+    # Flush (simulate owner/operator flush)
+    chat_ui.DECISION_CACHE.clear()
+    assert chat_ui.DECISION_CACHE == {}
+
+    # Disable: simulate toggle by forcing identity to return None key
+    monkeypatch.setattr(chat_ui, "_compute_identity", lambda payload, client_address=None: (None, None, None))
+
+    req2 = {"workspace_id": "ws1", "operator_id": "userA", "message": "again", "tag": "second"}
+    key2, _, _ = chat_ui._compute_identity(req2, handler.client_address)
+    assert key2 is None  # disabled → no cache key
+    resp2 = chat_ui.route_request({**req2, "previous_decision": None})
+    # No reuse because disabled; cache stays empty
+    assert resp2.metadata["decision_snapshot"].get("prev") is None
+    assert chat_ui.DECISION_CACHE == {}
