@@ -5,11 +5,13 @@ Test coverage: Observability and audit export functionality
 """
 
 import unittest
+import pytest
 import time
 import json
 from io import StringIO
 
 from weslr.observability import (
+    get_proposal_lineage_reference,
     get_routing_timeline,
     get_governance_decisions,
     get_proposal_lifecycle,
@@ -248,3 +250,65 @@ class TestObservabilityOutputStructure(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+def test_get_proposal_lineage_reference_reads_when_available():
+    from weslr.lineage.storage import LineageStorage
+    from weslr.lineage.model import LineageOrigin, Status
+    backend = type("PB", (), {
+        "can_view_lineage": lambda self, u, w: True,
+        "can_change_status": lambda self, u, w: True,
+        "now": lambda self: "2026-04-12T10:05:00Z",
+    })()
+    storage = LineageStorage(backend)
+    origin = LineageOrigin(
+        proposal_id="p1",
+        source_loop_id="loop1",
+        workspace_id="ws1",
+        user_id="u1",
+        trigger_reason="coverage_gap",
+        originating_evidence_signal="signalA",
+        timestamp="2026-04-12T10:00:00Z",
+        confidence=0.7,
+        linked_checkpoint="chk1",
+    )
+    storage.create_lineage(origin, Status.PENDING)
+    ref = get_proposal_lineage_reference("u1", "p1", storage)
+    assert ref is not None
+    assert ref["proposal_id"] == "p1"
+
+
+def test_get_proposal_lineage_reference_none_when_missing():
+    from weslr.lineage.storage import LineageStorage
+    backend = type("PB", (), {
+        "can_view_lineage": lambda self, u, w: True,
+        "can_change_status": lambda self, u, w: True,
+        "now": lambda self: "2026-04-12T10:05:00Z",
+    })()
+    storage = LineageStorage(backend)
+    ref = get_proposal_lineage_reference("u1", "missing", storage)
+    assert ref is None
+
+
+def test_get_proposal_lineage_reference_respects_permissions():
+    from weslr.lineage.storage import LineageStorage
+    from weslr.lineage.model import LineageOrigin, Status
+    backend = type("PB", (), {
+        "can_view_lineage": lambda self, u, w: False,
+        "can_change_status": lambda self, u, w: True,
+        "now": lambda self: "2026-04-12T10:05:00Z",
+    })()
+    storage = LineageStorage(backend)
+    origin = LineageOrigin(
+        proposal_id="p1",
+        source_loop_id="loop1",
+        workspace_id="ws1",
+        user_id="u1",
+        trigger_reason="coverage_gap",
+        originating_evidence_signal="signalA",
+        timestamp="2026-04-12T10:00:00Z",
+        confidence=0.7,
+        linked_checkpoint="chk1",
+    )
+    storage.create_lineage(origin, Status.PENDING)
+    with pytest.raises(PermissionError):
+        get_proposal_lineage_reference("u2", "p1", storage)

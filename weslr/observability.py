@@ -339,3 +339,13 @@ def format_audit_summary(events: Optional[List[AuditEvent]] = None) -> str:
         lines.append(f"  [{timestamp}] {event.proposal_id}: {event.action} ({event.event_type})")
     
     return "\n".join(lines)
+
+def get_proposal_lineage_reference(user_id: str, proposal_id: str, storage) -> Optional[dict]:
+    """Permission-aware lineage read for operator/observability surfaces.
+
+    Uses lineage storage governed read; returns None when lineage absent.
+    No mutation or UI behavior; no additional permission logic beyond storage backend.
+    """
+    if not hasattr(storage, "governed_read"):
+        raise AttributeError("storage must provide governed_read")
+    return storage.governed_read(user_id, proposal_id)
