@@ -80,6 +80,13 @@ Must pass before browser UI reactivation:
 - Runtime snapshot updated with pass result.
 - Checkpoint + traceability updated.
 
+## Browser Reactivation Rollback Criteria
+Rollback (disable browser) if any occur:
+- Send button failure or no response visibility in UI.
+- Routing mismatch (route_request not reached) or legacy/CLI path reappears.
+- Repeated E2E harness failures.
+- Checkpoint mismatch or snapshot inconsistency after activation.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
