@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
+from llm_runtime import generate_inner_thought, status as llm_status
 
 
 def _synthesize_active_context(message: str, chat_context: Optional[List[str]], chat_hints: Optional[List[str]]) -> Dict[str, bool]:
@@ -505,8 +506,20 @@ class ChatResponder:
         if "code" in msg_lower or "bug" in msg_lower:
             return "Describe the code issue and error; I’ll help outline a fix or steps to debug."
 
-        return "Got it. Tell me a bit more and I’ll help you work through it."
+        # Prefer model-backed response; if unavailable, surface error
+        return self._model_chat_response(message or "")
     
+    def _model_chat_response(self, message: str) -> str:
+        try:
+            st = llm_status()
+            if not st.get("live"):
+                return f"Model unavailable (provider={st.get('provider')}, live={st.get('live')})."
+            result = generate_inner_thought("communicator", {"chat_message": message, "wake_reason": "chat_request"})
+            summary = result.get("summary") or result.get("concern") or "(no content returned)"
+            return summary
+        except Exception as e:
+            return f"Model call failed: {e}"
+
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
         """Generate a conversational response to a user message.
         
