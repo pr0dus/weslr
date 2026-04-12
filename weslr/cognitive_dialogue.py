@@ -12,22 +12,25 @@ class DialogueState:
     lineage_refs: List[Dict[str, Any]] = field(default_factory=list)
 
 
-def explain_inadequacy(response_text: str, findings: List[str], lineage_ref: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def explain_inadequacy(response_text: str, findings: List[str], evidence: Optional[List[str]] = None, lineage_ref: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     return {
         "type": "inadequacy_explanation",
         "response": response_text,
         "findings": findings,
+        "evidence": evidence or [],
         "lineage_ref": lineage_ref,
     }
 
 
-def propose_improvement(findings: List[str], proposal_text: str, lineage_ref: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def propose_improvement(findings: List[str], proposal_text: str, lineage_ref: Optional[Dict[str, Any]] = None, risk: Optional[str] = None, rollback: Optional[str] = None) -> Dict[str, Any]:
     return {
         "type": "improvement_proposal",
         "findings": findings,
         "proposal": proposal_text,
         "lineage_ref": lineage_ref,
         "requires_approval": True,
+        "risk": risk or "bounded",
+        "rollback": rollback or "revert to prior checkpoint if noise/regressions detected",
     }
 
 
@@ -42,6 +45,9 @@ def handle_operator_response(proposal: Dict[str, Any], operator_action: str, ref
         "refined": operator_action == "refine",
         "refinement": refinement if operator_action == "refine" else None,
         "requires_activation": False,  # no autonomous activation
+        "approval_gate_reminder": "Approval required; no changes applied yet.",
+        "risk": proposal.get("risk"),
+        "rollback": proposal.get("rollback"),
     }
     return result
 

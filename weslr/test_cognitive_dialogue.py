@@ -9,28 +9,30 @@ from weslr.cognitive_dialogue import (
 )
 
 
-def test_explain_inadequacy_includes_findings_and_lineage():
-    resp = explain_inadequacy("weak answer", ["low confidence"], {"proposal_id": "p1"})
+def test_explain_inadequacy_includes_evidence_and_lineage():
+    resp = explain_inadequacy("weak answer", ["low confidence"], ["log:missed context"], {"proposal_id": "p1"})
     assert resp["type"] == "inadequacy_explanation"
-    assert "low confidence" in resp["findings"]
+    assert "log:missed context" in resp["evidence"]
     assert resp["lineage_ref"]["proposal_id"] == "p1"
 
 
-def test_propose_improvement_requires_approval():
-    prop = propose_improvement(["low confidence"], "add reflection step")
+def test_propose_improvement_carries_risk_and_rollback():
+    prop = propose_improvement(["low confidence"], "add reflection step", risk="low", rollback="disable reflection")
+    assert prop["risk"] == "low"
+    assert "rollback" in prop
     assert prop["requires_approval"] is True
-    assert prop["type"] == "improvement_proposal"
 
 
-def test_handle_operator_response_approve_deny_refine():
-    prop = propose_improvement([], "refine reply")
+def test_handle_operator_response_includes_gate_and_risk():
+    prop = propose_improvement([], "refine reply", risk="medium", rollback="revert to checkpoint")
     r1 = handle_operator_response(prop, "approve")
     assert r1["approved"] is True
-    r2 = handle_operator_response(prop, "deny")
-    assert r2["approved"] is False
-    r3 = handle_operator_response(prop, "refine", refinement="shorter")
-    assert r3["refined"] is True
-    assert r3["refinement"] == "shorter"
+    assert r1["approval_gate_reminder"]
+    assert r1["risk"] == "medium"
+    assert r1["rollback"] == "revert to checkpoint"
+    r2 = handle_operator_response(prop, "refine", refinement="shorter")
+    assert r2["refined"] is True
+    assert r2["refinement"] == "shorter"
 
 
 def test_dialogue_state_lineage_and_exchange():
