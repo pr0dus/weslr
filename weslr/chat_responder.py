@@ -504,10 +504,16 @@ def respond_to_message(message: str, decision: Dict[str, Any], escalations: List
     return responder.respond(message, decision, escalations)
 
 
-def handle_request(request: Dict[str, Any], persona: str = "general user", domain: str = "general") -> Response:
+def handle_request(
+    request: Dict[str, Any],
+    persona: str = "general user",
+    domain: str = "general",
+    previous_decision: Optional[Dict[str, Any]] = None,
+) -> Response:
     """Minimal live request handler: compute decision then render via adaptive explanation.
     
     Keeps truth/governance intact; exposes blockers/approvals/next actions to operator.
+    Supports optional previous_decision for continuity delta rendering.
     """
     try:
         from .decision_layer import DecisionLayer
@@ -517,6 +523,10 @@ def handle_request(request: Dict[str, Any], persona: str = "general user", domai
 
     layer = DecisionLayer()
     decision = layer.compute_with_signals(request)
+
+    # Allow previous_decision from caller or request payload (no persistence here)
+    prev = previous_decision or request.get("previous_decision")
+
     # Render for operator
     has_gaps = bool(
         decision.get("evidence_gaps")
@@ -530,6 +540,7 @@ def handle_request(request: Dict[str, Any], persona: str = "general user", domai
         domain=domain,
         explanation_overrides=request.get("explanation_overrides"),
         explanation_signals=signals,
+        previous_decision=prev,
     )
     # Attach actions explicitly
     resp.actions = decision.get("next_actions", [])
