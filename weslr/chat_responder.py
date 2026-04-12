@@ -284,18 +284,20 @@ def _format_reason(item: Dict[str, Any]) -> str:
 
 
 def format_evidence_uncertainty(decision: Dict[str, Any]) -> List[str]:
-    """Surface confidence and evidence gaps per operator contract."""
+    """Surface confidence and evidence gaps per operator contract.
+
+    Refinement: when no evidence gaps are present, omit gap suggestion/noise.
+    """
     lines: List[str] = []
     confidence = decision.get("confidence")
-    if confidence is not None:
-        lines.append(f"- Confidence ~{confidence:.2f} (bounded)")
-
     evidence_gaps = (
         decision.get("evidence_gaps")
         or decision.get("evidence_gap_items")
         or decision.get("evidence_gaps_detected")
     )
     if evidence_gaps:
+        if confidence is not None:
+            lines.append(f"- Confidence ~{confidence:.2f} (bounded)")
         if isinstance(evidence_gaps, list):
             gap_list = [str(g) for g in evidence_gaps if g]
             if gap_list:
@@ -304,8 +306,10 @@ def format_evidence_uncertainty(decision: Dict[str, Any]) -> List[str]:
                     lines.append(f"- ...and {len(gap_list) - 3} more gaps")
         else:
             lines.append(f"- Evidence gaps: {evidence_gaps}")
-    elif confidence is not None:
-        lines.append("- Evidence gaps: none flagged in this view")
+    else:
+        # No evidence gaps: suppress evidence suggestions entirely to avoid noise
+        if confidence is not None:
+            lines.append(f"- Confidence ~{confidence:.2f} (bounded)")
 
     return lines
 
@@ -331,8 +335,13 @@ def format_status_summary(decision: Dict[str, Any], mode: str = "detailed") -> s
     lines.append("")
     lines.append(format_next_actions(actions, mode=mode))
 
+    has_gaps = bool(
+        decision.get("evidence_gaps")
+        or decision.get("evidence_gap_items")
+        or decision.get("evidence_gaps_detected")
+    )
     evidence_lines = format_evidence_uncertainty(decision)
-    if evidence_lines:
+    if evidence_lines and has_gaps:
         lines.append("")
         lines.append("Evidence/uncertainty:")
         lines.extend(evidence_lines)
@@ -453,12 +462,18 @@ def handle_request(request: Dict[str, Any], persona: str = "general user", domai
     layer = DecisionLayer()
     decision = layer.compute_with_signals(request)
     # Render for operator
+    has_gaps = bool(
+        decision.get("evidence_gaps")
+        or decision.get("evidence_gap_items")
+        or decision.get("evidence_gaps_detected")
+    )
+    signals = {"confidence": decision.get("confidence")} if has_gaps else None
     resp = render_decision_for_operator(
         decision,
         persona=persona,
         domain=domain,
         explanation_overrides=request.get("explanation_overrides"),
-        explanation_signals={"confidence": decision.get("confidence")},
+        explanation_signals=signals,
     )
     # Attach actions explicitly
     resp.actions = decision.get("next_actions", [])
@@ -520,8 +535,39 @@ def render_decision_for_operator(
     summary = format_status_summary(decision, mode=summary_mode)
     confidence = decision.get("confidence")
     signals = explanation_signals or {}
-    if confidence is not None:
+    has_gaps = bool(
+        decision.get("evidence_gaps")
+        or decision.get("evidence_gap_items")
+        or decision.get("evidence_gaps_detected")
+    )
+    if confidence is not None and has_gaps:
         signals = {**signals, "confidence": confidence}
+
+    has_content = bool(
+        decision.get("what_matters_now")
+        or decision.get("blocked_items")
+        or decision.get("approval_queue")
+        or decision.get("next_actions")
+    )
+
+    if not has_gaps:
+        # Keep explanation lead but strip evidence suggestions for no-gap views
+        resp = compose_reply(
+            messages=[],
+            summary=summary,
+            actions=decision.get("next_actions"),
+            summary_format="text",
+            responder=None,
+            explanation_overrides=explanation_overrides,
+            explanation_signals={},
+            persona=persona,
+            domain=domain,
+        )
+        if resp and resp.content:
+            resp.content = resp.content.replace("  Suggested: confirm with logs/tests.", "")
+            resp.content = resp.content.replace(" Suggested: confirm with logs/tests.", "")
+        return resp
+
     return compose_reply(
         messages=[],
         summary=summary,
