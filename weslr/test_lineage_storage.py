@@ -72,3 +72,25 @@ def test_query_filters_and_audit():
     res = storage.query("u1", workspace_id="ws1")
     assert len(res) == 1
     assert len(res[0].audit_log) == 1  # view audit from query
+
+def test_lineage_reference_readonly_and_permission():
+    storage = LineageStorage(perm_backend())
+    storage.create_lineage(origin(), Status.PENDING)
+    ref = storage.lineage_reference("u1", "p1")
+    assert ref is not None
+    assert ref["proposal_id"] == "p1"
+    # no audit side effects
+    rec = storage._records["p1"]
+    assert len(rec.audit_log) == 0
+
+
+def test_lineage_reference_missing_returns_none():
+    storage = LineageStorage(perm_backend())
+    assert storage.lineage_reference("u1", "missing") is None
+
+
+def test_lineage_reference_permission_enforced():
+    storage = LineageStorage(perm_backend(view=False))
+    storage.create_lineage(origin(), Status.PENDING)
+    with pytest.raises(PermissionError):
+        storage.lineage_reference("u2", "p1")

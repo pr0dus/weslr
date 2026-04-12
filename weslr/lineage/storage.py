@@ -106,3 +106,27 @@ class LineageStorage:
         if proposal_id not in self._records:
             raise KeyError("lineage not found")
         return self._records[proposal_id]
+
+    def lineage_reference(self, user_id: str, proposal_id: str) -> Optional[dict]:
+        """Return a read-only lineage reference payload if available, without mutating state.
+
+        - Enforces view permission.
+        - No audit/log side effects.
+        - Returns None if proposal_id is unknown.
+        """
+        rec = self._records.get(proposal_id)
+        if rec is None:
+            return None
+        assert_can_view(self._perm, user_id, rec.origin.workspace_id)
+        return {
+            "proposal_id": rec.origin.proposal_id,
+            "source_loop_id": rec.origin.source_loop_id,
+            "workspace_id": rec.origin.workspace_id,
+            "user_id": rec.origin.user_id,
+            "trigger_reason": rec.origin.trigger_reason,
+            "originating_evidence_signal": rec.origin.originating_evidence_signal,
+            "timestamp": rec.origin.timestamp,
+            "confidence": rec.origin.confidence,
+            "linked_checkpoint": rec.origin.linked_checkpoint,
+            "current_status": rec.current_status.value,
+        }
