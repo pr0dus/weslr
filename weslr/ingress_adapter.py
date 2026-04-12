@@ -22,6 +22,7 @@ def normalize_request(raw: Dict[str, Any]) -> Dict[str, Any]:
         "previous_decision": previous_decision,
         "request_mode": request_mode,
         "explanation_overrides": explanation_overrides,
+        "chat_context": raw.get("chat_context"),
     }
     return normalized
 

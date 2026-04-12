@@ -419,21 +419,55 @@ class ChatResponder:
         """Initialize the chat responder."""
         self.greeting_shown = False
 
-    def respond_chat(self, message: str) -> str:
-        """Subject-following chat reply that hides internal priorities."""
+    def respond_chat(self, message: str, chat_context: Optional[List[str]] = None) -> str:
+        """Subject-following chat reply that hides internal priorities.
+
+        Uses lightweight recent context (list of prior user messages) to add small
+        helpful hints without exposing status/continuity.
+        """
         msg_lower = (message or "").lower()
+        ctx = " ".join(chat_context or []).lower() if chat_context else ""
+
+        def has_any(text, keywords):
+            return any(k in text for k in keywords)
+
         if not msg_lower:
             return "What’s on your mind?"
+
+        # Context-aware hints
+        lunch_hint = has_any(ctx, ["lunch", "eat", "food"])
+        workout_hint = has_any(ctx, ["workout", "gym", "run", "exercise"])
+        email_hint = has_any(ctx, ["email", "inbox", "reply"])
+        plan_hint = has_any(ctx, ["plan", "schedule", "afternoon", "morning"])
+
         if "lunch" in msg_lower:
+            if workout_hint:
+                return "Light lunch ideas before a workout: grain bowl (rice/quinoa) with veg + lean protein, or a sandwich + fruit/yogurt. Leave 60–90min before exercising."
             return "Quick lunch ideas: grain bowl (rice/quinoa) with veg + protein, or a sandwich + fruit/yogurt. Keep it light if you have work after."
+
+        if "workout" in msg_lower or "gym" in msg_lower or "run" in msg_lower or "exercise" in msg_lower:
+            if lunch_hint:
+                return "If you ate recently, give yourself ~60–90min, then do a steady 30–45min session plus a short warm-up/cool-down."
+            if plan_hint:
+                return "Slot the workout after your main focus block; 30–45min is fine. Add a 5–10min warm-up and cool-down."
+            return "Plan a 30–45min session with a warm-up and cool-down; schedule it around your main tasks so it sticks."
+
         if "plan" in msg_lower:
-            return "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up."
+            if email_hint:
+                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) 15–20min to clear the important email, 4) short break, 5) wrap-up."
+            return "Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up."
+
+        if "email" in msg_lower:
+            if plan_hint:
+                return "Draft the email goal + key points; send it in your admin slot so it doesn’t break focus. I can help tighten the draft."
+            return "Draft the email goal and key points; I’ll help tighten it up."
+
         if "wife" in msg_lower or "partner" in msg_lower:
             return "Keep it clear and kind. Share the key point, what you’re doing about it, and anything you need from them."
+
         if "code" in msg_lower or "bug" in msg_lower:
             return "Describe the code issue and error; I’ll help outline a fix or steps to debug."
-        if "email" in msg_lower:
-            return "Draft the email goal and key points; I’ll help tighten it up."
+
         return "Got it. Tell me a bit more and I’ll help you work through it."
     
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
@@ -535,7 +569,8 @@ def handle_request(
     request_mode = request.get("request_mode")
     if request_mode == "chat":
         msg = (request.get("message") or "").strip()
-        reply = ChatResponder().respond_chat(msg)
+        chat_context = request.get("chat_context")
+        reply = ChatResponder().respond_chat(msg, chat_context)
         return Response(content=reply, metadata=None, actions=[])
 
     try:

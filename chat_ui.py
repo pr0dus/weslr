@@ -7,14 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from weslr.ingress_adapter import route_request
-
 BASE_DIR = Path(__file__).resolve().parent
 PYTHON = sys.executable
 IMPLEMENTATION_STATE_PATH = BASE_DIR / "implementation_state.json"
-
-# Minimal per-operator/channel continuity cache (in-memory only)
-DECISION_CACHE: dict[str, dict] = {}
 
 HTML = """<!doctype html>
 <html>
@@ -338,22 +333,6 @@ def summarize_search_reply(query: str, raw_result: str, message: str = "") -> st
     return "\n".join(lines)
 
 
-
-
-def _compute_identity(payload: dict, client_address):
-    workspace_id = payload.get("workspace_id") or payload.get("org_id") or payload.get("tenant_id")
-    operator_id = payload.get("operator_id")
-
-    resolved_user = str(operator_id) if operator_id else None
-    resolved_workspace = str(workspace_id) if workspace_id else None
-
-    cache_key = None
-    if resolved_user:
-        cache_key = f"{resolved_workspace or 'global'}::{resolved_user}"
-
-    return cache_key, resolved_workspace, resolved_user
-
-
 class Handler(BaseHTTPRequestHandler):
     def _json(self, payload: dict, code: int = 200):
         body = json.dumps(payload).encode()
@@ -394,84 +373,159 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"reply": "", "meta": "", "status": "Nothing sent."}, 400)
             return
         try:
-            cache_key, resolved_workspace, resolved_user = _compute_identity(payload, self.client_address)
-
-            request_mode = payload.get("mode")
-            overrides = payload.get("explanation_overrides")
-            delta_modes = {"recap", "debug", "delta"}
-
-            message_lower = message.lower()
-            status_intents = (
-                "what matters now" in message_lower
-                or "what should i focus on" in message_lower
-                or "anything important" in message_lower
-                or "what is blocked" in message_lower
-                or "what changed" in message_lower
-                or "changed since" in message_lower
-                or "since last time" in message_lower
-            )
-
-            explicit_delta_request = (
-                (isinstance(request_mode, str) and request_mode in delta_modes)
-                or (isinstance(overrides, dict) and overrides.get("show_deltas"))
-                or ("what changed" in message_lower or "changed since" in message_lower or "since last time" in message_lower)
-            )
-
-            explanation_overrides = None
-            if explicit_delta_request:
-                if isinstance(overrides, dict):
-                    explanation_overrides = {**overrides}
-                    explanation_overrides.setdefault("show_deltas", True)
-                    if request_mode in delta_modes:
-                        explanation_overrides.setdefault("mode", request_mode)
-                elif isinstance(request_mode, str) and request_mode in delta_modes:
-                    explanation_overrides = {"mode": request_mode, "show_deltas": True}
+            immediate_reply = ""
+            requested_completion_notice = message_requests_completion_notice(message)
+            
+            # Web search
+            if should_search_web(message):
+                query = extract_search_query(message)
+                search_result = run_cmd([PYTHON, "main.py", "search-web", query, "--limit", "5"])
+                immediate_reply = summarize_search_reply(query, search_result, message)
+                bridged_message = (
+                    f"{message}\n\n"
+                    f"Web search results for: {query}\n"
+                    f"{search_result[:4000]}\n\n"
+                    f"Use these results to answer directly and practically."
+                )
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", bridged_message, "--response", immediate_reply])
+            
+            # Weslr entity commands
+            elif message.lower().strip().startswith("entity"):
+                query = message.lower().strip()
+                if "list" in query or "stats" in query:
+                    immediate_reply = run_weslr_cmd(["entity-list", "--limit", "5"])
+                elif "details" in query:
+                    immediate_reply = run_weslr_cmd(["entity-stats"])
                 else:
-                    explanation_overrides = {"show_deltas": True}
+                    immediate_reply = run_weslr_cmd(["entity-list", "--limit", "3"])
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+            
+            # Weslr capability commands (operator-only)
+            elif message.lower().strip().startswith("capability"):
+                query = message.lower().strip()
+                # Parse capability command - extract subcommand and args
+                # Format: "capability <subcommand> [--id <id>] [--query <q>] [--json]"
+                # Also supports: "capability search query" (query after search)
+                # For create: "capability create --title <t> --type <type> --summary <s> --why <w> --improvement <i>"
+                parts = query.split()
+                
+                if len(parts) < 2:
+                    immediate_reply = "Usage: capability <list|show|search|accept|deny|snooze|archive|stats>"
+                else:
+                    subcommand = parts[1]
+                    capability_args = ["capability", subcommand]
+                    
+                    # Handle simple formats for stats and list (no flags needed)
+                    if subcommand in ["stats", "list"] and len(parts) == 2:
+                        # "capability stats" or "capability list" - no args needed
+                        pass
+                    elif subcommand == "show" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability show <id>" - get id as next arg
+                        capability_args.extend(["--id", parts[2]])
+                    elif subcommand == "search" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability search query" - query is all parts after search
+                        capability_args.extend(["--query", " ".join(parts[2:])])
+                    elif subcommand in ["deny", "snooze", "archive"] and len(parts) >= 3 and not parts[2].startswith("--"):
+                        # "capability deny <id> [hours]" or "capability <cmd> <id>"
+                        capability_args.extend(["--id", parts[2]])
+                        if len(parts) >= 4 and parts[3].isdigit():
+                            capability_args.extend(["--hours", parts[3]])
+                    elif subcommand == "accept" and len(parts) >= 3 and not parts[2].startswith("--"):
+                        capability_args.extend(["--id", parts[2]])
+                    elif subcommand == "create" and len(parts) >= 2:
+                        # Create requires --flags, so just pass through
+                        pass
+                    # Additional argument parsing
+                    elif "--query" in parts:
+                        idx = parts.index("--query")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--query", parts[idx + 1]])
+                    
+                    # Handle other arguments
+                    if "--id" in parts:
+                        idx = parts.index("--id")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--id", parts[idx + 1]])
+                    if "--hours" in parts:
+                        idx = parts.index("--hours")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--hours", parts[idx + 1]])
+                    if "--json" in parts:
+                        capability_args.append("--json")
+                    if "--limit" in parts:
+                        idx = parts.index("--limit")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--limit", parts[idx + 1]])
+                    if "--offset" in parts:
+                        idx = parts.index("--offset")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--offset", parts[idx + 1]])
+                    if "--title" in parts:
+                        idx = parts.index("--title")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--title", parts[idx + 1]])
+                    if "--type" in parts:
+                        idx = parts.index("--type")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--type", parts[idx + 1]])
+                    if "--summary" in parts:
+                        idx = parts.index("--summary")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--summary", parts[idx + 1]])
+                    if "--why" in parts:
+                        idx = parts.index("--why")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--why", parts[idx + 1]])
+                    if "--improvement" in parts:
+                        idx = parts.index("--improvement")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--improvement", parts[idx + 1]])
+                    if "--confidence" in parts:
+                        idx = parts.index("--confidence")
+                        if idx + 1 < len(parts):
+                            capability_args.extend(["--confidence", parts[idx + 1]])
+                    if "--tags" in parts:
+                        idx = parts.index("--tags")
+                        # Get all remaining parts as tags
+                        tags = parts[idx + 1:]
+                        if tags:
+                            capability_args.append("--tags")
+                            capability_args.extend(tags)
+                    try:
+                        immediate_reply = run_weslr_cmd(capability_args)
+                    except Exception as e:
+                        immediate_reply = f"Error: {e}"
+                run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+            
+            # Control messages (no Weslr response needed)
+            elif message_requests_completion_notice(message):
+                immediate_reply = "Understood. I should report back when the current implementation step is finished."
+            elif message_starts_execution(message):
+                start_implementation_worker()
+                immediate_reply = "Understood. I am starting one concrete implementation step now."
+            elif message_is_control_approval(message):
+                immediate_reply = "Understood. I should continue with the approved next step."
+            elif message_asks_can_implement(message):
+                immediate_reply = "Yes — if implementation is allowed, I should stop restating the plan and start applying one concrete fix."
+            elif message_asks_for_code_suggestions(message):
+                immediate_reply = synthesize_code_change_reply()
+            
+            # Default: Weslr as primary responder
             else:
-                if isinstance(overrides, dict):
-                    sanitized = {
-                        k: v
-                        for k, v in overrides.items()
-                        if k not in {"show_deltas", "delta"}
-                    }
-                    if sanitized.get("mode") in delta_modes:
-                        sanitized.pop("mode", None)
-                    explanation_overrides = sanitized or None
-                elif isinstance(request_mode, str) and request_mode not in delta_modes:
-                    explanation_overrides = {"mode": request_mode}
-
-            request_mode = "status" if status_intents else "chat"
-
-            prev = DECISION_CACHE.get(cache_key) if cache_key else None
-            if isinstance(prev, dict):
-                prev = dict(prev)
-                if prev.get("evidence_gaps") is None:
-                    prev["evidence_gaps"] = []
-
-            raw_payload = {
-                "message": message,
-                "persona": payload.get("persona"),
-                "domain": payload.get("domain"),
-                "workspace_id": resolved_workspace,
-                "user_id": resolved_user,
-                "previous_decision": prev,
-                "request_mode": request_mode,
-                "explanation_overrides": explanation_overrides,
-            }
-
-            resp = route_request(raw_payload)
-
-            snap = (resp.metadata or {}).get("decision_snapshot") if resp.metadata else None
-            if snap and cache_key:
-                DECISION_CACHE[cache_key] = snap
-
-            self._json({
-                "reply": resp.content,
-                "actions": resp.actions or [],
-                "meta": json.dumps(resp.metadata or {}, indent=2),
-                "status": "Message processed.",
-            })
+                immediate_reply = weslr_speak(message)
+                try:
+                    run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
+                except Exception:
+                    pass
+            
+            # Final response
+            data = state_payload()
+            if requested_completion_notice and load_implementation_state().get("status") == "completed":
+                data["reply"] = f"Finished: {load_implementation_state().get('summary') or load_implementation_state().get('task') or 'implementation step completed.'}"
+            elif immediate_reply:
+                data["reply"] = immediate_reply
+            data["status"] = "Message processed."
+            self._json(data)
         except Exception as e:
             self._json({"reply": str(e), "meta": "", "status": "Send failed."}, 500)
 

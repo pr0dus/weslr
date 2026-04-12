@@ -12,7 +12,7 @@ def test_chat_mode_skips_status(monkeypatch):
     fake_module = SimpleNamespace(DecisionLayer=SimpleNamespace(compute_with_signals=lambda req: (_ for _ in ()).throw(AssertionError("should not be called"))))
     monkeypatch.setitem(sys.modules, "weslr.decision_layer", fake_module)
 
-    resp = handle_request({"message": "hi", "request_mode": "chat"})
+    resp = handle_request({"message": "hi", "request_mode": "chat", "chat_context": ["plan lunch"]})
     assert "what matters now" not in resp.content.lower()
     assert "status" not in resp.content.lower()
 
