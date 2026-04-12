@@ -63,6 +63,14 @@ Refresh rules:
 - Legacy UI paths remain prohibited; only the canonical path may be exposed.
 - Checkpoint + snapshot traceability updated when reactivated.
 
+## Browser Reactivation Harness Trigger
+- Triggered before any browser reactivation.
+- Uses canonical backend (route_request/DecisionLayer) as truth source.
+- Validates end-to-end send/receive from browser client to route_request and back.
+- Ensures no legacy routing (CLI speak/legacy UI) is involved.
+- Confirms response is visible in the browser UI.
+- Pass/fail must be recorded in the runtime snapshot before enabling browser surface.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
