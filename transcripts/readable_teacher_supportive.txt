@@ -1,0 +1,13 @@
+Persona: teacher_supportive
+
+Exchange 1
+User: Hi, I’m planning a lesson on photosynthesis for 10th graders.
+WESLR: Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up.
+
+Exchange 2
+User: Need a simple analogy to explain light-dependent reactions.
+WESLR: The sun's energy is the source of light-dependent reactions in living organisms.
+
+Exchange 3
+User: Any quick in-class activity that fits 15 minutes?
+WESLR: The current situation feels unresolved and anxiety-inducing.
