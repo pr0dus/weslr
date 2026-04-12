@@ -91,6 +91,9 @@ Rollback (disable browser) if any occur:
 - GO when: PASS checklist completed; no rollback triggers active; E2E harness passing; route_request canonical path stable; no legacy/CLI path reachable; snapshot + checkpoint traceability aligned.
 - NO-GO when: any rollback trigger active; harness fail; send/receive fail; snapshot inconsistency; backend instability; legacy route reachable.
 
+## Browser Reactivation Freeze
+- Freeze all browser UI work (reactivation, endpoints, send-button, harness, UI routing changes) until an explicit UI return phase is strategically approved.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
