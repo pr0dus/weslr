@@ -314,6 +314,62 @@ def format_evidence_uncertainty(decision: Dict[str, Any]) -> List[str]:
     return lines
 
 
+def format_delta_block(delta: Dict[str, Any]) -> str:
+    lines: List[str] = []
+    added = delta.get("added", {})
+    removed = delta.get("removed", {})
+
+    def _title_list(items):
+        return [it.get("title", "Untitled") for it in items or []]
+
+    sections = {
+        "what_matters_now": "what matters",
+        "blocked_items": "blocked",
+        "approval_queue": "approvals",
+        "next_actions": "next actions",
+    }
+
+    for sec, label in sections.items():
+        new_items = _title_list(added.get(sec, []))
+        rem_items = _title_list(removed.get(sec, []))
+        if new_items:
+            lines.append(f"• Added to {label}: {', '.join(new_items)}")
+        if rem_items:
+            lines.append(f"• Removed from {label}: {', '.join(rem_items)}")
+
+    if delta.get("unblocked"):
+        lines.append(f"• Unblocked: {', '.join([u[0] for u in delta['unblocked']])}")
+    if delta.get("newly_blocked"):
+        lines.append(f"• Newly blocked: {', '.join([b[0] for b in delta['newly_blocked']])}")
+    if delta.get("approvals_granted"):
+        lines.append(f"• Approvals granted: {', '.join([a[0] for a in delta['approvals_granted']])}")
+    if delta.get("approvals_added"):
+        lines.append(f"• Approvals added: {', '.join([a[0] for a in delta['approvals_added']])}")
+
+    conf_delta = delta.get("confidence_change")
+    if conf_delta and conf_delta.get("delta") not in (None, 0):
+        direction = "increased" if conf_delta["delta"] > 0 else "decreased"
+        lines.append(
+            f"• Confidence {direction}: {conf_delta['prev']:.2f} → {conf_delta['curr']:.2f}"
+        )
+
+    ev = delta.get("evidence_gaps_change", {})
+    if ev.get("added"):
+        lines.append(f"• Evidence gaps added: {', '.join(ev['added'])}")
+    if ev.get("removed"):
+        lines.append(f"• Evidence gaps resolved: {', '.join(ev['removed'])}")
+
+    na = delta.get("next_actions_change", {})
+    if na.get("added"):
+        lines.append(f"• Next actions added: {', '.join(_title_list(na['added']))}")
+    if na.get("removed"):
+        lines.append(f"• Next actions removed: {', '.join(_title_list(na['removed']))}")
+
+    if not lines:
+        return ""
+    return "\n".join(["Since last time:", *lines])
+
+
 def format_status_summary(decision: Dict[str, Any], mode: str = "detailed") -> str:
     """Contract-aligned status summary surface."""
     what_matters = decision.get("what_matters_now", [])
@@ -526,13 +582,24 @@ def render_decision_for_operator(
     explanation_overrides: Optional[Dict[str, Any]] = None,
     explanation_signals: Optional[Dict[str, Any]] = None,
     summary_mode: str = "detailed",
+    previous_decision: Optional[Dict[str, Any]] = None,
 ) -> Response:
     """Render decision output through adaptive explanation for operator-facing clarity.
 
     Truth/governance unchanged; surfaces what_matters_now, blockers, and approvals via
     the existing status formatter, then applies explanation session styling.
     """
+    from .delta_tracker import diff_decisions, delta_is_empty
+
     summary = format_status_summary(decision, mode=summary_mode)
+
+    if previous_decision:
+        delta = diff_decisions(previous_decision, decision)
+        if not delta_is_empty(delta):
+            delta_block = format_delta_block(delta)
+            if delta_block:
+                summary = "\n".join([delta_block, "", summary])
+
     confidence = decision.get("confidence")
     signals = explanation_signals or {}
     has_gaps = bool(
@@ -542,13 +609,6 @@ def render_decision_for_operator(
     )
     if confidence is not None and has_gaps:
         signals = {**signals, "confidence": confidence}
-
-    has_content = bool(
-        decision.get("what_matters_now")
-        or decision.get("blocked_items")
-        or decision.get("approval_queue")
-        or decision.get("next_actions")
-    )
 
     if not has_gaps:
         # Keep explanation lead but strip evidence suggestions for no-gap views
