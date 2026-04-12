@@ -12,9 +12,15 @@ def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, 
     - Proposal emission is governed; caller is responsible for recording/surfacing.
     """
     proposals = []
-    # Optionally include prior similar proposals for basic context if passed in evidence
-    if evidence and evidence.get("similar_proposals"):
-        proposals.extend(evidence.get("similar_proposals"))
+    operator_requested = False
+    exploratory_window = False
+
+    if evidence:
+        operator_requested = evidence.get("operator_requested_repetition", False)
+        exploratory_window = evidence.get("exploratory_window", False)
+        if evidence.get("similar_proposals"):
+            proposals.extend(evidence.get("similar_proposals"))
+
     proposals.append(
         {
             "id": proposal.get("proposal_id") or proposal.get("id"),
@@ -26,6 +32,7 @@ def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, 
             "actionable": proposal.get("actionable"),
         }
     )
+
     if evidence:
         proposals[-1].update({
             "source_loop_id": evidence.get("source_loop_id"),
@@ -34,4 +41,9 @@ def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, 
             "trigger_reason": evidence.get("trigger_reason"),
             "originating_evidence_signal": evidence.get("originating_evidence_signal"),
         })
-    return evaluate(proposals)
+
+    return evaluate(
+        proposals,
+        operator_requested_repetition=operator_requested,
+        exploratory_window=exploratory_window,
+    )
