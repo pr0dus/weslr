@@ -44,8 +44,11 @@
 - Background analysis engine internal-only/proposal-only (Phase 5)
 - Canonical conversational path: route_request → DecisionLayer → (anchor/local) with thin client; browser UI deferred; CLI speak path non-default
 
+## Recovery / Resume
+- Use the canonical recovery checklist after interruptions/resets: see docs/RECOVERY_STARTUP_STATUS_CHECKLIST_v1.md
+- Why: ensures correct branch/worktree, active phases, canonical path, checkpoints, and safety toggles before resuming work.
+
 ## Open / Deferred Items
-- Recovery-oriented startup/status checklist (follow-up)
 - Background Analysis Observability Surface (new, doctrine-first)
 - Browser front door deferred until core path remains stable
 
