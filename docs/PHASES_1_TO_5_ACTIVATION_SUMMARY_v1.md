@@ -46,6 +46,7 @@
 
 ## Recovery / Resume
 - Use the canonical recovery checklist after interruptions/resets: see docs/RECOVERY_STARTUP_STATUS_CHECKLIST_v1.md
+- Snapshot: current runtime state reference at docs/CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md (active phases, checkpoints, canonical path, toggles, open items).
 - Why: ensures correct branch/worktree, active phases, canonical path, checkpoints, and safety toggles before resuming work.
 
 ## Open / Deferred Items
