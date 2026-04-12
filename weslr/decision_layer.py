@@ -40,6 +40,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# Phase 3 activation toggle (minimal rollback). When False, DecisionLayer returns
+# a rollback-safe baseline output without Phase 3 synthesis. Governance and identity
+# boundaries are external and unaffected.
+DECISION_LAYER_PHASE3_ACTIVE = True
+
 # Try relative imports first (for module context), then absolute
 try:
     from .decision_output import DecisionItem, DecisionOutput
@@ -976,6 +981,19 @@ class DecisionLayer:
         Returns:
             DecisionOutput with four unified outputs
         """
+        # Rollback toggle: when Phase 3 is disabled, return a minimal baseline
+        # without Phase 3 synthesis, leaving governance/identity boundaries untouched.
+        from weslr.decision_layer import DECISION_LAYER_PHASE3_ACTIVE  # safe import same module
+        if not DECISION_LAYER_PHASE3_ACTIVE:
+            return DecisionOutput(
+                what_matters_now=[],
+                blocked_items=[],
+                next_actions=[],
+                approval_queue=[],
+                output_id=f"decision-rollback-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}",
+                synthesis_version="rollback-disabled",
+            )
+
         # Synthesize each output
         what_matters_now = self._synthesize_what_matters_now()
         blocked_items = self._synthesize_blocked_items()
