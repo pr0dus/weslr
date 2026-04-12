@@ -44,6 +44,11 @@ Refresh rules:
 - Update: active phases, checkpoints, canonical path, toggles, deferred surfaces, open items, queued follow-ups, escalated net-new items.
 - Carry-forward: queued follow-ups and net-new escalations are retained/updated in the snapshot.
 
+## Checkpoint Traceability
+- Each major checkpoint commit/doc should reference this snapshot (CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md) as the authoritative state.
+- Snapshot should list/latest stable checkpoints so recovery and audits can trace back.
+- Add/update links in checkpoint docs to this snapshot where appropriate.
+
 ## Next Queued Follow-Ups
 - Refresh snapshot after major checkpoints (activation hygiene)
 - Design observability surface (pending approval)
