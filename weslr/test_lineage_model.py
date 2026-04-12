@@ -59,3 +59,24 @@ def test_audit_entry_proposal_mismatch():
     audit = AuditEntry(proposal_id="other", action="view", actor="u1", timestamp="2026-04-12T10:03:00Z")
     with pytest.raises(ValidationError):
         validate_audit_entry(audit, origin)
+
+def test_origin_from_change_proposal_reuses_id_and_timestamp():
+    class DummyProposal:
+        def __init__(self):
+            self.proposal_id = "p123"
+            self.created_at = "2026-04-12T09:00:00Z"
+            self.evidence_confidence = 0.55
+            self.source_scenario = "loopX"
+
+    origin = LineageOrigin.from_change_proposal(
+        DummyProposal(),
+        workspace_id="ws1",
+        user_id="u1",
+        trigger_reason="coverage_gap",
+        originating_evidence_signal="signalA",
+        linked_checkpoint="chk1",
+    )
+    assert origin.proposal_id == "p123"
+    assert origin.timestamp == "2026-04-12T09:00:00Z"
+    assert origin.confidence == 0.55
+    assert origin.source_loop_id == "loopX"
