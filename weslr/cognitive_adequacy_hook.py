@@ -1,15 +1,16 @@
 from __future__ import annotations
 from typing import Dict, Any
 from .cognitive_adequacy import evaluate
+from .cognitive_reflection import run_reflection
 
 
-def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, Any] | None = None, reflection_enabled: bool = False) -> Dict[str, Any]:
     """Guarded post-proposal adequacy hook.
 
     - Inputs: proposal record (id, conf, optional family/fix/action/evidence/actionable), optional evidence bundle.
     - Behavior: calls adequacy evaluator and returns a proposal-only adequacy finding.
+    - Optional bounded reflection pass (proposal-only) when enabled.
     - No mutation of proposal or routing/execution path.
-    - Proposal emission is governed; caller is responsible for recording/surfacing.
     """
     proposals = []
     operator_requested = False
@@ -42,8 +43,13 @@ def run_post_proposal_adequacy(proposal: Dict[str, Any], *, evidence: Dict[str, 
             "originating_evidence_signal": evidence.get("originating_evidence_signal"),
         })
 
-    return evaluate(
+    result = evaluate(
         proposals,
         operator_requested_repetition=operator_requested,
         exploratory_window=exploratory_window,
     )
+
+    if reflection_enabled and result.get("inadequate"):
+        result["reflection"] = run_reflection(proposal, evidence)
+
+    return result

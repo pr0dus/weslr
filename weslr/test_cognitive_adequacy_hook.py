@@ -47,3 +47,20 @@ def test_post_proposal_hook_guard_exploratory():
     res = run_post_proposal_adequacy(proposal, evidence=evidence)
     assert res["inadequate"] is False
     assert res["proposal"]["emit"] is False
+
+
+def test_post_proposal_reflection_optional_and_off_by_default():
+    fixture = FIXTURES["CA-LOWCONF-1"]
+    evidence = {"similar_proposals": fixture["proposals"]}
+    proposal = fixture["proposals"][0]
+    res = run_post_proposal_adequacy(proposal, evidence=evidence)
+    assert "reflection" not in res
+
+
+def test_post_proposal_reflection_when_enabled():
+    fixture = FIXTURES["CA-E2A-1"]
+    evidence = {"similar_proposals": fixture["proposals"], "coverage_gap": True}
+    proposal = fixture["proposals"][0]
+    res = run_post_proposal_adequacy(proposal, evidence=evidence, reflection_enabled=True)
+    assert res.get("reflection", {}).get("reflection_added") is True
+    assert isinstance(res.get("reflection", {}).get("consistency_notes"), list)
