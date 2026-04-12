@@ -52,4 +52,5 @@
 
 ## SECTION 7 — NEXT STEP
 - Freeze Wave 2; open Wave 3 only with explicit approval.
+- Transcript/Persona validation workflow: PARKED (future milestone) — runner/exports/review tooling preserved; no further transcript runs until reopened.
 > Reference: docs/HISTORICAL_LAYER_RECONCILIATION_AUDIT_v1.md
