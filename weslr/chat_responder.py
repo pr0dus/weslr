@@ -418,6 +418,23 @@ class ChatResponder:
     def __init__(self):
         """Initialize the chat responder."""
         self.greeting_shown = False
+
+    def respond_chat(self, message: str) -> str:
+        """Subject-following chat reply that hides internal priorities."""
+        msg_lower = (message or "").lower()
+        if not msg_lower:
+            return "What’s on your mind?"
+        if "lunch" in msg_lower:
+            return "Quick lunch ideas: grain bowl (rice/quinoa) with veg + protein, or a sandwich + fruit/yogurt. Keep it light if you have work after."
+        if "plan" in msg_lower:
+            return "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up."
+        if "wife" in msg_lower or "partner" in msg_lower:
+            return "Keep it clear and kind. Share the key point, what you’re doing about it, and anything you need from them."
+        if "code" in msg_lower or "bug" in msg_lower:
+            return "Describe the code issue and error; I’ll help outline a fix or steps to debug."
+        if "email" in msg_lower:
+            return "Draft the email goal and key points; I’ll help tighten it up."
+        return "Got it. Tell me a bit more and I’ll help you work through it."
     
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
         """Generate a conversational response to a user message.
@@ -515,6 +532,12 @@ def handle_request(
     Keeps truth/governance intact; exposes blockers/approvals/next actions to operator.
     Supports optional previous_decision for continuity delta rendering.
     """
+    request_mode = request.get("request_mode")
+    if request_mode == "chat":
+        msg = (request.get("message") or "").strip()
+        reply = ChatResponder().respond_chat(msg)
+        return Response(content=reply, metadata=None, actions=[])
+
     try:
         from .decision_layer import DecisionLayer
     except Exception:
@@ -544,6 +567,15 @@ def handle_request(
     )
     # Attach actions explicitly
     resp.actions = decision.get("next_actions", [])
+    snapshot = {
+        "what_matters_now": decision.get("what_matters_now", []),
+        "blocked_items": decision.get("blocked_items", []),
+        "approval_queue": decision.get("approval_queue", []),
+        "next_actions": decision.get("next_actions", []),
+        "confidence": decision.get("confidence"),
+        "evidence_gaps": decision.get("evidence_gaps"),
+    }
+    resp.metadata = {**(resp.metadata or {}), "decision_snapshot": snapshot}
     return resp
 
 

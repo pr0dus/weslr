@@ -13,12 +13,14 @@ def normalize_request(raw: Dict[str, Any]) -> Dict[str, Any]:
     domain = raw.get("domain") or "general"
     previous_decision = raw.get("previous_decision")
     explanation_overrides = raw.get("explanation_overrides") or raw.get("mode")
+    request_mode = raw.get("request_mode") or raw.get("mode")
 
     normalized = {
         "message": raw.get("message"),
         "persona": persona,
         "domain": domain,
         "previous_decision": previous_decision,
+        "request_mode": request_mode,
         "explanation_overrides": explanation_overrides,
     }
     return normalized
