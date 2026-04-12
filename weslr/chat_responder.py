@@ -14,6 +14,19 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
+
+
+def _synthesize_active_context(message: str, chat_context: Optional[List[str]], chat_hints: Optional[List[str]]) -> Dict[str, bool]:
+    text_pool = " ".join([message or "", " ".join(chat_context or []), " ".join(chat_hints or [])]).lower()
+    def has_any(keywords):
+        return any(k in text_pool for k in keywords)
+    return {
+        "wants_workout": has_any(["workout", "gym", "run", "exercise"]),
+        "mentions_email": has_any(["email", "inbox", "reply", "send"]),
+        "mentions_plan": has_any(["plan", "schedule", "afternoon", "morning"]),
+        "mentions_lunch": has_any(["lunch", "eat", "food", "light meal"]),
+        "prefers_concise": has_any(["concise", "brief"]) or "prefers concise" in (" ".join(chat_hints or [])).lower(),
+    }
 from .request_parser import parse_request, apply_request_to_decision
 from .explanation_responder import ExplanationSession
 
@@ -447,26 +460,20 @@ class ChatResponder:
     ) -> str:
         """Subject-following chat reply that hides internal priorities.
 
-        Uses lightweight recent context (list of prior user messages) and a hidden
-        hint list (promoted per-user cues) to add small helpful hints without
-        exposing status/continuity.
+        Uses lightweight recent context + hidden hints to tailor replies subtly.
         """
         msg_lower = (message or "").lower()
         ctx = " ".join(chat_context or []).lower() if chat_context else ""
         hint_text = " ".join(chat_hints or []).lower() if chat_hints else ""
 
-        def has_any(text, keywords):
-            return any(k in text for k in keywords)
-
         if not msg_lower:
             return "What’s on your mind?"
 
-        # Context-aware hints (recent + hints)
-        text_pool = ctx + " " + hint_text
-        lunch_hint = has_any(text_pool, ["lunch", "eat", "food", "light meal"])
-        workout_hint = has_any(text_pool, ["workout", "gym", "run", "exercise"])
-        email_hint = has_any(text_pool, ["email", "inbox", "reply"])
-        plan_hint = has_any(text_pool, ["plan", "schedule", "afternoon", "morning"])
+        synth = _synthesize_active_context(message, chat_context, chat_hints)
+        lunch_hint = synth["mentions_lunch"]
+        workout_hint = synth["wants_workout"]
+        email_hint = synth["mentions_email"]
+        plan_hint = synth["mentions_plan"]
 
         if "lunch" in msg_lower:
             if workout_hint:
