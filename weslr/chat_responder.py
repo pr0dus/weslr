@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from .chat_hints import get_hints
 from .request_parser import parse_request, apply_request_to_decision
 from .explanation_responder import ExplanationSession
 
@@ -419,14 +420,21 @@ class ChatResponder:
         """Initialize the chat responder."""
         self.greeting_shown = False
 
-    def respond_chat(self, message: str, chat_context: Optional[List[str]] = None) -> str:
+    def respond_chat(
+        self,
+        message: str,
+        chat_context: Optional[List[str]] = None,
+        chat_hints: Optional[List[str]] = None,
+    ) -> str:
         """Subject-following chat reply that hides internal priorities.
 
-        Uses lightweight recent context (list of prior user messages) to add small
-        helpful hints without exposing status/continuity.
+        Uses lightweight recent context (list of prior user messages) and a hidden
+        hint list (promoted per-user cues) to add small helpful hints without
+        exposing status/continuity.
         """
         msg_lower = (message or "").lower()
         ctx = " ".join(chat_context or []).lower() if chat_context else ""
+        hint_text = " ".join(chat_hints or []).lower() if chat_hints else ""
 
         def has_any(text, keywords):
             return any(k in text for k in keywords)
@@ -434,11 +442,12 @@ class ChatResponder:
         if not msg_lower:
             return "What’s on your mind?"
 
-        # Context-aware hints
-        lunch_hint = has_any(ctx, ["lunch", "eat", "food"])
-        workout_hint = has_any(ctx, ["workout", "gym", "run", "exercise"])
-        email_hint = has_any(ctx, ["email", "inbox", "reply"])
-        plan_hint = has_any(ctx, ["plan", "schedule", "afternoon", "morning"])
+        # Context-aware hints (recent + hints)
+        text_pool = ctx + " " + hint_text
+        lunch_hint = has_any(text_pool, ["lunch", "eat", "food", "light meal"])
+        workout_hint = has_any(text_pool, ["workout", "gym", "run", "exercise"])
+        email_hint = has_any(text_pool, ["email", "inbox", "reply"])
+        plan_hint = has_any(text_pool, ["plan", "schedule", "afternoon", "morning"])
 
         if "lunch" in msg_lower:
             if workout_hint:
@@ -455,6 +464,8 @@ class ChatResponder:
         if "plan" in msg_lower:
             if email_hint:
                 return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) 15–20min to clear the important email, 4) short break, 5) wrap-up."
+            if workout_hint:
+                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) workout 30–45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up."
             return "Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up."
 
         if "email" in msg_lower:
@@ -570,7 +581,10 @@ def handle_request(
     if request_mode == "chat":
         msg = (request.get("message") or "").strip()
         chat_context = request.get("chat_context")
-        reply = ChatResponder().respond_chat(msg, chat_context)
+        workspace_id = request.get("workspace_id")
+        user_id = request.get("user_id")
+        chat_hints = request.get("chat_hints") or get_hints(workspace_id, user_id)
+        reply = ChatResponder().respond_chat(msg, chat_context, chat_hints)
         return Response(content=reply, metadata=None, actions=[])
 
     try:
