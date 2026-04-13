@@ -540,7 +540,7 @@ class ChatResponder:
         try:
             st = llm_status()
             if not st.get("live"):
-                return f"Model unavailable (provider={st.get('provider')}, live={st.get('live')})."
+                return "Model is temporarily unavailable. Try again in a moment."
 
             result = generate_chat(
                 message,
@@ -597,17 +597,21 @@ class ChatResponder:
                 return "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends."
 
             if _looks_meta(summary) or _too_vague(summary):
-                rescue = generate_inner_thought(
-                    "communicator",
+                rescue = generate_chat(
+                    message,
                     {
-                        "chat_message": message,
                         "wake_reason": "chat_request",
-                        "requested_style": "Rescue answer: 2 concise, actionable steps for the user; no meta/internal wording; no slogans; stay on the user’s request only.",
+                        "requested_style": "Rescue answer: give 2 concrete, actionable steps for the user; no meta/internal wording; no slogans; stay on the user’s request only.",
                     },
                 )
-                rescue_summary = rescue.get("summary") or rescue.get("concern") or summary
+                metadata["rescue_used"] = True
+                rescue_summary = rescue.get("summary") or summary
                 if not _looks_meta(rescue_summary) and not _too_vague(rescue_summary):
                     summary = rescue_summary
+
+            # If still vague, provide a deterministic concise helper
+            if _too_vague(summary):
+                summary = "Quick steps: 1) state your goal in one sentence, 2) list the top 3 actions to move it forward." 
 
             # Return user-visible summary only; metadata is kept internal/operator-facing
             return summary
