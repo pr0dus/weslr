@@ -547,6 +547,16 @@ class ChatResponder:
                 {"wake_reason": "chat_request", "requested_style": "concise actionable reply for user; avoid meta/internal language; 2-3 concrete suggestions"},
             )
             summary = result.get("summary") or "(no content returned)"
+            metadata = {
+                "path": "chat",
+                "provider": result.get("provider"),
+                "fallback_used": result.get("provider") == "fallback" or not result.get("summary"),
+                "rescue_used": False,  # may be updated below
+                "continuity_stance": "stateless",
+                "governance_lane": "CDI_proposal_only",
+                "lineage_attached": False,
+            }
+            # TODO: attach this metadata to an operator-only surface; do not include in user content
 
             if _looks_meta(summary) or _too_vague(summary):
                 retry = generate_chat(
@@ -556,6 +566,7 @@ class ChatResponder:
                         "requested_style": "answer the user directly with concise, actionable steps; no meta language; avoid slogans; include 2 specific suggestions",
                     },
                 )
+                metadata["rescue_used"] = True
                 summary = retry.get("summary") or summary
 
             if _looks_meta(summary) or _too_vague(summary):
@@ -566,6 +577,7 @@ class ChatResponder:
                         "requested_style": "Direct user-facing answer. No meta words (communicator, wake, continuity, internal, prompt, schema). Keep 2-3 actionable steps, concrete verbs, no slogans.",
                     },
                 )
+                metadata["rescue_used"] = True
                 cleaned = final.get("summary") or summary
                 banned = ["communicator", "chat_request", "current pressure", "continuity pressure", "wake", "woke", "continuity", "internal", "schema", "prompt", "json", "inner", "fallback", "woke on", "chat_request around", "continuity pressure" ]
                 for b in banned:
@@ -581,6 +593,7 @@ class ChatResponder:
             # Targeted low-focus rescue: if the user signals low focus, return a fixed concise helper
             msg_lower = (message or "").lower()
             if "low on focus" in msg_lower or "low focus" in msg_lower or "can't focus" in msg_lower:
+                metadata["rescue_used"] = True
                 return "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends."
 
             if _looks_meta(summary) or _too_vague(summary):
@@ -596,8 +609,7 @@ class ChatResponder:
                 if not _looks_meta(rescue_summary) and not _too_vague(rescue_summary):
                     summary = rescue_summary
 
-            return summary
-
+            # Return user-visible summary only; metadata is kept internal/operator-facing
             return summary
         except Exception as e:
             return f"Model call failed: {e}"
