@@ -42,3 +42,22 @@ def record_inadequacy_event(metadata: Dict[str, Any]) -> None:
 
     with STORAGE_PATH.open("a", encoding="utf-8") as fd:
         fd.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+def _load_events() -> List[Dict[str, Any]]:
+    if not STORAGE_PATH.exists():
+        return []
+    events: List[Dict[str, Any]] = []
+    with STORAGE_PATH.open("r", encoding="utf-8") as fd:
+        for line in fd:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ts = datetime.fromisoformat(payload.get("timestamp", datetime.utcnow().isoformat()))
+            payload["timestamp_dt"] = ts
+            events.append(payload)
+    return events
