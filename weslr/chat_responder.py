@@ -459,17 +459,18 @@ class ChatResponder:
         message: str,
         chat_context: Optional[List[str]] = None,
         chat_hints: Optional[List[str]] = None,
-    ) -> str:
+    ) -> tuple[str, dict[str, Any] | None]:
         """Subject-following chat reply that hides internal priorities.
 
         Uses lightweight recent context + hidden hints to tailor replies subtly.
+        Returns (content, metadata).
         """
         msg_lower = (message or "").lower()
         ctx = " ".join(chat_context or []).lower() if chat_context else ""
         hint_text = " ".join(chat_hints or []).lower() if chat_hints else ""
 
         if not msg_lower:
-            return "What’s on your mind?"
+            return "What’s on your mind?", None
 
         synth = _synthesize_active_context(message, chat_context, chat_hints)
         lunch_hint = synth["mentions_lunch"]
@@ -479,38 +480,38 @@ class ChatResponder:
 
         if "lunch" in msg_lower:
             if workout_hint:
-                return "Light lunch ideas before a workout: grain bowl (rice/quinoa) with veg + lean protein, or a sandwich + fruit/yogurt. Leave 60–90min before exercising."
-            return "Quick lunch ideas: grain bowl (rice/quinoa) with veg + protein, or a sandwich + fruit/yogurt. Keep it light if you have work after."
+                return "Light lunch ideas before a workout: grain bowl (rice/quinoa) with veg + lean protein, or a sandwich + fruit/yogurt. Leave 60–90min before exercising.", None
+            return "Quick lunch ideas: grain bowl (rice/quinoa) with veg + protein, or a sandwich + fruit/yogurt. Keep it light if you have work after.", None
 
         if "workout" in msg_lower or "gym" in msg_lower or "run" in msg_lower or "exercise" in msg_lower:
             if lunch_hint:
-                return "If you ate recently, give yourself ~60–90min, then do a steady 30–45min session plus a short warm-up/cool-down."
+                return "If you ate recently, give yourself ~60–90min, then do a steady 30–45min session plus a short warm-up/cool-down.", None
             if plan_hint:
-                return "Slot the workout after your main focus block; 30–45min is fine. Add a 5–10min warm-up and cool-down."
-            return "Plan a 30–45min session with a warm-up and cool-down; schedule it around your main tasks so it sticks."
+                return "Slot the workout after your main focus block; 30–45min is fine. Add a 5–10min warm-up and cool-down.", None
+            return "Plan a 30–45min session with a warm-up and cool-down; schedule it around your main tasks so it sticks.", None
 
         if "plan" in msg_lower:
             if email_hint:
-                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) 15–20min to clear the important email, 4) short break, 5) wrap-up."
+                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) 15–20min to clear the important email, 4) short break, 5) wrap-up.", None
             if workout_hint:
-                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) workout 30–45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up."
-            return "Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up."
+                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) workout 30–45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up.", None
+            return "Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up.", None
 
         if "email" in msg_lower:
             if plan_hint:
-                return "Draft the email goal + key points; send it in your admin slot so it doesn’t break focus. I can help tighten the draft."
-            return "Draft the email goal and key points; I’ll help tighten it up."
+                return "Draft the email goal + key points; send it in your admin slot so it doesn’t break focus. I can help tighten the draft.", None
+            return "Draft the email goal and key points; I’ll help tighten it up.", None
 
         if "wife" in msg_lower or "partner" in msg_lower:
-            return "Keep it clear and kind. Share the key point, what you’re doing about it, and anything you need from them."
+            return "Keep it clear and kind. Share the key point, what you’re doing about it, and anything you need from them.", None
 
         if "code" in msg_lower or "bug" in msg_lower:
-            return "Describe the code issue and error; I’ll help outline a fix or steps to debug."
+            return "Describe the code issue and error; I’ll help outline a fix or steps to debug.", None
 
         # Prefer model-backed response; if unavailable, surface error
         return self._model_chat_response(message or "")
     
-    def _model_chat_response(self, message: str) -> str:
+    def _model_chat_response(self, message: str) -> tuple[str, dict[str, Any] | None]:
         def _looks_meta(text: str) -> bool:
             t = (text or "").lower()
             meta_tokens = [
@@ -538,26 +539,34 @@ class ChatResponder:
             return any(tok in t.lower() for tok in vague_tokens)
 
         try:
+            metadata = None
             state, state_reason = provider_state()
+            metadata = {
+                "path": "chat",
+                "provider": "fallback",
+                "runtime_state": state,
+                "runtime_state_reason": state_reason,
+                "fallback_used": False,
+                "rescue_used": False,
+            }
             if state == "unavailable":
-                return "Model is temporarily unavailable. Try again in a moment."
+                return (
+                    "Model is temporarily unavailable. Try again in a moment.",
+                    metadata,
+                )
 
             result = generate_chat(
                 message,
                 {"wake_reason": "chat_request", "requested_style": "concise actionable reply for user; avoid meta/internal language; 2-3 concrete suggestions"},
             )
             summary = result.get("summary") or "(no content returned)"
-            metadata = {
-                "path": "chat",
+            metadata.update({
                 "provider": result.get("provider"),
                 "fallback_used": result.get("provider") == "fallback" or not result.get("summary"),
-                "rescue_used": False,  # may be updated below
                 "continuity_stance": "stateless",
                 "governance_lane": "CDI_proposal_only",
                 "lineage_attached": False,
-                "runtime_state": state,
-                "runtime_state_reason": state_reason,
-            }
+            })
             # TODO: attach this metadata to an operator-only surface; do not include in user content
 
             if _looks_meta(summary) or _too_vague(summary):
@@ -596,7 +605,10 @@ class ChatResponder:
             msg_lower = (message or "").lower()
             if "low on focus" in msg_lower or "low focus" in msg_lower or "can't focus" in msg_lower:
                 metadata["rescue_used"] = True
-                return "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends."
+                return (
+                    "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends.",
+                    metadata,
+                )
 
             if _looks_meta(summary) or _too_vague(summary):
                 rescue = generate_chat(
@@ -616,9 +628,19 @@ class ChatResponder:
                 summary = "Quick steps: 1) state your goal in one sentence, 2) list the top 3 actions to move it forward." 
 
             # Return user-visible summary only; metadata is kept internal/operator-facing
-            return summary
+            return summary, metadata
         except Exception as e:
-            return f"Model call failed: {e}"
+            return (
+                f"Model call failed: {e}",
+                metadata if metadata else {
+                    "path": "chat",
+                    "provider": "fallback",
+                    "runtime_state": "unavailable",
+                    "runtime_state_reason": "exception",
+                    "fallback_used": True,
+                    "rescue_used": False,
+                },
+            )
 
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
         """Generate a conversational response to a user message.
@@ -723,9 +745,9 @@ def handle_request(
         workspace_id = request.get("workspace_id")
         user_id = request.get("user_id")
         chat_hints = request.get("chat_hints") or get_hints(workspace_id, user_id)
-        reply = ChatResponder().respond_chat(msg, chat_context, chat_hints)
+        reply, reply_meta = ChatResponder().respond_chat(msg, chat_context, chat_hints)
         _maybe_promote_hints(workspace_id, user_id, msg.lower(), chat_context)
-        return Response(content=reply, metadata=None, actions=[])
+        return Response(content=reply, metadata=reply_meta, actions=[])
 
     try:
         from .decision_layer import DecisionLayer
