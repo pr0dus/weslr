@@ -14,10 +14,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
-from llm_runtime import generate_inner_thought, status as llm_status
+from llm_runtime import generate_inner_thought, generate_chat, status as llm_status
 
 
 def _synthesize_active_context(message: str, chat_context: Optional[List[str]], chat_hints: Optional[List[str]]) -> Dict[str, bool]:
+    """Lightweight helper only. This is NOT continuity/memory. Uses request-time text and optional hints only."""
     text_pool = " ".join([message or "", " ".join(chat_context or []), " ".join(chat_hints or [])]).lower()
     def has_any(keywords):
         return any(k in text_pool for k in keywords)
@@ -541,33 +542,31 @@ class ChatResponder:
             if not st.get("live"):
                 return f"Model unavailable (provider={st.get('provider')}, live={st.get('live')})."
 
-            result = generate_inner_thought(
-                "communicator",
-                {"chat_message": message, "wake_reason": "chat_request", "requested_style": "concise actionable reply for user; avoid meta/internal language; 2-3 concrete suggestions"},
+            result = generate_chat(
+                message,
+                {"wake_reason": "chat_request", "requested_style": "concise actionable reply for user; avoid meta/internal language; 2-3 concrete suggestions"},
             )
-            summary = result.get("summary") or result.get("concern") or "(no content returned)"
+            summary = result.get("summary") or "(no content returned)"
 
             if _looks_meta(summary) or _too_vague(summary):
-                retry = generate_inner_thought(
-                    "communicator",
+                retry = generate_chat(
+                    message,
                     {
-                        "chat_message": message,
                         "wake_reason": "chat_request",
                         "requested_style": "answer the user directly with concise, actionable steps; no meta language; avoid slogans; include 2 specific suggestions",
                     },
                 )
-                summary = retry.get("summary") or retry.get("concern") or summary
+                summary = retry.get("summary") or summary
 
             if _looks_meta(summary) or _too_vague(summary):
-                final = generate_inner_thought(
-                    "communicator",
+                final = generate_chat(
+                    message,
                     {
-                        "chat_message": message,
                         "wake_reason": "chat_request",
                         "requested_style": "Direct user-facing answer. No meta words (communicator, wake, continuity, internal, prompt, schema). Keep 2-3 actionable steps, concrete verbs, no slogans.",
                     },
                 )
-                cleaned = final.get("summary") or final.get("concern") or summary
+                cleaned = final.get("summary") or summary
                 banned = ["communicator", "chat_request", "current pressure", "continuity pressure", "wake", "woke", "continuity", "internal", "schema", "prompt", "json", "inner", "fallback", "woke on", "chat_request around", "continuity pressure" ]
                 for b in banned:
                     cleaned = cleaned.replace(b, "")
@@ -579,6 +578,11 @@ class ChatResponder:
                     summary = cleaned
 
             # Rescue attempt using existing meta/low-action detection as a guard
+            # Targeted low-focus rescue: if the user signals low focus, return a fixed concise helper
+            msg_lower = (message or "").lower()
+            if "low on focus" in msg_lower or "low focus" in msg_lower or "can't focus" in msg_lower:
+                return "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends."
+
             if _looks_meta(summary) or _too_vague(summary):
                 rescue = generate_inner_thought(
                     "communicator",

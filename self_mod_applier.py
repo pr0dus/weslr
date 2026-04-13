@@ -8,6 +8,9 @@ from pathlib import Path
 
 MOD_LOG_PATH = "self_mod_log.json"
 CHECKPOINT_DIR = "checkpoints"
+# LEGACY/EXPERIMENTAL: This module is NOT the canonical improvement/governance lane.
+# Canonical lane: adequacy → CDI proposal (with lineage/evidence) → operator approve/deny/refine → execution eligibility (governed).
+# Do not treat this file as protected-core improvement; keep it isolated/experimental.
 PROTECTED_FILES = {"main.py", "sim.py", "agent_runtime.py", "llm_runtime.py", "continuity.py", "relational.py", "perception.py"}
 
 

@@ -47,14 +47,14 @@ def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
 
 
 def _prompt(context: dict[str, Any]) -> dict[str, Any]:
-    # If this is a user chat message, ask for a user-facing reply in summary.
-    if context.get("chat_message"):
+    # Chat-facing prompt path (user-visible response). Explicitly marked by chat_mode="chat".
+    if context.get("chat_message") is not None and context.get("chat_mode") == "chat":
         return {
             "identity": "You are WESLR responding directly to a user chat.",
             "job": "Provide a concise, actionable reply for the user. The 'summary' IS the user-facing response.",
             "hard_rules": [
                 "Return strict JSON only.",
-                "No meta/internal language. No schema/prompt mentions. No slogans.",
+                "No meta/internal language. No schema/prompt mentions. No role/wake/continuity phrasing.",
                 "2–3 concise, concrete suggestions; be specific to the user's message.",
             ],
             "field_guidance": {
@@ -67,6 +67,7 @@ def _prompt(context: dict[str, Any]) -> dict[str, Any]:
             "live_context": context,
         }
 
+    # Legacy inner-thought path (internal roles only)
     return {
         "identity": "You are not an assistant answering a user. You are one inner function inside one continuing local being.",
         "job": "Emit one compact inner-thought state for your role, grounded in the live world/context below.",
@@ -232,6 +233,25 @@ def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]
         return fallback
 
 
+def generate_chat(message: str, context: dict[str, Any]) -> dict[str, Any]:
+    """Chat-facing entrypoint. Returns chat-safe payload only."""
+    role = "chat"
+    chat_context = {"chat_message": message, "chat_mode": "chat", **(context or {})}
+    fallback = {"summary": "Couldn't form a response on the task at hand.", "provider": "fallback"}
+    provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
+
+    try:
+        if provider == "ollama":
+            return _generate_via_ollama(role, chat_context, fallback, chat_mode=True)
+        if provider in {"openai", "openai_compatible", "oauth"}:
+            return _generate_via_openai_compatible(role, chat_context, fallback, chat_mode=True)
+        if provider in {"embedded", "llama_cpp", "embedded_llama_cpp"}:
+            return _generate_via_embedded(role, chat_context, fallback)
+        return fallback
+    except Exception:
+        return fallback
+
+
 def _meta_sounding(text: str) -> bool:
     lowered = text.strip().lower()
     bad_fragments = [
@@ -255,7 +275,18 @@ def _meta_sounding(text: str) -> bool:
     return any(fragment in lowered for fragment in bad_fragments)
 
 
-def _normalize(parsed: dict[str, Any], role: str, fallback: dict[str, Any], provider: str) -> dict[str, Any]:
+def _normalize_chat(parsed: dict[str, Any], fallback: dict[str, Any], provider: str) -> dict[str, Any]:
+    summary = str(parsed.get("summary") or fallback["summary"])[:240]
+    if _meta_sounding(summary) or summary.strip().endswith(":"):
+        summary = fallback["summary"]
+    return {
+        "kind": "chat_response",
+        "summary": summary,
+        "provider": provider,
+    }
+
+
+def _normalize_inner(parsed: dict[str, Any], role: str, fallback: dict[str, Any], provider: str) -> dict[str, Any]:
     summary = str(parsed.get("summary") or fallback["summary"])[:240]
     concern = str(parsed.get("concern") or fallback["concern"])[:160]
     intent = str(parsed.get("intent") or fallback["intent"])[:160]
@@ -283,7 +314,7 @@ def _normalize(parsed: dict[str, Any], role: str, fallback: dict[str, Any], prov
     }
 
 
-def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str, Any], *, chat_mode: bool = False) -> dict[str, Any]:
     import socket
     socket.setdefaulttimeout(OLLAMA_TIMEOUT_SECONDS)
     
@@ -311,12 +342,14 @@ def _generate_via_ollama(role: str, context: dict[str, Any], fallback: dict[str,
             parsed = json.loads(response_str)
         else:
             parsed = response_str
-        return _normalize(parsed, role, fallback, "ollama")
+        if chat_mode:
+            return _normalize_chat(parsed, fallback, "ollama")
+        return _normalize_inner(parsed, role, fallback, "ollama")
     except socket.timeout:
         return fallback
 
 
-def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback: dict[str, Any], *, chat_mode: bool = False) -> dict[str, Any]:
     if not OPENAI_API_KEY:
         return fallback
     body = json.dumps({
@@ -341,10 +374,12 @@ def _generate_via_openai_compatible(role: str, context: dict[str, Any], fallback
         payload = json.loads(resp.read().decode("utf-8"))
     content = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or "{}")
     parsed = json.loads(content)
-    return _normalize(parsed, role, fallback, "openai")
+    if chat_mode:
+        return _normalize_chat(parsed, fallback, "openai")
+    return _normalize_inner(parsed, role, fallback, "openai")
 
 
-def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[str, Any], *, chat_mode: bool = False) -> dict[str, Any]:
     model_path = WESLR_EMBEDDED_MODEL_PATH
     if not model_path.exists():
         return fallback
@@ -353,10 +388,10 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     try:
         from llama_cpp import Llama  # type: ignore
     except Exception:
-        server_result = _generate_via_embedded_server(role, prompt_payload, fallback)
+        server_result = _generate_via_embedded_server(role, prompt_payload, fallback, chat_mode=chat_mode)
         if server_result.get("provider") == "embedded":
             return server_result
-        return _generate_via_embedded_cli(role, prompt, fallback)
+        return _generate_via_embedded_cli(role, prompt, fallback, chat_mode=chat_mode)
     llm = Llama(model_path=str(model_path), n_ctx=2048, verbose=False)
     out = llm.create_completion(
         prompt=prompt,
@@ -366,7 +401,9 @@ def _generate_via_embedded(role: str, context: dict[str, Any], fallback: dict[st
     )
     text = ((out.get("choices") or [{}])[0].get("text") or "{}").strip()
     parsed = json.loads(text)
-    return _normalize(parsed, role, fallback, "embedded")
+    if chat_mode:
+        return _normalize_chat(parsed, fallback, "embedded")
+    return _normalize_inner(parsed, role, fallback, "embedded")
 
 
 def _embedded_server_base() -> str:
@@ -439,7 +476,7 @@ def _ensure_embedded_server() -> bool:
     return False
 
 
-def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+def _generate_via_embedded_server(role: str, prompt_payload: dict[str, Any], fallback: dict[str, Any], *, chat_mode: bool = False) -> dict[str, Any]:
     server_base = _embedded_server_base()
     server_ok = _ensure_embedded_server()
     if not server_ok:

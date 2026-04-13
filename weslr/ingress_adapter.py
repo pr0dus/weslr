@@ -6,8 +6,8 @@ from .chat_responder import handle_request, Response
 def normalize_request(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize raw channel input into a WESLR request dict.
 
-    Minimal mapping: persona/domain defaults, previous_decision passthrough, explanation overrides/mode if provided.
-    Does not alter governance or signals.
+    Stateless stance: main-door chat has no canonical persistent continuity. Valid context is limited to the
+    current request fields and optional explicit chat_context. Hints (if used downstream) are helper-only, not continuity.
     """
     persona = raw.get("persona") or "general user"
     domain = raw.get("domain") or "general"
@@ -36,7 +36,7 @@ def normalize_request(raw: Dict[str, Any]) -> Dict[str, Any]:
         "previous_decision": previous_decision,
         "request_mode": inferred_mode,
         "explanation_overrides": explanation_overrides,
-        "chat_context": raw.get("chat_context"),
+        "chat_context": raw.get("chat_context"),  # explicit context only; no implicit continuity
     }
     return normalized
 

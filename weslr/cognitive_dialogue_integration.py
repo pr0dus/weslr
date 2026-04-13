@@ -5,9 +5,11 @@ from .cognitive_dialogue import explain_inadequacy, propose_improvement, handle_
 
 
 def build_cdi_bundle(adequacy_finding: Optional[Dict[str, Any]], operator_action: Optional[str] = None, refinement: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Operator-triggered CDI bundle. Requires an adequacy finding.
+    """Canonical improvement lane (operator-triggered): adequacy → CDI proposal → operator decision.
 
-    Returns None if no adequacy finding is provided. No activation, no routing changes.
+    - Requires an adequacy finding (proposal-only). Returns None if absent.
+    - Attaches lineage/evidence when provided; proposals without lineage/evidence are not canonical core governance.
+    - No activation, no routing changes, no autonomous approval.
     """
     if not adequacy_finding:
         return None
@@ -28,4 +30,6 @@ def build_cdi_bundle(adequacy_finding: Optional[Dict[str, Any]], operator_action
         "explanation": explanation,
         "proposal": improvement,
         "operator_outcome": operator_outcome,
+        "lineage_ref": lineage_ref,
+        "evidence": evidence,
     }
