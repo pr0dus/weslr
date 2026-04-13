@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
-from llm_runtime import generate_inner_thought, generate_chat, status as llm_status
+from llm_runtime import generate_inner_thought, generate_chat, provider_state, status as llm_status
 
 
 def _synthesize_active_context(message: str, chat_context: Optional[List[str]], chat_hints: Optional[List[str]]) -> Dict[str, bool]:
@@ -538,8 +538,8 @@ class ChatResponder:
             return any(tok in t.lower() for tok in vague_tokens)
 
         try:
-            st = llm_status()
-            if not st.get("live"):
+            state, state_reason = provider_state()
+            if state == "unavailable":
                 return "Model is temporarily unavailable. Try again in a moment."
 
             result = generate_chat(
@@ -555,6 +555,8 @@ class ChatResponder:
                 "continuity_stance": "stateless",
                 "governance_lane": "CDI_proposal_only",
                 "lineage_attached": False,
+                "runtime_state": state,
+                "runtime_state_reason": state_reason,
             }
             # TODO: attach this metadata to an operator-only surface; do not include in user content
 

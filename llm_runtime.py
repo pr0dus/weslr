@@ -638,6 +638,22 @@ def status() -> dict[str, Any]:
     return result
 
 
+def provider_state() -> tuple[str, str]:
+    st = status()
+    provider = st.get("provider", "fallback")
+    if not st.get("enabled"):
+        return "unavailable", "LLM disabled"
+    if provider in {"openai", "openai_compatible", "oauth"} and not st.get("openai_configured"):
+        return "unavailable", "OpenAI credentials missing"
+    if st.get("live"):
+        return "healthy", "provider live"
+    if provider in {"embedded", "llama_cpp", "embedded_llama_cpp"} and not st.get("embedded_server_reachable"):
+        return "degraded", "Embedded server unreachable"
+    if provider == "fallback":
+        return "unavailable", "No provider configured"
+    return "degraded", "Provider configured but not live"
+
+
 def health() -> dict[str, Any]:
     """Health endpoint for monitoring - returns structured status."""
     provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
