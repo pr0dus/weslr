@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
+from .inadequacy_persistence import record_inadequacy_event
 from llm_runtime import generate_inner_thought, generate_chat, provider_state, status as llm_status
 
 
@@ -549,11 +550,13 @@ class ChatResponder:
                 "fallback_used": False,
                 "rescue_used": False,
             }
+
+            def finalize(text: str) -> tuple[str, dict[str, Any]]:
+                record_inadequacy_event(metadata)
+                return text, metadata
+
             if state == "unavailable":
-                return (
-                    "Model is temporarily unavailable. Try again in a moment.",
-                    metadata,
-                )
+                return finalize("Model is temporarily unavailable. Try again in a moment.")
 
             result = generate_chat(
                 message,
@@ -605,10 +608,7 @@ class ChatResponder:
             msg_lower = (message or "").lower()
             if "low on focus" in msg_lower or "low focus" in msg_lower or "can't focus" in msg_lower:
                 metadata["rescue_used"] = True
-                return (
-                    "Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends.",
-                    metadata,
-                )
+                return finalize("Do one 15-min task: 1) set a timer, 2) pick the smallest next step, 3) silence pings until timer ends.")
 
             if _looks_meta(summary) or _too_vague(summary):
                 rescue = generate_chat(
@@ -628,18 +628,20 @@ class ChatResponder:
                 summary = "Quick steps: 1) state your goal in one sentence, 2) list the top 3 actions to move it forward." 
 
             # Return user-visible summary only; metadata is kept internal/operator-facing
-            return summary, metadata
+            return finalize(summary)
         except Exception as e:
+            fallback_metadata = metadata or {
+                "path": "chat",
+                "provider": "fallback",
+                "runtime_state": "unavailable",
+                "runtime_state_reason": "exception",
+                "fallback_used": True,
+                "rescue_used": False,
+            }
+            record_inadequacy_event(fallback_metadata)
             return (
                 f"Model call failed: {e}",
-                metadata if metadata else {
-                    "path": "chat",
-                    "provider": "fallback",
-                    "runtime_state": "unavailable",
-                    "runtime_state_reason": "exception",
-                    "fallback_used": True,
-                    "rescue_used": False,
-                },
+                fallback_metadata,
             )
 
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:

@@ -67,3 +67,5 @@ weslr-tia-openness-bridge/
 weslr/tests/continuity/
 weslr/tests/continuity/*
 capability_suggestions.db
+
+weslr_inadequacy_events.jsonl
