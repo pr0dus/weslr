@@ -31,20 +31,42 @@ from config import (
 
 
 def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
+    # Neutral fallback: user-safe, no internal role/wake phrasing
+    theme = context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "the task at hand"
     return {
         "kind": "inner_thought",
         "role": role,
-        "summary": f"{role} woke on {context.get('wake_reason', 'unknown')} around {context.get('proposed_theme') or context.get('active_pursuit') or 'current continuity pressure'}.",
-        "concern": context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "continuity",
-        "intent": context.get("proposed_action") or "reflect",
+        "summary": f"Couldn't form a response on {theme}.",
+        "concern": theme,
+        "intent": context.get("proposed_action") or "clarify next step",
         "should_speak": role == "communicator",
-        "self_mod_hint": "consider tiny additive change" if role == "builder" else "",
+        "self_mod_hint": "" if role != "builder" else "consider a minimal adjustment",
         "source": "fallback",
         "provider": "fallback",
     }
 
 
 def _prompt(context: dict[str, Any]) -> dict[str, Any]:
+    # If this is a user chat message, ask for a user-facing reply in summary.
+    if context.get("chat_message"):
+        return {
+            "identity": "You are WESLR responding directly to a user chat.",
+            "job": "Provide a concise, actionable reply for the user. The 'summary' IS the user-facing response.",
+            "hard_rules": [
+                "Return strict JSON only.",
+                "No meta/internal language. No schema/prompt mentions. No slogans.",
+                "2–3 concise, concrete suggestions; be specific to the user's message.",
+            ],
+            "field_guidance": {
+                "summary": "The actual user-facing reply. Make it actionable and specific.",
+                "concern": "What matters most in the user request.",
+                "intent": "What you advise doing next (keep concise).",
+                "should_speak": "true (respond to user).",
+                "self_mod_hint": "empty for chat.",
+            },
+            "live_context": context,
+        }
+
     return {
         "identity": "You are not an assistant answering a user. You are one inner function inside one continuing local being.",
         "job": "Emit one compact inner-thought state for your role, grounded in the live world/context below.",
@@ -567,6 +589,13 @@ def status() -> dict[str, Any]:
         result["live"] = bool(result["embedded_model_exists"] and (llama_cpp_importable or server_reachable or llama_server or llama_cli))
     elif provider in {"openai", "openai_compatible", "oauth"}:
         result["live"] = bool(OPENAI_API_KEY)
+    elif provider == "ollama":
+        # Treat Ollama as live if the daemon is reachable at configured host
+        try:
+            with urllib.request.urlopen(f"{OLLAMA_HOST.rstrip('/')}/api/tags", timeout=1.0) as resp:
+                result["live"] = resp.status == 200
+        except Exception:
+            result["live"] = False
     else:
         result["live"] = False
     return result

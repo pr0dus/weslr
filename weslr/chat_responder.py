@@ -510,12 +510,90 @@ class ChatResponder:
         return self._model_chat_response(message or "")
     
     def _model_chat_response(self, message: str) -> str:
+        def _looks_meta(text: str) -> bool:
+            t = (text or "").lower()
+            meta_tokens = [
+                "communicator",
+                "chat_request",
+                "continuity pressure",
+                "current pressure",
+                "continuity",
+                "wake",
+                "woke",
+                "schema",
+                "prompt",
+                "json",
+                "inner",
+                "internal",
+                "fallback",
+            ]
+            return any(tok in t for tok in meta_tokens)
+
+        def _too_vague(text: str) -> bool:
+            t = (text or "").strip()
+            if len(t) < 40:
+                return True
+            vague_tokens = ["scanning", "friction", "circling", "pressure", "wiring"]
+            return any(tok in t.lower() for tok in vague_tokens)
+
         try:
             st = llm_status()
             if not st.get("live"):
                 return f"Model unavailable (provider={st.get('provider')}, live={st.get('live')})."
-            result = generate_inner_thought("communicator", {"chat_message": message, "wake_reason": "chat_request"})
+
+            result = generate_inner_thought(
+                "communicator",
+                {"chat_message": message, "wake_reason": "chat_request", "requested_style": "concise actionable reply for user; avoid meta/internal language; 2-3 concrete suggestions"},
+            )
             summary = result.get("summary") or result.get("concern") or "(no content returned)"
+
+            if _looks_meta(summary) or _too_vague(summary):
+                retry = generate_inner_thought(
+                    "communicator",
+                    {
+                        "chat_message": message,
+                        "wake_reason": "chat_request",
+                        "requested_style": "answer the user directly with concise, actionable steps; no meta language; avoid slogans; include 2 specific suggestions",
+                    },
+                )
+                summary = retry.get("summary") or retry.get("concern") or summary
+
+            if _looks_meta(summary) or _too_vague(summary):
+                final = generate_inner_thought(
+                    "communicator",
+                    {
+                        "chat_message": message,
+                        "wake_reason": "chat_request",
+                        "requested_style": "Direct user-facing answer. No meta words (communicator, wake, continuity, internal, prompt, schema). Keep 2-3 actionable steps, concrete verbs, no slogans.",
+                    },
+                )
+                cleaned = final.get("summary") or final.get("concern") or summary
+                banned = ["communicator", "chat_request", "current pressure", "continuity pressure", "wake", "woke", "continuity", "internal", "schema", "prompt", "json", "inner", "fallback", "woke on", "chat_request around", "continuity pressure" ]
+                for b in banned:
+                    cleaned = cleaned.replace(b, "")
+                fragments = ["on around current", "around current", "current .", "around .", "on .", "current", "on around", "around current continuity"]
+                for frag in fragments:
+                    cleaned = cleaned.replace(frag, "")
+                cleaned = " ".join(cleaned.split())
+                if cleaned and len(cleaned) > 10:
+                    summary = cleaned
+
+            # Rescue attempt using existing meta/low-action detection as a guard
+            if _looks_meta(summary) or _too_vague(summary):
+                rescue = generate_inner_thought(
+                    "communicator",
+                    {
+                        "chat_message": message,
+                        "wake_reason": "chat_request",
+                        "requested_style": "Rescue answer: 2 concise, actionable steps for the user; no meta/internal wording; no slogans; stay on the user’s request only.",
+                    },
+                )
+                rescue_summary = rescue.get("summary") or rescue.get("concern") or summary
+                if not _looks_meta(rescue_summary) and not _too_vague(rescue_summary):
+                    summary = rescue_summary
+
+            return summary
+
             return summary
         except Exception as e:
             return f"Model call failed: {e}"
