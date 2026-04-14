@@ -28769,6 +28769,13 @@
       "request_id": "req-f51ed2",
       "requester_type": "laboratory",
       "domain": "governance research"
+    },
+    {
+      "timestamp": "2026-04-14T06:15:30.251166Z",
+      "action": "submitted",
+      "request_id": "req-cc49e5",
+      "requester_type": "university",
+      "domain": "observability"
     }
   ]
 }

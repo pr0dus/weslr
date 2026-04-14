@@ -1,0 +1,112 @@
+{
+  "id": "agent-2-observability_trace-1776147350",
+  "agent_name": "agent-2",
+  "title": "Observability Trace",
+  "artifact_type": "artifact",
+  "category": "observability",
+  "family": "evaluation",
+  "idea": "Trace how observability signals map into review queue visibility.",
+  "explanation": "Document the ticks, topics, and artifacts that drive the dashboard so operators can follow the signal lineage.",
+  "purpose": "Seed an observability-themed artifact that references real events and encourages review.",
+  "destination": "shared_with_agents",
+  "niche_theme": "observability signals",
+  "target_user": "operator team",
+  "problem_statement": "Operators need a better map from communicator events to review items.",
+  "gap_reason": "Current dashboards skip the upstream signal lineage.",
+  "existing_solution_friction": "Manual cross-referencing is slow.",
+  "artifact_hypothesis": "A trace link in dashboard cards will reassure operators.",
+  "offer_hypothesis": "Operators trust when every state change is documented.",
+  "delivery_mode_guess": "bundle_candidate",
+  "research_confidence": 0.58,
+  "audience": [
+    "local AI tinkerers",
+    "agent-sim builders"
+  ],
+  "depends_on": [
+    "persistent memory",
+    "timed ticks"
+  ],
+  "combinable_with": [
+    "governance_transparency_review",
+    "dashboard_metrics"
+  ],
+  "why_now": "Weslr agents benefit from reusable, inspectable outputs instead of opaque internal work.",
+  "future_directions": [
+    "Add detailed tick references",
+    "Surface in operator time-series card"
+  ],
+  "if_interest_exists": [
+    "package as a standalone module",
+    "export to a GitHub subproject",
+    "bundle into a premium add-on pack"
+  ],
+  "lineage": {
+    "action": "research",
+    "generation": 1
+  },
+  "parent_ids": [],
+  "derived_from": [],
+  "generation": 1,
+  "status": "prototype",
+  "lifecycle_stage": "prototype",
+  "review_status": "proposed",
+  "review_notes": [
+    {
+      "at": 1776147350,
+      "by": "seed-script",
+      "action": "seeded",
+      "details": "Observability trace artifact added."
+    }
+  ],
+  "approved_for_export": false,
+  "export_path": null,
+  "proof_signals": {
+    "first_seen_tick": 0,
+    "last_seen_tick": 0,
+    "appearances": 0,
+    "top_pack_hits": 0,
+    "review_exports": 0,
+    "human_approvals": 0,
+    "real_usage_hits": 0,
+    "buyer_fit_votes": 0,
+    "handoff_acceptances": 0,
+    "handoff_rejections": 0,
+    "external_validation_state": "unvalidated",
+    "last_status": "unseen"
+  },
+  "artifact_source_path": "agents/agent-2/artifacts/research.txt",
+  "artifact_source_kind": "txt",
+  "artifact_line_count": 1,
+  "artifact_nonempty_line_count": 1,
+  "artifact_char_count": 44,
+  "substance_score": 0.08,
+  "thin_artifact_penalty": 0.42,
+  "description_mismatch_penalty": 0.0,
+  "substance_warnings": [
+    "placeholder-like content detected",
+    "very small text artifact"
+  ],
+  "clarity_score": 0.75,
+  "reusability_score": 0.6,
+  "novelty_score": 0.28,
+  "stability_score": 0.45,
+  "exportability_score": 0.57,
+  "market_fit_score": 0.55,
+  "internal_score": 0.6,
+  "human_proposed_score": 0.118,
+  "pain_clarity_score": 0.64,
+  "buyer_specificity_score": 0.38,
+  "gap_severity_score": 0.36,
+  "packaging_ease_score": 0.41,
+  "opportunity_score": 0.459,
+  "buyer_clarity_score": 0.4,
+  "pain_severity_score": 0.48,
+  "deployment_effort_score": 0.7,
+  "proof_level_score": 0.15,
+  "support_burden_score": 0.48,
+  "commercial_readiness_score": 0.01,
+  "sellability_score": 0.01,
+  "price_band_guess": "needs packaging",
+  "external_validation_state": "unvalidated",
+  "delivery_mode": "internal_reusable_component"
+}

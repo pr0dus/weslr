@@ -50,5 +50,18 @@
     "contact_email": "lab@example.com",
     "additional_notes": "Focus on review queues and artifact traceability.",
     "status": "submitted"
+  },
+  {
+    "category": "suggestion_request",
+    "request_id": "req-cc49e5",
+    "timestamp": "2026-04-14T06:15:30.241599Z",
+    "requester_type": "university",
+    "domain": "observability",
+    "requested_capability": "scenario observability narrative",
+    "problem_statement": "Operators want visible narrative notes tying observations, events, and review_queue candidates together.",
+    "requester_id": "case-202",
+    "contact_email": "ops@observatory.example",
+    "additional_notes": "Focus on linking communicator artifacts with dashboard cards.",
+    "status": "submitted"
   }
 ]
