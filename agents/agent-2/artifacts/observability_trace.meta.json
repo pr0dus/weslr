@@ -56,14 +56,16 @@
       "by": "seed-script",
       "action": "seeded",
       "details": "Observability trace artifact added."
-    }
+    },
+    "Operators requested additional evidence linking observations to artifacts."
   ],
   "approved_for_export": false,
   "export_path": null,
   "proof_signals": {
-    "first_seen_tick": 0,
-    "last_seen_tick": 0,
-    "appearances": 0,
+    "artifact_id": "agent-2-observability_trace-1776147350",
+    "first_seen_tick": 8,
+    "last_seen_tick": 8,
+    "appearances": 2,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,
@@ -72,7 +74,7 @@
     "handoff_acceptances": 0,
     "handoff_rejections": 0,
     "external_validation_state": "unvalidated",
-    "last_status": "unseen"
+    "last_status": "proposed"
   },
   "artifact_source_path": "agents/agent-2/artifacts/research.txt",
   "artifact_source_kind": "txt",
@@ -86,14 +88,14 @@
     "placeholder-like content detected",
     "very small text artifact"
   ],
-  "clarity_score": 0.75,
+  "clarity_score": 0.8,
   "reusability_score": 0.6,
   "novelty_score": 0.28,
   "stability_score": 0.45,
   "exportability_score": 0.57,
   "market_fit_score": 0.55,
-  "internal_score": 0.6,
-  "human_proposed_score": 0.118,
+  "internal_score": 0.617,
+  "human_proposed_score": 0.13,
   "pain_clarity_score": 0.64,
   "buyer_specificity_score": 0.38,
   "gap_severity_score": 0.36,
@@ -101,11 +103,11 @@
   "opportunity_score": 0.459,
   "buyer_clarity_score": 0.4,
   "pain_severity_score": 0.48,
-  "deployment_effort_score": 0.7,
-  "proof_level_score": 0.15,
+  "deployment_effort_score": 0.68,
+  "proof_level_score": 0.24,
   "support_burden_score": 0.48,
   "commercial_readiness_score": 0.01,
-  "sellability_score": 0.01,
+  "sellability_score": 0.017,
   "price_band_guess": "needs packaging",
   "external_validation_state": "unvalidated",
   "delivery_mode": "internal_reusable_component"
