@@ -57,7 +57,7 @@
     "rank": 1,
     "delivery_mode": "bundle_candidate",
     "offer_count": 1,
-    "accept_count": 0,
+    "accept_count": 1,
     "reject_count": 0,
     "revision_count": 0,
     "test_count": 0,
@@ -74,6 +74,18 @@
         "niche_theme": "observability signals",
         "category": "observability",
         "created_at": 1776152851
+      },
+      {
+        "pack_name": "observability-signals-opportunity-pack",
+        "action": "accept",
+        "note": "Operator-team accepts the observability signal pack for tracking visibility.",
+        "buyer": "",
+        "price_band": "",
+        "mode": "",
+        "group_kind": "opportunity",
+        "niche_theme": "observability signals",
+        "category": "observability",
+        "created_at": 1776155887
       }
     ],
     "wrapper_path": "exports/observability-signals-opportunity-pack"

@@ -10,5 +10,17 @@
     "niche_theme": "observability signals",
     "category": "observability",
     "created_at": 1776152851
+  },
+  {
+    "pack_name": "observability-signals-opportunity-pack",
+    "action": "accept",
+    "note": "Operator-team accepts the observability signal pack for tracking visibility.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "observability signals",
+    "category": "observability",
+    "created_at": 1776155887
   }
 ]
