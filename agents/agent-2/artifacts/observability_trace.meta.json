@@ -57,7 +57,13 @@
       "action": "seeded",
       "details": "Observability trace artifact added."
     },
-    "Operators requested additional evidence linking observations to artifacts."
+    "Operators requested additional evidence linking observations to artifacts.",
+    {
+      "at": 1776150497,
+      "by": "operator",
+      "action": "evidence",
+      "details": "Tied Observability Trace to review_queue demand and communicator topic logs (log readability, observability) so the operator knows what upstream signals confirm this artifact."
+    }
   ],
   "approved_for_export": false,
   "export_path": null,
@@ -65,7 +71,7 @@
     "artifact_id": "agent-2-observability_trace-1776147350",
     "first_seen_tick": 8,
     "last_seen_tick": 8,
-    "appearances": 2,
+    "appearances": 3,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,
@@ -104,10 +110,10 @@
   "buyer_clarity_score": 0.4,
   "pain_severity_score": 0.48,
   "deployment_effort_score": 0.68,
-  "proof_level_score": 0.24,
+  "proof_level_score": 0.3,
   "support_burden_score": 0.48,
-  "commercial_readiness_score": 0.01,
-  "sellability_score": 0.017,
+  "commercial_readiness_score": 0.012,
+  "sellability_score": 0.03,
   "price_band_guess": "needs packaging",
   "external_validation_state": "unvalidated",
   "delivery_mode": "internal_reusable_component"
