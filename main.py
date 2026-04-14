@@ -902,6 +902,49 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             
+            elif self.path == "/onboarding":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    # Record human exchange with onboarding answers
+                    from sim import record_human_exchange
+                    answers = {
+                        "phase": "onboarding",
+                        "name": data.get("name", ""),
+                        "role": data.get("role", ""),
+                        "persona": data.get("persona", ""),
+                        "primary_outcome": data.get("primary_outcome", ""),
+                        "time_horizon": data.get("time_horizon", ""),
+                        "objectives": data.get("objectives", []),
+                        "failure_conditions": data.get("failure_conditions", ""),
+                        "red_lines": data.get("red_lines", ""),
+                        "legal_constraints": data.get("legal_constraints", ""),
+                        "audit_level": data.get("audit_level", ""),
+                        "metric_primary": data.get("metric_primary", ""),
+                        "metric_secondary": data.get("metric_secondary", ""),
+                        "checkin_style": data.get("checkin_style", ""),
+                        "urgency": data.get("urgency", ""),
+                        "blockers": data.get("blockers", ""),
+                        "standup_cadence": data.get("standup_cadence", ""),
+                    }
+                    record_human_exchange(
+                        human_name=data.get("name", "operator"),
+                        message=f"Operator completed onboarding: {_json.dumps(answers)}",
+                        response="onboarding recorded",
+                        topics=["onboarding", "operator-profile"],
+                        unresolved=False,
+                    )
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "recorded": True}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""

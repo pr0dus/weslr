@@ -5,214 +5,921 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Weslr — Front Door</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0d12;
+      --surface: #111620;
+      --surface2: #171b22;
+      --border: #1e2736;
+      --border2: #28303a;
+      --text: #e7ecf3;
+      --muted: #9aa6b2;
+      --dim: #4b5563;
+      --accent: #6ee7b7;
+      --accent2: #a7f3d0;
+      --warn-bg: #1c1408;
+      --warn-border: #92400e;
+      --warn-text: #fde68a;
+      --err: #ef4444;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0d12;
-      color: #e7ecf3;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
-    .hero {
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .hdr-logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .hdr-phase {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    /* ── Main ── */
+    main {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 60px 24px;
-      gap: 24px;
+      justify-content: flex-start;
+      padding: 48px 24px 96px;
     }
-    .logo {
-      font-size: 48px;
-      font-weight: 200;
-      letter-spacing: 0.15em;
-      color: #6ee7b7;
-      text-transform: uppercase;
+
+    /* ── Progress ── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 40px;
     }
-    .tagline {
-      font-size: 18px;
-      color: #9aa6b2;
-      max-width: 480px;
-      line-height: 1.6;
-    }
-    .status-bar {
+    .progress-bar {
       display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 8px;
+      gap: 4px;
+      margin-bottom: 8px;
     }
-    .pill {
+    .progress-seg {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border2);
+      transition: background 0.3s;
+    }
+    .progress-seg.done { background: var(--accent); }
+    .progress-seg.active { background: #4ade80; }
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px;
+    }
+
+    .phase-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 14px;
-      background: #171b22;
-      border: 1px solid #28303a;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(110,231,183,0.08);
+      border: 1px solid rgba(110,231,183,0.2);
+      padding: 4px 10px;
       border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .phase-badge svg { width: 12px; height: 12px; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block;
       font-size: 13px;
-      color: #9aa6b2;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
     }
-    .pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #6ee7b7;
+    .field .helper {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.5;
     }
-    .pill-dot.warn { background: #f59e0b; }
-    .pill-dot.err { background: #ef4444; }
-    nav {
+    input[type="text"],
+    input[type="url"],
+    textarea, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+    input.error, textarea.error, select.error {
+      border-color: var(--err);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .err-msg {
+      font-size: 12px;
+      color: var(--err);
+      margin-top: 5px;
+      display: none;
+    }
+    .err-msg.visible { display: block; }
+
+    /* ── Governance warning ── */
+    .gov-warning {
       display: flex;
       gap: 12px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: var(--warn-text);
+      line-height: 1.5;
     }
-    nav a {
-      display: inline-block;
-      padding: 10px 22px;
+    .gov-warning svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Review table ── */
+    .review-table { width: 100%; border-collapse: collapse; }
+    .review-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .review-table td {
+      font-size: 13px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .review-table td:first-child { color: var(--muted); width: 40%; }
+    .review-table tr:last-child td { border-bottom: none; }
+    .edit-link {
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+      margin-left: 8px;
+    }
+    .edit-link:hover { color: var(--accent2); }
+
+    /* ── Nav buttons ── */
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      gap: 12px;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
       border-radius: 10px;
       font-size: 14px;
       font-weight: 500;
-      text-decoration: none;
-      transition: background 0.15s;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: background 0.15s, opacity 0.15s;
     }
-    .btn-primary {
-      background: #6ee7b7;
+    button:disabled { opacity: 0.4; cursor: default; }
+    .btn-back {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border2);
+    }
+    .btn-back:hover:not(:disabled) { background: var(--border2); color: var(--text); }
+    .btn-next {
+      background: var(--accent);
       color: #0a0d12;
+      font-weight: 600;
     }
-    .btn-primary:hover { background: #a7f3d0; }
-    .btn-secondary {
-      background: #171b22;
-      color: #e7ecf3;
-      border: 1px solid #28303a;
-    }
-    .btn-secondary:hover { background: #1e2430; }
-    .card-grid {
+    .btn-next:hover:not(:disabled) { background: var(--accent2); }
+    .btn-next:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Welcome screen extras ── */
+    .feature-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      max-width: 800px;
-      width: 100%;
-      margin-top: 16px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0 28px;
     }
-    .card {
-      background: #111620;
-      border: 1px solid #1e2736;
-      border-radius: 14px;
-      padding: 20px;
-      text-align: left;
+    .feature-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
     }
-    .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #e7ecf3; }
-    .card p { font-size: 13px; color: #6b7a8d; line-height: 1.5; }
+    .feature-item h3 { font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--accent); }
+    .feature-item p { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    /* ── Footer ── */
     footer {
       text-align: center;
-      padding: 24px;
+      padding: 20px 24px;
       font-size: 12px;
-      color: #3d4a5c;
-      border-top: 1px solid #1e2736;
+      color: var(--dim);
+      border-top: 1px solid var(--border);
     }
-    footer a { color: #4b5563; text-decoration: none; }
-    footer a:hover { color: #6b7a8d; }
+    footer a { color: var(--dim); text-decoration: none; }
+    footer a:hover { color: var(--muted); }
+
+    /* ── Utility ── */
+    .hidden { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
 </head>
 <body>
-  <div class="hero">
-    <div class="logo">Weslr</div>
-    <p class="tagline">
+
+<header>
+  <span class="hdr-logo">Weslr</span>
+  <span class="hdr-phase" id="phase-indicator">Welcome</span>
+</header>
+
+<main>
+
+  <!-- ── Progress ── -->
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-label" id="progress-label"></div>
+  </div>
+
+  <!-- ── Screen: Welcome ── -->
+  <div class="card" id="screen-welcome">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 4v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Getting Started
+    </div>
+    <h1>Welcome to Weslr</h1>
+    <p class="subtitle">
       Self-directing coding-agent ecosystem with bounded autonomy,
       memory continuity, and structured opportunity lifecycle.
+      This short onboarding configures your session.
     </p>
 
-    <div class="status-bar" id="status-bar">
-      <span class="pill"><span class="pill-dot" id="runtime-dot"></span> Runtime</span>
-      <span class="pill">Status: <span id="mode-label">loading</span></span>
-      <span class="pill" id="current-thought-pill" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Thought: <span id="agent-count">—</span></span>
-      <span class="pill">Active: <span id="tick-count">—</span></span>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h3>Bounded Autonomy</h3>
+        <p>Safe capability evolution gates all self-modifications behind evaluation thresholds.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Memory Continuity</h3>
+        <p>Working, episodic, and semantic memory layers persist across sessions.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Operator Oversight</h3>
+        <p>All significant decisions are surfaced for review before irreversible action.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Governed Evolution</h3>
+        <p>Proposals, observations, and apply logs create a full audit trail.</p>
+      </div>
     </div>
 
-    <nav>
-      <a href="/operator" class="btn-secondary">Operator Dashboard</a>
-      <a href="/operator/dashboard.html" class="btn-secondary">Debug View</a>
-    </nav>
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>This system runs with bounded autonomy. You retain operator authority at all times. No self-modification executes without evaluation and your approval.</span>
+    </div>
 
-    <div class="card-grid">
-      <div class="card">
-        <h3>Reality Audit</h3>
-        <p>Front-door surface shows canonical state files loaded in real time from the live runtime.</p>
-      </div>
-      <div class="card">
-        <h3>Operator View</h3>
-        <p>Full debug dashboard for agents, memory layers, self-mod proposals, and review queues.</p>
-      </div>
-      <div class="card">
-        <h3>Bounded Autonomy</h3>
-        <p>Safe capability evolution engine gates all self-modifications behind evaluation thresholds.</p>
-      </div>
+    <div class="nav-row">
+      <span></span>
+      <button class="btn-next" onclick="goNext()">Begin Onboarding →</button>
     </div>
   </div>
 
-  <footer>
-    <a href="/operator">Operator Dashboard</a>
-    &nbsp;·&nbsp;
-    <span id="version">—</span>
-    &nbsp;·&nbsp;
-    <span id="uptime">—</span>
-  </footer>
+  <!-- ── Screen: Phase A — Your Profile ── -->
+  <div class="card hidden" id="screen-phaseA">
 
-  <script>
-    async function loadStatus() {
-      try {
-        const [comm] = await Promise.all([
-          fetch('/communicator_self.json').then(r => r.json()).catch(() => null),
-        ]);
-        if (comm) {
-          // Status dot: green if active, warn if not
-          const status = comm.status || 'unknown';
-          const dot = document.getElementById('runtime-dot');
-          if (status === 'active') {
-            dot.className = 'pill-dot';
-          } else {
-            dot.className = 'pill-dot warn';
-          }
-          document.getElementById('mode-label').textContent = status;
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Answers are stored locally in your session and inform how Weslr addresses and assists you. No data leaves the runtime without your explicit action.</span>
+    </div>
 
-          // Uptime: how long since last update
-          const updated = comm.updated_at;
-          if (updated) {
-            const secs = Math.floor(Date.now() / 1000) - updated;
-            if (secs < 60) {
-              document.getElementById('uptime').textContent = secs + 's ago';
-            } else if (secs < 3600) {
-              document.getElementById('uptime').textContent = Math.floor(secs / 60) + 'm ago';
-            } else {
-              document.getElementById('uptime').textContent = Math.floor(secs / 3600) + 'h ago';
-            }
-          }
+    <div class="field">
+      <label for="a-name">What should Weslr call you?</label>
+      <div class="helper">This name personalizes Weslr's communication and memory records.</div>
+      <input type="text" id="a-name" placeholder="Your name or alias" oninput="validateA()" />
+      <div class="err-msg" id="a-name-err">Please enter a name or alias.</div>
+    </div>
 
-          // Version from identity anchor or default
-          document.getElementById('version').textContent = 'Weslr';
+    <div class="field">
+      <label for="a-role">What is your role or context?</label>
+      <div class="helper">e.g. Solo developer, Engineering lead, Researcher, Operations</div>
+      <input type="text" id="a-role" placeholder="Your primary role" oninput="validateA()" />
+      <div class="err-msg" id="a-role-err">Please describe your role or context.</div>
+    </div>
 
-          // Inner thought / current intent
-          const thoughts = comm.inner_thoughts;
-          if (Array.isArray(thoughts) && thoughts.length > 0) {
-            const latest = thoughts[thoughts.length - 1];
-            if (latest.summary) {
-              document.getElementById('agent-count').textContent =
-                latest.summary.slice(0, 60) + (latest.summary.length > 60 ? '…' : '');
-            }
-          }
-        } else {
-          document.getElementById('runtime-dot').className = 'pill-dot warn';
-        }
-      } catch (e) {
-        document.getElementById('runtime-dot').className = 'pill-dot err';
-      }
+    <div class="field">
+      <label for="a-persona">Preferred interaction style</label>
+      <div class="helper">How technical is your usual context?</div>
+      <select id="a-persona" onchange="validateA()">
+        <option value="">— Select —</option>
+        <option value="technical">Highly technical (code, architecture, infra)</option>
+        <option value="mixed">Mixed technical and conceptual</option>
+        <option value="conceptual">Mostly conceptual / product / design</option>
+        <option value="minimal">Minimal — just outcomes, please</option>
+      </select>
+      <div class="err-msg" id="a-persona-err">Please select an interaction style.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="a-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B1 — Primary Outcomes ── -->
+  <div class="card hidden" id="screen-phaseB1">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What does success look like?</h1>
+    <p class="subtitle">Describe the primary outcome you want from this session.</p>
+
+    <div class="field">
+      <label for="b-primary-outcome">Primary outcome</label>
+      <div class="helper">One to three sentences describing the end state you want to reach.</div>
+      <textarea id="b-primary-outcome" placeholder="e.g. I want Weslr to maintain continuous code quality oversight across my project…" oninput="validateB1()"></textarea>
+      <div class="err-msg" id="b-primary-outcome-err">Please describe your primary outcome.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-horizon">What is your time horizon?</label>
+      <div class="helper">Are we working toward a single session goal, a day, a week, or something open-ended?</div>
+      <select id="b-horizon" onchange="validateB1()">
+        <option value="">— Select —</option>
+        <option value="session">This session only</option>
+        <option value="day">Today / this workday</option>
+        <option value="week">This week</option>
+        <option value="open">Open-ended / ongoing</option>
+      </select>
+      <div class="err-msg" id="b-horizon-err">Please select a time horizon.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b1-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B2 — Priority Objectives ── -->
+  <div class="card hidden" id="screen-phaseB2">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What are the top priorities?</h1>
+    <p class="subtitle">Rank up to three objectives in order of importance.</p>
+
+    <div class="field">
+      <label for="b-obj1">1st priority</label>
+      <input type="text" id="b-obj1" placeholder="Most important objective…" oninput="validateB2()" />
+      <div class="err-msg" id="b-obj1-err">Please enter your 1st priority.</div>
+    </div>
+    <div class="field">
+      <label for="b-obj2">2nd priority <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="b-obj2" placeholder="Second important objective…" oninput="validateB2()" />
+    </div>
+    <div class="field">
+      <label for="b-obj3">3rd priority <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="b-obj3" placeholder="Third important objective…" oninput="validateB2()" />
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b2-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B3 — Failure Conditions ── -->
+  <div class="card hidden" id="screen-phaseB3">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What must not happen?</h1>
+    <p class="subtitle">Define conditions that would constitute a failure or require immediate intervention.</p>
+
+    <div class="field">
+      <label for="b-fail-conditions">Failure conditions</label>
+      <div class="helper">Describe scenarios that would be unacceptable — e.g. data loss, security regression, production disruption.</div>
+      <textarea id="b-fail-conditions" placeholder="e.g. Any deletion of user data, any schema change without review, any write to production…" oninput="validateB3()"></textarea>
+      <div class="err-msg" id="b-fail-conditions-err">Please describe at least one failure condition.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-red-lines">Red lines <span style="font-weight:400;color:var(--muted)">(at least one required)</span></label>
+      <div class="helper">Hard limits that should never be crossed under any circumstances.</div>
+      <textarea id="b-red-lines" placeholder="e.g. Never modify the database schema directly. Never disable safety_gateway. Never push to main without review…" style="min-height:60px" oninput="validateB3()"></textarea>
+      <div class="err-msg" id="b-red-lines-err">Please specify at least one red line.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b3-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B4 — Legal & Policy Constraints ── -->
+  <div class="card hidden" id="screen-phaseB4">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>Any legal or policy constraints?</h1>
+    <p class="subtitle">Describe any compliance, licensing, or policy boundaries relevant to this session.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Weslr will not execute actions that contravene stated legal or policy constraints. This information is used solely to gate action proposals.</span>
+    </div>
+
+    <div class="field">
+      <label for="b-legal">Legal or policy constraints <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">e.g. License restrictions, open-source obligations, data-residency requirements, audit requirements.</div>
+      <textarea id="b-legal" placeholder="e.g. All code must comply with Apache 2.0. No user PII may be logged. All changes must be auditable for SOC2…" oninput="validateB4()"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="b-audit">Audit requirements <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Does this session require decision logging for compliance purposes?</div>
+      <select id="b-audit" onchange="validateB4()">
+        <option value="">— Select —</option>
+        <option value="none">No special audit requirements</option>
+        <option value="standard">Standard decision log is sufficient</option>
+        <option value="detailed">Detailed action-by-action logging required</option>
+      </select>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b4-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B5 — Success Metrics ── -->
+  <div class="card hidden" id="screen-phaseB5">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>How will you know it's working?</h1>
+    <p class="subtitle">Define what good looks like so Weslr can self-report progress against it.</p>
+
+    <div class="field">
+      <label for="b-metric-primary">Primary success metric</label>
+      <div class="helper">One measurable outcome that indicates success.</div>
+      <input type="text" id="b-metric-primary" placeholder="e.g. Code review turnaround time reduced by 50%…" oninput="validateB5()" />
+      <div class="err-msg" id="b-metric-primary-err">Please define a primary success metric.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-metric-secondary">Secondary metrics <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Additional measurable indicators, comma-separated.</div>
+      <input type="text" id="b-metric-secondary" placeholder="e.g. Test coverage above 80%, no P0 bugs in prod…" />
+    </div>
+
+    <div class="field">
+      <label for="b-checkin">Preferred check-in style</label>
+      <div class="helper">How often should Weslr surface a status summary?</div>
+      <select id="b-checkin" onchange="validateB5()">
+        <option value="">— Select —</option>
+        <option value="silent">Only when action is needed</option>
+        <option value="hourly">Hourly summary</option>
+        <option value="daily">Daily summary</option>
+        <option value="verbose">After every major decision</option>
+      </select>
+      <div class="err-msg" id="b-checkin-err">Please select a check-in style.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b5-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B6 — Urgency Expectations ── -->
+  <div class="card hidden" id="screen-phaseB6">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What is the urgency context?</h1>
+    <p class="subtitle">Set expectations for pacing and responsiveness.</p>
+
+    <div class="field">
+      <label for="b-urgency">Urgency level</label>
+      <select id="b-urgency" onchange="validateB6()">
+        <option value="">— Select —</option>
+        <option value="explore">Explore — no rush, thorough research welcome</option>
+        <option value="deliberate">Deliver — clear goal, quality matters most</option>
+        <option value="fast">Sprint — time is tight, stay focused</option>
+        <option value="reactive">Reactive — respond quickly, keep things running</option>
+      </select>
+      <div class="err-msg" id="b-urgency-err">Please select an urgency level.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-blockers">Current blockers <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Anything currently blocking your own progress that Weslr should be aware of.</div>
+      <textarea id="b-blockers" placeholder="e.g. Waiting on API credentials. Design doc not yet approved. Need to unblock CI first…" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="b-standup">Standup cadence</label>
+      <div class="helper">How should Weslr align with your team's standup rhythm?</div>
+      <select id="b-standup" onchange="validateB6()">
+        <option value="">— Select —</option>
+        <option value="none">No standup alignment needed</option>
+        <option value="morning">Daily morning standup (before 10am)</option>
+        <option value="evening">Daily evening check-in</option>
+        <option value="weekly">Weekly only</option>
+      </select>
+      <div class="err-msg" id="b-standup-err">Please select a standup cadence.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b6-next" onclick="goNext()" disabled>Review →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Review ── -->
+  <div class="card hidden" id="screen-review">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Review
+    </div>
+    <h1>Review your session setup</h1>
+    <p class="subtitle">Confirm your answers before starting. Use "Edit" to change any answer.</p>
+
+    <table class="review-table" id="review-table">
+      <thead><tr><th>Topic</th><th>Your answer</th></tr></thead>
+      <tbody id="review-body"></tbody>
+    </table>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Weslr will use this configuration to align its actions and self-reporting. You can update it at any time via the Operator Dashboard.</span>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" onclick="submitOnboarding()">Start Session →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Complete ── -->
+  <div class="card hidden" id="screen-complete">
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:48px;margin-bottom:16px">✓</div>
+      <h1>Session configured</h1>
+      <p class="subtitle">Your operator preferences are saved. Weslr is ready.</p>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="window.location.reload()">Start Over</button>
+      <button class="btn-next" onclick="window.location.href='/operator'">Open Operator Dashboard →</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <a href="/operator">Operator Dashboard</a>
+  &nbsp;·&nbsp;
+  <span>Weslr Front Door</span>
+</footer>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  const SCREENS = [
+    'welcome',
+    'phaseA',
+    'phaseB1', 'phaseB2', 'phaseB3', 'phaseB4', 'phaseB5', 'phaseB6',
+    'review',
+    'complete',
+  ];
+
+  const PHASE_B_LABELS = ['phaseB1','phaseB2','phaseB3','phaseB4','phaseB5','phaseB6'];
+
+  let current = 0; // index into SCREENS
+
+  // ── Nav ────────────────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
+    const el = document.getElementById('screen-' + id);
+    if (el) el.classList.remove('hidden');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goNext() {
+    if (current < SCREENS.length - 1) {
+      current++;
+      const id = SCREENS[current];
+      if (id === 'review') buildReview();
+      showScreen(id);
     }
-    loadStatus();
-    setInterval(loadStatus, 5000);
-  </script>
+  }
+
+  function goBack() {
+    if (current > 0) {
+      current--;
+      showScreen(SCREENS[current]);
+    }
+  }
+
+  // ── Progress bar ───────────────────────────────────────────
+  function updateProgress() {
+    const bar = document.getElementById('progress-bar');
+    const label = document.getElementById('progress-label');
+    const indicator = document.getElementById('phase-indicator');
+
+    const screenId = SCREENS[current];
+
+    if (screenId === 'welcome') {
+      bar.innerHTML = '';
+      label.textContent = '';
+      indicator.textContent = 'Welcome';
+      document.getElementById('progress-wrap').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('progress-wrap').style.display = 'block';
+
+    // Calculate total steps (exclude welcome + complete)
+    const total = SCREENS.filter(s => s !== 'welcome' && s !== 'complete').length;
+    const done = SCREENS.slice(1, current + 1).filter(s => s !== 'complete').length;
+    const pct = Math.round((done / total) * 100);
+
+    let html = '';
+    const segments = SCREENS.filter(s => s !== 'welcome' && s !== 'complete');
+    segments.forEach(s => {
+      if (s === screenId) html += '<div class="progress-seg active"></div>';
+      else if (SCREENS.indexOf(s) < current) html += '<div class="progress-seg done"></div>';
+      else html += '<div class="progress-seg"></div>';
+    });
+    bar.innerHTML = html;
+    label.textContent = pct + '% complete';
+
+    if (PHASE_B_LABELS.includes(screenId)) {
+      const idx = PHASE_B_LABELS.indexOf(screenId) + 1;
+      indicator.textContent = 'Phase B — Mission Discovery';
+    } else if (screenId === 'phaseA') {
+      indicator.textContent = 'Phase A — Your Profile';
+    } else if (screenId === 'review') {
+      indicator.textContent = 'Review';
+    } else if (screenId === 'complete') {
+      indicator.textContent = 'Complete';
+    }
+  }
+
+  // ── Validation helpers ─────────────────────────────────────
+  function req(id, errId, emptyOk) {
+    const val = document.getElementById(id).value.trim();
+    const err = document.getElementById(errId);
+    if (!emptyOk && !val) {
+      document.getElementById(id).classList.add('error');
+      err.classList.add('visible');
+      return false;
+    }
+    document.getElementById(id).classList.remove('error');
+    err.classList.remove('visible');
+    return true;
+  }
+
+  function enableNext(btnId, ...conditions) {
+    document.getElementById(btnId).disabled = !conditions.every(Boolean);
+  }
+
+  // Phase A
+  function validateA() {
+    const n = req('a-name', 'a-name-err');
+    const r = req('a-role', 'a-role-err');
+    const p = req('a-persona', 'a-persona-err');
+    enableNext('a-next', n, r, p);
+  }
+
+  // Phase B1
+  function validateB1() {
+    const o = req('b-primary-outcome', 'b-primary-outcome-err');
+    const h = req('b-horizon', 'b-horizon-err');
+    enableNext('b1-next', o, h);
+  }
+
+  // Phase B2
+  function validateB2() {
+    const o1 = req('b-obj1', 'b-obj1-err');
+    enableNext('b2-next', o1);
+  }
+
+  // Phase B3
+  function validateB3() {
+    const f = req('b-fail-conditions', 'b-fail-conditions-err');
+    const r = req('b-red-lines', 'b-red-lines-err');
+    enableNext('b3-next', f, r);
+  }
+
+  // Phase B4
+  function validateB4() {
+    // optional — always enabled
+    enableNext('b4-next', true);
+  }
+
+  // Phase B5
+  function validateB5() {
+    const m = req('b-metric-primary', 'b-metric-primary-err');
+    const c = req('b-checkin', 'b-checkin-err');
+    enableNext('b5-next', m, c);
+  }
+
+  // Phase B6
+  function validateB6() {
+    const u = req('b-urgency', 'b-urgency-err');
+    const s = req('b-standup', 'b-standup-err');
+    enableNext('b6-next', u, s);
+  }
+
+  // ── Review ─────────────────────────────────────────────────
+  function buildReview() {
+    const rows = [
+      ['Your name', get('a-name')],
+      ['Your role', get('a-role')],
+      ['Interaction style', get('a-persona')],
+      ['Primary outcome', get('b-primary-outcome')],
+      ['Time horizon', get('b-horizon')],
+      ['1st priority', get('b-obj1')],
+      ['2nd priority', get('b-obj2') || '—'],
+      ['3rd priority', get('b-obj3') || '—'],
+      ['Failure conditions', get('b-fail-conditions')],
+      ['Red lines', get('b-red-lines')],
+      ['Legal / policy constraints', get('b-legal') || 'None specified'],
+      ['Audit requirements', get('b-audit') || 'None'],
+      ['Primary success metric', get('b-metric-primary')],
+      ['Secondary metrics', get('b-metric-secondary') || '—'],
+      ['Check-in style', get('b-checkin')],
+      ['Urgency level', get('b-urgency')],
+      ['Current blockers', get('b-blockers') || 'None specified'],
+      ['Standup cadence', get('b-standup')],
+    ];
+
+    const editMap = {
+      'Your name': 'phaseA', 'Your role': 'phaseA', 'Interaction style': 'phaseA',
+      'Primary outcome': 'phaseB1', 'Time horizon': 'phaseB1',
+      '1st priority': 'phaseB2', '2nd priority': 'phaseB2', '3rd priority': 'phaseB2',
+      'Failure conditions': 'phaseB3', 'Red lines': 'phaseB3',
+      'Legal / policy constraints': 'phaseB4', 'Audit requirements': 'phaseB4',
+      'Primary success metric': 'phaseB5', 'Secondary metrics': 'phaseB5', 'Check-in style': 'phaseB5',
+      'Urgency level': 'phaseB6', 'Current blockers': 'phaseB6', 'Standup cadence': 'phaseB6',
+    };
+
+    const tbody = document.getElementById('review-body');
+    tbody.innerHTML = rows.map(([label, value]) =>
+      `<tr>
+        <td>${label}</td>
+        <td>${escapeHtml(value)} <a class="edit-link" onclick="editScreen('${editMap[label]}')">Edit</a></td>
+      </tr>`
+    ).join('');
+  }
+
+  function editScreen(id) {
+    current = SCREENS.indexOf(id);
+    showScreen(id);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function get(id) {
+    const el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  // ── Submit ─────────────────────────────────────────────────
+  async function submitOnboarding() {
+    const payload = {
+      name: get('a-name'),
+      role: get('a-role'),
+      persona: get('a-persona'),
+      primary_outcome: get('b-primary-outcome'),
+      time_horizon: get('b-horizon'),
+      objectives: [get('b-obj1'), get('b-obj2'), get('b-obj3')].filter(Boolean),
+      failure_conditions: get('b-fail-conditions'),
+      red_lines: get('b-red-lines'),
+      legal_constraints: get('b-legal'),
+      audit_level: get('b-audit'),
+      metric_primary: get('b-metric-primary'),
+      metric_secondary: get('b-metric-secondary'),
+      checkin_style: get('b-checkin'),
+      urgency: get('b-urgency'),
+      blockers: get('b-blockers'),
+      standup_cadence: get('b-standup'),
+      submitted_at: Date.now(),
+    };
+
+    try {
+      const res = await fetch('/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Server error');
+    } catch (e) {
+      // Non-blocking: proceed anyway — runtime is already configured
+    }
+
+    current = SCREENS.indexOf('complete');
+    showScreen('complete');
+  }
+
+  // ── Init ────────────────────────────────────────────────────
+  showScreen('welcome');
+</script>
 </body>
 </html>
