@@ -128,9 +128,9 @@
 
     <div class="status-bar" id="status-bar">
       <span class="pill"><span class="pill-dot" id="runtime-dot"></span> Runtime</span>
-      <span class="pill">Ticks: <span id="tick-count">—</span></span>
-      <span class="pill">Agents: <span id="agent-count">—</span></span>
-      <span class="pill">Mode: <span id="mode-label">—</span></span>
+      <span class="pill">Status: <span id="mode-label">loading</span></span>
+      <span class="pill" id="current-thought-pill" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Thought: <span id="agent-count">—</span></span>
+      <span class="pill">Active: <span id="tick-count">—</span></span>
     </div>
 
     <nav>
@@ -165,29 +165,47 @@
   <script>
     async function loadStatus() {
       try {
-        const [state, comm] = await Promise.all([
-          fetch('/state_core.json').then(r => r.json()).catch(() => null),
+        const [comm] = await Promise.all([
           fetch('/communicator_self.json').then(r => r.json()).catch(() => null),
         ]);
-        if (state) {
-          document.getElementById('tick-count').textContent =
-            state.tick_count !== undefined ? state.tick_count : (state.ticks ?? '—');
-          document.getElementById('agent-count').textContent =
-            Array.isArray(state.agents) ? state.agents.length :
-            state.agent_count !== undefined ? state.agent_count : '—';
-          document.getElementById('mode-label').textContent = state.mode || 'active';
-          document.getElementById('runtime-dot').className = 'pill-dot';
+        if (comm) {
+          // Status dot: green if active, warn if not
+          const status = comm.status || 'unknown';
+          const dot = document.getElementById('runtime-dot');
+          if (status === 'active') {
+            dot.className = 'pill-dot';
+          } else {
+            dot.className = 'pill-dot warn';
+          }
+          document.getElementById('mode-label').textContent = status;
+
+          // Uptime: how long since last update
+          const updated = comm.updated_at;
+          if (updated) {
+            const secs = Math.floor(Date.now() / 1000) - updated;
+            if (secs < 60) {
+              document.getElementById('uptime').textContent = secs + 's ago';
+            } else if (secs < 3600) {
+              document.getElementById('uptime').textContent = Math.floor(secs / 60) + 'm ago';
+            } else {
+              document.getElementById('uptime').textContent = Math.floor(secs / 3600) + 'h ago';
+            }
+          }
+
+          // Version from identity anchor or default
+          document.getElementById('version').textContent = 'Weslr';
+
+          // Inner thought / current intent
+          const thoughts = comm.inner_thoughts;
+          if (Array.isArray(thoughts) && thoughts.length > 0) {
+            const latest = thoughts[thoughts.length - 1];
+            if (latest.summary) {
+              document.getElementById('agent-count').textContent =
+                latest.summary.slice(0, 60) + (latest.summary.length > 60 ? '…' : '');
+            }
+          }
         } else {
           document.getElementById('runtime-dot').className = 'pill-dot warn';
-        }
-        if (comm) {
-          const v = comm.version || comm.build_version || '';
-          if (v) document.getElementById('version').textContent = 'v' + v;
-          const narrative = comm.narrative_state;
-          if (narrative && narrative.last_update) {
-            const d = new Date(narrative.last_update * 1000);
-            document.getElementById('uptime').textContent = 'up ' + d.toLocaleTimeString();
-          }
         }
       } catch (e) {
         document.getElementById('runtime-dot').className = 'pill-dot err';
