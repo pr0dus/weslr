@@ -936,6 +936,21 @@ def cmd_serve(args):
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
                 return
+            if self.path == "/operator" or self.path == "/operator/dashboard.html":
+                dashboard_index = base_dir / "dashboard" / "index.html"
+                try:
+                    with open(dashboard_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
             if self.path == "/tia-history":
                 import json as _json
                 from pathlib import Path as _Path
