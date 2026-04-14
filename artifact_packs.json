@@ -1,1 +1,81 @@
-[]
+[
+  {
+    "category": "observability",
+    "group_kind": "opportunity",
+    "group_key": "observability signals",
+    "niche_theme": "observability signals",
+    "pack_name": "observability-signals-opportunity-pack",
+    "count": 1,
+    "pack_score": 0.52,
+    "coherence_score": 0.883,
+    "readiness_score": 0.715,
+    "novelty_score": 0.4,
+    "coverage_score": 0.275,
+    "lineage_score": 0.333,
+    "commercial_readiness_score": 0.519,
+    "sellability_score": 0.202,
+    "buyer_clarity_score": 0.48,
+    "price_band_guess": "needs packaging",
+    "artifact_count": 1,
+    "release_candidate": false,
+    "lifecycle_stage": "coherent",
+    "why_promising": [
+      "artifacts cluster around a clear family direction"
+    ],
+    "summary": "rank #1 \u00b7 observability signals \u00b7 score 0.52 \u00b7 sellability 0.202 \u00b7 stage coherent",
+    "artifacts": [
+      {
+        "id": "agent-2-observability_trace-1776147350",
+        "title": "Observability Trace",
+        "artifact_type": "export_candidate",
+        "family": "evaluation",
+        "lifecycle_stage": "packed",
+        "export_path": "exports/agent-2-observability_trace-1776147350",
+        "human_proposed_score": 0.185,
+        "internal_score": 0.667,
+        "novelty_score": 0.4,
+        "proof_level_score": 0.95,
+        "support_burden_score": 0.45,
+        "review_status": "export_ready",
+        "generation": 1,
+        "target_user": "operator team",
+        "niche_theme": "observability signals",
+        "problem_statement": "Operators need a better map from communicator events to review items.",
+        "opportunity_score": 0.459,
+        "buyer_clarity_score": 0.48,
+        "sellability_score": 0.202,
+        "price_band_guess": "needs packaging",
+        "explanation_reasons": [
+          "artifact is export-ready and already passed into human-facing flow",
+          "artifact is tied to the niche theme 'observability signals'",
+          "artifact has persisted across multiple state refreshes",
+          "artifact has appeared inside a top-ranked pack",
+          "artifact has direct human approval evidence"
+        ]
+      }
+    ],
+    "rank": 1,
+    "delivery_mode": "bundle_candidate",
+    "offer_count": 1,
+    "accept_count": 0,
+    "reject_count": 0,
+    "revision_count": 0,
+    "test_count": 0,
+    "export_count": 0,
+    "recent_events": [
+      {
+        "pack_name": "observability-signals-opportunity-pack",
+        "action": "offer",
+        "note": "Offer includes Observability Trace export-ready artifact.",
+        "buyer": "operator-team",
+        "price_band": "needs packaging",
+        "mode": "",
+        "group_kind": "opportunity",
+        "niche_theme": "observability signals",
+        "category": "observability",
+        "created_at": 1776152851
+      }
+    ],
+    "wrapper_path": "exports/observability-signals-opportunity-pack"
+  }
+]

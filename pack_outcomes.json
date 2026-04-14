@@ -1,0 +1,14 @@
+[
+  {
+    "pack_name": "observability-signals-opportunity-pack",
+    "action": "offer",
+    "note": "Offer includes Observability Trace export-ready artifact.",
+    "buyer": "operator-team",
+    "price_band": "needs packaging",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "observability signals",
+    "category": "observability",
+    "created_at": 1776152851
+  }
+]
