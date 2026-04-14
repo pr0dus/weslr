@@ -22,5 +22,17 @@
     "niche_theme": "observability signals",
     "category": "observability",
     "created_at": 1776155887
+  },
+  {
+    "pack_name": "planetary-signals-opportunity-pack",
+    "action": "offer",
+    "note": "Offer includes Planet Signal Trace artifact for science operators.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "planetary-signals",
+    "category": "science",
+    "created_at": 1776178451
   }
 ]
