@@ -37,5 +37,18 @@
     "contact_email": null,
     "additional_notes": null,
     "status": "submitted"
+  },
+  {
+    "category": "suggestion_request",
+    "request_id": "req-f51ed2",
+    "timestamp": "2026-04-14T05:53:23.272635Z",
+    "requester_type": "laboratory",
+    "domain": "governance research",
+    "requested_capability": "governance transparency dashboard",
+    "problem_statement": "Operators need clearer evidence linking execution signals to candidate proposals so decisions stay traceable.",
+    "requester_id": "lab-0420",
+    "contact_email": "lab@example.com",
+    "additional_notes": "Focus on review queues and artifact traceability.",
+    "status": "submitted"
   }
 ]

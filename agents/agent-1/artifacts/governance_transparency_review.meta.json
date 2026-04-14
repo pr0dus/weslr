@@ -1,0 +1,109 @@
+{
+  "id": "agent-1-governance_transparency_review-1776146241",
+  "agent_name": "agent-1",
+  "title": "Governance Transparency Review",
+  "artifact_type": "proposal",
+  "category": "governance",
+  "family": "evaluation",
+  "idea": "Tie review queue candidates to their execution signals.",
+  "explanation": "Document how each review queue entry is grounded in emitted artifacts and communicator threads so operators can trust the history.",
+  "purpose": "Seed a governance-transparent proposal that surfaces the signal lineage on the dashboard.",
+  "destination": "shared_with_agents",
+  "niche_theme": "governance transparency",
+  "target_user": "governance operators",
+  "problem_statement": "Operators currently lack a signal trail that links candidate proposals to the execution logs feeding the dashboard.",
+  "gap_reason": "Manual correlation is slow and error prone.",
+  "existing_solution_friction": "Spreadsheets and ad-hoc notes are outdated every tick.",
+  "artifact_hypothesis": "A dashboard card that links review rows with the communicator/agent summary behind them.",
+  "offer_hypothesis": "Operators will feel confident because every queue entry references visible signal origins.",
+  "delivery_mode_guess": "consulting_accelerator",
+  "research_confidence": 0.62,
+  "audience": [
+    "local AI tinkerers",
+    "agent-sim builders"
+  ],
+  "depends_on": [
+    "persistent memory",
+    "timed ticks"
+  ],
+  "combinable_with": [
+    "artifact-mapping",
+    "operator-ui"
+  ],
+  "why_now": "Weslr agents benefit from reusable, inspectable outputs instead of opaque internal work.",
+  "future_directions": [
+    "Add per-operator evidence links",
+    "Export as observability dashboard module"
+  ],
+  "if_interest_exists": [
+    "package as a standalone module",
+    "export to a GitHub subproject",
+    "bundle into a premium add-on pack"
+  ],
+  "lineage": {
+    "action": "research",
+    "generation": 2
+  },
+  "parent_ids": [],
+  "derived_from": [],
+  "generation": 2,
+  "status": "prototype",
+  "lifecycle_stage": "prototype",
+  "review_status": "proposed",
+  "review_notes": [
+    {
+      "at": 1776146241,
+      "by": "seed-script",
+      "action": "seeded",
+      "details": "Linked governance proposal to signal tracing."
+    }
+  ],
+  "approved_for_export": false,
+  "export_path": null,
+  "proof_signals": {
+    "first_seen_tick": 0,
+    "last_seen_tick": 0,
+    "appearances": 0,
+    "top_pack_hits": 0,
+    "review_exports": 0,
+    "human_approvals": 0,
+    "real_usage_hits": 0,
+    "buyer_fit_votes": 0,
+    "handoff_acceptances": 0,
+    "handoff_rejections": 0,
+    "external_validation_state": "unvalidated",
+    "last_status": "unseen"
+  },
+  "artifact_source_path": "agents/agent-1/artifacts/governance_transparency_review.md",
+  "artifact_source_kind": "md",
+  "artifact_line_count": 7,
+  "artifact_nonempty_line_count": 6,
+  "artifact_char_count": 554,
+  "substance_score": 0.4,
+  "thin_artifact_penalty": 0.0,
+  "description_mismatch_penalty": 0.0,
+  "substance_warnings": [],
+  "clarity_score": 0.75,
+  "reusability_score": 0.6,
+  "novelty_score": 0.28,
+  "stability_score": 0.45,
+  "exportability_score": 0.57,
+  "market_fit_score": 0.55,
+  "internal_score": 0.6,
+  "human_proposed_score": 0.538,
+  "pain_clarity_score": 0.64,
+  "buyer_specificity_score": 0.46,
+  "gap_severity_score": 0.36,
+  "packaging_ease_score": 0.45,
+  "opportunity_score": 0.487,
+  "buyer_clarity_score": 0.4,
+  "pain_severity_score": 0.48,
+  "deployment_effort_score": 0.7,
+  "proof_level_score": 0.15,
+  "support_burden_score": 0.48,
+  "commercial_readiness_score": 0.329,
+  "sellability_score": 0.352,
+  "price_band_guess": "needs packaging",
+  "external_validation_state": "unvalidated",
+  "delivery_mode": "internal_reusable_component"
+}
