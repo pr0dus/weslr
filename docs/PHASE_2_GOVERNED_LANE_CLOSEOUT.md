@@ -31,3 +31,9 @@ Phase 2 existed to prove that CDI is the single sanctioned improvement lane for 
 - Do we need a dedicated operator surface for viewing/approving the tighten chain before execution?  
 - When and how do we study real execution against these staged records without breaking trust?  
 - Is there value in adding additional telemetry or safeguards before we ever touch the apply scripts?
+
+## Evidence acquisition milestone
+- Phase 4 evidence sufficiency scoring now ensures proposals emit only when coverage is insufficient; sufficiency prevents noisy proposals.
+- High-risk acquisitions require governance approval before outbound signals are emitted, and rollback is tested in assessment-only mode.
+- Confidence/coverage thresholds and proposal-only blocking are verified via the dry-run harness before any outbound reach.
+- This ensures the governed lane already enforces evidence checks before any future apply or capability expansion.

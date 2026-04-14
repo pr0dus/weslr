@@ -28,6 +28,12 @@ Phase 2 is justified because the core is hardened and observable; we can now per
 - No TIA, installer, or packaging changes.
 - No skipping straight to proposal/apply steps before the persisted inadequacy baseline exists.
 
+## Phase 3 Decision Layer confirmation
+- Decision outputs (`what_matters_now`, `next_actions`, approval queue) verified via decision_support suite.
+- Governance blocks/approvals stay intact (`test_compound_multisignal_capability_governance.py`).
+- Rollback toggle for the decision layer was exercised (`test_decision_layer_rollback_toggle.py`).
+- Identity continuity remained stable throughout, indicating partitioned caches survive decision transitions.
+
 ## Result
 - FILE_CREATED: YES
 - FILE_PATH: docs/PHASE_1_CLOSEOUT_AND_PHASE_2_ENTRY.md
