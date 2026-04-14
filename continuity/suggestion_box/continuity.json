@@ -28776,6 +28776,20 @@
       "request_id": "req-cc49e5",
       "requester_type": "university",
       "domain": "observability"
+    },
+    {
+      "timestamp": "2026-04-14T13:03:05.969284Z",
+      "action": "submitted",
+      "request_id": "req-424e9c",
+      "requester_type": "laboratory",
+      "domain": "planet discovery"
+    },
+    {
+      "timestamp": "2026-04-14T13:03:26.474469Z",
+      "action": "submitted",
+      "request_id": "req-a74617",
+      "requester_type": "laboratory",
+      "domain": "planet discovery"
     }
   ]
 }

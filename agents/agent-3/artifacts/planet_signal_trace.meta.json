@@ -1,0 +1,113 @@
+{
+  "id": "agent-3-planet_signal_trace-1776171834",
+  "agent_name": "agent-3",
+  "title": "Planet Signal Trace",
+  "artifact_type": "artifact",
+  "category": "science",
+  "family": "dashboards",
+  "idea": "Surface a science domain signal trace for planetary discovery.",
+  "explanation": "Document the datasets and tick cadence that produced this signal so operators can connect it to the canonical review path.",
+  "purpose": "Seed a science artifact that proves the universal loop is domain-agnostic.",
+  "destination": "shared_with_agents",
+  "niche_theme": "planetary-signals",
+  "target_user": "scientific operators",
+  "problem_statement": "Operators currently lack a single artifact that lists planet detection signals, proof ticks, and analysis notes.",
+  "gap_reason": "Signal analysis lives in notebooks, not artifacts.",
+  "existing_solution_friction": "Manual cross-checks between notebooks and review queue.",
+  "artifact_hypothesis": "A science artifact with explicit dataset + tick context will flow through the universal governed loop.",
+  "offer_hypothesis": "Operators trust artifacts tied to real signal analysis.",
+  "delivery_mode_guess": "science_bundle",
+  "research_confidence": 0.65,
+  "audience": [
+    "local AI tinkerers",
+    "agent-sim builders"
+  ],
+  "depends_on": [
+    "persistent memory",
+    "timed ticks"
+  ],
+  "combinable_with": [
+    "observability_trace",
+    "dashboard_metrics"
+  ],
+  "why_now": "Weslr agents benefit from reusable, inspectable outputs instead of opaque internal work.",
+  "future_directions": [
+    "Add signal-to-noise detail",
+    "Tie to specific dataset outputs"
+  ],
+  "if_interest_exists": [
+    "package as a standalone module",
+    "export to a GitHub subproject",
+    "bundle into a premium add-on pack"
+  ],
+  "lineage": {
+    "action": "analysis",
+    "generation": 1
+  },
+  "parent_ids": [],
+  "derived_from": [],
+  "generation": 1,
+  "status": "prototype",
+  "lifecycle_stage": "prototype",
+  "review_status": "proposed",
+  "review_notes": [
+    {
+      "at": 1776171834,
+      "by": "science_bridge",
+      "action": "seeded",
+      "details": "Domain science signal bridged from suggestion candidate ext-a49764 referencing scientific_analysis output."
+    }
+  ],
+  "approved_for_export": false,
+  "export_path": null,
+  "proof_signals": {
+    "first_seen_tick": 0,
+    "last_seen_tick": 0,
+    "appearances": 0,
+    "top_pack_hits": 0,
+    "review_exports": 0,
+    "human_approvals": 0,
+    "real_usage_hits": 0,
+    "buyer_fit_votes": 0,
+    "handoff_acceptances": 0,
+    "handoff_rejections": 0,
+    "external_validation_state": "unvalidated",
+    "last_status": "unseen"
+  },
+  "artifact_source_path": null,
+  "artifact_source_kind": null,
+  "artifact_line_count": 0,
+  "artifact_nonempty_line_count": 0,
+  "artifact_char_count": 0,
+  "substance_score": 0.05,
+  "thin_artifact_penalty": 0.22,
+  "description_mismatch_penalty": 0.08,
+  "substance_warnings": [
+    "missing source artifact"
+  ],
+  "clarity_score": 0.75,
+  "reusability_score": 0.6,
+  "novelty_score": 0.28,
+  "stability_score": 0.45,
+  "exportability_score": 0.57,
+  "market_fit_score": 0.55,
+  "internal_score": 0.6,
+  "human_proposed_score": 0.227,
+  "pain_clarity_score": 0.64,
+  "buyer_specificity_score": 0.38,
+  "gap_severity_score": 0.36,
+  "packaging_ease_score": 0.31,
+  "opportunity_score": 0.451,
+  "buyer_clarity_score": 0.4,
+  "pain_severity_score": 0.4,
+  "deployment_effort_score": 0.62,
+  "proof_level_score": 0.15,
+  "support_burden_score": 0.56,
+  "commercial_readiness_score": 0.062,
+  "sellability_score": 0.085,
+  "price_band_guess": "needs packaging",
+  "external_validation_state": "unvalidated",
+  "delivery_mode": "bundle_candidate",
+  "review_exports": 0,
+  "human_approvals": 0
+}

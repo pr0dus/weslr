@@ -63,5 +63,31 @@
     "contact_email": "ops@observatory.example",
     "additional_notes": "Focus on linking communicator artifacts with dashboard cards.",
     "status": "submitted"
+  },
+  {
+    "category": "suggestion_request",
+    "request_id": "req-424e9c",
+    "timestamp": "2026-04-14T13:03:05.958662Z",
+    "requester_type": "laboratory",
+    "domain": "planet discovery",
+    "requested_capability": "planetary signal trace",
+    "problem_statement": "Operators need a clear signal lineage for candidate planet events so they can trust follow-up science.",
+    "requester_id": "lab-planet-09",
+    "contact_email": "planets@example.com",
+    "additional_notes": "Include transit confidence and dip clarity from scientific_analysis",
+    "status": "submitted"
+  },
+  {
+    "category": "suggestion_request",
+    "request_id": "req-a74617",
+    "timestamp": "2026-04-14T13:03:26.465699Z",
+    "requester_type": "laboratory",
+    "domain": "planet discovery",
+    "requested_capability": "planetary signal trace",
+    "problem_statement": "Operators need a clear signal lineage for candidate planet events so they can trust follow-up science.",
+    "requester_id": "lab-planet-09",
+    "contact_email": "planets@example.com",
+    "additional_notes": "Include transit confidence and dip clarity from scientific_analysis",
+    "status": "submitted"
   }
 ]
