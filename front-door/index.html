@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weslr — Front Door</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0d12;
+      color: #e7ecf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px;
+      gap: 24px;
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: 200;
+      letter-spacing: 0.15em;
+      color: #6ee7b7;
+      text-transform: uppercase;
+    }
+    .tagline {
+      font-size: 18px;
+      color: #9aa6b2;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+    .status-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: #171b22;
+      border: 1px solid #28303a;
+      border-radius: 999px;
+      font-size: 13px;
+      color: #9aa6b2;
+    }
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6ee7b7;
+    }
+    .pill-dot.warn { background: #f59e0b; }
+    .pill-dot.err { background: #ef4444; }
+    nav {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      display: inline-block;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: #6ee7b7;
+      color: #0a0d12;
+    }
+    .btn-primary:hover { background: #a7f3d0; }
+    .btn-secondary {
+      background: #171b22;
+      color: #e7ecf3;
+      border: 1px solid #28303a;
+    }
+    .btn-secondary:hover { background: #1e2430; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 800px;
+      width: 100%;
+      margin-top: 16px;
+    }
+    .card {
+      background: #111620;
+      border: 1px solid #1e2736;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: left;
+    }
+    .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #e7ecf3; }
+    .card p { font-size: 13px; color: #6b7a8d; line-height: 1.5; }
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: #3d4a5c;
+      border-top: 1px solid #1e2736;
+    }
+    footer a { color: #4b5563; text-decoration: none; }
+    footer a:hover { color: #6b7a8d; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="logo">Weslr</div>
+    <p class="tagline">
+      Self-directing coding-agent ecosystem with bounded autonomy,
+      memory continuity, and structured opportunity lifecycle.
+    </p>
+
+    <div class="status-bar" id="status-bar">
+      <span class="pill"><span class="pill-dot" id="runtime-dot"></span> Runtime</span>
+      <span class="pill">Ticks: <span id="tick-count">—</span></span>
+      <span class="pill">Agents: <span id="agent-count">—</span></span>
+      <span class="pill">Mode: <span id="mode-label">—</span></span>
+    </div>
+
+    <nav>
+      <a href="/operator" class="btn-secondary">Operator Dashboard</a>
+      <a href="/operator/dashboard.html" class="btn-secondary">Debug View</a>
+    </nav>
+
+    <div class="card-grid">
+      <div class="card">
+        <h3>Reality Audit</h3>
+        <p>Front-door surface shows canonical state files loaded in real time from the live runtime.</p>
+      </div>
+      <div class="card">
+        <h3>Operator View</h3>
+        <p>Full debug dashboard for agents, memory layers, self-mod proposals, and review queues.</p>
+      </div>
+      <div class="card">
+        <h3>Bounded Autonomy</h3>
+        <p>Safe capability evolution engine gates all self-modifications behind evaluation thresholds.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="/operator">Operator Dashboard</a>
+    &nbsp;·&nbsp;
+    <span id="version">—</span>
+    &nbsp;·&nbsp;
+    <span id="uptime">—</span>
+  </footer>
+
+  <script>
+    async function loadStatus() {
+      try {
+        const [state, comm] = await Promise.all([
+          fetch('/state_core.json').then(r => r.json()).catch(() => null),
+          fetch('/communicator_self.json').then(r => r.json()).catch(() => null),
+        ]);
+        if (state) {
+          document.getElementById('tick-count').textContent =
+            state.tick_count !== undefined ? state.tick_count : (state.ticks ?? '—');
+          document.getElementById('agent-count').textContent =
+            Array.isArray(state.agents) ? state.agents.length :
+            state.agent_count !== undefined ? state.agent_count : '—';
+          document.getElementById('mode-label').textContent = state.mode || 'active';
+          document.getElementById('runtime-dot').className = 'pill-dot';
+        } else {
+          document.getElementById('runtime-dot').className = 'pill-dot warn';
+        }
+        if (comm) {
+          const v = comm.version || comm.build_version || '';
+          if (v) document.getElementById('version').textContent = 'v' + v;
+          const narrative = comm.narrative_state;
+          if (narrative && narrative.last_update) {
+            const d = new Date(narrative.last_update * 1000);
+            document.getElementById('uptime').textContent = 'up ' + d.toLocaleTimeString();
+          }
+        }
+      } catch (e) {
+        document.getElementById('runtime-dot').className = 'pill-dot err';
+      }
+    }
+    loadStatus();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>

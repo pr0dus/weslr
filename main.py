@@ -932,10 +932,28 @@ def cmd_serve(args):
                 self.send_error(404, "Unknown endpoint")
 
         def do_GET(self):
-            """Serve GET requests - add /tia-history endpoint for history JSON."""
+            """Serve GET requests."""
+            # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
                 return
+            # Main front door
+            if self.path == "/" or self.path == "/main/index.html":
+                front_door = base_dir / "front-door" / "index.html"
+                try:
+                    with open(front_door, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+            # Operator / debug dashboard
             if self.path == "/operator" or self.path == "/operator/dashboard.html":
                 dashboard_index = base_dir / "dashboard" / "index.html"
                 try:
@@ -951,12 +969,11 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(f"Error: {e}".encode("utf-8"))
                 return
+            # TIA import history
             if self.path == "/tia-history":
                 import json as _json
-                from pathlib import Path as _Path
                 try:
-                    workspace_root = Path(__file__).resolve().parent
-                    history_path = workspace_root / "tia_import_history.json"
+                    history_path = base_dir / "tia_import_history.json"
                     if history_path.exists():
                         with open(history_path, "r", encoding="utf-8") as f:
                             data = _json.load(f)
@@ -971,7 +988,8 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
-            elif self.path == "/tia-summary":
+                return
+            if self.path == "/tia-summary":
                 import json as _json
                 try:
                     from tia_import import get_latest_tia_summary
@@ -985,9 +1003,9 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "summary": None, "error": str(e)}).encode("utf-8"))
-            else:
-                # Fall back to default handler for other GET requests
-                super().do_GET()
+                return
+            # Fall back to default handler for other GET requests
+            super().do_GET()
         
         def log_message(self, format, *args):
             # Suppress default logging for cleaner output
