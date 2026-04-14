@@ -48,8 +48,8 @@
   "derived_from": [],
   "generation": 1,
   "status": "prototype",
-  "lifecycle_stage": "approved",
-  "review_status": "approved",
+  "lifecycle_stage": "packed",
+  "review_status": "export_ready",
   "review_notes": [
     {
       "at": 1776171834,
@@ -57,24 +57,25 @@
       "action": "seeded",
       "details": "Domain science signal bridged from suggestion candidate ext-a49764 referencing scientific_analysis output."
     },
-    "Planetary signal evidence vetted; dataset cadence is traceable."
+    "Planetary signal evidence vetted; dataset cadence is traceable.",
+    "Science signal ready for export queue"
   ],
   "approved_for_export": true,
-  "export_path": null,
+  "export_path": "exports/agent-3-planet_signal_trace-1776171834",
   "proof_signals": {
     "artifact_id": "agent-3-planet_signal_trace-1776171834",
     "first_seen_tick": 8,
     "last_seen_tick": 8,
-    "appearances": 2,
-    "top_pack_hits": 0,
-    "review_exports": 0,
+    "appearances": 4,
+    "top_pack_hits": 1,
+    "review_exports": 1,
     "human_approvals": 1,
     "real_usage_hits": 0,
     "buyer_fit_votes": 0,
     "handoff_acceptances": 0,
     "handoff_rejections": 0,
     "external_validation_state": "unvalidated",
-    "last_status": "approved"
+    "last_status": "export_ready"
   },
   "artifact_source_path": null,
   "artifact_source_kind": null,
@@ -102,11 +103,11 @@
   "opportunity_score": 0.451,
   "buyer_clarity_score": 0.4,
   "pain_severity_score": 0.4,
-  "deployment_effort_score": 0.6,
-  "proof_level_score": 0.42,
+  "deployment_effort_score": 0.56,
+  "proof_level_score": 0.87,
   "support_burden_score": 0.53,
-  "commercial_readiness_score": 0.144,
-  "sellability_score": 0.147,
+  "commercial_readiness_score": 0.201,
+  "sellability_score": 0.179,
   "price_band_guess": "needs packaging",
   "external_validation_state": "unvalidated",
   "delivery_mode": "bundle_candidate",
