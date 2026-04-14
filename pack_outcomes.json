@@ -34,5 +34,17 @@
     "niche_theme": "planetary-signals",
     "category": "science",
     "created_at": 1776178451
+  },
+  {
+    "pack_name": "planetary-signals-opportunity-pack",
+    "action": "accept",
+    "note": "Science operators confirm delivery and accept the planetary signal pack.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "planetary-signals",
+    "category": "science",
+    "created_at": 1776178646
   }
 ]
