@@ -472,6 +472,14 @@
     <h1>What must not happen?</h1>
     <p class="subtitle">Define conditions that would constitute a failure or require immediate intervention.</p>
 
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Failure conditions and red lines are enforced by the safety gateway. Weslr will not propose or execute actions that violate stated red lines.</span>
+    </div>
+
     <div class="field">
       <label for="b-fail-conditions">Failure conditions</label>
       <div class="helper">Describe scenarios that would be unacceptable — e.g. data loss, security regression, production disruption.</div>
@@ -620,52 +628,6 @@
   </div>
 
   <!-- ── Screen: Phase B6 — Urgency Expectations ── -->
-  <div class="card hidden" id="screen-phaseB6">
-    <div class="phase-badge">
-      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      Phase B — Mission Discovery
-    </div>
-    <h1>What is the urgency context?</h1>
-    <p class="subtitle">Set expectations for pacing and responsiveness.</p>
-
-    <div class="field">
-      <label for="b-urgency">Urgency level</label>
-      <select id="b-urgency" onchange="validateB6()">
-        <option value="">— Select —</option>
-        <option value="explore">Explore — no rush, thorough research welcome</option>
-        <option value="deliberate">Deliver — clear goal, quality matters most</option>
-        <option value="fast">Sprint — time is tight, stay focused</option>
-        <option value="reactive">Reactive — respond quickly, keep things running</option>
-      </select>
-      <div class="err-msg" id="b-urgency-err">Please select an urgency level.</div>
-    </div>
-
-    <div class="field">
-      <label for="b-blockers">Current blockers <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-      <div class="helper">Anything currently blocking your own progress that Weslr should be aware of.</div>
-      <textarea id="b-blockers" placeholder="e.g. Waiting on API credentials. Design doc not yet approved. Need to unblock CI first…" style="min-height:60px"></textarea>
-    </div>
-
-    <div class="field">
-      <label for="b-standup">Standup cadence</label>
-      <div class="helper">How should Weslr align with your team's standup rhythm?</div>
-      <select id="b-standup" onchange="validateB6()">
-        <option value="">— Select —</option>
-        <option value="none">No standup alignment needed</option>
-        <option value="morning">Daily morning standup (before 10am)</option>
-        <option value="evening">Daily evening check-in</option>
-        <option value="weekly">Weekly only</option>
-      </select>
-      <div class="err-msg" id="b-standup-err">Please select a standup cadence.</div>
-    </div>
-
-    <div class="nav-row">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <button class="btn-next" id="b6-next" onclick="goNext()" disabled>Continue →</button>
-    </div>
-  </div>
-
-  <!-- ── Screen: Phase C1 — Allowed Capabilities ── -->
   <div class="card hidden" id="screen-phaseC1">
     <div class="phase-badge">
       <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
