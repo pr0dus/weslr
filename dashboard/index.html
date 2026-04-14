@@ -47,7 +47,7 @@
       <a href="#operators">Operators</a> ·
       <a href="#improvement">Continuous Improvement</a>
     </nav>
-    
+
     <div class="debug-toggle">
       <button id="toggle-debug">Toggle Debug Sections (hidden by default)</button>
     </div>
@@ -83,6 +83,17 @@
         <div class="content">
           <p class="muted">Additional legacy data available for debugging.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- Closed loop story -->
+    <section class="card" id="loop-summary" style="margin-top:16px;">
+      <h2>Closed Loop Story</h2>
+      <p class="muted help-text"><strong>What:</strong> The lifecycle from review → export → delivery is captured here.<br>
+      <strong>Why:</strong> This highlights the strongest governed loop and keeps the narrative legible.<br>
+      <strong>Next:</strong> Watch the next candidate enter this loop or a new delivery appear.</p>
+      <div id="loop-summary-content">
+        <p class="muted">Loading the closed-loop story...</p>
       </div>
     </section>
 
@@ -158,7 +169,7 @@
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #6ee7b7;">
           <h3 style="font-size:14px; margin:0 0 8px;">Artifact Review</h3>
           <p class="muted" style="font-size:11px; margin-bottom:8px;">Review artifacts and decide whether to approve or reject them for export</p>
-          
+
           <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
             <input type="text" id="artifact-review-id" placeholder="Artifact ID (e.g., artifact-123)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
             <select id="artifact-review-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
@@ -167,21 +178,21 @@
               <option value="note">Note Only</option>
             </select>
           </div>
-          
+
           <!-- Recent Artifact IDs Suggestion -->
           <div id="artifact-review-recent-suggestions" class="muted" style="display:none; margin-bottom:8px; font-size:11px;">
             <strong>Recent IDs:</strong>
             <div id="artifact-review-recent-list" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
           </div>
-          
+
           <div id="artifact-review-note-container" style="display:none; margin-bottom:8px;">
             <input type="text" id="artifact-review-note" placeholder="Reason for action (required for reject)" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
           </div>
-          
+
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="artifact-review-submit" style="padding:8px 16px; border:none; background:#6ee7b7; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Review</button>
             <p id="artifact-review-status" class="muted" style="font-size:11px; margin:0;"></p>
-            
+
             <!-- Success Summary Card -->
             <div id="artifact-review-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
               <p style="margin:4px 0; font-size:11px;"><strong>✅ Review submitted:</strong> <span id="artifact-review-summary-id"></span> - <span id="artifact-review-summary-action"></span></p>
@@ -190,17 +201,17 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Weslr Suggestion Review Section -->
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #34d399;">
           <h3 style="font-size:14px; margin:0 0 8px;">Weslr Suggestion Review</h3>
           <p class="muted" style="font-size:11px; margin-bottom:8px;">Review external suggestions and see Weslr's internal assessment (priority, fit, risk, reasoning)</p>
-          
+
           <!-- Suggestion Review List -->
           <div id="suggestion-review-list" class="muted" style="max-height:300px; overflow-y:auto; margin-bottom:12px; font-size:12px;">
             <p class="muted" style="font-size:11px;">Loading suggestion candidates...</p>
           </div>
-          
+
           <!-- Selected Suggestion Details -->
           <div id="suggestion-review-detail" class="muted" style="display:none; margin-bottom:12px; padding:12px; background:#0c0f14; border-radius:8px;">
             <h4 style="font-size:13px; margin:0 0 8px;">Assessment Details</h4>
@@ -227,7 +238,7 @@
               <p id="suggestion-reasoning" style="margin:2px 0; font-size:10px; background:#171b22; padding:6px; border-radius:4px;"></p>
             </div>
           </div>
-          
+
           <!-- Review Actions -->
           <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
             <select id="suggestion-review-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
@@ -236,7 +247,7 @@
             </select>
             <button id="suggestion-review-submit" style="padding:8px 16px; border:none; background:#34d399; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit</button>
             <p id="suggestion-review-status" class="muted" style="font-size:11px; margin:0;"></p>
-            
+
             <!-- Success Summary Card -->
             <div id="suggestion-review-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
               <p style="margin:4px 0; font-size:11px;"><strong>✅ Review submitted:</strong> <span id="suggestion-review-summary-id"></span> - <span id="suggestion-review-summary-action"></span></p>
@@ -244,12 +255,12 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Category Management Section -->
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #3b82f6;">
           <h3 style="font-size:14px; margin:0 0 8px;">Category Management</h3>
           <p class="muted" style="font-size:11px; margin-bottom:8px;">Create, update, or archive categories for organizing opportunities and artifacts</p>
-          
+
           <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
             <input type="text" id="category-update-name" placeholder="Category Name (e.g., marketing)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
             <select id="category-update-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
@@ -258,16 +269,16 @@
               <option value="archive">Archive</option>
             </select>
           </div>
-          
+
           <div id="category-update-note-container" style="display:none; margin-bottom:8px;">
             <input type="text" id="category-update-note" placeholder="Reason for action (required for archive)" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
           </div>
-          
+
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="category-update-submit" style="padding:8px 16px; border:none; background:#3b82f6; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Category Action</button>
             <p id="category-update-status" class="muted" style="font-size:11px; margin:0;"></p>
           </div>
-          
+
           <!-- Success Summary Card -->
           <div id="category-update-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
             <p style="margin:4px 0; font-size:11px;"><strong>✅ Category action:</strong> <span id="category-update-summary-name"></span> - <span id="category-update-summary-action"></span></p>
@@ -275,12 +286,12 @@
             <p id="category-update-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
           </div>
         </div>
-        
+
         <!-- Validation Recording Section -->
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #fbbf24;">
           <h3 style="font-size:14px; margin:0 0 8px;">Validation Recording</h3>
           <p class="muted" style="font-size:11px; margin-bottom:8px;">Record external validation outcomes for artifacts to track real-world usage</p>
-          
+
           <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
             <input type="text" id="validation-record-id" placeholder="Artifact ID (e.g., artifact-123)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
             <select id="validation-record-outcome" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
@@ -289,22 +300,22 @@
               <option value="needs_review">Needs Review</option>
             </select>
           </div>
-          
+
           <!-- Recent Artifact IDs Suggestion -->
           <div id="validation-record-recent-suggestions" class="muted" style="display:none; margin-bottom:8px; font-size:11px;">
             <strong>Recent IDs:</strong>
             <div id="validation-record-recent-list" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
           </div>
-          
+
           <div style="margin-bottom:8px;">
             <input type="text" id="validation-record-note" placeholder="Context or reason for validation outcome" style="width:100%; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
           </div>
-          
+
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="validation-record-submit" style="padding:8px 16px; border:none; background:#fbbf24; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Validation</button>
             <p id="validation-record-status" class="muted" style="font-size:11px; margin:0;"></p>
           </div>
-          
+
           <!-- Success Summary Card -->
           <div id="validation-record-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
             <p style="margin:4px 0; font-size:11px;"><strong>✅ Validation recorded:</strong> <span id="validation-record-summary-id"></span> - <span id="validation-record-summary-outcome"></span></p>
@@ -312,12 +323,12 @@
             <p id="validation-record-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
           </div>
         </div>
-        
+
         <!-- Pack Decision Section -->
         <div style="margin-bottom:16px; padding:12px; background:#1c222b; border-radius:8px; border-left:3px solid #f59e0b;">
           <h3 style="font-size:14px; margin:0 0 8px;">Pack Decision</h3>
           <p class="muted" style="font-size:11px; margin-bottom:8px;">Record decisions for export packs (approve, reject, or update pricing)</p>
-          
+
           <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
             <input type="text" id="pack-decision-name" placeholder="Pack Name (e.g., marketing-1)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
             <select id="pack-decision-action" style="padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;">
@@ -326,17 +337,17 @@
               <option value="update_price">Update Price</option>
             </select>
           </div>
-          
+
           <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
             <input type="text" id="pack-decision-note" placeholder="Reason for action (required for reject)" style="flex:1; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
             <input type="text" id="pack-decision-price" placeholder="Price (required for update_price)" style="flex:1; padding:8px 12px; border:1px solid #28303a; border-radius:8px; background:#0c0f14; color:#e7ecf3; outline:none;" />
           </div>
-          
+
           <div style="display:flex; gap:8px; align-items:center;">
             <button id="pack-decision-submit" style="padding:8px 16px; border:none; background:#f59e0b; color:#0f1115; border-radius:8px; cursor:pointer; font-weight:bold;">Submit Pack Decision</button>
             <p id="pack-decision-status" class="muted" style="font-size:11px; margin:0;"></p>
           </div>
-          
+
           <!-- Success Summary Card -->
           <div id="pack-decision-summary" class="muted" style="display:none; padding:12px; background:#dcfce7; border-radius:8px; margin-top:8px;">
             <p style="margin:4px 0; font-size:11px;"><strong>✅ Pack decision:</strong> <span id="pack-decision-summary-name"></span> - <span id="pack-decision-summary-action"></span></p>
@@ -345,7 +356,7 @@
             <p id="pack-decision-summary-time" style="font-size:10px; margin:4px 0; color:#6b7280;"></p>
           </div>
         </div>
-        
+
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
           <li><strong>Approve artifact</strong><br><code>python3 main.py review &lt;artifact-id&gt; approve --note 'operator-approved from dashboard'</code></li>
@@ -360,14 +371,14 @@
       <p class="muted help-text"><strong>What:</strong> Operator-governed improvement proposals and trends<br>
       <strong>Why:</strong> See improvement opportunities and track progress over time<br>
       <strong>Next:</strong> Review and approve improvement proposals</p>
-      
+
       <!-- Improvement Navigation -->
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; border-bottom:1px solid #28303a; padding-bottom:8px;">
         <button onclick="showImprovementTab('proposals')" style="padding:6px 12px; border:none; background:#28303a; color:#e7ecf3; border-radius:8px; cursor:pointer;">Proposals</button>
         <button onclick="showImprovementTab('history')" style="padding:6px 12px; border:none; background:#28303a; color:#e7ecf3; border-radius:8px; cursor:pointer;">History</button>
         <button onclick="showImprovementTab('trends')" style="padding:6px 12px; border:none; background:#28303a; color:#e7ecf3; border-radius:8px; cursor:pointer;">Trends</button>
       </div>
-      
+
       <!-- Improvement Content -->
       <div id="improvement-content">
         <div id="improvement-proposals">
@@ -418,28 +429,28 @@
     document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       document.getElementById('refresh-time').textContent = now.toLocaleString();
-      
+
       // Toggle debug sections
       document.getElementById('toggle-debug').addEventListener('click', () => {
         const debugSections = document.getElementById('debug-sections');
         debugSections.classList.toggle('visible');
       });
-      
+
       // Load dashboard data from state_core.json and merge with communicator_self.json
       fetchStateCore();
-      
+
       // Load recent artifact IDs
       loadRecentArtifactIds();
-      
+
       // Artifact Review UI handler
       setupArtifactReviewUI();
-      
+
       // Category Management UI handler
       setupCategoryManagementUI();
-      
+
       // Validation Recording UI handler
       setupValidationRecordingUI();
-      
+
       // Pack Decision UI handler
       setupPackDecisionUI();
     });
@@ -450,27 +461,27 @@
         if (!response.ok) return;
         const data = await response.json();
         const artifacts = data.artifacts || [];
-        
+
         // Get unique IDs, limit to 10 most recent (by timestamp)
         const recentIds = [...new Set(artifacts.map(a => a.id))].slice(0, 10);
-        
+
         if (recentIds.length === 0) return;
-        
+
         // Update Artifact Review section
         const reviewList = document.getElementById('artifact-review-recent-list');
         if (reviewList) {
-          reviewList.innerHTML = recentIds.map(id => 
-            `<button onclick="fillArtifactId('${id}', 'artifact-review-id')" 
+          reviewList.innerHTML = recentIds.map(id =>
+            `<button onclick="fillArtifactId('${id}', 'artifact-review-id')"
               style="padding:2px 8px; background:#263241; color:#e7ecf3; border:none; border-radius:6px; font-size:10px; cursor:pointer; white-space:nowrap;">${id.substring(0, 20)}...</button>`
           ).join(' ');
           document.getElementById('artifact-review-recent-suggestions').style.display = 'block';
         }
-        
+
         // Update Validation Recording section
         const validationList = document.getElementById('validation-record-recent-list');
         if (validationList) {
-          validationList.innerHTML = recentIds.map(id => 
-            `<button onclick="fillArtifactId('${id}', 'validation-record-id')" 
+          validationList.innerHTML = recentIds.map(id =>
+            `<button onclick="fillArtifactId('${id}', 'validation-record-id')"
               style="padding:2px 8px; background:#263241; color:#e7ecf3; border:none; border-radius:6px; font-size:10px; cursor:pointer; white-space:nowrap;">${id.substring(0, 20)}...</button>`
           ).join(' ');
           document.getElementById('validation-record-recent-suggestions').style.display = 'block';
@@ -491,7 +502,7 @@
       const noteContainer = document.getElementById('artifact-review-note-container');
       const reviewSubmit = document.getElementById('artifact-review-submit');
       const reviewStatus = document.getElementById('artifact-review-status');
-      
+
       // Show note field only for reject action
       actionSelect.addEventListener('change', () => {
         if (actionSelect.value === 'reject') {
@@ -502,43 +513,43 @@
           document.getElementById('artifact-review-note').required = false;
         }
       });
-      
+
       // Submit review
       reviewSubmit.addEventListener('click', async () => {
         const artifactId = document.getElementById('artifact-review-id').value.trim();
         const action = document.getElementById('artifact-review-action').value;
         const note = document.getElementById('artifact-review-note').value.trim();
-        
+
         if (!artifactId) {
           reviewStatus.textContent = '❌ Artifact ID is required';
           reviewStatus.style.color = '#f87171';
           return;
         }
-        
+
         if (action === 'reject' && !note) {
           reviewStatus.textContent = '❌ Note is required for reject action';
           reviewStatus.style.color = '#f87171';
           return;
         }
-        
+
         // Disable button during request
         reviewSubmit.disabled = true;
         reviewStatus.textContent = '⏳ Submitting...';
         reviewStatus.style.color = '#6ee7b7';
-        
+
         try {
           const response = await fetch('/artifact-review', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({artifact_id: artifactId, action: action, note: note})
           });
-          
+
           const result = await response.json();
-          
+
           if (result.ok) {
             reviewStatus.textContent = `✅ Review submitted: ${action}`;
             reviewStatus.style.color = '#6ee7b7';
-            
+
             // Show success summary card
             const summary = document.getElementById('artifact-review-summary');
             document.getElementById('artifact-review-summary-id').textContent = artifactId;
@@ -546,7 +557,7 @@
             document.getElementById('artifact-review-summary-note').textContent = note ? `Note: ${note}` : '';
             document.getElementById('artifact-review-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
             summary.style.display = 'block';
-            
+
             // Clear the fields
             document.getElementById('artifact-review-id').value = '';
             document.getElementById('artifact-review-note').value = '';
@@ -568,7 +579,7 @@
       const noteContainer = document.getElementById('category-update-note-container');
       const updateSubmit = document.getElementById('category-update-submit');
       const updateStatus = document.getElementById('category-update-status');
-      
+
       // Show note field only for archive action
       actionSelect.addEventListener('change', () => {
         if (actionSelect.value === 'archive') {
@@ -579,43 +590,43 @@
           document.getElementById('category-update-note').required = false;
         }
       });
-      
+
       // Submit category update
       updateSubmit.addEventListener('click', async () => {
         const categoryName = document.getElementById('category-update-name').value.trim();
         const action = document.getElementById('category-update-action').value;
         const note = document.getElementById('category-update-note').value.trim();
-        
+
         if (!categoryName) {
           updateStatus.textContent = '❌ Category name is required';
           updateStatus.style.color = '#f87171';
           return;
         }
-        
+
         if (action === 'archive' && !note) {
           updateStatus.textContent = '❌ Note/reason is required for archive action';
           updateStatus.style.color = '#f87171';
           return;
         }
-        
+
         // Disable button during request
         updateSubmit.disabled = true;
         updateStatus.textContent = '⏳ Submitting...';
         updateStatus.style.color = '#3b82f6';
-        
+
         try {
           const response = await fetch('/category/update', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name: categoryName, action: action, note: note})
           });
-          
+
           const result = await response.json();
-          
+
           if (result.ok) {
             updateStatus.textContent = `✅ Category action submitted: ${action}`;
             updateStatus.style.color = '#3b82f6';
-            
+
             // Show success summary card
             const summary = document.getElementById('category-update-summary');
             document.getElementById('category-update-summary-name').textContent = categoryName;
@@ -623,7 +634,7 @@
             document.getElementById('category-update-summary-note').textContent = note ? `Reason: ${note}` : '';
             document.getElementById('category-update-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
             summary.style.display = 'block';
-            
+
             // Clear the fields
             document.getElementById('category-update-name').value = '';
             document.getElementById('category-update-note').value = '';
@@ -643,43 +654,43 @@
     function setupValidationRecordingUI() {
       const validationSubmit = document.getElementById('validation-record-submit');
       const validationStatus = document.getElementById('validation-record-status');
-      
+
       // Submit validation
       validationSubmit.addEventListener('click', async () => {
         const artifactId = document.getElementById('validation-record-id').value.trim();
         const outcome = document.getElementById('validation-record-outcome').value;
         const note = document.getElementById('validation-record-note').value.trim();
-        
+
         if (!artifactId) {
           validationStatus.textContent = '❌ Artifact ID is required';
           validationStatus.style.color = '#f87171';
           return;
         }
-        
+
         if (!note) {
           validationStatus.textContent = '❌ Note/context is required for validation';
           validationStatus.style.color = '#f87171';
           return;
         }
-        
+
         // Disable button during request
         validationSubmit.disabled = true;
         validationStatus.textContent = '⏳ Submitting...';
         validationStatus.style.color = '#fbbf24';
-        
+
         try {
           const response = await fetch('/artifact/validate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({artifact_id: artifactId, outcome: outcome, note: note})
           });
-          
+
           const result = await response.json();
-          
+
           if (result.ok) {
             validationStatus.textContent = `✅ Validation recorded: ${outcome}`;
             validationStatus.style.color = '#fbbf24';
-            
+
             // Show success summary card
             const summary = document.getElementById('validation-record-summary');
             document.getElementById('validation-record-summary-id').textContent = artifactId;
@@ -687,7 +698,7 @@
             document.getElementById('validation-record-summary-note').textContent = note ? `Context: ${note}` : '';
             document.getElementById('validation-record-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
             summary.style.display = 'block';
-            
+
             // Clear the fields
             document.getElementById('validation-record-id').value = '';
             document.getElementById('validation-record-note').value = '';
@@ -710,7 +721,7 @@
       const priceInput = document.getElementById('pack-decision-price');
       const decisionSubmit = document.getElementById('pack-decision-submit');
       const decisionStatus = document.getElementById('pack-decision-status');
-      
+
       // Show/hide note and price fields based on action
       actionSelect.addEventListener('change', () => {
         if (actionSelect.value === 'reject') {
@@ -724,50 +735,50 @@
           priceInput.required = false;
         }
       });
-      
+
       // Submit pack decision
       decisionSubmit.addEventListener('click', async () => {
         const packName = document.getElementById('pack-decision-name').value.trim();
         const action = document.getElementById('pack-decision-action').value;
         const note = document.getElementById('pack-decision-note').value.trim();
         const price = document.getElementById('pack-decision-price').value.trim();
-        
+
         if (!packName) {
           decisionStatus.textContent = '❌ Pack name is required';
           decisionStatus.style.color = '#f87171';
           return;
         }
-        
+
         if (action === 'reject' && !note) {
           decisionStatus.textContent = '❌ Note/reason is required for reject action';
           decisionStatus.style.color = '#f87171';
           return;
         }
-        
+
         if (action === 'update_price' && !price) {
           decisionStatus.textContent = '❌ Price is required for update_price action';
           decisionStatus.style.color = '#f87171';
           return;
         }
-        
+
         // Disable button during request
         decisionSubmit.disabled = true;
         decisionStatus.textContent = '⏳ Submitting...';
         decisionStatus.style.color = '#f59e0b';
-        
+
         try {
           const response = await fetch('/pack/decision', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({pack_name: packName, action: action, note: note, price: price})
           });
-          
+
           const result = await response.json();
-          
+
           if (result.ok) {
             decisionStatus.textContent = `✅ Pack decision submitted: ${action}`;
             decisionStatus.style.color = '#f59e0b';
-            
+
             // Show success summary card
             const summary = document.getElementById('pack-decision-summary');
             document.getElementById('pack-decision-summary-name').textContent = packName;
@@ -776,7 +787,7 @@
             document.getElementById('pack-decision-summary-price').textContent = price ? `Price: ${price}` : '';
             document.getElementById('pack-decision-summary-time').textContent = `Updated: ${new Date().toLocaleString()}`;
             summary.style.display = 'block';
-            
+
             // Clear the fields
             document.getElementById('pack-decision-name').value = '';
             document.getElementById('pack-decision-note').value = '';
@@ -796,21 +807,25 @@
 
     async function fetchStateCore() {
       try {
-        const [stateCoreResponse, commSelfResponse, reviewQueueResponse] = await Promise.all([
+        const [stateCoreResponse, commSelfResponse, reviewQueueResponse, exportQueueResponse, packOutcomesResponse] = await Promise.all([
           fetch('state_core.json'),
           fetch('communicator_self.json'),
-          fetch('review_queue.json')
+          fetch('review_queue.json'),
+          fetch('export_queue.json'),
+          fetch('pack_outcomes.json')
         ]);
-        
+
         const stateCore = await stateCoreResponse.json();
         const commSelf = await commSelfResponse.json();
         const reviewQueue = await reviewQueueResponse.json() || [];
-        
+        const exportQueue = exportQueueResponse.ok ? await exportQueueResponse.json() : [];
+        const packOutcomes = packOutcomesResponse.ok ? await packOutcomesResponse.json() : [];
+
         // Filter for Weslr candidates (external requests)
-        const weslrCandidates = reviewQueue.filter(c => 
+        const weslrCandidates = reviewQueue.filter(c =>
           c.source?.type === 'external_request' || c.category === 'external_request'
         );
-        
+
         // Merge communicator_self data into state_core for dashboard display
         // Only merge specific fields that are useful for the operator view
         const mergedData = {
@@ -820,10 +835,13 @@
             confidence_score: commSelf.continuity?.confidence_score || null
           },
           last_communicator_outcome: commSelf.last_communicator_outcome || null,
+          review_queue: reviewQueue,
+          export_queue: exportQueue,
+          pack_outcomes: packOutcomes,
           // Add Weslr candidates for suggestion review panel
           weslr_candidates: weslrCandidates
         };
-        
+
         renderDashboard(mergedData);
       } catch (error) {
         console.error('Dashboard load error:', error);
@@ -835,28 +853,31 @@
     function renderDashboard(data) {
       // Status / Overview
       renderStatus(data);
-      
+
+      // Closed loop summary
+      renderLoopSummary(data);
+
       // Topics
       renderTopics(data);
-      
+
       // Artifacts
       renderArtifacts(data);
-      
+
       // Entities
       renderEntities(data);
-      
+
       // Events
       renderEvents(data);
-      
+
       // Handoffs
       renderHandoffs(data);
-      
+
       // Weslr Suggestion Review (operator-only)
       renderWeslrSuggestions(data);
-      
+
       // Debug sections
       renderDebug(data);
-      
+
       // Operators (CLI commands)
       renderOperators(data);
     }
@@ -989,15 +1010,64 @@
       content.innerHTML = html;
     }
 
+    function renderLoopSummary(data) {
+      const content = document.getElementById('loop-summary-content');
+      if (!content) return;
+      const reviewQueue = data.review_queue || [];
+      const exportQueue = data.export_queue || [];
+      const packOutcomes = data.pack_outcomes || [];
+      const latestOutcome = packOutcomes[packOutcomes.length - 1];
+      const topReview = reviewQueue[0];
+      const topExport = exportQueue[0];
+      const reviewDetail = topReview ? (topReview.title || topReview.id) : 'No review yet';
+      const exportDetail = topExport ? (topExport.title || topExport.id) : 'Idle';
+      const reviewStatus = reviewQueue.length > 0 ? ` ${reviewQueue.length} candidate${reviewQueue.length === 1 ? '' : 's'} waiting` : 'No pending reviews';
+      const exportStatus = exportQueue.length > 0 ? `${exportQueue.length} export-ready artifact${exportQueue.length === 1 ? '' : 's'}` : 'Queue is empty';
+      const loopMessage = latestOutcome ? `Latest pack event ${latestOutcome.action.toUpperCase()} on ${latestOutcome.pack_name} (${formatPackTimestamp(latestOutcome.created_at)})` : 'No pack events recorded yet';
+      
+      const html = `
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+          <div class="card" style="padding:12px;">
+            <p class="muted" style="font-size:11px; margin:0 0 4px;">Review queue</p>
+            <p style="font-size:28px; margin:0; font-weight:bold;">${reviewQueue.length}</p>
+            <p class="muted" style="font-size:11px; margin-top:4px;">${reviewStatus}</p>
+            <p class="muted" style="font-size:11px; margin-top:4px;">Top: ${reviewDetail}</p>
+          </div>
+          <div class="card" style="padding:12px;">
+            <p class="muted" style="font-size:11px; margin:0 0 4px;">Export queue</p>
+            <p style="font-size:28px; margin:0; font-weight:bold;">${exportQueue.length}</p>
+            <p class="muted" style="font-size:11px; margin-top:4px;">${exportStatus}</p>
+            <p class="muted" style="font-size:11px; margin-top:4px;">Top: ${exportDetail}</p>
+          </div>
+          <div class="card" style="padding:12px;">
+            <p class="muted" style="font-size:11px; margin:0 0 4px;">Delivery loop</p>
+            <p style="font-size:28px; margin:0; font-weight:bold;">${latestOutcome ? latestOutcome.action : 'unstarted'}</p>
+            <p class="muted" style="font-size:11px; margin-top:4px;">${loopMessage}</p>
+          </div>
+        </div>
+        <div style="margin-top:12px; padding:12px; background:#1c222b; border-radius:10px; border-left:3px solid #6ee7b7;">
+          <strong style="font-size:14px;">Closed loop narrative</strong>
+          <p class="muted" style="font-size:12px; margin:8px 0 0;">Review → Export → Delivery path is visible: ${reviewQueue.length ? 'candidate waiting' : 'no new candidates'} · ${exportQueue.length ? 'export queue active' : 'exports idle'} · ${latestOutcome ? `${latestOutcome.action} recorded` : 'awaiting pack action'}. ${loopMessage}</p>
+        </div>
+      `;
+      
+      content.innerHTML = html;
+    }
+
+    function formatPackTimestamp(timestamp) {
+      if (!timestamp) return 'unknown';
+      return new Date(timestamp * 1000).toLocaleString();
+    }
+
     function renderTopics(data) {
       const content = document.getElementById('topics-content');
       const topics = data.topics || [];
-      
+
       if (topics.length === 0) {
         content.innerHTML = '<p class="muted">No topics yet. Run a tick to populate.</p>';
         return;
       }
-      
+
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">';
       for (const topic of topics) {
         const pressureBar = Math.min(topic.pressure * 100, 100);
@@ -1018,18 +1088,18 @@
     function renderArtifacts(data) {
       const content = document.getElementById('artifacts-content');
       const artifacts = data.artifacts || [];
-      
+
       if (artifacts.length === 0) {
         content.innerHTML = '<p class="muted">No artifacts yet. Run a tick to populate.</p>';
         return;
       }
-      
+
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">';
       for (const artifact of artifacts) {
         // Decision guidance: determine review priority based on scores
         let guidance = '';
         let statusCue = 'healthy';
-        
+
         if (artifact.sellability_score >= 0.5) {
           guidance = '<strong>High priority for review</strong> - sellability indicates strong export potential';
           statusCue = 'attention';
@@ -1040,7 +1110,7 @@
           guidance = '<strong>No immediate action</strong> - low sellability score';
           statusCue = 'healthy';
         }
-        
+
         html += `
           <div class="card" style="padding:12px;">
             <h3 style="font-size:14px; margin-bottom:8px;">${artifact.title || artifact.id}</h3>
@@ -1064,12 +1134,12 @@
     function renderEntities(data) {
       const content = document.getElementById('entities-content');
       const entities = data.entities || [];
-      
+
       if (entities.length === 0) {
         content.innerHTML = '<p class="muted">No entities yet. Run a tick to populate.</p>';
         return;
       }
-      
+
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">';
       for (const entity of entities) {
         // Get meaningful name if available
@@ -1080,11 +1150,11 @@
           const match = id.match(/^(agent-\d+)/);
           name = match ? match[1] : id.substring(0, 8);
         }
-        
+
         // Determine status
         let statusCue = entity.status === 'authoritative' ? 'healthy' : 'attention';
         let trustLabel = entity.confidence >= 0.7 ? 'High trust' : (entity.confidence >= 0.4 ? 'Medium trust' : 'Low trust');
-        
+
         html += `
           <div class="card" style="padding:12px;">
             <h3 style="font-size:14px; margin-bottom:8px;">${name}</h3>
@@ -1105,15 +1175,15 @@
     function renderEvents(data) {
       const content = document.getElementById('events-content');
       const events = data.events || [];
-      
+
       if (events.length === 0) {
         content.innerHTML = '<p class="muted">No events yet. Run a tick to populate.</p>';
         return;
       }
-      
+
       let html = '<div style="max-height:400px; overflow-y:auto;">';
       html += '<table><thead><tr><th>Timestamp</th><th>Type</th><th>Action</th><th>Status</th><th>Summary</th></tr></thead><tbody>';
-      
+
       for (const event of events.slice(0, 50)) {
         const date = new Date(event.timestamp * 1000);
         html += `
@@ -1162,15 +1232,15 @@
       const content = document.getElementById('handoffs-content');
       const handoffs = data.handoffs || [];
       const emptySection = document.getElementById('handoffs-empty');
-      
+
       if (handoffs.length === 0) {
         content.innerHTML = '';
         if (emptySection) emptySection.style.display = 'block';
         return;
       }
-      
+
       if (emptySection) emptySection.style.display = 'none';
-      
+
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">';
       for (const handoff of handoffs) {
         // Determine status cue
@@ -1178,7 +1248,7 @@
         if (handoff.status === 'pending') statusCue = 'attention';
         if (handoff.status === 'accepted') statusCue = 'review';
         if (handoff.status === 'error') statusCue = 'blocked';
-        
+
         html += `
           <div class="card" style="padding:12px;">
             <h3 style="font-size:14px; margin-bottom:8px;">${handoff.id || 'unnamed'}</h3>
@@ -1201,14 +1271,14 @@
     function renderOperators(data) {
       const content = document.getElementById('operators-content');
       const nextAction = data.next_action || {};
-      
+
       let html = '';
-      
+
       // Only show next action if it's not 'none'
       if (nextAction.action && nextAction.action !== 'none') {
         html += `<p class="muted">System suggests: <strong>${nextAction.action}</strong> (${nextAction.priority})</p>`;
       }
-      
+
       html += `
         <ul>
           <li><strong>Explain artifact</strong><br><code>python3 main.py explain &lt;artifact-id&gt;</code></li>
@@ -1217,22 +1287,22 @@
         </ul>
         <p class="muted">Operator actions available via CLI commands.</p>
       `;
-      
+
       content.innerHTML = html;
     }
 
     function renderWeslrSuggestions(data) {
       const listContent = document.getElementById('suggestion-review-list');
       const detailContent = document.getElementById('suggestion-review-detail');
-      
+
       // Get Weslr candidates from review_queue.json
       const candidates = data.weslr_candidates || [];
-      
+
       if (candidates.length === 0) {
         listContent.innerHTML = '<p class="muted" style="font-size:11px;">No suggestion candidates available yet.</p>';
         return;
       }
-      
+
       let html = '';
       for (const c of candidates) {
         const priority = c.weslr_priority || 'N/A';
@@ -1240,13 +1310,13 @@
         const risk = c.weslr_risk || 'N/A';
         const id = c.id || 'N/A';
         const title = c.title || 'Untitled';
-        
+
         // Status indicator
         let statusBadge = '';
         if (priority === 'high') statusBadge = '<span style="background:#f87171; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">HIGH PRIORITY</span>';
         else if (priority === 'medium') statusBadge = '<span style="background:#fbbf24; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">MEDIUM</span>';
         else statusBadge = '<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">NORMAL</span>';
-        
+
         html += `
           <div style="padding:8px; margin:4px 0; background:#171b22; border-radius:6px; border-left:3px solid #34d399; cursor:pointer;" onclick="selectWeslrSuggestion('${id}')">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1261,7 +1331,7 @@
           </div>
         `;
       }
-      
+
       listContent.innerHTML = html;
       detailContent.style.display = 'none';
     }
@@ -1271,7 +1341,7 @@
       const candidates = document.getElementById('suggestion-review-list').children;
       // For now, just show that selection was made
       console.log('Selected candidate:', id);
-      
+
       // In a real implementation, we would fetch and display details
       const detailContent = document.getElementById('suggestion-review-detail');
       if (detailContent) detailContent.style.display = 'block';
@@ -1283,7 +1353,7 @@
       document.getElementById('debug-episodic-count').textContent = data.memory_layers?.episodic?.count ?? 0;
       document.getElementById('debug-semantic-count').textContent = data.memory_layers?.semantic?.count ?? 0;
       document.getElementById('debug-archive-count').textContent = data.memory_layers?.archive?.count ?? 0;
-      
+
       if (data.validation) {
         let validationHtml = '';
         if (data.validation.errors?.length) {
@@ -1306,10 +1376,10 @@
       document.getElementById('improvement-proposals').style.display = 'none';
       document.getElementById('improvement-history').style.display = 'none';
       document.getElementById('improvement-trends').style.display = 'none';
-      
+
       // Show selected tab
       document.getElementById('improvement-' + tabName).style.display = 'block';
-      
+
       // Load data if not already loaded
       if (tabName === 'proposals' && !document.getElementById('improvement-proposals').dataset.loaded) {
         loadImprovementData();
@@ -1387,50 +1457,50 @@
       renderImprovementProposals(mockData);
       renderImprovementHistory(mockData);
       renderImprovementTrends(mockData);
-      
+
       document.getElementById('improvement-proposals').dataset.loaded = 'true';
     }
 
     function renderImprovementProposals(data) {
       const content = document.getElementById('improvement-proposals');
       const proposals = data.proposals || [];
-      
+
       if (proposals.length === 0) {
         content.innerHTML = '<p class="muted" style="font-size:11px;">No improvement proposals available. Run improvement engine or check for new signals.</p>';
         return;
       }
-      
+
       let html = '<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">';
-      
+
       for (const p of proposals) {
         // Priority badge
         let priorityBadge = '';
         if (p.priority === 'high') priorityBadge = '<span style="background:#f87171; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">HIGH PRIORITY</span>';
         else if (p.priority === 'medium') priorityBadge = '<span style="background:#fbbf24; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">MEDIUM</span>';
         else priorityBadge = '<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">LOW</span>';
-        
+
         // Risk badge
         let riskBadge = '';
         if (p.risk_level === 'high') riskBadge = '<span style="background:#f87171; color:#fff; padding:2px 6px; border-radius:4px; font-size:9px;">HIGH RISK</span>';
         else if (p.risk_level === 'medium') riskBadge = '<span style="background:#fbbf24; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">MEDIUM</span>';
         else riskBadge = '<span style="background:#34d399; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">LOW</span>';
-        
+
         // Safety badge
-        let safetyBadge = p.safety === 'additive_only' 
+        let safetyBadge = p.safety === 'additive_only'
           ? '<span style="background:#34d399; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">ADDITIVE ONLY</span>'
           : '<span style="background:#fbbf24; color:#000; padding:2px 6px; border-radius:4px; font-size:9px;">REQUIRES REVIEW</span>';
-        
+
         html += `
           <div class="card" style="padding:12px;">
             <h3 style="font-size:13px; margin:0 0 8px;">${p.title}</h3>
             <p class="muted" style="font-size:11px; margin:4px 0;">${p.description}</p>
-            
+
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
               ${priorityBadge}
               ${riskBadge}
               ${safetyBadge}
             </div>
-            
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:10px; margin:8px 0;">
               <div>
                 <span class="muted">Affected:</span> ${p.affected_subsystem}
@@ -1445,7 +1515,7 @@
                 <span class="muted">Signal:</span> ${p.audit?.signal_id || 'unknown'}
               </div>
             </div>
-            
+
             <div style="display:flex; gap:6px; margin-top:12px; padding-top:8px; border-top:1px solid #28303a;">
               <button onclick="approveImprovement('${p.proposal_id}')" style="flex:1; padding:6px 12px; border:none; background:#34d399; color:#0f1115; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">Approve</button>
               <button onclick="rejectImprovement('${p.proposal_id}')" style="flex:1; padding:6px 12px; border:none; background:#f87171; color:#fff; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">Reject</button>
@@ -1454,7 +1524,7 @@
           </div>
         `;
       }
-      
+
       html += '</div>';
       content.innerHTML = html;
     }
@@ -1462,18 +1532,18 @@
     function renderImprovementHistory(data) {
       const content = document.getElementById('improvement-history');
       const history = data.history || [];
-      
+
       if (history.length === 0) {
         content.innerHTML = '<p class="muted" style="font-size:11px;">No improvement history yet. Approve some proposals to see history.</p>';
         return;
       }
-      
+
       let html = '<div style="max-height:400px; overflow-y:auto; font-size:12px;">';
-      
+
       for (const h of history) {
         let statusColor = h.type === 'approved' ? '#34d399' : '#f87171';
         let statusText = h.type === 'approved' ? 'APPROVED' : 'REJECTED';
-        
+
         html += `
           <div style="padding:8px; margin:4px 0; background:#171b22; border-radius:6px; border-left:3px solid ${statusColor};">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1489,7 +1559,7 @@
           </div>
         `;
       }
-      
+
       html += '</div>';
       content.innerHTML = html;
     }
@@ -1497,7 +1567,7 @@
     function renderImprovementTrends(data) {
       const content = document.getElementById('improvement-trends');
       const trends = data.trends || {};
-      
+
       let html = `
         <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
           <div class="card" style="padding:12px;">
@@ -1522,7 +1592,7 @@
           <p class="muted" style="font-size:11px; margin:0;">Last 24 hours: ${trends.last_24h || 0} new signals</p>
         </div>
       `;
-      
+
       content.innerHTML = html;
     }
 
