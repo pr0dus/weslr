@@ -694,9 +694,29 @@ def _launch_dashboard_server(project_dir: Path, host: str, port: int):
 
 def cmd_serve(args):
     dashboard_dir = Path(__file__).resolve().parent / "dashboard"
+    base_dir = Path(__file__).resolve().parent
     
     # Custom handler that adds /chat endpoint to existing static file serving
     class ChatHandler(SimpleHTTPRequestHandler):
+        def _serve_state_file(self, path: str) -> None:
+            relative = path.lstrip("/")
+            target = base_dir / relative
+            if not target.exists():
+                self.send_error(404, "State file not found")
+                return
+            try:
+                data = target.read_bytes()
+            except Exception as exc:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(exc)}).encode("utf-8"))
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_POST(self):
             # Handle artifact review endpoint
             if self.path == "/artifact-review":
@@ -913,6 +933,9 @@ def cmd_serve(args):
 
         def do_GET(self):
             """Serve GET requests - add /tia-history endpoint for history JSON."""
+            if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
+                self._serve_state_file(self.path)
+                return
             if self.path == "/tia-history":
                 import json as _json
                 from pathlib import Path as _Path
