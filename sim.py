@@ -493,14 +493,25 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
     ).to_dict())
 
 
+# In-process mtime-aware cache: avoids repeated deserialization of unchanged files
+# within the same request cycle. Invalidated on write_json_file so correctness holds.
+_JSON_FILE_CACHE: dict[str, tuple[float, object]] = {}  # path_str -> (mtime, parsed)
+
 def read_json_file(path: Path, default):
     if not path.exists():
         return default
     try:
+        mtime = path.stat().st_mtime
+        cache_key = str(path)
+        cached = _JSON_FILE_CACHE.get(cache_key)
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
         raw = path.read_text().strip()
         if not raw:
             return default
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        _JSON_FILE_CACHE[cache_key] = (mtime, parsed)
+        return parsed
     except Exception:
         return default
 
@@ -514,6 +525,8 @@ def write_json_file(path: Path, payload) -> None:
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(sanitized_payload, indent=2))
     tmp_path.replace(path)
+    # Invalidate cache entry so next read picks up the new content
+    _JSON_FILE_CACHE.pop(str(path), None)
 
 
 def load_categories() -> list[str]:
