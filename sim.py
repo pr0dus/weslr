@@ -171,66 +171,15 @@ CREATE TABLE IF NOT EXISTS artifact_proof (
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.executescript(SCHEMA)
-    
-    # Handle schema version
-    cursor = conn.cursor()
-    
-    # Try to read schema version from meta table, then world table
-    schema_version = None
-    try:
-        cursor.execute("SELECT value FROM meta WHERE key = 'schema_version'")
-        row = cursor.fetchone()
-        if row:
-            schema_version = int(row[0])
-    except sqlite3.OperationalError:
-        # meta table doesn't exist, check world table
-        try:
-            cursor.execute("SELECT value FROM world WHERE key = 'schema_version'")
-            row = cursor.fetchone()
-            if row:
-                schema_version = int(row[0])
-        except sqlite3.OperationalError:
-            # Neither table exists, this is a new world
-            pass
-    
-    if schema_version is None:
-        # This is a new world or old world without schema version
-        cursor.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?)", (str(SCHEMA_VERSION),))
-        conn.commit()
-        schema_version = SCHEMA_VERSION
-    elif schema_version < SCHEMA_VERSION:
-        # Run migration if needed
-        run_schema_migration(conn, schema_version, SCHEMA_VERSION)
-        cursor.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?)", (str(SCHEMA_VERSION),))
-        conn.commit()
-        schema_version = SCHEMA_VERSION
-    elif schema_version > SCHEMA_VERSION:
-        # Future schema - halt with error
-        raise RuntimeError(f"Weslr schema version mismatch: DB has {schema_version}, code expects {SCHEMA_VERSION}. Run a newer version or reset.")
-    
-    columns = {row['name'] for row in conn.execute("PRAGMA table_info(agents)").fetchall()}
-    if 'next_due_tick' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN next_due_tick INTEGER NOT NULL DEFAULT 0")
-    if 'wake_reason' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN wake_reason TEXT NOT NULL DEFAULT 'initial'")
-    if 'cadence_interval' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN cadence_interval INTEGER NOT NULL DEFAULT 1")
-    return conn
+    """Delegate to weslr.db_schema (extracted DB initialization)."""
+    from weslr.db_schema import connect as _connect
+    return _connect()
 
 
 def run_schema_migration(conn: sqlite3.Connection, from_version: int, to_version: int) -> None:
-    """Run schema migrations from old to new version."""
-    cursor = conn.cursor()
-    
-    # Example migration: add new tables or columns between versions
-    if from_version < 1:
-        # Current version 1 - no migrations yet
-        pass
-    
-    conn.commit()
+    """Delegate to weslr.db_schema (extracted schema migration)."""
+    from weslr.db_schema import run_schema_migration as _run
+    return _run(conn, from_version, to_version)
 
 
 def get_behavioral_traits_defaults() -> dict:
