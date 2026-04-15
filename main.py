@@ -12,7 +12,7 @@ from pathlib import Path
 from time import strftime, localtime
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
-from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
+from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS, CHAT_LLM_TIMEOUT_SECONDS
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
@@ -970,22 +970,37 @@ def cmd_serve(args):
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
                 try:
                     import json as _json
+                    import signal
+
+                    def _chat_timeout_handler(signum, frame):
+                        raise TimeoutError("chat LLM call exceeded limit")
+
                     data = _json.loads(body) if body else {}
-                    human_name = data.get("name", "human")
                     message = data.get("message", "")
-                    
-                    payload = build_communicator_message_payload(
-                        narrative=load_communicator_self().get("narrative_state", {}),
-                        relationships=load_relationships(),
-                        active_thread="human_message",
-                        latest_human={"message": message},
-                        research_context=None,
-                    )
-                    
+
+                    # Bounded timeout guard: fail fast rather than hang server threads
+                    signal.signal(signal.SIGALRM, _chat_timeout_handler)
+                    signal.alarm(int(CHAT_LLM_TIMEOUT_SECONDS))
+                    try:
+                        payload = build_communicator_message_payload(
+                            narrative=load_communicator_self().get("narrative_state", {}),
+                            relationships=load_relationships(),
+                            active_thread="human_message",
+                            latest_human={"message": message},
+                            research_context=None,
+                        )
+                    finally:
+                        signal.alarm(0)  # cancel alarm
+
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps(payload).encode("utf-8"))
+                except TimeoutError:
+                    self.send_response(504)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": "chat request timed out after " + str(CHAT_LLM_TIMEOUT_SECONDS) + "s"}).encode("utf-8"))
                 except Exception as e:
                     self.send_response(500)
                     self.send_header("Content-Type", "application/json")
