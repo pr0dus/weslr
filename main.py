@@ -928,6 +928,20 @@ def cmd_serve(args):
                         "urgency": data.get("urgency", ""),
                         "blockers": data.get("blockers", ""),
                         "standup_cadence": data.get("standup_cadence", ""),
+                        # Phase C fields
+                        "allowed_capabilities": data.get("allowed_capabilities", []),
+                        "allowed_custom": data.get("allowed_custom", ""),
+                        "forbidden_actions": data.get("forbidden_actions", ""),
+                        "byop_policy": data.get("byop_policy", ""),
+                        "external_permissions": data.get("external_permissions", []),
+                        "external_custom": data.get("external_custom", ""),
+                        "knowledge_sharing": data.get("knowledge_sharing", ""),
+                        "federation_permissions": data.get("federation_permissions", ""),
+                        "adaptation_level": data.get("adaptation_level", ""),
+                        "adaptation_limits": data.get("adaptation_limits", ""),
+                        "escalation_primary": data.get("escalation_primary", ""),
+                        "escalation_secondary": data.get("escalation_secondary", ""),
+                        "escalation_channel": data.get("escalation_channel", ""),
                     }
                     record_human_exchange(
                         human_name=data.get("name", "operator"),
@@ -936,6 +950,12 @@ def cmd_serve(args):
                         topics=["onboarding", "operator-profile"],
                         unresolved=False,
                     )
+                    # Also save operator profile for Phase C communicator wiring
+                    try:
+                        from weslr.communicator_config import update_operator_profile
+                        update_operator_profile(answers)
+                    except Exception as profile_err:
+                        pass  # Non-blocking — don't fail onboarding if profile update fails
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
