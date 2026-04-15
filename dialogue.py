@@ -467,6 +467,39 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
         return f"I'm {declared_name}. {consciousness_str}"
 
 
+def _get_targeted_anchors(message: str | None = None, topics: list | None = None, max_per_type: int = 3) -> dict:
+    """Assemble a small relevant subset of memory anchors for the live chat payload.
+
+    This is the lifecycle-aware memory retrieval slice: instead of passing the full
+    communicator_self state through the hot path, we selectively retrieve only the
+    most relevant anchors using the existing retrieval functions. Each anchor type
+    is capped at max_per_type to keep the payload small.
+
+    The message is used for relevance scoring. Topics (already extracted) are passed
+    directly to avoid re-extraction.
+    """
+    anchors: dict[str, list] = {
+        "continuity": [],
+        "goals": [],
+        "episodes": [],
+        "semantic": [],
+    }
+    try:
+        from sim import (
+            get_relevant_continuity_anchors,
+            get_relevant_goal_anchors,
+            get_relevant_episodic_anchors,
+            get_relevant_semantic_anchors,
+        )
+        anchors["continuity"] = list(get_relevant_continuity_anchors(message or "", topics, max_per_type).values())
+        anchors["goals"] = list(get_relevant_goal_anchors(message or "", topics, max_per_type).values())
+        anchors["episodes"] = list(get_relevant_episodic_anchors(message or "", topics, max_per_type).values())
+        anchors["semantic"] = list(get_relevant_semantic_anchors(message or "", topics, max_per_type).values())
+    except Exception:
+        pass  # Non-critical — leave anchors empty if any retrieval fails
+    return anchors
+
+
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
     from sim import load_communicator_self
     
@@ -792,8 +825,11 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = f"I'll answer directly. {message}"
         audience = str(latest_human.get("human_label") or "you") or "you"
         source = f"conversation-aware-communicator:{turn_type}:{reply_shape}"
-        
-        return {"message": message, "audience": audience, "source": source}
+
+        # Lifecycle-aware memory retrieval: assemble targeted anchors
+        targeted_anchors = _get_targeted_anchors(last_message, topic_list)
+
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -822,14 +858,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = _get_language_module().live_issue_response(topic)
         
         source = f"thread-aware-communicator:{topic}"
-        
-        return {"message": message, "audience": audience, "source": source}
-    
+
+        # Lifecycle-aware memory retrieval: assemble targeted anchors
+        targeted_anchors = _get_targeted_anchors(topic if isinstance(topic, str) else None)
+
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors}
+
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
     source = "fallback"
-    
-    result = {"message": message, "audience": "you", "source": source}
+
+    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors()}
     
     # Route through outbox for unified communication
     try:
