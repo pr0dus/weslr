@@ -338,3 +338,67 @@ def clear_expired_pending_records() -> int:
             record["revoked_reason"] = "activation_link_expired"
             purged += 1
     return purged
+
+
+# =============================================================================
+# COMPLETED TIMELINE STORE (timeline_id -> bootstrap record)
+# =============================================================================
+# Once bootstrap is completed, the record is also indexed by timeline_id.
+# This enables SS-TDE to look up bootstrap trust status by timeline.
+
+_BOOTSTRAP_BY_TIMELINE: dict[str, dict] = {}  # timeline_id -> completed bootstrap record
+
+
+def register_completed_bootstrap(bootstrap_record: dict) -> str:
+    """Register a completed bootstrap record in both user_id and timeline_id stores.
+
+    Called after complete_bootstrap() succeeds to make the record
+    lookup-available by timeline_id for SS-TDE enforcement.
+
+    Args:
+        bootstrap_record: A completed bootstrap record (from complete_bootstrap)
+
+    Returns:
+        The assigned timeline_id.
+    """
+    timeline_id = bootstrap_record.get("timeline_id")
+    if not timeline_id:
+        raise ValueError("Cannot register non-completed bootstrap record")
+    user_id = bootstrap_record.get("user_id")
+    _BOOTSTRAP_RECORDS[user_id] = bootstrap_record
+    _BOOTSTRAP_BY_TIMELINE[timeline_id] = bootstrap_record
+    return timeline_id
+
+
+def get_bootstrap_by_timeline(timeline_id: str) -> dict | None:
+    """Retrieve a bootstrap record by timeline_id.
+
+    Used by SS-TDE enforcement to check if a timeline has a valid
+    bootstrap trust anchor.
+
+    Args:
+        timeline_id: The timeline identifier
+
+    Returns:
+        The bootstrap record if found, otherwise None.
+    """
+    return _BOOTSTRAP_BY_TIMELINE.get(timeline_id)
+
+
+def is_verified_timeline(timeline_id: str) -> bool:
+    """Return True if the timeline has a COMPLETED bootstrap trust anchor.
+
+    This is the root trust check: SS-TDE escalation requires a verified
+    bootstrap anchor. Without it, the actor cannot proceed to trusted-device
+    verification as if they were already trusted.
+
+    Args:
+        timeline_id: The timeline identifier to check
+
+    Returns:
+        True if the timeline has completed bootstrap; False otherwise.
+    """
+    record = _BOOTSTRAP_BY_TIMELINE.get(timeline_id)
+    if record is None:
+        return False
+    return record.get("status") == "COMPLETED" and record.get("timeline_id") is not None

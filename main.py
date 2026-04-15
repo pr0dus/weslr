@@ -1062,6 +1062,26 @@ def cmd_serve(args):
                             }).encode("utf-8"))
                             return
                     if risk_level >= TrustLevel.HIGH_RISK:
+                        # Bootstrap trust check: SS-TDE escalation requires a verified
+                        # bootstrap trust anchor. Non-bootstrapped actors cannot proceed.
+                        timeline_id = data.get("timeline_id", "")
+                        if timeline_id:
+                            from weslr.bootstrap import is_verified_timeline
+                            if not is_verified_timeline(timeline_id):
+                                self.send_response(403)
+                                self.send_header("Content-Type", "application/json")
+                                self.end_headers()
+                                self.wfile.write(_json.dumps({
+                                    "escalation_required": True,
+                                    "trust_level": "HIGH_RISK",
+                                    "bootstrap_required": True,
+                                    "message": (
+                                        "Your account has not completed the security setup yet. "
+                                        "Please complete account activation before attempting this action."
+                                    ),
+                                    "action": "bootstrap_activation_required",
+                                }).encode("utf-8"))
+                                return
                         log_audit_event(
                             event_kind="clearance_denied",
                             actor_id="anonymous",
