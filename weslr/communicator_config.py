@@ -262,9 +262,12 @@ def is_change_prohibited(change_category: str) -> bool:
 
     # Check all sub-tokens of the change category
     # e.g. "safety_gateway" → ["safety_gateway", "safety", "gateway"]
-    sub_tokens = [change_category.lower()]
-    if "_" in change_category:
-        sub_tokens.extend(change_category.lower().split("_"))
+    # Also tokenize to handle space-separated category names
+    raw = change_category.lower()
+    sub_tokens = [raw]
+    if "_" in raw:
+        sub_tokens.extend(raw.split("_"))
+    sub_tokens.extend(_tokenize(change_category))
 
     for limit in limits:
         limit_tokens = _tokenize(limit)
