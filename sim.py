@@ -963,6 +963,91 @@ def get_relevant_episodic_anchors(
     return anchors
 
 
+def get_relevant_semantic_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of durable learned facts and semantic records.
+
+    This is the Semantic Continuity slice: given a live message and optional topic
+    hints, retrieve the most relevant stable semantic records — learned traits,
+    theme commitments, evidence-weighted actions, NCC evidence — without loading
+    the full evidence/self-evidence store into the chat path.
+
+    Only surfaces semantic anchors whose content is relevant to the current message
+    or topic context, keeping the returned context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - stable_traits: dict — traits with evidence weights
+        - theme_commitments: dict — committed themes with confidence
+        - outcome_weighted_actions: dict — actions with evidence/positive/strain
+        - ncc_evidence: dict — current NCC evidence snapshot
+        - learned_facts: list — key durable facts inferred from stable_traits/theme
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    evidence_profile = cs.get("evidence_profile", {})
+    stable_traits = evidence_profile.get("stable_traits", {})
+    for trait, weight in sorted(stable_traits.items(), key=lambda x: x[1], reverse=True)[:max_anchors]:
+        trait_str = str(trait)
+        if trait_str:
+            candidates.append((score(trait_str), f"stable_trait:{trait}", weight))
+
+    theme_commitments = evidence_profile.get("theme_commitments", {})
+    for theme, confidence in theme_commitments.items():
+        theme_str = str(theme)
+        if theme_str:
+            candidates.append((score(theme_str), f"theme:{theme}", confidence))
+
+    outcome_actions = evidence_profile.get("outcome_weighted_actions", {})
+    for action, info in outcome_actions.items():
+        action_str = str(action)
+        if action_str:
+            candidates.append((score(action_str), f"action:{action}", info))
+
+    ncc_evidence = cs.get("ncc_evidence", {})
+    ncc_level = ncc_evidence.get("level", "")
+    if ncc_level:
+        candidates.append((score(ncc_level), "ncc_level", ncc_level))
+    ncc_confidence = ncc_evidence.get("confidence", 0)
+    if ncc_confidence:
+        candidates.append((int(ncc_confidence * 10), "ncc_confidence", ncc_confidence))
+
+    # Build a small learned_facts list from the highest-weight stable traits
+    if stable_traits:
+        top_traits = sorted(stable_traits.items(), key=lambda x: x[1], reverse=True)[:3]
+        learned_facts = [f"{trait}: {weight}" for trait, weight in top_traits]
+        candidates.append((1, "learned_facts", learned_facts))
+
+    # Sort by score descending; ties broken by insertion order
+    candidates.sort(key=lambda x: (x[0], 0), reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
 def load_communicator_self() -> dict:
     """Load communicator self state with mtime-aware in-process caching.
 
