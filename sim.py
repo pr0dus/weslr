@@ -882,6 +882,87 @@ def get_relevant_goal_anchors(
     return anchors
 
 
+def get_relevant_episodic_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of past episodes and milestone events.
+
+    This is the Episodic Continuity slice: given a live message and optional
+    topic hints, retrieve the most relevant past episodes — milestones, evolution
+    log entries, origin story, current chapter — without loading the full
+    biography or long-term history into the chat path.
+
+    Only surfaces episodes whose content is relevant to the current message or
+    topic context, keeping the returned context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - origin_story: str — how the agent started
+        - current_chapter: str — the current narrative chapter
+        - milestones: list — past significant events (up to max_anchors)
+        - evolution_log: list — past self-evolution events (up to max_anchors)
+        - history_summary: str — condensed history when relevant
+        - phase: str — current developmental phase
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    biography = cs.get("biography", {})
+    origin = biography.get("origin_story", "")
+    if origin:
+        candidates.append((score(origin), "origin_story", origin))
+    chapter = biography.get("current_chapter", "")
+    if chapter:
+        candidates.append((score(chapter), "current_chapter", chapter))
+    history_summary = biography.get("history_summary", "")
+    if history_summary:
+        candidates.append((score(history_summary), "history_summary", history_summary))
+
+    identity_state = cs.get("identity_state", {})
+    phase = identity_state.get("phase", "")
+    if phase:
+        candidates.append((score(phase), "phase", phase))
+
+    evolution_log = cs.get("self_evolution_log", [])
+    for entry in evolution_log[:max_anchors]:
+        entry_str = str(entry.get("summary", ""))
+        if entry_str:
+            candidates.append((score(entry_str), "evolution_entry", entry_str))
+
+    milestones = biography.get("milestones", [])
+    for milestone in milestones[:max_anchors]:
+        ms_str = str(milestone.get("summary", ""))
+        if ms_str:
+            candidates.append((score(ms_str), "milestone", ms_str))
+
+    # Sort by score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
 def load_communicator_self() -> dict:
     """Load communicator self state with mtime-aware in-process caching.
 
