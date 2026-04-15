@@ -970,28 +970,28 @@ def cmd_serve(args):
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
                 try:
                     import json as _json
-                    import signal
-
-                    def _chat_timeout_handler(signum, frame):
-                        raise TimeoutError("chat LLM call exceeded limit")
+                    from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FTError
 
                     data = _json.loads(body) if body else {}
                     message = data.get("message", "")
 
-                    # Bounded timeout guard: fail fast rather than hang server threads
-                    signal.signal(signal.SIGALRM, _chat_timeout_handler)
-                    signal.alarm(int(CHAT_LLM_TIMEOUT_SECONDS))
-                    try:
-                        payload = build_communicator_message_payload(
+                    # Thread-safe deadline guard: run payload build in a bounded
+                    # thread so timeout is enforced per-request, not process-wide.
+                    # The provider's urlopen timeout is the real enforcement;
+                    # this outer deadline catches any path that escapes it.
+                    with ThreadPoolExecutor(max_workers=1) as _ex:
+                        fut = _ex.submit(
+                            build_communicator_message_payload,
                             narrative=load_communicator_self().get("narrative_state", {}),
                             relationships=load_relationships(),
                             active_thread="human_message",
                             latest_human={"message": message},
                             research_context=None,
                         )
-                    finally:
-                        signal.alarm(0)  # cancel alarm
-
+                        try:
+                            payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                        except _FTError:
+                            raise TimeoutError("chat request exceeded time limit")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
