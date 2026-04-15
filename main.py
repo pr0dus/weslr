@@ -70,6 +70,12 @@ from entity_graph import get_entity_graph
 # Bounded to prevent thread exhaustion under concurrent load.
 _CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-request")
 
+# Bounded admission gate for /chat: limits concurrent in-flight requests.
+# When exhausted, server returns 503 instead of queuing unboundedly.
+# Keep small — the single-worker executor serializes execution anyway.
+_MAX_CONCURRENT_CHAT = 4
+_chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
+
 
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
@@ -976,26 +982,38 @@ def cmd_serve(args):
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
                 try:
                     import json as _json
-                    from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FTError
+                    from concurrent.futures import ThreadPoolExecutor
 
                     data = _json.loads(body) if body else {}
                     message = data.get("message", "")
 
-                    # Thread-safe deadline guard: run payload build in a bounded
                     # Thread-safe deadline guard: use shared bounded executor so threads are
                     # reused rather than created/destroyed per request.
-                    fut = _CHAT_EXECUTOR.submit(
-                        build_communicator_message_payload,
-                        narrative=load_communicator_self().get("narrative_state", {}),
-                        relationships=load_relationships(),
-                        active_thread="human_message",
-                        latest_human={"message": message},
-                        research_context=None,
-                    )
+                    acquired = _chat_semaphore.acquire(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                    if not acquired:
+                        self.send_response(503)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Retry-After", "5")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({
+                            "error": "chat service busy, try again shortly"
+                        }).encode("utf-8"))
+                        return
                     try:
-                        payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
-                    except TimeoutError:
-                        raise TimeoutError("chat request exceeded time limit")
+                        fut = _CHAT_EXECUTOR.submit(
+                            build_communicator_message_payload,
+                            narrative=load_communicator_self().get("narrative_state", {}),
+                            relationships=load_relationships(),
+                            active_thread="human_message",
+                            latest_human={"message": message},
+                            research_context=None,
+                        )
+                        try:
+                            payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                        except TimeoutError:
+                            raise TimeoutError("chat request exceeded time limit")
+                    finally:
+                        _chat_semaphore.release()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
