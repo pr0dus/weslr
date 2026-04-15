@@ -6,6 +6,7 @@ import socket
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -64,6 +65,11 @@ from core_knowledge import (
     get_all_domains
 )
 from entity_graph import get_entity_graph
+
+# Shared bounded executor for /chat — one thread, reused across requests.
+# Bounded to prevent thread exhaustion under concurrent load.
+_CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-request")
+
 
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
@@ -976,22 +982,20 @@ def cmd_serve(args):
                     message = data.get("message", "")
 
                     # Thread-safe deadline guard: run payload build in a bounded
-                    # thread so timeout is enforced per-request, not process-wide.
-                    # The provider's urlopen timeout is the real enforcement;
-                    # this outer deadline catches any path that escapes it.
-                    with ThreadPoolExecutor(max_workers=1) as _ex:
-                        fut = _ex.submit(
-                            build_communicator_message_payload,
-                            narrative=load_communicator_self().get("narrative_state", {}),
-                            relationships=load_relationships(),
-                            active_thread="human_message",
-                            latest_human={"message": message},
-                            research_context=None,
-                        )
-                        try:
-                            payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
-                        except _FTError:
-                            raise TimeoutError("chat request exceeded time limit")
+                    # Thread-safe deadline guard: use shared bounded executor so threads are
+                    # reused rather than created/destroyed per request.
+                    fut = _CHAT_EXECUTOR.submit(
+                        build_communicator_message_payload,
+                        narrative=load_communicator_self().get("narrative_state", {}),
+                        relationships=load_relationships(),
+                        active_thread="human_message",
+                        latest_human={"message": message},
+                        research_context=None,
+                    )
+                    try:
+                        payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                    except TimeoutError:
+                        raise TimeoutError("chat request exceeded time limit")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
