@@ -613,8 +613,14 @@ def save_communicator_state(payload: dict) -> None:
     write_json_file(COMMUNICATOR_STATE_PATH, payload)
 
 
-def load_communicator_self() -> dict:
-    default = CommunicatorSelfState(
+# In-process mtime-aware cache for communicator_self — avoids repeated deserialization
+# and ensure_memory_layers overhead within the same tick cycle.
+_SELF_CACHE: dict[str, tuple[float, dict]] = {}  # path_str -> (mtime, result)
+
+
+def _default_communicator_self() -> dict:
+    """Build the default CommunicatorSelfState dict (used for new worlds or on error)."""
+    return CommunicatorSelfState(
         identity_anchor="Weslr",
         core_drives=["continuity", "understanding", "relationship", "self-revision"],
         affect={
@@ -680,11 +686,32 @@ def load_communicator_self() -> dict:
         self_evolution_log=[],
         updated_at=0,
     ).to_dict()
-    return ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, default))
+
+
+def load_communicator_self() -> dict:
+    """Load communicator self state with mtime-aware in-process caching.
+
+    Returns a cached result when the file has not changed since last load.
+    The cache is invalidated whenever save_communicator_self() is called.
+    """
+    # Check cache via file mtime
+    if not COMMUNICATOR_SELF_PATH.exists():
+        return _default_communicator_self()
+    try:
+        mtime = COMMUNICATOR_SELF_PATH.stat().st_mtime
+        cached = _SELF_CACHE.get(str(COMMUNICATOR_SELF_PATH))
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
+        result = ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, _default_communicator_self()))
+        _SELF_CACHE[str(COMMUNICATOR_SELF_PATH)] = (mtime, result)
+        return result
+    except Exception:
+        return _default_communicator_self()
 
 
 def save_communicator_self(payload: dict) -> None:
     write_json_file(COMMUNICATOR_SELF_PATH, payload)
+    _SELF_CACHE.pop(str(COMMUNICATOR_SELF_PATH), None)
 
 
 def load_experiments() -> list[dict]:
