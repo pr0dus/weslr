@@ -152,7 +152,15 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
         why = narrative_state.get("why_it_matters", "")
         follow = narrative_state.get("follow_up_impulse", "")
         if why or follow:
-            return lang.generate_narrative_message(why, follow)
+            # Load lifecycle state to influence narrative tone
+            lifecycle_tone = "balanced"
+            try:
+                from weslr.communicator_config import get_lifecycle_state
+                lc = get_lifecycle_state()
+                lifecycle_tone = lc.get("tone", "balanced")
+            except Exception:
+                pass  # Non-critical — default to balanced if any import/load fails
+            return lang.generate_narrative_message(why, follow, lifecycle_tone=lifecycle_tone)
     
     return lang.generate_fallback_message()
 
