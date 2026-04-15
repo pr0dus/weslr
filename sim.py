@@ -89,6 +89,7 @@ from integration import find_relevant_research_note, integrate_research_into_com
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
 from self_improvement_chat import handle_chat_intent, load_chat_context, save_chat_context, get_current_proposal_id, set_current_proposal_id
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
+from weslr.state_defs import default_memory_layers, default_reflection_store  # noqa: E402
 from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
 from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
@@ -768,48 +769,9 @@ def save_self_evidence(payload: dict) -> None:
 
 
 def default_memory_layers(now_ts: int | None = None) -> dict:
-    now_ts = now_ts or int(time.time())
-    return {
-        "working": {
-            "summary": "Current hot memory for active thinking.",
-            "recent_exchange_ids": [],
-            "recent_thought_ids": [],
-            "active_thread_ids": [],
-            "active_concern_topics": [],
-            "last_compacted_at": 0,
-            "max_recent_exchanges": 24,
-            "max_recent_thoughts": 80,
-            "max_active_threads": 6,
-        },
-        "episodic": {
-            "summary": "Meaningful event memory compressed from raw experience.",
-            "episodes": [],
-            "episode_count": 0,
-            "last_distilled_at": 0,
-            "max_episodes": 240,
-        },
-        "semantic": {
-            "summary": "Long-term identity and relationship memory.",
-            "identity_anchors": ["Weslr"],
-            "relationship_facts": [],
-            "stable_topics": [],
-            "durable_lessons": [],
-            "continuity_anchors": [],
-            "last_updated_at": 0,
-        },
-        "archive": {
-            "summary": "Cold storage index for old raw traces and compacted material.",
-            "archived_items": [],
-            "archived_count": 0,
-            "last_archived_at": 0,
-            "storage_pressure": {
-                "raw_log_bytes": 0,
-                "communicator_self_bytes": 0,
-                "db_bytes": 0,
-                "pressure_level": "normal",
-            },
-        },
-    }
+    """Delegate to weslr.state_defs (extracted state definition)."""
+    from weslr.state_defs import default_memory_layers as _def
+    return _def(now_ts)
 
 
 def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
@@ -5288,24 +5250,9 @@ def update_self_model(communicator: dict) -> None:
 
 
 def default_reflection_store(now_ts: int | None = None) -> dict:
-    now_ts = now_ts or int(time.time())
-    return {
-        "summary": "Private reflection artifacts with explicit reality-status tagging.",
-        "items": [],
-        "episodes": [],
-        "last_reflected_at": 0,
-        "last_generated_at": 0,
-        "generation_cooldown_seconds": 300,
-        "last_compacted_at": 0,
-        "max_items": 48,
-        "max_episodes": 16,
-        "reflection_pass_retention": 1,
-        "generation_history": [],
-        "max_generation_history": 12,
-        "health_history": [],
-        "max_health_history": 10,
-        "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
-    }
+    """Delegate to weslr.state_defs (extracted state definition)."""
+    from weslr.state_defs import default_reflection_store as _def
+    return _def(now_ts)
 
 
 def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict:
