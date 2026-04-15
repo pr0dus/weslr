@@ -436,6 +436,77 @@ def escalation_response(action_level: TrustLevel) -> dict:
         "message": messages.get(action_level, "Verification required."),
         "action": "trusted_device_escalation",
     }
+
+
+def build_escalation_handoff(
+    message: str,
+    risk_level: TrustLevel,
+    actor_id: str = "anonymous",
+    session_id: str = "unknown",
+) -> dict:
+    """Build a structured escalation handoff object for L3/L4 actions.
+
+    This is the trusted-device escalation stub: a structured object containing
+    everything needed to initiate and verify a trusted-device verification flow.
+    It is returned alongside the escalation_required response for L3/L4 requests.
+
+    Args:
+        message: The original human message that triggered the escalation
+        risk_level: The trust level required for the action
+        actor_id: Who made the request (actor identifier)
+        session_id: Which session the request occurred in
+
+    Returns:
+        A structured handoff dict with keys:
+        - handoff_id: unique escalation request ID
+        - action_requested: truncated original message (max 200 chars)
+        - risk_level: "HIGH_RISK" or "CRITICAL"
+        - actor_id / session_id: who and where
+        - verification_required: human-readable description of what's needed
+        - ttl_seconds: time-to-live for the handoff (5 min for L3, 2 min for L4)
+        - audit_event_id: links to the audit log entry
+        - status: "awaiting_verification"
+    """
+    import time as _time
+    handoff_id = _generate_token_id()
+    now = _time.time()
+    ttl = 300 if risk_level == TrustLevel.HIGH_RISK else 120
+    expires_at = now + ttl
+    level_name = "HIGH_RISK" if risk_level == TrustLevel.HIGH_RISK else "CRITICAL"
+    verification_required = (
+        "Trusted device challenge/response required. "
+        "Confirm your identity on a registered device to proceed."
+    ) if risk_level == TrustLevel.HIGH_RISK else (
+        "Multi-party operator verification required. "
+        "Await operator confirmation before proceeding."
+    )
+    # Log the escalation event and link it to the handoff
+    evt = log_audit_event(
+        event_kind="escalation_handoff_created",
+        actor_id=actor_id,
+        session_id=session_id,
+        action_requested=message[:200],
+        trust_level_required=risk_level,
+        verification_method="trusted_device" if risk_level == TrustLevel.HIGH_RISK else "operator_multi_party",
+        outcome="pending",
+        operator_alert=(risk_level >= TrustLevel.CRITICAL),
+        details={"handoff_id": handoff_id},
+    )
+    return {
+        "handoff_id": handoff_id,
+        "action_requested": message[:200],
+        "risk_level": level_name,
+        "actor_id": actor_id,
+        "session_id": session_id,
+        "verification_required": verification_required,
+        "ttl_seconds": ttl,
+        "expires_at": expires_at,
+        "audit_event_id": evt["event_id"],
+        "status": "awaiting_verification",
+    }
+
+
+def count_failed_attempts(session_id: str, action_scope: str | None = None) -> int:
     """Count consecutive failed attempts for a session and optionally an action."""
     events = get_recent_audit_events(limit=50, session_id=session_id)
     failures = [

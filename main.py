@@ -988,7 +988,11 @@ def cmd_serve(args):
                     message = data.get("message", "")
 
                     # SS-TDE risk scan: intercept high-risk actions before executing inline
-                    from weslr.security import TrustLevel, classify_message_for_risk, escalation_response, log_audit_event
+                    from weslr.security import (
+                        TrustLevel, classify_message_for_risk,
+                        escalation_response, build_escalation_handoff,
+                        log_audit_event,
+                    )
                     risk_level = classify_message_for_risk(message)
                     if risk_level >= TrustLevel.HIGH_RISK:
                         log_audit_event(
@@ -1001,10 +1005,13 @@ def cmd_serve(args):
                             outcome="denied",
                             operator_alert=(risk_level >= TrustLevel.CRITICAL),
                         )
+                        handoff = build_escalation_handoff(message, risk_level)
+                        response = escalation_response(risk_level)
+                        response["escalation_handoff"] = handoff
                         self.send_response(403)
                         self.send_header("Content-Type", "application/json")
                         self.end_headers()
-                        self.wfile.write(_json.dumps(escalation_response(risk_level)).encode("utf-8"))
+                        self.wfile.write(_json.dumps(response).encode("utf-8"))
                         return
 
                     # Thread-safe deadline guard: use shared bounded executor so threads are
