@@ -6982,11 +6982,9 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
 
 
 def slugify(value: str) -> str:
-    value = (value or "item").strip().lower()
-    safe = ''.join(ch if ch.isalnum() else '-' for ch in value)
-    while '--' in safe:
-        safe = safe.replace('--', '-')
-    return safe.strip('-') or 'item'
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import slugify as _slugify
+    return _slugify(value)
 
 
 def persist_event_log(event_feed: list[dict], generated_at: int) -> list[dict]:
@@ -7035,34 +7033,15 @@ def build_operator_actions(export_queue: list[dict], review_queue: list[dict], a
 
 
 def build_theme_trends(history: list[dict]) -> list[dict]:
-    if not history:
-        return []
-    names = {}
-    for point in history[-8:]:
-        for theme, pressure in point.get('theme_pressure', {}).items():
-            names.setdefault(theme, []).append(round(float(pressure), 3))
-    result = []
-    for theme, series in names.items():
-        delta = round(series[-1] - series[0], 3) if len(series) > 1 else 0.0
-        bars = ''.join('▁▂▃▄▅▆▇█'[min(7, max(0, int(v * 8) - 1))] for v in series) or '▁'
-        result.append({'theme': theme, 'series': series, 'delta': delta, 'sparkline': bars})
-    return sorted(result, key=lambda item: (item['series'][-1], item['delta']), reverse=True)[:8]
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import build_theme_trends as _btt
+    return _btt(history)
 
 
 def sparkline_for_series(series: list[float | int], *, normalize: bool = False) -> str:
-    if not series:
-        return '—'
-    ticks = '▁▂▃▄▅▆▇█'
-    values = [float(v) for v in series]
-    if normalize:
-        low = min(values)
-        high = max(values)
-        if abs(high - low) < 1e-9:
-            return ticks[3] * len(values)
-        scaled = [(v - low) / (high - low) for v in values]
-    else:
-        scaled = [min(1.0, max(0.0, v)) for v in values]
-    return ''.join(ticks[min(7, max(0, int(v * 8) - (0 if normalize else 1)))] for v in scaled)
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import sparkline_for_series as _sparkline
+    return _sparkline(series, normalize=normalize)
 
 
 def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict:
