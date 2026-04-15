@@ -788,6 +788,100 @@ def get_relevant_continuity_anchors(
     return anchors
 
 
+def get_relevant_goal_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of active goals and unresolved work.
+
+    This is the Goal Continuity slice: given a live message and optional topic
+    hints, retrieve only the most relevant goal-related anchors from long-term
+    state — active priorities, resumable work, and unfinished threads — without
+    loading the full communicator_self into the chat path.
+
+    The function surfaces goal-oriented fields only when their content is
+    relevant to the current message or topic context, keeping the returned
+    context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - active_goals: list — current active goal strings
+        - unresolved_threads: list — shared threads needing revisiting
+        - follow_up_impulse: str — the current follow-up impulse from narrative
+        - relationship_state: str — current relationship continuity state
+        - active_thread_summary: str — summary of active shared threads
+        - session_count: int — how many sessions have occurred
+        - memory_bonds: float — current memory bond strength
+        - unfinished_work: list — items from unfinished work lists
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    narrative = cs.get("narrative_state", {})
+    follow_up = narrative.get("follow_up_impulse", "")
+    if follow_up:
+        candidates.append((score(follow_up), "follow_up_impulse", follow_up))
+    rel_state = narrative.get("relationship_state", "")
+    if rel_state:
+        candidates.append((score(rel_state), "relationship_state", rel_state))
+    thread_summary = narrative.get("active_thread_summary", "")
+    if thread_summary:
+        candidates.append((score(thread_summary), "active_thread_summary", thread_summary))
+
+    continuity = cs.get("continuity", {})
+    unfinished = continuity.get("unfinished_threads", [])
+    for thread in unfinished[:max_anchors]:
+        thread_str = str(thread)
+        if thread_str:
+            candidates.append((score(thread_str), "unresolved_thread", thread_str))
+    session_count = continuity.get("session_count", 0)
+    if session_count:
+        candidates.append((session_count, "session_count", session_count))
+    memory_bonds = continuity.get("memory_bonds", 0)
+    if memory_bonds:
+        candidates.append((int(memory_bonds * 10), "memory_bonds", memory_bonds))
+
+    relationships = cs.get("relationships", {})
+    unresolved_shared = relationships.get("unresolved_shared_threads", [])
+    for item in unresolved_shared[:max_anchors]:
+        item_str = str(item)
+        if item_str:
+            candidates.append((score(item_str), "unresolved_shared_thread", item_str))
+
+    # Pull active concerns that have goal-like language
+    active_concerns = cs.get("active_concerns", [])
+    for concern in active_concerns[:max_anchors]:
+        concern_str = str(concern)
+        if concern_str and any(k in concern_str.lower() for k in ["goal", "plan", "next", "build", "finish", "improve", "learn", "resolve"]):
+            candidates.append((score(concern_str), "active_goal_concern", concern_str))
+
+    # Sort by score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
 def load_communicator_self() -> dict:
     """Load communicator self state with mtime-aware in-process caching.
 
