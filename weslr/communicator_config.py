@@ -95,6 +95,7 @@ def derive_communicator_config() -> Dict[str, Any]:
     Returns a stable config even if operator hasn't onboarded yet.
     """
     profile = load_operator_profile()
+    lifecycle_state = _derive_lifecycle_state_key(profile)
     
     config = {
         # Check-in cadence (derived from urgency/time-sensitivity if not explicit)
@@ -117,6 +118,9 @@ def derive_communicator_config() -> Dict[str, Any]:
         "primary_outcome": profile.get("primary_outcome", ""),
         "time_horizon": profile.get("time_horizon", "session"),
         "urgency": profile.get("urgency", "deliberate"),
+        
+        # Lifecycle state (derived from session count and onboarding completeness)
+        "lifecycle_state": _derive_lifecycle_state_key(profile),
         
         # Derived flags (read-only, operator guidance only)
         "_is_onboarded": bool(profile.get("name")),
@@ -157,6 +161,42 @@ def _derive_cadence_from_urgency(profile: Dict[str, Any]) -> str:
     elif is_low:
         return "daily"
     return "silent"
+
+
+def _derive_lifecycle_state_key(profile: Dict[str, Any] | None = None) -> str:
+    """Derive the communicator lifecycle state key from profile and continuity data.
+
+    This is a lightweight version of derive_lifecycle_state() that returns only
+    the state string — suitable for embedding in config dicts without
+    introducing circular imports.
+
+    States: bootstrap_required | newly_activated | establishing | established
+    """
+    if profile is None:
+        profile = {}
+    is_onboarded = bool(profile.get("name"))
+    if not is_onboarded:
+        return "bootstrap_required"
+
+    try:
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        continuity = cs.get("continuity", {})
+        session_count = continuity.get("session_count", 0)
+        memory_bonds = continuity.get("memory_bonds", 0.0)
+        unfinished = continuity.get("unfinished_threads", [])
+    except Exception:
+        session_count = 0
+        memory_bonds = 0.0
+        unfinished = []
+
+    if session_count <= 2:
+        return "newly_activated"
+    if session_count <= 14:
+        return "establishing"
+    if session_count >= 15 or memory_bonds >= 0.5 or len(unfinished) >= 3:
+        return "established"
+    return "establishing"
 
 
 def get_checkin_cadence() -> str:
@@ -396,6 +436,107 @@ def get_forbidden_actions() -> List[str]:
         return [str(f).strip() for f in forbidden if f]
     # Handle string format (newline-separated)
     return [line.strip() for line in forbidden.split("\n") if line.strip()]
+
+
+# ── Communicator Lifecycle State ─────────────────────────────────────────────
+
+def derive_lifecycle_state(profile: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    """Derive the communicator lifecycle state from profile and continuity data.
+
+    Lifecycle state reflects the relationship maturity between WESLR and the
+    operator. It influences tone, check-in style, guidance verbosity, and
+    escalation messaging. State is derived from onboarding completeness,
+    session history, and trust anchor status — it is read-only.
+
+    States:
+    - bootstrap_required: No onboarding data; WESLR is in initial setup
+    - newly_activated: Onboarding complete but relationship is fresh (< 3 sessions)
+    - establishing: 3–14 sessions; relationship is developing
+    - established: 15+ sessions with stable continuity; trust is solid
+    - escalation_pending: Active SS-TDE escalation in progress
+    - elevated_action_window: A clearance token is active; bounded elevated trust
+
+    Args:
+        profile: Optional pre-loaded operator profile (avoids re-reading file)
+
+    Returns:
+        dict with keys: state, tone, guidance, checkin_style, escalation_wording
+    """
+    from weslr.state_defs import default_memory_layers
+    from sim import load_communicator_self
+
+    if profile is None:
+        profile = load_operator_profile()
+    is_onboarded = bool(profile.get("name"))
+
+    # Bootstrap_required: no onboarding data at all
+    if not is_onboarded:
+        return {
+            "state": "bootstrap_required",
+            "tone": "welcoming",
+            "guidance": "explain",
+            "checkin_style": "daily",
+            "escalation_wording": "setup_required",
+        }
+
+    # Get session count from communicator self
+    try:
+        cs = load_communicator_self()
+        continuity = cs.get("continuity", {})
+        session_count = continuity.get("session_count", 0)
+        memory_bonds = continuity.get("memory_bonds", 0.0)
+        unfinished = continuity.get("unfinished_threads", [])
+    except Exception:
+        session_count = 0
+        memory_bonds = 0.0
+        unfinished = []
+
+    # Newly activated: onboarding done but sessions are few
+    if session_count <= 2:
+        return {
+            "state": "newly_activated",
+            "tone": "warm",
+            "guidance": "guide",
+            "checkin_style": _derive_cadence_from_urgency(profile),
+            "escalation_wording": "standard",
+        }
+
+    # Establishing: sessions are growing, trust is developing
+    if session_count <= 14:
+        return {
+            "state": "establishing",
+            "tone": "balanced",
+            "guidance": "support",
+            "checkin_style": _derive_cadence_from_urgency(profile),
+            "escalation_wording": "standard",
+        }
+
+    # Established: 15+ sessions, strong memory bonds, or active threads
+    if session_count >= 15 or memory_bonds >= 0.5 or len(unfinished) >= 3:
+        return {
+            "state": "established",
+            "tone": "confident",
+            "guidance": "concise",
+            "checkin_style": _derive_cadence_from_urgency(profile),
+            "escalation_wording": "familiar",
+        }
+
+    # Fallback to establishing
+    return {
+        "state": "establishing",
+        "tone": "balanced",
+        "guidance": "support",
+        "checkin_style": _derive_cadence_from_urgency(profile),
+        "escalation_wording": "standard",
+    }
+
+
+def get_lifecycle_state() -> Dict[str, Any]:
+    """Get the current lifecycle state dict for the communicator.
+
+    Convenience wrapper around derive_lifecycle_state().
+    """
+    return derive_lifecycle_state()
 
 def is_action_forbidden(action: str) -> bool:
     """Check if an action is explicitly forbidden by operator.
