@@ -353,6 +353,125 @@ def count_failed_attempts(session_id: str, action_scope: str | None = None) -> i
 
 
 # =============================================================================
+# CLEARANCE ENFORCEMENT — guard and verified completion
+# =============================================================================
+
+def require_clearance(
+    token_id: str,
+    action_scope: str,
+    actor_id: str,
+    session_id: str,
+    log: bool = True,
+) -> tuple[bool, str, dict | None]:
+    """Validate a clearance token for a guarded action.
+
+    This is the enforcement guard: before any L3/L4 action executes,
+    it must pass through this check.
+
+    Args:
+        token_id: The clearance token ID presented for the action
+        action_scope: The specific action being attempted
+        actor_id: Who is attempting the action (for audit)
+        session_id: Which session the action is in
+        log: Whether to write an audit event for the attempt
+
+    Returns:
+        (allowed, reason, token) — allowed is True if the token is valid and
+        the action is within scope; otherwise denied with a reason string.
+    """
+    is_valid, reason = validate_clearance_token(token_id, action_scope)
+    if not is_valid:
+        if log:
+            log_audit_event(
+                event_kind="clearance_check_denied",
+                actor_id=actor_id,
+                session_id=session_id,
+                action_requested=action_scope,
+                trust_level_required=TrustLevel.HIGH_RISK,
+                verification_method="clearance_token",
+                outcome="denied",
+                details={"reason": reason, "token_id": token_id},
+            )
+        return False, reason, None
+    # Token is valid — mark it used (one-time use)
+    use_clearance_token(token_id)
+    if log:
+        log_audit_event(
+            event_kind="clearance_check_passed",
+            actor_id=actor_id,
+            session_id=session_id,
+            action_requested=action_scope,
+            trust_level_required=TrustLevel.HIGH_RISK,
+            verification_method="clearance_token",
+            outcome="used",
+            token_id=token_id,
+        )
+    token = _TOKEN_STORE.get(token_id)
+    return True, "allowed", token
+
+
+def verified_completion(
+    handoff_id: str,
+    actor_id: str,
+    session_id: str,
+    action_scope: str,
+    trust_level: TrustLevel,
+    ttl_seconds: int = 60,
+) -> tuple[bool, dict]:
+    """Issue a bounded clearance token after a verified trusted-device completion.
+
+    This is the counterpart to build_escalation_handoff: once the user has
+    successfully completed the trusted-device challenge, this function issues
+    the bounded clearance token scoped to the specific action.
+
+    Args:
+        handoff_id: The escalation handoff ID that was created for this action
+        actor_id: Who completed the verification
+        session_id: Which session the action is in
+        action_scope: The specific action being authorized (must match the handoff)
+        trust_level: The trust level required (must match or exceed action risk)
+        ttl_seconds: Time-to-live for the token (default 60; short for one-time use)
+
+    Returns:
+        (success, result_dict) — if verification succeeds, returns (True, token dict).
+        If it fails, returns (False, error reason).
+    """
+    required_level = classify_action(action_scope)
+    if trust_level < required_level:
+        log_audit_event(
+            event_kind="clearance_denied",
+            actor_id=actor_id,
+            session_id=session_id,
+            action_requested=action_scope,
+            trust_level_required=required_level,
+            verification_method="trusted_device",
+            outcome="denied",
+            details={"reason": "trust_level_insufficient", "handoff_id": handoff_id},
+        )
+        return False, {"error": "trust_level_insufficient", "required": int(required_level)}
+    # Issue the bounded token
+    token = issue_clearance_token(
+        actor_id=actor_id,
+        session_id=session_id,
+        action_scope=action_scope,
+        trust_level=trust_level,
+        ttl_seconds=ttl_seconds,
+    )
+    log_audit_event(
+        event_kind="clearance_granted",
+        actor_id=actor_id,
+        session_id=session_id,
+        action_requested=action_scope,
+        trust_level_required=trust_level,
+        verification_method="trusted_device",
+        outcome="granted",
+        token_id=token["token_id"],
+        details={"handoff_id": handoff_id},
+    )
+    return True, token
+
+
+# =============================================================================
 # SS-TDE RISK CLASSIFIER (for natural-language chat input)
 # =============================================================================
 # Maps message content patterns to the minimum trust level required.
@@ -504,13 +623,3 @@ def build_escalation_handoff(
         "audit_event_id": evt["event_id"],
         "status": "awaiting_verification",
     }
-
-
-def count_failed_attempts(session_id: str, action_scope: str | None = None) -> int:
-    """Count consecutive failed attempts for a session and optionally an action."""
-    events = get_recent_audit_events(limit=50, session_id=session_id)
-    failures = [
-        e for e in events
-        if e.get("outcome") in ("denied", "failed") and e.get("action_requested") == action_scope
-    ]
-    return len(failures)

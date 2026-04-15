@@ -977,6 +977,50 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            elif self.path == "/api/clearance/verify":
+                # Clearance token issuance endpoint — called after trusted-device verification succeeds.
+                # Issues a bounded one-time-use clearance token scoped to the specific action.
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    handoff_id = data.get("handoff_id", "")
+                    actor_id = data.get("actor_id", "anonymous")
+                    session_id = data.get("session_id", "unknown")
+                    action_scope = data.get("action_scope", "")
+                    trust_level_str = str(data.get("trust_level", "HIGH_RISK"))
+                    from weslr.security import TrustLevel, verified_completion
+                    trust_level = TrustLevel[trust_level_str] if trust_level_str in [l.name for l in TrustLevel] else TrustLevel.HIGH_RISK
+                    if not action_scope:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action_scope is required"}).encode("utf-8"))
+                        return
+                    success, result = verified_completion(
+                        handoff_id=handoff_id,
+                        actor_id=actor_id,
+                        session_id=session_id,
+                        action_scope=action_scope,
+                        trust_level=trust_level,
+                        ttl_seconds=60,
+                    )
+                    if success:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": True, "token": result}).encode("utf-8"))
+                    else:
+                        self.send_response(403)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
@@ -991,9 +1035,32 @@ def cmd_serve(args):
                     from weslr.security import (
                         TrustLevel, classify_message_for_risk,
                         escalation_response, build_escalation_handoff,
-                        log_audit_event,
+                        log_audit_event, require_clearance,
                     )
                     risk_level = classify_message_for_risk(message)
+                    # If a clearance token is provided, validate it for this action.
+                    # If valid, bypass the risk scan and proceed.
+                    token_id = data.get("clearance_token_id", "")
+                    if token_id:
+                        allowed, reason, _ = require_clearance(
+                            token_id=token_id,
+                            action_scope="chat:message",
+                            actor_id="anonymous",
+                            session_id="unknown",
+                        )
+                        if allowed:
+                            risk_level = TrustLevel.CONVERSATIONAL  # bypass escalation
+                        else:
+                            self.send_response(403)
+                            self.send_header("Content-Type", "application/json")
+                            self.end_headers()
+                            self.wfile.write(_json.dumps({
+                                "error": f"clearance token invalid: {reason}",
+                                "escalation_required": True,
+                                "trust_level": "HIGH_RISK",
+                                "action": "trusted_device_escalation",
+                            }).encode("utf-8"))
+                            return
                     if risk_level >= TrustLevel.HIGH_RISK:
                         log_audit_event(
                             event_kind="clearance_denied",
