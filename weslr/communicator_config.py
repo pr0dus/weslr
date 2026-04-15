@@ -97,8 +97,8 @@ def derive_communicator_config() -> Dict[str, Any]:
     profile = load_operator_profile()
     
     config = {
-        # Check-in cadence
-        "checkin_style": profile.get("checkin_style", "silent"),
+        # Check-in cadence (derived from urgency/time-sensitivity if not explicit)
+        "checkin_style": _derive_cadence_from_urgency(profile),
         "standup_cadence": profile.get("standup_cadence", "none"),
         
         # Adaptation / capability gates
@@ -126,6 +126,38 @@ def derive_communicator_config() -> Dict[str, Any]:
     return config
 
 # ── Check-in Cadence ─────────────────────────────────────────────────────────
+
+def _derive_cadence_from_urgency(profile: Dict[str, Any]) -> str:
+    """Derive check-in cadence from onboarding urgency/time-sensitivity answers.
+    
+    First pass mapping:
+    - critical/high urgency -> verbose  (check-in every 30 min)
+    - normal urgency        -> hourly
+    - low/deliberate       -> daily
+    - none/silent          -> silent  (only when action is needed)
+    
+    Operator's explicit checkin_style in profile takes precedence.
+    """
+    explicit = profile.get("checkin_style")
+    if explicit in ("silent", "hourly", "daily", "verbose"):
+        return explicit  # explicit profile setting wins
+
+    urgency = profile.get("urgency", "deliberate").lower()
+    time_sensitivity = profile.get("time_sensitivity", "").lower()
+
+    # Combine urgency and time-sensitivity for richer mapping
+    is_high = urgency in ("critical", "high") or time_sensitivity == "high"
+    is_normal = urgency == "normal" or time_sensitivity == "normal"
+    is_low = urgency in ("low", "deliberate", "none") or time_sensitivity == "low"
+
+    if is_high:
+        return "verbose"
+    elif is_normal:
+        return "hourly"
+    elif is_low:
+        return "daily"
+    return "silent"
+
 
 def get_checkin_cadence() -> str:
     """Get check-in cadence string.
