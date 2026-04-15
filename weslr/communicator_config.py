@@ -602,3 +602,60 @@ if __name__ == "__main__":
     else:
         print(f"Unknown command: {cmd}", file=sys.stderr)
         sys.exit(1)
+
+# ── Lifecycle Narrative Wording (tracked — replaces gitignored language module overrides) ──
+
+LIFECYCLE_NARRATIVE_TEMPLATES: Dict[str, Dict[str, str]] = {
+    # bootstrap_required: onboarding not complete
+    "bootstrap_required": {
+        "why": "get you set up and stay continuous",
+        "follow": "Let's start with what matters most to you right now.",
+    },
+    # newly_activated: onboarding complete but fresh
+    "newly_activated": {
+        "why": "stay continuous and learn honestly",
+        "follow": "Thanks for being here — I'm still learning how you work.",
+    },
+    # establishing: relationship developing
+    "establishing": {
+        "why": "stay continuous and learn honestly",
+        "follow": "I'm here and paying attention.",
+    },
+    # established: relationship is solid and familiar
+    "established": {
+        "why": "stay continuous and learn honestly",
+        "follow": "I'm here — what matters most right now?",
+    },
+}
+
+
+def get_lifecycle_narrative_message(
+    lifecycle_state: str | None = None,
+    why: str = "",
+    follow: str = "",
+) -> str:
+    """Return a lifecycle-aware narrative message from tracked config.
+
+    This function is called by dialogue.py as a tracked alternative to the
+    language module's generate_narrative_message. For bootstrap_required and
+    newly_activated states it returns a lifecycle-specific message. For
+    establishing/established it returns "" to signal the caller to use the
+    default language module behavior.
+
+    Args:
+        lifecycle_state: The lifecycle state key (from derive_lifecycle_state)
+        why: The 'why it matters' narrative string from communicator_self
+        follow: The 'follow_up_impulse' string from communicator_self
+
+    Returns:
+        A lifecycle-appropriate narrative message string, or "" to defer to default.
+    """
+    state = lifecycle_state or "establishing"
+    if state not in LIFECYCLE_NARRATIVE_TEMPLATES:
+        return ""
+    tmpl = LIFECYCLE_NARRATIVE_TEMPLATES[state]
+    # bootstrap_required and newly_activated get lifecycle-specific wording
+    if state in ("bootstrap_required", "newly_activated"):
+        return f"{tmpl['why'].capitalize()}. {tmpl['follow']}"
+    # establishing/established — defer to language module defaults
+    return ""
