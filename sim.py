@@ -688,6 +688,106 @@ def _default_communicator_self() -> dict:
     ).to_dict()
 
 
+def get_relevant_continuity_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of continuity anchors for a given message context.
+
+    This is the first continuity-assembler slice: given a live message and optional
+    topic hints, retrieve only the most relevant long-term anchors without loading
+    the full communicator_self into the chat path. Used to keep the chat path light
+    while still surfacing meaningful historical continuity when relevant.
+
+    The function is conservative: it only surfaces anchors whose content clearly
+    matches the current message or topic context. Anchors that don't match are
+    omitted to keep the returned context small.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys:
+        - identity_anchor: str — the agent's stable name/identity
+        - active_concerns: list — current hot topics from the live state
+        - unresolved_threads: list — shared threads that need revisiting
+        - last_topic: str — the last significant human topic
+        - core_continuity_prompt: str — the "why it matters" sentence
+        - identity_traits: list — key identity descriptors
+        - core_drives: list — the agent's core motivational drives
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+    # Relevance score: count how many topic tokens appear in each anchor field
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    # Collect candidate anchors with scores
+    candidates: list[tuple[int, str, object]] = []
+
+    identity_anchor = cs.get("identity_anchor", "")
+    if identity_anchor:
+        candidates.append((score(identity_anchor), "identity_anchor", identity_anchor))
+
+    narrative = cs.get("narrative_state", {})
+    why = narrative.get("why_it_matters", "")
+    if why:
+        candidates.append((score(why), "why_it_matters", why))
+
+    active_concerns = cs.get("active_concerns", [])
+    for concern in active_concerns[:max_anchors]:
+        concern_str = str(concern)
+        if concern_str:
+            candidates.append((score(concern_str), "active_concern", concern_str))
+
+    continuity = cs.get("continuity", {})
+    unfinished = continuity.get("unfinished_threads", [])
+    for thread in unfinished[:max_anchors]:
+        thread_str = str(thread)
+        if thread_str:
+            candidates.append((score(thread_str), "unfinished_thread", thread_str))
+
+    relationships = cs.get("relationships", {})
+    last_topic = relationships.get("last_human_topic", "")
+    if last_topic:
+        candidates.append((score(last_topic), "last_topic", last_topic))
+
+    identity_state = cs.get("identity_state", {})
+    traits = identity_state.get("identity_traits", [])
+    for trait in traits[:max_anchors]:
+        trait_str = str(trait)
+        if trait_str:
+            candidates.append((score(trait_str), "identity_trait", trait_str))
+
+    core_drives = cs.get("core_drives", [])
+    for drive in core_drives:
+        drive_str = str(drive)
+        if drive_str:
+            candidates.append((score(drive_str), "core_drive", drive_str))
+
+    # Sort by relevance score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    # Always include identity_anchor if present (it's always relevant)
+    if "identity_anchor" not in anchors and identity_anchor:
+        anchors["identity_anchor"] = identity_anchor
+
+    return anchors
+
+
 def load_communicator_self() -> dict:
     """Load communicator self state with mtime-aware in-process caching.
 
