@@ -30,6 +30,7 @@ from config import (
 )
 
 
+
 def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
     # Neutral fallback: user-safe, no internal role/wake phrasing
     theme = context.get("proposed_theme") or context.get("active_pursuit") or context.get("unresolved_question") or "the task at hand"
@@ -222,13 +223,9 @@ def generate_inner_thought(role: str, context: dict[str, Any]) -> dict[str, Any]
         if not guard_ok:
             return _fallback(role, {**context, "error": "embedded_prestart_failed", "error_detail": guard_msg})
     try:
-        if provider == "ollama":
-            return _generate_via_ollama(role, context, fallback)
-        if provider in {"openai", "openai_compatible", "oauth"}:
-            return _generate_via_openai_compatible(role, context, fallback)
-        if provider in {"embedded", "llama_cpp", "embedded_llama_cpp"}:
-            return _generate_via_embedded(role, context, fallback)
-        return fallback
+        # Evidence routing done above. Now delegate to provider abstraction.
+        from weslr.providers import get_provider  # local to avoid circular import
+        return get_provider().generate(role, context, chat_mode=False)
     except Exception:
         return fallback
 
@@ -241,13 +238,8 @@ def generate_chat(message: str, context: dict[str, Any]) -> dict[str, Any]:
     provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
 
     try:
-        if provider == "ollama":
-            return _generate_via_ollama(role, chat_context, fallback, chat_mode=True)
-        if provider in {"openai", "openai_compatible", "oauth"}:
-            return _generate_via_openai_compatible(role, chat_context, fallback, chat_mode=True)
-        if provider in {"embedded", "llama_cpp", "embedded_llama_cpp"}:
-            return _generate_via_embedded(role, chat_context, fallback)
-        return fallback
+        from weslr.providers import get_provider  # local to avoid circular import
+        return get_provider(provider).generate(role, chat_context, chat_mode=True)
     except Exception:
         return fallback
 
