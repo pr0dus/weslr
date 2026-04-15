@@ -261,8 +261,43 @@ class OllamaProvider(Provider):
                 timeout_seconds=OLLAMA_TIMEOUT_SECONDS,
             )
         super().__init__(config)
+        self._warmed = False
+
+    def warmup(self) -> bool:
+        """Pre-load the model by sending a minimal warmup request.
+
+        Call this once at startup or before first real use to reduce the cold-start
+        penalty on the first generate() call. Returns True if the warmup succeeded.
+
+        Note: fails gracefully — a failed warmup does not prevent generate() from
+        running; it simply means the first real request pays the cold-start cost.
+        """
+        if self._warmed:
+            return True
+        try:
+            warmup_body = json.dumps({
+                "model": self.config.model_name,
+                "prompt": json.dumps({"identity": "boot", "job": "boot"}),
+                "stream": False,
+                "options": {"temperature": 0.0, "num_predict": 1},
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                f"{self.config.host.rstrip('/')}/api/generate",
+                data=warmup_body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=min(5.0, self.config.timeout_seconds)) as resp:
+                resp.read()
+            self._warmed = True
+            return True
+        except Exception:
+            self._warmed = False
+            return False
 
     def generate(self, role: str, context: dict[str, Any], *, chat_mode: bool = False) -> dict[str, Any]:
+        # Lazy warmup on first real request — cheap no-op if already warm
+        self.warmup()
         fallback = self._default_fallback(role, context)
         timeout = self.config.timeout_seconds
 
