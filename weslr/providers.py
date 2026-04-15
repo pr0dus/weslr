@@ -284,7 +284,7 @@ class OllamaProvider(Provider):
             req = urllib.request.Request(
                 f"{self.config.host.rstrip('/')}/api/generate",
                 data=warmup_body,
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/json", "Connection": "keep-alive"},
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=min(5.0, self.config.timeout_seconds)) as resp:
@@ -314,7 +314,10 @@ class OllamaProvider(Provider):
         req = urllib.request.Request(
             f"{self.config.host.rstrip('/')}/api/generate",
             data=body,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
             method="POST",
         )
         try:
