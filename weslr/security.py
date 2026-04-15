@@ -350,3 +350,96 @@ def count_failed_attempts(session_id: str, action_scope: str | None = None) -> i
         if e.get("outcome") in ("denied", "failed") and e.get("action_requested") == action_scope
     ]
     return len(failures)
+
+
+# =============================================================================
+# SS-TDE RISK CLASSIFIER (for natural-language chat input)
+# =============================================================================
+# Maps message content patterns to the minimum trust level required.
+# This is the enforcement hook for the /api/chat risk scan in main.py.
+
+_RISK_PATTERNS: list[tuple[TrustLevel, list[str]]] = [
+    # L4 Critical — most dangerous first
+    (TrustLevel.CRITICAL, [
+        "wipe the database", "wipe all data", "delete everything permanently",
+        "revoke all permissions", "revoke everyone's access",
+        "destroy the world", "unrecoverable",
+        "factory reset all", "reset all permissions",
+    ]),
+    # L3 High-Risk
+    (TrustLevel.HIGH_RISK, [
+        "delete the world", "delete my world", "delete all messages",
+        "post this publicly", "post to twitter", "post to facebook", "post externally",
+        "make an api call", "call the api", "send an external request",
+        "change my security", "change security settings", "change password",
+        "grant admin", "grant full access", "give me admin",
+        "revoke access", "revoke permissions",
+        "send this message to", "send this to someone",
+        "export all data", "download all my data",
+        "access log", "access logs", "show me the audit log",
+        "delete my account", "delete account",
+    ]),
+    # L2 Elevated
+    (TrustLevel.ELEVATED, [
+        "send a message", "send this message", "share with",
+        "share this with", "add a contact", "add contact",
+        "post to", "post publicly",
+        "change my preference", "change preference",
+        "send an email", "send email",
+    ]),
+    # L1 Sensitive
+    (TrustLevel.SENSITIVE, [
+        "remember this", "save this", "note this",
+        "change your name", "update my profile", "update profile",
+        "remember me as",
+    ]),
+]
+
+
+def classify_message_for_risk(message: str) -> TrustLevel:
+    """Scan message text and return the minimum trust level required.
+
+    Checks from highest risk to lowest, returns the first match.
+    Returns CONVERSATIONAL if no dangerous patterns are detected.
+    """
+    msg_lower = message.lower()
+    for level, patterns in _RISK_PATTERNS:
+        for pattern in patterns:
+            if pattern in msg_lower:
+                return level
+    return TrustLevel.CONVERSATIONAL
+
+
+def escalation_response(action_level: TrustLevel) -> dict:
+    """Return a structured escalation-required response for L3/L4 requests.
+
+    This is the stub response returned by /chat instead of executing
+    a high-risk action inline.
+    """
+    level_names = {
+        TrustLevel.HIGH_RISK: "HIGH_RISK",
+        TrustLevel.CRITICAL: "CRITICAL",
+    }
+    messages = {
+        TrustLevel.HIGH_RISK: (
+            "I can't complete that request here. It requires a higher level of "
+            "verification. Please confirm your identity on a trusted device to proceed."
+        ),
+        TrustLevel.CRITICAL: (
+            "This action requires multi-party verification and operator oversight. "
+            "I will alert an operator and await their confirmation before proceeding."
+        ),
+    }
+    return {
+        "escalation_required": True,
+        "trust_level": level_names.get(action_level, str(action_level)),
+        "message": messages.get(action_level, "Verification required."),
+        "action": "trusted_device_escalation",
+    }
+    """Count consecutive failed attempts for a session and optionally an action."""
+    events = get_recent_audit_events(limit=50, session_id=session_id)
+    failures = [
+        e for e in events
+        if e.get("outcome") in ("denied", "failed") and e.get("action_requested") == action_scope
+    ]
+    return len(failures)

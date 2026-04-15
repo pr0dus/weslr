@@ -987,6 +987,26 @@ def cmd_serve(args):
                     data = _json.loads(body) if body else {}
                     message = data.get("message", "")
 
+                    # SS-TDE risk scan: intercept high-risk actions before executing inline
+                    from weslr.security import TrustLevel, classify_message_for_risk, escalation_response, log_audit_event
+                    risk_level = classify_message_for_risk(message)
+                    if risk_level >= TrustLevel.HIGH_RISK:
+                        log_audit_event(
+                            event_kind="clearance_denied",
+                            actor_id="anonymous",
+                            session_id="unknown",
+                            action_requested=message[:100],
+                            trust_level_required=risk_level,
+                            verification_method="none",
+                            outcome="denied",
+                            operator_alert=(risk_level >= TrustLevel.CRITICAL),
+                        )
+                        self.send_response(403)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps(escalation_response(risk_level)).encode("utf-8"))
+                        return
+
                     # Thread-safe deadline guard: use shared bounded executor so threads are
                     # reused rather than created/destroyed per request.
                     acquired = _chat_semaphore.acquire(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
