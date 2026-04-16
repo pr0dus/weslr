@@ -406,6 +406,7 @@ class ExecutionGate:
         - approve: Move to APPROVED state, mark for execution
         - deny: Move to DENIED state, mark as rejected
         - defer: Move to DEFERRED state, schedule for later review
+        - counterpropose: Mark as DENIED and emit governance override signal
         
         Returns None if proposal not found.
         """
@@ -439,8 +440,23 @@ class ExecutionGate:
                 actor=actor,
                 details=details or {},
             )
+        elif action == "counterpropose":
+            # Counter-propose: operator substitutes their own version.
+            # Transition to DENIED (rejects WESLR's version) and emit override signal.
+            # Full counter-proposal submission (new proposal text) is a future surface enhancement.
+            proposal.transition_state(
+                ProposalState.DENIED.value,
+                actor=actor,
+                details=details or {},
+            )
+            # Emit governance override signal (fail-open)
+            try:
+                from weslr.drift_emitter import emit_counterproposed_signal
+                emit_counterproposed_signal(proposal_id=str(proposal.proposal_id), human=str(actor))
+            except Exception:
+                pass
         else:
-            raise ValueError(f"Unknown action: {action}. Use: approve, deny, defer")
+            raise ValueError(f"Unknown action: {action}. Use: approve, deny, defer, counterpropose")
         
         self._save_proposals()
         return proposal
