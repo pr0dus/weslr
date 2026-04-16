@@ -1395,3 +1395,207 @@ def get_reflection_status_summary() -> dict:
         "dismissed": len([r for r in _REFLECTIONS if r.status == ReflectionStatus.DISMISSED]),
         "total_signals": len(_DRIFT_SIGNALS),
     }
+
+
+# =============================================================================
+# UNIFIED SELF-MODEL QUERY LAYER — canonical composed self-summary
+# =============================================================================
+# One coherent read-only query surface composing WESLR's identity from
+# existing sources. This is the canonical self-model for internal reference
+# and operator dialogue.
+#
+# Composition sources:
+# - bootstrap identity / trust posture   → bootstrap.py
+# - governance health                     → get_institutional_health_summary()
+# - active reflections / concerns         → get_pending_reflections()
+# - continuity posture                    → continuity.py / unified_continuity.py
+# - institutional posture                 → institution registry
+#
+# Rules:
+# - read-only, no writes, no side effects
+# - composed summary language, not raw module dumps
+# - operator-facing: no internal-only trace details
+# - graceful degradation: each source independently skipped on failure
+# =============================================================================
+
+
+
+def get_self_summary() -> dict:
+    """Return one coherent composed self-model summary for WESLR.
+
+    This is the canonical query surface for WESLR's self-understanding.
+    It composes from all existing sources without creating a new database.
+
+    Returns:
+        A dict with keys:
+        - generated_at: Unix timestamp
+        - identity: dict (name, version, description)
+        - trust_posture: dict (bootstrap state, trust level, trusted device)
+        - health_posture: dict (subsystem counts, critical risks, governance quality)
+        - continuity_posture: dict (continuity state summary)
+        - institutional_posture: dict (institution count, governor count, role counts)
+        - active_concerns: list (pending reflection concerns)
+        - strengths: list (things working reliably)
+        - unresolved_weaknesses: list (known degraded areas)
+    """
+    now = _time.time()
+    return {
+        "generated_at": now,
+        "identity": _get_identity(),
+        "trust_posture": _get_trust_posture(),
+        "health_posture": _get_health_posture(),
+        "continuity_posture": _get_continuity_posture(),
+        "institutional_posture": _get_institutional_posture(),
+        "active_concerns": _get_active_concerns(),
+        "strengths": _get_strengths(),
+        "unresolved_weaknesses": _get_unresolved_weaknesses(),
+    }
+
+
+def _get_identity() -> dict:
+    return {
+        "name": "WESLR",
+        "version": "v1",
+        "description": "Entity intelligence platform with governed self-assessment and institutional continuity",
+        "canonical_since": "2026-04-16",
+    }
+
+
+def _get_trust_posture() -> dict:
+    try:
+        from weslr.bootstrap import (
+            is_user_bootstrap_verified,
+            _BOOTSTRAP_RECORDS,
+            _BOOTSTRAP_BY_TIMELINE,
+        )
+        verified_count = len(_BOOTSTRAP_BY_TIMELINE)
+        pending_count = len([r for r in _BOOTSTRAP_RECORDS.values() if r.get("status") == "PENDING"])
+        return {
+            "bootstrap_verified_timelines": verified_count,
+            "pending_bootstraps": pending_count,
+            "root_trust": "bootstrap_completed",
+            "status": "operational" if verified_count > 0 else "initializing",
+        }
+    except Exception:
+        return {"status": "unknown", "error": "bootstrap module unavailable"}
+
+
+def _get_health_posture() -> dict:
+    try:
+        health = get_institutional_health_summary()
+        sub = health.get("subsystem_health", {})
+        gov = health.get("governance_quality", {})
+        obs = health.get("observability_freshness", {})
+        return {
+            "subsystem_count": sub.get("subsystem_count", 0),
+            "critical_risks": sub.get("critical_risk_count", 0),
+            "high_risks": sub.get("high_risk_count", 0),
+            "governance_decisions_approved": gov.get("decisions_by_type", {}).get("approved", 0),
+            "governance_decisions_rejected": gov.get("decisions_by_type", {}).get("rejected", 0),
+            "pending_proposals": gov.get("pending_proposal_count", 0),
+            "capsule_operational": bool(obs.get("capsule_status", {})),
+            "routing_count": len(obs.get("routing_summary", {}).get("routings", {})),
+        }
+    except Exception:
+        return {"status": "unknown", "error": "health module unavailable"}
+
+
+def _get_continuity_posture() -> dict:
+    try:
+        from weslr.continuity import get_continuity_status
+        return get_continuity_status()
+    except Exception:
+        try:
+            from weslr.unified_continuity import get_continuity_status
+            return get_continuity_status()
+        except Exception:
+            return {"status": "unknown", "error": "continuity module unavailable"}
+
+
+def _get_institutional_posture() -> dict:
+    try:
+        institutions = list_institutions()
+        total_governors = 0
+        total_roles = 0
+        total_vacant = 0
+        for inst in institutions:
+            total_governors += len(inst.get("governors", []))
+            role_ids = inst.get("role_timeline_ids", [])
+            total_roles += len(role_ids)
+            for rid in role_ids:
+                rt = get_role_timeline(rid)
+                if rt and rt.get("status") == RoleStatus.VACANT:
+                    total_vacant += 1
+        return {
+            "institution_count": len(institutions),
+            "total_governors": total_governors,
+            "total_roles": total_roles,
+            "vacant_roles": total_vacant,
+            "status": "operational" if institutions else "no_institution",
+        }
+    except Exception:
+        return {"status": "unknown", "error": "institution module unavailable"}
+
+
+def _get_active_concerns() -> list[dict]:
+    try:
+        pending = get_pending_reflections()
+        return [
+            {
+                "concern": r.get("concern", ""),
+                "confidence": r.get("confidence", ""),
+                "description": r.get("description", ""),
+            }
+            for r in pending
+        ]
+    except Exception:
+        return []
+
+
+def _get_strengths() -> list[str]:
+    strengths = []
+    try:
+        health = get_institutional_health_summary()
+        sub = health.get("subsystem_health", {})
+        if sub.get("critical_risk_count", 0) == 0 and sub.get("high_risk_count", 0) == 0:
+            strengths.append("no critical or high-severity architectural risks")
+        obs = health.get("observability_freshness", {})
+        if obs.get("capsule_status", {}):
+            strengths.append("capsule observability operational")
+        boot = _get_trust_posture()
+        if boot.get("bootstrap_verified_timelines", 0) > 0:
+            strengths.append("bootstrap trust root established")
+        inst = _get_institutional_posture()
+        if inst.get("institution_count", 0) > 0:
+            strengths.append("institutional governance active")
+        drift = get_reflection_status_summary()
+        if drift.get("total_signals", 0) > 0:
+            strengths.append("reflective drift monitoring active")
+    except Exception:
+        pass
+    if not strengths:
+        strengths.append("core systems nominal")
+    return strengths
+
+
+def _get_unresolved_weaknesses() -> list[str]:
+    weaknesses = []
+    try:
+        health = get_institutional_health_summary()
+        sub = health.get("subsystem_health", {})
+        if sub.get("critical_risk_count", 0) > 0:
+            weaknesses.append(f"{sub['critical_risk_count']} critical risk(s) require attention")
+        if sub.get("high_risk_count", 0) > 0:
+            weaknesses.append(f"{sub['high_risk_count']} high-severity risk(s) require attention")
+        inst = _get_institutional_posture()
+        if inst.get("vacant_roles", 0) > 0:
+            weaknesses.append(f"{inst['vacant_roles']} role(s) are currently vacant")
+        boot = _get_trust_posture()
+        if boot.get("pending_bootstraps", 0) > 0:
+            weaknesses.append(f"{boot['pending_bootstraps']} bootstrap(s) pending completion")
+        drift = get_reflection_status_summary()
+        if drift.get("cooldown", 0) > 0:
+            weaknesses.append("one or more drift concerns are in cooldown — monitor for re-surfacing")
+    except Exception:
+        pass
+    return weaknesses
