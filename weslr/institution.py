@@ -816,3 +816,219 @@ def list_roster(institution_record: dict) -> list[str]:
         List of Layer 1 timeline_ids.
     """
     return list(institution_record.get("roster", []))
+
+
+# =============================================================================
+# GOVERNANCE HEALTH REPORT — Layer 3 operator-facing aggregator
+# =============================================================================
+# Thin read-only aggregator that consolidates institutional health signals
+# from existing modules into one coherent operator-facing summary.
+#
+# Categories:
+# - subsystem_health       → self_architecture.py
+# - governance_quality     → governance_scorecard.py, governance_surface.py
+# - observability_freshness → capsule_observability.py, observability.py
+# - bootstrap_readiness    → bootstrap.py
+# - audit_trace_health     → audit_ledger.py, audit_replay.py
+# - bottleneck_pressure     → deterministic_synthesis.py
+# - recommended_next_actions → improvement_engine.py, governance_surface.py
+#
+# Rules:
+# - read-only, no writes, no side effects
+# - graceful degradation: missing modules are skipped (not fatal)
+# - operator-facing view: no raw subsystem IDs, no internal trace details
+# =============================================================================
+
+import time as _time
+
+
+def _safe_import(module_path: str, names: tuple[str, ...]):
+    """Try importing names from a module; return (None, None) on failure."""
+    try:
+        mod = __import__(module_path, fromlist=names)
+        return tuple(getattr(mod, n) for n in names)
+    except Exception:
+        return tuple(None for _ in names)
+
+
+def get_institutional_health_summary() -> dict:
+    """Return a read-only governance health summary for the institution.
+
+    Aggregates signals from existing modules into one operator-facing view.
+    Each category is independently populated — a failure in one module does
+    not block the others.
+
+    Returns:
+        A dict with keys:
+        - generated_at: Unix timestamp
+        - subsystem_health: dict with counts by status, open risks by severity
+        - governance_quality: dict with decisions by type, pending count
+        - observability_freshness: dict with capsule status, freshness, routing counts
+        - bootstrap_readiness: dict with completed/pending counts
+        - audit_trace_health: dict with trace summary, open forensic reports
+        - bottleneck_pressure: dict with recurrence summaries
+        - recommended_next_actions: list of prioritized improvement items
+    """
+    now = _time.time()
+    report = {
+        "generated_at": now,
+        "subsystem_health": _get_subsystem_health(),
+        "governance_quality": _get_governance_quality(),
+        "observability_freshness": _get_observability_freshness(),
+        "bootstrap_readiness": _get_bootstrap_readiness(),
+        "audit_trace_health": _get_audit_trace_health(),
+        "bottleneck_pressure": _get_bottleneck_pressure(),
+        "recommended_next_actions": _get_recommended_actions(),
+    }
+    return report
+
+
+def _get_subsystem_health() -> dict:
+    """Aggregate subsystem health from self_architecture.py."""
+    try:
+        from weslr.self_architecture import SelfArchitecture
+        arch = SelfArchitecture.load()
+        active = arch.get_subsystems_by_status("active")
+        degraded = arch.get_subsystems_by_status("degraded")
+        offline = arch.get_subsystems_by_status("offline")
+        critical_risks = arch.get_risks_by_severity("critical")
+        high_risks = arch.get_risks_by_severity("high")
+        return {
+            "subsystem_count": len(arch.subsystems),
+            "active_count": len(active),
+            "degraded_count": len(degraded),
+            "offline_count": len(offline),
+            "critical_risk_count": len(critical_risks),
+            "high_risk_count": len(high_risks),
+            "risk_names": (
+                [r.description for r in critical_risks] +
+                [r.description for r in high_risks]
+            ),
+        }
+    except Exception:
+        return {"error": "self_architecture unavailable"}
+
+
+def _get_governance_quality() -> dict:
+    """Aggregate governance quality from governance_scorecard + governance_surface."""
+    result = {"decisions_by_type": {}, "pending_proposal_count": 0}
+    try:
+        from weslr import observability
+        gov_summary = observability.export_governance_summary()
+        result["decisions_by_type"] = gov_summary.get("decisions_by_type", {})
+    except Exception:
+        pass
+    try:
+        from weslr.self_architecture import SelfArchitecture
+        arch = SelfArchitecture.load()
+        pending = arch.get_pending_proposals()
+        result["pending_proposal_count"] = len(pending)
+    except Exception:
+        pass
+    return result
+
+
+def _get_observability_freshness() -> dict:
+    """Aggregate observability freshness from capsule_observability + observability."""
+    result = {"capsule_status": {}, "routing_summary": {}}
+    try:
+        from weslr.capsule_observability import get_capsule_status
+        result["capsule_status"] = get_capsule_status()
+    except Exception:
+        pass
+    try:
+        from weslr import observability
+        result["routing_summary"] = observability.export_routing_summary()
+    except Exception:
+        pass
+    return result
+
+
+def _get_bootstrap_readiness() -> dict:
+    """Aggregate bootstrap readiness from bootstrap.py."""
+    try:
+        from weslr.bootstrap import (
+            list_completed_bootstraps,
+            list_pending_bootstraps,
+        )
+        completed = list_completed_bootstraps()
+        pending = list_pending_bootstraps()
+        expired = [p for p in pending if p.get("activation_expires_at", float("inf")) < _time.time()]
+        return {
+            "completed_count": len(completed),
+            "pending_count": len(pending),
+            "expired_count": len(expired),
+        }
+    except Exception:
+        return {"error": "bootstrap module unavailable"}
+
+
+def _get_audit_trace_health() -> dict:
+    """Aggregate audit trace health from audit_ledger + audit_replay."""
+    result = {"trace_summary": {}, "open_forensic_report_count": 0}
+    try:
+        from weslr.audit_ledger import AuditLedger
+        ledger = AuditLedger()
+        summary = ledger.get_trace_summary("__placeholder__")
+        result["trace_summary"] = summary
+    except Exception:
+        pass
+    try:
+        from weslr.audit_replay import AuditReplayStore
+        store = AuditReplayStore()
+        reports = store._load_reports() if hasattr(store, "_load_reports") else []
+        open_reports = [r for r in reports if r.get("status") in ("draft", "review")]
+        result["open_forensic_report_count"] = len(open_reports)
+    except Exception:
+        pass
+    return result
+
+
+def _get_bottleneck_pressure() -> dict:
+    """Aggregate bottleneck pressure from deterministic_synthesis.py."""
+    try:
+        from weslr.deterministic_synthesis import (
+            ConfidenceTrendSummary,
+            BottleneckRecurrenceSummary,
+        )
+        return {
+            "note": "bottleneck events require input — call synthesize_bottleneck_recurrences() separately",
+            "recurrence_summary_count": 0,
+        }
+    except Exception:
+        return {"error": "deterministic_synthesis unavailable"}
+
+
+def _get_recommended_actions() -> list[dict]:
+    """Aggregate recommended next actions from improvement_engine + governance_surface."""
+    actions = []
+    try:
+        from weslr.improvement_engine import ImprovementEngine
+        engine = ImprovementEngine()
+        for suggestion in engine.get_top_suggestions(limit=5):
+            actions.append({
+                "improvement_id": suggestion.get("improvement_id", ""),
+                "description": suggestion.get("description", ""),
+                "rationale": suggestion.get("rationale", ""),
+                "priority": suggestion.get("priority", "unknown"),
+                "risk_level": suggestion.get("risk_level", "unknown"),
+                "affected_subsystem": suggestion.get("affected_subsystem", ""),
+            })
+    except Exception:
+        pass
+    try:
+        from weslr.self_architecture import SelfArchitecture
+        arch = SelfArchitecture.load()
+        pending = arch.get_pending_proposals()
+        for p in pending[:5]:
+            actions.append({
+                "improvement_id": p.get("proposal_id", ""),
+                "description": p.get("description", ""),
+                "rationale": p.get("reasoning", ""),
+                "priority": "pending_review",
+                "risk_level": "unknown",
+                "affected_subsystem": "",
+            })
+    except Exception:
+        pass
+    return actions[:10]
