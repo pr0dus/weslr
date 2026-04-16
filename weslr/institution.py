@@ -420,15 +420,395 @@ def list_vacant_roles(institution_id: str | None = None) -> list[dict]:
 
 
 # =============================================================================
-# PLACEHOLDER — Layer 3 admin check (to be implemented)
+# LAYER 3 — INSTITUTION REGISTRY
 # =============================================================================
-# is_institution_admin requires Layer 3 institution registry to be implemented.
-# Until then, this always returns False (deny-by-default).
+# Layer 3 is the institution timeline layer. The institution is the top-level
+# container for all role timelines and roster members. It provides institutional
+# identity, governor bindings, and cross-role governance metadata.
+#
+# Governance rules (Layer 3):
+# - institution_id is the top-level identifier
+# - governors are Layer 1 timeline_ids with administrative authority over the institution
+# - roster members are Layer 1 timeline_ids affiliated with the institution
+# - role timelines belong to the institution (Layer 2 ownership)
+# - deny-by-default: only governors can perform institutional administrative actions
+#
+# NOT YET implemented:
+# - delegated access workflows (Layer 3 extended)
+# - vacancy replacement workflow orchestration
+# - institutional policy storage and enforcement
+# - handover synthesis
+# =============================================================================
+
+
+# =============================================================================
+# INSTITUTION STATUS
+# =============================================================================
+
+class InstitutionStatus:
+    ACTIVE = "active"      # Institution is operating normally
+    INACTIVE = "inactive" # Institution is dormant but preserved
+    ARCHIVED = "archived" # Institution is archived (no new roles/roster changes)
+
+
+# =============================================================================
+# INSTITUTION REGISTRY SCHEMA FACTORY
+# =============================================================================
+
+def new_institution(
+    institution_id: str,
+    institution_name: str,
+    institution_metadata: dict | None = None,
+    founding_governor_id: str | None = None,
+) -> dict:
+    """Create a new Layer 3 Institution Registry record.
+
+    This is the top-level record for the institution. All role timelines (Layer 2)
+    and roster members belong to an institution. The institution is permanent —
+    it survives role vacancies and roster changes.
+
+    Args:
+        institution_id: Unique identifier for this institution
+        institution_name: Human-readable institution name
+        institution_metadata: Arbitrary key-value metadata dict (optional)
+        founding_governor_id: Layer 1 timeline_id of the founding governor (optional)
+
+    Returns:
+        An institution registry record dict.
+    """
+    now = time.time()
+    record = {
+        # Core identity
+        "institution_id": institution_id,
+        "institution_name": institution_name,
+        "institution_metadata": dict(institution_metadata or {}),
+        # Lifecycle
+        "status": InstitutionStatus.ACTIVE,
+        "created_at": now,
+        "archived_at": None,
+        # Governance — governors are Layer 1 timeline_ids with admin authority
+        "governors": [],  # list of Layer 1 timeline_ids
+        "governor_history": [],  # list of {timeline_id, added_at, removed_at, reason}
+        # Cross-layer references
+        "role_timeline_ids": [],  # list of role_ids belonging to this institution
+        "roster": [],  # list of Layer 1 timeline_ids affiliated with this institution
+        # Audit metadata
+        "last_updated_at": now,
+        "last_governor_change_at": None,
+    }
+
+    # Automatically bind founding governor if provided
+    if founding_governor_id:
+        record = bind_governor(record, founding_governor_id, reason="founding")
+    else:
+        # Store even without a founding governor so is_institution_admin can resolve
+        store_institution(record)
+
+    return record
+
+
+# =============================================================================
+# INSTITUTION LIFECYCLE HELPERS
+# =============================================================================
+
+def get_institution_status(institution_record: dict) -> dict:
+    """Return a human-readable status summary for an institution.
+
+    Args:
+        institution_record: An institution registry record dict
+
+    Returns:
+        A status dict with keys: institution_id, institution_name, status,
+        governor_count, role_count, roster_size, is_active.
+    """
+    record = institution_record
+    return {
+        "institution_id": record.get("institution_id", ""),
+        "institution_name": record.get("institution_name", ""),
+        "status": record.get("status", InstitutionStatus.INACTIVE),
+        "is_active": record.get("status") == InstitutionStatus.ACTIVE,
+        "governor_count": len(record.get("governors", [])),
+        "role_timeline_count": len(record.get("role_timeline_ids", [])),
+        "roster_size": len(record.get("roster", [])),
+        "institution_metadata": record.get("institution_metadata", {}),
+    }
+
+
+def archive_institution(institution_record: dict) -> dict:
+    """Archive an institution — mark it as no longer active.
+
+    Args:
+        institution_record: The institution registry record to archive
+
+    Returns:
+        The archived institution record.
+    """
+    record = dict(institution_record)
+    now = time.time()
+    record["status"] = InstitutionStatus.ARCHIVED
+    record["archived_at"] = now
+    record["last_updated_at"] = now
+    return record
+
+
+# =============================================================================
+# GOVERNOR BINDINGS
+# =============================================================================
+
+def bind_governor(
+    institution_record: dict,
+    governor_timeline_id: str,
+    bound_by: str | None = None,
+    reason: str = "added",
+) -> dict:
+    """Bind a Layer 1 human timeline as a governor of the institution.
+
+    Governors have administrative authority over the institution and all its
+    role timelines. Binding a governor appends them to the governors list
+    and records the action in governor history. This function auto-stores
+    the institution record so that is_institution_admin can immediately resolve
+    the governor check.
+
+    Args:
+        institution_record: The institution registry record
+        governor_timeline_id: Layer 1 timeline_id to grant governor authority
+        bound_by: Layer 1 timeline_id of who authorized this binding (optional)
+        reason: Why the governor is being added (e.g. "founding", "promoted", "delegated")
+
+    Returns:
+        The updated institution record with the new governor bound.
+    """
+    record = dict(institution_record)
+    now = time.time()
+
+    existing = record.get("governors", [])
+    if governor_timeline_id not in existing:
+        existing = existing + [governor_timeline_id]
+        record["governors"] = existing
+        record["last_governor_change_at"] = now
+        record["last_updated_at"] = now
+
+        history_entry = {
+            "timeline_id": governor_timeline_id,
+            "added_at": now,
+            "removed_at": None,
+            "reason": reason,
+            "bound_by": bound_by,
+        }
+        record["governor_history"] = record.get("governor_history", []) + [history_entry]
+
+    # Auto-store so is_institution_admin can immediately resolve this governor
+    store_institution(record)
+    return record
+
+
+def unbind_governor(
+    institution_record: dict,
+    governor_timeline_id: str,
+    unbound_by: str | None = None,
+    reason: str = "removed",
+) -> dict:
+    """Unbind a Layer 1 human timeline from governor authority.
+
+    Removes the timeline from the governors list and closes the history entry.
+    This function auto-stores the updated record so is_institution_admin
+    immediately reflects the removal.
+
+    Args:
+        institution_record: The institution registry record
+        governor_timeline_id: Layer 1 timeline_id to remove from governors
+        unbound_by: Layer 1 timeline_id of who authorized this removal (optional)
+        reason: Why the governor is being removed (e.g. "resigned", "dismissed")
+
+    Returns:
+        The updated institution record with the governor unbound.
+    """
+    record = dict(institution_record)
+    now = time.time()
+
+    existing = record.get("governors", [])
+    if governor_timeline_id in existing:
+        record["governors"] = [g for g in existing if g != governor_timeline_id]
+        record["last_governor_change_at"] = now
+        record["last_updated_at"] = now
+
+        # Close the open history entry for this governor
+        updated_history = []
+        for entry in record.get("governor_history", []):
+            if entry.get("timeline_id") == governor_timeline_id and entry.get("removed_at") is None:
+                closed = dict(entry)
+                closed["removed_at"] = now
+                closed["reason"] = reason
+                closed["unbound_by"] = unbound_by
+                updated_history.append(closed)
+            else:
+                updated_history.append(entry)
+        record["governor_history"] = updated_history
+
+    # Auto-store so is_institution_admin immediately reflects the removal
+    store_institution(record)
+    return record
+
+
+def list_governors(institution_record: dict) -> list[dict]:
+    """Return the list of currently active governors for the institution.
+
+    Args:
+        institution_record: An institution registry record dict
+
+    Returns:
+        List of governor entry dicts (those with removed_at == None).
+    """
+    return [
+        e for e in institution_record.get("governor_history", [])
+        if e.get("removed_at") is None
+    ]
+
+
+def is_governor(institution_record: dict, timeline_id: str) -> bool:
+    """Return True if the given Layer 1 timeline is an active governor.
+
+    Args:
+        institution_record: An institution registry record dict
+        timeline_id: Layer 1 timeline_id to check
+
+    Returns:
+        True if the timeline is a current governor, False otherwise.
+    """
+    return timeline_id in institution_record.get("governors", [])
+
+
+# =============================================================================
+# GOVERNOR-GATED ADMIN CHECK (replaces stub in Layer 2)
+# =============================================================================
 
 def is_institution_admin(timeline_id: str, institution_id: str) -> bool:
     """Return True if the given Layer 1 timeline is a governor of the institution.
 
-    This is a Layer 3 function that requires the institution registry.
-    Until Layer 3 is implemented, returns False — deny-by-default.
+    This function requires Layer 3 institution registry. If the registry is
+    not loaded, returns False (deny-by-default).
+
+    Args:
+        timeline_id: Layer 1 timeline_id to check
+        institution_id: Institution to check against
+
+    Returns:
+        True if the timeline is an active governor of the institution.
     """
-    return False
+    inst = _INSTITUTIONS.get(institution_id)
+    if inst is None:
+        return False
+    return is_governor(inst, timeline_id)
+
+
+# =============================================================================
+# IN-PROCESS INSTITUTION STORE (stub — replace with DB in production)
+# =============================================================================
+_INSTITUTIONS: dict[str, dict] = {}  # institution_id -> institution record
+
+
+def store_institution(institution_record: dict) -> None:
+    """Store an institution registry record (in-process)."""
+    inst_id = institution_record.get("institution_id")
+    _INSTITUTIONS[inst_id] = institution_record
+
+
+def get_institution(institution_id: str) -> dict | None:
+    """Retrieve an institution registry record by institution_id (in-process)."""
+    return _INSTITUTIONS.get(institution_id)
+
+
+def list_institutions(status: str | None = None) -> list[dict]:
+    """List all institutions, optionally filtered by status.
+
+    Args:
+        status: Optional status filter (InstitutionStatus enum value)
+
+    Returns:
+        List of institution records matching the filter.
+    """
+    if status is None:
+        return list(_INSTITUTIONS.values())
+    return [i for i in _INSTITUTIONS.values() if i.get("status") == status]
+
+
+# =============================================================================
+# CROSS-LAYER LINKAGE HELPERS
+# =============================================================================
+
+def link_role_to_institution(institution_record: dict, role_id: str) -> dict:
+    """Link a Layer 2 role timeline to this institution.
+
+    Args:
+        institution_record: The institution registry record
+        role_id: The role_id to link
+
+    Returns:
+        The updated institution record with the role_id added.
+    """
+    record = dict(institution_record)
+    now = time.time()
+    role_ids = record.get("role_timeline_ids", [])
+    if role_id not in role_ids:
+        record["role_timeline_ids"] = role_ids + [role_id]
+        record["last_updated_at"] = now
+    return record
+
+
+def add_roster_member(
+    institution_record: dict,
+    timeline_id: str,
+    added_by: str | None = None,
+) -> dict:
+    """Add a Layer 1 timeline to the institution's roster.
+
+    Roster members are humans affiliated with the institution but not necessarily
+    in an active role. Roster membership is informational.
+
+    Args:
+        institution_record: The institution registry record
+        timeline_id: Layer 1 timeline_id to add to the roster
+        added_by: Layer 1 timeline_id of who added this member (optional)
+
+    Returns:
+        The updated institution record with the roster member added.
+    """
+    record = dict(institution_record)
+    now = time.time()
+    roster = record.get("roster", [])
+    if timeline_id not in roster:
+        record["roster"] = roster + [timeline_id]
+        record["last_updated_at"] = now
+    return record
+
+
+def remove_roster_member(
+    institution_record: dict,
+    timeline_id: str,
+) -> dict:
+    """Remove a Layer 1 timeline from the institution's roster.
+
+    Args:
+        institution_record: The institution registry record
+        timeline_id: Layer 1 timeline_id to remove from the roster
+
+    Returns:
+        The updated institution record with the roster member removed.
+    """
+    record = dict(institution_record)
+    now = time.time()
+    record["roster"] = [m for m in record.get("roster", []) if m != timeline_id]
+    record["last_updated_at"] = now
+    return record
+
+
+def list_roster(institution_record: dict) -> list[str]:
+    """Return the list of roster member timeline_ids for the institution.
+
+    Args:
+        institution_record: An institution registry record dict
+
+    Returns:
+        List of Layer 1 timeline_ids.
+    """
+    return list(institution_record.get("roster", []))
