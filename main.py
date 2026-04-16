@@ -1027,6 +1027,77 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            elif self.path == "/api/initialize":
+                # Contract-gated initialization marker creation.
+                # Idempotent: if already initialized, returns success without error.
+                content_length = int(self.headers.get("Content-Length", 0))
+                _ = self.rfile.read(content_length).decode("utf-8") if content_length else ""
+                try:
+                    reasons = []
+                    # 1. operator profile exists with name
+                    try:
+                        from weslr.communicator_config import load_operator_profile
+                        profile = load_operator_profile()
+                        if not profile.get("name"):
+                            reasons.append("operator_profile_name_missing")
+                    except Exception:
+                        reasons.append("operator_profile_load_failed")
+                    # 2. lifecycle_state != bootstrap_required
+                    try:
+                        from weslr.communicator_config import derive_lifecycle_state
+                        lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                        if lc.get("state") == "bootstrap_required":
+                            reasons.append("lifecycle_not_onboarded")
+                    except Exception:
+                        reasons.append("lifecycle_derivation_failed")
+                    # 3. get_weslr_state_summary() returns without fatal error
+                    try:
+                        from weslr.governance_health import get_weslr_state_summary
+                        get_weslr_state_summary()
+                    except Exception:
+                        reasons.append("state_summary_failed")
+                    # 4. at least one bootstrap timeline_id exists (persisted in communicator_self.json)
+                    try:
+                        from sim import load_communicator_self
+                        cs = load_communicator_self()
+                        tl = cs.get("bootstrap", {}).get("timeline_id")
+                        if not tl:
+                            reasons.append("no_bootstrap_timeline")
+                    except Exception:
+                        reasons.append("bootstrap_check_failed")
+                    marker = base_dir / ".weslr_initialized"
+                    already = marker.exists()
+                    if reasons:
+                        self.send_response(422)
+                        self.send_header("Content-Type", "application/json")
+                        payload = json.dumps({
+                            "initialized": already,
+                            "created_now": False,
+                            "blocked": True,
+                            "reasons": reasons,
+                        }).encode("utf-8")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                    else:
+                        marker.write_text(f"initialized_at={__import__('time').time()}\n")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        payload = json.dumps({
+                            "initialized": True,
+                            "created_now": not already,
+                            "blocked": False,
+                            "reasons": [],
+                        }).encode("utf-8")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""

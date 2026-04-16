@@ -177,6 +177,15 @@ def complete_bootstrap(
         emit_bootstrap_signal("PENDING", "COMPLETED", str(record.get("user_id", "")))
     except Exception:
         pass
+    # Persist timeline_id to communicator_self.json so HTTP-layer checks can read it
+    try:
+        from sim import load_communicator_self, save_communicator_self
+        cs = load_communicator_self()
+        cs.setdefault("bootstrap", {})["timeline_id"] = record["timeline_id"]
+        cs.setdefault("bootstrap", {})["status"] = "COMPLETED"
+        save_communicator_self(cs)
+    except Exception:
+        pass  # Non-blocking — don't fail bootstrap if persistence fails
     return record
 
 
