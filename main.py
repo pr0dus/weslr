@@ -1222,6 +1222,24 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Machine-readable unified state summary
+            if self.path == "/api/state":
+                try:
+                    from weslr.governance_health import get_weslr_state_summary
+                    summary = get_weslr_state_summary()
+                    payload = json.dumps(summary, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "state_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
