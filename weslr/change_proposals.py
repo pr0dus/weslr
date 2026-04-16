@@ -427,6 +427,12 @@ class ExecutionGate:
                 actor=actor,
                 details=details or {},
             )
+            # Emit governance override signal (fail-open)
+            try:
+                from weslr.drift_emitter import emit_override_signal
+                emit_override_signal("denied", proposal_id=str(proposal.proposal_id), human=str(actor))
+            except Exception:
+                pass
         elif action == "defer":
             proposal.transition_state(
                 ProposalState.DEFERRED.value,

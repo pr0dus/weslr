@@ -171,6 +171,12 @@ def complete_bootstrap(
     record["bootstrap_verified_at"] = now
     record["bootstrap_completed_at"] = now
     record["activation_token"] = None  # invalidate the one-time token
+    # Emit bootstrap transition signal (fail-open)
+    try:
+        from weslr.drift_emitter import emit_bootstrap_signal
+        emit_bootstrap_signal("PENDING", "COMPLETED", str(record.get("user_id", "")))
+    except Exception:
+        pass
     return record
 
 
@@ -188,6 +194,12 @@ def expire_pending_bootstrap(bootstrap_record: dict, reason: str = "expired") ->
     record["status"] = "EXPIRED"
     record["revoked_at"] = time.time()
     record["revoked_reason"] = reason
+    # Emit bootstrap transition signal (fail-open)
+    try:
+        from weslr.drift_emitter import emit_bootstrap_signal
+        emit_bootstrap_signal("PENDING", "EXPIRED", str(record.get("user_id", "")))
+    except Exception:
+        pass
     return record
 
 
@@ -336,6 +348,12 @@ def clear_expired_pending_records() -> int:
             record["status"] = "EXPIRED"
             record["revoked_at"] = now
             record["revoked_reason"] = "activation_link_expired"
+            # Emit bootstrap transition signal (fail-open)
+            try:
+                from weslr.drift_emitter import emit_bootstrap_signal
+                emit_bootstrap_signal("PENDING", "EXPIRED", str(user_id))
+            except Exception:
+                pass
             purged += 1
     return purged
 

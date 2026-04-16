@@ -135,6 +135,23 @@ def weslr_speak(message: str) -> str:
         return f"I'm Weslr. (Error: {e})"
 
 
+def weslr_speak_with_timing(message: str):
+    """Get Weslr's response with latency timing for drift signal emission.
+
+    Returns (response_text, duration_seconds, ok).
+    """
+    import time
+    start = time.monotonic()
+    ok = True
+    try:
+        response = run_weslr_cmd(["speak", "--message", message])
+    except Exception:
+        ok = False
+        response = f"I'm Weslr. (Error: {e})" if "e" in dir() else "I'm Weslr."
+    duration = time.monotonic() - start
+    return response, duration, ok
+
+
 def load_implementation_state() -> dict:
     if not IMPLEMENTATION_STATE_PATH.exists():
         return {}
@@ -512,7 +529,14 @@ class Handler(BaseHTTPRequestHandler):
             
             # Default: Weslr as primary responder
             else:
-                immediate_reply = weslr_speak(message)
+                # Emit latency signal (fail-open)
+                try:
+                    from weslr.drift_emitter import emit_latency_signal
+                    response_text, duration, ok = weslr_speak_with_timing(message)
+                    immediate_reply = response_text
+                    emit_latency_signal(duration, ok)
+                except Exception:
+                    immediate_reply = weslr_speak(message)
                 try:
                     run_cmd([PYTHON, "main.py", "human-exchange", "human", message, "--response", immediate_reply])
                 except Exception:
