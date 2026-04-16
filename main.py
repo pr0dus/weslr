@@ -134,6 +134,42 @@ def emit(data):
     print(json.dumps(data, indent=2))
 
 
+def cmd_init_operator(args):
+    from weslr.communicator_config import update_operator_profile
+    profile = {
+        "phase": "onboarding",
+        "name": args.name,
+        "role": args.role or "",
+        "urgency": args.urgency or "normal",
+        "checkin_style": args.checkin_style or "daily",
+        "adaptation_level": args.adaptation_level or "propose",
+    }
+    update_operator_profile(profile)
+    print(f"Operator profile created: {args.name} ({args.role or 'no role'})")
+
+
+def cmd_init_bootstrap(args):
+    from weslr.bootstrap import new_timeline_id, register_completed_bootstrap, complete_bootstrap
+    from sim import load_communicator_self, save_communicator_self
+    user_id = args.user_id or "operator"
+    timeline_id = new_timeline_id(user_id)
+    # Write durable bootstrap truth into communicator_self.json
+    cs = load_communicator_self()
+    cs.setdefault("bootstrap", {})["timeline_id"] = timeline_id
+    cs["bootstrap"]["status"] = "COMPLETED"
+    cs["bootstrap"]["user_id"] = user_id
+    save_communicator_self(cs)
+    # Register in bootstrap store so is_verified_timeline() returns True
+    record = {
+        "user_id": user_id,
+        "status": "COMPLETED",
+        "timeline_id": timeline_id,
+        "bootstrap_completed_at": time.time(),
+    }
+    register_completed_bootstrap(record)
+    print(f"Bootstrap complete. timeline_id: {timeline_id}")
+
+
 def cmd_init(args):
     init_world(agent_count=args.agents, reset=args.reset)
     print(f"Initialized {PROJECT_NAME} with {args.agents} agents.")
@@ -1575,6 +1611,18 @@ def main():
     p.add_argument("--agents", type=int, default=DEFAULT_AGENT_COUNT)
     p.add_argument("--reset", action="store_true")
     p.set_defaults(func=cmd_init)
+
+    p = sub.add_parser("init-operator", help="create operator profile (headless onboarding)")
+    p.add_argument("--name", required=True, help="Operator display name")
+    p.add_argument("--role", help="Operator role")
+    p.add_argument("--urgency", choices=["low", "normal", "high", "critical"], help="Operational urgency")
+    p.add_argument("--checkin-style", dest="checkin_style", choices=["silent", "hourly", "daily", "verbose"], help="Check-in cadence")
+    p.add_argument("--adaptation-level", dest="adaptation_level", choices=["none", "propose", "low-risk", "full"], help="Self-modification permission level")
+    p.set_defaults(func=cmd_init_operator)
+
+    p = sub.add_parser("init-bootstrap", help="complete bootstrap trust anchor (headless setup)")
+    p.add_argument("--user-id", dest="user_id", help="User identifier (default: operator)")
+    p.set_defaults(func=cmd_init_bootstrap)
 
     p = sub.add_parser("tick", help="run one world tick")
     p.add_argument("--verbose", action="store_true")
