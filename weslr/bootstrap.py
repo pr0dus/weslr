@@ -401,7 +401,8 @@ def get_bootstrap_by_timeline(timeline_id: str) -> dict | None:
     """Retrieve a bootstrap record by timeline_id.
 
     Used by SS-TDE enforcement to check if a timeline has a valid
-    bootstrap trust anchor.
+    bootstrap trust anchor. In-process store is checked first; if not found,
+    falls back to the durable communicator_self.json["bootstrap"] record.
 
     Args:
         timeline_id: The timeline identifier
@@ -409,7 +410,20 @@ def get_bootstrap_by_timeline(timeline_id: str) -> dict | None:
     Returns:
         The bootstrap record if found, otherwise None.
     """
-    return _BOOTSTRAP_BY_TIMELINE.get(timeline_id)
+    # Fast path: in-process store
+    record = _BOOTSTRAP_BY_TIMELINE.get(timeline_id)
+    if record is not None:
+        return record
+    # Durable path: read from communicator_self.json
+    try:
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        bs = cs.get("bootstrap") or {}
+        if bs.get("timeline_id") == timeline_id and bs.get("status") == "COMPLETED":
+            return bs
+    except Exception:
+        pass
+    return None
 
 
 def is_verified_timeline(timeline_id: str) -> bool:
@@ -419,13 +433,26 @@ def is_verified_timeline(timeline_id: str) -> bool:
     bootstrap anchor. Without it, the actor cannot proceed to trusted-device
     verification as if they were already trusted.
 
+    Source of truth is communicator_self.json["bootstrap"]; in-process store
+    is only an acceleration layer and does not survive restarts.
+
     Args:
         timeline_id: The timeline identifier to check
 
     Returns:
         True if the timeline has completed bootstrap; False otherwise.
     """
+    # Fast path: in-process store (survives within same process)
     record = _BOOTSTRAP_BY_TIMELINE.get(timeline_id)
-    if record is None:
-        return False
-    return record.get("status") == "COMPLETED" and record.get("timeline_id") is not None
+    if record is not None:
+        return record.get("status") == "COMPLETED" and record.get("timeline_id") is not None
+    # Durable path: read from communicator_self.json (survives restarts)
+    try:
+        from sim import load_communicator_self
+        cs = load_communicator_self()
+        bs = cs.get("bootstrap") or {}
+        if bs.get("timeline_id") == timeline_id and bs.get("status") == "COMPLETED":
+            return True
+    except Exception:
+        pass
+    return False
