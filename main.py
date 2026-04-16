@@ -969,15 +969,62 @@ def cmd_serve(args):
                         unresolved=False,
                     )
                     # Also save operator profile for Phase C communicator wiring
+                    profile_saved = False
                     try:
                         from weslr.communicator_config import update_operator_profile
                         update_operator_profile(answers)
+                        profile_saved = True
                     except Exception as profile_err:
                         pass  # Non-blocking — don't fail onboarding if profile update fails
+                    # Attempt canonical initialization (contract-gated, non-blocking for onboarding)
+                    marker = base_dir / ".weslr_initialized"
+                    already_init = marker.exists()
+                    init_blocked_reasons = []
+                    try:
+                        # 1. operator profile saved (profile_saved confirms this)
+                        if not profile_saved:
+                            init_blocked_reasons.append("operator_profile_not_saved")
+                        # 2. lifecycle_state != bootstrap_required
+                        try:
+                            from weslr.communicator_config import derive_lifecycle_state, load_operator_profile
+                            profile = load_operator_profile()
+                            lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                            if lc.get("state") == "bootstrap_required":
+                                init_blocked_reasons.append("lifecycle_not_onboarded")
+                        except Exception:
+                            init_blocked_reasons.append("lifecycle_derivation_failed")
+                        # 3. state summary works
+                        try:
+                            from weslr.governance_health import get_weslr_state_summary
+                            get_weslr_state_summary()
+                        except Exception:
+                            init_blocked_reasons.append("state_summary_failed")
+                        # 4. persisted bootstrap timeline exists
+                        try:
+                            from sim import load_communicator_self
+                            cs = load_communicator_self()
+                            if not cs.get("bootstrap", {}).get("timeline_id"):
+                                init_blocked_reasons.append("no_bootstrap_timeline")
+                        except Exception:
+                            init_blocked_reasons.append("bootstrap_check_failed")
+                        if not init_blocked_reasons:
+                            marker.write_text(f"initialized_at={__import__('time').time()}\n")
+                    except Exception:
+                        pass  # Non-blocking — don't fail onboarding if initialization fails
+                    init_result = {
+                        "initialized": marker.exists(),
+                        "created_now": marker.exists() and not already_init,
+                        "blocked": bool(init_blocked_reasons),
+                        "reasons": init_blocked_reasons,
+                    }
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
-                    self.wfile.write(_json.dumps({"ok": True, "recorded": True}).encode("utf-8"))
+                    self.wfile.write(_json.dumps({
+                        "ok": True,
+                        "recorded": True,
+                        "initialization": init_result,
+                    }).encode("utf-8"))
                 except Exception as e:
                     self.send_response(500)
                     self.send_header("Content-Type", "application/json")
