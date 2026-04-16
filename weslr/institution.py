@@ -1032,3 +1032,366 @@ def _get_recommended_actions() -> list[dict]:
     except Exception:
         pass
     return actions[:10]
+
+# =============================================================================
+# BACKGROUND REFLECTIVE DRIFT LOOP — Layer 3 governance observation
+# =============================================================================
+# Quiet background drift observation and aggregation. Accumulates evidence
+# of institutional friction, degradation, and continuity failures over time,
+# surfacing only when convergence thresholds are met or high-confidence
+# signals are detected.
+#
+# Rules:
+# - evidence-based only; no speculation
+# - no self-modification without operator approval
+# - surfacing requires convergence (2+ independent signals) or high-confidence threshold
+# - cooldown prevents repeated re-surfacing of the same concern
+# - reflections produce proposals via governance_surface, never self-authorize
+#
+# Signal types:
+# - LATENCY          — response time drift
+# - MEMORY_QUALITY   — memory retrieval failures
+# - HANDOVER_GAP     — role vacancy without timely assignment
+# - OVERRIDE         — human overrides of WESLR recommendations
+# - ESCALATION       — repeated security/escalation friction
+# - LIFECYCLE_STALE  — stagnant bootstrap or role states
+# - INSTITUTION_REC  — repeated vacancy in the same role
+# - BOTTLENECK_REC   — recurring bottleneck events
+# - SUGGESTION_REJECT — consistent low-fit suggestion assessments
+# =============================================================================
+
+import time as _time
+
+
+class DriftSignalType:
+    LATENCY = "latency"
+    MEMORY_QUALITY = "memory_quality"
+    HANDOVER_GAP = "handover_gap"
+    OVERRIDE = "governance_override"
+    ESCALATION = "escalation"
+    LIFECYCLE_STALE = "lifecycle_stale"
+    INSTITUTION_REC = "institution_recurrence"
+    BOTTLENECK_REC = "bottleneck_recurrence"
+    SUGGESTION_REJECT = "suggestion_reject"
+
+
+class ReflectionStatus:
+    PENDING = "pending"      # Meets convergence/threshold, ready to surface
+    COOLDOWN = "cooldown"    # Recently surfaced, waiting for cooldown expiry
+    SURFACED = "surfaced"    # Operator has been shown this
+    DISMISSED = "dismissed"  # Operator explicitly dismissed this concern
+
+
+class DriftSignal:
+    """A single observed drift signal from the system."""
+
+    def __init__(
+        self,
+        signal_type: str,
+        value: float,
+        context: dict | None = None,
+        severity: str = "medium",
+    ):
+        self.signal_type = signal_type
+        self.value = value
+        self.context = context or {}
+        self.severity = severity
+        self.observed_at = _time.time()
+
+    def to_dict(self) -> dict:
+        return {
+            "signal_type": self.signal_type,
+            "value": self.value,
+            "context": self.context,
+            "severity": self.severity,
+            "observed_at": self.observed_at,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "DriftSignal":
+        sig = cls(d["signal_type"], d["value"], d.get("context"), d.get("severity", "medium"))
+        sig.observed_at = d.get("observed_at", _time.time())
+        return sig
+
+
+class Reflection:
+    """A reflective observation ready for operator surfacing."""
+
+    CONVERGENCE_THRESHOLD = 2  # minimum independent signal types for convergence
+    HIGH_CONFIDENCE_SAMPLES = 5  # single-signal high-confidence sample count
+    DEFAULT_COOLDOWN_SECS = 86400  # 24 hours
+
+    def __init__(
+        self,
+        concern: str,
+        signals: list[DriftSignal],
+        confidence: str = "medium",
+        description: str = "",
+        proposal_hint: str = "",
+    ):
+        self.concern = concern
+        self.signals = signals
+        self.confidence = confidence
+        self.description = description
+        self.proposal_hint = proposal_hint
+        self.status = ReflectionStatus.PENDING
+        self.created_at = _time.time()
+        self.last_surfaced_at: float | None = None
+        self.cooldown_until: float | None = None
+        self.dismissed_reason: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "concern": self.concern,
+            "confidence": self.confidence,
+            "description": self.description,
+            "proposal_hint": self.proposal_hint,
+            "status": self.status,
+            "created_at": self.created_at,
+            "last_surfaced_at": self.last_surfaced_at,
+            "cooldown_until": self.cooldown_until,
+            "dismissed_reason": self.dismissed_reason,
+            "signal_count": len(self.signals),
+            "signal_types": list(set(s.signal_type for s in self.signals)),
+        }
+
+    def enter_cooldown(self, seconds: float | None = None) -> None:
+        self.status = ReflectionStatus.COOLDOWN
+        self.cooldown_until = _time.time() + (seconds or self.DEFAULT_COOLDOWN_SECS)
+
+    def dismiss(self, reason: str = "") -> None:
+        self.status = ReflectionStatus.DISMISSED
+        self.dismissed_reason = reason
+        self.cooldown_until = None
+
+    def mark_surfaced(self) -> None:
+        self.status = ReflectionStatus.SURFACED
+        self.last_surfaced_at = _time.time()
+
+
+# =============================================================================
+# IN-PROCESS DRIFT SIGNAL STORE
+# =============================================================================
+_DRIFT_SIGNALS: list[DriftSignal] = []
+_REFLECTIONS: list[Reflection] = []
+_DRIFT_WINDOW_SECS = 172800  # 48-hour rolling window
+_MAX_SIGNALS = 1000
+
+
+def record_drift_signal(
+    signal_type: str,
+    value: float,
+    context: dict | None = None,
+    severity: str = "medium",
+) -> None:
+    """Record a drift signal observation.
+
+    Args:
+        signal_type: One of DriftSignalType values
+        value: Numeric signal value
+        context: Arbitrary context dict
+        severity: "low", "medium", "high", "critical"
+    """
+    valid = {
+        DriftSignalType.LATENCY, DriftSignalType.MEMORY_QUALITY,
+        DriftSignalType.HANDOVER_GAP, DriftSignalType.OVERRIDE,
+        DriftSignalType.ESCALATION, DriftSignalType.LIFECYCLE_STALE,
+        DriftSignalType.INSTITUTION_REC, DriftSignalType.BOTTLENECK_REC,
+        DriftSignalType.SUGGESTION_REJECT,
+    }
+    if signal_type not in valid:
+        return
+    signal = DriftSignal(signal_type, value, context, severity)
+    _DRIFT_SIGNALS.append(signal)
+    now = _time.time()
+    cutoff = now - _DRIFT_WINDOW_SECS
+    # Evict stale signals; cap at _MAX_SIGNALS
+    kept = [s for s in _DRIFT_SIGNALS if s.observed_at > cutoff]
+    if len(kept) > _MAX_SIGNALS:
+        kept = kept[-_MAX_SIGNALS:]
+    _DRIFT_SIGNALS[:] = kept
+
+
+def _active_by_type(stype: str, window: float = _DRIFT_WINDOW_SECS) -> list[DriftSignal]:
+    now = _time.time()
+    return [s for s in _DRIFT_SIGNALS if s.signal_type == stype and (now - s.observed_at) < window]
+
+
+def _recent(window: float = _DRIFT_WINDOW_SECS) -> list[DriftSignal]:
+    now = _time.time()
+    return [s for s in _DRIFT_SIGNALS if (now - s.observed_at) < window]
+
+
+def _e_latency() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.LATENCY)
+    if len(s) < 5:
+        return None
+    vals = [x.value for x in s]
+    if vals[-1] > (sum(vals) / len(vals)) * 1.3:
+        return s[-3:]
+    return None
+
+
+def _e_memory() -> list[DriftSignal] | None:
+    r = _recent()
+    if len(r) < 20:
+        return None
+    fails = [s for s in r if s.signal_type == DriftSignalType.MEMORY_QUALITY and s.value < 0.5]
+    if len(fails) / len(r) > 0.3:
+        return fails[-3:]
+    return None
+
+
+def _e_handover() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.HANDOVER_GAP)
+    return s[-2:] if len(s) >= 2 else None
+
+
+def _e_override() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.OVERRIDE)
+    return s[-3:] if len(s) >= 3 else None
+
+
+def _e_escalation() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.ESCALATION)
+    return s[-3:] if len(s) >= 3 else None
+
+
+def _e_lifecycle() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.LIFECYCLE_STALE)
+    crit = [x for x in s if x.severity == "critical"]
+    if crit:
+        return crit
+    return s[-3:] if len(s) >= 5 else None
+
+
+def _e_institution() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.INSTITUTION_REC)
+    return s[-2:] if len(s) >= 2 else None
+
+
+def _e_bottleneck() -> list[DriftSignal] | None:
+    s = _active_by_type(DriftSignalType.BOTTLENECK_REC)
+    return s[-3:] if len(s) >= 3 else None
+
+
+def _e_suggestion() -> list[DriftSignal] | None:
+    r = _recent()
+    s = [x for x in r if x.signal_type == DriftSignalType.SUGGESTION_REJECT]
+    if len(s) >= 5:
+        rej = [x for x in s if x.value < 0.3]
+        if len(rej) / len(s) > 0.5:
+            return s[-3:]
+    return None
+
+
+_CONCERN_EVALUATORS = {
+    "latency_drift": _e_latency,
+    "memory_quality_degradation": _e_memory,
+    "handover_gap": _e_handover,
+    "governance_override_frequency": _e_override,
+    "escalation_friction": _e_escalation,
+    "lifecycle_stagnation": _e_lifecycle,
+    "institution_role_recurrence": _e_institution,
+    "bottleneck_recurrence": _e_bottleneck,
+    "suggestion_rejection_trend": _e_suggestion,
+}
+
+_CONCERN_DESCRIPTIONS = {
+    "latency_drift": "Response latency has drifted significantly over the observation window.",
+    "memory_quality_degradation": "Memory retrieval quality has degraded — recall failures are above baseline.",
+    "handover_gap": "Role handover gaps detected — vacancies are not being resolved within expected time.",
+    "governance_override_frequency": "Human override frequency is elevated — operator is frequently correcting WESLR recommendations.",
+    "escalation_friction": "Escalation friction is recurring — similar escalations are being triggered repeatedly.",
+    "lifecycle_stagnation": "Lifecycle stagnation detected — one or more states have been stale longer than expected.",
+    "institution_role_recurrence": "A role has been vacant multiple times recently — this may indicate a structural gap.",
+    "bottleneck_recurrence": "Bottleneck events are recurring — the same constraint is triggering repeatedly.",
+    "suggestion_rejection_trend": "Suggestion rejection rate is elevated — suggested capabilities are consistently not meeting fit thresholds.",
+}
+
+
+def run_drift_observation_pass() -> list[dict]:
+    """Run one drift observation pass.
+
+    Evaluates all concern types against the rolling signal window.
+    Returns reflections ready to surface (pending, not in cooldown).
+
+    Returns:
+        List of reflection dicts.
+    """
+    now = _time.time()
+    surfaced = []
+
+    for concern, evaluator in _CONCERN_EVALUATORS.items():
+        existing = [r for r in _REFLECTIONS if r.concern == concern and r.status == ReflectionStatus.COOLDOWN]
+        if existing and existing[0].cooldown_until and existing[0].cooldown_until > now:
+            continue
+        for ref in existing:
+            if ref.cooldown_until and ref.cooldown_until <= now:
+                ref.status = ReflectionStatus.PENDING
+
+        signals = evaluator()
+        if not signals:
+            continue
+
+        stypes = set(s.signal_type for s in signals)
+        conf = "high"
+        if len(signals) < Reflection.HIGH_CONFIDENCE_SAMPLES and not any(s.severity == "critical" for s in signals):
+            conf = "medium"
+        if len(stypes) >= Reflection.CONVERGENCE_THRESHOLD:
+            conf = "high"
+
+        description = _CONCERN_DESCRIPTIONS.get(concern, f"Drift concern: {concern}")
+        reflection = Reflection(concern, signals, conf, description)
+        _REFLECTIONS.append(reflection)
+        d = reflection.to_dict()
+        surfaced.append(d)
+        reflection.enter_cooldown()
+
+    return surfaced
+
+
+def get_pending_reflections() -> list[dict]:
+    """Return pending reflections not in cooldown."""
+    now = _time.time()
+    return [
+        r.to_dict() for r in _REFLECTIONS
+        if r.status == ReflectionStatus.PENDING
+        and not (r.cooldown_until and r.cooldown_until > now)
+    ]
+
+
+def acknowledge_reflection(concern: str, outcome: str = "surfaced") -> bool:
+    """Acknowledge a pending or cooldown reflection.
+
+    Args:
+        concern: Concern string
+        outcome: "surfaced" or "dismissed"
+
+    Returns:
+        True if found and updated.
+    """
+    ref = next(
+        (r for r in _REFLECTIONS
+         if r.concern == concern and r.status in (ReflectionStatus.PENDING, ReflectionStatus.COOLDOWN)),
+        None,
+    )
+    if not ref:
+        return False
+    if outcome == "dismissed":
+        ref.dismiss()
+    else:
+        ref.mark_surfaced()
+        ref.enter_cooldown()
+    return True
+
+
+def get_reflection_status_summary() -> dict:
+    """Return count summary of all reflection states."""
+    return {
+        "pending": len([r for r in _REFLECTIONS if r.status == ReflectionStatus.PENDING]),
+        "cooldown": len([r for r in _REFLECTIONS if r.status == ReflectionStatus.COOLDOWN]),
+        "surfaced": len([r for r in _REFLECTIONS if r.status == ReflectionStatus.SURFACED]),
+        "dismissed": len([r for r in _REFLECTIONS if r.status == ReflectionStatus.DISMISSED]),
+        "total_signals": len(_DRIFT_SIGNALS),
+    }
