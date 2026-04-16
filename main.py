@@ -15,6 +15,9 @@ from time import strftime, localtime
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS, CHAT_LLM_TIMEOUT_SECONDS
 
+# Server start time — used for uptime calculation in /api/health
+_SERVER_START_TIME = None
+
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
 from continuation_notes import ContinuationNoteError, append_note, latest_note, load_notes, render_note_text
@@ -1342,6 +1345,40 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Machine-readable health check — lightweight, no expensive paths
+            if self.path == "/api/health":
+                try:
+                    import os as _os
+                    marker = base_dir / ".weslr_initialized"
+                    initialized = marker.exists()
+                    uptime_s = int(time.time() - (_SERVER_START_TIME or time.time()))
+                    # Lightweight provider availability check (cheap only)
+                    provider_ok = False
+                    try:
+                        from llm_runtime import get_provider as _get_provider
+                        _get_provider()  # just check it doesn't raise
+                        provider_ok = True
+                    except Exception:
+                        provider_ok = False
+                    payload = json.dumps({
+                        "healthy": True,
+                        "version": VERSION,
+                        "uptime_s": uptime_s,
+                        "initialized": initialized,
+                        "provider_available": provider_ok,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"healthy": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # Machine-readable unified state summary
             if self.path == "/api/state":
                 try:
@@ -1440,6 +1477,8 @@ def cmd_serve(args):
     
     handler = partial(ChatHandler, directory=str(dashboard_dir))
     server = ThreadingHTTPServer((args.host, args.port), handler)
+    global _SERVER_START_TIME
+    _SERVER_START_TIME = time.time()
     lan_ip = _detect_lan_ip()
     print("Dashboard server running.")
     print(f"Open locally: http://127.0.0.1:{args.port}/")
