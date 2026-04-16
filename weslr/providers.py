@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from config import (
+    BASE_DIR,
     OLLAMA_HOST,
     OLLAMA_TIMEOUT_SECONDS,
     WESLR_LLM_MODEL,
@@ -487,13 +488,46 @@ _PROVIDER_CLASSES: dict[str, type[Provider]] = {
 
 
 def _load_provider_config() -> ProviderConfig:
-    """Derive ProviderConfig from current WESLR config."""
+    """Derive ProviderConfig from current WESLR config.
+
+    Priority:
+    1. WESLR_LLM_PROVIDER env var (set by init-provider --provider or operator)
+    2. provider_config.json (written by init-provider; survives restarts)
+    3. Defaults from config.py
+    """
+    # Env var wins if explicitly set
+    env_provider = (WESLR_LLM_PROVIDER or "").strip().lower()
+    if env_provider in _PROVIDER_CLASSES or env_provider == "fallback":
+        return ProviderConfig(
+            provider_name=env_provider,
+            model_name=WESLR_LLM_MODEL,
+            host=OLLAMA_HOST,
+            timeout_seconds=OLLAMA_TIMEOUT_SECONDS,
+            api_key=OPENAI_API_KEY or None,
+        )
+    # Fall back to persisted config (survives restarts)
+    config_path = BASE_DIR / "provider_config.json"
+    if config_path.exists():
+        try:
+            import json as _json
+            persisted = _json.loads(config_path.read_text())
+            persisted_provider = persisted.get("provider", "fallback")
+            return ProviderConfig(
+                provider_name=persisted_provider,
+                model_name=persisted.get("model") or WESLR_LLM_MODEL,
+                host=persisted.get("ollama_host") or OLLAMA_HOST,
+                timeout_seconds=OLLAMA_TIMEOUT_SECONDS,
+                api_key=None,  # Key always via env; never read from disk
+            )
+        except Exception:
+            pass
+    # Default
     return ProviderConfig(
-        provider_name=WESLR_LLM_PROVIDER or "fallback",
+        provider_name="fallback",
         model_name=WESLR_LLM_MODEL,
         host=OLLAMA_HOST,
         timeout_seconds=OLLAMA_TIMEOUT_SECONDS,
-        api_key=OPENAI_API_KEY or None,
+        api_key=None,
     )
 
 
@@ -517,7 +551,7 @@ def get_provider(provider_name: Optional[str] = None) -> Provider:
         A Provider instance (always non-None; falls back to FallbackProvider).
     """
     if provider_name is None:
-        provider_name = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
+        provider_name = _load_provider_config().provider_name
 
     # Return cached instance if available
     if provider_name in _PROVIDER_CACHE:

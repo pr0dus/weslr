@@ -190,6 +190,111 @@ def cmd_init_bootstrap(args):
         print(f"Bootstrap complete. timeline_id: {timeline_id}")
 
 
+_PROVIDER_CONFIG_PATH = None  # set after BASE_DIR is available
+
+
+def cmd_init_provider(args):
+    """Configure and validate the active LLM provider for headless deployments."""
+    import json as _json
+    import os
+    import urllib.request
+
+    global _PROVIDER_CONFIG_PATH
+    if _PROVIDER_CONFIG_PATH is None:
+        from config import BASE_DIR
+        _PROVIDER_CONFIG_PATH = BASE_DIR / "provider_config.json"
+
+    VALID_PROVIDERS = ["fallback", "ollama", "openai", "openai_compatible"]
+    provider = args.provider.lower()
+    if provider not in VALID_PROVIDERS:
+        payload = {
+            "success": False,
+            "provider": provider,
+            "error": f"Unknown provider '{provider}'. Supported: {', '.join(VALID_PROVIDERS)}",
+        }
+        if getattr(args, "json", False):
+            print(_json.dumps(payload))
+        else:
+            print(f"ERROR: {payload['error']}")
+        return
+
+    # Build config record
+    config = {
+        "provider": provider,
+        "model": args.model or "default",
+        "ollama_host": args.ollama_host or "http://127.0.0.1:11434",
+        "openai_base_url": args.openai_base_url or "https://api.openai.com/v1",
+        "openai_api_key_env": args.openai_api_key_env or "",
+        "configured_at": __import__("time").time(),
+    }
+
+    # Validate: check provider-specific reachability
+    validated = False
+    validation_detail = ""
+
+    if provider == "fallback":
+        validated = True
+        validation_detail = "Fallback is always available; no external dependency"
+
+    elif provider == "ollama":
+        host = config["ollama_host"]
+        try:
+            req = urllib.request.Request(
+                f"{host.rstrip('/')}/api/tags",
+                headers={"Content-Type": "application/json"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                validated = resp.status == 200
+                validation_detail = f"Ollama daemon reachable at {host}"
+        except Exception as e:
+            validation_detail = f"Ollama not reachable at {host}: {e}"
+
+    elif provider in ("openai", "openai_compatible"):
+        base = config["openai_base_url"]
+        key_env = config.get("openai_api_key_env") or os.getenv("OPENAI_API_KEY", "")
+        if not key_env:
+            validation_detail = "OPENAI_API_KEY not set; cannot validate"
+        else:
+            try:
+                req = urllib.request.Request(
+                    f"{base.rstrip('/')}/models",
+                    headers={"Authorization": f"Bearer {key_env}"}
+                )
+                with urllib.request.urlopen(req, timeout=5.0) as resp:
+                    validated = resp.status == 200
+                    validation_detail = f"OpenAI API reachable at {base}"
+            except Exception as e:
+                validation_detail = f"OpenAI API not reachable: {e}"
+
+    # Persist config to provider_config.json (safe JSON; no secrets written)
+    config_path = _PROVIDER_CONFIG_PATH
+    safe_config = dict(config)
+    # Never write actual key values; only env var references
+    safe_config["openai_api_key_env"] = args.openai_api_key_env or ""
+    config_path.write_text(_json.dumps(safe_config, indent=2))
+    # Set in current process env so provider abstraction picks it up
+    os.environ["WESLR_LLM_PROVIDER"] = provider
+    if args.ollama_host:
+        os.environ["OLLAMA_HOST"] = args.ollama_host
+
+    payload = {
+        "success": True,
+        "provider": provider,
+        "configured": True,
+        "validated": validated,
+        "validation_detail": validation_detail,
+        "config_path": str(config_path),
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        if validated:
+            print(f"Provider '{provider}' configured and validated. ({validation_detail})")
+        else:
+            print(f"Provider '{provider}' configured but not validated. ({validation_detail})")
+
+
 def cmd_init(args):
     init_world(agent_count=args.agents, reset=args.reset)
     print(f"Initialized {PROJECT_NAME} with {args.agents} agents.")
@@ -1645,6 +1750,15 @@ def main():
     p.add_argument("--user-id", dest="user_id", help="User identifier (default: operator)")
     p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
     p.set_defaults(func=cmd_init_bootstrap)
+
+    p = sub.add_parser("init-provider", help="configure and validate the active LLM provider (headless)")
+    p.add_argument("--provider", required=True, choices=["fallback", "ollama", "openai", "openai_compatible"], help="Active LLM provider")
+    p.add_argument("--ollama-host", dest="ollama_host", help="Ollama host URL (default: http://127.0.0.1:11434)")
+    p.add_argument("--openai-base-url", dest="openai_base_url", help="OpenAI-compatible base URL")
+    p.add_argument("--openai-api-key-env", dest="openai_api_key_env", help="Env var name holding the OpenAI API key (e.g. OPENAI_API_KEY)")
+    p.add_argument("--model", help="Model name (provider-specific; leave empty for default)")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
+    p.set_defaults(func=cmd_init_provider)
 
     p = sub.add_parser("tick", help="run one world tick")
     p.add_argument("--verbose", action="store_true")
