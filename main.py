@@ -1004,7 +1004,6 @@ def cmd_serve(args):
                             init_blocked_reasons.append("state_summary_failed")
                         # 4. persisted bootstrap timeline exists
                         try:
-                            from sim import load_communicator_self
                             cs = load_communicator_self()
                             if not cs.get("bootstrap", {}).get("timeline_id"):
                                 init_blocked_reasons.append("no_bootstrap_timeline")
@@ -1108,7 +1107,6 @@ def cmd_serve(args):
                         reasons.append("state_summary_failed")
                     # 4. at least one bootstrap timeline_id exists (persisted in communicator_self.json)
                     try:
-                        from sim import load_communicator_self
                         cs = load_communicator_self()
                         tl = cs.get("bootstrap", {}).get("timeline_id")
                         if not tl:
@@ -1255,6 +1253,21 @@ def cmd_serve(args):
                             raise TimeoutError("chat request exceeded time limit")
                     finally:
                         _chat_semaphore.release()
+                    # Graceful degradation: provider was unavailable, return structured 503
+                    if payload.get("degraded"):
+                        self.send_response(503)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Retry-After", "30")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({
+                            "kind": "chat_degraded",
+                            "summary": payload.get("summary", "Chat is temporarily unavailable."),
+                            "provider": payload.get("provider", "unknown"),
+                            "degraded": True,
+                            "degraded_reason": payload.get("degraded_reason", "provider_unavailable"),
+                            "retry_after_s": 30,
+                        }).encode("utf-8"))
+                        return
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()

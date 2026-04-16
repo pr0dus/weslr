@@ -234,14 +234,24 @@ def generate_chat(message: str, context: dict[str, Any]) -> dict[str, Any]:
     """Chat-facing entrypoint. Returns chat-safe payload only."""
     role = "chat"
     chat_context = {"chat_message": message, "chat_mode": "chat", **(context or {})}
-    fallback = {"summary": "Couldn't form a response on the task at hand.", "provider": "fallback"}
+    fallback_payload = {"summary": "Chat is temporarily unavailable. Please try again in a moment.", "provider": "fallback"}
     provider = (WESLR_LLM_PROVIDER or "fallback").strip().lower()
 
     try:
-        from weslr.providers import get_provider  # local to avoid circular import
-        return get_provider(provider).generate(role, chat_context, chat_mode=True)
+        from weslr.providers import get_provider, FallbackProvider  # local to avoid circular import
+        try:
+            return get_provider(provider).generate(role, chat_context, chat_mode=True)
+        except Exception as primary_err:
+            # Attempt graceful degradation via FallbackProvider before surfacing upward
+            try:
+                fallback_result = FallbackProvider().generate(role, chat_context, chat_mode=True)
+                fallback_result["degraded"] = True
+                fallback_result["degraded_reason"] = "primary_provider_unavailable"
+                return fallback_result
+            except Exception:
+                return fallback_payload
     except Exception:
-        return fallback
+        return fallback_payload
 
 
 def _meta_sounding(text: str) -> bool:

@@ -176,6 +176,22 @@ def _fallback(role: str, context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# ── Exception types ─────────────────────────────────────────────────────────
+
+class ProviderError(Exception):
+    """Base exception for provider-level failures."""
+    pass
+
+
+class ProviderUnavailable(ProviderError):
+    """Raised when the selected provider is unreachable or unavailable.
+
+    This is the signal used by the canonical runtime to distinguish
+    provider-level unavailability (→ 503 degraded) from internal errors (→ 500).
+    """
+    pass
+
+
 # ── Provider interface ─────────────────────────────────────────────────────
 
 @dataclass
@@ -333,6 +349,10 @@ class OllamaProvider(Provider):
             return _normalize_inner(parsed, role, fallback, self.name)
         except socket.timeout:
             raise TimeoutError(f"Ollama provider timed out after {timeout}s")
+        except urllib.error.URLError as exc:
+            raise ProviderUnavailable(f"Ollama unreachable: {exc}") from exc
+        except OSError as exc:
+            raise ProviderUnavailable(f"Ollama connection error: {exc}") from exc
         except Exception:
             raise
 
@@ -405,6 +425,10 @@ class OpenAICompatibleProvider(Provider):
             return _normalize_inner(parsed, role, fallback, self.name)
         except socket.timeout:
             raise TimeoutError(f"OpenAI-compatible provider timed out after {timeout}s")
+        except urllib.error.URLError as exc:
+            raise ProviderUnavailable(f"OpenAI-compatible endpoint unreachable: {exc}") from exc
+        except OSError as exc:
+            raise ProviderUnavailable(f"OpenAI-compatible connection error: {exc}") from exc
         except Exception:
             raise
 
