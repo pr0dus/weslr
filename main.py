@@ -1169,6 +1169,59 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(f"Error: {e}".encode("utf-8"))
                 return
+            # Machine-readable first-run detection
+            if self.path == "/api/first-run":
+                try:
+                    import os as _os
+                    from weslr.communicator_config import load_operator_profile
+                    profile = load_operator_profile()
+                    profile_exists = bool(profile.get("name"))
+                    marker = base_dir / ".weslr_initialized"
+                    initialized = marker.exists()
+                    payload = json.dumps({
+                        "first_run": not profile_exists and not initialized,
+                        "profile_exists": profile_exists,
+                        "initialized": initialized,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Machine-readable onboarding status
+            if self.path == "/api/onboarding":
+                try:
+                    from weslr.communicator_config import load_operator_profile, derive_lifecycle_state
+                    profile = load_operator_profile()
+                    lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                    payload = json.dumps({
+                        "configured": bool(profile.get("name")),
+                        "operator_name": profile.get("name", ""),
+                        "role": profile.get("role", ""),
+                        "lifecycle_state": lc.get("state", "bootstrap_required"),
+                        "checkin_style": profile.get("checkin_style", ""),
+                        "adaptation_level": profile.get("adaptation_level", ""),
+                        "urgency": profile.get("urgency", ""),
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
