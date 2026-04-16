@@ -283,14 +283,8 @@ def is_authorized_for_role(
     if timeline_id == current_occupant and action == "read":
         return True
 
-    # Institution admin check — lazy import to avoid circular dependency
-    is_admin = False
-    try:
-        from weslr.institution import is_institution_admin
-        is_admin = is_institution_admin(timeline_id, record.get("institution_id", ""))
-    except Exception:
-        pass  # Layer 3 not yet implemented — deny
-
+    # Institution admin check via Layer 3 registry (same module — no circular risk)
+    is_admin = is_institution_admin(timeline_id, record.get("institution_id", ""))
     if is_admin:
         return True
 
@@ -386,12 +380,22 @@ _INSTITUTION_ROLES: dict[str, set[str]] = {}  # institution_id -> set of role_id
 
 
 def store_role_timeline(role_record: dict) -> None:
-    """Store a role timeline record (in-process)."""
+    """Store a role timeline record and auto-link it to the institution registry.
+
+    This function bridges Layer 2 and Layer 3: after storing the role timeline
+    locally, it also links the role to the institution's registry record so that
+    list_institution_roles and governance checks stay in sync.
+    """
     role_id = role_record.get("role_id")
     _ROLE_TIMELINES[role_id] = role_record
     institution_id = role_record.get("institution_id", "")
     if institution_id:
         _INSTITUTION_ROLES.setdefault(institution_id, set()).add(role_id)
+        # Bridge to Layer 3: keep institution registry role list in sync
+        inst = _INSTITUTIONS.get(institution_id)
+        if inst and role_id not in inst.get("role_timeline_ids", []):
+            updated = link_role_to_institution(inst, role_id)
+            _INSTITUTIONS[institution_id] = updated
 
 
 def get_role_timeline(role_id: str) -> dict | None:
