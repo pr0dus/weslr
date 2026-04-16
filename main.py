@@ -1153,6 +1153,22 @@ def cmd_serve(args):
 
         def do_GET(self):
             """Serve GET requests."""
+            # Onboarding front door
+            if self.path == "/onboarding":
+                front_door = base_dir / "front-door" / "index.html"
+                try:
+                    with open(front_door, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
