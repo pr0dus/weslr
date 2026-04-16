@@ -110,126 +110,6 @@ refreshState();
 </html>
 """
 
-# Onboarding HTML — served at /onboarding
-_ONBOARDING_HTML = """<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Weslr — Setup</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; background: #0f1115; color: #e8eaed; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 22px; margin: 0 0 6px; }
-    .muted { color: #9aa0a6; font-size: 14px; margin-bottom: 28px; }
-    .field { margin-bottom: 18px; }
-    label { display: block; font-size: 13px; color: #9aa0a6; margin-bottom: 5px; }
-    input, select, textarea { width: 100%%; box-sizing: border-box; padding: 9px 11px; border-radius: 8px;
-      border: 1px solid #2a2f3a; background: #11141a; color: #fff; font-size: 15px; }
-    textarea { min-height: 72px; resize: vertical; }
-    button { border: 0; border-radius: 10px; padding: 11px 20px; background: #4f8cff; color: white;
-      cursor: pointer; font-size: 15px; margin-top: 8px; }
-    button:hover { background: #6fa0ff; }
-    .msg { margin-top: 16px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
-    .msg.ok { background: #1b2a1f; color: #6fcf97; }
-    .msg.err { background: #2a1b1b; color: #eb5757; }
-    .skip { margin-top: 16px; text-align: center; }
-    .skip a { color: #9aa0a6; font-size: 13px; text-decoration: none; }
-  </style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Welcome to Weslr</h1>
-  <p class="muted">Tell me a little about yourself so I can adapt to how you work.</p>
-
-  <form id="form">
-    <div class="field">
-      <label for="name">Your name</label>
-      <input id="name" name="name" placeholder="Ada Lovelace" required />
-    </div>
-    <div class="field">
-      <label for="role">Your role</label>
-      <input id="role" name="role" placeholder="Engineer, researcher, founder..." />
-    </div>
-    <div class="field">
-      <label for="urgency">How time-sensitive is your work?</label>
-      <select id="urgency" name="urgency">
-        <option value="critical">Critical — I need fast responses</option>
-        <option value="normal" selected>Normal</option>
-        <option value="deliberate">Deliberate — quality over speed</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="adaptation_level">How much autonomy should I take?</label>
-      <select id="adaptation_level" name="adaptation_level">
-        <option value="none">None — always ask before acting</option>
-        <option value="propose" selected>Propose — I decide</option>
-        <option value="low-risk">Low-risk — small things done automatically</option>
-        <option value="full">Full — within safety thresholds</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="checkin_style">How often should I check in with you?</label>
-      <select id="checkin_style" name="checkin_style">
-        <option value="verbose">Verbose — every 30 minutes</option>
-        <option value="hourly">Hourly</option>
-        <option value="daily" selected>Daily</option>
-        <option value="silent">Silent — only when action is needed</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="forbidden_actions">Anything I should never do? (one per line)</label>
-      <textarea id="forbidden_actions" name="forbidden_actions" placeholder="push to main&#10;delete resources&#10;send emails"></textarea>
-    </div>
-    <button type="submit" id="submit">Save and continue</button>
-  </form>
-  <div id="msg"></div>
-  <div class="skip"><a href="/">Skip for now</a></div>
-</div>
-<script>
-const form = document.getElementById("form");
-const msg = document.getElementById("msg");
-const submit = document.getElementById("submit");
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-  submit.disabled = true;
-  msg.innerHTML = "";
-  const fd = new FormData(form);
-  const payload = Object.fromEntries(fd.entries());
-  // Parse forbidden_actions into list
-  if (payload.forbidden_actions) {
-    payload.forbidden_actions = payload.forbidden_actions.split("\\n").map(s => s.trim()).filter(Boolean);
-  }
-  const res = await fetch("/api/onboarding", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  if (data.ok) {
-    msg.innerHTML = '<div class="msg ok">Saved. <a href="/" style="color:#6fcf97">Go to chat →</a></div>';
-  } else {
-    msg.innerHTML = '<div class="msg err">Error: ' + (data.error || "unknown") + "</div>";
-    submit.disabled = false;
-  }
-});
-// Load existing profile
-(async () => {
-  try {
-    const r = await fetch("/api/onboarding");
-    const d = await r.json();
-    if (d.ok && d.profile) {
-      for (const [k, v] of Object.entries(d.profile)) {
-        const el = document.getElementById(k);
-        if (el) el.value = Array.isArray(v) ? v.join("\\n") : (v || "");
-      }
-    }
-  } catch(_) {}
-})();
-</script>
-</body>
-</html>
-"""
 
 
 def run_cmd(args: list[str]) -> str:
@@ -497,51 +377,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"reply": str(e), "meta": "", "status": "State read failed."}, 500)
             return
-        if path == "/onboarding":
-            self._html(_ONBOARDING_HTML)
-            return
-        if path == "/api/onboarding":
-            # Return current onboarding status
-            try:
-                from weslr.communicator_config import load_operator_profile
-                profile = load_operator_profile()
-                self._json({"ok": True, "onboarded": bool(profile.get("name")), "profile": profile})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
-            return
-        if path == "/api/first-run":
-            # Check if this is a fresh install vs existing deployment
-            try:
-                import os
-                from weslr.communicator_config import load_operator_profile
-                profile = load_operator_profile()
-                has_profile = bool(profile.get("name"))
-                marker_path = os.path.join(BASE_DIR, ".weslr_initialized")
-                has_marker = os.path.exists(marker_path)
-                self._json({
-                    "ok": True,
-                    "first_run": not has_profile and not has_marker,
-                    "onboarded": has_profile,
-                    "initialized": has_marker,
-                })
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
-            return
         self.send_error(404)
     def do_POST(self):
         path = urlparse(self.path).path
         if path != "/api/send":
-            if path == "/api/onboarding":
-                content_length = int(self.headers.get("Content-Length", "0") or 0)
-                raw = self.rfile.read(content_length).decode("utf-8") if content_length else "{}"
-                payload = json.loads(raw or "{}")
-                try:
-                    from weslr.communicator_config import update_operator_profile
-                    update_operator_profile(payload)
-                    self._json({"ok": True, "status": "profile saved"})
-                except Exception as e:
-                    self._json({"ok": False, "error": str(e)}, 500)
-                return
             self.send_error(404)
             return
         length = int(self.headers.get("Content-Length", "0") or 0)

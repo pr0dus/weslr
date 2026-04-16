@@ -1,15 +1,17 @@
 #!/bin/sh
-# weslr-start.sh — Start the WESLR chat server
+# weslr-start.sh — Start the WESLR HTTP server
 #
 # Usage: ./weslr-start.sh [port]
-#   port  — optional, defaults to 8081
+#   port  — optional, defaults to 8080
 #
-# What it does:
-#   1. Resolves the workspace root (parent of scripts/)
-#   2. Creates .runtime/ directory for PID file
-#   3. Checks if already running
-#   4. Starts chat_ui.py via python3 on the configured port
-#   5. Writes PID to .runtime/weslr.pid
+# Canonical entrypoint. Starts main.py serve which provides:
+#   /           — dashboard UI
+#   /operator   — operator dashboard
+#   /chat       — chat endpoint (POST JSON {message})
+#   /onboarding — onboarding flow
+#   /artifact-review, /category/update, /pack/decision, /api/clearance/verify
+#
+# The server is a stdlib ThreadingHTTPServer; no FastAPI/uvicorn required.
 
 set -e
 
@@ -18,9 +20,9 @@ WORKSPACE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$WORKSPACE_DIR"
 
 # Port argument or default
-PORT="${1:-8081}"
+PORT="${1:-8080}"
 
-# PID file in workspace (avoids Termux-specific PREFIX assumptions)
+# PID file in workspace
 PIDFILE="$WORKSPACE_DIR/.runtime/weslr.pid"
 
 # Ensure .runtime directory exists
@@ -59,11 +61,16 @@ elif command -v netstat >/dev/null 2>&1; then
     fi
 fi
 
-# Start the real server — chat_ui.py (ThreadingHTTPServer)
-nohup python3 "$WORKSPACE_DIR/chat_ui.py" > "$WORKSPACE_DIR/.runtime/weslr.log" 2>&1 &
+# Start main.py serve — the canonical runtime server
+# Provides /chat, /operator, /onboarding, and all state + artifact endpoints
+nohup python3 "$WORKSPACE_DIR/main.py" serve --host 0.0.0.0 --port "$PORT" \
+    > "$WORKSPACE_DIR/.runtime/weslr.log" 2>&1 &
 PID=$!
 echo "$PID" > "$PIDFILE"
 echo "WESLR started with PID $PID on port $PORT"
-echo "Access it at http://localhost:$PORT"
+echo "Dashboard:  http://localhost:$PORT/"
+echo "Chat:       http://localhost:$PORT/chat"
+echo "Operator:   http://localhost:$PORT/operator"
+echo "Onboarding: http://localhost:$PORT/onboarding"
 echo "Logs: $WORKSPACE_DIR/.runtime/weslr.log"
 echo "Stop:  ./scripts/weslr-stop.sh"
