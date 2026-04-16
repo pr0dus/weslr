@@ -199,6 +199,14 @@ def cmd_accept(args):
 def cmd_archive(args):
     """Handle 'capability archive' command."""
     suggestion = api.archive_suggestion(suggestion_id=args.id)
+    # Emit ignored governance override signal (fail-open)
+    try:
+        import sys
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent.parent))
+        from weslr.drift_emitter import emit_ignored_signal
+        emit_ignored_signal(proposal_id=str(suggestion.id), human="operator")
+    except Exception:
+        pass
     if args.json:
         print(json.dumps(suggestion.to_dict(), indent=2))
     else:

@@ -407,6 +407,7 @@ class ExecutionGate:
         - deny: Move to DENIED state, mark as rejected
         - defer: Move to DEFERRED state, schedule for later review
         - counterpropose: Mark as DENIED and emit governance override signal
+        - dismiss: Mark as DENIED and emit ignored signal
         
         Returns None if proposal not found.
         """
@@ -455,8 +456,21 @@ class ExecutionGate:
                 emit_counterproposed_signal(proposal_id=str(proposal.proposal_id), human=str(actor))
             except Exception:
                 pass
+        elif action == "dismiss":
+            # Dismiss: operator explicitly dismisses without adopting — treated as ignored.
+            proposal.transition_state(
+                ProposalState.DENIED.value,
+                actor=actor,
+                details=details or {},
+            )
+            # Emit governance override signal (fail-open)
+            try:
+                from weslr.drift_emitter import emit_ignored_signal
+                emit_ignored_signal(proposal_id=str(proposal.proposal_id), human=str(actor))
+            except Exception:
+                pass
         else:
-            raise ValueError(f"Unknown action: {action}. Use: approve, deny, defer, counterpropose")
+            raise ValueError(f"Unknown action: {action}. Use: approve, deny, defer, counterpropose, dismiss")
         
         self._save_proposals()
         return proposal
