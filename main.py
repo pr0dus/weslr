@@ -135,6 +135,7 @@ def emit(data):
 
 
 def cmd_init_operator(args):
+    import json as _json
     from weslr.communicator_config import update_operator_profile
     profile = {
         "phase": "onboarding",
@@ -145,11 +146,21 @@ def cmd_init_operator(args):
         "adaptation_level": args.adaptation_level or "propose",
     }
     update_operator_profile(profile)
-    print(f"Operator profile created: {args.name} ({args.role or 'no role'})")
+    payload = {
+        "success": True,
+        "operator_name": args.name,
+        "role": args.role or "",
+        "profile_path": "/data/data/com.termux/files/home/.openclaw/workspace/operator_profile.json",
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        print(f"Operator profile created: {args.name} ({args.role or 'no role'})")
 
 
 def cmd_init_bootstrap(args):
-    from weslr.bootstrap import new_timeline_id, register_completed_bootstrap, complete_bootstrap
+    import json as _json
+    from weslr.bootstrap import new_timeline_id, register_completed_bootstrap
     from sim import load_communicator_self, save_communicator_self
     user_id = args.user_id or "operator"
     timeline_id = new_timeline_id(user_id)
@@ -167,7 +178,16 @@ def cmd_init_bootstrap(args):
         "bootstrap_completed_at": time.time(),
     }
     register_completed_bootstrap(record)
-    print(f"Bootstrap complete. timeline_id: {timeline_id}")
+    payload = {
+        "success": True,
+        "user_id": user_id,
+        "timeline_id": timeline_id,
+        "bootstrap_status": "COMPLETED",
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        print(f"Bootstrap complete. timeline_id: {timeline_id}")
 
 
 def cmd_init(args):
@@ -1618,10 +1638,12 @@ def main():
     p.add_argument("--urgency", choices=["low", "normal", "high", "critical"], help="Operational urgency")
     p.add_argument("--checkin-style", dest="checkin_style", choices=["silent", "hourly", "daily", "verbose"], help="Check-in cadence")
     p.add_argument("--adaptation-level", dest="adaptation_level", choices=["none", "propose", "low-risk", "full"], help="Self-modification permission level")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
     p.set_defaults(func=cmd_init_operator)
 
     p = sub.add_parser("init-bootstrap", help="complete bootstrap trust anchor (headless setup)")
     p.add_argument("--user-id", dest="user_id", help="User identifier (default: operator)")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
     p.set_defaults(func=cmd_init_bootstrap)
 
     p = sub.add_parser("tick", help="run one world tick")
