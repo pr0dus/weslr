@@ -1319,6 +1319,7 @@ def cmd_serve(args):
                     from weslr.communicator_config import load_operator_profile, derive_lifecycle_state
                     profile = load_operator_profile()
                     lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                    marker = base_dir / ".weslr_initialized"
                     payload = json.dumps({
                         "configured": bool(profile.get("name")),
                         "operator_name": profile.get("name", ""),
@@ -1327,6 +1328,7 @@ def cmd_serve(args):
                         "checkin_style": profile.get("checkin_style", ""),
                         "adaptation_level": profile.get("adaptation_level", ""),
                         "urgency": profile.get("urgency", ""),
+                        "initialized": marker.exists(),
                     }).encode("utf-8")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
