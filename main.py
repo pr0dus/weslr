@@ -403,6 +403,12 @@ def cmd_session_continuity(_args):
     emit(continuity)
 
 
+def cmd_weslr_state(_args):
+    """Print WESLR's unified operational state summary."""
+    from weslr.governance_health import get_weslr_state_summary
+    emit(get_weslr_state_summary())
+
+
 def cmd_autonomous_intentionality(_args):
     """Report on autonomous intentionality (plan execution)."""
     report = autonomous_intentionality_report()
@@ -1385,6 +1391,9 @@ def main():
 
     p = sub.add_parser("session-continuity", help="check session continuity and time-persistent identity")
     p.set_defaults(func=cmd_session_continuity)
+
+    p = sub.add_parser("weslr-state", help="print WESLR unified operational state summary")
+    p.set_defaults(func=cmd_weslr_state)
 
     p = sub.add_parser("autonomous-intentionality", help="report on autonomous intentionality (plan execution)")
     p.set_defaults(func=cmd_autonomous_intentionality)
