@@ -240,6 +240,14 @@ def cmd_snooze(args):
         api.time.gmtime(api.time.time() + args.hours * 3600)
     )
     api.get_store().update_suggestion(suggestion)
+    # Emit snoozed governance override signal (fail-open)
+    try:
+        import sys
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent.parent))
+        from weslr.drift_emitter import emit_snoozed_signal
+        emit_snoozed_signal(proposal_id=str(suggestion.id), human="operator")
+    except Exception:
+        pass
     if args.json:
         print(json.dumps(suggestion.to_dict(), indent=2))
     else:

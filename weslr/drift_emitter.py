@@ -80,6 +80,12 @@ def emit_override_signal(override_type: str, proposal_id: str | None = None, hum
     Called when the operator overrides, rejects, or counteracts a WESLR
     recommendation. This is the "operator knows better" signal.
     Fails open silently.
+
+    Known override types:
+    - "denied"        — operator rejected a proposal
+    - "counterproposed" — operator replaced with their own alternative (wire when path exists)
+    - "ignored"       — operator snoozed/dismissed without adopting (wire when path exists)
+    - "snoozed"       — operator explicitly snoozed the proposal
     """
     _record_drift(
         signal_type="governance_override",
@@ -92,3 +98,22 @@ def emit_override_signal(override_type: str, proposal_id: str | None = None, hum
         },
         severity="medium",
     )
+
+
+# ---------------------------------------------------------------------------
+# Convenience aliases for specific override sub-types
+# ---------------------------------------------------------------------------
+
+def emit_counterproposed_signal(proposal_id: str | None = None, human: str = "operator") -> None:
+    """Emit when operator counters with their own alternative proposal."""
+    emit_override_signal("counterproposed", proposal_id, human)
+
+
+def emit_ignored_signal(proposal_id: str | None = None, human: str = "operator") -> None:
+    """Emit when operator ignores or dismisses a proposal without adopting it."""
+    emit_override_signal("ignored", proposal_id, human)
+
+
+def emit_snoozed_signal(proposal_id: str | None = None, human: str = "operator") -> None:
+    """Emit when operator explicitly snoozes a proposal."""
+    emit_override_signal("snoozed", proposal_id, human)
