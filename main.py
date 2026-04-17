@@ -6,6 +6,9 @@ import socket
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from datetime import datetime, timezone
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -899,8 +902,617 @@ def cmd_serve(args):
             self.end_headers()
             self.wfile.write(data)
 
+        def _log_timeline_event(self, timeline_id, event_type, data, frame=None, source="operator", trust_level="direct"):
+            """Append-only event logger per timeline. Safe — never raises."""
+            try:
+                base = Path(__file__).resolve().parent
+                tl_dir = base / ".weslr" / "timelines" / timeline_id
+                tl_dir.mkdir(parents=True, exist_ok=True)
+                event = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event_type": event_type,
+                    "data": data,
+                    "frame": frame,
+                    "source": source,
+                    "trust_level": trust_level,
+                }
+                event_file = tl_dir / "events.jsonl"
+                with open(event_file, "a") as f:
+                    f.write(json.dumps(event) + "\n")
+            except Exception:
+                pass
+
+        def _evaluate_event_against_charter(self, event_metadata):
+            """Read-only Charter evaluation of event metadata. Returns interpretation, no blocking."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {"charter_present": False}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                evaluation = {
+                    "charter_present": True,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned_with_charter": aligned,
+                    "requires_validation": requires_validation,
+                    "source_category": "operator" if source == "operator" else ("system" if source == "system" else "external"),
+                    "trust_claim": trust_level,
+                    "charter_note": self._charter_note(source, trust_level, aligned, requires_validation),
+                }
+                return evaluation
+            except Exception:
+                return {"charter_present": False, "error": "evaluation_failed"}
+
+        def _charter_note(self, source, trust_level, aligned, requires_validation):
+            if not aligned:
+                return f"TRUST_MISMATCH: source={source} claims trust_level={trust_level} — charter expects direct for operator only"
+            if requires_validation:
+                return f"CAUTION: source={source} requires validation before trust"
+            if aligned and source == "operator":
+                return "Aligned: operator-direct input. Highest trust."
+            if aligned and source == "system":
+                return "Aligned: system-inferred. Trusted, derived."
+            return "Aligned: external-unverified input."
+
+        def _flag_event_against_charter(self, event_metadata):
+            """Read-only Charter pattern flagging. Returns signal dict, never blocks."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                flags = []
+                if not aligned:
+                    flags.append("TRUST_MISMATCH")
+                if requires_validation:
+                    flags.append("REQUIRES_VALIDATION")
+                if source == "external" and trust_level == "unverified":
+                    flags.append("LOW_TRUST_EXTERNAL")
+                if source == "external" and trust_level == "direct":
+                    flags.append("SUSPICIOUS_DIRECT_CLAIM")
+                if source not in hierarchy:
+                    flags.append("UNKNOWN_SOURCE")
+                return {
+                    "flags": flags,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned": aligned,
+                    "signal_level": "clean" if not flags else ("warning" if "REQUIRES_VALIDATION" in flags else "alert"),
+                }
+            except Exception:
+                return {}
+
+        def _generate_charter_signal_report(self, events):
+            """Read-only signal analysis over event list."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                patterns = charter.get("poisoning_resistance", {}).get("patterns", {})
+                alert_count = 0
+                warning_count = 0
+                clean_count = 0
+                flagged_events = []
+                external_count = 0
+                source_counts = {"operator": 0, "system": 0, "external": 0}
+                frame_counts = {}
+                for ev in events:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        alert_count += 1
+                        flagged_events.append({"event": ev, "signal": sig})
+                    elif lvl == "warning":
+                        warning_count += 1
+                    else:
+                        clean_count += 1
+                    src = ev.get("source")
+                    if src in source_counts:
+                        source_counts[src] += 1
+                    if src == "external":
+                        external_count += 1
+                    fr = ev.get("frame")
+                    if fr:
+                        frame_counts[fr] = frame_counts.get(fr, 0) + 1
+                    if len(flagged_events) > 20:
+                        break
+                high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
+                repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+                return {
+                    "summary": {
+                        "total_events": len(events),
+                        "clean": clean_count,
+                        "warning": warning_count,
+                        "alert": alert_count,
+                        "source_breakdown": source_counts,
+                        "frame_breakdown": frame_counts,
+                    },
+                    "patterns": {
+                        "high_frequency_external": high_freq_external,
+                        "repeated_same_source": repeated_pattern,
+                    },
+                    "flagged_events": flagged_events[-10:],
+                    "signal_level": "alert" if alert_count > 0 else ("warning" if warning_count > 0 else "clean"),
+                }
+            except Exception as e:
+                return {"error": str(e)}
+
+        def _log_timeline_event(self, timeline_id, event_type, data, frame=None, source="operator", trust_level="direct"):
+            """Append-only event logger per timeline. Safe — never raises."""
+            try:
+                base = Path(__file__).resolve().parent
+                tl_dir = base / ".weslr" / "timelines" / timeline_id
+                tl_dir.mkdir(parents=True, exist_ok=True)
+                event = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event_type": event_type,
+                    "data": data,
+                    "frame": frame,
+                    "source": source,
+                    "trust_level": trust_level,
+                }
+                event_file = tl_dir / "events.jsonl"
+                with open(event_file, "a") as f:
+                    f.write(json.dumps(event) + "\n")
+            except Exception:
+                pass
+
+        def _evaluate_event_against_charter(self, event_metadata):
+            """Read-only Charter evaluation of event metadata. Returns interpretation, no blocking."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {"charter_present": False}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                evaluation = {
+                    "charter_present": True,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned_with_charter": aligned,
+                    "requires_validation": requires_validation,
+                    "source_category": "operator" if source == "operator" else ("system" if source == "system" else "external"),
+                    "trust_claim": trust_level,
+                    "charter_note": self._charter_note(source, trust_level, aligned, requires_validation),
+                }
+                return evaluation
+            except Exception:
+                return {"charter_present": False, "error": "evaluation_failed"}
+
+        def _charter_note(self, source, trust_level, aligned, requires_validation):
+            if not aligned:
+                return f"TRUST_MISMATCH: source={source} claims trust_level={trust_level} — charter expects direct for operator only"
+            if requires_validation:
+                return f"CAUTION: source={source} requires validation before trust"
+            if aligned and source == "operator":
+                return "Aligned: operator-direct input. Highest trust."
+            if aligned and source == "system":
+                return "Aligned: system-inferred. Trusted, derived."
+            return "Aligned: external-unverified input."
+
+        def _flag_event_against_charter(self, event_metadata):
+            """Read-only Charter pattern flagging. Returns signal dict, never blocks."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                flags = []
+                if not aligned:
+                    flags.append("TRUST_MISMATCH")
+                if requires_validation:
+                    flags.append("REQUIRES_VALIDATION")
+                if source == "external" and trust_level == "unverified":
+                    flags.append("LOW_TRUST_EXTERNAL")
+                if source == "external" and trust_level == "direct":
+                    flags.append("SUSPICIOUS_DIRECT_CLAIM")
+                if source not in hierarchy:
+                    flags.append("UNKNOWN_SOURCE")
+                return {
+                    "flags": flags,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned": aligned,
+                    "signal_level": "clean" if not flags else ("warning" if "REQUIRES_VALIDATION" in flags else "alert"),
+                }
+            except Exception:
+                return {}
+
+        def _generate_charter_signal_report(self, events):
+            """Read-only signal analysis over event list."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                patterns = charter.get("poisoning_resistance", {}).get("patterns", {})
+                alert_count = 0
+                warning_count = 0
+                clean_count = 0
+                flagged_events = []
+                external_count = 0
+                source_counts = {"operator": 0, "system": 0, "external": 0}
+                frame_counts = {}
+                for ev in events:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        alert_count += 1
+                        flagged_events.append({"event": ev, "signal": sig})
+                    elif lvl == "warning":
+                        warning_count += 1
+                    else:
+                        clean_count += 1
+                    src = ev.get("source")
+                    if src in source_counts:
+                        source_counts[src] += 1
+                    if src == "external":
+                        external_count += 1
+                    fr = ev.get("frame")
+                    if fr:
+                        frame_counts[fr] = frame_counts.get(fr, 0) + 1
+                    if len(flagged_events) > 20:
+                        break
+                high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
+                repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+                return {
+                    "summary": {
+                        "total_events": len(events),
+                        "clean": clean_count,
+                        "warning": warning_count,
+                        "alert": alert_count,
+                        "source_breakdown": source_counts,
+                        "frame_breakdown": frame_counts,
+                    },
+                    "patterns": {
+                        "high_frequency_external": high_freq_external,
+                        "repeated_same_source": repeated_pattern,
+                    },
+                    "flagged_events": flagged_events[-10:],
+                    "signal_level": "alert" if alert_count > 0 else ("warning" if warning_count > 0 else "clean"),
+                }
+            except Exception as e:
+                return {"error": str(e)}
+
+        def _derive_event_id(self, event):
+            """Derive a stable event ID from an event dict for annotation targeting."""
+            import hashlib
+            ts = event.get("timestamp", "")
+            et = event.get("event_type", "")
+            data_str = json.dumps(event.get("data", {}), sort_keys=True)
+            raw = (ts + et + data_str).encode("utf-8")
+            return hashlib.sha256(raw).hexdigest()[:16]
+
+        def _load_annotations(self, timeline_id):
+            """Load all annotations for a timeline."""
+            try:
+                base = Path(__file__).resolve().parent
+                ann_path = base / ".weslr" / "timelines" / timeline_id / "annotations.jsonl"
+                if not ann_path.exists():
+                    return []
+                annotations = []
+                with open(ann_path) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                annotations.append(json.loads(line))
+                            except Exception:
+                                pass
+                return annotations
+            except Exception:
+                return []
+
+        def _get_annotations_by_event_id(self, timeline_id):
+            """Return dict of event_id -> latest annotation."""
+            annotations = self._load_annotations(timeline_id)
+            latest = {}
+            for ann in annotations:
+                eid = ann.get("event_id")
+                if eid:
+                    # keep only latest per event_id
+                    latest[eid] = ann
+            return latest
+
+
+        def _build_trust_signal(self, timeline_id):
+            """Lightweight trust climate signal from recent events and annotations. Additive only."""
+            try:
+                base = Path(__file__).resolve().parent
+                event_file = base / ".weslr" / "timelines" / timeline_id / "events.jsonl"
+                if not event_file.exists():
+                    return {}
+                events = []
+                with open(event_file) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                events.append(json.loads(line))
+                            except Exception:
+                                pass
+                if not events:
+                    return {}
+                recent = events[-20:] if len(events) >= 20 else events
+                annotations_map = self._get_annotations_by_event_id(timeline_id)
+                trusted = 0
+                untrusted = 0
+                unverified = 0
+                flagged_types = []
+                for ev in recent:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        flagged_types.append(ev.get("event_type", "unknown"))
+                    if lvl == "warning":
+                        unverified += 1
+                    ann = annotations_map.get(ev.get("_event_id") or self._derive_event_id(ev))
+                    if ann:
+                        if ann.get("action") == "mark_trusted":
+                            trusted += 1
+                        elif ann.get("action") == "mark_untrusted":
+                            untrusted += 1
+                    elif ev.get("trust_level") == "unverified" or ev.get("source") == "external":
+                        unverified += 1
+                total = len(recent)
+                total = len(recent)
+                untrusted_pct = untrusted / total if total > 0 else 0
+                flagged_count = len(flagged_types)
+                high_concern_pct = (untrusted + flagged_count) / total if total > 0 else 0
+                trusted_pct = trusted / total if total > 0 else 0
+                if high_concern_pct >= 0.2:
+                    confidence = "low"
+                    caution = "Recent events include operator-distusted or Charter-flagged inputs."
+                elif high_concern_pct >= 0.05:
+                    confidence = "medium"
+                    caution = "Some recent inputs have trust concerns."
+                elif trusted_pct >= 0.6:
+                    confidence = "high"
+                    caution = None
+                else:
+                    confidence = "medium"
+                    caution = None
+                result = {
+                    "confidence": confidence,
+                    "recent_total": total,
+                    "recent_trusted": trusted,
+                    "recent_untrusted": untrusted,
+                    "recent_unverified": unverified,
+                }
+                if caution:
+                    result["caution_note"] = caution
+                if flagged_types:
+                    result["flagged_event_types"] = list(set(flagged_types))[:3]
+                return result
+            except Exception:
+                return {}
+
         def do_POST(self):
             # Handle artifact review endpoint
+
+            # API: feedback ingestion
+            if self.path == "/api/feedback":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    msg = data.get("message", "")
+                    if not msg:
+                        payload = json.dumps({"ok": False, "error": "message_required"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_type = data.get("type", "feedback")
+                    if fb_type not in ("feedback", "friction", "suggestion"):
+                        payload = json.dumps({"ok": False, "error": "invalid_type"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_path = base_dir / ".weslr" / "feedback.json"
+                    entry = {"type": fb_type, "message": msg, "received_at": datetime.now(timezone.utc).isoformat()}
+                    try:
+                        with open(fb_path) as f:
+                            existing = json.load(f)
+                    except Exception:
+                        existing = []
+                    if isinstance(existing, list):
+                        existing.append(entry)
+                    else:
+                        existing.setdefault("entries", []).append(entry)
+                    with open(fb_path, "w") as f:
+                        json.dump(existing, f, indent=2)
+                    payload = json.dumps({
+                        "ok": True, "saved": True, "type": fb_type, "received_at": entry["received_at"],
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "feedback.submit", {
+                        "type": fb_type, "message_length": len(msg),
+                    }, frame=frame, source="operator", trust_level="direct")
+                except Exception as e:
+                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
+
+            # API: feedback ingestion
+            if self.path == "/api/feedback":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    msg = data.get("message", "")
+                    if not msg:
+                        payload = json.dumps({"ok": False, "error": "message_required"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_type = data.get("type", "feedback")
+                    if fb_type not in ("feedback", "friction", "suggestion"):
+                        payload = json.dumps({"ok": False, "error": "invalid_type"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_path = base_dir / ".weslr" / "feedback.json"
+                    entry = {"type": fb_type, "message": msg, "received_at": datetime.now(timezone.utc).isoformat()}
+                    try:
+                        with open(fb_path) as f:
+                            existing = json.load(f)
+                    except Exception:
+                        existing = []
+                    if isinstance(existing, list):
+                        existing.append(entry)
+                    else:
+                        existing.setdefault("entries", []).append(entry)
+                    with open(fb_path, "w") as f:
+                        json.dump(existing, f, indent=2)
+                    payload = json.dumps({
+                        "ok": True, "saved": True, "type": fb_type, "received_at": entry["received_at"],
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "feedback.submit", {
+                        "type": fb_type, "message_length": len(msg),
+                    }, frame=frame, source="operator", trust_level="direct")
+                except Exception as e:
+                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
+
+            # API: event annotation (append-only trust action)
+            if self.path == "/api/events/annotate":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    timeline_id = data.get("timeline_id")
+                    event_id = data.get("event_id")
+                    action = data.get("action")
+                    note = data.get("note", "")
+                    if not timeline_id or not event_id or not action:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "timeline_id, event_id, and action are required"}).encode("utf-8"))
+                        return
+                    if action not in ("mark_trusted", "mark_untrusted", "add_note"):
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "invalid_action"}).encode("utf-8"))
+                        return
+                    base = Path(__file__).resolve().parent
+                    tl_dir = base / ".weslr" / "timelines" / timeline_id
+                    if not tl_dir.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "timeline_not_found"}).encode("utf-8"))
+                        return
+                    # Load operator identity
+                    try:
+                        op_path = base_dir / "operator_profile.json"
+                        if op_path.exists():
+                            with open(op_path) as f:
+                                op = json.load(f)
+                                operator_name = op.get("name", "operator")
+                        else:
+                            operator_name = "operator"
+                    except Exception:
+                        operator_name = "operator"
+                    ann_record = {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event_id": event_id,
+                        "action": action,
+                        "operator": operator_name,
+                        "note": note,
+                        "source": "operator",
+                    }
+                    ann_file = tl_dir / "annotations.jsonl"
+                    with open(ann_file, "a") as f:
+                        f.write(json.dumps(ann_record) + "\n")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": True, "saved": True, "annotation": ann_record}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+                return
+
             if self.path == "/artifact-review":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
@@ -1429,10 +2041,20 @@ def cmd_serve(args):
                             "retry_after_s": 30,
                         }).encode("utf-8"))
                         return
+                    # Soft trust signal: inject climate into response (additive, non-blocking)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    trust_signal = self._build_trust_signal(tl_id)
+                    if trust_signal:
+                        payload["_trust_signal"] = trust_signal
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps(payload).encode("utf-8"))
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "chat.message", {
+                        "message_length": len(message),
+                        "has_clearance": bool(token_id),
+                    }, frame=frame, source="operator", trust_level="direct")
                 except TimeoutError:
                     self.send_response(504)
                     self.send_header("Content-Type", "application/json")
@@ -1608,6 +2230,293 @@ def cmd_serve(args):
                     self.wfile.write(f"Error: {e}".encode("utf-8"))
                 return
             # TIA import history
+            # API: Charter evaluation (read-only)
+            if self.path == "/api/charter/evaluate":
+                try:
+                    charter_path = base_dir / ".weslr" / "charter.json"
+                    if not charter_path.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": "charter_not_found"}).encode("utf-8"))
+                        return
+                    with open(charter_path) as f:
+                        charter = json.load(f)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "charter_present": True,
+                        "version": charter.get("version"),
+                        "principles": charter.get("principles", []),
+                        "trust_rules": charter.get("trust_rules", {}),
+                        "source_categories": charter.get("source_categories", {}),
+                        "poisoning_resistance": charter.get("poisoning_resistance", {}),
+                    }).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: Charter signal report (read-only)
+            if self.path.startswith("/api/charter/signals"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["100"])[0])
+                    base = Path(__file__).resolve().parent
+                    event_file = base / ".weslr" / "timelines" / timeline / "events.jsonl"
+                    events = []
+                    if event_file.exists():
+                        with open(event_file) as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    try:
+                                        events.append(json.loads(line))
+                                    except Exception:
+                                        pass
+                    report = self._generate_charter_signal_report(events)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(report).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: recent timeline events (merged with annotations)
+            if self.path.startswith("/api/events/recent"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["20"])[0])
+                    base = Path(__file__).resolve().parent
+                    event_file = base / ".weslr" / "timelines" / timeline / "events.jsonl"
+                    events = []
+                    if event_file.exists():
+                        with open(event_file) as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    try:
+                                        events.append(json.loads(line))
+                                    except Exception:
+                                        pass
+                    recent = events[-limit:] if len(events) > limit else events
+                    # Attach latest annotation to each event
+                    annotations_map = self._get_annotations_by_event_id(timeline)
+                    enriched = []
+                    for ev in recent:
+                        eid = self._derive_event_id(ev)
+                        annotation = annotations_map.get(eid)
+                        ev_with_meta = dict(ev)
+                        ev_with_meta["_annotation"] = annotation
+                        ev_with_meta["_event_id"] = eid
+                        enriched.append(ev_with_meta)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(enriched).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+
+
+            # API: annotations (read-only)
+            if self.path.startswith("/api/events/annotations"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["50"])[0])
+                    base = Path(__file__).resolve().parent
+                    ann_file = base / ".weslr" / "timelines" / timeline / "annotations.jsonl"
+                    if not ann_file.exists():
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps([]).encode("utf-8"))
+                        return
+                    annotations = []
+                    with open(ann_file) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                try:
+                                    annotations.append(json.loads(line))
+                                except Exception:
+                                    pass
+                    recent = annotations[-limit:] if len(annotations) > limit else annotations
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(recent).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # Satellite UI
+            if self.path == "/satellite":
+                satellite_index = base_dir / "dashboard" / "satellite" / "index.html"
+                try:
+                    with open(satellite_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+
+            # API: capability authorizations
+            if self.path == "/api/capabilities":
+                try:
+                    auth_path = base_dir / ".weslr" / "capability_authorizations.json"
+                    if auth_path.exists():
+                        with open(auth_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "capabilities": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: device registry
+            if self.path == "/api/devices":
+                try:
+                    dev_path = base_dir / ".weslr" / "device_registry.json"
+                    if dev_path.exists():
+                        with open(dev_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "devices": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: Charter evaluation (read-only)
+            if self.path == "/api/charter/evaluate":
+                try:
+                    charter_path = base_dir / ".weslr" / "charter.json"
+                    if not charter_path.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": "charter_not_found"}).encode("utf-8"))
+                        return
+                    with open(charter_path) as f:
+                        charter = json.load(f)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "charter_present": True,
+                        "version": charter.get("version"),
+                        "principles": charter.get("principles", []),
+                        "trust_rules": charter.get("trust_rules", {}),
+                        "source_categories": charter.get("source_categories", {}),
+                        "poisoning_resistance": charter.get("poisoning_resistance", {}),
+                    }).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # Satellite UI
+            if self.path == "/satellite":
+                satellite_index = base_dir / "dashboard" / "satellite" / "index.html"
+                try:
+                    with open(satellite_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+
+            # API: capability authorizations
+            if self.path == "/api/capabilities":
+                try:
+                    auth_path = base_dir / ".weslr" / "capability_authorizations.json"
+                    if auth_path.exists():
+                        with open(auth_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "capabilities": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: device registry
+            if self.path == "/api/devices":
+                try:
+                    dev_path = base_dir / ".weslr" / "device_registry.json"
+                    if dev_path.exists():
+                        with open(dev_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "devices": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
             if self.path == "/tia-history":
                 import json as _json
                 try:
