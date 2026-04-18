@@ -413,6 +413,25 @@ async def voice_connection(ws, path=None):
                     duration_s=duration_s,
                 )
 
+            elif msg_type == "chat_text":
+                # ── Phase 2: lightweight JSON text-chat ────────────────────────
+                text = msg.get("text", "").strip()
+                if not text:
+                    await ws.send(json.dumps({
+                        "type": "error",
+                        "message": "chat_text requires a non-empty 'text' field",
+                    }))
+                else:
+                    logger.info(f"WS text chat: {text[:60]}")
+                    chat_response = weslr_chat(text, timeline_id=timeline_id)
+                    response_text = chat_response.get("message", "")
+                    source = chat_response.get("source", "weslr")
+                    await ws.send(json.dumps({
+                        "type": "chat_text_response",
+                        "text": response_text,
+                        "source": source,
+                    }))
+
             elif msg_type == "end":
                 logger.info(f"Voice session ended: {connection_id}")
                 await ws.send(json.dumps({"type": "ready"}))
