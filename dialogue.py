@@ -986,7 +986,38 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         # Lifecycle-aware memory retrieval: assemble targeted anchors
         targeted_anchors = _get_targeted_anchors(last_message, topic_list)
 
-        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors, "_response_signals": _response_signals}
+        # ── Hallucination guard: evaluate truth class from response signals ─────
+        eval_class = _response_signals.get("evaluation_class", "unknown")
+        llm_used = _response_signals.get("llm_used", False)
+        internal_cap = _response_signals.get("internal_capability", False)
+        conf = _response_signals.get("confidence", "low")
+
+        if eval_class == "system_fact" and internal_cap:
+            _t_class = "system_fact"
+            _verified = True
+        elif eval_class == "model_reasoning" and llm_used:
+            _t_class = "model_reasoning"
+            _verified = False
+        elif eval_class == "fallback_template":
+            _t_class = "fallback_template"
+            _verified = False
+            conf = "low"
+        elif eval_class in ("memory_fact", "evidence_fact"):
+            _t_class = eval_class
+            _verified = True
+        else:
+            _t_class = "uncertain"
+            _verified = False
+
+        _truth_guard = {
+            "truth_class": _t_class,
+            "verified": _verified,
+            "can_be_verified": eval_class in ("system_fact", "memory_fact", "evidence_fact"),
+            "policy": "hallucination_guard_active",
+        }
+
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
+               "_response_signals": _response_signals, "_truth_guard": _truth_guard}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -1019,13 +1050,33 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         # Lifecycle-aware memory retrieval: assemble targeted anchors
         targeted_anchors = _get_targeted_anchors(topic if isinstance(topic, str) else None)
 
-        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors, "_response_signals": _response_signals}
+        # ── Hallucination guard for active_thread branch ─────────────────────
+        eval_class = _response_signals.get("evaluation_class", "unknown")
+        llm_used = _response_signals.get("llm_used", False)
+        internal_cap = _response_signals.get("internal_capability", False)
+        conf = _response_signals.get("confidence", "low")
+        if eval_class == "system_fact" and internal_cap:
+            _t_class = "system_fact"; _verified = True
+        elif eval_class == "model_reasoning" and llm_used:
+            _t_class = "model_reasoning"; _verified = False
+        elif eval_class == "fallback_template":
+            _t_class = "fallback_template"; _verified = False; conf = "low"
+        elif eval_class in ("memory_fact", "evidence_fact"):
+            _t_class = eval_class; _verified = True
+        else:
+            _t_class = "uncertain"; _verified = False
+        _truth_guard = {"truth_class": _t_class, "verified": _verified,
+                        "can_be_verified": eval_class in ("system_fact", "memory_fact", "evidence_fact"),
+                        "policy": "hallucination_guard_active"}
+
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
+               "_response_signals": _response_signals, "_truth_guard": _truth_guard}
 
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
     source = "fallback"
 
-    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(), "_response_signals": _response_signals}
+    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(), "_response_signals": _response_signals, "_truth_guard": _truth_guard}
     
     # Route through outbox for unified communication
     try:
