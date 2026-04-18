@@ -50,6 +50,7 @@ from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
 from self_eval import run_self_evaluation, run_self_directed_growth, generate_self_speech
 from sim import apply_pack_outcome, archive_memory, browse_queue, build_communicator_message, build_communicator_message_payload, build_identity_core_report, build_memory_layer_report, build_memory_lifecycle_report, build_memory_score_report, build_reflection_report, category_action, distill_episodic_memory, distill_semantic_memory, explain_item, handoff_summary, init_world, load_communicator_self, load_communicator_state, load_evaluation_metrics, load_experiments, load_failsafe_status, load_llm_status, load_messages, load_needs, load_projects, load_public_memory, load_relationships, load_self_mod_proposals, load_work_items, load_tier, monitor_memory_pressure, perform_tick, prepare_pack_offer, prune_archived_memory, record_human_exchange, render_dashboard, review_artifact, save_public_memory, show_agent, show_world, validate_artifact
+from integration import find_relevant_research_note
 from session_continuity import get_session_continuity
 from plugins import (
     enable_plugin, disable_plugin, list_plugins, create_plugin,
@@ -2116,6 +2117,21 @@ def cmd_serve(args):
                     # load_communicator_self() below is a legacy fallback; its output is
                     # entirely overwritten by tier injections on the hot path.
                     # Future: remove full loader from /chat once tier coverage is validated.
+                    # Bounded research context enrichment — see TWO_PATH_GAP_ANALYSIS.md
+                    _rc = None
+                    try:
+                        _ml = message.lower().strip()
+                        _sw = {"the","is","are","was","were","a","an","of","to","in","on","at","for","with","what","how","why","when","who","where","can","you","i","it","this","that"}
+                        _wd = [w.strip() for w in _ml.split() if len(w.strip()) > 2 and w.strip() not in _sw]
+                        if _wd and _ml.startswith(("what","how","why","explain","tell","define","about")):
+                            _lt = _wd[0]
+                            _pub = load_public_memory()
+                            _note = find_relevant_research_note(_pub, _lt) if _pub else None
+                            if _note:
+                                _raw = str(_note.get("content") or "").strip()[:350]
+                                _rc = {"topic": _lt, "title": str(_note.get("title","")[:80]), "summary": _raw, "source": str(_note.get("source","")[:60])}
+                    except Exception:
+                        _rc = None
                     try:
                         fut = _CHAT_EXECUTOR.submit(
                             build_communicator_message_payload,
@@ -2123,7 +2139,7 @@ def cmd_serve(args):
                             relationships=load_relationships(),
                             active_thread="human_message",
                             latest_human={"message": message},
-                            research_context=None,
+                            research_context=_rc,
                             l0_identity=load_tier("l0"),
                             l1_operating=load_tier("l1"),
                             l2_session=load_tier("l2"),
