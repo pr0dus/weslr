@@ -13,28 +13,32 @@
     .wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
     header { padding: 16px 0; border-bottom: 1px solid #28303a; margin-bottom: 16px; }
     header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; color: #6ee7b7; }
-    nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    nav button { flex: 1; min-width: 100px; padding: 10px 12px; background: #171b22; border: 1px solid #28303a; border-radius: 8px; color: #9aa6b2; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+    nav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    nav button { flex: 1 1 calc(50% - 6px); min-width: 0; padding: 10px 8px; background: #171b22; border: 1px solid #28303a; border-radius: 8px; color: #9aa6b2; font-size: 13px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; text-align: center; }
+    nav button:nth-child(n+3) { flex: 1 1 calc(33.3% - 6px); }
     nav button:hover { background: #1c222b; color: #e7ecf3; }
     nav button.active { background: #1c222b; border-color: #6ee7b7; color: #6ee7b7; }
-    .card { background: #171b22; border: 1px solid #28303a; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    .card h2 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #9aa6b2; }
+    .card { background: #171b22; border: 1px solid #28303a; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .card h2 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #9aa6b2; text-transform: uppercase; letter-spacing: 0.06em; }
     .content-text { font-size: 14px; line-height: 1.6; }
     .activity-list { list-style: none; }
     .activity-list li { padding: 8px 0; border-bottom: 1px solid #28303a; }
     .activity-list li:last-child { border-bottom: none; }
     .activity-list .time { font-size: 11px; color: #6ee7b7; margin-right: 6px; }
     .activity-list .desc { color: #e7ecf3; }
+    .empty-state { color: #9aa6b2; font-size: 13px; font-style: italic; opacity: 0.7; }
     .muted { color: #9aa6b2; }
     .debug-panel { background: #0c0f14; border: 1px solid #28303a; border-radius: 8px; padding: 12px; font-size: 12px; font-family: monospace; margin-top: 24px; }
     .debug-panel .row { display: flex; gap: 8px; margin-bottom: 4px; }
     .debug-panel .label { color: #6ee7b7; min-width: 120px; }
     .debug-panel .value { color: #e7ecf3; }
     .hidden { display: none; }
-    .actions-sub { margin-bottom: 16px; }
-    .actions-sub h3 { font-size: 13px; font-weight: 600; color: #9aa6b2; margin-bottom: 8px; }
+    .actions-sub { margin-bottom: 18px; }
+    .actions-sub:last-child { margin-bottom: 0; }
+    .actions-sub h3 { font-size: 12px; font-weight: 600; color: #9aa6b2; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
     .actions-sub textarea { width: 100%; background: #0c0f14; border: 1px solid #28303a; border-radius: 8px; color: #e7ecf3; padding: 8px 10px; font-size: 13px; resize: vertical; min-height: 72px; font-family: inherit; }
     .actions-sub textarea:focus { outline: none; border-color: #6ee7b7; }
+    .actions-sub textarea::placeholder { color: #5a6270; font-style: italic; }
     .actions-sub .btn-row { display: flex; gap: 8px; margin-top: 8px; }
     .actions-sub button { padding: 8px 16px; background: #6ee7b7; color: #0f1115; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
     .actions-sub button:hover { opacity: 0.85; }
@@ -48,6 +52,20 @@
     .dev-list li:last-child { border-bottom: none; }
     .dev-list .dev-name { color: #e7ecf3; }
     .dev-list .dev-trust { font-size: 12px; margin-left: 6px; }
+    /* Charter compact */
+    .charter-section { margin-bottom: 14px; }
+    .charter-section:last-child { margin-bottom: 0; }
+    .charter-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #6ee7b7; margin-bottom: 6px; }
+    .charter-section ul { margin: 0 0 0 14px; padding: 0; }
+    .charter-section li { font-size: 13px; margin-bottom: 3px; }
+    .charter-section li strong { color: #e7ecf3; }
+    .charter-row { font-size: 13px; margin-bottom: 4px; }
+    .charter-row .ck { color: #e7ecf3; }
+    .charter-row .cv { color: #9aa6b2; }
+    @media (max-width: 400px) {
+      nav button { flex: 1 1 calc(50% - 6px); font-size: 12px; padding: 8px 6px; }
+      nav button:nth-child(n+3) { flex: 1 1 calc(50% - 6px); }
+    }
   </style>
 </head>
 <body>
@@ -60,24 +78,24 @@
   <nav>
     <button id="btn-situation" class="active" onclick="showCard('situation')">Situation</button>
     <button id="btn-activity" onclick="showCard('activity')">Activity</button>
-    <button id="btn-evaluation" onclick="showCard('evaluation')">Activity</button>
+    <button id="btn-evaluation" onclick="showCard('evaluation')">Evaluation</button>
     <button id="btn-actions" onclick="showCard('actions')">Actions</button>
     <button id="btn-charter" onclick="showCard('charter')">Charter</button>
   </nav>
 
   <div id="situation-card" class="card">
-    <h2>How am I doing?</h2>
+    <h2>System Status</h2>
     <div class="content-text" id="health-content"><p class="muted">Loading...</p></div>
   </div>
 
   <div id="activity-card" class="card hidden">
-    <h2>Recent Activity</h2>
-    <div class="content-text" id="activity-content"><p class="muted">Loading...</p></div>
+    <h2>Recent Events</h2>
+    <div class="content-text" id="activity-content"><p class="empty-state">Loading recent events…</p></div>
   </div>
 
   <div id="evaluation-card" class="card hidden">
-    <h2>Self-Evaluation</h2>
-    <div class="content-text" id="eval-content"><p class="muted">Loading...</p></div>
+    <h2>How I Read the Situation</h2>
+    <div class="content-text" id="eval-content"><p class="empty-state">Loading governance state…</p></div>
   </div>
 
   <div id="actions-card" class="card hidden">
@@ -94,18 +112,18 @@
 
     <div class="actions-sub">
       <h3>Devices</h3>
-      <div id="devices-content"><p class="muted">Loading...</p></div>
+      <div id="devices-content"><p class="empty-state">Loading devices…</p></div>
     </div>
 
     <div class="actions-sub">
       <h3>Capabilities</h3>
-      <div id="caps-content"><p class="muted">Loading...</p></div>
+      <div id="caps-content"><p class="empty-state">Loading capabilities…</p></div>
     </div>
   </div>
 
   <div id="charter-card" class="card hidden">
     <h2>Charter</h2>
-    <div class="content-text" id="charter-content"><p class="muted">Loading...</p></div>
+    <div class="content-text" id="charter-content"><p class="empty-state">Loading Charter…</p></div>
   </div>
 
   <div class="debug-panel">
@@ -158,9 +176,10 @@
     .then(function(data) {
       var el = document.getElementById('health-content');
       if (el) {
-        var healthy = data.healthy !== false ? 'Healthy' : 'Degraded';
+        var healthy = data.healthy !== false ? 'Operational' : 'Degraded';
         var uptime = data.uptime_s ? Math.floor(data.uptime_s) + 's' : '--';
-        el.innerHTML = '<p>System: ' + healthy + '</p><p>Uptime: ' + uptime + '</p>';
+        var provider = data.provider_available ? 'LLM available' : 'LLM unavailable';
+        el.innerHTML = '<p>System: ' + healthy + '</p><p>Uptime: ' + uptime + '</p><p>LLM: ' + provider + '</p>';
       }
       var hv = document.getElementById('dbg-health-val');
       if (hv) hv.textContent = 'ok';
@@ -180,7 +199,7 @@
       if (!el) return;
       var events = Array.isArray(data) ? data : (data.events || []);
       if (events.length === 0) {
-        el.innerHTML = '<p class="muted">No recent activity.</p>';
+        el.innerHTML = '<p class="empty-state">No recent activity yet.</p>';
       } else {
         var html = '<ul class="activity-list">';
         events.forEach(function(ev) {
@@ -196,12 +215,12 @@
     })
     .catch(function() {
       var el = document.getElementById('activity-content');
-      if (el) el.innerHTML = '<p class="muted">Activity unavailable.</p>';
+      if (el) el.innerHTML = '<p class="empty-state">Activity unavailable right now.</p>';
       var av = document.getElementById('dbg-activity-val');
       if (av) av.textContent = 'failed';
     });
 
-  /* ---- Evaluation: governance health ---- */
+  /* ---- Evaluation: how WESLR reads the situation ---- */
   fetch('/api/state')
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -210,21 +229,52 @@
       var posture = data.health_posture || {};
       var risk = posture.risk_counts || 0;
       var quality = posture.governance_quality || 'unknown';
-      var msg;
+      var strengths = data.strengths || [];
+      var weaknesses = data.unresolved_weaknesses || [];
+      var concerns = data.active_concerns || [];
+
+      var verdict;
       if (risk === 0 && quality === 'operational') {
-        msg = 'Everything looks normal.';
+        verdict = 'Everything looks normal.';
       } else if (risk === 0) {
-        msg = 'System operational. No active risks.';
+        verdict = 'System operational. No active risks.';
       } else {
-        msg = 'Something needs attention. ' + risk + ' risk(s) detected.';
+        verdict = 'Something needs attention. ' + risk + ' risk(s) detected.';
       }
-      el.innerHTML = '<p>' + msg + '</p><p class="muted" style="font-size:12px;margin-top:6px;">Quality: ' + quality + '</p>';
+
+      var html = '<p style="font-size:14px;font-weight:600;margin-bottom:10px;">' + verdict + '</p>';
+      html += '<p class="muted" style="font-size:12px;margin-bottom:12px;">Governance quality: ' + quality + '</p>';
+
+      if (strengths.length > 0) {
+        html += '<p class="charter-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:#6ee7b7;margin-bottom:6px;">What is working</p>';
+        html += '<ul style="margin:0 0 12px 16px;padding:0;">';
+        strengths.slice(0, 4).forEach(function(s) { html += '<li style="font-size:13px;margin-bottom:3px;color:#9aa6b2;">' + s + '</li>'; });
+        html += '</ul>';
+      }
+      if (weaknesses.length > 0) {
+        html += '<p class="charter-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:#e7ecf3;margin-bottom:6px;">What needs attention</p>';
+        html += '<ul style="margin:0 0 12px 16px;padding:0;">';
+        weaknesses.slice(0, 4).forEach(function(w) { html += '<li style="font-size:13px;margin-bottom:3px;color:#9aa6b2;">' + w + '</li>'; });
+        html += '</ul>';
+      }
+      if (concerns.length > 0) {
+        html += '<p class="charter-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:#e7ecf3;margin-bottom:6px;">Active concerns</p>';
+        html += '<ul style="margin:0 0 12px 16px;padding:0;">';
+        concerns.slice(0, 3).forEach(function(c) { html += '<li style="font-size:13px;margin-bottom:3px;color:#9aa6b2;">' + c + '</li>'; });
+        html += '</ul>';
+      }
+
+      if (verdict === 'Everything looks normal.' && strengths.length === 0 && weaknesses.length === 0) {
+        el.innerHTML = '<p style="font-size:14px;font-weight:600;margin-bottom:8px;">' + verdict + '</p><p class="muted" style="font-size:13px;">No active concerns right now.</p>';
+      } else {
+        el.innerHTML = html;
+      }
       var ev = document.getElementById('dbg-eval-val');
       if (ev) ev.textContent = 'ok';
     })
     .catch(function() {
       var el = document.getElementById('eval-content');
-      if (el) el.innerHTML = '<p class="muted">Evaluation unavailable.</p>';
+      if (el) el.innerHTML = '<p class="empty-state">Evaluation unavailable.</p>';
       var ev = document.getElementById('dbg-eval-val');
       if (ev) ev.textContent = 'failed';
     });
@@ -271,7 +321,7 @@
       if (!el) return;
       var devices = data.devices || [];
       if (devices.length === 0) {
-        el.innerHTML = '<p class="muted">No devices registered yet.</p>';
+        el.innerHTML = '<p class="empty-state">No devices are registered yet.</p>';
       } else {
         var html = '<ul class="dev-list">';
         devices.forEach(function(d) {
@@ -287,7 +337,7 @@
     })
     .catch(function() {
       var el = document.getElementById('devices-content');
-      if (el) el.innerHTML = '<p class="muted">No devices available right now.</p>';
+      if (el) el.innerHTML = '<p class="empty-state">No devices available right now.</p>';
       var dv = document.getElementById('dbg-devices-val');
       if (dv) dv.textContent = 'failed';
     });
@@ -300,7 +350,7 @@
       if (!el) return;
       var caps = data.capabilities || [];
       if (caps.length === 0) {
-        el.innerHTML = '<p class="muted">No capabilities available.</p>';
+        el.innerHTML = '<p class="empty-state">No capabilities are available right now.</p>';
       } else {
         var html = '<ul class="cap-list">';
         caps.forEach(function(c) {
@@ -318,7 +368,7 @@
     })
     .catch(function() {
       var el = document.getElementById('caps-content');
-      if (el) el.innerHTML = '<p class="muted">Capabilities unavailable.</p>';
+      if (el) el.innerHTML = '<p class="empty-state">Capabilities unavailable.</p>';
       var cv = document.getElementById('dbg-caps-val');
       if (cv) cv.textContent = 'failed';
     });
@@ -335,36 +385,38 @@
       var html = '';
 
       if (principles.length > 0) {
-        html += '<p style="font-size:12px;font-weight:600;margin-bottom:6px;color:#6ee7b7;">Guiding Principles</p>';
-        html += '<ul style="margin:0 0 14px 16px;padding:0;">';
+        html += '<div class="charter-section">';
+        html += '<p class="charter-label">Guiding Principles</p>';
+        html += '<ul>';
         principles.slice(0, 6).forEach(function(p) {
-          html += '<li style="font-size:13px;margin-bottom:3px;">' + p + '</li>';
+          html += '<li>' + p + '</li>';
         });
-        html += '</ul>';
+        html += '</ul></div>';
       }
 
       var trustKeys = Object.keys(trustRules);
       if (trustKeys.length > 0) {
-        html += '<p style="font-size:12px;font-weight:600;margin-bottom:6px;color:#6ee7b7;">Trust Hierarchy</p>';
-        html += '<div style="margin-bottom:14px;">';
+        html += '<div class="charter-section">';
+        html += '<p class="charter-label">Trust Hierarchy</p>';
         trustKeys.forEach(function(k) {
-          html += '<div style="font-size:13px;margin-bottom:4px;"><strong style="color:#e7ecf3;">' + k + '</strong> — <span style="color:#9aa6b2;">' + trustRules[k] + '</span></div>';
+          html += '<div class="charter-row"><span class="ck">' + k + '</span> — <span class="cv">' + trustRules[k] + '</span></div>';
         });
         html += '</div>';
       }
 
       var poisonKeys = Object.keys(poisoning);
       if (poisonKeys.length > 0) {
-        html += '<p style="font-size:12px;font-weight:600;margin-bottom:6px;color:#6ee7b7;">What WESLR Watches For</p>';
-        html += '<ul style="margin:0 0 14px 16px;padding:0;">';
+        html += '<div class="charter-section">';
+        html += '<p class="charter-label">What WESLR Watches For</p>';
+        html += '<ul>';
         poisonKeys.slice(0, 5).forEach(function(k) {
-          html += '<li style="font-size:13px;margin-bottom:3px;"><strong style="color:#e7ecf3;">' + k + '</strong>: <span style="color:#9aa6b2;">' + poisoning[k] + '</span></li>';
+          html += '<li><span class="ck">' + k + '</span>: <span class="cv">' + poisoning[k] + '</span></li>';
         });
-        html += '</ul>';
+        html += '</ul></div>';
       }
 
       if (!html) {
-        el.innerHTML = '<p class="muted">Charter not configured yet.</p>';
+        el.innerHTML = '<p class="empty-state">Charter not configured yet.</p>';
       } else {
         el.innerHTML = html;
       }
@@ -373,7 +425,7 @@
     })
     .catch(function() {
       var el = document.getElementById('charter-content');
-      if (el) el.innerHTML = '<p class="muted">Charter data unavailable.</p>';
+      if (el) el.innerHTML = '<p class="empty-state">Charter data unavailable.</p>';
       var chv = document.getElementById('dbg-charter-val');
       if (chv) chv.textContent = 'failed';
     });

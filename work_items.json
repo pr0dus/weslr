@@ -3,22 +3,22 @@
     "id": "work-1",
     "title": "Advance Backup Confidence",
     "status": "open",
-    "priority": 0.6,
+    "priority": 0.52,
     "owner": "agent-1",
     "created_at": 1774847525,
     "project_id": "project-backup-confidence",
     "need_id": "",
-    "notes": "Bootstrap work item for Backup Confidence"
+    "notes": "Last progressed at 1776146140 by agent-1"
   },
   {
     "id": "work-2",
     "title": "Advance Workflow Packaging",
     "status": "open",
-    "priority": 0.6,
+    "priority": 0.52,
     "owner": "agent-2",
     "created_at": 1774847525,
     "project_id": "project-workflow-packaging",
     "need_id": "",
-    "notes": "Bootstrap work item for Workflow Packaging"
+    "notes": "Last progressed at 1776146140 by agent-2"
   }
 ]

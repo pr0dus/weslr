@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "need-5-1",
+    "title": "inspect cooldown active (86296s remaining)",
+    "kind": "repair",
+    "description": "Observed unresolved runtime friction: inspect cooldown active (86296s remaining)",
+    "origin": "world-log",
+    "scope": "public",
+    "pressure": 0.58,
+    "novelty": 0.42,
+    "status": "open",
+    "created_at": 1776146244,
+    "updated_at": 1776146244
+  }
+]

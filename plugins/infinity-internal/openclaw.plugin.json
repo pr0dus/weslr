@@ -1,0 +1,17 @@
+{
+  "id": "infinity-internal",
+  "name": "Infinity Internal",
+  "description": "Staged restart capsule plugin placeholder for SAFE STEP 1.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable the staged restart capsule (no effect until final enablement)."
+      }
+    }
+  },
+  "register": "./index.js"
+}

@@ -1,1 +1,7 @@
-[]
+[
+  "inspect learned agent-2 top_theme=log readability modules=1 artifacts=3",
+  "tick 3: inspected agent-2",
+  "tick 4: traded with agent-2",
+  "signal sent to agent-2 about log readability: raw logs are hard to scan during small incidents",
+  "tick 6: signaled agent-2 about log readability"
+]

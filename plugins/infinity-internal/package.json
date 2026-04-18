@@ -1,0 +1,9 @@
+{
+  "name": "infinity-internal",
+  "version": "0.1.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  }
+}

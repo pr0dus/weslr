@@ -1,0 +1,20 @@
+{
+  "repoRoot": "/data/data/com.termux/files/home/.openclaw/workspace",
+  "branch": "weslr/canonical-clean-signals",
+  "commit": "7e77824f67f70fd0c5d104f77bdb40ac2d5786ad",
+  "dirty": true,
+  "activeFiles": [
+    "docs/CANONICAL_BUILD_ROADMAP_V1.md",
+    "memory/2026-04-13-1843.md",
+    "memory/2026-04-13-1844.md",
+    "memory/2026-04-13-read-from-memory-md-failed.md",
+    "memory/2026-04-13-read-from-openclaw-workspace-m.md",
+    "memory/2026-04-13-read-lines-1-200-from-memory-m.md",
+    "memory/2026-04-13-request-timed-out-before-a-res.md",
+    "memory/2026-04-13.md",
+    "plugins/infinity-internal/"
+  ],
+  "pendingTests": [],
+  "latestTask": null,
+  "reason": "post-recovery smoke"
+}

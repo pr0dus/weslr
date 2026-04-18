@@ -1,6 +1,100 @@
 {
-  "actions": {},
-  "themes": {},
-  "notes": [],
-  "evidence_types": {}
+  "actions": {
+    "trade": {
+      "count": 3,
+      "follow_through": 3,
+      "question_link": 3,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "gather": {
+      "count": 1,
+      "follow_through": 1,
+      "question_link": 1,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "rest": {
+      "count": 1,
+      "follow_through": 1,
+      "question_link": 1,
+      "experiment_link": 0,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    },
+    "inspect": {
+      "count": 2,
+      "follow_through": 2,
+      "question_link": 2,
+      "experiment_link": 2,
+      "question_narrowing": 0,
+      "coordination_effect": 2,
+      "reuse_signal": 0
+    },
+    "research": {
+      "count": 2,
+      "follow_through": 2,
+      "question_link": 2,
+      "experiment_link": 2,
+      "question_narrowing": 0,
+      "coordination_effect": 0,
+      "reuse_signal": 0
+    }
+  },
+  "themes": {
+    "log readability": {
+      "trade": {
+        "count": 3,
+        "follow_through": 3,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "gather": {
+        "count": 1,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "rest": {
+        "count": 1,
+        "follow_through": 1,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      },
+      "inspect": {
+        "count": 2,
+        "follow_through": 2,
+        "question_narrowing": 0,
+        "coordination_effect": 2,
+        "reuse_signal": 0
+      },
+      "research": {
+        "count": 2,
+        "follow_through": 2,
+        "question_narrowing": 0,
+        "coordination_effect": 0,
+        "reuse_signal": 0
+      }
+    }
+  },
+  "notes": [
+    "decision_mode=act chosen_action=rest",
+    "decision_mode=act chosen_action=inspect",
+    "decision_mode=act chosen_action=research",
+    "decision_mode=act chosen_action=inspect"
+  ],
+  "evidence_types": {
+    "follow_through": 9,
+    "question_link": 9,
+    "experiment_progress": 4,
+    "coordination_effect": 2
+  }
 }

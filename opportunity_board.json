@@ -1,18 +1,18 @@
 {
   "themes": {
     "backup confidence": {
-      "pressure": 0.168,
+      "pressure": 0.118,
       "evidence": 0,
       "updated_at": 1774612821,
       "acceptances": 0,
       "rejections": 91,
       "revisions": 0,
       "aliases": [],
-      "lifecycle": "declining",
+      "lifecycle": "dormant",
       "split_from": "config sanity checks"
     },
     "service visibility": {
-      "pressure": 0.217,
+      "pressure": 0.213,
       "evidence": 1,
       "updated_at": 1774618726,
       "acceptances": 0,
@@ -23,7 +23,7 @@
       "split_from": null
     },
     "config sanity checks": {
-      "pressure": 0.393,
+      "pressure": 0.276,
       "evidence": 31,
       "updated_at": 1774595883,
       "acceptances": 0,
@@ -35,8 +35,8 @@
     },
     "log readability": {
       "pressure": 0.99,
-      "evidence": 55,
-      "updated_at": 1774846697,
+      "evidence": 64,
+      "updated_at": 1776146244,
       "acceptances": 0,
       "rejections": 0,
       "revisions": 0,
@@ -45,7 +45,7 @@
       "split_from": null
     },
     "workflow packaging": {
-      "pressure": 0.22,
+      "pressure": 0.216,
       "evidence": 0,
       "updated_at": 1774591958,
       "acceptances": 0,
@@ -56,7 +56,7 @@
       "split_from": null
     },
     "config sanity checks validation": {
-      "pressure": 0.94,
+      "pressure": 0.92,
       "evidence": 75,
       "updated_at": 1774618597,
       "acceptances": 0,
@@ -67,7 +67,7 @@
       "split_from": "config sanity checks"
     },
     "test opportunity": {
-      "pressure": 0.108,
+      "pressure": 0.076,
       "evidence": 1,
       "updated_at": 1774618727,
       "acceptances": 0,
@@ -78,7 +78,7 @@
       "split_from": null
     },
     "log readability validation": {
-      "pressure": 0.37,
+      "pressure": 0.362,
       "evidence": 0,
       "updated_at": 1774618808,
       "acceptances": 0,
@@ -87,21 +87,54 @@
       "aliases": [],
       "lifecycle": "emergent",
       "split_from": "log readability"
+    },
+    "governance transparency": {
+      "pressure": 0.44,
+      "evidence": 1,
+      "updated_at": 1776150004,
+      "acceptances": 0,
+      "rejections": 0,
+      "revisions": 0,
+      "aliases": [],
+      "lifecycle": "stable",
+      "split_from": null
+    },
+    "observability signals": {
+      "pressure": 0.61,
+      "evidence": 4,
+      "updated_at": 1776155887,
+      "acceptances": 1,
+      "rejections": 0,
+      "revisions": 0,
+      "aliases": [],
+      "lifecycle": "stable",
+      "split_from": null
+    },
+    "planetary-signals": {
+      "pressure": 0.61,
+      "evidence": 4,
+      "updated_at": 1776178646,
+      "acceptances": 1,
+      "rejections": 0,
+      "revisions": 0,
+      "aliases": [],
+      "lifecycle": "stable",
+      "split_from": null
     }
   },
   "emergent_candidates": [
     {
       "theme": "readable logs",
       "parent_theme": "log readability",
-      "signal_count": 1,
-      "confidence": 0.205,
-      "updated_at": 1774623471
+      "signal_count": 3,
+      "confidence": 0.426,
+      "updated_at": 1776146140
     },
     {
       "theme": "backup validation",
       "parent_theme": "log readability",
       "signal_count": 2,
-      "confidence": 0.332,
+      "confidence": 0.312,
       "updated_at": 1774846697
     }
   ],

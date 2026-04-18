@@ -1043,12 +1043,35 @@ def cmd_serve(args):
                         break
                 high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
                 repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+
+                # Early warning: emerging patterns that haven't hit alert thresholds yet
+                early_warning_flags = []
+                early_warning_count = 0
+                recent_ext = [e for e in events[-20:] if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in events[-20:] if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5 and not repeated_pattern:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3 and unverified_ratio < 0.5:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in events[-20:]:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
+                early_warning_count = len(early_warning_flags)
+
+                signal_level = "alert" if alert_count > 0 else ("warning" if warning_count > 0 else ("early_warning" if early_warning_count > 0 else "clean"))
+
                 return {
                     "summary": {
                         "total_events": len(events),
                         "clean": clean_count,
                         "warning": warning_count,
                         "alert": alert_count,
+                        "early_warning": early_warning_count,
                         "source_breakdown": source_counts,
                         "frame_breakdown": frame_counts,
                     },
@@ -1056,8 +1079,14 @@ def cmd_serve(args):
                         "high_frequency_external": high_freq_external,
                         "repeated_same_source": repeated_pattern,
                     },
+                    "early_warnings": {
+                        "flags": early_warning_flags,
+                        "rising_external_source": "rising_external_source" in early_warning_flags,
+                        "rising_unverified_ratio": "rising_unverified_ratio" in early_warning_flags,
+                        "emerging_burst_pattern": "emerging_burst_pattern" in early_warning_flags,
+                    },
                     "flagged_events": flagged_events[-10:],
-                    "signal_level": "alert" if alert_count > 0 else ("warning" if warning_count > 0 else "clean"),
+                    "signal_level": signal_level,
                 }
             except Exception as e:
                 return {"error": str(e)}
@@ -1203,12 +1232,35 @@ def cmd_serve(args):
                         break
                 high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
                 repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+
+                # Early warning: emerging patterns that haven't hit alert thresholds yet
+                early_warning_flags = []
+                early_warning_count = 0
+                recent_ext = [e for e in events[-20:] if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in events[-20:] if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5 and not repeated_pattern:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3 and unverified_ratio < 0.5:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in events[-20:]:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
+                early_warning_count = len(early_warning_flags)
+
+                signal_level = "alert" if alert_count > 0 else ("warning" if warning_count > 0 else ("early_warning" if early_warning_count > 0 else "clean"))
+
                 return {
                     "summary": {
                         "total_events": len(events),
                         "clean": clean_count,
                         "warning": warning_count,
                         "alert": alert_count,
+                        "early_warning": early_warning_count,
                         "source_breakdown": source_counts,
                         "frame_breakdown": frame_counts,
                     },
@@ -1216,8 +1268,14 @@ def cmd_serve(args):
                         "high_frequency_external": high_freq_external,
                         "repeated_same_source": repeated_pattern,
                     },
+                    "early_warnings": {
+                        "flags": early_warning_flags,
+                        "rising_external_source": "rising_external_source" in early_warning_flags,
+                        "rising_unverified_ratio": "rising_unverified_ratio" in early_warning_flags,
+                        "emerging_burst_pattern": "emerging_burst_pattern" in early_warning_flags,
+                    },
                     "flagged_events": flagged_events[-10:],
-                    "signal_level": "alert" if alert_count > 0 else ("warning" if warning_count > 0 else "clean"),
+                    "signal_level": signal_level,
                 }
             except Exception as e:
                 return {"error": str(e)}
@@ -1303,17 +1361,32 @@ def cmd_serve(args):
                     elif ev.get("trust_level") == "unverified" or ev.get("source") == "external":
                         unverified += 1
                 total = len(recent)
-                total = len(recent)
                 untrusted_pct = untrusted / total if total > 0 else 0
                 flagged_count = len(flagged_types)
                 high_concern_pct = (untrusted + flagged_count) / total if total > 0 else 0
                 trusted_pct = trusted / total if total > 0 else 0
+                # Early warning: external source patterns emerging (before alert threshold)
+                early_warning_flags = []
+                recent_ext = [e for e in recent if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in recent if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in recent:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
                 if high_concern_pct >= 0.2:
                     confidence = "low"
                     caution = "Recent events include operator-distusted or Charter-flagged inputs."
-                elif high_concern_pct >= 0.05:
+                elif high_concern_pct >= 0.05 or early_warning_flags:
                     confidence = "medium"
-                    caution = "Some recent inputs have trust concerns."
+                    caution = "Pattern emerging: " + "; ".join(early_warning_flags) if early_warning_flags else "Some recent inputs have trust concerns."
                 elif trusted_pct >= 0.6:
                     confidence = "high"
                     caution = None
@@ -1329,6 +1402,8 @@ def cmd_serve(args):
                 }
                 if caution:
                     result["caution_note"] = caution
+                if early_warning_flags:
+                    result["early_warning_flags"] = early_warning_flags
                 if flagged_types:
                     result["flagged_event_types"] = list(set(flagged_types))[:3]
                 return result

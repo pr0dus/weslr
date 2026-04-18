@@ -86,3 +86,15 @@ weslr_apply_eligibility.jsonl
 weslr_apply_staging.jsonl
 
 weslr_execute_readiness.jsonl
+
+# Satellite UI recovery artifacts
+.main_original.py
+_runtime/
+_patch_ui.py
+_rebuild.py
+
+# Memory files (runtime session logs)
+memory/
+
+# Continuity runtime state
+continuity/change_proposals.json

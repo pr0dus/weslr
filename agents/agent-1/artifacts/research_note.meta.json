@@ -58,8 +58,8 @@
   "proof_signals": {
     "artifact_id": "agent-1-research_note-1774624083",
     "first_seen_tick": 1,
-    "last_seen_tick": 0,
-    "appearances": 5,
+    "last_seen_tick": 8,
+    "appearances": 22,
     "top_pack_hits": 0,
     "review_exports": 0,
     "human_approvals": 0,

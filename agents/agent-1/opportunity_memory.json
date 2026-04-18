@@ -22,11 +22,11 @@
       "last_category": null
     },
     "log readability": {
-      "strength": 0.531,
+      "strength": 0.7,
       "wins": 2,
       "failures": 0,
-      "last_action": "build_module",
-      "last_category": "optimization"
+      "last_action": "signal",
+      "last_category": "observability"
     },
     "workflow packaging": {
       "strength": 0.3,

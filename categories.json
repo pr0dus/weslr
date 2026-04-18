@@ -5,5 +5,13 @@
   "debugging",
   "memory",
   "exports",
-  "benchmarks"
+  "benchmarks",
+  "observability",
+  "packaging",
+  "interfaces",
+  "forecasting",
+  "market-tools",
+  "replay",
+  "lineage",
+  "automation"
 ]

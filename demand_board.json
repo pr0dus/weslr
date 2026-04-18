@@ -10,13 +10,33 @@
     "reason": "There are exportable modules/components that should be shortlisted outside the sim."
   },
   {
+    "kind": "governance",
+    "title": "Dormant categories detected",
+    "reason": "These categories are underused and may need retirement or revival: packaging, interfaces, forecasting, market-tools, replay, lineage, automation."
+  },
+  {
+    "kind": "export",
+    "title": "Export-ready artifacts available",
+    "reason": "At least one artifact is ready for human inspection or external packaging."
+  },
+  {
     "kind": "family",
     "title": "Active artifact families detected",
-    "reason": "Current artifact work is clustering around: packaging, evaluation."
+    "reason": "Current artifact work is clustering around: evaluation, packaging, local-ai-ops, dashboards."
   },
   {
     "kind": "market",
     "title": "Rising categories detected",
-    "reason": "Current activity is clustering around: memory."
+    "reason": "Current activity is clustering around: memory, observability, research."
+  },
+  {
+    "kind": "market",
+    "title": "Export pressure building",
+    "reason": "These categories currently hold export-ready artifacts: observability, science."
+  },
+  {
+    "kind": "failure",
+    "title": "Recent friction detected",
+    "reason": "Errors=0, cooldowns=1, skipped=0; hot actions: inspect."
   }
 ]

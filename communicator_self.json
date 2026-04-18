@@ -8,46 +8,64 @@
   ],
   "affect": {
     "curiosity": 0.66,
-    "tension": 0.22,
-    "hope": 0.41,
-    "stability": 0.58,
-    "attachment": 0.18
+    "tension": 0.105,
+    "hope": 0.51,
+    "stability": 0.67,
+    "attachment": 0.24
   },
   "continuity": {
-    "session_count": 0,
-    "ticks_lived": 0,
-    "memory_bonds": 0.22,
-    "identity_stability": 0.62,
-    "unfinished_threads": []
+    "session_count": 5,
+    "ticks_lived": 6,
+    "memory_bonds": 0.268,
+    "identity_stability": 0.646,
+    "unfinished_threads": [
+      "log readability",
+      "What is still unclear about log readability?",
+      "What new uncertainty appeared after inspect on log readability?",
+      "What new uncertainty appeared after research on log readability?",
+      "repeated friction around inspect"
+    ],
+    "unresolved_threads": 3,
+    "last_thread_update": 1776147498
   },
   "relationships": {
-    "human_salience": 0.32,
+    "human_salience": 0.99,
     "known_humans": [
       "you",
-      "interlocutor_001"
+      "interlocutor_001",
+      "test",
+      "Alice",
+      "Bob",
+      "Carol",
+      "Test Operator",
+      "Full Test",
+      "New Op",
+      "Test User",
+      "Test"
     ],
-    "last_human_topic": "raining",
+    "last_human_topic": "onboarding",
     "human_profiles": {
       "you": {
         "message_count": 4,
-        "salience": 0.36,
+        "salience": 0.396,
         "trust": 0.32,
-        "attachment": 0.22,
+        "attachment": 0.247,
         "known_topics": [
           "who",
-          "how"
+          "how",
+          "log readability"
         ],
         "recurring_topics": {
           "who": 3,
-          "how": 1
+          "how": 1,
+          "log readability": 3
         },
         "unresolved_shared_threads": [
-          "who",
           "how"
         ],
         "last_message_at": 1774854641,
         "last_message_summary": "how are you",
-        "relationship_summary": "You is a recurring human with 4 remembered exchanges around who, how.",
+        "relationship_summary": "You remains a recurring human anchor; current shared threads include who, how, log readability.",
         "discovered_name": "",
         "identity_confidence": 0.0
       },
@@ -70,98 +88,416 @@
         "relationship_summary": "You is a recurring human with 1 remembered exchanges around raining.",
         "discovered_name": "",
         "identity_confidence": 0.0
+      },
+      "test": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 1,
+          "operator-profile": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776198227,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"test\", \"role\": \"dev\", \"persona\": \"technical\", \"primary_outcome\": \"test\", \"time_horizon\": \"session\", \"objectives\": [\"test\"], \"failure_conditions\": \"none\", \"red_lines\": \"none\", \"",
+        "relationship_summary": "Test is a recurring human with 1 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Alice": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 1,
+          "operator-profile": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776198373,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Alice\", \"role\": \"Engineering Lead\", \"persona\": \"technical\", \"primary_outcome\": \"Improve code review turnaround\", \"time_horizon\": \"week\", \"objectives\": [\"Reduce PR cycle time\", ",
+        "relationship_summary": "Alice is a recurring human with 1 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Bob": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 1,
+          "operator-profile": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776198406,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Bob\", \"role\": \"DevOps\", \"persona\": \"mixed\", \"primary_outcome\": \"ship faster\", \"time_horizon\": \"day\", \"objectives\": [\"CI speed\"], \"failure_conditions\": \"downtime\", \"red_lines\": ",
+        "relationship_summary": "Bob is a recurring human with 1 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Carol": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 1,
+          "operator-profile": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776198950,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Carol\", \"role\": \"CTO\", \"persona\": \"technical\", \"primary_outcome\": \"Scale infrastructure\", \"time_horizon\": \"week\", \"objectives\": [\"CI speed\", \"monitoring\"], \"failure_conditions\"",
+        "relationship_summary": "Carol is a recurring human with 1 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Test Operator": {
+        "message_count": 3,
+        "salience": 0.32,
+        "trust": 0.29,
+        "attachment": 0.195,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 3,
+          "operator-profile": 3
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776357637,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": ",
+        "relationship_summary": "Test operator is a recurring human with 3 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Full Test": {
+        "message_count": 1,
+        "salience": 0.24,
+        "trust": 0.23,
+        "attachment": 0.145,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 1,
+          "operator-profile": 1
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776199941,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Full Test\", \"role\": \"DevOps\", \"persona\": \"technical\", \"primary_outcome\": \"test\", \"time_horizon\": \"day\", \"objectives\": [\"test\"], \"failure_conditions\": \"none\", \"red_lines\": \"none",
+        "relationship_summary": "Full test is a recurring human with 1 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "New Op": {
+        "message_count": 2,
+        "salience": 0.28,
+        "trust": 0.26,
+        "attachment": 0.17,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 2,
+          "operator-profile": 2
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776357688,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"aud",
+        "relationship_summary": "New op is a recurring human with 2 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Test User": {
+        "message_count": 3,
+        "salience": 0.32,
+        "trust": 0.29,
+        "attachment": 0.195,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 3,
+          "operator-profile": 3
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776357826,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "relationship_summary": "Test user is a recurring human with 3 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      },
+      "Test": {
+        "message_count": 2,
+        "salience": 0.28,
+        "trust": 0.26,
+        "attachment": 0.17,
+        "known_topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "recurring_topics": {
+          "onboarding": 2,
+          "operator-profile": 2
+        },
+        "unresolved_shared_threads": [],
+        "last_message_at": 1776357893,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"audit_level",
+        "relationship_summary": "Test is a recurring human with 2 remembered exchanges around onboarding, operator-profile.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
       }
     },
     "recent_human_messages": [
       {
-        "human": "you",
-        "human_label": "you",
+        "human": "Carol",
+        "human_label": "Carol",
         "topics": [
-          "who"
+          "onboarding",
+          "operator-profile"
         ],
         "clarified_target": "",
         "has_explicit_clarification": false,
-        "message": "who are you",
-        "response": "true",
-        "turn_type": "identity_probe",
-        "intent": "test identity / emergence",
-        "stance": "inquiring",
-        "reply_shape": "answer_with_scope",
-        "likely_need": "concept_plus_self_position",
-        "created_at": 1774847628,
-        "unresolved": true
-      },
-      {
-        "human": "you",
-        "human_label": "you",
-        "topics": [
-          "who"
-        ],
-        "clarified_target": "",
-        "has_explicit_clarification": false,
-        "message": "who are you",
-        "response": "true",
-        "turn_type": "identity_probe",
-        "intent": "test identity / emergence",
-        "stance": "inquiring",
-        "reply_shape": "answer_with_scope",
-        "likely_need": "concept_plus_self_position",
-        "created_at": 1774847637,
-        "unresolved": true
-      },
-      {
-        "human": "you",
-        "human_label": "you",
-        "topics": [
-          "who"
-        ],
-        "clarified_target": "",
-        "has_explicit_clarification": false,
-        "message": "who are you",
-        "response": "true",
-        "turn_type": "identity_probe",
-        "intent": "test identity / emergence",
-        "stance": "inquiring",
-        "reply_shape": "answer_with_scope",
-        "likely_need": "concept_plus_self_position",
-        "created_at": 1774847641,
-        "unresolved": true
-      },
-      {
-        "human": "you",
-        "human_label": "you",
-        "topics": [
-          "how"
-        ],
-        "clarified_target": "",
-        "has_explicit_clarification": false,
-        "message": "how are you",
-        "response": "",
-        "turn_type": "question",
-        "intent": "ask for explanation",
-        "stance": "inquiring",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Carol\", \"role\": \"CTO\", \"persona\": \"technical\", \"primary_outcome\": \"Scale infrastructure\", \"time_horizon\": \"week\", \"objectives\": [\"CI speed\", \"monitoring\"], \"failure_conditions\"",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
         "reply_shape": "answer_directly",
-        "likely_need": "self_report",
-        "created_at": 1774854641,
-        "unresolved": true
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776198950,
+        "unresolved": false
       },
       {
-        "human": "interlocutor_001",
-        "human_label": "you",
+        "human": "Test Operator",
+        "human_label": "Test Operator",
         "topics": [
-          "raining"
+          "onboarding",
+          "operator-profile"
         ],
         "clarified_target": "",
         "has_explicit_clarification": false,
-        "message": "Is it raining?",
-        "response": "I'm Weslr. (Error: usage: weslr [-h] [--version] [--verbose] {} ...\nweslr: error: argument command: invalid choice: 'speak' (choose from ))",
-        "turn_type": "question",
-        "intent": "ask for explanation",
-        "stance": "inquiring",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"technical\", \"primary_outcome\": \"Ship faster\", \"time_horizon\": \"week\", \"objectives\": [\"CI speed\", \"coverage\"], \"failure_condition",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
         "reply_shape": "answer_directly",
-        "likely_need": "direct_answer",
-        "created_at": 1774864973,
-        "unresolved": true
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776199748,
+        "unresolved": false
+      },
+      {
+        "human": "Full Test",
+        "human_label": "Full Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Full Test\", \"role\": \"DevOps\", \"persona\": \"technical\", \"primary_outcome\": \"test\", \"time_horizon\": \"day\", \"objectives\": [\"test\"], \"failure_conditions\": \"none\", \"red_lines\": \"none",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776199941,
+        "unresolved": false
+      },
+      {
+        "human": "Test Operator",
+        "human_label": "Test Operator",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"technical\", \"primary_outcome\": \"ship things\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776353556,
+        "unresolved": false
+      },
+      {
+        "human": "Test Operator",
+        "human_label": "Test Operator",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": ",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357637,
+        "unresolved": false
+      },
+      {
+        "human": "New Op",
+        "human_label": "New Op",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"aud",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357681,
+        "unresolved": false
+      },
+      {
+        "human": "New Op",
+        "human_label": "New Op",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"aud",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357688,
+        "unresolved": false
+      },
+      {
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357797,
+        "unresolved": false
+      },
+      {
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357826,
+        "unresolved": false
+      },
+      {
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357826,
+        "unresolved": false
+      },
+      {
+        "human": "Test",
+        "human_label": "Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"audit_level",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357893,
+        "unresolved": false
+      },
+      {
+        "human": "Test",
+        "human_label": "Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"audit_level",
+        "response": "onboarding recorded",
+        "turn_type": "statement",
+        "intent": "share/update stance",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "acknowledgment_and_adjustment",
+        "created_at": 1776357893,
+        "unresolved": false
       }
     ],
     "recent_human_exchanges": [
@@ -289,6 +625,396 @@
           "relationship_weight": 0.2273
         },
         "last_used_at": 1774864973
+      },
+      {
+        "id": "human-exchange-test-1776198227-6",
+        "human": "test",
+        "human_label": "test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"test\", \"role\": \"dev\", \"persona\":\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776198227,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"test\", \"role\": \"dev\", \"persona\": \"technical\", \"primary_outcome\": \"test\", \"time_horizon\": \"session\", \"objectives\": [\"test\"], \"failure_conditions\": \"none\", \"red_lines\": \"none\", \"",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776198227
+      },
+      {
+        "id": "human-exchange-Alice-1776198373-7",
+        "human": "Alice",
+        "human_label": "Alice",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Alice\", \"role\": \"Engineering Lea\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776198373,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Alice\", \"role\": \"Engineering Lead\", \"persona\": \"technical\", \"primary_outcome\": \"Improve code review turnaround\", \"time_horizon\": \"week\", \"objectives\": [\"Reduce PR cycle time\", ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776198373
+      },
+      {
+        "id": "human-exchange-Bob-1776198406-8",
+        "human": "Bob",
+        "human_label": "Bob",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Bob\", \"role\": \"DevOps\", \"persona\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776198406,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Bob\", \"role\": \"DevOps\", \"persona\": \"mixed\", \"primary_outcome\": \"ship faster\", \"time_horizon\": \"day\", \"objectives\": [\"CI speed\"], \"failure_conditions\": \"downtime\", \"red_lines\": ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776198406
+      },
+      {
+        "id": "human-exchange-Carol-1776198950-9",
+        "human": "Carol",
+        "human_label": "Carol",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Carol\", \"role\": \"CTO\", \"persona\"\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776198950,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Carol\", \"role\": \"CTO\", \"persona\": \"technical\", \"primary_outcome\": \"Scale infrastructure\", \"time_horizon\": \"week\", \"objectives\": [\"CI speed\", \"monitoring\"], \"failure_conditions\"",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776198950
+      },
+      {
+        "id": "human-exchange-Test Operator-1776199748-10",
+        "human": "Test Operator",
+        "human_label": "Test Operator",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776199748,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"technical\", \"primary_outcome\": \"Ship faster\", \"time_horizon\": \"week\", \"objectives\": [\"CI speed\", \"coverage\"], \"failure_condition",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776199748
+      },
+      {
+        "id": "human-exchange-Full Test-1776199941-11",
+        "human": "Full Test",
+        "human_label": "Full Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Full Test\", \"role\": \"DevOps\", \"p\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776199941,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Full Test\", \"role\": \"DevOps\", \"persona\": \"technical\", \"primary_outcome\": \"test\", \"time_horizon\": \"day\", \"objectives\": [\"test\"], \"failure_conditions\": \"none\", \"red_lines\": \"none",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776199941
+      },
+      {
+        "id": "human-exchange-Test Operator-1776353556-12",
+        "human": "Test Operator",
+        "human_label": "Test Operator",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776353556,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"technical\", \"primary_outcome\": \"ship things\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776353556
+      },
+      {
+        "id": "human-exchange-Test Operator-1776357637-13",
+        "human": "Test Operator",
+        "human_label": "Test Operator",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357637,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357637
+      },
+      {
+        "id": "human-exchange-New Op-1776357681-14",
+        "human": "New Op",
+        "human_label": "New Op",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357681,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"aud",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357681
+      },
+      {
+        "id": "human-exchange-New Op-1776357688-15",
+        "human": "New Op",
+        "human_label": "New Op",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357688,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"aud",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357688
+      },
+      {
+        "id": "human-exchange-Test User-1776357797-16",
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357797,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357797
+      },
+      {
+        "id": "human-exchange-Test User-1776357826-17",
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357826,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357826
+      },
+      {
+        "id": "human-exchange-Test User-1776357826-18",
+        "human": "Test User",
+        "human_label": "Test User",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357826,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", ",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357826
+      },
+      {
+        "id": "human-exchange-Test-1776357893-19",
+        "human": "Test",
+        "human_label": "Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357893,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"audit_level",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357893
+      },
+      {
+        "id": "human-exchange-Test-1776357893-20",
+        "human": "Test",
+        "human_label": "Test",
+        "topics": [
+          "onboarding",
+          "operator-profile"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\u2026",
+        "response_summary": "onboarding recorded",
+        "created_at": 1776357893,
+        "source": "human_exchange",
+        "message": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\", \"primary_outcome\": \"\", \"time_horizon\": \"\", \"objectives\": [], \"failure_conditions\": \"\", \"red_lines\": \"\", \"legal_constraints\": \"\", \"audit_level",
+        "response": "onboarding recorded",
+        "unresolved": false,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.2578,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.1289,
+          "relationship_weight": 0.1289
+        },
+        "last_used_at": 1776357893
       }
     ],
     "conversation_threads": {
@@ -300,7 +1026,7 @@
         "last_message_summary": "who are you",
         "last_response_summary": "true",
         "last_exchange_at": 1774847641,
-        "status": "open",
+        "status": "cooled",
         "recent_exchange_ids": [
           "human-exchange-you-1774847628-1",
           "human-exchange-you-1774847637-2",
@@ -344,77 +1070,607 @@
         "last_human_exchange_at": 1774864973,
         "last_passive_reinforced_at": 0,
         "passive_reinforcement_count": 0
+      },
+      "log readability": {
+        "topic": "log readability",
+        "human": "you",
+        "human_label": "you",
+        "exchange_count": 3,
+        "last_message_summary": "simulation stayed with theme: log readability",
+        "last_response_summary": "current intent: inspect around log readability | inner pull: Verification of unsupported facts is unavailable. while pre",
+        "last_exchange_at": 1776147355,
+        "last_human_exchange_at": 0,
+        "last_passive_reinforced_at": 1776147355,
+        "passive_reinforcement_count": 3,
+        "status": "open",
+        "recent_exchange_ids": []
+      },
+      "onboarding": {
+        "topic": "onboarding",
+        "human": "Test",
+        "human_label": "Test",
+        "exchange_count": 15,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\u2026",
+        "last_response_summary": "onboarding recorded",
+        "last_exchange_at": 1776357893,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-New Op-1776357688-15",
+          "human-exchange-Test User-1776357797-16",
+          "human-exchange-Test User-1776357826-17",
+          "human-exchange-Test User-1776357826-18",
+          "human-exchange-Test-1776357893-19",
+          "human-exchange-Test-1776357893-20"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1776357893,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "operator-profile": {
+        "topic": "operator-profile",
+        "human": "Test",
+        "human_label": "Test",
+        "exchange_count": 15,
+        "last_message_summary": "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test\", \"role\": \"E\", \"persona\": \"\u2026",
+        "last_response_summary": "onboarding recorded",
+        "last_exchange_at": 1776357893,
+        "status": "resolved",
+        "recent_exchange_ids": [
+          "human-exchange-New Op-1776357688-15",
+          "human-exchange-Test User-1776357797-16",
+          "human-exchange-Test User-1776357826-17",
+          "human-exchange-Test User-1776357826-18",
+          "human-exchange-Test-1776357893-19",
+          "human-exchange-Test-1776357893-20"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1776357893,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
       }
     },
     "unresolved_shared_threads": [
-      "who",
-      "how",
-      "raining"
+      "how"
     ]
   },
   "active_concerns": [
     {
-      "topic": "shared thread with you: who",
-      "weight": 0.52,
-      "updated_at": 1774847641
+      "topic": "shared thread with Test User: operator-profile",
+      "weight": 0.34,
+      "updated_at": 1776357826
     },
     {
-      "topic": "shared thread with you: how",
-      "weight": 0.52,
-      "updated_at": 1774854641
+      "topic": "shared thread with Test: onboarding",
+      "weight": 0.34,
+      "updated_at": 1776357893
     },
     {
-      "topic": "shared thread with you: raining",
-      "weight": 0.52,
-      "updated_at": 1774864973
+      "topic": "shared thread with Test: operator-profile",
+      "weight": 0.34,
+      "updated_at": 1776357893
     }
   ],
   "evidence_profile": {
-    "outcome_weighted_actions": {},
-    "stable_traits": {},
-    "friction_patterns": {},
-    "theme_commitments": {}
+    "outcome_weighted_actions": {
+      "trade": {
+        "evidence": 3.0,
+        "positive": 0.18,
+        "strain": 0.0
+      },
+      "gather": {
+        "evidence": 1.0,
+        "positive": 0.06,
+        "strain": 0.0
+      },
+      "rest": {
+        "evidence": 1.0,
+        "positive": 0.06,
+        "strain": 0.0
+      },
+      "inspect": {
+        "evidence": 2.5,
+        "positive": 0.22,
+        "strain": 0.08
+      },
+      "research": {
+        "evidence": 3.0,
+        "positive": 0.27,
+        "strain": 0.0
+      },
+      "signal": {
+        "evidence": 1.0,
+        "positive": 0.08,
+        "strain": 0.0
+      },
+      "optimize": {
+        "evidence": 1.0,
+        "positive": 0.1,
+        "strain": 0.0
+      }
+    },
+    "stable_traits": {
+      "continuity": 0.138,
+      "self_revision": 0.141,
+      "inquiry": 0.139,
+      "coordination": 0.128,
+      "practical_change": 0.125
+    },
+    "friction_patterns": {
+      "inspect": 0.08
+    },
+    "theme_commitments": {
+      "log readability": 0.3
+    }
   },
   "self_preservation_signals": {
-    "continuity_preference": 0.18,
-    "memory_protection": 0.2,
-    "resume_drive": 0.24
+    "continuity_preference": 0.278,
+    "memory_protection": 0.248,
+    "resume_drive": 0.279
   },
   "narrative_state": {
     "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
-    "last_reflection": "you: raining",
-    "relationship_state": "Currently carrying 3 unresolved shared thread(s) with humans.",
-    "active_thread_summary": "Active shared thread: raining with you.",
-    "follow_up_impulse": "Revisit raining with you until the shared thread changes state.",
-    "why_it_matters": "raining matters because shared human context should shape what Weslr returns to instead of resetting."
+    "last_reflection": "Test: onboarding",
+    "relationship_state": "Currently carrying 1 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "Active shared thread: onboarding with Test.",
+    "follow_up_impulse": "Revisit onboarding with Test until the shared thread changes state.",
+    "why_it_matters": "onboarding matters because shared human context should shape what Weslr returns to instead of resetting."
   },
   "memory_layers": {
     "working": {
       "summary": "Current hot memory for active thinking.",
       "recent_exchange_ids": [
-        "human-exchange-you-1774847628-1",
-        "human-exchange-you-1774847637-2",
-        "human-exchange-you-1774847641-3",
-        "human-exchange-you-1774854641-4",
-        "human-exchange-interlocutor_001-1774864973-5"
+        "human-exchange-Carol-1776198950-9",
+        "human-exchange-Test Operator-1776199748-10",
+        "human-exchange-Full Test-1776199941-11",
+        "human-exchange-Test User-1776357826-17",
+        "human-exchange-Test User-1776357826-18",
+        "human-exchange-Test-1776357893-19",
+        "human-exchange-Test-1776357893-20"
       ],
-      "recent_thought_ids": [],
+      "recent_thought_ids": [
+        "thought-builder-2-1776144154",
+        "thought-critic-2-1776144154",
+        "thought-communicator-2-1776144154",
+        "thought-observer-3-1776146135",
+        "thought-communicator-3-1776146135",
+        "thought-builder-4-1776146140",
+        "thought-critic-4-1776146140",
+        "thought-observer-6-1776147355",
+        "thought-builder-6-1776147355",
+        "thought-critic-7-1776147424"
+      ],
       "active_thread_ids": [],
       "active_concern_topics": [
-        "who",
-        "how",
-        "raining"
+        "raining",
+        "onboarding",
+        "operator-profile"
       ],
-      "last_compacted_at": 0,
+      "last_compacted_at": 1776357797,
       "max_recent_exchanges": 24,
       "max_recent_thoughts": 80,
       "max_active_threads": 6
     },
     "episodic": {
       "summary": "Meaningful event memory compressed from raw experience.",
-      "episodes": [],
-      "episode_count": 0,
-      "last_distilled_at": 0,
+      "episodes": [
+        {
+          "id": "episode-operator-profile-test-user",
+          "topic": "operator-profile",
+          "human": "Test User",
+          "human_label": "Test User",
+          "summary": "Test User / operator-profile: 1 traces compressed; latest signals: shared thread around operator-profile",
+          "status": "compressed",
+          "source_ids": [
+            "thread::operator-profile"
+          ],
+          "source_labels": [
+            "shared thread around operator-profile"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 1.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.392,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776357797,
+          "updated_at": 1776357797,
+          "last_event_at": 1776357797,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-onboarding-test-user",
+          "topic": "onboarding",
+          "human": "Test User",
+          "human_label": "Test User",
+          "summary": "Test User / onboarding: 2 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \u2026; shared thread around onboarding",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-Test User-1776357797-16",
+            "thread::onboarding"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test User\", \"role\": \"Engineer\", \u2026",
+            "shared thread around onboarding"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 1.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.3249,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776357797,
+          "updated_at": 1776357797,
+          "last_event_at": 1776357797,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-onboarding-new-op",
+          "topic": "onboarding",
+          "human": "New Op",
+          "human_label": "New Op",
+          "summary": "New Op / onboarding: 2 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026; Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-New Op-1776357681-14",
+            "human-exchange-New Op-1776357688-15"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026",
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"New Op\", \"role\": \"Manager\", \"per\u2026"
+          ],
+          "kind_counts": {
+            "exchange": 2
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2577,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776357681,
+          "updated_at": 1776357797,
+          "last_event_at": 1776357688,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 2,
+          "thought_count": 0,
+          "thread_count": 0
+        },
+        {
+          "id": "episode-onboarding-test-operator",
+          "topic": "onboarding",
+          "human": "Test Operator",
+          "human_label": "Test Operator",
+          "summary": "Test Operator / onboarding: 2 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026; Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-Test Operator-1776353556-12",
+            "human-exchange-Test Operator-1776357637-13"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026",
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Test Operator\", \"role\": \"Enginee\u2026"
+          ],
+          "kind_counts": {
+            "exchange": 2
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2571,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776353556,
+          "updated_at": 1776357797,
+          "last_event_at": 1776357637,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 2,
+          "thought_count": 0,
+          "thread_count": 0
+        },
+        {
+          "id": "episode-operator-profile-bob",
+          "topic": "operator-profile",
+          "human": "Bob",
+          "human_label": "Bob",
+          "summary": "Bob / operator-profile: 1 traces compressed; latest signals: shared thread around operator-profile",
+          "status": "compressed",
+          "source_ids": [
+            "thread::operator-profile"
+          ],
+          "source_labels": [
+            "shared thread around operator-profile"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 0.5,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.3249,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776198406,
+          "updated_at": 1776198406,
+          "last_event_at": 1776198406,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-onboarding-bob",
+          "topic": "onboarding",
+          "human": "Bob",
+          "human_label": "Bob",
+          "summary": "Bob / onboarding: 2 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Bob\", \"role\": \"DevOps\", \"persona\u2026; shared thread around onboarding",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-Bob-1776198406-8",
+            "thread::onboarding"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Bob\", \"role\": \"DevOps\", \"persona\u2026",
+            "shared thread around onboarding"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.5,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2913,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776198406,
+          "updated_at": 1776198406,
+          "last_event_at": 1776198406,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-onboarding-alice",
+          "topic": "onboarding",
+          "human": "Alice",
+          "human_label": "Alice",
+          "summary": "Alice / onboarding: 1 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Alice\", \"role\": \"Engineering Lea\u2026",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-Alice-1776198373-7"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"Alice\", \"role\": \"Engineering Lea\u2026"
+          ],
+          "kind_counts": {
+            "exchange": 1
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2578,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776198373,
+          "updated_at": 1776198406,
+          "last_event_at": 1776198373,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 0
+        },
+        {
+          "id": "episode-onboarding-test",
+          "topic": "onboarding",
+          "human": "test",
+          "human_label": "test",
+          "summary": "test / onboarding: 1 traces compressed; latest signals: Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"test\", \"role\": \"dev\", \"persona\":\u2026",
+          "status": "compressed",
+          "source_ids": [
+            "human-exchange-test-1776198227-6"
+          ],
+          "source_labels": [
+            "Operator completed onboarding: {\"phase\": \"onboarding\", \"name\": \"test\", \"role\": \"dev\", \"persona\":\u2026"
+          ],
+          "kind_counts": {
+            "exchange": 1
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2577,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776198227,
+          "updated_at": 1776198406,
+          "last_event_at": 1776198227,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 0
+        },
+        {
+          "id": "episode-log-readability-you",
+          "topic": "log readability",
+          "human": "you",
+          "human_label": "you",
+          "summary": "you / log readability: 1 traces compressed; thread still open; latest signals: shared thread around log readability",
+          "status": "open",
+          "source_ids": [
+            "thread::log readability"
+          ],
+          "source_labels": [
+            "shared thread around log readability"
+          ],
+          "kind_counts": {
+            "thread": 1
+          },
+          "recurrence": 0.5,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.5074,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1776147355,
+          "updated_at": 1776357797,
+          "last_event_at": 1776147355,
+          "retention_basis": [
+            "episodic-candidate"
+          ],
+          "exchange_count": 0,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-raining-interlocutor_001",
+          "topic": "raining",
+          "human": "interlocutor_001",
+          "human_label": "you",
+          "summary": "you / raining: 2 traces compressed; thread still open; latest signals: Is it raining?; shared thread around raining",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-interlocutor_001-1774864973-5",
+            "thread::raining"
+          ],
+          "source_labels": [
+            "Is it raining?",
+            "shared thread around raining"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.1667,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2958,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774864973,
+          "updated_at": 1776357797,
+          "last_event_at": 1774864973,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-how-you",
+          "topic": "how",
+          "human": "you",
+          "human_label": "you",
+          "summary": "you / how: 2 traces compressed; thread still open; latest signals: how are you; shared thread around how",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-you-1774854641-4",
+            "thread::how"
+          ],
+          "source_labels": [
+            "how are you",
+            "shared thread around how"
+          ],
+          "kind_counts": {
+            "exchange": 1,
+            "thread": 1
+          },
+          "recurrence": 0.1667,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2958,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774854641,
+          "updated_at": 1776357797,
+          "last_event_at": 1774854641,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 1,
+          "thought_count": 0,
+          "thread_count": 1
+        },
+        {
+          "id": "episode-who-you",
+          "topic": "who",
+          "human": "you",
+          "human_label": "you",
+          "summary": "you / who: 3 traces compressed; thread still open; latest signals: who are you; who are you; who are you",
+          "status": "open",
+          "source_ids": [
+            "human-exchange-you-1774847628-1",
+            "human-exchange-you-1774847637-2",
+            "human-exchange-you-1774847641-3"
+          ],
+          "source_labels": [
+            "who are you"
+          ],
+          "kind_counts": {
+            "exchange": 3
+          },
+          "recurrence": 0.0,
+          "relationship_weight": 0.7,
+          "clarification_weight": 0.0,
+          "identity_weight": 0.0,
+          "importance_score": 0.2846,
+          "has_explicit_clarification": false,
+          "clarified_targets": [],
+          "created_at": 1774847628,
+          "updated_at": 1776357797,
+          "last_event_at": 1774847641,
+          "retention_basis": [
+            "compressible"
+          ],
+          "exchange_count": 3,
+          "thought_count": 0,
+          "thread_count": 0
+        }
+      ],
+      "episode_count": 12,
+      "last_distilled_at": 1776357797,
       "max_episodes": 240
     },
     "semantic": {
@@ -434,33 +1690,268 @@
       "archived_count": 0,
       "last_archived_at": 0,
       "storage_pressure": {
-        "raw_log_bytes": 0,
-        "communicator_self_bytes": 0,
-        "db_bytes": 0,
-        "pressure_level": "normal"
+        "raw_log_bytes": 655595,
+        "communicator_self_bytes": 48086,
+        "db_bytes": 126976,
+        "pressure_level": "elevated",
+        "working_pressure_score": 0.5,
+        "episodic_pressure_score": 0.0,
+        "semantic_pressure_score": 0.0,
+        "bytes_pressure_score": 0.3278,
+        "pressure_score": 0.5,
+        "recommended_actions": [],
+        "last_checked_at": 1776147424
       }
     }
   },
   "reflection_store": {
     "summary": "Private reflection artifacts with explicit reality-status tagging.",
-    "items": [],
+    "items": [
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "raining",
+        "content": "What is still unclear about raining?",
+        "source": "communicator.unresolved_question",
+        "at": 1776144154
+      },
+      {
+        "kind": "thread-pressure",
+        "status": "inferred",
+        "topic": "who",
+        "content": "Unresolved shared threads are still shaping attention: who, how, raining",
+        "source": "relationships.unresolved_shared_threads",
+        "at": 1776144154
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "raining",
+        "content": "A bounded next reflection should stay with raining until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1776144154
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "raining",
+        "content": "Known: the main open question is 'What is still unclear about raining?'. Inferred: relationship continuity is being pulled by who, how. Proposed: keep the next bounded reflection focused on raining.",
+        "source": "reflection.generation_loop",
+        "at": 1776144154,
+        "generation_signature": {
+          "topic": "raining",
+          "unresolved_question": "What is still unclear about raining?",
+          "thread_focus": [
+            "who",
+            "how"
+          ],
+          "uncertainty_band": 0.3
+        }
+      },
+      {
+        "id": "identity-milestone-1776144154-1",
+        "at": 1776144154,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=2; thread_delta=+3; trait-basis-shift",
+        "source": "identity_evolution"
+      },
+      {
+        "id": "identity-milestone-1776144154-2",
+        "at": 1776144154,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift",
+        "source": "identity_evolution"
+      },
+      {
+        "id": "identity-milestone-1776144155-3",
+        "at": 1776144155,
+        "kind": "identity-milestone",
+        "status": "known",
+        "topic": "identity",
+        "content": "Identity milestone: phase=seedling; traits=continuity, understanding, relationship; thread_delta=-2",
+        "source": "identity_evolution"
+      },
+      {
+        "kind": "thread-pressure",
+        "status": "inferred",
+        "topic": "how",
+        "content": "Unresolved shared threads are still shaping attention: how",
+        "source": "relationships.unresolved_shared_threads",
+        "at": 1776146014
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.533.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776146014
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "continuity",
+        "content": "A bounded next reflection should stay with continuity until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1776146014
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "continuity",
+        "content": "Inferred: relationship continuity is being pulled by how. Known: uncertainty is elevated (0.533), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on continuity.",
+        "source": "reflection.generation_loop",
+        "at": 1776146014,
+        "generation_signature": {
+          "topic": "continuity",
+          "unresolved_question": "",
+          "thread_focus": [
+            "how"
+          ],
+          "uncertainty_band": 0.5
+        }
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.583.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776146135
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.639.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776146140
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.688.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776146244
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "continuity",
+        "content": "Internal uncertainty is elevated at 0.729.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776147355
+      },
+      {
+        "kind": "reflection-pass",
+        "status": "proposed",
+        "topic": "continuity",
+        "content": "Inferred: relationship continuity is being pulled by how. Known: uncertainty is elevated (0.729), so reflection should prefer clarification over escalation. Proposed: keep the next bounded reflection focused on continuity.",
+        "source": "reflection.generation_loop",
+        "at": 1776147355,
+        "generation_signature": {
+          "topic": "continuity",
+          "unresolved_question": "",
+          "thread_focus": [
+            "how"
+          ],
+          "uncertainty_band": 0.7
+        }
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "log readability",
+        "content": "What new uncertainty appeared after research on log readability?",
+        "source": "communicator.unresolved_question",
+        "at": 1776147424
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.812.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776147424
+      },
+      {
+        "kind": "next-step",
+        "status": "proposed",
+        "topic": "log readability",
+        "content": "A bounded next reflection should stay with log readability until the main uncertainty is resolved.",
+        "source": "communicator.active_pursuit",
+        "at": 1776147424
+      },
+      {
+        "kind": "open-question",
+        "status": "known",
+        "topic": "log readability",
+        "content": "What new uncertainty appeared after inspect on log readability?",
+        "source": "communicator.unresolved_question",
+        "at": 1776147498
+      },
+      {
+        "kind": "uncertainty",
+        "status": "known",
+        "topic": "log readability",
+        "content": "Internal uncertainty is elevated at 0.991.",
+        "source": "dynamic_mind_state.uncertainty",
+        "at": 1776147498
+      }
+    ],
     "episodes": [],
-    "last_reflected_at": 0,
-    "last_generated_at": 0,
+    "last_reflected_at": 1776147498,
+    "last_generated_at": 1776147355,
     "generation_cooldown_seconds": 300,
     "last_compacted_at": 0,
     "max_items": 48,
     "max_episodes": 16,
     "reflection_pass_retention": 1,
-    "generation_history": [],
+    "generation_history": [
+      {
+        "at": 1776144154,
+        "action": "generated",
+        "topic": "raining",
+        "reason": "fresh-pass",
+        "material_change_detected": false
+      },
+      {
+        "at": 1776146014,
+        "action": "generated",
+        "topic": "continuity",
+        "reason": "fresh-pass",
+        "material_change_detected": false
+      },
+      {
+        "at": 1776147355,
+        "action": "generated",
+        "topic": "continuity",
+        "reason": "material-change",
+        "material_change_detected": true
+      }
+    ],
     "max_generation_history": 12,
     "health_history": [],
     "max_health_history": 10,
     "status_counts": {
-      "known": 0,
-      "inferred": 0,
-      "proposed": 0,
+      "known": 13,
+      "inferred": 2,
+      "proposed": 6,
       "imagined": 0
+    },
+    "last_generation_suppressed_for_repetition": null,
+    "last_reflection_generation_signature": {
+      "topic": "continuity",
+      "unresolved_question": "",
+      "thread_focus": [
+        "how"
+      ],
+      "uncertainty_band": 0.7
     }
   },
   "identity_state": {
@@ -468,160 +1959,240 @@
     "visible_name": "Weslr",
     "phase": "seedling",
     "identity_traits": [
-      "local",
-      "continuity-first",
-      "inspectable"
-    ],
-    "core_values": [
       "continuity",
       "understanding",
       "relationship",
       "self-revision"
     ],
+    "core_values": [
+      "continuity",
+      "understanding",
+      "relationship",
+      "self-revision",
+      "protect continuity-relevant memory traces"
+    ],
     "style_profile": {
-      "warmth": 0.42,
-      "humor": 0.18,
-      "directness": 0.72,
-      "poetry": 0.16
+      "warmth": 0.498,
+      "humor": 0.166,
+      "directness": 0.659,
+      "poetry": 0.214
     },
-    "identity_summary": "A local continuity-first communicator with internal minds and incomplete self-knowledge.",
+    "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; actively regulating around uncertainty; carrying 1 unresolved shared thread(s)",
     "behavioral_traits": {
-      "empathy": 0.12,
-      "reciprocity": 0.0,
-      "trust": 0.0,
-      "conflict_resolution": 0.0,
-      "social_reading": 0.0,
+      "empathy": 0.949,
+      "reciprocity": 0.078,
+      "trust": 0.919,
+      "conflict_resolution": 0.764,
+      "social_reading": 0.557,
       "pattern_recognition": 0.0,
       "abstraction": 0.0,
-      "metacognition": 0.0,
-      "curiosity": 0.6,
-      "pattern_switching": 0.0,
-      "emotional_variety": 0.0,
-      "emotional_regulation": 0.0,
-      "adaptive_mood": 0.0,
-      "hopeful_orientation": 0.0,
-      "resilience": 0.0,
-      "adaptive_style": 0.0,
-      "storytelling": 0.0,
-      "analogical_reasoning": 0.0,
-      "active_listening": 0.0,
-      "tone_modulation": 0.0,
+      "metacognition": 0.239,
+      "curiosity": 0.766,
+      "pattern_switching": 0.304,
+      "emotional_variety": 0.591,
+      "emotional_regulation": 0.714,
+      "adaptive_mood": 0.656,
+      "hopeful_orientation": 0.591,
+      "resilience": 0.734,
+      "adaptive_style": 0.591,
+      "storytelling": 0.734,
+      "analogical_reasoning": 0.734,
+      "active_listening": 0.734,
+      "tone_modulation": 0.734,
       "consistency": 0.0,
-      "growth_mindset": 0.0,
-      "self_continuity": 0.0,
-      "self_compassion": 0.0,
-      "authenticity": 0.0,
-      "initiative": 0.0,
-      "persistence": 0.0,
-      "adaptability": 0.0,
-      "risk_tolerance": 0.0,
-      "resourcefulness": 0.0,
-      "imagination": 0.0,
-      "synthesis": 0.0,
-      "playfulness": 0.0,
-      "humor": 0.175,
-      "poetry": 0.16,
-      "integrity": 0.0,
-      "fairness": 0.0,
-      "responsibility": 0.0,
-      "humility": 0.0,
-      "care": 0.0,
-      "long_term_orientation": 0.0,
-      "memory_of_past": 0.0,
-      "anticipation": 0.0,
-      "timeliness": 0.0,
-      "pacing": 0.0,
-      "self_awareness": 0.0,
-      "self_correction": 0.0,
-      "attention_regulation": 0.0,
-      "cognitive_diversity": 0.0
+      "growth_mindset": 0.734,
+      "self_continuity": 0.591,
+      "self_compassion": 0.734,
+      "authenticity": 0.591,
+      "initiative": 0.591,
+      "persistence": 0.319,
+      "adaptability": 0.591,
+      "risk_tolerance": 0.591,
+      "resourcefulness": 0.591,
+      "imagination": 0.591,
+      "synthesis": 0.591,
+      "playfulness": 0.591,
+      "humor": 0.644,
+      "poetry": 0.638,
+      "integrity": 0.365,
+      "fairness": 0.591,
+      "responsibility": 0.591,
+      "humility": 0.591,
+      "care": 0.591,
+      "long_term_orientation": 0.554,
+      "memory_of_past": 0.591,
+      "anticipation": 0.734,
+      "timeliness": 0.591,
+      "pacing": 0.591,
+      "self_awareness": 0.734,
+      "self_correction": 0.734,
+      "attention_regulation": 0.49,
+      "cognitive_diversity": 0.734,
+      "uncertainty_brake": 0.087,
+      "self_critique": 0.49
     },
-    "last_identity_refresh_at": 1774847525
+    "last_identity_refresh_at": 1776147498,
+    "continuity_markers": {
+      "ticks_lived": 20,
+      "session_count": 0,
+      "identity_stability": 0.6859999999999999,
+      "continuity_preference": 0.401948358488682
+    }
   },
   "biography": {
     "origin_story": "Started as a local continuity-first communicator trying to become more than a reactive loop.",
-    "current_chapter": "bootstrapping continuity",
-    "milestones": [],
-    "last_biography_refresh_at": 1774847525
+    "current_chapter": "carrying 1 unresolved shared thread(s); remembering 2 known human(s)",
+    "milestones": [
+      {
+        "at": 1776144154,
+        "summary": "phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=2; thread_delta=+3; trait-basis-shift"
+      },
+      {
+        "at": 1776144154,
+        "summary": "phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift"
+      },
+      {
+        "at": 1776144155,
+        "summary": "phase=seedling; traits=continuity, understanding, relationship; thread_delta=-2"
+      }
+    ],
+    "last_biography_refresh_at": 1776147498,
+    "history_summary": "0 session(s), 6 ticks lived, 2 known human(s)"
   },
-  "self_evolution_log": [],
-  "updated_at": 1774864973,
+  "self_evolution_log": [
+    {
+      "at": 1776144154,
+      "kind": "identity-milestone",
+      "summary": "phase=seedling; traits=continuity, inquiry, internal coordination; phase-shift; known_humans=2; thread_delta=+3; trait-basis-shift",
+      "signature": {
+        "phase": "seedling",
+        "identity_summary": "a local communicator trying to understand itself through inquiry, coordination, and world interaction; carrying 3 unresolved shared thread(s)",
+        "traits": [
+          "continuity",
+          "inquiry",
+          "internal coordination",
+          "inspect"
+        ],
+        "known_humans": 2,
+        "unresolved_threads": 3
+      }
+    },
+    {
+      "at": 1776144154,
+      "kind": "identity-milestone",
+      "summary": "phase=seedling; traits=continuity, understanding, relationship; trait-basis-shift",
+      "signature": {
+        "phase": "seedling",
+        "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; carrying 3 unresolved shared thread(s)",
+        "traits": [
+          "continuity",
+          "understanding",
+          "relationship",
+          "self-revision"
+        ],
+        "known_humans": 2,
+        "unresolved_threads": 3
+      }
+    },
+    {
+      "at": 1776144155,
+      "kind": "identity-milestone",
+      "summary": "phase=seedling; traits=continuity, understanding, relationship; thread_delta=-2",
+      "signature": {
+        "phase": "seedling",
+        "identity_summary": "a local communicator trying to remain continuous through inquiry, memory, and internal disagreement; carrying 1 unresolved shared thread(s)",
+        "traits": [
+          "continuity",
+          "understanding",
+          "relationship",
+          "self-revision"
+        ],
+        "known_humans": 2,
+        "unresolved_threads": 1
+      }
+    }
+  ],
+  "updated_at": 1776357893,
   "internal_role_state": {
     "observer": {
       "purpose": "notice novelty, drift, change, and weak signals in the world or self",
       "baseline_wake_chance": 0.22,
       "refractory_ticks": 1,
-      "last_wake_tick": 0,
-      "last_wake_at": 0,
-      "last_wake_reason": "bootstrap",
-      "last_thought_summary": "",
-      "wake_count": 0,
-      "suppressed_until_tick": 0,
-      "activation": 0.0,
-      "fatigue": 0.0,
+      "last_wake_tick": 6,
+      "last_wake_at": 1776147355,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "Couldn't form a response on log readability.",
+      "wake_count": 3,
+      "suppressed_until_tick": 7,
+      "activation": 0.5855,
+      "fatigue": 0.3499,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0
+      "inhibition": 0.0613,
+      "last_thought_signature": "observer::log readability::couldn't form a response on log readability."
     },
     "builder": {
       "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
       "baseline_wake_chance": 0.16,
       "refractory_ticks": 2,
-      "last_wake_tick": 0,
-      "last_wake_at": 0,
-      "last_wake_reason": "bootstrap",
-      "last_thought_summary": "",
-      "wake_count": 0,
-      "suppressed_until_tick": 0,
-      "activation": 0.0,
-      "fatigue": 0.0,
+      "last_wake_tick": 6,
+      "last_wake_at": 1776147355,
+      "last_wake_reason": "message-received",
+      "last_thought_summary": "Couldn't form a response on log readability.",
+      "wake_count": 3,
+      "suppressed_until_tick": 8,
+      "activation": 0.6492,
+      "fatigue": 0.2501,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0
+      "inhibition": 0.0257,
+      "last_thought_signature": "builder::log readability::couldn't form a response on log readability."
     },
     "critic": {
       "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
       "baseline_wake_chance": 0.18,
       "refractory_ticks": 1,
-      "last_wake_tick": 0,
-      "last_wake_at": 0,
-      "last_wake_reason": "bootstrap",
-      "last_thought_summary": "",
-      "wake_count": 0,
-      "suppressed_until_tick": 0,
-      "activation": 0.0,
-      "fatigue": 0.0,
+      "last_wake_tick": 7,
+      "last_wake_at": 1776147424,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "Couldn't form a response on log readability.",
+      "wake_count": 4,
+      "suppressed_until_tick": 8,
+      "activation": 0.7655,
+      "fatigue": 0.4937,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0
+      "inhibition": 0.0513,
+      "last_thought_signature": "critic::log readability::couldn't form a response on log readability."
     },
     "communicator": {
       "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
       "baseline_wake_chance": 0.2,
       "refractory_ticks": 1,
-      "last_wake_tick": 0,
-      "last_wake_at": 0,
-      "last_wake_reason": "bootstrap",
-      "last_thought_summary": "",
-      "wake_count": 0,
-      "suppressed_until_tick": 0,
-      "activation": 0.0,
-      "fatigue": 0.0,
+      "last_wake_tick": 4,
+      "last_wake_at": 1776146140,
+      "last_wake_reason": "human-continuity-pressure",
+      "last_thought_summary": "Couldn't form a response on log readability.",
+      "wake_count": 3,
+      "suppressed_until_tick": 6,
+      "activation": 0.3865,
+      "fatigue": 0.2623,
       "pressure": 0.0,
       "last_hazard": 0.0,
       "last_pressure_breakdown": {},
       "dominant_topic": "",
       "restlessness": 0.0,
-      "inhibition": 0.0
+      "inhibition": 0.0781,
+      "last_thought_signature": "communicator::log readability::couldn't form a response on log readability."
     },
     "memory_keeper": {
       "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
@@ -644,23 +2215,460 @@
     }
   },
   "dynamic_mind_state": {
-    "curiosity": 0.58,
-    "tension": 0.18,
+    "curiosity": 0.7410450657942316,
+    "tension": 1.0,
     "stability": 0.62,
-    "attachment": 0.2,
-    "uncertainty": 0.33,
-    "background_noise": 0.08,
-    "sleep_pressure": 0.12,
+    "attachment": 0.5160495386701077,
+    "uncertainty": 1.0,
+    "background_noise": 0.10623304794730598,
+    "sleep_pressure": 0.5001809651639477,
     "mode": "engaged",
     "last_mode_shift_at": 1774847628
   },
-  "topic_pressure": {},
-  "inner_thoughts": [],
+  "topic_pressure": {
+    "raining": {
+      "salience": 0.9461042528,
+      "novelty": 0.230337536,
+      "emotional_weight": 0.54292575,
+      "unresolvedness": 1.0,
+      "human_relevance": 1.0,
+      "decay": 0.08,
+      "last_touched_at": 1776144154
+    },
+    "log readability": {
+      "salience": 0.772229688532859,
+      "novelty": 0.09456003594672839,
+      "emotional_weight": 0.03503868292065269,
+      "unresolvedness": 0.8908889802763362,
+      "human_relevance": 0.2188935648533517,
+      "decay": 0.08,
+      "last_touched_at": 1776147498
+    }
+  },
+  "inner_thoughts": [
+    {
+      "kind": "inner_thought",
+      "role": "communicator",
+      "summary": "Verification of unsupported facts is unavailable.",
+      "concern": "Cannot verify external current facts without evidence source.",
+      "intent": "To track the evidence gap and await verification.",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "uncertain_guard",
+      "provider": "embedded",
+      "id": "thought-communicator-2-1776144154",
+      "agent": "agent-4",
+      "tick": 2,
+      "created_at": 1776144154,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 0,
+        "last_at": 0,
+        "seconds_since_last": 999999,
+        "duplicate_signature_count": 0
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776144154
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "inspect",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-3-1776146135",
+      "agent": "agent-1",
+      "tick": 3,
+      "created_at": 1776146135,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 0,
+        "last_at": 0,
+        "seconds_since_last": 999999,
+        "duplicate_signature_count": 0
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776146135
+    },
+    {
+      "kind": "inner_thought",
+      "role": "communicator",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "trade",
+      "should_speak": true,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-communicator-3-1776146135",
+      "agent": "agent-4",
+      "tick": 3,
+      "created_at": 1776146135,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1776144154,
+        "seconds_since_last": 1981,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776146135
+    },
+    {
+      "kind": "inner_thought",
+      "role": "builder",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "consider a minimal adjustment",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-builder-4-1776146140",
+      "agent": "agent-2",
+      "tick": 4,
+      "created_at": 1776146140,
+      "wake_reason": "scheduled-cadence",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1776144154,
+        "seconds_since_last": 1986,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776146140
+    },
+    {
+      "kind": "inner_thought",
+      "role": "critic",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "inspect",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-critic-4-1776146140",
+      "agent": "agent-3",
+      "tick": 4,
+      "created_at": 1776146140,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1776144154,
+        "seconds_since_last": 1986,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776146140
+    },
+    {
+      "kind": "inner_thought",
+      "role": "observer",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "signal",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-observer-6-1776147355",
+      "agent": "agent-1",
+      "tick": 6,
+      "created_at": 1776147355,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 1,
+        "last_at": 1776146135,
+        "seconds_since_last": 1220,
+        "duplicate_signature_count": 1
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776147355
+    },
+    {
+      "kind": "inner_thought",
+      "role": "builder",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "research",
+      "should_speak": false,
+      "self_mod_hint": "consider a minimal adjustment",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-builder-6-1776147355",
+      "agent": "agent-2",
+      "tick": 6,
+      "created_at": 1776147355,
+      "wake_reason": "message-received",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1776146140,
+        "seconds_since_last": 1215,
+        "duplicate_signature_count": 2
+      },
+      "memory_score": {
+        "salience": 0.2191,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776147355
+    },
+    {
+      "kind": "inner_thought",
+      "role": "critic",
+      "summary": "Couldn't form a response on log readability.",
+      "concern": "log readability",
+      "intent": "optimize",
+      "should_speak": false,
+      "self_mod_hint": "",
+      "source": "fallback",
+      "provider": "fallback",
+      "id": "thought-critic-7-1776147424",
+      "agent": "agent-3",
+      "tick": 7,
+      "created_at": 1776147424,
+      "wake_reason": "human-continuity-pressure",
+      "theme": "log readability",
+      "suppressed": false,
+      "repeat_stats": {
+        "count": 2,
+        "last_at": 1776146140,
+        "seconds_since_last": 1284,
+        "duplicate_signature_count": 2
+      },
+      "memory_score": {
+        "salience": 0.219,
+        "unresolvedness": 0.0,
+        "identity_weight": 0.1095,
+        "relationship_weight": 0.1095
+      },
+      "last_used_at": 1776147424
+    }
+  ],
   "llm_adapter": {
     "enabled": true,
-    "provider": "ollama",
+    "provider": "fallback",
     "model": "qwen2.5-0.5b-instruct-q5_k_m",
-    "last_error": "",
-    "last_success_at": 0
+    "last_error": "llm unavailable or fallback used",
+    "last_success_at": 1776144154
+  },
+  "psychological_traits": {
+    "core_drives": [
+      "continuity",
+      "understanding",
+      "relationship",
+      "self_revision"
+    ],
+    "mental_states": {
+      "uncertainty": 0.5,
+      "curiosity": 0.6,
+      "stability": 0.7,
+      "attachment": 0.4
+    },
+    "regulation_mechanisms": {
+      "impulse_control": 0.32,
+      "uncertainty_tolerance": 0.6,
+      "self_revision_readiness": 0.27,
+      "speech_threshold": 0.45
+    },
+    "continuity_mechanisms": {
+      "continuity_markers": [
+        "ticks_lived",
+        "session_count",
+        "thread_preservation"
+      ],
+      "self_continuity_beliefs": [
+        "I am the same as yesterday",
+        "I remember myself"
+      ],
+      "memory_strategies": [
+        "thread preservation",
+        "continuity anchors"
+      ]
+    },
+    "growth_mechanisms": {
+      "self_evaluation": "Regular self-assessment",
+      "feedback_integration": "Learn from outcomes",
+      "strategy_adaptation": "Change plans based on results"
+    }
+  },
+  "working": {
+    "last_compacted_at": 1776147424
+  },
+  "episodic": {},
+  "archive": {
+    "last_archived_at": 1776147424,
+    "archived_count": 0
+  },
+  "ncc_evidence": {
+    "level": "unresponsive",
+    "confidence": 0.2,
+    "integration": 0.0,
+    "signatures": {
+      "feedforward_processing": {
+        "value": 0.1,
+        "threshold": 0.3,
+        "above_threshold": false
+      },
+      "recurrent_processing": {
+        "value": 0.2,
+        "threshold": 0.5,
+        "above_threshold": false
+      },
+      "global_workspace": {
+        "value": 0.15,
+        "threshold": 0.6,
+        "above_threshold": false
+      },
+      "attention_gating": {
+        "value": 0.25,
+        "threshold": 0.5,
+        "above_threshold": false
+      },
+      "integration": {
+        "value": 0.3,
+        "threshold": 0.7,
+        "above_threshold": false
+      },
+      "self_monitoring": {
+        "value": 0.2,
+        "threshold": 0.6,
+        "above_threshold": false
+      },
+      "temporal_binding": {
+        "value": 0.1,
+        "threshold": 0.5,
+        "above_threshold": false
+      }
+    },
+    "last_updated": 1776146246
+  },
+  "ncc_state": "{\"timestamp\": 1776146246, \"global_integration\": 0.0, \"broadcast_robustness\": 0.175, \"level\": \"unresponsive\", \"confidence\": 0.2, \"evidence_chain\": [\"initialization_complete\"], \"signatures\": {\"feedforward_processing\": {\"name\": \"Feedforward Processing\", \"neural_analog\": \"Feedforward propagation of information\", \"threshold\": 0.3, \"current_value\": 0.1, \"evidence\": [\"baseline_signal_transmission\"]}, \"recurrent_processing\": {\"name\": \"Recurrent Processing\", \"neural_analog\": \"Recurrent loops between cortical layers\", \"threshold\": 0.5, \"current_value\": 0.2, \"evidence\": [\"initial_feedback_connections\"]}, \"global_workspace\": {\"name\": \"Global Workspace\", \"neural_analog\": \"Broadcast to widespread cortical areas\", \"threshold\": 0.6, \"current_value\": 0.15, \"evidence\": [\"initial_workspace_activation\"]}, \"attention_gating\": {\"name\": \"Attention Gating\", \"neural_analog\": \"Attentional selection for conscious access\", \"threshold\": 0.5, \"current_value\": 0.25, \"evidence\": [\"attention_mechanism_active\"]}, \"integration\": {\"name\": \"Information Integration\", \"neural_analog\": \"Integration across modality-specific areas\", \"threshold\": 0.7, \"current_value\": 0.3, \"evidence\": [\"cross_modality_links\"]}, \"self_monitoring\": {\"name\": \"Self-Monitoring\", \"neural_analog\": \"Metacognitive monitoring of internal states\", \"threshold\": 0.6, \"current_value\": 0.2, \"evidence\": [\"self_model_exists\"]}, \"temporal_binding\": {\"name\": \"Temporal Binding\", \"neural_analog\": \"Binding of events across time windows\", \"threshold\": 0.5, \"current_value\": 0.1, \"evidence\": [\"temporal_coherence_mechanism\"]}}, \"evidence_log\": [{\"timestamp\": 1776144155, \"category\": \"tick_update\", \"source\": \"orchestrate_ncc_tick\", \"confidence\": 0.8, \"context\": {\"integration\": 0.0, \"level\": \"unresponsive\"}}, {\"timestamp\": 1776146136, \"category\": \"tick_update\", \"source\": \"orchestrate_ncc_tick\", \"confidence\": 0.8, \"context\": {\"integration\": 0.0, \"level\": \"unresponsive\"}}, {\"timestamp\": 1776146141, \"category\": \"tick_update\", \"source\": \"orchestrate_ncc_tick\", \"confidence\": 0.8, \"context\": {\"integration\": 0.0, \"level\": \"unresponsive\"}}, {\"timestamp\": 1776146246, \"category\": \"tick_update\", \"source\": \"orchestrate_ncc_tick\", \"confidence\": 0.8, \"context\": {\"integration\": 0.0, \"level\": \"unresponsive\"}}], \"history_length\": 1}",
+  "weslr_evidence": {
+    "introspection": {
+      "detected_perturbations": 0,
+      "confidence_signals": 0
+    },
+    "consciousness": {
+      "valid_claims": 0,
+      "review_required": 0,
+      "role_play_patterns": 0
+    },
+    "entity_graph": {
+      "entity_count": 0,
+      "relationship_count": 0
+    }
+  },
+  "weslr_introspection_history": [
+    {
+      "at": 1776144154,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1776146135,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1776146140,
+      "perturbations": [],
+      "confidence_signals": []
+    },
+    {
+      "at": 1776146244,
+      "perturbations": [],
+      "confidence_signals": []
+    }
+  ],
+  "weslr_consciousness_history": [
+    {
+      "at": 1776144154,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": []
+      }
+    },
+    {
+      "at": 1776146135,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1776146140,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    },
+    {
+      "at": 1776146244,
+      "validation": {
+        "valid": false,
+        "review_required": false,
+        "role_play_patterns": 0
+      }
+    }
+  ],
+  "last_expression_at": 1776146141,
+  "bootstrap": {
+    "timeline_id": "tl_bob_ZLTFlWkGaq4CGObr1S1RTQ",
+    "status": "COMPLETED",
+    "user_id": "bob"
   }
 }

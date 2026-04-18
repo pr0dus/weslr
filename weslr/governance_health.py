@@ -106,17 +106,41 @@ def _get_identity() -> dict:
 # ---------------------------------------------------------------------------
 
 def _get_trust_posture() -> dict:
+    """Return trust posture from durable state.
+
+    Prefers persisted communicator_self.json so HTTP-layer processes see the same
+    truth as CLI processes. Falls back to in-process bootstrap records when
+    communicator_self bootstrap data is absent.
+    """
     try:
         from weslr.bootstrap import (
-            is_user_bootstrap_verified,
-            _BOOTSTRAP_RECORDS,
             _BOOTSTRAP_BY_TIMELINE,
+            _BOOTSTRAP_RECORDS,
         )
+        # Primary: read from persisted communicator_self.json
+        try:
+            from sim import load_communicator_self
+            cs = load_communicator_self()
+            bs = cs.get("bootstrap", {})
+            persisted_timeline = bs.get("timeline_id", "")
+            persisted_status = bs.get("status", "")
+        except Exception:
+            persisted_timeline = ""
+            persisted_status = ""
+
+        # In-process records as secondary source (current process only)
+        inproc_timelines = list(_BOOTSTRAP_BY_TIMELINE.keys())
+        inproc_pending = [r for r in _BOOTSTRAP_RECORDS.values() if r.get("status") == "PENDING"]
+
         return {
+            # Persisted bootstrap state (cross-process, durable)
+            "bootstrap_timeline_id": persisted_timeline,
+            "bootstrap_status": persisted_status or "none",
+            # In-process state (current process only)
             "bootstrap_verified_timelines": len(_BOOTSTRAP_BY_TIMELINE),
-            "pending_bootstraps": len([r for r in _BOOTSTRAP_RECORDS.values() if r.get("status") == "PENDING"]),
-            "root_trust": "bootstrap_completed",
-            "status": "operational" if _BOOTSTRAP_BY_TIMELINE else "initializing",
+            "pending_bootstraps": len(inproc_pending),
+            "root_trust": "bootstrap_completed" if persisted_timeline else "unestablished",
+            "status": "operational" if persisted_timeline else "initializing",
         }
     except Exception:
         return {"status": "unknown", "error": "bootstrap module unavailable"}
