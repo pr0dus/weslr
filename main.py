@@ -2096,6 +2096,7 @@ def cmd_serve(args):
                             research_context=None,
                             l0_identity=load_tier("l0"),
                             l1_operating=load_tier("l1"),
+                            l2_session=load_tier("l2"),
                         )
                         try:
                             payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))

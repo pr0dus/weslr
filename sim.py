@@ -1126,6 +1126,7 @@ def load_tier(tier: str) -> dict | None:
     Currently implements:
         l0  — identity core (~286 bytes): identity_anchor, core_drives, operator info
         l1  — operating facts (~800 bytes): affect, narrative, intent, governance
+        l2  — session state (~775 bytes): identity_state, continuity
 
     Returns None if the file is missing or invalid. Callers must handle None
     and fall back to their own defaults.
@@ -1136,6 +1137,8 @@ def load_tier(tier: str) -> dict | None:
             path = base / ".weslr" / "memory_tiers" / "l0_identity.json"
         elif tier == "l1":
             path = base / ".weslr" / "memory_tiers" / "l1_operating.json"
+        elif tier == "l2":
+            path = base / ".weslr" / "memory_tiers" / "l2_session.json"
         else:
             return None
         if not path.exists():

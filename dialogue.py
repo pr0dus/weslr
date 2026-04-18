@@ -500,7 +500,7 @@ def _get_targeted_anchors(message: str | None = None, topics: list | None = None
     return anchors
 
 
-def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None) -> dict:
+def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None, l2_session: dict | None = None) -> dict:
     from sim import load_communicator_self
     
     communicator_self = load_communicator_self()
@@ -530,8 +530,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         current_intent = l1_operating.get("current_intent")
         if current_intent:
             communicator_self["current_intent"] = current_intent
-    
-    if latest_human:
+
+    # Inject L2 tier if provided — session state (identity_state, continuity).
+    # These are read by _generate_enriched_identity and _generate_enriched_self_report
+    # via communicator_self.get("identity_state") and communicator_self.get("continuity").
+    if l2_session:
+        identity_state = l2_session.get("identity_state")
+        if identity_state:
+            communicator_self["identity_state"] = identity_state
+        continuity = l2_session.get("continuity")
+        if continuity:
+            communicator_self["continuity"] = continuity
         last_message = str(latest_human.get("message") or "").strip()
         interpreted_turn = interpret_human_turn(last_message)
         topic_list = [str(item).strip() for item in (latest_human.get("topics") or interpreted_turn.get("topics") or []) if str(item).strip()]
