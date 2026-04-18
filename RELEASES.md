@@ -22,6 +22,103 @@ Recommended rollback order:
 
 ## Releases
 
+### v0.7.1
+- diagnostic export / observability integration (v71) - WESLR Python only, additive only, read-only
+- diagnostic summary export via `diagnostics-summary` CLI command
+- correlated failure-chain export via `diagnostics-failure-chain` CLI command with flow/request/handshake/deadline correlation
+- recovery-hint export via `diagnostics-recovery-hints` CLI command
+- correlation by flow/request/handshake/deadline IDs across queues
+- operator-readable export form (human-friendly CLI output + JSON)
+- machine-readable export form (structured JSON payloads)
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: extend v70 with structured export hooks for diagnostic summaries and correlated failure chains
+- commit: `v71-diagnostics`
+- backup: `CircleForge-backup-20260407-0001.tar.gz`
+- tag: `v0.7.1`
+
+### v0.7.2
+- distributed failure replay / diagnostic trace export hardening (v72) - WESLR Python only, additive only, read-only
+- trace export model with structured TraceExportRecord dataclass
+- replay-oriented failure trace reconstruction via FailureTraceReconstructor
+- stronger correlation validation across flow/request/handshake/deadline IDs
+- consistency score computation with timestamp ordering and stage progression checks
+- operator-readable replay summary generation
+- machine-readable replay export (JSON with full trace metadata)
+- backward compatibility with v70/v71 exports
+- CLI commands: `diagnostics-trace-export`, `diagnostics-trace-replay`, `diagnostics-replay-export`
+- comprehensive behavioral tests (60 tests covering correlation, timestamps, stage progression, consistency, replay, backward compat)
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: harden the distributed diagnostic/export stack for reliable failure trace replay across the v61–v71 chain
+- commit: `v72-trace-export`
+- backup: `CircleForge-backup-20260407-0002.tar.gz`
+- tag: `v0.7.2`
+
+### v0.7.3
+- distributed fallback behavior (v73) - WESLR Python only, additive only, read-safe/execution-safe
+- node-level degraded fallback state with FallbackState enum (NORMAL, DEGRADED, REMOTE_UNAVAILABLE, LOCAL_ONLY, MODEL_REQUIRED, DETERMINISTIC_ONLY)
+- fallback reason tracking with FallbackReason enum (timeout, unavailable, degraded, handshake_failed, deadline_breached, remote_refused, model_unavailable)
+- path capability classification with PathCapability enum (model_required, deterministic_capable)
+- FallbackPathSelector for remote-unavailable fallback path selection
+- FallbackManager central layer with node status management, path selection, and audit logging
+- Correlation with existing flow/request/session/deadline IDs where relevant
+- CLI commands: `fallback-status`, `fallback-diagnostics`
+- audit/diagnostic export for fallback events
+- 45 behavioral tests covering state transitions, path selection, correlation, reason/capability separation
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: create distributed fallback layer so WESLR can continue operating safely when nodes, models, or remote dependencies become unavailable
+- commit: `v73-fallback`
+- backup: `CircleForge-backup-20260407-0003.tar.gz`
+- tag: `v0.7.3`
+
+- commit: `4c96141`
+- tag: `v0.7.5`
+
+### v0.7.5
+- operator insight consolidation / case summary layer (v89) - WESLR Python only, additive only, read-only
+- ConsolidatedCaseSummary dataclass with operator-readable + machine-readable output
+- ConsolidatedCaseExporter with operator and JSON export formats
+- OperatorInsightConsolidation class integrating v75-v78-v84-v87-v88 layers
+- Correlation by flow_id/request_id/handshake_id/deadline_id
+- Telemetry hooks (passive, descriptive only, no behavior control)
+- Backward compatibility with v75-v88 layers
+- 29 tests covering models, behavior, integration, and backward compatibility
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: read-only consolidation of recovery guidance, decision trace, pattern history, drift, and escalation into operator-facing summaries
+- commit: `4c96141`
+- tag: `v0.7.5`
+
+### v0.7.6
+- operator case comparison / escalation summary layer (v90) - WESLR Python only, additive only, read-only
+- CaseComparisonSummary dataclass with operator-readable + machine-readable output
+- CaseComparisonExporter with operator and JSON export formats
+- OperatorCaseComparison class comparing v89 consolidated cases
+- Comparison types: escalation context, confidence guidance, safe-next-action
+- Correlation by flow_id/request_id/handshake_id/deadline_id
+- Telemetry hooks (passive, descriptive only, no behavior control)
+- Backward compatibility with v89 layer
+- 25 tests covering models, behavior, integration, and backward compatibility
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: read-only comparison of consolidated cases with escalation/confidence/safe-action differences
+- commit: `de03cfa`
+- tag: `v0.7.6`
+
+### v0.7.5
+- distributed fallback trace / replay integration (v74) - WESLR Python only, additive only, read-only diagnostic/export
+- FallbackTraceRecord with fallback state, reason, and path capability correlation
+- FallbackTraceExporter with full fallback visibility in diagnostic summaries
+- FallbackTraceReconstructor for rebuilding traces with fallback path info
+- Operator-readable fallback replay summary with recovery-safe alternatives
+- Machine-readable fallback trace exports (JSON with trace metadata)
+- Correlation with existing flow/request/session/deadline IDs where relevant
+- CLI commands: fallback-trace-export, fallback-trace-replay
+- Backward compatibility with v72/v73 exports
+- 47 behavioral tests covering correlation, capability visibility, recovery alternatives
+- strict rules respected: no TIA/C#, no collector/, no orchestration, no sharding, no aggregation, no scheduler/task engine, no telemetry backend/service, no dashboard/UI
+- intended direction: integrate v73 distributed fallback behavior into existing diagnostic replay/export stack
+- commit: `v74-fallback-trace`
+- backup: `CircleForge-backup-20260407-0004.tar.gz`
+- tag: `v0.7.4`
+
 ### v0.7.0
 - autonomous expression system with rate control (`set-expression-rate`)
 - circuit breaker to prevent runaway ticks and infinite loops

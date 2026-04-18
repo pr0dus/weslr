@@ -1,0 +1,8 @@
+{
+  "provider": "ollama",
+  "model": "default",
+  "ollama_host": "http://127.0.0.1:11434",
+  "openai_base_url": "https://api.openai.com/v1",
+  "openai_api_key_env": "",
+  "configured_at": 1776366876.7580945
+}

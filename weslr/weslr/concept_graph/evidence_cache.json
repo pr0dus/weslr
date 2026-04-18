@@ -1,0 +1,16 @@
+{
+  "model-test-model": [
+    {
+      "source_id": "model-test-model-1775417566",
+      "source_type": "model_reasoning",
+      "content": "Model assertion",
+      "confidence": 0.7,
+      "timestamp": 1775417566,
+      "category": "model-asserted",
+      "traceable": true,
+      "reason": "Model assertion: Reasoning",
+      "source_file": null,
+      "source_message_id": null
+    }
+  ]
+}

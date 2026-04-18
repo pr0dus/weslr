@@ -1,0 +1,28 @@
+{
+  "name": "security",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./gateway": {
+      "types": "./gateway.d.ts",
+      "default": "./gateway.js"
+    },
+    "./gateway-wrappers": {
+      "types": "./gateway-wrappers.d.ts",
+      "default": "./gateway-wrappers.js"
+    },
+    "./test-wrappers": {
+      "types": "./test-wrappers.d.ts",
+      "default": "./test-wrappers.js"
+    }
+  },
+  "scripts": {
+    "build": "echo 'Security extension - no build required'",
+    "test": "node test-wrappers.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

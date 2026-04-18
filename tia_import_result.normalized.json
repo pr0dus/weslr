@@ -1,0 +1,133 @@
+{
+  "ok": true,
+  "envelope_type": "tia_normalized",
+  "project": {
+    "id": "tia-project-001",
+    "name": "PLC-Control-Machine-A",
+    "kind": "project",
+    "raw": {
+      "id": "tia-project-001",
+      "name": "PLC-Control-Machine-A",
+      "path": "C:\\Projects\\Machine-A\\TIA_V20proj",
+      "last_modified": "2026-03-30T14:22:15Z",
+      "tia_portal_version": "v20.1.2"
+    }
+  },
+  "devices": [
+    {
+      "id": "device-001",
+      "name": "S7-1500 CPU 1516-3 PN/DP",
+      "kind": "device",
+      "raw": {
+        "id": "device-001",
+        "name": "S7-1500 CPU 1516-3 PN/DP",
+        "type": "PLC",
+        "hardware_version": "V6",
+        "firmware_version": "V4.3"
+      },
+      "hw_ver": "V6",
+      "fw_ver": "V4.3"
+    }
+  ],
+  "plcs": [
+    {
+      "id": "plc-001",
+      "name": "CPU 1516-3 PN/DP",
+      "kind": "plc",
+      "raw": {
+        "id": "plc-001",
+        "device_id": "device-001",
+        "name": "CPU 1516-3 PN/DP",
+        "rack": 0,
+        "slot": 2,
+        "ip_address": "192.168.1.100"
+      },
+      "rack": 0,
+      "slot": 2,
+      "ip": "192.168.1.100"
+    }
+  ],
+  "cpus": [
+    {
+      "id": "cpu-001",
+      "name": "CPU",
+      "kind": "cpu",
+      "raw": {
+        "id": "cpu-001",
+        "plc_id": "plc-001",
+        "name": "CPU",
+        "module_type": "6ES7 151-3AA01-0AB0",
+        "serial_number": "2211223344"
+      }
+    }
+  ],
+  "modules": [
+    {
+      "id": "mod-001",
+      "name": "SM 1231 analog input",
+      "kind": "module",
+      "raw": {
+        "id": "mod-001",
+        "plc_id": "plc-001",
+        "name": "SM 1231 analog input",
+        "module_type": "6ES7 231-4HD30-0XB0",
+        "position": 1
+      }
+    }
+  ],
+  "tags": [
+    {
+      "id": "tag-001",
+      "name": "MOTOR_SPEED",
+      "kind": "tag",
+      "raw": {
+        "id": "tag-001",
+        "plc_id": "plc-001",
+        "name": "MOTOR_SPEED",
+        "data_type": "REAL",
+        "address": "DB1.DBW0",
+        "comment": "Motor speed in RPM"
+      },
+      "type": "REAL",
+      "addr": "DB1.DBW0",
+      "desc": "Motor speed in RPM"
+    },
+    {
+      "id": "tag-002",
+      "name": "TEMPERATURE",
+      "kind": "tag",
+      "raw": {
+        "id": "tag-002",
+        "plc_id": "plc-001",
+        "name": "TEMPERATURE",
+        "data_type": "INT",
+        "address": "DB1.DBW2",
+        "comment": "Process temperature"
+      },
+      "type": "INT",
+      "addr": "DB1.DBW2",
+      "desc": "Process temperature"
+    }
+  ],
+  "metadata": {
+    "validation": {
+      "ok": true,
+      "warnings": [],
+      "errors": []
+    },
+    "source_envelope": "tia_real_export.json",
+    "imported_at": 1774991926869,
+    "normalization": {
+      "warnings": [],
+      "item_counts": {
+        "devices": 1,
+        "plcs": 1,
+        "cpus": 1,
+        "modules": 1,
+        "tags": 2,
+        "total_items": 6
+      },
+      "normalized_at": 1774991926870
+    }
+  }
+}

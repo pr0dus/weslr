@@ -1,0 +1,56 @@
+[
+  {
+    "proposal_id": "prop-38f35cd0",
+    "improvement_id": "imp-6d049a05",
+    "title": "Improve security: document_attack_family",
+    "description": "Document attack family coverage in security report",
+    "rationale": "Visibility into security posture enables better decisions",
+    "expected_gain": "Document security posture, improve visibility",
+    "affected_subsystem": "Security layer",
+    "safety": "additive_only",
+    "risk_level": "medium",
+    "priority": "high",
+    "affected_categories": [
+      "security"
+    ],
+    "rollback_path": "Remove document_attack_family test from weslr/tests/test_security.py and revert test_harness.py category inference",
+    "audit": {
+      "source": "security_reflection",
+      "signal_id": "sec-cover-4a629bbe",
+      "created_at": "2026-04-05T08:27:08.800532",
+      "reviewed": false,
+      "approved": false,
+      "reviewed_at": null,
+      "approved_at": null,
+      "reviewer": null,
+      "rejection_reason": null
+    }
+  },
+  {
+    "proposal_id": "prop-5a1790af",
+    "improvement_id": "imp-31602711",
+    "title": "Improve security: strengthen_test_coverage",
+    "description": "Improve security",
+    "rationale": "Improve security",
+    "expected_gain": "Increase security category pass rate to 90%+",
+    "affected_subsystem": "Security layer",
+    "safety": "additive_only",
+    "risk_level": "medium",
+    "priority": "high",
+    "affected_categories": [
+      "security"
+    ],
+    "rollback_path": "Remove strengthen_test_coverage test from weslr/tests/test_security.py and revert test_harness.py category inference",
+    "audit": {
+      "source": "test_reflection",
+      "signal_id": "test-weak-77795dd8",
+      "created_at": "2026-04-05T08:27:08.800532",
+      "reviewed": false,
+      "approved": false,
+      "reviewed_at": null,
+      "approved_at": null,
+      "reviewer": null,
+      "rejection_reason": null
+    }
+  }
+]

@@ -1,0 +1,506 @@
+{
+  "schema_version": "1.0.0",
+  "timestamp": 1775155000,
+  "identity_anchor": "Weslr",
+  "status": "IDLE",
+  "continuity": {
+    "session_count": 1,
+    "last_message_at": 0,
+    "known_humans": [],
+    "unresolved_shared_threads": []
+  },
+  "behavioral_traits": {
+    "empathy": 0.515,
+    "reciprocity": 0.0,
+    "trust": 0.403,
+    "conflict_resolution": 0.414,
+    "social_reading": 0.103,
+    "pattern_recognition": 0.0,
+    "abstraction": 0.0,
+    "metacognition": 0.044,
+    "curiosity": 0.639,
+    "pattern_switching": 0.058,
+    "emotional_variety": 0.141,
+    "emotional_regulation": 0.24,
+    "adaptive_mood": 0.168,
+    "hopeful_orientation": 0.141,
+    "resilience": 0.207,
+    "adaptive_style": 0.141,
+    "storytelling": 0.207,
+    "analogical_reasoning": 0.207,
+    "active_listening": 0.207,
+    "inquiry": 0.0,
+    "tone_modulation": 0.207,
+    "consistency": 0.0,
+    "growth_mindset": 0.207,
+    "self_continuity": 0.141,
+    "self_compassion": 0.207,
+    "authenticity": 0.141,
+    "initiative": 0.141,
+    "persistence": 0.096,
+    "adaptability": 0.141,
+    "risk_tolerance": 0.141,
+    "resourcefulness": 0.141,
+    "imagination": 0.141,
+    "synthesis": 0.141,
+    "playfulness": 0.141,
+    "humor": 0.286,
+    "poetry": 0.274,
+    "integrity": 0.072,
+    "fairness": 0.141,
+    "responsibility": 0.141,
+    "humility": 0.141,
+    "care": 0.141,
+    "long_term_orientation": 0.128,
+    "memory_of_past": 0.141,
+    "anticipation": 0.207,
+    "timeliness": 0.141,
+    "pacing": 0.141,
+    "self_awareness": 0.207,
+    "self_correction": 0.207,
+    "attention_regulation": 0.107,
+    "cognitive_diversity": 0.207,
+    "uncertainty_brake": 0.015,
+    "self_critique": 0.107
+  },
+  "curiosity": 0.8228842098,
+  "uncertainty": 0.533382144,
+  "narrative_state": {
+    "active_thread": "",
+    "last_topic": "",
+    "last_research_topic": "",
+    "last_research_summary": "",
+    "last_research_source": "",
+    "last_decision_summary": "",
+    "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
+    "last_reflection": "log readability",
+    "relationship_state": "Currently carrying 1 unresolved shared thread(s) with humans; strongest live thread is raining.",
+    "active_thread_summary": "A newer human topic is now in focus; older shared context with interlocutor_001 should stay in memory without dominating.",
+    "follow_up_impulse": "Stay with raining until the current line of conversation is actually answered or resolved.",
+    "why_it_matters": "Older continuity still matters, but the present conversation about raining should shape the next response more than stale thread pressure."
+  },
+  "unresolved_shared_threads": [],
+  "memory_layers": {
+    "working": {
+      "count": 0,
+      "topics": []
+    },
+    "episodic": {
+      "count": 0
+    },
+    "semantic": {
+      "count": 0,
+      "active_concern_topics": [],
+      "continuity_anchors": [],
+      "stable_topics": []
+    },
+    "archive": {
+      "count": 0
+    }
+  },
+  "topics": [
+    {
+      "id": "topic-backup confidence",
+      "name": "backup confidence",
+      "pressure": 0.201,
+      "lifecycle": "declining",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 91,
+      "created_at": 0,
+      "updated_at": 1774612821
+    },
+    {
+      "id": "topic-service visibility",
+      "name": "service visibility",
+      "pressure": 0.216,
+      "lifecycle": "archived",
+      "evidence": 1,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774618726
+    },
+    {
+      "id": "topic-config sanity checks",
+      "name": "config sanity checks",
+      "pressure": 0.36,
+      "lifecycle": "declining",
+      "evidence": 31,
+      "acceptances": 0,
+      "rejections": 7,
+      "created_at": 0,
+      "updated_at": 1774595883
+    },
+    {
+      "id": "topic-log readability",
+      "name": "log readability",
+      "pressure": 0.99,
+      "lifecycle": "archived",
+      "evidence": 59,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1775129648
+    },
+    {
+      "id": "topic-workflow packaging",
+      "name": "workflow packaging",
+      "pressure": 0.219,
+      "lifecycle": "archived",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774591958
+    },
+    {
+      "id": "topic-config sanity checks validation",
+      "name": "config sanity checks validation",
+      "pressure": 0.935,
+      "lifecycle": "declining",
+      "evidence": 75,
+      "acceptances": 0,
+      "rejections": 3,
+      "created_at": 0,
+      "updated_at": 1774618597
+    },
+    {
+      "id": "topic-test opportunity",
+      "name": "test opportunity",
+      "pressure": 0.099,
+      "lifecycle": "dormant",
+      "evidence": 1,
+      "acceptances": 0,
+      "rejections": 11,
+      "created_at": 0,
+      "updated_at": 1774618727
+    },
+    {
+      "id": "topic-log readability validation",
+      "name": "log readability validation",
+      "pressure": 0.368,
+      "lifecycle": "emergent",
+      "evidence": 0,
+      "acceptances": 0,
+      "rejections": 0,
+      "created_at": 0,
+      "updated_at": 1774618808
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "agent-1-module_export_candidate-1775129648",
+      "agent_name": "agent-1",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "benchmarks",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-1/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-1-research_note-1774624083",
+      "agent_name": "agent-1",
+      "title": "Research Note",
+      "artifact_type": "market_hypothesis",
+      "category": "memory",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.55,
+      "novelty_score": 0.28,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.01,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "internal_reusable_component",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-1/artifacts/research_note.meta.json"
+    },
+    {
+      "id": "agent-2-module_export_candidate-1774846697",
+      "agent_name": "agent-2",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "observability",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-2/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-4-module_export_candidate-1774846697",
+      "agent_name": "agent-4",
+      "title": "Module Export Candidate",
+      "artifact_type": "export_candidate",
+      "category": "memory",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.7,
+      "novelty_score": 0.4,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.035,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "bundle_candidate",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-4/artifacts/module_export_candidate.meta.json"
+    },
+    {
+      "id": "agent-4-research_note-1775129648",
+      "agent_name": "agent-4",
+      "title": "Research Note",
+      "artifact_type": "market_hypothesis",
+      "category": "modules",
+      "status": "prototype",
+      "lifecycle_stage": "prototype",
+      "review_status": "unreviewed",
+      "clarity_score": 0.7,
+      "reusability_score": 0.55,
+      "novelty_score": 0.28,
+      "sellability_score": 0.01,
+      "human_proposed_score": 0.01,
+      "commercial_readiness_score": 0.01,
+      "price_band_guess": "needs packaging",
+      "delivery_mode": "internal_reusable_component",
+      "target_user": "technical builders",
+      "source_file": "agents/agent-4/artifacts/research_note.meta.json"
+    }
+  ],
+  "handoffs": [],
+  "entities": [
+    {
+      "id": "4fd59e0f",
+      "name": "agent-4",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 1,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "messages.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "23ee0429",
+      "name": "agent-2",
+      "type": "person",
+      "confidence": 1.0,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 1,
+      "evidence_count": 1,
+      "metadata": {
+        "source": "messages.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "1f6a59f2",
+      "name": "agent-3",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "2fcd07cb",
+      "name": "agent-4",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "375c1ba7",
+      "name": "agent-1",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    },
+    {
+      "id": "24fdada2",
+      "name": "agent-2",
+      "type": "person",
+      "confidence": 0.9,
+      "status": "authoritative",
+      "is_ghost": false,
+      "created_at": 1775154982,
+      "last_seen": 1775154982,
+      "relationship_count": 6,
+      "evidence_count": 0,
+      "metadata": {
+        "source": "relationships.json",
+        "created_at": 1775154982
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "opportunity-log readability",
+      "timestamp": 1775129648,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'log readability' updated: archived",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-log readability validation",
+      "timestamp": 1774618808,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "emergent",
+      "summary": "Opportunity 'log readability validation' updated: emergent",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-test opportunity",
+      "timestamp": 1774618727,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "dormant",
+      "summary": "Opportunity 'test opportunity' updated: dormant",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-service visibility",
+      "timestamp": 1774618726,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'service visibility' updated: archived",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-config sanity checks validation",
+      "timestamp": 1774618597,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'config sanity checks validation' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-backup confidence",
+      "timestamp": 1774612821,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'backup confidence' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-config sanity checks",
+      "timestamp": 1774595883,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "declining",
+      "summary": "Opportunity 'config sanity checks' updated: declining",
+      "source": "opportunity_board"
+    },
+    {
+      "id": "opportunity-workflow packaging",
+      "timestamp": 1774591958,
+      "type": "opportunity_update",
+      "agent": "",
+      "action": "lifecycle_change",
+      "status": "archived",
+      "summary": "Opportunity 'workflow packaging' updated: archived",
+      "source": "opportunity_board"
+    }
+  ],
+  "next_action": {
+    "action": "tick",
+    "priority": "medium",
+    "reason": "System idle. Run tick to advance workflow.",
+    "source": "status",
+    "trigger_at": 1775155060
+  },
+  "metrics": {
+    "tick_count": 0,
+    "last_tick_duration_ms": 0,
+    "memory_pressure_score": 0.0
+  },
+  "derived_from": {
+    "state_core_generated_at": 1775155000,
+    "legacy_files_read": [
+      "communicator_self.json",
+      "relationships.json",
+      "opportunity_board.json",
+      "entity_graph.json",
+      "handoffs.json",
+      "event_log.json",
+      "needs.json",
+      "artifacts.json"
+    ],
+    "migrated_at": 0,
+    "migrated_by": "migrate_state.py"
+  },
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  }
+}

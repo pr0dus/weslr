@@ -1,0 +1,50 @@
+[
+  {
+    "pack_name": "observability-signals-opportunity-pack",
+    "action": "offer",
+    "note": "Offer includes Observability Trace export-ready artifact.",
+    "buyer": "operator-team",
+    "price_band": "needs packaging",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "observability signals",
+    "category": "observability",
+    "created_at": 1776152851
+  },
+  {
+    "pack_name": "observability-signals-opportunity-pack",
+    "action": "accept",
+    "note": "Operator-team accepts the observability signal pack for tracking visibility.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "observability signals",
+    "category": "observability",
+    "created_at": 1776155887
+  },
+  {
+    "pack_name": "planetary-signals-opportunity-pack",
+    "action": "offer",
+    "note": "Offer includes Planet Signal Trace artifact for science operators.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "planetary-signals",
+    "category": "science",
+    "created_at": 1776178451
+  },
+  {
+    "pack_name": "planetary-signals-opportunity-pack",
+    "action": "accept",
+    "note": "Science operators confirm delivery and accept the planetary signal pack.",
+    "buyer": "",
+    "price_band": "",
+    "mode": "",
+    "group_kind": "opportunity",
+    "niche_theme": "planetary-signals",
+    "category": "science",
+    "created_at": 1776178646
+  }
+]

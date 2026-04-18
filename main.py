@@ -6,9 +6,20 @@ import socket
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from datetime import datetime, timezone
+from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from http.server import ThreadingHTTPServer
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from time import strftime, localtime
+
+from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
+from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS, CHAT_LLM_TIMEOUT_SECONDS
+
+# Server start time — used for uptime calculation in /api/health
+_SERVER_START_TIME = None
 
 from config import CONTINUATION_NOTES_PATH, DEFAULT_AGENT_COUNT, PROJECT_NAME, TICK_SECONDS, VERSION
 from config import TICKS_PER_SECOND_LIMIT, TICK_TIME_LIMIT_SECONDS
@@ -21,6 +32,18 @@ from error_translator import translate_error, translate_error_to_plain_english
 from tool_search import explain_tool_usage, search_tool_and_synthesize
 from self_modifier import build_proposal_report, propose_self_modification_report
 from self_mod_applier import apply_modification, build_self_mod_report, create_checkpoint, list_checkpoints, rollback
+from self_improvement_proposal import create_proposal, list_proposals, approve_proposal, deny_proposal, get_proposal, build_proposal_report as build_sci_report, load_proposals
+from self_improvement_apply import apply_proposal, apply_proposal_with_tests, build_apply_report, rollback_proposal, load_apply_log
+from self_improvement_observation import record_observation, list_observations, load_observations
+from tia_import import (
+    create_raw_import_envelope,
+    save_import_envelope,
+    normalize_tia_envelope,
+    save_normalized_envelope,
+    record_tia_import_history,
+    list_tia_import_history,
+    get_tia_import_record,
+)
 from llm_diff_generator import generate_diff_with_llm, generate_improvement_suggestion, analyze_code_for_issues
 from self_mod_dashboard import update_dashboard, get_dashboard_status
 from self_mod_enhancements import generate_autonomous_suggestion, check_modification_safety, validate_modification, generate_rollback_preview, batch_modifications
@@ -49,9 +72,230 @@ from core_knowledge import (
 )
 from entity_graph import get_entity_graph
 
+# Shared bounded executor for /chat — one thread, reused across requests.
+# Bounded to prevent thread exhaustion under concurrent load.
+_CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-request")
+
+# Bounded admission gate for /chat: limits concurrent in-flight requests.
+# When exhausted, server returns 503 instead of queuing unboundedly.
+# Keep small — the single-worker executor serializes execution anyway.
+_MAX_CONCURRENT_CHAT = 4
+_chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
+
+
+# Minimal telemetry emitter for v71 diagnostics
+class _MinimalTelemetryEmitter:
+    """Minimal TelemetryEventEmitter for v71 diagnostics."""
+    def __init__(self):
+        self._events = []
+        self._events_by_flow = {}
+        self._events_by_type = {}
+    
+    def emit_event(self, event):
+        self._events.append(event)
+    
+    def get_all_events(self):
+        return self._events
+    
+    def get_all_flows(self):
+        return list(self._events_by_flow.keys())
+    
+    def get_events_by_flow(self):
+        return self._events_by_flow
+
+
+from weslr.diagnostic_export import (
+    DiagnosticExportHooks,
+    DiagnosticSummaryExporter,
+    FailureChainExporter,
+    RecoveryHintExporter,
+)
+from weslr.diagnostic_trace_export import (
+    TraceExporter,
+    FailureTraceReconstructor,
+    ReplaySummaryGenerator,
+    ExportVersion,
+    ExportFormat,
+)
+from weslr.distributed_fallback import (
+    FallbackManager,
+    FallbackReason,
+    PathCapability,
+    FallbackState,
+    create_fallback_manager,
+)
+from weslr.fallback_trace_export import (
+    FallbackTraceExporter,
+    FallbackTraceReconstructor,
+    create_fallback_trace_exporter,
+    create_fallback_trace_reconstructor,
+)
+from weslr.distributed_diagnostic_hooks import DiagnosticHooks
+
 
 def emit(data):
     print(json.dumps(data, indent=2))
+
+
+def cmd_init_operator(args):
+    import json as _json
+    from weslr.communicator_config import update_operator_profile
+    profile = {
+        "phase": "onboarding",
+        "name": args.name,
+        "role": args.role or "",
+        "urgency": args.urgency or "normal",
+        "checkin_style": args.checkin_style or "daily",
+        "adaptation_level": args.adaptation_level or "propose",
+    }
+    update_operator_profile(profile)
+    payload = {
+        "success": True,
+        "operator_name": args.name,
+        "role": args.role or "",
+        "profile_path": "/data/data/com.termux/files/home/.openclaw/workspace/operator_profile.json",
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        print(f"Operator profile created: {args.name} ({args.role or 'no role'})")
+
+
+def cmd_init_bootstrap(args):
+    import json as _json
+    from weslr.bootstrap import new_timeline_id, register_completed_bootstrap
+    from sim import load_communicator_self, save_communicator_self
+    user_id = args.user_id or "operator"
+    timeline_id = new_timeline_id(user_id)
+    # Write durable bootstrap truth into communicator_self.json
+    cs = load_communicator_self()
+    cs.setdefault("bootstrap", {})["timeline_id"] = timeline_id
+    cs["bootstrap"]["status"] = "COMPLETED"
+    cs["bootstrap"]["user_id"] = user_id
+    save_communicator_self(cs)
+    # Register in bootstrap store so is_verified_timeline() returns True
+    record = {
+        "user_id": user_id,
+        "status": "COMPLETED",
+        "timeline_id": timeline_id,
+        "bootstrap_completed_at": time.time(),
+    }
+    register_completed_bootstrap(record)
+    payload = {
+        "success": True,
+        "user_id": user_id,
+        "timeline_id": timeline_id,
+        "bootstrap_status": "COMPLETED",
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        print(f"Bootstrap complete. timeline_id: {timeline_id}")
+
+
+_PROVIDER_CONFIG_PATH = None  # set after BASE_DIR is available
+
+
+def cmd_init_provider(args):
+    """Configure and validate the active LLM provider for headless deployments."""
+    import json as _json
+    import os
+    import urllib.request
+
+    global _PROVIDER_CONFIG_PATH
+    if _PROVIDER_CONFIG_PATH is None:
+        from config import BASE_DIR
+        _PROVIDER_CONFIG_PATH = BASE_DIR / "provider_config.json"
+
+    VALID_PROVIDERS = ["fallback", "ollama", "openai", "openai_compatible"]
+    provider = args.provider.lower()
+    if provider not in VALID_PROVIDERS:
+        payload = {
+            "success": False,
+            "provider": provider,
+            "error": f"Unknown provider '{provider}'. Supported: {', '.join(VALID_PROVIDERS)}",
+        }
+        if getattr(args, "json", False):
+            print(_json.dumps(payload))
+        else:
+            print(f"ERROR: {payload['error']}")
+        return
+
+    # Build config record
+    config = {
+        "provider": provider,
+        "model": args.model or "default",
+        "ollama_host": args.ollama_host or "http://127.0.0.1:11434",
+        "openai_base_url": args.openai_base_url or "https://api.openai.com/v1",
+        "openai_api_key_env": args.openai_api_key_env or "",
+        "configured_at": __import__("time").time(),
+    }
+
+    # Validate: check provider-specific reachability
+    validated = False
+    validation_detail = ""
+
+    if provider == "fallback":
+        validated = True
+        validation_detail = "Fallback is always available; no external dependency"
+
+    elif provider == "ollama":
+        host = config["ollama_host"]
+        try:
+            req = urllib.request.Request(
+                f"{host.rstrip('/')}/api/tags",
+                headers={"Content-Type": "application/json"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                validated = resp.status == 200
+                validation_detail = f"Ollama daemon reachable at {host}"
+        except Exception as e:
+            validation_detail = f"Ollama not reachable at {host}: {e}"
+
+    elif provider in ("openai", "openai_compatible"):
+        base = config["openai_base_url"]
+        key_env = config.get("openai_api_key_env") or os.getenv("OPENAI_API_KEY", "")
+        if not key_env:
+            validation_detail = "OPENAI_API_KEY not set; cannot validate"
+        else:
+            try:
+                req = urllib.request.Request(
+                    f"{base.rstrip('/')}/models",
+                    headers={"Authorization": f"Bearer {key_env}"}
+                )
+                with urllib.request.urlopen(req, timeout=5.0) as resp:
+                    validated = resp.status == 200
+                    validation_detail = f"OpenAI API reachable at {base}"
+            except Exception as e:
+                validation_detail = f"OpenAI API not reachable: {e}"
+
+    # Persist config to provider_config.json (safe JSON; no secrets written)
+    config_path = _PROVIDER_CONFIG_PATH
+    safe_config = dict(config)
+    # Never write actual key values; only env var references
+    safe_config["openai_api_key_env"] = args.openai_api_key_env or ""
+    config_path.write_text(_json.dumps(safe_config, indent=2))
+    # Set in current process env so provider abstraction picks it up
+    os.environ["WESLR_LLM_PROVIDER"] = provider
+    if args.ollama_host:
+        os.environ["OLLAMA_HOST"] = args.ollama_host
+
+    payload = {
+        "success": True,
+        "provider": provider,
+        "configured": True,
+        "validated": validated,
+        "validation_detail": validation_detail,
+        "config_path": str(config_path),
+    }
+    if getattr(args, "json", False):
+        print(_json.dumps(payload))
+    else:
+        if validated:
+            print(f"Provider '{provider}' configured and validated. ({validation_detail})")
+        else:
+            print(f"Provider '{provider}' configured but not validated. ({validation_detail})")
 
 
 def cmd_init(args):
@@ -324,6 +568,12 @@ def cmd_session_continuity(_args):
     """Check session continuity and time-persistent identity."""
     continuity = get_session_continuity()
     emit(continuity)
+
+
+def cmd_weslr_state(_args):
+    """Print WESLR's unified operational state summary."""
+    from weslr.governance_health import get_weslr_state_summary
+    emit(get_weslr_state_summary())
 
 
 def cmd_autonomous_intentionality(_args):
@@ -629,11 +879,1768 @@ def _launch_dashboard_server(project_dir: Path, host: str, port: int):
 
 def cmd_serve(args):
     dashboard_dir = Path(__file__).resolve().parent / "dashboard"
-    handler = partial(SimpleHTTPRequestHandler, directory=str(dashboard_dir))
+    base_dir = Path(__file__).resolve().parent
+    
+    # Custom handler that adds /chat endpoint to existing static file serving
+    class ChatHandler(SimpleHTTPRequestHandler):
+        def _serve_state_file(self, path: str) -> None:
+            relative = path.lstrip("/")
+            target = base_dir / relative
+            if not target.exists():
+                self.send_error(404, "State file not found")
+                return
+            try:
+                data = target.read_bytes()
+            except Exception as exc:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(exc)}).encode("utf-8"))
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def _log_timeline_event(self, timeline_id, event_type, data, frame=None, source="operator", trust_level="direct"):
+            """Append-only event logger per timeline. Safe — never raises."""
+            try:
+                base = Path(__file__).resolve().parent
+                tl_dir = base / ".weslr" / "timelines" / timeline_id
+                tl_dir.mkdir(parents=True, exist_ok=True)
+                event = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event_type": event_type,
+                    "data": data,
+                    "frame": frame,
+                    "source": source,
+                    "trust_level": trust_level,
+                }
+                event_file = tl_dir / "events.jsonl"
+                with open(event_file, "a") as f:
+                    f.write(json.dumps(event) + "\n")
+            except Exception:
+                pass
+
+        def _evaluate_event_against_charter(self, event_metadata):
+            """Read-only Charter evaluation of event metadata. Returns interpretation, no blocking."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {"charter_present": False}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                evaluation = {
+                    "charter_present": True,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned_with_charter": aligned,
+                    "requires_validation": requires_validation,
+                    "source_category": "operator" if source == "operator" else ("system" if source == "system" else "external"),
+                    "trust_claim": trust_level,
+                    "charter_note": self._charter_note(source, trust_level, aligned, requires_validation),
+                }
+                return evaluation
+            except Exception:
+                return {"charter_present": False, "error": "evaluation_failed"}
+
+        def _charter_note(self, source, trust_level, aligned, requires_validation):
+            if not aligned:
+                return f"TRUST_MISMATCH: source={source} claims trust_level={trust_level} — charter expects direct for operator only"
+            if requires_validation:
+                return f"CAUTION: source={source} requires validation before trust"
+            if aligned and source == "operator":
+                return "Aligned: operator-direct input. Highest trust."
+            if aligned and source == "system":
+                return "Aligned: system-inferred. Trusted, derived."
+            return "Aligned: external-unverified input."
+
+        def _flag_event_against_charter(self, event_metadata):
+            """Read-only Charter pattern flagging. Returns signal dict, never blocks."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                flags = []
+                if not aligned:
+                    flags.append("TRUST_MISMATCH")
+                if requires_validation:
+                    flags.append("REQUIRES_VALIDATION")
+                if source == "external" and trust_level == "unverified":
+                    flags.append("LOW_TRUST_EXTERNAL")
+                if source == "external" and trust_level == "direct":
+                    flags.append("SUSPICIOUS_DIRECT_CLAIM")
+                if source not in hierarchy:
+                    flags.append("UNKNOWN_SOURCE")
+                return {
+                    "flags": flags,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned": aligned,
+                    "signal_level": "clean" if not flags else ("warning" if "REQUIRES_VALIDATION" in flags else "alert"),
+                }
+            except Exception:
+                return {}
+
+        def _generate_charter_signal_report(self, events):
+            """Read-only signal analysis over event list."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                patterns = charter.get("poisoning_resistance", {}).get("patterns", {})
+                alert_count = 0
+                warning_count = 0
+                clean_count = 0
+                flagged_events = []
+                external_count = 0
+                source_counts = {"operator": 0, "system": 0, "external": 0}
+                frame_counts = {}
+                for ev in events:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        alert_count += 1
+                        flagged_events.append({"event": ev, "signal": sig})
+                    elif lvl == "warning":
+                        warning_count += 1
+                    else:
+                        clean_count += 1
+                    src = ev.get("source")
+                    if src in source_counts:
+                        source_counts[src] += 1
+                    if src == "external":
+                        external_count += 1
+                    fr = ev.get("frame")
+                    if fr:
+                        frame_counts[fr] = frame_counts.get(fr, 0) + 1
+                    if len(flagged_events) > 20:
+                        break
+                high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
+                repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+
+                # Early warning: emerging patterns that haven't hit alert thresholds yet
+                early_warning_flags = []
+                early_warning_count = 0
+                recent_ext = [e for e in events[-20:] if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in events[-20:] if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5 and not repeated_pattern:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3 and unverified_ratio < 0.5:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in events[-20:]:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
+                early_warning_count = len(early_warning_flags)
+
+                signal_level = "alert" if alert_count > 0 else ("warning" if warning_count > 0 else ("early_warning" if early_warning_count > 0 else "clean"))
+
+                return {
+                    "summary": {
+                        "total_events": len(events),
+                        "clean": clean_count,
+                        "warning": warning_count,
+                        "alert": alert_count,
+                        "early_warning": early_warning_count,
+                        "source_breakdown": source_counts,
+                        "frame_breakdown": frame_counts,
+                    },
+                    "patterns": {
+                        "high_frequency_external": high_freq_external,
+                        "repeated_same_source": repeated_pattern,
+                    },
+                    "early_warnings": {
+                        "flags": early_warning_flags,
+                        "rising_external_source": "rising_external_source" in early_warning_flags,
+                        "rising_unverified_ratio": "rising_unverified_ratio" in early_warning_flags,
+                        "emerging_burst_pattern": "emerging_burst_pattern" in early_warning_flags,
+                    },
+                    "flagged_events": flagged_events[-10:],
+                    "signal_level": signal_level,
+                }
+            except Exception as e:
+                return {"error": str(e)}
+
+        def _log_timeline_event(self, timeline_id, event_type, data, frame=None, source="operator", trust_level="direct"):
+            """Append-only event logger per timeline. Safe — never raises."""
+            try:
+                base = Path(__file__).resolve().parent
+                tl_dir = base / ".weslr" / "timelines" / timeline_id
+                tl_dir.mkdir(parents=True, exist_ok=True)
+                event = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event_type": event_type,
+                    "data": data,
+                    "frame": frame,
+                    "source": source,
+                    "trust_level": trust_level,
+                }
+                event_file = tl_dir / "events.jsonl"
+                with open(event_file, "a") as f:
+                    f.write(json.dumps(event) + "\n")
+            except Exception:
+                pass
+
+        def _evaluate_event_against_charter(self, event_metadata):
+            """Read-only Charter evaluation of event metadata. Returns interpretation, no blocking."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {"charter_present": False}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                evaluation = {
+                    "charter_present": True,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned_with_charter": aligned,
+                    "requires_validation": requires_validation,
+                    "source_category": "operator" if source == "operator" else ("system" if source == "system" else "external"),
+                    "trust_claim": trust_level,
+                    "charter_note": self._charter_note(source, trust_level, aligned, requires_validation),
+                }
+                return evaluation
+            except Exception:
+                return {"charter_present": False, "error": "evaluation_failed"}
+
+        def _charter_note(self, source, trust_level, aligned, requires_validation):
+            if not aligned:
+                return f"TRUST_MISMATCH: source={source} claims trust_level={trust_level} — charter expects direct for operator only"
+            if requires_validation:
+                return f"CAUTION: source={source} requires validation before trust"
+            if aligned and source == "operator":
+                return "Aligned: operator-direct input. Highest trust."
+            if aligned and source == "system":
+                return "Aligned: system-inferred. Trusted, derived."
+            return "Aligned: external-unverified input."
+
+        def _flag_event_against_charter(self, event_metadata):
+            """Read-only Charter pattern flagging. Returns signal dict, never blocks."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                source = event_metadata.get("source", "unknown")
+                trust_level = event_metadata.get("trust_level", "unknown")
+                frame = event_metadata.get("frame")
+                hierarchy = charter.get("trust_rules", {}).get("source_hierarchy", {})
+                source_info = hierarchy.get(source, {})
+                expected_trust = source_info.get("default_trust_level")
+                requires_validation = source_info.get("requires_validation", False)
+                aligned = (trust_level == expected_trust)
+                flags = []
+                if not aligned:
+                    flags.append("TRUST_MISMATCH")
+                if requires_validation:
+                    flags.append("REQUIRES_VALIDATION")
+                if source == "external" and trust_level == "unverified":
+                    flags.append("LOW_TRUST_EXTERNAL")
+                if source == "external" and trust_level == "direct":
+                    flags.append("SUSPICIOUS_DIRECT_CLAIM")
+                if source not in hierarchy:
+                    flags.append("UNKNOWN_SOURCE")
+                return {
+                    "flags": flags,
+                    "source": source,
+                    "trust_level": trust_level,
+                    "frame": frame,
+                    "aligned": aligned,
+                    "signal_level": "clean" if not flags else ("warning" if "REQUIRES_VALIDATION" in flags else "alert"),
+                }
+            except Exception:
+                return {}
+
+        def _generate_charter_signal_report(self, events):
+            """Read-only signal analysis over event list."""
+            try:
+                base = Path(__file__).resolve().parent
+                charter_path = base / ".weslr" / "charter.json"
+                if not charter_path.exists():
+                    return {}
+                with open(charter_path) as f:
+                    charter = json.load(f)
+                patterns = charter.get("poisoning_resistance", {}).get("patterns", {})
+                alert_count = 0
+                warning_count = 0
+                clean_count = 0
+                flagged_events = []
+                external_count = 0
+                source_counts = {"operator": 0, "system": 0, "external": 0}
+                frame_counts = {}
+                for ev in events:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        alert_count += 1
+                        flagged_events.append({"event": ev, "signal": sig})
+                    elif lvl == "warning":
+                        warning_count += 1
+                    else:
+                        clean_count += 1
+                    src = ev.get("source")
+                    if src in source_counts:
+                        source_counts[src] += 1
+                    if src == "external":
+                        external_count += 1
+                    fr = ev.get("frame")
+                    if fr:
+                        frame_counts[fr] = frame_counts.get(fr, 0) + 1
+                    if len(flagged_events) > 20:
+                        break
+                high_freq_external = external_count > patterns.get("high_frequency_external", {}).get("threshold", 100)
+                repeated_pattern = len([e for e in events[-50:] if e.get("source") == "external"]) > patterns.get("same_source_repeated", {}).get("threshold", 10)
+
+                # Early warning: emerging patterns that haven't hit alert thresholds yet
+                early_warning_flags = []
+                early_warning_count = 0
+                recent_ext = [e for e in events[-20:] if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in events[-20:] if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5 and not repeated_pattern:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3 and unverified_ratio < 0.5:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in events[-20:]:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
+                early_warning_count = len(early_warning_flags)
+
+                signal_level = "alert" if alert_count > 0 else ("warning" if warning_count > 0 else ("early_warning" if early_warning_count > 0 else "clean"))
+
+                return {
+                    "summary": {
+                        "total_events": len(events),
+                        "clean": clean_count,
+                        "warning": warning_count,
+                        "alert": alert_count,
+                        "early_warning": early_warning_count,
+                        "source_breakdown": source_counts,
+                        "frame_breakdown": frame_counts,
+                    },
+                    "patterns": {
+                        "high_frequency_external": high_freq_external,
+                        "repeated_same_source": repeated_pattern,
+                    },
+                    "early_warnings": {
+                        "flags": early_warning_flags,
+                        "rising_external_source": "rising_external_source" in early_warning_flags,
+                        "rising_unverified_ratio": "rising_unverified_ratio" in early_warning_flags,
+                        "emerging_burst_pattern": "emerging_burst_pattern" in early_warning_flags,
+                    },
+                    "flagged_events": flagged_events[-10:],
+                    "signal_level": signal_level,
+                }
+            except Exception as e:
+                return {"error": str(e)}
+
+        def _derive_event_id(self, event):
+            """Derive a stable event ID from an event dict for annotation targeting."""
+            import hashlib
+            ts = event.get("timestamp", "")
+            et = event.get("event_type", "")
+            data_str = json.dumps(event.get("data", {}), sort_keys=True)
+            raw = (ts + et + data_str).encode("utf-8")
+            return hashlib.sha256(raw).hexdigest()[:16]
+
+        def _load_annotations(self, timeline_id):
+            """Load all annotations for a timeline."""
+            try:
+                base = Path(__file__).resolve().parent
+                ann_path = base / ".weslr" / "timelines" / timeline_id / "annotations.jsonl"
+                if not ann_path.exists():
+                    return []
+                annotations = []
+                with open(ann_path) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                annotations.append(json.loads(line))
+                            except Exception:
+                                pass
+                return annotations
+            except Exception:
+                return []
+
+        def _get_annotations_by_event_id(self, timeline_id):
+            """Return dict of event_id -> latest annotation."""
+            annotations = self._load_annotations(timeline_id)
+            latest = {}
+            for ann in annotations:
+                eid = ann.get("event_id")
+                if eid:
+                    # keep only latest per event_id
+                    latest[eid] = ann
+            return latest
+
+
+        def _build_trust_signal(self, timeline_id):
+            """Lightweight trust climate signal from recent events and annotations. Additive only."""
+            try:
+                base = Path(__file__).resolve().parent
+                event_file = base / ".weslr" / "timelines" / timeline_id / "events.jsonl"
+                if not event_file.exists():
+                    return {}
+                events = []
+                with open(event_file) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                events.append(json.loads(line))
+                            except Exception:
+                                pass
+                if not events:
+                    return {}
+                recent = events[-20:] if len(events) >= 20 else events
+                annotations_map = self._get_annotations_by_event_id(timeline_id)
+                trusted = 0
+                untrusted = 0
+                unverified = 0
+                flagged_types = []
+                for ev in recent:
+                    sig = self._flag_event_against_charter(ev)
+                    lvl = sig.get("signal_level", "clean")
+                    if lvl == "alert":
+                        flagged_types.append(ev.get("event_type", "unknown"))
+                    if lvl == "warning":
+                        unverified += 1
+                    ann = annotations_map.get(ev.get("_event_id") or self._derive_event_id(ev))
+                    if ann:
+                        if ann.get("action") == "mark_trusted":
+                            trusted += 1
+                        elif ann.get("action") == "mark_untrusted":
+                            untrusted += 1
+                    elif ev.get("trust_level") == "unverified" or ev.get("source") == "external":
+                        unverified += 1
+                total = len(recent)
+                untrusted_pct = untrusted / total if total > 0 else 0
+                flagged_count = len(flagged_types)
+                high_concern_pct = (untrusted + flagged_count) / total if total > 0 else 0
+                trusted_pct = trusted / total if total > 0 else 0
+                # Early warning: external source patterns emerging (before alert threshold)
+                early_warning_flags = []
+                recent_ext = [e for e in recent if e.get("source") == "external"]
+                recent_ext_unverified = [e for e in recent if e.get("source") == "external" and e.get("trust_level") == "unverified"]
+                unverified_ratio = len(recent_ext_unverified) / len(recent_ext) if recent_ext else 0
+                if len(recent_ext) >= 5:
+                    early_warning_flags.append("rising_external_source")
+                if unverified_ratio >= 0.3:
+                    early_warning_flags.append("rising_unverified_ratio")
+                event_type_counts = {}
+                for e in recent:
+                    et = e.get("event_type", "unknown")
+                    event_type_counts[et] = event_type_counts.get(et, 0) + 1
+                burst_types = [et for et, cnt in event_type_counts.items() if cnt >= 3 and et.startswith("external.")]
+                if burst_types:
+                    early_warning_flags.append("emerging_burst_pattern")
+                if high_concern_pct >= 0.2:
+                    confidence = "low"
+                    caution = "Recent events include operator-distusted or Charter-flagged inputs."
+                elif high_concern_pct >= 0.05 or early_warning_flags:
+                    confidence = "medium"
+                    caution = "Pattern emerging: " + "; ".join(early_warning_flags) if early_warning_flags else "Some recent inputs have trust concerns."
+                elif trusted_pct >= 0.6:
+                    confidence = "high"
+                    caution = None
+                else:
+                    confidence = "medium"
+                    caution = None
+                result = {
+                    "confidence": confidence,
+                    "recent_total": total,
+                    "recent_trusted": trusted,
+                    "recent_untrusted": untrusted,
+                    "recent_unverified": unverified,
+                }
+                if caution:
+                    result["caution_note"] = caution
+                if early_warning_flags:
+                    result["early_warning_flags"] = early_warning_flags
+                if flagged_types:
+                    result["flagged_event_types"] = list(set(flagged_types))[:3]
+                return result
+            except Exception:
+                return {}
+
+        def do_POST(self):
+            # Handle artifact review endpoint
+
+            # API: feedback ingestion
+            if self.path == "/api/feedback":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    msg = data.get("message", "")
+                    if not msg:
+                        payload = json.dumps({"ok": False, "error": "message_required"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_type = data.get("type", "feedback")
+                    if fb_type not in ("feedback", "friction", "suggestion"):
+                        payload = json.dumps({"ok": False, "error": "invalid_type"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_path = base_dir / ".weslr" / "feedback.json"
+                    entry = {"type": fb_type, "message": msg, "received_at": datetime.now(timezone.utc).isoformat()}
+                    try:
+                        with open(fb_path) as f:
+                            existing = json.load(f)
+                    except Exception:
+                        existing = []
+                    if isinstance(existing, list):
+                        existing.append(entry)
+                    else:
+                        existing.setdefault("entries", []).append(entry)
+                    with open(fb_path, "w") as f:
+                        json.dump(existing, f, indent=2)
+                    payload = json.dumps({
+                        "ok": True, "saved": True, "type": fb_type, "received_at": entry["received_at"],
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "feedback.submit", {
+                        "type": fb_type, "message_length": len(msg),
+                    }, frame=frame, source="operator", trust_level="direct")
+                except Exception as e:
+                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
+
+            # API: feedback ingestion
+            if self.path == "/api/feedback":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    msg = data.get("message", "")
+                    if not msg:
+                        payload = json.dumps({"ok": False, "error": "message_required"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_type = data.get("type", "feedback")
+                    if fb_type not in ("feedback", "friction", "suggestion"):
+                        payload = json.dumps({"ok": False, "error": "invalid_type"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    fb_path = base_dir / ".weslr" / "feedback.json"
+                    entry = {"type": fb_type, "message": msg, "received_at": datetime.now(timezone.utc).isoformat()}
+                    try:
+                        with open(fb_path) as f:
+                            existing = json.load(f)
+                    except Exception:
+                        existing = []
+                    if isinstance(existing, list):
+                        existing.append(entry)
+                    else:
+                        existing.setdefault("entries", []).append(entry)
+                    with open(fb_path, "w") as f:
+                        json.dump(existing, f, indent=2)
+                    payload = json.dumps({
+                        "ok": True, "saved": True, "type": fb_type, "received_at": entry["received_at"],
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "feedback.submit", {
+                        "type": fb_type, "message_length": len(msg),
+                    }, frame=frame, source="operator", trust_level="direct")
+                except Exception as e:
+                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
+
+            # API: event annotation (append-only trust action)
+            if self.path == "/api/events/annotate":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    data = json.loads(body) if body else {}
+                    timeline_id = data.get("timeline_id")
+                    event_id = data.get("event_id")
+                    action = data.get("action")
+                    note = data.get("note", "")
+                    if not timeline_id or not event_id or not action:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "timeline_id, event_id, and action are required"}).encode("utf-8"))
+                        return
+                    if action not in ("mark_trusted", "mark_untrusted", "add_note"):
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "invalid_action"}).encode("utf-8"))
+                        return
+                    base = Path(__file__).resolve().parent
+                    tl_dir = base / ".weslr" / "timelines" / timeline_id
+                    if not tl_dir.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"ok": False, "error": "timeline_not_found"}).encode("utf-8"))
+                        return
+                    # Load operator identity
+                    try:
+                        op_path = base_dir / "operator_profile.json"
+                        if op_path.exists():
+                            with open(op_path) as f:
+                                op = json.load(f)
+                                operator_name = op.get("name", "operator")
+                        else:
+                            operator_name = "operator"
+                    except Exception:
+                        operator_name = "operator"
+                    ann_record = {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event_id": event_id,
+                        "action": action,
+                        "operator": operator_name,
+                        "note": note,
+                        "source": "operator",
+                    }
+                    ann_file = tl_dir / "annotations.jsonl"
+                    with open(ann_file, "a") as f:
+                        f.write(json.dumps(ann_record) + "\n")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": True, "saved": True, "annotation": ann_record}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+                return
+
+            if self.path == "/artifact-review":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    artifact_id = data.get("artifact_id", "")
+                    action = data.get("action", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not artifact_id:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "artifact_id is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["approve", "reject", "note"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'approve', 'reject', or 'note'"}).encode("utf-8"))
+                        return
+                    if action == "reject" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note is required for reject action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the review
+                    result = review_artifact(artifact_id, action, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
+            # Handle category update endpoint
+            elif self.path == "/category/update":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    category_name = data.get("name", "")
+                    action = data.get("action", "")
+                    description = data.get("description", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not category_name:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "category name is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["create", "update", "archive"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'create', 'update', or 'archive'"}).encode("utf-8"))
+                        return
+                    if action == "archive" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/reason is required for archive action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the category action using dashboard-specific function
+                    result = category_update_dashboard(action, category_name, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
+            # Handle artifact validation endpoint
+            elif self.path == "/artifact/validate":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    artifact_id = data.get("artifact_id", "")
+                    outcome = data.get("outcome", "")
+                    note = data.get("note", "")
+                    
+                    # Validate input
+                    if not artifact_id:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "artifact_id is required"}).encode("utf-8"))
+                        return
+                    if not outcome or outcome not in ["valid", "invalid", "needs_review"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "outcome must be 'valid', 'invalid', or 'needs_review'"}).encode("utf-8"))
+                        return
+                    if not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/context is required for validation"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the validation using dashboard-specific function
+                    result = artifact_validate_dashboard(artifact_id, outcome, note=note)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
+            # Handle pack decision endpoint
+            elif self.path == "/pack/decision":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    pack_name = data.get("pack_name", "")
+                    action = data.get("action", "")
+                    note = data.get("note", "")
+                    price = data.get("price", "")
+                    
+                    # Validate input
+                    if not pack_name:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "pack name is required"}).encode("utf-8"))
+                        return
+                    if not action or action not in ["approve", "reject", "update_price"]:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action must be 'approve', 'reject', or 'update_price'"}).encode("utf-8"))
+                        return
+                    if action == "reject" and not note:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "note/reason is required for reject action"}).encode("utf-8"))
+                        return
+                    if action == "update_price" and not price:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "price is required for update_price action"}).encode("utf-8"))
+                        return
+                    
+                    # Perform the pack decision using dashboard-specific function
+                    result = pack_decision_dashboard(pack_name, action, note=note, price=price)
+                    
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": True, "result": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            
+            elif self.path == "/onboarding":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    # Record human exchange with onboarding answers
+                    from sim import record_human_exchange
+                    answers = {
+                        "phase": "onboarding",
+                        "name": data.get("name", ""),
+                        "role": data.get("role", ""),
+                        "persona": data.get("persona", ""),
+                        "primary_outcome": data.get("primary_outcome", ""),
+                        "time_horizon": data.get("time_horizon", ""),
+                        "objectives": data.get("objectives", []),
+                        "failure_conditions": data.get("failure_conditions", ""),
+                        "red_lines": data.get("red_lines", ""),
+                        "legal_constraints": data.get("legal_constraints", ""),
+                        "audit_level": data.get("audit_level", ""),
+                        "metric_primary": data.get("metric_primary", ""),
+                        "metric_secondary": data.get("metric_secondary", ""),
+                        "checkin_style": data.get("checkin_style", ""),
+                        "urgency": data.get("urgency", ""),
+                        "blockers": data.get("blockers", ""),
+                        "standup_cadence": data.get("standup_cadence", ""),
+                        # Phase C fields
+                        "allowed_capabilities": data.get("allowed_capabilities", []),
+                        "allowed_custom": data.get("allowed_custom", ""),
+                        "forbidden_actions": data.get("forbidden_actions", ""),
+                        "byop_policy": data.get("byop_policy", ""),
+                        "external_permissions": data.get("external_permissions", []),
+                        "external_custom": data.get("external_custom", ""),
+                        "knowledge_sharing": data.get("knowledge_sharing", ""),
+                        "federation_permissions": data.get("federation_permissions", ""),
+                        "adaptation_level": data.get("adaptation_level", ""),
+                        "adaptation_limits": data.get("adaptation_limits", ""),
+                        "escalation_primary": data.get("escalation_primary", ""),
+                        "escalation_secondary": data.get("escalation_secondary", ""),
+                        "escalation_channel": data.get("escalation_channel", ""),
+                    }
+                    record_human_exchange(
+                        human_name=data.get("name", "operator"),
+                        message=f"Operator completed onboarding: {_json.dumps(answers)}",
+                        response="onboarding recorded",
+                        topics=["onboarding", "operator-profile"],
+                        unresolved=False,
+                    )
+                    # Also save operator profile for Phase C communicator wiring
+                    profile_saved = False
+                    try:
+                        from weslr.communicator_config import update_operator_profile
+                        update_operator_profile(answers)
+                        profile_saved = True
+                    except Exception as profile_err:
+                        pass  # Non-blocking — don't fail onboarding if profile update fails
+                    # Attempt canonical initialization (contract-gated, non-blocking for onboarding)
+                    marker = base_dir / ".weslr_initialized"
+                    already_init = marker.exists()
+                    init_blocked_reasons = []
+                    try:
+                        # 1. operator profile saved (profile_saved confirms this)
+                        if not profile_saved:
+                            init_blocked_reasons.append("operator_profile_not_saved")
+                        # 2. lifecycle_state != bootstrap_required
+                        try:
+                            from weslr.communicator_config import derive_lifecycle_state, load_operator_profile
+                            profile = load_operator_profile()
+                            lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                            if lc.get("state") == "bootstrap_required":
+                                init_blocked_reasons.append("lifecycle_not_onboarded")
+                        except Exception:
+                            init_blocked_reasons.append("lifecycle_derivation_failed")
+                        # 3. state summary works
+                        try:
+                            from weslr.governance_health import get_weslr_state_summary
+                            get_weslr_state_summary()
+                        except Exception:
+                            init_blocked_reasons.append("state_summary_failed")
+                        # 4. persisted bootstrap timeline exists
+                        try:
+                            cs = load_communicator_self()
+                            if not cs.get("bootstrap", {}).get("timeline_id"):
+                                init_blocked_reasons.append("no_bootstrap_timeline")
+                        except Exception:
+                            init_blocked_reasons.append("bootstrap_check_failed")
+                        if not init_blocked_reasons:
+                            marker.write_text(f"initialized_at={__import__('time').time()}\n")
+                    except Exception:
+                        pass  # Non-blocking — don't fail onboarding if initialization fails
+                    init_result = {
+                        "initialized": marker.exists(),
+                        "created_now": marker.exists() and not already_init,
+                        "blocked": bool(init_blocked_reasons),
+                        "reasons": init_blocked_reasons,
+                    }
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({
+                        "ok": True,
+                        "recorded": True,
+                        "initialization": init_result,
+                    }).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            elif self.path == "/api/clearance/verify":
+                # Clearance token issuance endpoint — called after trusted-device verification succeeds.
+                # Issues a bounded one-time-use clearance token scoped to the specific action.
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    data = _json.loads(body) if body else {}
+                    handoff_id = data.get("handoff_id", "")
+                    actor_id = data.get("actor_id", "anonymous")
+                    session_id = data.get("session_id", "unknown")
+                    action_scope = data.get("action_scope", "")
+                    trust_level_str = str(data.get("trust_level", "HIGH_RISK"))
+                    from weslr.security import TrustLevel, verified_completion
+                    trust_level = TrustLevel[trust_level_str] if trust_level_str in [l.name for l in TrustLevel] else TrustLevel.HIGH_RISK
+                    if not action_scope:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": "action_scope is required"}).encode("utf-8"))
+                        return
+                    success, result = verified_completion(
+                        handoff_id=handoff_id,
+                        actor_id=actor_id,
+                        session_id=session_id,
+                        action_scope=action_scope,
+                        trust_level=trust_level,
+                        ttl_seconds=60,
+                    )
+                    if success:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": True, "token": result}).encode("utf-8"))
+                    else:
+                        self.send_response(403)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({"ok": False, "error": result}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            elif self.path == "/api/initialize":
+                # Contract-gated initialization marker creation.
+                # Idempotent: if already initialized, returns success without error.
+                content_length = int(self.headers.get("Content-Length", 0))
+                _ = self.rfile.read(content_length).decode("utf-8") if content_length else ""
+                try:
+                    reasons = []
+                    # 1. operator profile exists with name
+                    try:
+                        from weslr.communicator_config import load_operator_profile
+                        profile = load_operator_profile()
+                        if not profile.get("name"):
+                            reasons.append("operator_profile_name_missing")
+                    except Exception:
+                        reasons.append("operator_profile_load_failed")
+                    # 2. lifecycle_state != bootstrap_required
+                    try:
+                        from weslr.communicator_config import derive_lifecycle_state
+                        lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                        if lc.get("state") == "bootstrap_required":
+                            reasons.append("lifecycle_not_onboarded")
+                    except Exception:
+                        reasons.append("lifecycle_derivation_failed")
+                    # 3. get_weslr_state_summary() returns without fatal error
+                    try:
+                        from weslr.governance_health import get_weslr_state_summary
+                        get_weslr_state_summary()
+                    except Exception:
+                        reasons.append("state_summary_failed")
+                    # 4. at least one bootstrap timeline_id exists (persisted in communicator_self.json)
+                    try:
+                        cs = load_communicator_self()
+                        tl = cs.get("bootstrap", {}).get("timeline_id")
+                        if not tl:
+                            reasons.append("no_bootstrap_timeline")
+                    except Exception:
+                        reasons.append("bootstrap_check_failed")
+                    marker = base_dir / ".weslr_initialized"
+                    already = marker.exists()
+                    if reasons:
+                        self.send_response(422)
+                        self.send_header("Content-Type", "application/json")
+                        payload = json.dumps({
+                            "initialized": already,
+                            "created_now": False,
+                            "blocked": True,
+                            "reasons": reasons,
+                        }).encode("utf-8")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                    else:
+                        marker.write_text(f"initialized_at={__import__('time').time()}\n")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        payload = json.dumps({
+                            "initialized": True,
+                            "created_now": not already,
+                            "blocked": False,
+                            "reasons": [],
+                        }).encode("utf-8")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+            elif self.path == "/chat":
+                content_length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+                try:
+                    import json as _json
+                    from concurrent.futures import ThreadPoolExecutor
+
+                    data = _json.loads(body) if body else {}
+                    message = data.get("message", "")
+
+                    # SS-TDE risk scan: intercept high-risk actions before executing inline
+                    from weslr.security import (
+                        TrustLevel, classify_message_for_risk,
+                        escalation_response, build_escalation_handoff,
+                        log_audit_event, require_clearance,
+                    )
+                    risk_level = classify_message_for_risk(message)
+                    # If a clearance token is provided, validate it for this action.
+                    # If valid, bypass the risk scan and proceed.
+                    token_id = data.get("clearance_token_id", "")
+                    if token_id:
+                        allowed, reason, _ = require_clearance(
+                            token_id=token_id,
+                            action_scope="chat:message",
+                            actor_id="anonymous",
+                            session_id="unknown",
+                        )
+                        if allowed:
+                            risk_level = TrustLevel.CONVERSATIONAL  # bypass escalation
+                        else:
+                            self.send_response(403)
+                            self.send_header("Content-Type", "application/json")
+                            self.end_headers()
+                            self.wfile.write(_json.dumps({
+                                "error": f"clearance token invalid: {reason}",
+                                "escalation_required": True,
+                                "trust_level": "HIGH_RISK",
+                                "action": "trusted_device_escalation",
+                            }).encode("utf-8"))
+                            return
+                    if risk_level >= TrustLevel.HIGH_RISK:
+                        # Bootstrap trust check: SS-TDE escalation requires a verified
+                        # bootstrap trust anchor. Non-bootstrapped actors cannot proceed.
+                        timeline_id = data.get("timeline_id", "")
+                        if timeline_id:
+                            from weslr.bootstrap import is_verified_timeline
+                            if not is_verified_timeline(timeline_id):
+                                self.send_response(403)
+                                self.send_header("Content-Type", "application/json")
+                                self.end_headers()
+                                self.wfile.write(_json.dumps({
+                                    "escalation_required": True,
+                                    "trust_level": "HIGH_RISK",
+                                    "bootstrap_required": True,
+                                    "message": (
+                                        "Your account has not completed the security setup yet. "
+                                        "Please complete account activation before attempting this action."
+                                    ),
+                                    "action": "bootstrap_activation_required",
+                                }).encode("utf-8"))
+                                return
+                        log_audit_event(
+                            event_kind="clearance_denied",
+                            actor_id="anonymous",
+                            session_id="unknown",
+                            action_requested=message[:100],
+                            trust_level_required=risk_level,
+                            verification_method="none",
+                            outcome="denied",
+                            operator_alert=(risk_level >= TrustLevel.CRITICAL),
+                        )
+                        handoff = build_escalation_handoff(message, risk_level)
+                        response = escalation_response(risk_level)
+                        response["escalation_handoff"] = handoff
+                        self.send_response(403)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps(response).encode("utf-8"))
+                        return
+
+                    # Thread-safe deadline guard: use shared bounded executor so threads are
+                    # reused rather than created/destroyed per request.
+                    acquired = _chat_semaphore.acquire(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                    if not acquired:
+                        self.send_response(503)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Retry-After", "5")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({
+                            "error": "chat service busy, try again shortly"
+                        }).encode("utf-8"))
+                        return
+                    try:
+                        fut = _CHAT_EXECUTOR.submit(
+                            build_communicator_message_payload,
+                            narrative=load_communicator_self().get("narrative_state", {}),
+                            relationships=load_relationships(),
+                            active_thread="human_message",
+                            latest_human={"message": message},
+                            research_context=None,
+                        )
+                        try:
+                            payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))
+                        except TimeoutError:
+                            raise TimeoutError("chat request exceeded time limit")
+                    finally:
+                        _chat_semaphore.release()
+                    # Graceful degradation: provider was unavailable, return structured 503
+                    if payload.get("degraded"):
+                        self.send_response(503)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Retry-After", "30")
+                        self.end_headers()
+                        self.wfile.write(_json.dumps({
+                            "kind": "chat_degraded",
+                            "summary": payload.get("summary", "Chat is temporarily unavailable."),
+                            "provider": payload.get("provider", "unknown"),
+                            "degraded": True,
+                            "degraded_reason": payload.get("degraded_reason", "provider_unavailable"),
+                            "retry_after_s": 30,
+                        }).encode("utf-8"))
+                        return
+                    # Soft trust signal: inject climate into response (additive, non-blocking)
+                    tl_id = data.get("timeline_id", "tl_default")
+                    trust_signal = self._build_trust_signal(tl_id)
+                    if trust_signal:
+                        payload["_trust_signal"] = trust_signal
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(payload).encode("utf-8"))
+                    frame = data.get("frame")
+                    self._log_timeline_event(tl_id, "chat.message", {
+                        "message_length": len(message),
+                        "has_clearance": bool(token_id),
+                    }, frame=frame, source="operator", trust_level="direct")
+                except TimeoutError:
+                    self.send_response(504)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": "chat request timed out after " + str(CHAT_LLM_TIMEOUT_SECONDS) + "s"}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+            else:
+                self.send_error(404, "Unknown endpoint")
+
+        def do_GET(self):
+            """Serve GET requests."""
+            # Onboarding front door
+            if self.path == "/onboarding":
+                front_door = base_dir / "front-door" / "index.html"
+                try:
+                    with open(front_door, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+            # Machine-readable first-run detection
+            if self.path == "/api/first-run":
+                try:
+                    import os as _os
+                    from weslr.communicator_config import load_operator_profile
+                    profile = load_operator_profile()
+                    profile_exists = bool(profile.get("name"))
+                    marker = base_dir / ".weslr_initialized"
+                    initialized = marker.exists()
+                    payload = json.dumps({
+                        "first_run": not profile_exists and not initialized,
+                        "profile_exists": profile_exists,
+                        "initialized": initialized,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Machine-readable onboarding status
+            if self.path == "/api/onboarding":
+                try:
+                    from weslr.communicator_config import load_operator_profile, derive_lifecycle_state
+                    profile = load_operator_profile()
+                    lc = derive_lifecycle_state(profile) if profile.get("name") else {}
+                    marker = base_dir / ".weslr_initialized"
+                    payload = json.dumps({
+                        "configured": bool(profile.get("name")),
+                        "operator_name": profile.get("name", ""),
+                        "role": profile.get("role", ""),
+                        "lifecycle_state": lc.get("state", "bootstrap_required"),
+                        "checkin_style": profile.get("checkin_style", ""),
+                        "adaptation_level": profile.get("adaptation_level", ""),
+                        "urgency": profile.get("urgency", ""),
+                        "initialized": marker.exists(),
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Machine-readable health check — lightweight, no expensive paths
+            if self.path == "/api/health":
+                try:
+                    import os as _os
+                    marker = base_dir / ".weslr_initialized"
+                    initialized = marker.exists()
+                    uptime_s = int(time.time() - (_SERVER_START_TIME or time.time()))
+                    # Lightweight provider availability check (cheap only)
+                    provider_ok = False
+                    try:
+                        from llm_runtime import get_provider as _get_provider
+                        _get_provider()  # just check it doesn't raise
+                        provider_ok = True
+                    except Exception:
+                        provider_ok = False
+                    payload = json.dumps({
+                        "healthy": True,
+                        "version": VERSION,
+                        "uptime_s": uptime_s,
+                        "initialized": initialized,
+                        "provider_available": provider_ok,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"healthy": False, "error": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Machine-readable unified state summary
+            if self.path == "/api/state":
+                try:
+                    from weslr.governance_health import get_weslr_state_summary
+                    summary = get_weslr_state_summary()
+                    payload = json.dumps(summary, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "state_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # State JSON files
+            if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
+                self._serve_state_file(self.path)
+                return
+            # Main front door
+            if self.path == "/" or self.path == "/main/index.html":
+                front_door = base_dir / "front-door" / "index.html"
+                try:
+                    with open(front_door, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+            # Operator / debug dashboard
+            if self.path == "/operator" or self.path == "/operator/dashboard.html":
+                dashboard_index = base_dir / "dashboard" / "index.html"
+                try:
+                    with open(dashboard_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+            # TIA import history
+            # API: Charter evaluation (read-only)
+            if self.path == "/api/charter/evaluate":
+                try:
+                    charter_path = base_dir / ".weslr" / "charter.json"
+                    if not charter_path.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": "charter_not_found"}).encode("utf-8"))
+                        return
+                    with open(charter_path) as f:
+                        charter = json.load(f)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "charter_present": True,
+                        "version": charter.get("version"),
+                        "principles": charter.get("principles", []),
+                        "trust_rules": charter.get("trust_rules", {}),
+                        "source_categories": charter.get("source_categories", {}),
+                        "poisoning_resistance": charter.get("poisoning_resistance", {}),
+                    }).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: Charter signal report (read-only)
+            if self.path.startswith("/api/charter/signals"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["100"])[0])
+                    base = Path(__file__).resolve().parent
+                    event_file = base / ".weslr" / "timelines" / timeline / "events.jsonl"
+                    events = []
+                    if event_file.exists():
+                        with open(event_file) as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    try:
+                                        events.append(json.loads(line))
+                                    except Exception:
+                                        pass
+                    report = self._generate_charter_signal_report(events)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(report).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: recent timeline events (merged with annotations)
+            if self.path.startswith("/api/events/recent"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["20"])[0])
+                    base = Path(__file__).resolve().parent
+                    event_file = base / ".weslr" / "timelines" / timeline / "events.jsonl"
+                    events = []
+                    if event_file.exists():
+                        with open(event_file) as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    try:
+                                        events.append(json.loads(line))
+                                    except Exception:
+                                        pass
+                    recent = events[-limit:] if len(events) > limit else events
+                    # Attach latest annotation to each event
+                    annotations_map = self._get_annotations_by_event_id(timeline)
+                    enriched = []
+                    for ev in recent:
+                        eid = self._derive_event_id(ev)
+                        annotation = annotations_map.get(eid)
+                        ev_with_meta = dict(ev)
+                        ev_with_meta["_annotation"] = annotation
+                        ev_with_meta["_event_id"] = eid
+                        enriched.append(ev_with_meta)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(enriched).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+
+
+            # API: annotations (read-only)
+            if self.path.startswith("/api/events/annotations"):
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    timeline = params.get("timeline", ["tl_default"])[0]
+                    limit = int(params.get("limit", ["50"])[0])
+                    base = Path(__file__).resolve().parent
+                    ann_file = base / ".weslr" / "timelines" / timeline / "annotations.jsonl"
+                    if not ann_file.exists():
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps([]).encode("utf-8"))
+                        return
+                    annotations = []
+                    with open(ann_file) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                try:
+                                    annotations.append(json.loads(line))
+                                except Exception:
+                                    pass
+                    recent = annotations[-limit:] if len(annotations) > limit else annotations
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(recent).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # Satellite UI
+            if self.path == "/satellite":
+                satellite_index = base_dir / "dashboard" / "satellite" / "index.html"
+                try:
+                    with open(satellite_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+
+            # API: capability authorizations
+            if self.path == "/api/capabilities":
+                try:
+                    auth_path = base_dir / ".weslr" / "capability_authorizations.json"
+                    if auth_path.exists():
+                        with open(auth_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "capabilities": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: device registry
+            if self.path == "/api/devices":
+                try:
+                    dev_path = base_dir / ".weslr" / "device_registry.json"
+                    if dev_path.exists():
+                        with open(dev_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "devices": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: Charter evaluation (read-only)
+            if self.path == "/api/charter/evaluate":
+                try:
+                    charter_path = base_dir / ".weslr" / "charter.json"
+                    if not charter_path.exists():
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": "charter_not_found"}).encode("utf-8"))
+                        return
+                    with open(charter_path) as f:
+                        charter = json.load(f)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "charter_present": True,
+                        "version": charter.get("version"),
+                        "principles": charter.get("principles", []),
+                        "trust_rules": charter.get("trust_rules", {}),
+                        "source_categories": charter.get("source_categories", {}),
+                        "poisoning_resistance": charter.get("poisoning_resistance", {}),
+                    }).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # Satellite UI
+            if self.path == "/satellite":
+                satellite_index = base_dir / "dashboard" / "satellite" / "index.html"
+                try:
+                    with open(satellite_index, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(content.encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(f"Error: {e}".encode("utf-8"))
+                return
+
+            # API: capability authorizations
+            if self.path == "/api/capabilities":
+                try:
+                    auth_path = base_dir / ".weslr" / "capability_authorizations.json"
+                    if auth_path.exists():
+                        with open(auth_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "capabilities": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            # API: device registry
+            if self.path == "/api/devices":
+                try:
+                    dev_path = base_dir / ".weslr" / "device_registry.json"
+                    if dev_path.exists():
+                        with open(dev_path) as f:
+                            registry = json.load(f)
+                    else:
+                        registry = {"version": 1, "devices": []}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(registry).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+
+            if self.path == "/tia-history":
+                import json as _json
+                try:
+                    history_path = base_dir / "tia_import_history.json"
+                    if history_path.exists():
+                        with open(history_path, "r", encoding="utf-8") as f:
+                            data = _json.load(f)
+                    else:
+                        data = {"records": [], "total_records": 0}
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(data).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+                return
+            if self.path == "/tia-summary":
+                import json as _json
+                try:
+                    from tia_import import get_latest_tia_summary
+                    result = get_latest_tia_summary()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps(result).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(_json.dumps({"ok": False, "summary": None, "error": str(e)}).encode("utf-8"))
+                return
+            # Fall back to default handler for other GET requests
+            super().do_GET()
+        
+        def log_message(self, format, *args):
+            # Suppress default logging for cleaner output
+            pass
+    
+    handler = partial(ChatHandler, directory=str(dashboard_dir))
     server = ThreadingHTTPServer((args.host, args.port), handler)
+    global _SERVER_START_TIME
+    _SERVER_START_TIME = time.time()
     lan_ip = _detect_lan_ip()
     print("Dashboard server running.")
     print(f"Open locally: http://127.0.0.1:{args.port}/")
+    print(f"Chat endpoint: http://127.0.0.1:{args.port}/chat")
     if args.host == "0.0.0.0":
         print(f"Open on your LAN: http://{lan_ip}:{args.port}/")
     print("Press Ctrl+C to stop.")
@@ -714,6 +2721,29 @@ def main():
     p.add_argument("--reset", action="store_true")
     p.set_defaults(func=cmd_init)
 
+    p = sub.add_parser("init-operator", help="create operator profile (headless onboarding)")
+    p.add_argument("--name", required=True, help="Operator display name")
+    p.add_argument("--role", help="Operator role")
+    p.add_argument("--urgency", choices=["low", "normal", "high", "critical"], help="Operational urgency")
+    p.add_argument("--checkin-style", dest="checkin_style", choices=["silent", "hourly", "daily", "verbose"], help="Check-in cadence")
+    p.add_argument("--adaptation-level", dest="adaptation_level", choices=["none", "propose", "low-risk", "full"], help="Self-modification permission level")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
+    p.set_defaults(func=cmd_init_operator)
+
+    p = sub.add_parser("init-bootstrap", help="complete bootstrap trust anchor (headless setup)")
+    p.add_argument("--user-id", dest="user_id", help="User identifier (default: operator)")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
+    p.set_defaults(func=cmd_init_bootstrap)
+
+    p = sub.add_parser("init-provider", help="configure and validate the active LLM provider (headless)")
+    p.add_argument("--provider", required=True, choices=["fallback", "ollama", "openai", "openai_compatible"], help="Active LLM provider")
+    p.add_argument("--ollama-host", dest="ollama_host", help="Ollama host URL (default: http://127.0.0.1:11434)")
+    p.add_argument("--openai-base-url", dest="openai_base_url", help="OpenAI-compatible base URL")
+    p.add_argument("--openai-api-key-env", dest="openai_api_key_env", help="Env var name holding the OpenAI API key (e.g. OPENAI_API_KEY)")
+    p.add_argument("--model", help="Model name (provider-specific; leave empty for default)")
+    p.add_argument("--json", action="store_true", help="Machine-readable JSON output")
+    p.set_defaults(func=cmd_init_provider)
+
     p = sub.add_parser("tick", help="run one world tick")
     p.add_argument("--verbose", action="store_true")
     p.set_defaults(func=cmd_tick)
@@ -788,6 +2818,9 @@ def main():
 
     p = sub.add_parser("session-continuity", help="check session continuity and time-persistent identity")
     p.set_defaults(func=cmd_session_continuity)
+
+    p = sub.add_parser("weslr-state", help="print WESLR unified operational state summary")
+    p.set_defaults(func=cmd_weslr_state)
 
     p = sub.add_parser("autonomous-intentionality", help="report on autonomous intentionality (plan execution)")
     p.set_defaults(func=cmd_autonomous_intentionality)
@@ -1088,6 +3121,84 @@ def main():
     p.add_argument("--approved-by", default="human", help="who approved the change")
     p.set_defaults(func=cmd_apply_mod)
 
+    # Phase 1E: Safe Capability Evolution Engine CLI
+    sci = sub.add_parser("sci", help="safe capability evolution engine commands")
+
+    sci_sub = sci.add_subparsers(dest="sci_cmd", required=True)
+
+    p = sci_sub.add_parser("observations-list", help="list recorded observations")
+    p.add_argument("--type", default="", help="filter by observation type")
+    p.add_argument("--source", default="", help="filter by source layer")
+    p.add_argument("--limit", type=int, default=50, help="max results")
+    p.set_defaults(func=cmd_sci_observations_list)
+
+    p = sci_sub.add_parser("observations-record", help="record a new observation")
+    p.add_argument("--type", required=True, help="observation type")
+    p.add_argument("--pattern", required=True, help="pattern description")
+    p.add_argument("--source", required=True, help="source layer")
+    p.set_defaults(func=cmd_sci_observations_record)
+
+    p = sci_sub.add_parser("proposals-create", help="create a new improvement proposal")
+    p.add_argument("--observation-ids", default="", help="comma-separated observation IDs")
+    p.add_argument("--title", required=True, help="proposal title")
+    p.add_argument("--problem", default="", help="problem description")
+    p.add_argument("--likely-cause", default="", help="root cause analysis")
+    p.add_argument("--files", required=True, help="comma-separated files to change")
+    p.add_argument("--expected-benefit", default="", help="expected improvement")
+    p.add_argument("--risk-level", default="low", help="risk level: low|medium|high")
+    p.add_argument("--test-prompts", default="", help="JSON test prompts array")
+    p.add_argument("--rollback", default="", help="rollback shell command")
+    p.add_argument("--patch-plan", default="", help="JSON patch plan")
+    p.set_defaults(func=cmd_sci_proposals_create)
+
+    p = sci_sub.add_parser("proposals-list", help="list proposals")
+    p.add_argument("--status", default="", help="filter by status")
+    p.add_argument("--limit", type=int, default=50, help="max results")
+    p.set_defaults(func=cmd_sci_proposals_list)
+
+    p = sci_sub.add_parser("proposals-approve", help="approve a proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="approving entity")
+    p.set_defaults(func=cmd_sci_proposals_approve)
+
+    p = sci_sub.add_parser("proposals-deny", help="deny a proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--reason", required=True, help="reason for denial")
+    p.set_defaults(func=cmd_sci_proposals_deny)
+
+    p = sci_sub.add_parser("apply", help="apply an approved proposal with real tests")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="applying entity")
+    p.set_defaults(func=cmd_sci_apply)
+
+    p = sci_sub.add_parser("status", help="show safe capability evolution engine status")
+    p.set_defaults(func=cmd_sci_status)
+
+    p = sci_sub.add_parser("proposal-show", help="show detailed proposal info")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.set_defaults(func=cmd_sci_proposal_show)
+
+    p = sci_sub.add_parser("proposal-rollback", help="rollback an applied proposal")
+    p.add_argument("--proposal-id", required=True, help="proposal ID")
+    p.add_argument("--by", default="human", help="rolling back entity")
+    p.set_defaults(func=cmd_sci_proposal_rollback)
+
+    p = sub.add_parser("tia-import", help="import TIA Openness export artifact")
+    p.add_argument("--file", required=True, help="path to TIA export JSON")
+    p.add_argument("--output", default="tia_import_result.json", help="output envelope JSON")
+    p.set_defaults(func=cmd_tia_import)
+
+    p = sub.add_parser("tia-history", help="list recent TIA import history records")
+    p.add_argument("--limit", type=int, default=10, help="number of recent records to show")
+    p.add_argument("--path", default="", help="override history file path")
+    p.set_defaults(func=cmd_tia_history)
+
+    p = sub.add_parser("tia-show", help="show detailed summary for one TIA import")
+    p.add_argument("--path", default="", help="override history file path")
+    p.add_argument("--index", type=int, default=None, help="record index (1-based, default: latest)")
+    p.add_argument("--source", default=None, help="filter by source filename")
+    p.set_defaults(func=cmd_tia_show)
+
     p = sub.add_parser("create-checkpoint", help="create a checkpoint of the current file state")
     p.add_argument("--file", required=True, help="file to checkpoint")
     p.set_defaults(func=cmd_create_checkpoint)
@@ -1193,6 +3304,48 @@ def main():
     p = sub.add_parser("variation-show", help="show detailed variation history for a theme")
     p.add_argument("--theme", required=True, help="theme name")
     p.set_defaults(func=cmd_variation_show)
+
+    # v71: Diagnostics / Observability Integration
+    p = sub.add_parser("diagnostics-summary", help="export diagnostic summary in operator-readable format")
+    p.set_defaults(func=cmd_diagnostics_summary)
+
+    p = sub.add_parser("diagnostics-failure-chain", help="export correlated failure chain by ID")
+    p.add_argument("correlation_id", help="the ID to trace (flow_id, request_id, handshake_id, deadline_id)")
+    p.add_argument("--type", default="flow", choices=["flow", "request", "handshake", "deadline"], help="correlation type")
+    p.set_defaults(func=cmd_diagnostics_failure_chain)
+
+    p = sub.add_parser("diagnostics-recovery-hints", help="export all recovery hints in structured format")
+    p.set_defaults(func=cmd_diagnostics_recovery_hints)
+
+    # v72: Distributed Failure Replay / Diagnostic Trace Export
+    p = sub.add_parser("diagnostics-trace-export", help="export diagnostic trace with correlation validation and consistency score")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all flows if omitted)")
+    p.set_defaults(func=cmd_diagnostics_trace_export)
+
+    p = sub.add_parser("diagnostics-trace-replay", help="export replay summary for operator consumption")
+    p.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
+    p.set_defaults(func=cmd_diagnostics_trace_replay)
+
+    p = sub.add_parser("diagnostics-replay-export", help="export replayable trace format")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
+    p.set_defaults(func=cmd_diagnostics_replay_export)
+
+    # v73: Distributed Fallback Behavior
+    p = sub.add_parser("fallback-status", help="export fallback status for a specific node or all nodes")
+    p.add_argument("--node-id", help="specific node ID (exports all nodes if omitted)")
+    p.set_defaults(func=cmd_fallback_status)
+
+    p = sub.add_parser("fallback-diagnostics", help="export fallback audit/diagnostic records")
+    p.set_defaults(func=cmd_fallback_diagnostics)
+
+    # v74: Fallback Trace Export / Replay Integration
+    p = sub.add_parser("fallback-trace-export", help="export fallback trace with correlation and capability visibility")
+    p.add_argument("--flow-id", help="specific flow ID to export (exports all if omitted)")
+    p.set_defaults(func=cmd_fallback_trace_export)
+
+    p = sub.add_parser("fallback-trace-replay", help="export fallback trace replay summary for operator consumption")
+    p.add_argument("--flow-id", help="specific flow ID to replay (exports all if omitted)")
+    p.set_defaults(func=cmd_fallback_trace_replay)
 
     args = parser.parse_args()
     args.func(args)
@@ -1371,6 +3524,476 @@ def cmd_apply_mod(args):
     })
     print(f"\n✅ Applied to {file_path}")
     print(f"Checkpoint: {result.get('checkpoint', {}).get('checkpoint_name', 'N/A')}")
+
+
+# Phase 1E: Safe Capability Evolution Engine CLI
+
+
+def cmd_sci_observations_list(args):
+    """List recorded observations."""
+    limit = args.limit or 50
+    obs_type = args.type
+    source = args.source
+
+    result = list_observations(type=obs_type, source_layer=source, limit=limit)
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Observations ({result.get('total', 0)} found) ---")
+    for obs in result.get("observations", []):
+        print(f"[{obs.get('id')}] Type: {obs.get('type')}, Source: {obs.get('source_layer')}")
+        print(f"  Pattern: {obs.get('pattern')}")
+        print(f"  Count: {obs.get('count')}, Last: {obs.get('last_seen')}")
+
+
+def cmd_sci_observations_record(args):
+    """Record a new observation of repeated weakness."""
+    obs_type = args.type
+    pattern = args.pattern
+    source = args.source
+
+    if not obs_type or not pattern or not source:
+        emit({"error": "Missing required fields: --type, --pattern, and --source are required."})
+        return
+
+    result = record_observation(type=obs_type, pattern=pattern, source_layer=source)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Observation recorded: {result.get('observation_id')}")
+
+
+def cmd_sci_proposals_create(args):
+    """Create a new improvement proposal."""
+    obs_ids = args.observation_ids.split(",") if args.observation_ids else []
+    title = args.title
+    problem = args.problem
+    likely_cause = args.likely_cause
+    files_to_change = args.files.split(",") if args.files else []
+    expected_benefit = args.expected_benefit
+    risk_level = args.risk_level or "low"
+    test_prompts = args.test_prompts
+    rollback = args.rollback
+    patch_plan = args.patch_plan
+
+    if not files_to_change or not title:
+        emit({"error": "Missing required fields: --files and --title are required."})
+        return
+
+    # Parse test prompts as JSON if provided
+    parsed_prompts = []
+    if test_prompts:
+        try:
+            parsed_prompts = json.loads(test_prompts)
+        except json.JSONDecodeError:
+            emit({"error": "Invalid JSON in --test-prompts"})
+            return
+
+    # Parse rollback command
+    rollback_cmd = None
+    if rollback:
+        rollback_cmd = rollback
+
+    # Parse patch plan as JSON if provided
+    parsed_patch = None
+    if patch_plan:
+        try:
+            parsed_patch = json.loads(patch_plan)
+        except json.JSONDecodeError:
+            emit({"error": "Invalid JSON in --patch-plan"})
+            return
+
+    result = create_proposal(
+        observation_ids=obs_ids,
+        title=title,
+        problem=problem or f"Proposed improvement: {title}",
+        likely_cause=likely_cause or "Human analysis",
+        files_to_change=files_to_change,
+        expected_benefit=expected_benefit or "Self-improvement",
+        risk_level=risk_level,
+        test_prompts=parsed_prompts,
+        rollback_command=rollback_cmd,
+        patch_plan=parsed_patch,
+    )
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal created: {result.get('proposal_id')}")
+
+
+def cmd_sci_proposals_list(args):
+    """List proposals, optionally filtered by status."""
+    limit = args.limit or 50
+    status = args.status
+
+    result = list_proposals(status=status, limit=limit)
+    emit(result)
+
+    if not result.get("ok"):
+        print(f"\nError: {result.get('error', 'unknown error')}")
+        return
+
+    print(f"\n--- Proposals ({result.get('total', 0)} found) ---")
+    for prop in result.get("proposals", []):
+        print(f"[{prop.get('id')}] Status: {prop.get('status')}, Title: {prop.get('title')}")
+        print(f"  Files: {', '.join(prop.get('files_to_change', []))}")
+        print(f"  Risk: {prop.get('risk_level')}")
+
+
+def cmd_sci_proposals_approve(args):
+    """Approve a proposal."""
+    proposal_id = args.proposal_id
+    approved_by = args.by or "human"
+
+    result = approve_proposal(proposal_id=proposal_id, approved_by=approved_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal approved: {proposal_id}")
+
+
+def cmd_sci_proposals_deny(args):
+    """Deny a proposal."""
+    proposal_id = args.proposal_id
+    reason = args.reason
+
+    if not reason:
+        emit({"error": "Missing required field: --reason is required."})
+        return
+
+    result = deny_proposal(proposal_id=proposal_id, reason=reason)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Proposal denied: {proposal_id}")
+
+
+def cmd_sci_apply(args):
+    """Apply an approved proposal with real test execution."""
+    proposal_id = args.proposal_id
+    applied_by = args.by or "human"
+
+    result = apply_proposal_with_tests(proposal_id=proposal_id, applied_by=applied_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+
+    if result.get("all_tests_passed"):
+        print(f"\n✅ Proposal applied successfully: {proposal_id}")
+        print(f"   Status: {result.get('status')}")
+    else:
+        print(f"\n⚠️  Proposal applied with failures: {proposal_id}")
+        print(f"   Status: {result.get('status')}")
+        print(f"   Failing tests: {result.get('failing_tests', [])}")
+        if result.get('rollback_guidance'):
+            print(f"   Rollback command: {result.get('rollback_guidance', {}).get('rollback_command', 'N/A')}")
+
+
+def cmd_sci_status(args):
+    """Show safe capability evolution engine status."""
+    proposals = load_proposals()
+    observations = load_observations()
+    apply_log = []
+
+    # Count by status
+    status_counts = {"proposed": 0, "approved": 0, "applied": 0, "applied_with_failures": 0, "rolled_back": 0, "rejected": 0}
+    for p in proposals:
+        status = p.get("status", "unknown")
+        if status in status_counts:
+            status_counts[status] += 1
+
+    result = {
+        "ok": True,
+        "observations": {
+            "total": len(observations),
+            "types": {}
+        },
+        "proposals": {
+            "total": len(proposals),
+            "by_status": status_counts,
+        },
+        "timestamp": int(time.time() * 1000),
+    }
+
+    # Count observation types
+    for obs in observations:
+        obs_type = obs.get("type")
+        if obs_type:
+            result["observations"]["types"][obs_type] = result["observations"]["types"].get(obs_type, 0) + 1
+
+    emit(result)
+
+    print("\n--- Safe Capability Evolution Engine Status ---")
+    print(f"Observations recorded: {result['observations']['total']}")
+    for obs_type, count in result["observations"]["types"].items():
+        print(f"  - {obs_type}: {count}")
+    print(f"\nProposals: {result['proposals']['total']} total")
+    print("  By status:")
+    for status, count in result["proposals"]["by_status"].items():
+        if count > 0:
+            print(f"    - {status}: {count}")
+
+
+def cmd_sci_proposal_show(args):
+    """Show detailed info for a specific proposal."""
+    proposal_id = args.proposal_id
+
+    prop = get_proposal(proposal_id)
+    if not prop:
+        emit({"error": f"Proposal not found: {proposal_id}"})
+        return
+
+    emit(prop)
+
+    print(f"\n--- Proposal Details: {proposal_id} ---")
+    print(f"Title: {prop.get('title')}")
+    print(f"Status: {prop.get('status')}")
+    print(f"Problem: {prop.get('problem')}")
+    print(f"Files to change: {', '.join(prop.get('files_to_change', []))}")
+    print(f"Risk level: {prop.get('risk_level')}")
+    print(f"Test prompts: {len(prop.get('test_prompts', []))}")
+
+    if prop.get('test_results'):
+        print(f"Test results:")
+        for tr in prop.get('test_results', []):
+            print(f"  [{tr.get('test_index')}] {tr.get('prompt')[:50]}... -> {tr.get('status')}")
+
+    if prop.get('rollback_command'):
+        print(f"Rollback command: {prop.get('rollback_command')}")
+
+    if prop.get('applied_at'):
+        print(f"Applied at: {prop.get('applied_at')}")
+    if prop.get('applied_by'):
+        print(f"Applied by: {prop.get('applied_by')}")
+
+
+def cmd_sci_proposal_rollback(args):
+    """Rollback an applied proposal."""
+    proposal_id = args.proposal_id
+    rolled_back_by = args.by or "human"
+
+    # Import rollback function from apply module
+    from self_improvement_apply import rollback_proposal
+    result = rollback_proposal(proposal_id=proposal_id, rolled_back_by=rolled_back_by)
+
+    if not result.get("ok"):
+        emit(result)
+        return
+
+    emit(result)
+    print(f"\n✅ Rollback recorded: {proposal_id}")
+    print(f"   Command to execute manually: {result.get('rollback_command', 'N/A')}")
+
+
+def cmd_tia_import(args):
+    """Import TIA Openness export artifact."""
+    result = create_raw_import_envelope(args.file)
+    if not result.get("ok"):
+        emit(result)
+        error_msg = result.get("error") or "Unknown error"
+        print(f"\n❌ Import failed: {error_msg}")
+        return
+
+    emit(result)
+    print(f"\n✅ TIA export imported: {args.file}")
+    print(f"   Project: {result.get('project_name')}")
+    print(f"   Collector: {result.get('collector_version') or 'unknown'}")
+
+    output_path = Path(__file__).resolve().parent / args.output
+    save_result = save_import_envelope(result, output_path)
+    if save_result.get("ok"):
+        print(f"   Envelope saved: {save_result.get('saved_to')}")
+    else:
+        print(f"   ⚠️  Envelope created but not saved: {save_result.get('error')}")
+
+    # Show validation summary
+    validation = result.get("validation", {})
+    if validation.get("warnings"):
+        print(f"\nValidation warnings ({len(validation['warnings'])}):")
+        for w in validation["warnings"]:
+            print(f"  - {w}")
+    if validation.get("errors"):
+        print(f"\nValidation errors ({len(validation['errors'])}):")
+        for e in validation["errors"]:
+            print(f"  - {e}")
+
+    # Normalize and save normalized artifact
+    try:
+        normalized = normalize_tia_envelope(result)
+        output_stem = output_path.stem  # e.g., 'tia_import_result'
+        normalized_path = output_path.parent / f"{output_stem}.normalized.json"
+        normalized_save_result = save_normalized_envelope(normalized, normalized_path)
+        if normalized_save_result.get("ok"):
+            print(f"\n✅ Normalized TIA artifact saved: {normalized_save_result.get('saved_to')}")
+        else:
+            print(f"\n⚠️  Normalized output not saved: {normalized_save_result.get('error')}")
+
+        # Safe metadata printing
+        project_name = normalized.get("project", {}).get("name", "Unknown")
+        counts = normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {})
+        total = counts.get("total_items", 0)
+        devices = counts.get("devices", 0)
+        plcs = counts.get("plcs", 0)
+        cpus = counts.get("cpus", 0)
+        modules = counts.get("modules", 0)
+        tags = counts.get("tags", 0)
+        print(f"   Project: {project_name}")
+        print(f"   Items: {total} total ({devices} devices, {plcs} PLCs, {cpus} CPUs, {modules} modules, {tags} tags)")
+
+        norm_warnings = normalized.get("metadata", {}).get("normalization", {}).get("warnings", [])
+        if norm_warnings:
+            print(f"   Normalization warnings: {len(norm_warnings)}")
+
+        # Record history
+        history_path = output_path.parent / "tia_import_history.json"
+        history_result = record_tia_import_history(result, normalized, output_path, normalized_path, history_path)
+        if history_result.get("ok"):
+            print(f"   History recorded: {history_path}")
+        else:
+            print(f"   ⚠️  History not recorded: {history_result.get('error')}")
+    except Exception as e:
+        print(f"\n⚠️  Normalization skipped: {e}")
+
+
+def cmd_tia_history(args):
+    """List recent TIA import history records."""
+    history_path = Path(args.path) if args.path else None
+    result = list_tia_import_history(history_path, args.limit)
+
+    if not result.get("ok"):
+        emit(result)
+        print(f"\n❌ Error: {result.get('error')}")
+        return
+
+    emit(result)
+    print(f"\n=== TIA Import History ({result.get('total_records', 0)} total) ===")
+    print(f"   File: {result.get('history_file')}")
+
+    for i, rec in enumerate(result.get("records", []), 1):
+        status_icon = {"ok": "✅", "warning": "⚠️", "error": "❌"}.get(rec.get("status"), "❓")
+        project = rec.get("project_name", "Unknown")
+        source = rec.get("source_file", "")
+        items = rec.get("item_counts", {}).get("total_items", 0)
+        timestamp = rec.get("timestamp", 0)
+        ts_str = strftime("%Y-%m-%d %H:%M:%S", localtime(timestamp / 1000))
+        print(f"\n{i}. {status_icon} {project}")
+        print(f"   Source: {source}")
+        print(f"   Items: {items}")
+        print(f"   At: {ts_str}")
+
+
+def cmd_tia_show(args):
+    """Show detailed summary for one TIA import."""
+    history_path = Path(args.path) if args.path else None
+    idx = getattr(args, 'index', None)
+    source = getattr(args, 'source', None)
+    
+    record = get_tia_import_record(history_path, idx, source)
+    if record is None:
+        emit({"error": "No TIA import history found or record not found"})
+        print("\n❌ No record found")
+        return
+    
+    ts = record.get("timestamp", 0)
+    ts_str = strftime("%Y-%m-%d %H:%M:%S", localtime(ts / 1000))
+    counts = record.get("item_counts", {})
+    
+    summary = {
+        "project_name": record.get("project_name", "Unknown"),
+        "source_file": record.get("source_file", ""),
+        "timestamp": ts,
+        "timestamp_human": ts_str,
+        "status": record.get("status", "unknown"),
+        "validation_ok": record.get("validation", {}).get("ok", False),
+        "validation_warnings": record.get("validation", {}).get("warnings", 0),
+        "validation_errors": record.get("validation", {}).get("errors", 0),
+        "devices": counts.get("devices", 0),
+        "plcs": counts.get("plcs", 0),
+        "cpus": counts.get("cpus", 0),
+        "modules": counts.get("modules", 0),
+        "tags": counts.get("tags", 0),
+        "total_items": counts.get("total_items", 0),
+        "raw_output": record.get("raw_output", ""),
+        "normalized_output": record.get("normalized_output", ""),
+    }
+    
+    emit(summary)
+    
+    print(f"\n=== TIA Import Summary ===")
+    print(f"Project: {summary['project_name']}")
+    print(f"Timestamp: {summary['timestamp_human']}")
+    status_icon = {"ok": "✅", "warning": "⚠️", "error": "❌"}.get(summary['status'], "❓")
+    print(f"Status: {status_icon} {summary['status']}")
+    print(f"Items: {summary['total_items']} total ({summary['devices']} devices, {summary['plcs']} PLCs, {summary['cpus']} CPUs, {summary['modules']} modules, {summary['tags']} tags)")
+    if summary['validation_warnings'] or summary['validation_errors']:
+        print(f"Validation: {summary['validation_warnings']} warnings, {summary['validation_errors']} errors")
+
+    # Industrial details — read promoted Siemens fields from normalized artifact
+    header_printed = False
+    try:
+        norm_path = Path(summary['normalized_output'])
+        if norm_path.exists():
+            with open(norm_path, "r", encoding="utf-8") as f:
+                norm = json.load(f)
+            # First PLC (promoted fields: rack, slot, ip)
+            plc_list = norm.get("plcs", [])
+            if plc_list:
+                plc = plc_list[0]
+                if plc.get("rack") is not None or plc.get("slot") is not None or plc.get("ip"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- PLC (first) ---")
+                    if plc.get("rack") is not None: print(f"  Rack: {plc['rack']}")
+                    if plc.get("slot") is not None: print(f"  Slot: {plc['slot']}")
+                    if plc.get("ip"): print(f"  IP: {plc['ip']}")
+            # First device (promoted fields: hw_ver, fw_ver)
+            dev_list = norm.get("devices", [])
+            if dev_list:
+                dev = dev_list[0]
+                if dev.get("hw_ver") or dev.get("fw_ver"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- Device (first) ---")
+                    if dev.get("hw_ver"): print(f"  HW: {dev['hw_ver']}")
+                    if dev.get("fw_ver"): print(f"  FW: {dev['fw_ver']}")
+            # First tag (promoted fields: type, addr, desc)
+            tag_list = norm.get("tags", [])
+            if tag_list:
+                tag = tag_list[0]
+                if tag.get("type") or tag.get("addr") or tag.get("desc"):
+                    if not header_printed:
+                        print(f"\n=== Industrial Details ===")
+                        header_printed = True
+                    print(f"\n--- Tag (first) ---")
+                    if tag.get("type"): print(f"  Type: {tag['type']}")
+                    if tag.get("addr"): print(f"  Address: {tag['addr']}")
+                    if tag.get("desc"): print(f"  Desc: {tag['desc']}")
+    except Exception:
+        pass  # silently skip if loading fails
+
+    # Print raw/normalized output paths once at the end
+    print(f"\nRaw output: {summary['raw_output']}")
+    print(f"Normalized output: {summary['normalized_output']}")
 
 
 def cmd_create_checkpoint(args):
@@ -2263,6 +4886,199 @@ def cmd_relationship_add(args):
     
     print(f"\n✅ Added relationship: {source.name} --[{rel.type}]--> {target.name}")
     print(f"   Strength: {rel.strength:.2f}")
+
+
+# ============================================================================
+# Diagnostics / Observability Integration (v71)
+# ============================================================================
+
+# Create minimal emitter for diagnostics (read-only, passive observation)
+_diagnostic_emitter = _MinimalTelemetryEmitter()
+_diagnostic_hooks = DiagnosticExportHooks(DiagnosticHooks(_diagnostic_emitter))
+
+
+# ============================================================================
+# Distributed Failure Replay / Diagnostic Trace Export (v72)
+# ============================================================================
+
+_trace_exporter = TraceExporter(DiagnosticHooks(_diagnostic_emitter))
+_reconstructor = FailureTraceReconstructor()
+_summary_generator = ReplaySummaryGenerator()
+
+
+# ============================================================================
+# Distributed Fallback Behavior (v73)
+# ============================================================================
+
+_fallback_manager = create_fallback_manager(emitter=_diagnostic_emitter, hooks=DiagnosticHooks(_diagnostic_emitter))
+_fallback_trace_exporter = FallbackTraceExporter(_fallback_manager)
+
+
+# ============================================================================
+# Fallback Trace Export / Replay Integration (v74)
+# ============================================================================
+
+_fallback_trace_reconstructor = FallbackTraceReconstructor()
+_fallback_trace_reconstructor.set_fallback_manager(_fallback_manager)
+
+
+def cmd_diagnostics_summary(_args):
+    """Export diagnostic summary in operator-readable format."""
+    result = _diagnostic_hooks.export_all_summaries()
+    emit(result)
+    print(f"\n--- Diagnostic Summary ---")
+    print(f"Total Flows with Failures: {len(result)}")
+    print(f"Total Chains: {len(_diagnostic_hooks.export_all_chains())}")
+    print(f"Total Hints: {len(_diagnostic_hooks.export_all_hints())}")
+    
+    if result:
+        print("\n--- Flows with Failures ---")
+        for summary in result[:3]:
+            flow_id = summary.get("flow_id", "unknown")
+            status = summary.get("status", "unknown")
+            print(f"  {flow_id}: {status}")
+    
+    print(f"\n--- Operator Readable Summary ---")
+    print(_diagnostic_hooks.get_operator_readable_summary())
+
+
+def cmd_diagnostics_failure_chain(args):
+    """Export correlated failure chain by ID."""
+    result = _diagnostic_hooks.export_by_correlation(
+        args.correlation_id, args.type
+    )
+    emit(result)
+    print(f"\n--- Failure Chain: {args.correlation_id} ({args.type}) ---")
+    print(f"Matching Summaries: {len(result.get('summaries', []))}")
+    print(f"Matching Chains: {len(result.get('chains', []))}")
+    print(f"Matching Hints: {len(result.get('hints', []))}")
+
+
+def cmd_diagnostics_recovery_hints(_args):
+    """Export all recovery hints in structured format."""
+    result = _diagnostic_hooks.export_all_hints()
+    emit(result)
+    print(f"\n--- Recovery Hints ({len(result)} total) ---")
+    for hint in result[:5]:
+        flow_id = hint.get("flow_id", "unknown")
+        recovery_hint = hint.get("recovery_hint", "None")
+        likely_cause = hint.get("likely_cause", "Unknown")
+        print(f"  [{likely_cause.upper()}] {flow_id}: {recovery_hint}")
+
+
+# ============================================================================
+# v72: Distributed Failure Replay / Diagnostic Trace Export CLI Commands
+# ============================================================================
+
+
+def cmd_diagnostics_trace_export(args):
+    """Export diagnostic trace with correlation validation and consistency score."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _trace_exporter.export_as_dict(flow_id)
+    else:
+        result = _trace_exporter.export_all_traces()
+    
+    emit(result)
+
+
+def cmd_diagnostics_trace_replay(args):
+    """Export replay summary for operator consumption."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        trace = _trace_exporter.export_trace(flow_id)
+        if trace:
+            records = [trace]
+        else:
+            records = []
+    else:
+        records = _trace_exporter.export_all_traces()
+    
+    summary = _summary_generator.generate_summary(records)
+    print(summary)
+
+
+def cmd_diagnostics_replay_export(args):
+    """Export replayable trace format."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _trace_exporter.export_replayable(flow_id)
+    else:
+        result = _trace_exporter.export_as_dict()
+    
+    emit(result)
+
+
+# ============================================================================
+# v73: Distributed Fallback Behavior CLI Commands
+# ============================================================================
+
+
+def cmd_fallback_status(args):
+    """Export fallback status for a specific node or all nodes."""
+    if args.node_id:
+        status = _fallback_manager.get_node_status(args.node_id)
+        if status:
+            result = status.to_dict()
+        else:
+            result = {"error": f"No fallback status found for node: {args.node_id}"}
+    else:
+        result = {
+            "nodes": [status.to_dict() for status in _fallback_manager._node_statuses.values()],
+            "local_paths": _fallback_manager.get_all_local_paths(),
+        }
+    emit(result)
+
+
+def cmd_fallback_diagnostics(_args):
+    """Export fallback audit/diagnostic records."""
+    result = {
+        "audit_records": _fallback_manager.export_audit_records(),
+        "local_paths": _fallback_manager.get_all_local_paths(),
+    }
+    emit(result)
+    print(f"\n--- Fallback Diagnostics ---")
+    print(f"Audit Records: {len(result['audit_records'])}")
+    print(f"Local Paths: {len(result['local_paths'])}")
+
+
+# ============================================================================
+# v74: Fallback Trace Export / Replay CLI Commands
+# ============================================================================
+
+
+def cmd_fallback_trace_export(args):
+    """Export fallback trace with correlation and capability visibility."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        result = _fallback_trace_exporter.export_as_dict()
+        # Filter for specific flow if requested
+        result["traces"] = [t for t in result.get("traces", []) if t.get("flow_id") == flow_id]
+    else:
+        result = _fallback_trace_exporter.export_as_dict()
+    
+    emit(result)
+
+
+def cmd_fallback_trace_replay(args):
+    """Export fallback trace replay summary for operator consumption."""
+    flow_id = args.flow_id
+    
+    if flow_id:
+        trace = _fallback_trace_exporter.export_trace(flow_id)
+        if trace:
+            records = [trace]
+        else:
+            records = []
+    else:
+        records = _fallback_trace_exporter.export_all_traces()
+    
+    summary = _fallback_trace_exporter.get_operator_readable_summary()
+    print(summary)
 
 
 if __name__ == "__main__":

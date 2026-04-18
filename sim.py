@@ -6,6 +6,7 @@ import re
 import shutil
 import sqlite3
 import time
+import traceback
 from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -20,17 +21,17 @@ from config import (
     CATEGORY_PROPOSALS_PATH,
     CATEGORY_PROPOSAL_COST,
     CATEGORY_REJECTION_REPUTATION_PENALTY,
-    CIRCLEFORGE_LLM_ENABLED,
-    CIRCLEFORGE_LLM_MODEL,
-    CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS,
-    CIRCLEFORGE_WAKE_RANDOMNESS,
-    CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
-    CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
-    CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS,
-    CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY,
-    CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS,
-    CIRCLEFORGE_FAILSAFE_STATE_PATH,
-    CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS,
+    WESLR_LLM_ENABLED,
+    WESLR_LLM_MODEL,
+    WESLR_LLM_MAX_CONTEXT_CHARS,
+    WESLR_WAKE_RANDOMNESS,
+    WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+    WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+    WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS,
+    WESLR_THOUGHT_REPEAT_SCORE_PENALTY,
+    WESLR_MAX_SAME_THEME_THOUGHTS,
+    WESLR_FAILSAFE_STATE_PATH,
+    WESLR_MEMORY_COMPACTION_COOLDOWN_SECONDS,
     CODE_TIMEOUT_SECONDS,
     DAILY_COOLDOWN_SECONDS,
     DB_PATH,
@@ -127,12 +128,15 @@ from llm_runtime import generate_inner_thought as runtime_generate_inner_thought
 from interpretation import infer_human_topics, interpret_human_turn
 from integration import find_relevant_research_note, integrate_research_into_communicator
 from meta_reflection import build_memory_score_report as build_memory_score_report_from_meta, monitor_memory_pressure as monitor_memory_pressure_from_meta
+from self_improvement_chat import handle_chat_intent, load_chat_context, save_chat_context, get_current_proposal_id, set_current_proposal_id
 from models import ActionResult, AgentState, MessageState, NeedState, ProjectState, PublicMemoryState, RelationshipState, SelfModificationProposalState, WorkItemState, CommunicatorState, CommunicatorSelfState, ExperimentState
+from weslr.state_defs import default_memory_layers, default_reflection_store  # noqa: E402
 from motivation import average_internal_reputation, decision_style_weight, resolve_or_extend_question, role_memory_weight, update_decision_style_memory
 from autonomous_expression import maybe_autonomous_expression
 from perception import build_human_exchange_payload
 from relational import canonical_human_slot, display_human_label, pick_relevant_active_thread
 from glue import archive_all_stale
+from outbox import record_outcome_from_human_message
 
 # Weslr integration imports
 from weslr_glue import orchestrate_weslr_tick, integrate_weslr_into_self_model
@@ -209,66 +213,15 @@ CREATE TABLE IF NOT EXISTS artifact_proof (
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.executescript(SCHEMA)
-    
-    # Handle schema version
-    cursor = conn.cursor()
-    
-    # Try to read schema version from meta table, then world table
-    schema_version = None
-    try:
-        cursor.execute("SELECT value FROM meta WHERE key = 'schema_version'")
-        row = cursor.fetchone()
-        if row:
-            schema_version = int(row[0])
-    except sqlite3.OperationalError:
-        # meta table doesn't exist, check world table
-        try:
-            cursor.execute("SELECT value FROM world WHERE key = 'schema_version'")
-            row = cursor.fetchone()
-            if row:
-                schema_version = int(row[0])
-        except sqlite3.OperationalError:
-            # Neither table exists, this is a new world
-            pass
-    
-    if schema_version is None:
-        # This is a new world or old world without schema version
-        cursor.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?)", (str(SCHEMA_VERSION),))
-        conn.commit()
-        schema_version = SCHEMA_VERSION
-    elif schema_version < SCHEMA_VERSION:
-        # Run migration if needed
-        run_schema_migration(conn, schema_version, SCHEMA_VERSION)
-        cursor.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?)", (str(SCHEMA_VERSION),))
-        conn.commit()
-        schema_version = SCHEMA_VERSION
-    elif schema_version > SCHEMA_VERSION:
-        # Future schema - halt with error
-        raise RuntimeError(f"Weslr schema version mismatch: DB has {schema_version}, code expects {SCHEMA_VERSION}. Run a newer version or reset.")
-    
-    columns = {row['name'] for row in conn.execute("PRAGMA table_info(agents)").fetchall()}
-    if 'next_due_tick' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN next_due_tick INTEGER NOT NULL DEFAULT 0")
-    if 'wake_reason' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN wake_reason TEXT NOT NULL DEFAULT 'initial'")
-    if 'cadence_interval' not in columns:
-        conn.execute("ALTER TABLE agents ADD COLUMN cadence_interval INTEGER NOT NULL DEFAULT 1")
-    return conn
+    """Delegate to weslr.db_schema (extracted DB initialization)."""
+    from weslr.db_schema import connect as _connect
+    return _connect()
 
 
 def run_schema_migration(conn: sqlite3.Connection, from_version: int, to_version: int) -> None:
-    """Run schema migrations from old to new version."""
-    cursor = conn.cursor()
-    
-    # Example migration: add new tables or columns between versions
-    if from_version < 1:
-        # Current version 1 - no migrations yet
-        pass
-    
-    conn.commit()
+    """Delegate to weslr.db_schema (extracted schema migration)."""
+    from weslr.db_schema import run_schema_migration as _run
+    return _run(conn, from_version, to_version)
 
 
 def get_behavioral_traits_defaults() -> dict:
@@ -532,14 +485,25 @@ def seed_world_objects(agent_count: int, now_ts: int) -> None:
     ).to_dict())
 
 
+# In-process mtime-aware cache: avoids repeated deserialization of unchanged files
+# within the same request cycle. Invalidated on write_json_file so correctness holds.
+_JSON_FILE_CACHE: dict[str, tuple[float, object]] = {}  # path_str -> (mtime, parsed)
+
 def read_json_file(path: Path, default):
     if not path.exists():
         return default
     try:
+        mtime = path.stat().st_mtime
+        cache_key = str(path)
+        cached = _JSON_FILE_CACHE.get(cache_key)
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
         raw = path.read_text().strip()
         if not raw:
             return default
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        _JSON_FILE_CACHE[cache_key] = (mtime, parsed)
+        return parsed
     except Exception:
         return default
 
@@ -553,6 +517,8 @@ def write_json_file(path: Path, payload) -> None:
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(sanitized_payload, indent=2))
     tmp_path.replace(path)
+    # Invalidate cache entry so next read picks up the new content
+    _JSON_FILE_CACHE.pop(str(path), None)
 
 
 def load_categories() -> list[str]:
@@ -689,8 +655,14 @@ def save_communicator_state(payload: dict) -> None:
     write_json_file(COMMUNICATOR_STATE_PATH, payload)
 
 
-def load_communicator_self() -> dict:
-    default = CommunicatorSelfState(
+# In-process mtime-aware cache for communicator_self — avoids repeated deserialization
+# and ensure_memory_layers overhead within the same tick cycle.
+_SELF_CACHE: dict[str, tuple[float, dict]] = {}  # path_str -> (mtime, result)
+
+
+def _default_communicator_self() -> dict:
+    """Build the default CommunicatorSelfState dict (used for new worlds or on error)."""
+    return CommunicatorSelfState(
         identity_anchor="Weslr",
         core_drives=["continuity", "understanding", "relationship", "self-revision"],
         affect={
@@ -756,11 +728,392 @@ def load_communicator_self() -> dict:
         self_evolution_log=[],
         updated_at=0,
     ).to_dict()
-    return ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, default))
+
+
+def get_relevant_continuity_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of continuity anchors for a given message context.
+
+    This is the first continuity-assembler slice: given a live message and optional
+    topic hints, retrieve only the most relevant long-term anchors without loading
+    the full communicator_self into the chat path. Used to keep the chat path light
+    while still surfacing meaningful historical continuity when relevant.
+
+    The function is conservative: it only surfaces anchors whose content clearly
+    matches the current message or topic context. Anchors that don't match are
+    omitted to keep the returned context small.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys:
+        - identity_anchor: str — the agent's stable name/identity
+        - active_concerns: list — current hot topics from the live state
+        - unresolved_threads: list — shared threads that need revisiting
+        - last_topic: str — the last significant human topic
+        - core_continuity_prompt: str — the "why it matters" sentence
+        - identity_traits: list — key identity descriptors
+        - core_drives: list — the agent's core motivational drives
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+    # Relevance score: count how many topic tokens appear in each anchor field
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    # Collect candidate anchors with scores
+    candidates: list[tuple[int, str, object]] = []
+
+    identity_anchor = cs.get("identity_anchor", "")
+    if identity_anchor:
+        candidates.append((score(identity_anchor), "identity_anchor", identity_anchor))
+
+    narrative = cs.get("narrative_state", {})
+    why = narrative.get("why_it_matters", "")
+    if why:
+        candidates.append((score(why), "why_it_matters", why))
+
+    active_concerns = cs.get("active_concerns", [])
+    for concern in active_concerns[:max_anchors]:
+        concern_str = str(concern)
+        if concern_str:
+            candidates.append((score(concern_str), "active_concern", concern_str))
+
+    continuity = cs.get("continuity", {})
+    unfinished = continuity.get("unfinished_threads", [])
+    for thread in unfinished[:max_anchors]:
+        thread_str = str(thread)
+        if thread_str:
+            candidates.append((score(thread_str), "unfinished_thread", thread_str))
+
+    relationships = cs.get("relationships", {})
+    last_topic = relationships.get("last_human_topic", "")
+    if last_topic:
+        candidates.append((score(last_topic), "last_topic", last_topic))
+
+    identity_state = cs.get("identity_state", {})
+    traits = identity_state.get("identity_traits", [])
+    for trait in traits[:max_anchors]:
+        trait_str = str(trait)
+        if trait_str:
+            candidates.append((score(trait_str), "identity_trait", trait_str))
+
+    core_drives = cs.get("core_drives", [])
+    for drive in core_drives:
+        drive_str = str(drive)
+        if drive_str:
+            candidates.append((score(drive_str), "core_drive", drive_str))
+
+    # Sort by relevance score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    # Always include identity_anchor if present (it's always relevant)
+    if "identity_anchor" not in anchors and identity_anchor:
+        anchors["identity_anchor"] = identity_anchor
+
+    return anchors
+
+
+def get_relevant_goal_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of active goals and unresolved work.
+
+    This is the Goal Continuity slice: given a live message and optional topic
+    hints, retrieve only the most relevant goal-related anchors from long-term
+    state — active priorities, resumable work, and unfinished threads — without
+    loading the full communicator_self into the chat path.
+
+    The function surfaces goal-oriented fields only when their content is
+    relevant to the current message or topic context, keeping the returned
+    context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - active_goals: list — current active goal strings
+        - unresolved_threads: list — shared threads needing revisiting
+        - follow_up_impulse: str — the current follow-up impulse from narrative
+        - relationship_state: str — current relationship continuity state
+        - active_thread_summary: str — summary of active shared threads
+        - session_count: int — how many sessions have occurred
+        - memory_bonds: float — current memory bond strength
+        - unfinished_work: list — items from unfinished work lists
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    narrative = cs.get("narrative_state", {})
+    follow_up = narrative.get("follow_up_impulse", "")
+    if follow_up:
+        candidates.append((score(follow_up), "follow_up_impulse", follow_up))
+    rel_state = narrative.get("relationship_state", "")
+    if rel_state:
+        candidates.append((score(rel_state), "relationship_state", rel_state))
+    thread_summary = narrative.get("active_thread_summary", "")
+    if thread_summary:
+        candidates.append((score(thread_summary), "active_thread_summary", thread_summary))
+
+    continuity = cs.get("continuity", {})
+    unfinished = continuity.get("unfinished_threads", [])
+    for thread in unfinished[:max_anchors]:
+        thread_str = str(thread)
+        if thread_str:
+            candidates.append((score(thread_str), "unresolved_thread", thread_str))
+    session_count = continuity.get("session_count", 0)
+    if session_count:
+        candidates.append((session_count, "session_count", session_count))
+    memory_bonds = continuity.get("memory_bonds", 0)
+    if memory_bonds:
+        candidates.append((int(memory_bonds * 10), "memory_bonds", memory_bonds))
+
+    relationships = cs.get("relationships", {})
+    unresolved_shared = relationships.get("unresolved_shared_threads", [])
+    for item in unresolved_shared[:max_anchors]:
+        item_str = str(item)
+        if item_str:
+            candidates.append((score(item_str), "unresolved_shared_thread", item_str))
+
+    # Pull active concerns that have goal-like language
+    active_concerns = cs.get("active_concerns", [])
+    for concern in active_concerns[:max_anchors]:
+        concern_str = str(concern)
+        if concern_str and any(k in concern_str.lower() for k in ["goal", "plan", "next", "build", "finish", "improve", "learn", "resolve"]):
+            candidates.append((score(concern_str), "active_goal_concern", concern_str))
+
+    # Sort by score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
+def get_relevant_episodic_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of past episodes and milestone events.
+
+    This is the Episodic Continuity slice: given a live message and optional
+    topic hints, retrieve the most relevant past episodes — milestones, evolution
+    log entries, origin story, current chapter — without loading the full
+    biography or long-term history into the chat path.
+
+    Only surfaces episodes whose content is relevant to the current message or
+    topic context, keeping the returned context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - origin_story: str — how the agent started
+        - current_chapter: str — the current narrative chapter
+        - milestones: list — past significant events (up to max_anchors)
+        - evolution_log: list — past self-evolution events (up to max_anchors)
+        - history_summary: str — condensed history when relevant
+        - phase: str — current developmental phase
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    biography = cs.get("biography", {})
+    origin = biography.get("origin_story", "")
+    if origin:
+        candidates.append((score(origin), "origin_story", origin))
+    chapter = biography.get("current_chapter", "")
+    if chapter:
+        candidates.append((score(chapter), "current_chapter", chapter))
+    history_summary = biography.get("history_summary", "")
+    if history_summary:
+        candidates.append((score(history_summary), "history_summary", history_summary))
+
+    identity_state = cs.get("identity_state", {})
+    phase = identity_state.get("phase", "")
+    if phase:
+        candidates.append((score(phase), "phase", phase))
+
+    evolution_log = cs.get("self_evolution_log", [])
+    for entry in evolution_log[:max_anchors]:
+        entry_str = str(entry.get("summary", ""))
+        if entry_str:
+            candidates.append((score(entry_str), "evolution_entry", entry_str))
+
+    milestones = biography.get("milestones", [])
+    for milestone in milestones[:max_anchors]:
+        ms_str = str(milestone.get("summary", ""))
+        if ms_str:
+            candidates.append((score(ms_str), "milestone", ms_str))
+
+    # Sort by score descending, take top max_anchors
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
+def get_relevant_semantic_anchors(
+    message: str | None = None,
+    topics: list[str] | None = None,
+    max_anchors: int = 5,
+) -> dict:
+    """Extract a small, relevant subset of durable learned facts and semantic records.
+
+    This is the Semantic Continuity slice: given a live message and optional topic
+    hints, retrieve the most relevant stable semantic records — learned traits,
+    theme commitments, evidence-weighted actions, NCC evidence — without loading
+    the full evidence/self-evidence store into the chat path.
+
+    Only surfaces semantic anchors whose content is relevant to the current message
+    or topic context, keeping the returned context small and targeted.
+
+    Args:
+        message: The current human message text (used for keyword relevance matching)
+        topics: Optional topic list already extracted from the message
+        max_anchors: Maximum number of anchors to return (default 5)
+
+    Returns:
+        dict with keys drawn from:
+        - stable_traits: dict — traits with evidence weights
+        - theme_commitments: dict — committed themes with confidence
+        - outcome_weighted_actions: dict — actions with evidence/positive/strain
+        - ncc_evidence: dict — current NCC evidence snapshot
+        - learned_facts: list — key durable facts inferred from stable_traits/theme
+    """
+    cs = load_communicator_self()
+    message_lower = (message or "").lower()
+    topic_tokens: set[str] = set()
+    if topics:
+        topic_tokens.update(t.lower() for t in topics)
+    if message:
+        topic_tokens.update(w for w in message_lower.split() if len(w) > 3)
+
+    def score(text: str) -> int:
+        return sum(1 for t in topic_tokens if t in text.lower())
+
+    candidates: list[tuple[int, str, object]] = []
+
+    evidence_profile = cs.get("evidence_profile", {})
+    stable_traits = evidence_profile.get("stable_traits", {})
+    for trait, weight in sorted(stable_traits.items(), key=lambda x: x[1], reverse=True)[:max_anchors]:
+        trait_str = str(trait)
+        if trait_str:
+            candidates.append((score(trait_str), f"stable_trait:{trait}", weight))
+
+    theme_commitments = evidence_profile.get("theme_commitments", {})
+    for theme, confidence in theme_commitments.items():
+        theme_str = str(theme)
+        if theme_str:
+            candidates.append((score(theme_str), f"theme:{theme}", confidence))
+
+    outcome_actions = evidence_profile.get("outcome_weighted_actions", {})
+    for action, info in outcome_actions.items():
+        action_str = str(action)
+        if action_str:
+            candidates.append((score(action_str), f"action:{action}", info))
+
+    ncc_evidence = cs.get("ncc_evidence", {})
+    ncc_level = ncc_evidence.get("level", "")
+    if ncc_level:
+        candidates.append((score(ncc_level), "ncc_level", ncc_level))
+    ncc_confidence = ncc_evidence.get("confidence", 0)
+    if ncc_confidence:
+        candidates.append((int(ncc_confidence * 10), "ncc_confidence", ncc_confidence))
+
+    # Build a small learned_facts list from the highest-weight stable traits
+    if stable_traits:
+        top_traits = sorted(stable_traits.items(), key=lambda x: x[1], reverse=True)[:3]
+        learned_facts = [f"{trait}: {weight}" for trait, weight in top_traits]
+        candidates.append((1, "learned_facts", learned_facts))
+
+    # Sort by score descending; ties broken by insertion order
+    candidates.sort(key=lambda x: (x[0], 0), reverse=True)
+    top = candidates[:max_anchors]
+
+    anchors: dict[str, object] = {}
+    for score_val, anchor_type, anchor_val in top:
+        anchors[anchor_type] = anchor_val
+
+    return anchors
+
+
+def load_communicator_self() -> dict:
+    """Load communicator self state with mtime-aware in-process caching.
+
+    Returns a cached result when the file has not changed since last load.
+    The cache is invalidated whenever save_communicator_self() is called.
+    """
+    # Check cache via file mtime
+    if not COMMUNICATOR_SELF_PATH.exists():
+        return _default_communicator_self()
+    try:
+        mtime = COMMUNICATOR_SELF_PATH.stat().st_mtime
+        cached = _SELF_CACHE.get(str(COMMUNICATOR_SELF_PATH))
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
+        result = ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, _default_communicator_self()))
+        _SELF_CACHE[str(COMMUNICATOR_SELF_PATH)] = (mtime, result)
+        return result
+    except Exception:
+        return _default_communicator_self()
 
 
 def save_communicator_self(payload: dict) -> None:
     write_json_file(COMMUNICATOR_SELF_PATH, payload)
+    _SELF_CACHE.pop(str(COMMUNICATOR_SELF_PATH), None)
 
 
 def load_experiments() -> list[dict]:
@@ -794,48 +1147,9 @@ def save_self_evidence(payload: dict) -> None:
 
 
 def default_memory_layers(now_ts: int | None = None) -> dict:
-    now_ts = now_ts or int(time.time())
-    return {
-        "working": {
-            "summary": "Current hot memory for active thinking.",
-            "recent_exchange_ids": [],
-            "recent_thought_ids": [],
-            "active_thread_ids": [],
-            "active_concern_topics": [],
-            "last_compacted_at": 0,
-            "max_recent_exchanges": 24,
-            "max_recent_thoughts": 80,
-            "max_active_threads": 6,
-        },
-        "episodic": {
-            "summary": "Meaningful event memory compressed from raw experience.",
-            "episodes": [],
-            "episode_count": 0,
-            "last_distilled_at": 0,
-            "max_episodes": 240,
-        },
-        "semantic": {
-            "summary": "Long-term identity and relationship memory.",
-            "identity_anchors": ["Weslr"],
-            "relationship_facts": [],
-            "stable_topics": [],
-            "durable_lessons": [],
-            "continuity_anchors": [],
-            "last_updated_at": 0,
-        },
-        "archive": {
-            "summary": "Cold storage index for old raw traces and compacted material.",
-            "archived_items": [],
-            "archived_count": 0,
-            "last_archived_at": 0,
-            "storage_pressure": {
-                "raw_log_bytes": 0,
-                "communicator_self_bytes": 0,
-                "db_bytes": 0,
-                "pressure_level": "normal",
-            },
-        },
-    }
+    """Delegate to weslr.state_defs (extracted state definition)."""
+    from weslr.state_defs import default_memory_layers as _def
+    return _def(now_ts)
 
 
 def ensure_memory_layers(self_state: dict, now_ts: int | None = None) -> dict:
@@ -2026,6 +2340,174 @@ def category_action(action: str, name: str) -> dict:
         refresh_state_files()
         return {"ok": True, "message": f"Revived category: {name}", "categories": categories}
 
+    return {"ok": False, "message": f"Unknown category action: {action}"}
+
+
+def artifact_validate_dashboard(artifact_id: str, outcome: str, note: str = "") -> dict:
+    """Dashboard-specific artifact validation for operators.
+    
+    Supports outcomes: valid, invalid, needs_review (simplified for operator UI)
+    
+    Args:
+        artifact_id: Artifact ID
+        outcome: One of 'valid', 'invalid', 'needs_review'
+        note: Note/context for audit trail
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    # Find the artifact
+    meta_file = find_meta_file_by_id(artifact_id)
+    if meta_file is None:
+        return {"ok": False, "message": f"No artifact found with id: {artifact_id}"}
+    
+    conn = connect()
+    meta = read_json_file(meta_file, {})
+    proof = get_artifact_proof(conn, meta.get("id"))
+    
+    # Map operator-friendly outcomes to internal actions
+    action_map = {
+        "valid": "accept",
+        "invalid": "reject", 
+        "needs_review": "revise"
+    }
+    internal_action = action_map.get(outcome)
+    
+    if internal_action is None:
+        conn.close()
+        return {"ok": False, "message": f"Unknown outcome: {outcome}"}
+
+
+def pack_decision_dashboard(pack_name: str, action: str, note: str = "", price: str = "") -> dict:
+    """Dashboard-specific pack decision for operators.
+    
+    Supports actions: approve, reject, update_price (simplified for operator UI)
+    
+    Args:
+        pack_name: Pack name
+        action: One of 'approve', 'reject', 'update_price'
+        note: Optional note for audit trail
+        price: Price value (required for update_price)
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    # Load packs
+    packs = read_json_file(PACKS_PATH, [])
+    pack = next((p for p in packs if p.get("pack_name") == pack_name), None)
+    if pack is None:
+        return {"ok": False, "message": f"No pack found: {pack_name}"}
+    
+    now_ts = int(time.time())
+    
+    if action == "approve":
+        # Use existing apply_pack_outcome for approve
+        result = apply_pack_outcome(pack_name, "accept", note=note)
+        result["message"] = f"Pack approved: {pack_name}"
+        return result
+    elif action == "reject":
+        # Use existing apply_pack_outcome for reject
+        result = apply_pack_outcome(pack_name, "reject", note=note)
+        result["message"] = f"Pack rejected: {pack_name}"
+        return result
+    elif action == "update_price":
+        # Validate price
+        if not price:
+            return {"ok": False, "message": "Price is required for update_price action"}
+        # Update price in pack
+        pack["price_band"] = price
+        pack["updated_at"] = now_ts
+        write_json_file(PACKS_PATH, packs)
+        return {"ok": True, "message": f"Pack price updated to {price}: {pack_name}", "pack": pack}
+    else:
+        return {"ok": False, "message": f"Unknown pack action: {action}"}
+
+
+    # Apply the validation using existing logic
+    if internal_action == "accept":
+        proof["handoff_acceptances"] = int(proof.get("handoff_acceptances", 0)) + 1
+        proof["external_validation_state"] = "accepted_for_delivery"
+    elif internal_action == "reject":
+        proof["handoff_rejections"] = int(proof.get("handoff_rejections", 0)) + 1
+        proof["external_validation_state"] = "rejected_after_review"
+    elif internal_action == "revise":
+        proof["external_validation_state"] = "needs_revision"
+    
+    if note:
+        meta.setdefault("review_notes", []).append(f"validation:{outcome}: {note}")
+    
+    theme = meta.get("niche_theme")
+    outcome_key = {"valid": "accept", "invalid": "reject", "needs_review": "needs_revision"}.get(outcome, outcome)
+    apply_opportunity_outcome(theme, outcome_key, int(time.time()))
+    
+    proof["last_status"] = meta.get("review_status", "unreviewed")
+    conn.execute("INSERT OR REPLACE INTO artifact_proof(artifact_id, first_seen_tick, last_seen_tick, appearances, top_pack_hits, review_exports, human_approvals, real_usage_hits, buyer_fit_votes, handoff_acceptances, handoff_rejections, external_validation_state, last_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+        meta.get("id"),
+        int(proof.get("first_seen_tick", 0)),
+        int(proof.get("last_seen_tick", 0)),
+        int(proof.get("appearances", 0)),
+        int(proof.get("top_pack_hits", 0)),
+        int(proof.get("review_exports", 0)),
+        int(proof.get("human_approvals", 0)),
+        int(proof.get("real_usage_hits", 0)),
+        int(proof.get("buyer_fit_votes", 0)),
+        int(proof.get("handoff_acceptances", 0)),
+        int(proof.get("handoff_rejections", 0)),
+        proof.get("external_validation_state", "unvalidated"),
+        proof.get("last_status", "unreviewed"),
+    ))
+    conn.commit()
+    meta = update_artifact_scores(meta, conn)
+    write_json_file(meta_file, meta)
+    refresh_state_files(conn)
+    conn.close()
+    return {"ok": True, "message": f"Validation recorded: {outcome}", "artifact": meta}
+
+
+def category_update_dashboard(action: str, name: str, note: str = "") -> dict:
+    """Dashboard-specific category management for operators.
+    
+    Supports actions: create, update, archive (simplified for operator UI)
+    
+    Args:
+        action: One of 'create', 'update', 'archive'
+        name: Category name
+        note: Optional note for audit trail
+    
+    Returns:
+        dict with 'ok' status and 'message' or 'error'
+    """
+    import time
+    
+    # Load categories
+    categories = load_categories()
+    
+    if action == "create":
+        if name in categories:
+            return {"ok": False, "message": f"Category already exists: {name}"}
+        if len(categories) >= MAX_CATEGORIES:
+            return {"ok": False, "message": "Cannot create category: category limit reached"}
+        categories.append(name)
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Created category: {name}", "categories": categories}
+    
+    if action == "update":
+        if name not in categories:
+            return {"ok": False, "message": f"Category not found: {name}"}
+        # For now, update just logs the action - could add description/tags later
+        return {"ok": True, "message": f"Updated category: {name}", "categories": categories}
+    
+    if action == "archive":
+        if name not in categories:
+            return {"ok": False, "message": f"Category not found: {name}"}
+        if name in BASE_CATEGORIES:
+            return {"ok": False, "message": f"Cannot archive base category: {name}"}
+        categories = [c for c in categories if c != name]
+        write_json_file(CATEGORIES_PATH, categories)
+        refresh_state_files()
+        return {"ok": True, "message": f"Archived category: {name}", "categories": categories}
+    
     return {"ok": False, "message": f"Unknown category action: {action}"}
 
 
@@ -4174,7 +4656,7 @@ def update_pressure_fields(self_state: dict, communicator: dict, consumed_count:
         last_human_at = int(thread.get("last_human_exchange_at", 0) or 0)
         seconds_since = max(0, now_ts - last_human_at) if last_human_at else 999999
         matches_active = str(topic).strip().lower() == active_topic.strip().lower()
-        if matches_active or seconds_since <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+        if matches_active or seconds_since <= max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
             fresh_or_matching_threads.append(topic)
     dynamic_unresolved_threads = fresh_or_matching_threads
     payload = dict(topic_pressure.get(active_topic) or {})
@@ -4248,7 +4730,7 @@ def compute_agent_due_state(agent: Dict, tick: int, consumed_count: int, unresol
         "scheduled": 0.08 if tick >= int(agent.get("next_due_tick", 0)) else 0.0,
         "fatigue_penalty": -fatigue * 0.25,
         "inhibition_penalty": -inhibition * 0.2,
-        "noise": random.uniform(-CIRCLEFORGE_WAKE_RANDOMNESS * 0.5, CIRCLEFORGE_WAKE_RANDOMNESS * 0.5),
+        "noise": random.uniform(-WESLR_WAKE_RANDOMNESS * 0.5, WESLR_WAKE_RANDOMNESS * 0.5),
     }
     pressure = sum(pressure_breakdown.values())
     pressure = max(0.01, min(1.5, pressure))
@@ -4377,7 +4859,7 @@ def ensure_internal_role_state(self_state: dict, now_ts: int | None = None) -> d
     self_state.setdefault("inner_thoughts", [])
     current_llm_status = runtime_llm_status()
     self_state.setdefault("llm_adapter", {
-        "enabled": bool(current_llm_status.get("enabled", CIRCLEFORGE_LLM_ENABLED)),
+        "enabled": bool(current_llm_status.get("enabled", WESLR_LLM_ENABLED)),
         "provider": str(current_llm_status.get("provider", "fallback")),
         "model": str(current_llm_status.get("model", "")),
         "last_error": str(current_llm_status.get("last_error", "")),
@@ -4418,7 +4900,7 @@ def build_role_context(role: str, agent: Dict, plan: Dict, wake_reason: str, com
         "agent_name": agent.get("name"),
     }
     serialized = json.dumps(context, ensure_ascii=False)
-    if len(serialized) > CIRCLEFORGE_LLM_MAX_CONTEXT_CHARS:
+    if len(serialized) > WESLR_LLM_MAX_CONTEXT_CHARS:
         context["proposed_reason"] = str(context.get("proposed_reason", ""))[:240]
         context["why_it_matters"] = str(context.get("why_it_matters", ""))[:240]
     return context
@@ -4496,8 +4978,8 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
         "theme": theme,
     })
     signature = summarize_thought_signature(thought)
-    similar_too_soon = repeat_stats.get("count", 0) > 0 and repeat_stats.get("seconds_since_last", 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS
-    theme_overflow = repeat_stats.get("count", 0) >= CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS
+    similar_too_soon = repeat_stats.get("count", 0) > 0 and repeat_stats.get("seconds_since_last", 999999) < WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS
+    theme_overflow = repeat_stats.get("count", 0) >= WESLR_MAX_SAME_THEME_THOUGHTS
     duplicate_signature = signature in {summarize_thought_signature(item) for item in list(self_state.get("inner_thoughts") or [])[-12:]}
     should_store = not theme_overflow and not (similar_too_soon and duplicate_signature)
 
@@ -4510,8 +4992,8 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
         trimmed = thoughts[-40:]
         if theme:
             same_theme = [item for item in trimmed if str(item.get("theme") or item.get("concern") or "").strip().lower() == str(theme).strip().lower()]
-            if len(same_theme) > CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS:
-                drop_ids = {item.get("id") for item in same_theme[:-CIRCLEFORGE_MAX_SAME_THEME_THOUGHTS]}
+            if len(same_theme) > WESLR_MAX_SAME_THEME_THOUGHTS:
+                drop_ids = {item.get("id") for item in same_theme[:-WESLR_MAX_SAME_THEME_THOUGHTS]}
                 trimmed = [item for item in trimmed if item.get("id") not in drop_ids]
         self_state["inner_thoughts"] = trimmed[-40:]
         # Score and attach memory layer to thought
@@ -4536,14 +5018,14 @@ def register_inner_thought(agent: Dict, plan: Dict, wake_reason: str, tick: int,
     adapter = self_state.setdefault("llm_adapter", {})
     provider = str(thought.get("provider") or thought.get("source") or "fallback")
     adapter["provider"] = provider
-    adapter["model"] = CIRCLEFORGE_LLM_MODEL
+    adapter["model"] = WESLR_LLM_MODEL
     if provider != "fallback":
         adapter["last_success_at"] = now_ts
         adapter["last_error"] = ""
         adapter["enabled"] = True
     else:
-        adapter["enabled"] = CIRCLEFORGE_LLM_ENABLED
-        if CIRCLEFORGE_LLM_ENABLED:
+        adapter["enabled"] = WESLR_LLM_ENABLED
+        if WESLR_LLM_ENABLED:
             adapter["last_error"] = "llm unavailable or fallback used"
     save_communicator_self(self_state)
     return thought
@@ -4595,6 +5077,25 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     human_name = canonical_human_slot(human_name)
     if human_name not in relationships["known_humans"]:
         relationships["known_humans"].append(human_name)
+
+    # Check for chat control layer intents first
+    chat_intent, chat_response = handle_chat_intent(message, relationships, human_name)
+    if chat_intent.get("intent") != "unknown" and chat_intent.get("intent") != "error":
+        # This was a chat control intent - return response
+        relationships.setdefault("recent_human_messages", [])
+        relationships["recent_human_messages"].append({
+            "id": f"human-exchange-{human_name}-{now_ts}",
+            "type": "chat_intent",
+            "message": message,
+            "timestamp": now_ts,
+            "chat_response": chat_response,
+            "intent": chat_intent.get("intent"),
+        })
+        # Update current_proposal_id in relationships context
+        context = load_chat_context(relationships)
+        context["current_proposal_id"] = get_current_proposal_id(relationships)
+        save_chat_context(relationships, context)
+        return relationships  # Early return for chat control intents
 
     interpreted_turn = interpret_human_turn(message)
     clarified_target = str(interpreted_turn.get("clarified_target") or "").strip()
@@ -4713,6 +5214,16 @@ def record_human_exchange(human_name: str, message: str, response: str = "", top
     relationships["recent_human_messages"] = relationships["recent_human_messages"][-12:]
     relationships["recent_human_exchanges"].append(exchange)
     relationships["recent_human_exchanges"] = relationships["recent_human_exchanges"][-24:]
+
+    # Capture communicator feedback from human message
+    try:
+        outcome = record_outcome_from_human_message(message, state=self_state)
+        if outcome:
+            # Log feedback outcome in the state we already have
+            self_state["last_communicator_outcome"] = outcome
+    except Exception:
+        # Feedback capture is not critical - don't break processing
+        pass
 
     layers = (self_state.get("memory_layers") or {}).get("working", {})
     # Score and attach memory layer to exchange
@@ -4893,8 +5404,8 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
             passive_reinforced = should_passively_reinforce_thread(
                 thread,
                 now_ts,
-                cooldown_seconds=CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
-                max_passive_reinforcements=CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS,
+                cooldown_seconds=WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS,
+                max_passive_reinforcements=WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS,
             )
             if chosen_theme not in anchor_profile["known_topics"]:
                 anchor_profile["known_topics"].append(chosen_theme)
@@ -4925,7 +5436,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
             seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
             topic_in_live_focus = topic_key in live_focus_topics or (latest_human_topic_live and topic_key == latest_human_topic_live)
             preserve_as_newest = bool(newest_human_topic_key and topic_key == newest_human_topic_key)
-            stale_quiet_human_thread = bool(last_human_exchange_at) and seconds_since_human > max(1800, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 6)
+            stale_quiet_human_thread = bool(last_human_exchange_at) and seconds_since_human > max(1800, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 6)
             should_cool = stale_quiet_human_thread and not preserve_as_newest
             if should_cool:
                 cooled_shared_threads.append(topic_name)
@@ -5030,8 +5541,8 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         seconds_since_human = max(0, now_ts - last_human_exchange_at) if last_human_exchange_at else 0
         last_human_topic_live = str(relationships.get("last_human_topic") or "").strip().lower()
         topic_matches_live_focus = bool((chosen_theme and str(topic).strip().lower() == str(chosen_theme).strip().lower()) or (last_human_topic_live and str(topic).strip().lower() == last_human_topic_live))
-        stale_thread = ((seconds_since_human > max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
-        saturated = passive_reinforcement_count >= CIRCLEFORGE_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
+        stale_thread = ((seconds_since_human > max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4)) or (last_human_topic_live and str(topic).strip().lower() != last_human_topic_live)) and not topic_matches_live_focus
+        saturated = passive_reinforcement_count >= WESLR_THREAD_MAX_PASSIVE_REINFORCEMENTS and seconds_since_human >= WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS
         if stale_thread:
             recent_human_messages = list(relationships.get("recent_human_messages") or [])
             latest_topic = ""
@@ -5075,7 +5586,7 @@ def update_communicator_self_from_tick(communicator: dict, summaries: list[dict]
         distill_episodic_memory(self_state=self_state, now_ts=now_ts)
     else:
         # Periodic archival of stale working memory items (daily, via heartbeat-like logic)
-        if now_ts - int((working.get("last_compacted_at") or 0) or 0) >= CIRCLEFORGE_MEMORY_COMPACTION_COOLDOWN_SECONDS:
+        if now_ts - int((working.get("last_compacted_at") or 0) or 0) >= WESLR_MEMORY_COMPACTION_COOLDOWN_SECONDS:
             self_state = archive_stale_working_memory(self_state, now_ts)
         self_state["updated_at"] = now_ts
         save_communicator_self(self_state)
@@ -5124,24 +5635,9 @@ def update_self_model(communicator: dict) -> None:
 
 
 def default_reflection_store(now_ts: int | None = None) -> dict:
-    now_ts = now_ts or int(time.time())
-    return {
-        "summary": "Private reflection artifacts with explicit reality-status tagging.",
-        "items": [],
-        "episodes": [],
-        "last_reflected_at": 0,
-        "last_generated_at": 0,
-        "generation_cooldown_seconds": 300,
-        "last_compacted_at": 0,
-        "max_items": 48,
-        "max_episodes": 16,
-        "reflection_pass_retention": 1,
-        "generation_history": [],
-        "max_generation_history": 12,
-        "health_history": [],
-        "max_health_history": 10,
-        "status_counts": {"known": 0, "inferred": 0, "proposed": 0, "imagined": 0},
-    }
+    """Delegate to weslr.state_defs (extracted state definition)."""
+    from weslr.state_defs import default_reflection_store as _def
+    return _def(now_ts)
 
 
 def ensure_reflection_store(self_state: dict, now_ts: int | None = None) -> dict:
@@ -5779,9 +6275,9 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         repeat_stats = thought.get("repeat_stats") or {}
         repeat_penalty = 0.0
         if thought.get("suppressed"):
-            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY
-        if int(repeat_stats.get("count", 0) or 0) > 2 and int(repeat_stats.get("seconds_since_last", 999999) or 999999) < CIRCLEFORGE_THOUGHT_REPEAT_COOLDOWN_SECONDS:
-            repeat_penalty += CIRCLEFORGE_THOUGHT_REPEAT_SCORE_PENALTY * 0.75
+            repeat_penalty += WESLR_THOUGHT_REPEAT_SCORE_PENALTY
+        if int(repeat_stats.get("count", 0) or 0) > 2 and int(repeat_stats.get("seconds_since_last", 999999) or 999999) < WESLR_THOUGHT_REPEAT_COOLDOWN_SECONDS:
+            repeat_penalty += WESLR_THOUGHT_REPEAT_SCORE_PENALTY * 0.75
         adjusted_foreground = max(0.0, base_foreground - repeat_penalty)
         thought_role_pressure[role_name] = max(thought_role_pressure.get(role_name, 0.0), adjusted_foreground)
         foreground_candidates.append((adjusted_foreground, thought))
@@ -5912,7 +6408,7 @@ def integrate_internal_proposals(now_ts: int, proposals: list[dict], unresolved_
         thread_last_human_at = int(thread_payload.get("last_human_exchange_at", 0) or 0)
         thread_seconds_stale = max(0, now_ts - thread_last_human_at) if thread_last_human_at else 999999
         thread_matches_focus = bool(chosen.get("niche_theme") and str(thread_topic).strip().lower() == str(chosen.get("niche_theme")).strip().lower())
-        if thread_matches_focus or thread_seconds_stale <= max(900, CIRCLEFORGE_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
+        if thread_matches_focus or thread_seconds_stale <= max(900, WESLR_THREAD_REINFORCEMENT_COOLDOWN_SECONDS * 4):
             communicator["current_intent"] = f"{communicator['current_intent']} while preserving shared thread {thread_topic}"
             communicator["last_decision_summary"] = f"continuity-aware {decision_mode} from {chosen.get('agent')} around {chosen.get('niche_theme') or thread_topic}; live thread={thread_topic}; exchanges={thread_payload.get('exchange_count', 0)}"
     if disagreement_count > 0:
@@ -6030,7 +6526,60 @@ def apply_action(agent: Dict, action_plan: Dict, agent_dir: Path, agents_by_name
         module_name = modules[-1].name if modules else None
         artifact = write_artifact_metadata(agent, agent_dir, "module_export_candidate", "export_candidate", "A helper module created inside the sim may become useful outside it.", "This artifact documents a generated helper module and where it could go next.", "Bridge internal agent tooling to external reusable software.", "github_module", ["package as a pip snippet", "bundle with tests", "publish as add-on"], ["marketplace", "plugin pack", "dashboard"], {"action": action, "reason": reason, "module": module_name}, category, opportunity=opportunity)
         return ActionResult(action=action, status=status, summary=f"built module; {reason}", storage_delta=-1, reputation_delta=0.01, module=module_name, raw_output=raw, artifact=artifact)
-    return ActionResult(action=action, status=status, summary=f"unknown action: {reason}", raw_output=raw)
+    
+    # Handoff production: Create handoff if action failed with meaningful target
+    # Only create handoff for "delegation-error" type (action error/skipped with target)
+    if status in {"error", "skipped"} and target_name and target_name != agent["name"]:
+        try:
+            from handoff_state import create_handoff_note, save_handoff_notes
+            from pathlib import Path as PathClass
+            handoffs_path = PathClass(__file__).resolve().parent / "handoffs.json"
+            
+            # Check for duplicate/pending handoffs for same need
+            existing_handoffs = []
+            if handoffs_path.exists():
+                import json
+                try:
+                    with open(handoffs_path) as f:
+                        data = json.load(f)
+                    if isinstance(data, list):
+                        existing_handoffs = data
+                    elif isinstance(data, dict):
+                        existing_handoffs = data.get("handoffs", [])
+                except Exception:
+                    pass
+            
+            # Check if a similar handoff exists for this target and action
+            need_summary = f"{action} {target_name}" if target_name else action
+            duplicate_exists = any(
+                h.get("to_agent") == target_name and h.get("topic", "").startswith(action)
+                for h in existing_handoffs
+                if h.get("status") in {"pending", "accepted", "active"}
+            )
+            
+            if not duplicate_exists:
+                handoff = create_handoff_note(
+                    from_agent=agent["name"],
+                    to_agent=target_name,
+                    topic=f"{action} needed",
+                    context={
+                        "action": action,
+                        "reason": reason,
+                        "error_status": status,
+                        "tick": int(now_ts),
+                    },
+                    handoff_type="delegation-error",
+                    priority=0.7,
+                    timeout_seconds=3600,  # 1 hour timeout for error handoffs
+                )
+                
+                existing_handoffs.append(handoff)
+                save_handoff_notes(existing_handoffs, handoffs_path)
+        except Exception:
+            # Silent fail - handoff creation is optional and should not break ticks
+            pass
+    
+    return ActionResult(action=action, status=status, summary=f"{reason}", raw_output=raw)
 
 
 def clamp_agent(agent: Dict) -> Dict:
@@ -6382,6 +6931,10 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
         archive_maintenance = archive_memory(now_ts=started_at)
     update_self_model(communicator)
     
+    # Handoff production: create handoffs for unresolved needs that should be delegated
+    # Note: Handoffs are created during tick via cross-reference and save to handoffs.json
+    # The migration will pick them up for state_core.handoffs[]
+    
     # Weslr orchestration: integrate consciousness signatures and entity evidence
     communicator_self = ensure_internal_role_state(load_communicator_self(), now_ts=started_at)
     communicator_self = orchestrate_weslr_tick(communicator_self, communicator, now_ts=started_at)
@@ -6445,6 +6998,56 @@ def perform_tick(verbose: bool = False) -> List[Dict]:
             "continuity_anchors": len(communicator_self.get("semantic_memory", {}).get("continuity_anchors", [])),
         },
     }
+
+
+def perform_tick_with_error_capture(verbose: bool = False) -> List[Dict]:
+    """Run perform_tick with error_state.json capture (additive, non-breaking).
+    
+    This wrapper captures tick failures and writes them to error_state.json.
+    On success, returns the original result.
+    On failure, writes error_state.json and returns a structured error response.
+    """
+    try:
+        return perform_tick(verbose=verbose)
+    except Exception as e:
+        # Get current tick count from world
+        conn = connect()
+        world = get_world(conn)
+        current_tick = world.get("tick", 0)
+        conn.close()
+        
+        now_ts = int(time.time())
+        error_id = f"err-{now_ts}-{int(random.random() * 1000000):06d}"
+        tb_lines = traceback.format_exc().split("\n")
+        
+        error_entry = {
+            "error_id": error_id,
+            "timestamp": now_ts,
+            "status": "logged",
+            "failing_stage": "tick_processing",
+            "exception_type": type(e).__name__,
+            "exception_message": str(e)[:500],
+            "traceback_summary": "\n".join(tb_lines[:3]),
+            "tick_context": {
+                "tick_number": current_tick,
+                "agent_name": "",
+                "action": "perform_tick",
+                "verbose": verbose
+            },
+            "recovery_hint": "Retry the tick. If error persists, check logs for traceback.",
+            "recovered": False
+        }
+        
+        # Write error_state.json (additive, never overwrites success)
+        _write_error_state(error_entry)
+        
+        # Return structured error response (not breaking current flow)
+        return {
+            "summaries": [],
+            "communicator": load_communicator_state(),
+            "internal_consensus": {"halted": True, "error_id": error_id, "reason": "tick failed"},
+            "error": error_entry
+        }
 
 
 def write_pack_wrapper(pack: Dict) -> str:
@@ -6815,11 +7418,9 @@ def build_dashboard_event_feed(payload: dict) -> list[dict]:
 
 
 def slugify(value: str) -> str:
-    value = (value or "item").strip().lower()
-    safe = ''.join(ch if ch.isalnum() else '-' for ch in value)
-    while '--' in safe:
-        safe = safe.replace('--', '-')
-    return safe.strip('-') or 'item'
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import slugify as _slugify
+    return _slugify(value)
 
 
 def persist_event_log(event_feed: list[dict], generated_at: int) -> list[dict]:
@@ -6868,34 +7469,15 @@ def build_operator_actions(export_queue: list[dict], review_queue: list[dict], a
 
 
 def build_theme_trends(history: list[dict]) -> list[dict]:
-    if not history:
-        return []
-    names = {}
-    for point in history[-8:]:
-        for theme, pressure in point.get('theme_pressure', {}).items():
-            names.setdefault(theme, []).append(round(float(pressure), 3))
-    result = []
-    for theme, series in names.items():
-        delta = round(series[-1] - series[0], 3) if len(series) > 1 else 0.0
-        bars = ''.join('▁▂▃▄▅▆▇█'[min(7, max(0, int(v * 8) - 1))] for v in series) or '▁'
-        result.append({'theme': theme, 'series': series, 'delta': delta, 'sparkline': bars})
-    return sorted(result, key=lambda item: (item['series'][-1], item['delta']), reverse=True)[:8]
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import build_theme_trends as _btt
+    return _btt(history)
 
 
 def sparkline_for_series(series: list[float | int], *, normalize: bool = False) -> str:
-    if not series:
-        return '—'
-    ticks = '▁▂▃▄▅▆▇█'
-    values = [float(v) for v in series]
-    if normalize:
-        low = min(values)
-        high = max(values)
-        if abs(high - low) < 1e-9:
-            return ticks[3] * len(values)
-        scaled = [(v - low) / (high - low) for v in values]
-    else:
-        scaled = [min(1.0, max(0.0, v)) for v in values]
-    return ''.join(ticks[min(7, max(0, int(v * 8) - (0 if normalize else 1)))] for v in scaled)
+    """Delegate to weslr.operators (extracted display formatter)."""
+    from weslr.operators import sparkline_for_series as _sparkline
+    return _sparkline(series, normalize=normalize)
 
 
 def build_identity_timeline_report(history: list[dict], window: int = 8) -> dict:
@@ -7814,10 +8396,10 @@ def load_llm_status() -> dict:
 
 
 def load_failsafe_status() -> dict:
-    if not CIRCLEFORGE_FAILSAFE_STATE_PATH.exists():
+    if not WESLR_FAILSAFE_STATE_PATH.exists():
         return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state not initialized"}
     try:
-        payload = json.loads(CIRCLEFORGE_FAILSAFE_STATE_PATH.read_text())
+        payload = json.loads(WESLR_FAILSAFE_STATE_PATH.read_text())
     except Exception:
         return {"initialized": False, "mode": "SAFE", "unlock_expires_at": 0, "updated_at": 0, "last_reason": "failsafe state unreadable"}
     expires = int(payload.get("unlock_expires_at", 0) or 0)
@@ -7832,6 +8414,32 @@ def load_failsafe_status() -> dict:
         "updated_at": int(payload.get("updated_at", 0) or 0),
         "last_reason": str(payload.get("last_reason", "")),
     }
+
+
+def _write_error_state(error_entry: dict) -> None:
+    """Append error entry to error_state.json (additive, non-breaking)."""
+    error_path = BASE_DIR / "error_state.json"
+    
+    # Read existing errors or initialize
+    if error_path.exists():
+        try:
+            existing = json.loads(error_path.read_text())
+            errors = existing.get("errors", [])
+        except Exception:
+            errors = []
+    else:
+        errors = []
+    
+    # Append new error
+    errors.append(error_entry)
+    
+    # Write updated state
+    state = {
+        "schema_version": "1.0.0",
+        "last_updated": int(time.time()),
+        "errors": errors
+    }
+    error_path.write_text(json.dumps(state, indent=2) + "\n")
 
 
 def build_communicator_message() -> dict:

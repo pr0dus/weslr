@@ -328,7 +328,7 @@ def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] 
         message = generate_mathematical_expression(topic, related)
         metadata = {"type": "mathematical", "topics": [topic, related], "uncertainty": uncertainty}
     
-    return {
+    result = {
         "message": message,
         "type": expression_type,
         "metadata": metadata,
@@ -336,6 +336,26 @@ def generate_spontaneous_expression(communicator_self: Optional[Dict[str, Any]] 
         "uncertainty_at_generation": uncertainty,
         "active_topics": [t["topic"] for t in active_topics],
     }
+    
+    # Route through outbox for unified communication
+    try:
+        import outbox as ob
+        from sim import load_communicator_self as load_cs
+        
+        outbox_instance = ob.get_outbox()
+        outbox_instance.enqueue(message, "autonomous_expression", priority=ob.PRIORITY_AUTONOMOUS_EXPRESSION)
+        
+        # Load and update state with outbox metadata
+        cs = load_cs()
+        if ob.STATE_OUTBOX_STATS not in cs:
+            cs[ob.STATE_OUTBOX_STATS] = {}
+        cs[ob.STATE_OUTBOX_STATS]["last_outbox_type"] = "autonomous_expression"
+        # Don't persist the full outbox queue in v1 - keep it in-memory only
+    except Exception:
+        # Fallback if outbox fails - don't break communication
+        pass
+    
+    return result
 
 
 def maybe_autonomous_expression(communicator_self: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:

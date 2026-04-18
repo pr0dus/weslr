@@ -1,0 +1,11 @@
+{
+  "snapshot_count": 1,
+  "last_snapshot_at": "2026-04-03T10:46:55.917414Z",
+  "restore_attempts": 5,
+  "restore_success_count": 0,
+  "restore_skipped_count": 5,
+  "restore_blocked_count": 0,
+  "restore_error_count": 0,
+  "latest_confidence": 100.0,
+  "latest_debt": 12.0
+}

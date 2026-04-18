@@ -1,4 +1,7 @@
 # self_modifier.py - Weslr proposes its own code changes
+# LEGACY/EXPERIMENTAL: Not the canonical improvement/governance lane.
+# Canonical lane: adequacy → CDI proposal (with lineage/evidence) → operator approve/deny/refine → execution eligibility (governed).
+# Keep this isolated; do not treat as protected-core improvement.
 from __future__ import annotations
 
 import time

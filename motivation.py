@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from config import CIRCLEFORGE_LANGUAGE
+from config import WESLR_LANGUAGE
 
 
 def resolve_or_extend_question(communicator: dict, chosen: dict, final_action: str | None) -> tuple[str, bool]:
     from languages import de, en
     
-    lang_module = de if CIRCLEFORGE_LANGUAGE == "de" else en
+    lang_module = de if WESLR_LANGUAGE == "de" else en
     
     previous_question = str(communicator.get("unresolved_question", "")).strip()
     theme = chosen.get("niche_theme") or communicator.get("active_pursuit") or "current pressure"

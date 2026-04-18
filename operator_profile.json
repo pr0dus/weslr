@@ -1,0 +1,67 @@
+{
+  "_onboarding_history": [
+    {
+      "timestamp": "2026-04-16T18:46:53.469403",
+      "answers": {
+        "phase": "onboarding",
+        "name": "Alice",
+        "role": "SRE",
+        "urgency": "high",
+        "checkin_style": "daily",
+        "adaptation_level": "propose"
+      }
+    },
+    {
+      "timestamp": "2026-04-16T18:52:05.861802",
+      "answers": {
+        "phase": "onboarding",
+        "name": "Bob",
+        "role": "DevOps",
+        "urgency": "normal",
+        "checkin_style": "daily",
+        "adaptation_level": "propose"
+      }
+    },
+    {
+      "timestamp": "2026-04-16T18:52:07.131383",
+      "answers": {
+        "phase": "onboarding",
+        "name": "Carol",
+        "role": "SecEng",
+        "urgency": "normal",
+        "checkin_style": "daily",
+        "adaptation_level": "propose"
+      }
+    }
+  ],
+  "name": "Carol",
+  "role": "SecEng",
+  "persona": "",
+  "primary_outcome": "",
+  "time_horizon": "",
+  "objectives": [],
+  "failure_conditions": "",
+  "red_lines": "",
+  "legal_constraints": "",
+  "audit_level": "",
+  "metric_primary": "",
+  "metric_secondary": "",
+  "checkin_style": "daily",
+  "urgency": "normal",
+  "blockers": "",
+  "standup_cadence": "",
+  "allowed_capabilities": [],
+  "allowed_custom": "",
+  "forbidden_actions": "",
+  "byop_policy": "",
+  "external_permissions": [],
+  "external_custom": "",
+  "knowledge_sharing": "",
+  "federation_permissions": "",
+  "adaptation_level": "propose",
+  "adaptation_limits": "",
+  "escalation_primary": "",
+  "escalation_secondary": "",
+  "escalation_channel": "",
+  "_last_updated": "2026-04-16T18:52:07.131409"
+}

@@ -1,0 +1,22 @@
+{
+  "migration_at": 1775129385,
+  "migrated_by": "migrate_state.py",
+  "state_core_path": "/data/data/com.termux/files/home/.openclaw/workspace/state_core.json",
+  "state_sync_path": "/data/data/com.termux/files/home/.openclaw/workspace/state_sync.json",
+  "snapshot_path": null,
+  "legacy_files_read": [
+    "communicator_self.json",
+    "relationships.json",
+    "opportunity_board.json",
+    "entity_graph.json",
+    "handoffs.json",
+    "event_log.json",
+    "needs.json",
+    "artifacts.json"
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  }
+}

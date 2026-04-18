@@ -1,0 +1,573 @@
+"""TIA Openness raw export envelope.
+
+Minimal raw import intake for TIA export artifacts.
+No normalization. No entity mapping. Just envelope wrapping.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+import json
+from pathlib import Path
+import time
+
+
+SIEMENS_TIA_PROMOTED_FIELDS = {
+    "device": {
+        "hardware_version": {"dst": "hw_ver", "truthy": True},
+        "firmware_version": {"dst": "fw_ver", "truthy": True},
+    },
+    "plc": {
+        "rack": {"dst": "rack", "truthy": False},
+        "slot": {"dst": "slot", "truthy": False},
+        "ip_address": {"dst": "ip", "truthy": True},
+    },
+    "tag": {
+        "data_type": {"dst": "type", "truthy": True},
+        "address": {"dst": "addr", "truthy": True},
+        "comment": {"dst": "desc", "truthy": True},
+    },
+}
+
+
+def _apply_promotions(normalized_list: list, kind: str) -> None:
+    """Apply Siemens/TIA promoted field mapping to normalized items in-place.
+    
+    Field policies:
+    - rack, slot: promote if value is not None (allows 0)
+    - hardware_version, firmware_version, ip_address, data_type, address, comment:
+      promote only if truthy (preserves current 'if raw_...:' semantics)
+    - No-op if kind has no profile defined
+    """
+    profile = SIEMENS_TIA_PROMOTED_FIELDS.get(kind, {})
+    if not profile:
+        return
+    for item in normalized_list:
+        raw = item.get("raw", {})
+        for src_key, config in profile.items():
+            dst_key = config["dst"]
+            truthy = config["truthy"]
+            src_val = raw.get(src_key)
+            if truthy:
+                # Preserve current behavior: promote only if truthy
+                if src_val:
+                    item[dst_key] = src_val
+            else:
+                # Preserve current PLC behavior: promote if not None (allows 0)
+                if src_val is not None:
+                    item[dst_key] = src_val
+
+
+def load_tia_export(filepath: str | Path) -> dict:
+    """Load TIA export JSON artifact."""
+    path = Path(filepath)
+    if not path.exists():
+        raise FileNotFoundError(f"TIA export not found: {filepath}")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def validate_export_shape(export: dict) -> dict:
+    """Validate minimal TIA export shape.
+
+    Returns dict with 'ok', 'warnings', 'errors'.
+    """
+    result = {"ok": True, "warnings": [], "errors": []}
+
+    if not isinstance(export, dict):
+        result["ok"] = False
+        result["errors"].append("TIA export must be a JSON object")
+        return result
+
+    if "project" not in export:
+        result["warnings"].append("TIA export missing 'project' field")
+
+    if "project" in export and not isinstance(export.get("project"), dict):
+        result["warnings"].append("TIA project must be an object")
+
+    if "project" in export and "name" not in export.get("project", {}):
+        result["warnings"].append("TIA project missing 'name' field")
+
+    return result
+
+
+def create_raw_import_envelope(filepath: str | Path) -> dict:
+    """Create canonical raw import envelope for TIA export."""
+    path = Path(filepath)
+    filename = path.name
+
+    try:
+        export = load_tia_export(filepath)
+    except FileNotFoundError as e:
+        return {"ok": False, "error": str(e), "filename": filename}
+    except json.JSONDecodeError as e:
+        return {"ok": False, "error": f"Invalid JSON: {e}", "filename": filename}
+    except Exception as e:
+        return {"ok": False, "error": f"Load error: {e}", "filename": filename}
+
+    validation = validate_export_shape(export)
+
+    now_ts = int(time.time() * 1000)
+
+    # Use validation to determine safe defaults
+    export_name = "Unknown"
+    if validation.get("ok"):
+        export_name = export.get("project", {}).get("name", "Unknown")
+
+    envelope = {
+        "ok": validation["ok"],
+        "envelope_type": "tia_raw_import",
+        "filename": filename,
+        "imported_at": now_ts,
+        "export_timestamp": "",
+        "collector_version": "",
+        "project_name": export_name,
+        "validation": validation,
+        "raw_data": export,
+    }
+    return envelope
+
+
+def save_import_envelope(envelope: dict, output_path: str | Path) -> dict:
+    """Save import envelope to JSON file."""
+    path = Path(output_path)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(envelope, f, indent=2)
+        return {"ok": True, "saved_to": str(path)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def normalize_tia_envelope(envelope: dict) -> dict:
+    """Normalize raw TIA import envelope to canonical industrial structure.
+
+    Lightweight wrapper - no assumption-heavy field mapping.
+    """
+
+    def _safe_list(value: Any) -> tuple[list, str | None]:
+        """Return empty list and warning if value is missing or not a list."""
+        if not isinstance(value, list):
+            if value is None:
+                return [], "field is missing"
+            return [], "field is not a list"
+        return value, None
+
+    raw = envelope.get("raw_data", {})
+    raw_validation = envelope.get("validation", {})
+
+    warnings = []
+
+    # Safe extraction with defensive handling per section
+    project = raw.get("project", {})
+    if not isinstance(project, dict):
+        project = {}
+        warnings.append("project is not an object")
+
+    devices, dev_warn = _safe_list(raw.get("devices", []))
+    if dev_warn:
+        warnings.append(f"devices: {dev_warn}")
+
+    plcs, plc_warn = _safe_list(raw.get("plcs", []))
+    if plc_warn:
+        warnings.append(f"plcs: {plc_warn}")
+
+    cpus, cpu_warn = _safe_list(raw.get("cpus", []))
+    if cpu_warn:
+        warnings.append(f"cpus: {cpu_warn}")
+
+    modules, mod_warn = _safe_list(raw.get("modules", []))
+    if mod_warn:
+        warnings.append(f"modules: {mod_warn}")
+
+    tags, tag_warn = _safe_list(raw.get("tags", []))
+    if tag_warn:
+        warnings.append(f"tags: {tag_warn}")
+
+    # Normalize project (minimal)
+    normalized_project = {
+        "id": project.get("id", ""),
+        "name": project.get("name", "Unknown"),
+        "kind": "project",
+        "raw": project,
+    }
+
+    # Normalize collections (lightweight wrappers)
+    def _normalize_item(item: dict, kind: str) -> dict:
+        """Lightweight item wrapper: id, name, kind, raw."""
+        return {
+            "id": item.get("id", ""),
+            "name": item.get("name", ""),
+            "kind": kind,
+            "raw": item,
+        }
+
+    normalized_devices = [_normalize_item(d, "device") for d in devices]
+    normalized_plcs = [_normalize_item(p, "plc") for p in plcs]
+    normalized_cpus = [_normalize_item(c, "cpu") for c in cpus]
+    normalized_modules = [_normalize_item(m, "module") for m in modules]
+    normalized_tags = [_normalize_item(t, "tag") for t in tags]
+
+    # Promote Siemens/TIA fields from raw → normalized (approved list)
+    _apply_promotions(normalized_devices, "device")
+    _apply_promotions(normalized_plcs, "plc")
+    _apply_promotions(normalized_tags, "tag")
+
+    # Build final structure
+    now_ts = int(time.time() * 1000)
+    return {
+        "ok": envelope.get("ok", False),
+        "envelope_type": "tia_normalized",
+        "project": normalized_project,
+        "devices": normalized_devices,
+        "plcs": normalized_plcs,
+        "cpus": normalized_cpus,
+        "modules": normalized_modules,
+        "tags": normalized_tags,
+        "metadata": {
+            "validation": raw_validation,
+            "source_envelope": envelope.get("filename", ""),
+            "imported_at": envelope.get("imported_at", 0),
+            "normalization": {
+                "warnings": warnings,
+                "item_counts": {
+                    "devices": len(normalized_devices),
+                    "plcs": len(normalized_plcs),
+                    "cpus": len(normalized_cpus),
+                    "modules": len(normalized_modules),
+                    "tags": len(normalized_tags),
+                    "total_items": (
+                        len(normalized_devices) +
+                        len(normalized_plcs) +
+                        len(normalized_cpus) +
+                        len(normalized_modules) +
+                        len(normalized_tags)
+                    ),
+                },
+                "normalized_at": now_ts,
+            },
+        },
+    }
+
+
+def save_normalized_envelope(normalized: dict, output_path: str | Path) -> dict:
+    """Save normalized TIA envelope to JSON file."""
+    path = Path(output_path)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(normalized, f, indent=2)
+        return {"ok": True, "saved_to": str(path)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def record_tia_import_history(envelope: dict, normalized: dict, raw_path: str | Path, norm_path: str | Path, history_path: str | Path) -> dict:
+    """Append a history record for a TIA import.
+
+    Status rules:
+    - error: if raw envelope is not ok
+    - warning: if validation warnings OR normalization warnings exist
+    - ok: otherwise
+    """
+    history_p = Path(history_path)
+
+    # Determine status
+    project_name = envelope.get("project_name", "Unknown")
+    status = "ok"
+    if not envelope.get("ok"):
+        status = "error"
+    else:
+        has_val_warnings = bool(envelope.get("validation", {}).get("warnings"))
+        has_norm_warnings = bool(normalized.get("metadata", {}).get("normalization", {}).get("warnings"))
+        if has_val_warnings or has_norm_warnings:
+            status = "warning"
+
+    # Build record
+    record = {
+        "timestamp": int(time.time() * 1000),
+        "source_file": envelope.get("filename", ""),
+        "raw_output": str(raw_path),
+        "normalized_output": str(norm_path),
+        "project_name": project_name,
+        "status": status,
+        "validation": {
+            "ok": envelope.get("validation", {}).get("ok", False),
+            "warnings": len(envelope.get("validation", {}).get("warnings", [])),
+            "errors": len(envelope.get("validation", {}).get("errors", [])),
+        },
+        "item_counts": {
+            "devices": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("devices", 0),
+            "plcs": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("plcs", 0),
+            "cpus": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("cpus", 0),
+            "modules": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("modules", 0),
+            "tags": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("tags", 0),
+            "total_items": normalized.get("metadata", {}).get("normalization", {}).get("item_counts", {}).get("total_items", 0),
+        },
+    }
+
+    # Read existing history (append-safe)
+    try:
+        if history_p.exists():
+            with open(history_p, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        else:
+            history = {"records": []}
+    except Exception:
+        history = {"records": []}
+
+    # Append record
+    history["records"].append(record)
+
+    # Save history
+    try:
+        with open(history_p, "w", encoding="utf-8") as f:
+            json.dump(history, f, indent=2)
+        return {"ok": True, "record": record}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def list_tia_import_history(history_path: str | Path | None = None, limit: int | None = None) -> dict:
+    """Read recent TIA import history records.
+
+    Returns records newest-first.
+    If history_path is None, defaults to tia_import_history.json in workspace root.
+    If limit is None or <= 0, uses default 10.
+    """
+    if history_path is None:
+        history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+    else:
+        history_path = Path(history_path)
+
+    if not history_path.exists():
+        return {"ok": False, "error": f"History file not found: {history_path}"}
+
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+    records = history.get("records", [])
+    if not records:
+        return {"ok": True, "history_file": str(history_path), "total_records": 0, "records": []}
+
+    # Normalize limit
+    if limit is None or limit <= 0:
+        limit = 10
+    if limit > len(records):
+        limit = len(records)
+
+    # Return newest-first, slice to limit
+    recent = list(reversed(records))[:limit]
+
+    return {
+        "ok": True,
+        "history_file": str(history_path),
+        "total_records": len(records),
+        "records": recent,
+    }
+
+
+def get_tia_import_record(history_path: str | Path | None = None, idx: int | None = None, source: str | None = None) -> dict | None:
+    """Fetch a single TIA import record by index or source file.
+    
+    Returns None if not found.
+    History is newest-first, so idx=1 means latest.
+    Does not use limit — reads full history to ensure all records are accessible.
+    """
+    if history_path is None:
+        history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+    else:
+        history_path = Path(history_path)
+    
+    if not history_path.exists():
+        return None
+    
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception:
+        return None
+    
+    records = history.get("records", [])
+    if not records:
+        return None
+    
+    records = list(reversed(records))
+    
+    if idx is not None:
+        if idx < 1 or idx > len(records):
+            return None
+        return records[idx - 1]
+    
+    if source is not None:
+        for r in records:
+            if r.get("source_file", "").endswith(source) or r.get("source_file") == source:
+                return r
+        return None
+    
+    return records[0]
+
+
+def get_latest_tia_summary(history_path: str | Path | None = None) -> dict:
+    """Return a compact summary of the latest TIA import record.
+    
+    Reuses get_tia_import_record with idx=1 to ensure consistent latest-record semantics
+    across CLI (tia-show) and dashboard (self-mod/index.html).
+    
+    Returns dict with:
+      - ok: bool
+      - summary: dict or None (if ok)
+      - error: str or None (if not ok)
+    """
+    record = get_tia_import_record(history_path=history_path, idx=1)
+    if record is None:
+        if history_path is None:
+            history_path = Path(__file__).resolve().parent / "tia_import_history.json"
+        hp_str = str(history_path)
+        try:
+            if not Path(history_path).exists():
+                return {"ok": False, "summary": None, "error": "History file not found"}
+        except Exception:
+            return {"ok": False, "summary": None, "error": "Failed to locate history file"}
+        return {"ok": False, "summary": None, "error": "No history records found"}
+    
+    summary = {
+        "project_name": record.get("project_name", "Unknown"),
+        "timestamp": record.get("timestamp", 0),
+        "status": record.get("status", "unknown"),
+        "devices": record.get("item_counts", {}).get("devices", 0),
+        "plcs": record.get("item_counts", {}).get("plcs", 0),
+        "cpus": record.get("item_counts", {}).get("cpus", 0),
+        "modules": record.get("item_counts", {}).get("modules", 0),
+        "tags": record.get("item_counts", {}).get("tags", 0),
+        "raw_output": record.get("raw_output", ""),
+        "normalized_output": record.get("normalized_output", ""),
+    }
+    
+    norm_path = record.get("normalized_output", "")
+    if norm_path:
+        try:
+            with open(norm_path, "r", encoding="utf-8") as nf:
+                norm = json.load(nf)
+                plcs = norm.get("plcs", [])
+                if plcs:
+                    plc = plcs[0]
+                    plc_info = {}
+                    if plc.get("rack") is not None:
+                        plc_info["rack"] = plc["rack"]
+                    if plc.get("slot") is not None:
+                        plc_info["slot"] = plc["slot"]
+                    if plc.get("ip"):
+                        plc_info["ip"] = plc["ip"]
+                    if plc_info:
+                        summary["first_plc"] = plc_info
+                devices = norm.get("devices", [])
+                if devices:
+                    dev = devices[0]
+                    device_info = {}
+                    if dev.get("hw_ver"):
+                        device_info["hw_ver"] = dev["hw_ver"]
+                    if dev.get("fw_ver"):
+                        device_info["fw_ver"] = dev["fw_ver"]
+                    if device_info:
+                        summary["first_device"] = device_info
+                tags = norm.get("tags", [])
+                if tags:
+                    tag = tags[0]
+                    tag_info = {}
+                    if tag.get("type"):
+                        tag_info["type"] = tag["type"]
+                    if tag.get("addr"):
+                        tag_info["addr"] = tag["addr"]
+                    if tag.get("desc"):
+                        tag_info["desc"] = tag["desc"]
+                    if tag_info:
+                        summary["first_tag"] = tag_info
+        except Exception:
+            pass
+    
+    # Check for previous record to compute diff
+    prev_record = get_tia_import_record(history_path=history_path, idx=2)
+    if prev_record is not None:
+        # Parse previous normalized file for first_plc/device/tag (minimal)
+        prev_norm_path = prev_record.get("normalized_output", "")
+        prev_first_plc = prev_first_device = prev_first_tag = None
+        if prev_norm_path:
+            try:
+                with open(prev_norm_path, "r", encoding="utf-8") as nf:
+                    norm = json.load(nf)
+                    # Parse first_plc
+                    plcs = norm.get("plcs", [])
+                    if plcs:
+                        plc = plcs[0]
+                        plc_info = {}
+                        if plc.get("rack") is not None: plc_info["rack"] = plc["rack"]
+                        if plc.get("slot") is not None: plc_info["slot"] = plc["slot"]
+                        if plc.get("ip"): plc_info["ip"] = plc["ip"]
+                        if plc_info: prev_first_plc = plc_info
+                    # Parse first_device
+                    devices = norm.get("devices", [])
+                    if devices:
+                        dev = devices[0]
+                        dev_info = {}
+                        if dev.get("hw_ver"): dev_info["hw_ver"] = dev["hw_ver"]
+                        if dev.get("fw_ver"): dev_info["fw_ver"] = dev["fw_ver"]
+                        if dev_info: prev_first_device = dev_info
+                    # Parse first_tag
+                    tags = norm.get("tags", [])
+                    if tags:
+                        tag = tags[0]
+                        tag_info = {}
+                        if tag.get("type"): tag_info["type"] = tag["type"]
+                        if tag.get("addr"): tag_info["addr"] = tag["addr"]
+                        if tag.get("desc"): tag_info["desc"] = tag["desc"]
+                        if tag_info: prev_first_tag = tag_info
+            except Exception:
+                pass
+        
+        # Compute diff
+        diff = {"counts": {}, "first_plc": None, "first_device": None, "first_tag": None}
+        
+        # Count deltas
+        for field in ["devices", "plcs", "cpus", "modules", "tags"]:
+            curr_val = summary.get(field, 0)
+            prev_val = prev_record.get("item_counts", {}).get(field, 0)
+            delta = curr_val - prev_val
+            if delta != 0:
+                diff["counts"][field] = f"{delta:+d}"
+        
+        # PLC deltas
+        curr_plc = summary.get("first_plc", {})
+        if prev_first_plc:
+            plc_diff = {}
+            for key in ["rack", "slot", "ip"]:
+                if curr_plc.get(key) != prev_first_plc.get(key):
+                    plc_diff[key] = f"{prev_first_plc.get(key)} → {curr_plc.get(key)}"
+            if plc_diff:
+                diff["first_plc"] = plc_diff
+        
+        # Device deltas
+        curr_dev = summary.get("first_device", {})
+        if prev_first_device:
+            dev_diff = {}
+            for key in ["hw_ver", "fw_ver"]:
+                if curr_dev.get(key) != prev_first_device.get(key):
+                    dev_diff[key] = f"{prev_first_device.get(key)} → {curr_dev.get(key)}"
+            if dev_diff:
+                diff["first_device"] = dev_diff
+        
+        # Tag deltas
+        curr_tag = summary.get("first_tag", {})
+        if prev_first_tag:
+            tag_diff = {}
+            for key in ["type", "addr", "desc"]:
+                if curr_tag.get(key) != prev_first_tag.get(key):
+                    tag_diff[key] = f"{prev_first_tag.get(key)} → {curr_tag.get(key)}"
+            if tag_diff:
+                diff["first_tag"] = tag_diff
+        
+        summary["diff"] = diff
+    
+    return {"ok": True, "summary": summary, "error": None}

@@ -1,0 +1,46 @@
+{
+  "conflict_id": "conflict_20260406184619_0003",
+  "conflict_context": "policy_profile_vs_deployment",
+  "competing_rules": [
+    {
+      "rule_id": "evidence_strictness_high",
+      "rule_type": "evidence_strictness",
+      "rule_value": "high",
+      "precedence_level": "medium",
+      "override_type": "none",
+      "source": {
+        "source_type": "policy_profile",
+        "source_id": "profile_home",
+        "source_context": null
+      }
+    },
+    {
+      "rule_id": "evidence_strictness_mod",
+      "rule_type": "evidence_strictness",
+      "rule_value": "moderate",
+      "precedence_level": "medium",
+      "override_type": "none",
+      "source": {
+        "source_type": "deployment_persona",
+        "source_id": "deployment_education",
+        "source_context": null
+      }
+    }
+  ],
+  "governing_rule": {
+    "rule_id": "evidence_strictness_high",
+    "rule_type": "evidence_strictness",
+    "rule_value": "high",
+    "precedence_level": "medium",
+    "override_type": "none",
+    "source": {
+      "source_type": "policy_profile",
+      "source_id": "profile_home",
+      "source_context": null
+    }
+  },
+  "overriding_rule": null,
+  "resolved_value": "high",
+  "explanation": "Equal precedence and no override; policy_profile rule 'evidence_strictness_high' takes precedence by default",
+  "timestamp": "2026-04-06T18:46:19.731889Z"
+}

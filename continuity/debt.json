@@ -1,0 +1,10 @@
+{
+  "current_debt": 0.04,
+  "max_debt": 0.04,
+  "debt_history": [
+    {
+      "timestamp": 1775208829,
+      "debt": 0.04
+    }
+  ]
+}

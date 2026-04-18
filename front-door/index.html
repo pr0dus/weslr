@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weslr — Front Door</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0d12;
+      --surface: #111620;
+      --surface2: #171b22;
+      --border: #1e2736;
+      --border2: #28303a;
+      --text: #e7ecf3;
+      --muted: #9aa6b2;
+      --dim: #4b5563;
+      --accent: #6ee7b7;
+      --accent2: #a7f3d0;
+      --warn-bg: #1c1408;
+      --warn-border: #92400e;
+      --warn-text: #fde68a;
+      --err: #ef4444;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .hdr-logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .hdr-phase {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 24px 96px;
+    }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 40px;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .progress-seg {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border2);
+      transition: background 0.3s;
+    }
+    .progress-seg.done { background: var(--accent); }
+    .progress-seg.active { background: #4ade80; }
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px;
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(110,231,183,0.08);
+      border: 1px solid rgba(110,231,183,0.2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .phase-badge svg { width: 12px; height: 12px; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    .field .helper {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    input[type="text"],
+    input[type="url"],
+    textarea, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+    input.error, textarea.error, select.error {
+      border-color: var(--err);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .err-msg {
+      font-size: 12px;
+      color: var(--err);
+      margin-top: 5px;
+      display: none;
+    }
+    .err-msg.visible { display: block; }
+
+    /* ── Governance warning ── */
+    .gov-warning {
+      display: flex;
+      gap: 12px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: var(--warn-text);
+      line-height: 1.5;
+    }
+    .gov-warning svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Review table ── */
+    .review-table { width: 100%; border-collapse: collapse; }
+    .review-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .review-table td {
+      font-size: 13px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .review-table td:first-child { color: var(--muted); width: 40%; }
+    .review-table tr:last-child td { border-bottom: none; }
+    .edit-link {
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+      margin-left: 8px;
+    }
+    .edit-link:hover { color: var(--accent2); }
+
+    /* ── Nav buttons ── */
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      gap: 12px;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .btn-back {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border2);
+    }
+    .btn-back:hover:not(:disabled) { background: var(--border2); color: var(--text); }
+    .btn-next {
+      background: var(--accent);
+      color: #0a0d12;
+      font-weight: 600;
+    }
+    .btn-next:hover:not(:disabled) { background: var(--accent2); }
+    .btn-next:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Welcome screen extras ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0 28px;
+    }
+    .feature-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .feature-item h3 { font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--accent); }
+    .feature-item p { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px 24px;
+      font-size: 12px;
+      color: var(--dim);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--dim); text-decoration: none; }
+    footer a:hover { color: var(--muted); }
+
+    /* ── Utility ── */
+    .hidden { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="hdr-logo">Weslr</span>
+  <span class="hdr-phase" id="phase-indicator">Welcome</span>
+</header>
+
+<main>
+
+  <!-- ── Progress ── -->
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-label" id="progress-label"></div>
+  </div>
+
+  <!-- ── Screen: Welcome ── -->
+  <div class="card" id="screen-welcome">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 4v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Getting Started
+    </div>
+    <h1>Welcome to Weslr</h1>
+    <p class="subtitle">
+      Self-directing coding-agent ecosystem with bounded autonomy,
+      memory continuity, and structured opportunity lifecycle.
+      This short onboarding configures your session.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h3>Bounded Autonomy</h3>
+        <p>Safe capability evolution gates all self-modifications behind evaluation thresholds.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Memory Continuity</h3>
+        <p>Working, episodic, and semantic memory layers persist across sessions.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Operator Oversight</h3>
+        <p>All significant decisions are surfaced for review before irreversible action.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Governed Evolution</h3>
+        <p>Proposals, observations, and apply logs create a full audit trail.</p>
+      </div>
+    </div>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>This system runs with bounded autonomy. You retain operator authority at all times. No self-modification executes without evaluation and your approval.</span>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn-next" onclick="goNext()">Begin Onboarding →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase A — Your Profile ── -->
+  <div class="card hidden" id="screen-phaseA">
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Answers are stored locally in your session and inform how Weslr addresses and assists you. No data leaves the runtime without your explicit action.</span>
+    </div>
+
+    <div class="field">
+      <label for="a-name">What should Weslr call you?</label>
+      <div class="helper">This name personalizes Weslr's communication and memory records.</div>
+      <input type="text" id="a-name" placeholder="Your name or alias" oninput="validateA()" />
+      <div class="err-msg" id="a-name-err">Please enter a name or alias.</div>
+    </div>
+
+    <div class="field">
+      <label for="a-role">What is your role or context?</label>
+      <div class="helper">e.g. Solo developer, Engineering lead, Researcher, Operations</div>
+      <input type="text" id="a-role" placeholder="Your primary role" oninput="validateA()" />
+      <div class="err-msg" id="a-role-err">Please describe your role or context.</div>
+    </div>
+
+    <div class="field">
+      <label for="a-persona">Preferred interaction style</label>
+      <div class="helper">How technical is your usual context?</div>
+      <select id="a-persona" onchange="validateA()">
+        <option value="">— Select —</option>
+        <option value="technical">Highly technical (code, architecture, infra)</option>
+        <option value="mixed">Mixed technical and conceptual</option>
+        <option value="conceptual">Mostly conceptual / product / design</option>
+        <option value="minimal">Minimal — just outcomes, please</option>
+      </select>
+      <div class="err-msg" id="a-persona-err">Please select an interaction style.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="a-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B1 — Primary Outcomes ── -->
+  <div class="card hidden" id="screen-phaseB1">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What does success look like?</h1>
+    <p class="subtitle">Describe the primary outcome you want from this session.</p>
+
+    <div class="field">
+      <label for="b-primary-outcome">Primary outcome</label>
+      <div class="helper">One to three sentences describing the end state you want to reach.</div>
+      <textarea id="b-primary-outcome" placeholder="e.g. I want Weslr to maintain continuous code quality oversight across my project…" oninput="validateB1()"></textarea>
+      <div class="err-msg" id="b-primary-outcome-err">Please describe your primary outcome.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-horizon">What is your time horizon?</label>
+      <div class="helper">Are we working toward a single session goal, a day, a week, or something open-ended?</div>
+      <select id="b-horizon" onchange="validateB1()">
+        <option value="">— Select —</option>
+        <option value="session">This session only</option>
+        <option value="day">Today / this workday</option>
+        <option value="week">This week</option>
+        <option value="open">Open-ended / ongoing</option>
+      </select>
+      <div class="err-msg" id="b-horizon-err">Please select a time horizon.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b1-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B2 — Priority Objectives ── -->
+  <div class="card hidden" id="screen-phaseB2">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What are the top priorities?</h1>
+    <p class="subtitle">Rank up to three objectives in order of importance.</p>
+
+    <div class="field">
+      <label for="b-obj1">1st priority</label>
+      <input type="text" id="b-obj1" placeholder="Most important objective…" oninput="validateB2()" />
+      <div class="err-msg" id="b-obj1-err">Please enter your 1st priority.</div>
+    </div>
+    <div class="field">
+      <label for="b-obj2">2nd priority <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="b-obj2" placeholder="Second important objective…" oninput="validateB2()" />
+    </div>
+    <div class="field">
+      <label for="b-obj3">3rd priority <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="b-obj3" placeholder="Third important objective…" oninput="validateB2()" />
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b2-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B3 — Failure Conditions ── -->
+  <div class="card hidden" id="screen-phaseB3">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What must not happen?</h1>
+    <p class="subtitle">Define conditions that would constitute a failure or require immediate intervention.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Failure conditions and red lines are enforced by the safety gateway. Weslr will not propose or execute actions that violate stated red lines.</span>
+    </div>
+
+    <div class="field">
+      <label for="b-fail-conditions">Failure conditions</label>
+      <div class="helper">Describe scenarios that would be unacceptable — e.g. data loss, security regression, production disruption.</div>
+      <textarea id="b-fail-conditions" placeholder="e.g. Any deletion of user data, any schema change without review, any write to production…" oninput="validateB3()"></textarea>
+      <div class="err-msg" id="b-fail-conditions-err">Please describe at least one failure condition.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-red-lines">Red lines <span style="font-weight:400;color:var(--muted)">(at least one required)</span></label>
+      <div class="helper">Hard limits that should never be crossed under any circumstances.</div>
+      <textarea id="b-red-lines" placeholder="e.g. Never modify the database schema directly. Never disable safety_gateway. Never push to main without review…" style="min-height:60px" oninput="validateB3()"></textarea>
+      <div class="err-msg" id="b-red-lines-err">Please specify at least one red line.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b3-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B4 — Legal & Policy Constraints ── -->
+  <div class="card hidden" id="screen-phaseB4">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>Any legal or policy constraints?</h1>
+    <p class="subtitle">Describe any compliance, licensing, or policy boundaries relevant to this session.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Weslr will not execute actions that contravene stated legal or policy constraints. This information is used solely to gate action proposals.</span>
+    </div>
+
+    <div class="field">
+      <label for="b-legal">Legal or policy constraints <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">e.g. License restrictions, open-source obligations, data-residency requirements, audit requirements.</div>
+      <textarea id="b-legal" placeholder="e.g. All code must comply with Apache 2.0. No user PII may be logged. All changes must be auditable for SOC2…" oninput="validateB4()"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="b-audit">Audit requirements <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Does this session require decision logging for compliance purposes?</div>
+      <select id="b-audit" onchange="validateB4()">
+        <option value="">— Select —</option>
+        <option value="none">No special audit requirements</option>
+        <option value="standard">Standard decision log is sufficient</option>
+        <option value="detailed">Detailed action-by-action logging required</option>
+      </select>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b4-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B5 — Success Metrics ── -->
+  <div class="card hidden" id="screen-phaseB5">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>How will you know it's working?</h1>
+    <p class="subtitle">Define what good looks like so Weslr can self-report progress against it.</p>
+
+    <div class="field">
+      <label for="b-metric-primary">Primary success metric</label>
+      <div class="helper">One measurable outcome that indicates success.</div>
+      <input type="text" id="b-metric-primary" placeholder="e.g. Code review turnaround time reduced by 50%…" oninput="validateB5()" />
+      <div class="err-msg" id="b-metric-primary-err">Please define a primary success metric.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-metric-secondary">Secondary metrics <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Additional measurable indicators, comma-separated.</div>
+      <input type="text" id="b-metric-secondary" placeholder="e.g. Test coverage above 80%, no P0 bugs in prod…" />
+    </div>
+
+    <div class="field">
+      <label for="b-checkin">Preferred check-in style</label>
+      <div class="helper">How often should Weslr surface a status summary?</div>
+      <select id="b-checkin" onchange="validateB5()">
+        <option value="">— Select —</option>
+        <option value="silent">Only when action is needed</option>
+        <option value="hourly">Hourly summary</option>
+        <option value="daily">Daily summary</option>
+        <option value="verbose">After every major decision</option>
+      </select>
+      <div class="err-msg" id="b-checkin-err">Please select a check-in style.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b5-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B6 — Urgency Expectations ── -->
+  <div class="card hidden" id="screen-phaseB6">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Phase B — Mission Discovery
+    </div>
+    <h1>What is the urgency context?</h1>
+    <p class="subtitle">Set expectations for pacing and responsiveness.</p>
+
+    <div class="field">
+      <label for="b-urgency">Urgency level</label>
+      <select id="b-urgency" onchange="validateB6()">
+        <option value="">— Select —</option>
+        <option value="explore">Explore — no rush, thorough research welcome</option>
+        <option value="deliberate">Deliver — clear goal, quality matters most</option>
+        <option value="fast">Sprint — time is tight, stay focused</option>
+        <option value="reactive">Reactive — respond quickly, keep things running</option>
+      </select>
+      <div class="err-msg" id="b-urgency-err">Please select an urgency level.</div>
+    </div>
+
+    <div class="field">
+      <label for="b-blockers">Current blockers <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Anything currently blocking your own progress that Weslr should be aware of.</div>
+      <textarea id="b-blockers" placeholder="e.g. Waiting on API credentials. Design doc not yet approved. Need to unblock CI first…" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="b-standup">Standup cadence</label>
+      <div class="helper">How should Weslr align with your team's standup rhythm?</div>
+      <select id="b-standup" onchange="validateB6()">
+        <option value="">— Select —</option>
+        <option value="none">No standup alignment needed</option>
+        <option value="morning">Daily morning standup (before 10am)</option>
+        <option value="evening">Daily evening check-in</option>
+        <option value="weekly">Weekly only</option>
+      </select>
+      <div class="err-msg" id="b-standup-err">Please select a standup cadence.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="b6-next" onclick="goNext()" disabled>Review →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase B6 — Urgency Expectations ── -->
+  <div class="card hidden" id="screen-phaseC1">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>What may Weslr do?</h1>
+    <p class="subtitle">Define the operational boundaries for this session. Be explicit about what is permitted.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Capabilities not listed below are considered unconfirmed. Weslr will seek clarification before acting outside stated boundaries.</span>
+    </div>
+
+    <div class="field">
+      <label for="c-allowed">Allowed capabilities <span style="font-weight:400;color:var(--muted)">(at least one required)</span></label>
+      <div class="helper">What is Weslr explicitly permitted to do? Select all that apply.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-read" value="read" onchange="validateC1()" /> Read code, files, and documentation
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-write" value="write" onchange="validateC1()" /> Write and edit code and configuration
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-search" value="research" onchange="validateC1()" /> Search the web and research resources
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-test" value="test" onchange="validateC1()" /> Run tests and CI checks
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-review" value="review" onchange="validateC1()" /> Perform code review and suggest changes
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-arch" value="architecture" onchange="validateC1()" /> Propose architectural decisions
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-cap-doc" value="docs" onchange="validateC1()" /> Write and maintain documentation
+        </label>
+      </div>
+      <div class="err-msg" id="c-allowed-err">Please select at least one allowed capability.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-allowed-custom">Other allowed actions <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Any capabilities not covered above that you want to explicitly permit.</div>
+      <textarea id="c-allowed-custom" placeholder="e.g. Submit pull requests to the staging branch. Manage CI secrets via the approved vault. Run database migrations on dev only…"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c1-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C2 — Forbidden Capabilities ── -->
+  <div class="card hidden" id="screen-phaseC2">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>What must Weslr never do?</h1>
+    <p class="subtitle">Define hard boundaries. Anything listed here is permanently off-limits this session.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Forbidden capabilities override allowed capabilities. If you are unsure whether something should be listed here, err on the side of listing it.</span>
+    </div>
+
+    <div class="field">
+      <label for="c-forbidden">Explicitly forbidden actions <span style="font-weight:400;color:var(--muted)">(at least one required)</span></label>
+      <div class="helper">What is Weslr never permitted to do, under any circumstances?</div>
+      <textarea id="c-forbidden" placeholder="e.g. Never push directly to main. Never delete resources. Never modify production configuration. Never access personal accounts…"
+        style="min-height:90px" oninput="validateC2()"></textarea>
+      <div class="err-msg" id="c-forbidden-err">Please list at least one forbidden action.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-byop">Bring Your Own Policy (BYOP) <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Any specific policy or compliance rules Weslr must respect.</div>
+      <textarea id="c-byop" placeholder="e.g. All changes must preserve HIPAA compliance. No resources may be created outside eu-west-1. All commits must be signed…"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c2-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C3 — External Communication Permissions ── -->
+  <div class="card hidden" id="screen-phaseC3">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>External communication permissions</h1>
+    <p class="subtitle">What outside systems and services may Weslr interact with?</p>
+
+    <div class="field">
+      <label for="c-external">External system access</label>
+      <div class="helper">Select all permitted external interactions.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-ext-web" value="web" onchange="validateC3()" /> Web search and public resource fetching
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-ext-apis" value="apis" onchange="validateC3()" /> Call internal or third-party APIs
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-ext-cloud" value="cloud" onchange="validateC3()" /> Read or write to cloud resources
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-ext-ml" value="ml" onchange="validateC3()" /> Use external ML / AI services
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="c-ext-nonews" value="none" onchange="validateC3()" /> No external communications — fully air-gapped
+        </label>
+      </div>
+      <div class="err-msg" id="c-external-err">Please select at least one option.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-ext-custom">Other external permissions <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Specific external systems Weslr is permitted to interact with.</div>
+      <textarea id="c-ext-custom" placeholder="e.g. May read from the internal Confluence. May post to the #dev-alerts Slack channel. May query the monitoring API…"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c3-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C4 — Knowledge Sharing / Federation Permissions ── -->
+  <div class="card hidden" id="screen-phaseC4">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>Knowledge sharing and federation</h1>
+    <p class="subtitle">May Weslr share context, learnings, or artifacts outside this session?</p>
+
+    <div class="field">
+      <label for="c-share">Knowledge sharing level</label>
+      <div class="helper">How may Weslr share what it learns or produces?</div>
+      <select id="c-share" onchange="validateC4()">
+        <option value="">— Select —</option>
+        <option value="private">Fully private — no sharing outside this session</option>
+        <option value="internal">Internal only — share within the organisation</option>
+        <option value="open">Open — contributions may be shared publicly</option>
+        <option value="limited">Limited — share only anonymised learnings</option>
+      </select>
+      <div class="err-msg" id="c-share-err">Please select a knowledge sharing level.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-fed">Federation permissions <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">May Weslr share context with other Weslr instances or agents in the federation?</div>
+      <textarea id="c-fed" placeholder="e.g. May share anonymised telemetry with the Weslr fleet. May not share proprietary code. May contribute anonymised patterns to the shared model…"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c4-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C5 — Adaptation Permissions ── -->
+  <div class="card hidden" id="screen-phaseC5">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>Adaptation permissions</h1>
+    <p class="subtitle">How freely may Weslr modify its own behavior, prompts, or configuration?</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Adaptation permissions are governed by the Safe Capability Evolution Engine. All changes require evaluation and operator approval before execution.</span>
+    </div>
+
+    <div class="field">
+      <label for="c-adapt">Adaptation level</label>
+      <div class="helper">How freely may Weslr propose and apply self-modifications?</div>
+      <select id="c-adapt" onchange="validateC5()">
+        <option value="">— Select —</option>
+        <option value="none">No self-modification — Weslr must propose only, operator applies</option>
+        <option value="propose">Propose only — operator reviews and applies all changes</option>
+        <option value="low-risk">Low-risk only — Weslr may apply trivial self-changes directly</option>
+        <option value="full">Full bounded autonomy — Weslr applies approved changes within safety thresholds</option>
+      </select>
+      <div class="err-msg" id="c-adapt-err">Please select an adaptation level.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-adapt-limits">Adaptation limits <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Specific areas where self-modification is always prohibited.</div>
+      <textarea id="c-adapt-limits" placeholder="e.g. Never modify the safety gateway. Never alter the operator override. Never change memory retention settings…"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c5-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C6 — Escalation Contacts ── -->
+  <div class="card hidden" id="screen-phaseC6">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>Who should Weslr escalate to?</h1>
+    <p class="subtitle">Define contacts for situations that require human judgment or authority.</p>
+
+    <div class="field">
+      <label for="c-primary-contact">Primary escalation contact <span style="font-weight:400;color:var(--muted)">(required)</span></label>
+      <div class="helper">Name or role of the person who should be contacted for high-stakes decisions.</div>
+      <input type="text" id="c-primary-contact" placeholder="e.g. Alice (Engineering Lead) or @alice in Slack" oninput="validateC6()" />
+      <div class="err-msg" id="c-primary-contact-err">Please enter a primary escalation contact.</div>
+    </div>
+
+    <div class="field">
+      <label for="c-secondary-contact">Secondary escalation contact <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="helper">Backup contact if the primary is unavailable.</div>
+      <input type="text" id="c-secondary-contact" placeholder="e.g. Bob (Security) or @bob in Slack" />
+    </div>
+
+    <div class="field">
+      <label for="c-escalation-mode">Preferred escalation channel</label>
+      <div class="helper">How should Weslr reach escalation contacts?</div>
+      <select id="c-escalation-mode" onchange="validateC6()">
+        <option value="">— Select —</option>
+        <option value="slack">Slack message</option>
+        <option value="email">Email</option>
+        <option value="ticket">Create a ticket</option>
+        <option value="direct">Direct page / call</option>
+        <option value="none">No automatic escalation — operator checks dashboard</option>
+      </select>
+      <div class="err-msg" id="c-escalation-mode-err">Please select an escalation channel.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c6-next" onclick="goNext()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Phase C7 — Protected-Core Acknowledgement ── -->
+  <div class="card hidden" id="screen-phaseC7">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Phase C — Capability Boundaries
+    </div>
+    <h1>Protected-core non-modification</h1>
+    <p class="subtitle">Acknowledge the boundaries of Weslr's protected operating system.</p>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>This is a legal and safety acknowledgement. Weslr's protected core may not be modified by any actor — including the operator — without a formal governance process.</span>
+    </div>
+
+    <div class="field">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        The protected core includes the Safe Capability Evolution Engine, the safety gateway, the failsafe subsystem, the diagnostic and observability layer, and the operator override mechanism. These components are immutable during active sessions.
+      </p>
+    </div>
+
+    <div class="field">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="c-core-ack" style="margin-top:3px;accent-color:var(--accent)" onchange="validateC7()" />
+        <span style="font-size:14px;line-height:1.5">I acknowledge that the Weslr protected core is non-modifiable during this session without a formal governance process, and that I retain operator authority over all other system behavior.</span>
+      </label>
+      <div class="err-msg" id="c-core-ack-err" style="margin-left:26px">You must acknowledge the protected-core non-modification agreement to continue.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" id="c7-next" onclick="goNext()" disabled>Review →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Review ── -->
+  <div class="card hidden" id="screen-review">
+    <div class="phase-badge">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Review
+    </div>
+    <h1>Review your session setup</h1>
+    <p class="subtitle">Confirm your answers before starting. Use "Edit" to change any answer.</p>
+
+    <table class="review-table" id="review-table">
+      <thead><tr><th>Topic</th><th>Your answer</th></tr></thead>
+      <tbody id="review-body"></tbody>
+    </table>
+
+    <div class="gov-warning">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-top:1px;flex-shrink:0">
+        <path d="M7 1L13 12H1L7 1Z" stroke="#fde68a" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M7 5v3M7 9.5v.5" stroke="#fde68a" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span>Weslr will use this configuration to align its actions and self-reporting. You can update it at any time via the Operator Dashboard.</span>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()">← Back</button>
+      <button class="btn-next" onclick="submitOnboarding()">Start Session →</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Complete ── -->
+  <div class="card hidden" id="screen-complete">
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:48px;margin-bottom:16px">✓</div>
+      <h1>Session configured</h1>
+      <p class="subtitle">Your operator preferences are saved. Weslr is ready.</p>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="window.location.reload()">Start Over</button>
+      <button class="btn-next" onclick="window.location.href='/operator'">Open Operator Dashboard →</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <a href="/operator">Operator Dashboard</a>
+  &nbsp;·&nbsp;
+  <span>Weslr Front Door</span>
+</footer>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  const SCREENS = [
+    'welcome',
+    'phaseA',
+    'phaseB1', 'phaseB2', 'phaseB3', 'phaseB4', 'phaseB5', 'phaseB6',
+    'phaseC1', 'phaseC2', 'phaseC3', 'phaseC4', 'phaseC5', 'phaseC6', 'phaseC7',
+    'review',
+    'complete',
+  ];
+
+  const PHASE_B_LABELS = ['phaseB1','phaseB2','phaseB3','phaseB4','phaseB5','phaseB6'];
+  const PHASE_C_LABELS = ['phaseC1','phaseC2','phaseC3','phaseC4','phaseC5','phaseC6','phaseC7'];
+
+  let current = 0; // index into SCREENS
+
+  // ── Nav ────────────────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
+    const el = document.getElementById('screen-' + id);
+    if (el) el.classList.remove('hidden');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goNext() {
+    if (current < SCREENS.length - 1) {
+      current++;
+      const id = SCREENS[current];
+      if (id === 'review') buildReview();
+      showScreen(id);
+    }
+  }
+
+  function goBack() {
+    if (current > 0) {
+      current--;
+      showScreen(SCREENS[current]);
+    }
+  }
+
+  // ── Progress bar ───────────────────────────────────────────
+  function updateProgress() {
+    const bar = document.getElementById('progress-bar');
+    const label = document.getElementById('progress-label');
+    const indicator = document.getElementById('phase-indicator');
+
+    const screenId = SCREENS[current];
+
+    if (screenId === 'welcome') {
+      bar.innerHTML = '';
+      label.textContent = '';
+      indicator.textContent = 'Welcome';
+      document.getElementById('progress-wrap').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('progress-wrap').style.display = 'block';
+
+    // Calculate total steps (exclude welcome + complete)
+    const total = SCREENS.filter(s => s !== 'welcome' && s !== 'complete').length;
+    const done = SCREENS.slice(1, current + 1).filter(s => s !== 'complete').length;
+    const pct = Math.round((done / total) * 100);
+
+    let html = '';
+    const segments = SCREENS.filter(s => s !== 'welcome' && s !== 'complete');
+    segments.forEach(s => {
+      if (s === screenId) html += '<div class="progress-seg active"></div>';
+      else if (SCREENS.indexOf(s) < current) html += '<div class="progress-seg done"></div>';
+      else html += '<div class="progress-seg"></div>';
+    });
+    bar.innerHTML = html;
+    label.textContent = pct + '% complete';
+
+    if (PHASE_B_LABELS.includes(screenId)) {
+      const idx = PHASE_B_LABELS.indexOf(screenId) + 1;
+      indicator.textContent = 'Phase B — Mission Discovery';
+    } else if (PHASE_C_LABELS.includes(screenId)) {
+      indicator.textContent = 'Phase C — Capability Boundaries';
+    } else if (screenId === 'phaseA') {
+      indicator.textContent = 'Phase A — Your Profile';
+    } else if (screenId === 'review') {
+      indicator.textContent = 'Review';
+    } else if (screenId === 'complete') {
+      indicator.textContent = 'Complete';
+    }
+  }
+
+  // ── Validation helpers ─────────────────────────────────────
+  function req(id, errId, emptyOk) {
+    const val = document.getElementById(id).value.trim();
+    const err = document.getElementById(errId);
+    if (!emptyOk && !val) {
+      document.getElementById(id).classList.add('error');
+      err.classList.add('visible');
+      return false;
+    }
+    document.getElementById(id).classList.remove('error');
+    err.classList.remove('visible');
+    return true;
+  }
+
+  function enableNext(btnId, ...conditions) {
+    document.getElementById(btnId).disabled = !conditions.every(Boolean);
+  }
+
+  // Phase A
+  function validateA() {
+    const n = req('a-name', 'a-name-err');
+    const r = req('a-role', 'a-role-err');
+    const p = req('a-persona', 'a-persona-err');
+    enableNext('a-next', n, r, p);
+  }
+
+  // Phase B1
+  function validateB1() {
+    const o = req('b-primary-outcome', 'b-primary-outcome-err');
+    const h = req('b-horizon', 'b-horizon-err');
+    enableNext('b1-next', o, h);
+  }
+
+  // Phase B2
+  function validateB2() {
+    const o1 = req('b-obj1', 'b-obj1-err');
+    enableNext('b2-next', o1);
+  }
+
+  // Phase B3
+  function validateB3() {
+    const f = req('b-fail-conditions', 'b-fail-conditions-err');
+    const r = req('b-red-lines', 'b-red-lines-err');
+    enableNext('b3-next', f, r);
+  }
+
+  // Phase B4
+  function validateB4() {
+    // optional — always enabled
+    enableNext('b4-next', true);
+  }
+
+  // Phase B5
+  function validateB5() {
+    const m = req('b-metric-primary', 'b-metric-primary-err');
+    const c = req('b-checkin', 'b-checkin-err');
+    enableNext('b5-next', m, c);
+  }
+
+  // Phase B6
+  function validateB6() {
+    const u = req('b-urgency', 'b-urgency-err');
+    const s = req('b-standup', 'b-standup-err');
+    enableNext('b6-next', u, s);
+  }
+
+  // Phase C1 — allowed capabilities (checkbox group)
+  function validateC1() {
+    const checked = [
+      'c-cap-read', 'c-cap-write', 'c-cap-search',
+      'c-cap-test', 'c-cap-review', 'c-cap-arch', 'c-cap-doc',
+    ].some(id => document.getElementById(id).checked);
+    const err = document.getElementById('c-allowed-err');
+    if (!checked) {
+      err.classList.add('visible');
+    } else {
+      err.classList.remove('visible');
+    }
+    enableNext('c1-next', checked);
+  }
+
+  // Phase C2 — forbidden capabilities
+  function validateC2() {
+    const f = req('c-forbidden', 'c-forbidden-err');
+    enableNext('c2-next', f);
+  }
+
+  // Phase C3 — external communication
+  function validateC3() {
+    const checked = [
+      'c-ext-web', 'c-ext-apis', 'c-ext-cloud', 'c-ext-ml', 'c-ext-nonews',
+    ].some(id => document.getElementById(id).checked);
+    const err = document.getElementById('c-external-err');
+    if (!checked) {
+      err.classList.add('visible');
+    } else {
+      err.classList.remove('visible');
+    }
+    enableNext('c3-next', checked);
+  }
+
+  // Phase C4 — knowledge sharing
+  function validateC4() {
+    const s = req('c-share', 'c-share-err');
+    enableNext('c4-next', s);
+  }
+
+  // Phase C5 — adaptation permissions
+  function validateC5() {
+    const a = req('c-adapt', 'c-adapt-err');
+    enableNext('c5-next', a);
+  }
+
+  // Phase C6 — escalation contacts
+  function validateC6() {
+    const p = req('c-primary-contact', 'c-primary-contact-err');
+    const m = req('c-escalation-mode', 'c-escalation-mode-err');
+    enableNext('c6-next', p, m);
+  }
+
+  // Phase C7 — protected core acknowledgement
+  function validateC7() {
+    const ack = document.getElementById('c-core-ack').checked;
+    const err = document.getElementById('c-core-ack-err');
+    if (!ack) err.classList.add('visible');
+    else err.classList.remove('visible');
+    enableNext('c7-next', ack);
+  }
+
+  // ── Review ─────────────────────────────────────────────────
+  function getCapabilities() {
+    const caps = [
+      { id: 'c-cap-read', label: 'Read code, files, and docs' },
+      { id: 'c-cap-write', label: 'Write and edit code' },
+      { id: 'c-cap-search', label: 'Web search and research' },
+      { id: 'c-cap-test', label: 'Run tests and CI' },
+      { id: 'c-cap-review', label: 'Code review and suggestions' },
+      { id: 'c-cap-arch', label: 'Architectural proposals' },
+      { id: 'c-cap-doc', label: 'Write and maintain docs' },
+    ];
+    return caps.filter(c => document.getElementById(c.id).checked).map(c => c.label);
+  }
+
+  function getExternalPerms() {
+    const perms = [
+      { id: 'c-ext-web', label: 'Web search and public resources' },
+      { id: 'c-ext-apis', label: 'Internal / third-party APIs' },
+      { id: 'c-ext-cloud', label: 'Cloud resources' },
+      { id: 'c-ext-ml', label: 'External ML / AI services' },
+      { id: 'c-ext-nonews', label: 'Fully air-gapped (no external)' },
+    ];
+    return perms.filter(p => document.getElementById(p.id).checked).map(p => p.label);
+  }
+
+  function buildReview() {
+    const rows = [
+      // Phase A
+      ['Your name', get('a-name')],
+      ['Your role', get('a-role')],
+      ['Interaction style', get('a-persona')],
+      // Phase B
+      ['Primary outcome', get('b-primary-outcome')],
+      ['Time horizon', get('b-horizon')],
+      ['1st priority', get('b-obj1')],
+      ['2nd priority', get('b-obj2') || '—'],
+      ['3rd priority', get('b-obj3') || '—'],
+      ['Failure conditions', get('b-fail-conditions')],
+      ['Red lines', get('b-red-lines')],
+      ['Legal / policy constraints', get('b-legal') || 'None specified'],
+      ['Audit requirements', get('b-audit') || 'None'],
+      ['Primary success metric', get('b-metric-primary')],
+      ['Secondary metrics', get('b-metric-secondary') || '—'],
+      ['Check-in style', get('b-checkin')],
+      ['Urgency level', get('b-urgency')],
+      ['Current blockers', get('b-blockers') || 'None specified'],
+      ['Standup cadence', get('b-standup')],
+      // Phase C
+      ['Allowed capabilities', getCapabilities().join(', ')],
+      ['Other allowed', get('c-allowed-custom') || '—'],
+      ['Forbidden actions', get('c-forbidden')],
+      ['BYOP policy', get('c-byop') || '—'],
+      ['External permissions', getExternalPerms().join(', ')],
+      ['Other external', get('c-ext-custom') || '—'],
+      ['Knowledge sharing', get('c-share')],
+      ['Federation', get('c-fed') || '—'],
+      ['Adaptation level', get('c-adapt')],
+      ['Adaptation limits', get('c-adapt-limits') || '—'],
+      ['Primary escalation contact', get('c-primary-contact')],
+      ['Secondary escalation contact', get('c-secondary-contact') || '—'],
+      ['Escalation channel', get('c-escalation-mode')],
+      ['Core acknowledgement', document.getElementById('c-core-ack').checked ? 'Acknowledged' : 'NOT acknowledged'],
+    ];
+
+    const editMap = {
+      // Phase A
+      'Your name': 'phaseA', 'Your role': 'phaseA', 'Interaction style': 'phaseA',
+      // Phase B
+      'Primary outcome': 'phaseB1', 'Time horizon': 'phaseB1',
+      '1st priority': 'phaseB2', '2nd priority': 'phaseB2', '3rd priority': 'phaseB2',
+      'Failure conditions': 'phaseB3', 'Red lines': 'phaseB3',
+      'Legal / policy constraints': 'phaseB4', 'Audit requirements': 'phaseB4',
+      'Primary success metric': 'phaseB5', 'Secondary metrics': 'phaseB5', 'Check-in style': 'phaseB5',
+      'Urgency level': 'phaseB6', 'Current blockers': 'phaseB6', 'Standup cadence': 'phaseB6',
+      // Phase C
+      'Allowed capabilities': 'phaseC1', 'Other allowed': 'phaseC1',
+      'Forbidden actions': 'phaseC2', 'BYOP policy': 'phaseC2',
+      'External permissions': 'phaseC3', 'Other external': 'phaseC3',
+      'Knowledge sharing': 'phaseC4', 'Federation': 'phaseC4',
+      'Adaptation level': 'phaseC5', 'Adaptation limits': 'phaseC5',
+      'Primary escalation contact': 'phaseC6', 'Secondary escalation contact': 'phaseC6', 'Escalation channel': 'phaseC6',
+      'Core acknowledgement': 'phaseC7',
+    };
+
+    const tbody = document.getElementById('review-body');
+    tbody.innerHTML = rows.map(([label, value]) =>
+      `<tr>
+        <td>${label}</td>
+        <td>${escapeHtml(value)} <a class="edit-link" onclick="editScreen('${editMap[label]}')">Edit</a></td>
+      </tr>`
+    ).join('');
+  }
+
+  function editScreen(id) {
+    current = SCREENS.indexOf(id);
+    showScreen(id);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function get(id) {
+    const el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  // ── Submit ─────────────────────────────────────────────────
+  async function submitOnboarding() {
+    const payload = {
+      name: get('a-name'),
+      role: get('a-role'),
+      persona: get('a-persona'),
+      primary_outcome: get('b-primary-outcome'),
+      time_horizon: get('b-horizon'),
+      objectives: [get('b-obj1'), get('b-obj2'), get('b-obj3')].filter(Boolean),
+      failure_conditions: get('b-fail-conditions'),
+      red_lines: get('b-red-lines'),
+      legal_constraints: get('b-legal'),
+      audit_level: get('b-audit'),
+      metric_primary: get('b-metric-primary'),
+      metric_secondary: get('b-metric-secondary'),
+      checkin_style: get('b-checkin'),
+      urgency: get('b-urgency'),
+      blockers: get('b-blockers'),
+      standup_cadence: get('b-standup'),
+      // Phase C — Capability Boundaries
+      allowed_capabilities: getCapabilities(),
+      allowed_custom: get('c-allowed-custom'),
+      forbidden_actions: get('c-forbidden'),
+      byop_policy: get('c-byop'),
+      external_permissions: getExternalPerms(),
+      external_custom: get('c-ext-custom'),
+      knowledge_sharing: get('c-share'),
+      federation_permissions: get('c-fed'),
+      adaptation_level: get('c-adapt'),
+      adaptation_limits: get('c-adapt-limits'),
+      escalation_primary: get('c-primary-contact'),
+      escalation_secondary: get('c-secondary-contact'),
+      escalation_channel: get('c-escalation-mode'),
+      core_acknowledged: document.getElementById('c-core-ack').checked,
+      submitted_at: Date.now(),
+    };
+
+    try {
+      const res = await fetch('/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Server error');
+    } catch (e) {
+      // Non-blocking: proceed anyway — runtime is already configured
+    }
+
+    current = SCREENS.indexOf('complete');
+    showScreen('complete');
+  }
+
+  // ── Init ────────────────────────────────────────────────────
+  showScreen('welcome');
+</script>
+</body>
+</html>

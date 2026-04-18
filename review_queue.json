@@ -1,1 +1,88 @@
-[]
+[
+  {
+    "id": "agent-1-governance_transparency_review-1776146241",
+    "title": "Governance Transparency Review",
+    "artifact_type": "proposal",
+    "category": "governance",
+    "lifecycle_stage": "approved",
+    "path": "agents/agent-1/artifacts/governance_transparency_review.meta.json",
+    "review_status": "approved",
+    "review_notes": [
+      {
+        "at": 1776146241,
+        "by": "seed-script",
+        "action": "seeded",
+        "details": "Linked governance proposal to signal tracing."
+      },
+      "Operator review: material ties between signals and queue entries verified."
+    ],
+    "human_proposed_score": 0.55,
+    "commercial_readiness_score": 0.423,
+    "sellability_score": 0.422,
+    "price_band_guess": "needs packaging",
+    "delivery_mode": "internal_reusable_component",
+    "approved_for_export": true,
+    "export_path": null
+  },
+  {
+    "id": "agent-3-planet_signal_trace-1776171834",
+    "title": "Planet Signal Trace",
+    "artifact_type": "artifact",
+    "category": "science",
+    "lifecycle_stage": "packed",
+    "path": "agents/agent-3/artifacts/planet_signal_trace.meta.json",
+    "review_status": "export_ready",
+    "review_notes": [
+      {
+        "at": 1776171834,
+        "by": "science_bridge",
+        "action": "seeded",
+        "details": "Domain science signal bridged from suggestion candidate ext-a49764 referencing scientific_analysis output."
+      },
+      "Planetary signal evidence vetted; dataset cadence is traceable.",
+      "Science signal ready for export queue"
+    ],
+    "human_proposed_score": 0.227,
+    "commercial_readiness_score": 0.201,
+    "sellability_score": 0.179,
+    "price_band_guess": "needs packaging",
+    "delivery_mode": "bundle_candidate",
+    "approved_for_export": true,
+    "export_path": "exports/agent-3-planet_signal_trace-1776171834"
+  },
+  {
+    "id": "agent-2-observability_trace-1776147350",
+    "title": "Observability Trace",
+    "artifact_type": "export_candidate",
+    "category": "observability",
+    "lifecycle_stage": "packed",
+    "path": "agents/agent-2/artifacts/observability_trace.meta.json",
+    "review_status": "export_ready",
+    "review_notes": [
+      {
+        "at": 1776147350,
+        "by": "seed-script",
+        "action": "seeded",
+        "details": "Observability trace artifact added."
+      },
+      "Operators requested additional evidence linking observations to artifacts.",
+      {
+        "at": 1776150497,
+        "by": "operator",
+        "action": "evidence",
+        "details": "Tied Observability Trace to review_queue demand and communicator topic logs (log readability, observability) so the operator knows what upstream signals confirm this artifact."
+      },
+      "Evidence linkage verified; operators can follow the signal lineage from review queue to communicator logs.",
+      "Export-ready after operator review; surface on dashboard export queue.",
+      "Human-proposed score raised to 0.58 to surface in export queue; evidence chain stands.",
+      "Upgraded to export_candidate so approved Observability Trace surfaces in export-ready queues."
+    ],
+    "human_proposed_score": 0.185,
+    "commercial_readiness_score": 0.226,
+    "sellability_score": 0.202,
+    "price_band_guess": "needs packaging",
+    "delivery_mode": "internal_reusable_component",
+    "approved_for_export": true,
+    "export_path": "exports/agent-2-observability_trace-1776147350"
+  }
+]

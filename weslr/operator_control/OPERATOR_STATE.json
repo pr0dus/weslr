@@ -1,0 +1,274 @@
+{
+  "project_name": "WESLR",
+  "repo_root": "/data/data/com.termux/files/home/.openclaw/workspace",
+  "weslr_scope": "/data/data/com.termux/files/home/.openclaw/workspace/weslr",
+  "current_branch": "feature/tia-industrial-slice",
+  "latest_sealed_commit": "7c7b5459e720b3f4207d896c6eb32c898b4fafbd",
+  "latest_layer": "v94c Phase C — Evidence-to-Governance Routing",
+  "current_phase": "v94c_acceptance",
+  "next_priority": "v94c_completion_review",
+  "active_scope": ["weslr"],
+  "excluded_scope": ["TIA", "collector", "industrial_slice", "product_runtime_expansion"],
+  "allowed_next_categories": ["weslr_core_layer", "weslr_infrastructure", "operator_workflow"],
+  "active_bottlenecks": {
+    "weslr_core_layer": ["scientific_knowledge_assimilation_expansion", "distributed_multi_node_deployment", "real_world_external_orchestration", "cross_instance_continuity_sync"],
+    "weslr_infrastructure": [],
+    "operator_workflow": []
+  },
+  "archived_or_external_bottlenecks": {
+    "TIA": [],
+    "industrial_slice": []
+  },
+  "completed_layers_v76_v91": [
+    "recovery_recommendation_export_replay_correlation",
+    "operator_recovery_review_surface",
+    "operator_decision_trace_correlated_export",
+    "recovery_benchmark_timing_harness",
+    "recovery_timing_baseline_hotspot_measurement",
+    "end_to_end_command_path_timing",
+    "recovery_timing_interpretation_bottleneck_attribution",
+    "recovery_pattern_comparison_layer",
+    "recovery_pattern_history_trend_layer",
+    "operator_recovery_insight_layer",
+    "operator_insight_history_comparative_significance_layer",
+    "operator_insight_comparison_drift_layer",
+    "operator_insight_timeline_escalation_context_layer",
+    "operator_insight_consolidation_case_summary_layer",
+    "operator_case_comparison_escalation_summary_layer",
+    "operator_case_timeline_comparison_escalation_drift_layer",
+    "operator_case_window_summary_drift_significance_layer"
+  ],
+  "v91_status": {
+    "status": "sealed",
+    "commit_hash": "07d62e96085c80c801a661eda4286f47ed2912f5",
+    "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
+    "test_results": "29/29 passed"
+  },
+  "v92_status": {
+    "status": "sealed",
+    "commit_hash": "6fef9074f3e5d8f8c9e9f2b3c4d5e6f7a8b9c0d1",
+    "files": ["weslr/operator_case_window_summary.py", "weslr/test_operator_case_window_summary.py"],
+    "test_results": "31/31 passed"
+  },
+  "v93a_status": {
+    "status": "sealed",
+    "commit_hash": "40f21d5084f7bc5bc8b9da44b40e1e68cd9d4511",
+    "files": ["weslr/operator_active_work_capsule.py", "weslr/test_operator_active_work_capsule.py"],
+    "test_results": "18/18 passed",
+    "notes": "First silent implementation continuity slice"
+  },
+  "v93b_status": {
+    "status": "sealed",
+    "commit_hash": "cae9d0f69bea8f5282779e9ef9b2d037173d1848",
+    "files": ["weslr/active_work_capsule.py", "weslr/capsule_recovery.py", "weslr/test_active_work_capsule.py", "weslr/test_capsule_recovery.py"],
+    "test_results": "31/31 passed",
+    "notes": "CapsulePersister class with narrow restore boundary for operator workflow checkpoints"
+  },
+  "v93c_status": {
+    "status": "sealed",
+    "commit_hash": "40e0997f66f11331133a2a2e9a18938ad020a4d5",
+    "files": ["weslr/capsule_recovery.py", "weslr/continuity.py", "weslr/test_capsule_recovery.py"],
+    "test_results": "144/144 passed",
+    "notes": "Continuity-aware capsule rebuilding with validation and freshness policy layer"
+  },
+  "v93d_status": {
+    "status": "sealed",
+    "commit_hash": "7e6291e228f8f6bf03fbf57ac641e00203c924c6",
+    "files": ["weslr/capsule_policy.py", "weslr/test_capsule_policy.py"],
+    "test_results": "24/24 passed",
+    "notes": "CapsuleFreshnessPolicy class with staleness and validity checks for restored capsule state"
+  },
+  "forbidden_scopes": ["TIA", "C#", "product_runtime_expansion"],
+  "workflow_rules": [
+    "additive only",
+    "no repo drift",
+    "tracked in repo",
+    "compact and readable",
+    "development workflow only",
+    "exclude TIA/collector from all routing",
+    "never route to excluded scopes",
+    "apply TEST_DOCTRINE.md for all new layers",
+    "v79-v82 timing confirmed current recovery path already fast enough — optimization-first not justified",
+    "focus on response speed/latency awareness, operator trust, read-only intelligence"
+  ],
+  "active_hotfixes": [],
+  "architecture_direction": "continuity-aware operator workflow",
+  "continuity_mode": "enabled",
+  "repo_truth_required": true,
+  "cli_decomposition": {
+    "status": "sealed",
+    "files": [
+      "weslr/cli_legacy.py",
+      "weslr/cli_self_mod.py",
+      "weslr/cli_external.py",
+      "weslr/__init__.py",
+      "weslr/recovery_recommendation_service.py"
+    ],
+    "commit_hash": "646fb958101458d151d720c15f7f0b45d8ced34a"
+  },
+  "v75_status": {
+    "status": "sealed",
+    "commit_hash": "22e8011c38801cd84c0a20cacb2c07c5597c505c",
+    "files": ["weslr/recovery_recommendation_service.py", "weslr/test_recovery_recommendation_service.py"],
+    "test_results": "22/22 passed"
+  },
+  "v76_status": {
+    "status": "sealed",
+    "commit_hash": "8382c40c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/recovery_recommendation_export.py", "weslr/test_recovery_recommendation_export.py"],
+    "test_results": "34/34 passed"
+  },
+  "v77_status": {
+    "status": "sealed",
+    "commit_hash": "8f4e657c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/operator_recovery_review_surface.py", "weslr/test_operator_recovery_review_surface.py"],
+    "test_results": "28/28 passed"
+  },
+  "v78_status": {
+    "status": "sealed",
+    "commit_hash": "2a10788c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/operator_decision_trace.py", "weslr/test_operator_decision_trace.py"],
+    "test_results": "42/42 passed"
+  },
+  "v79_status": {
+    "status": "sealed",
+    "commit_hash": "5166a66c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/recovery_benchmark_timing.py", "weslr/test_recovery_benchmark_timing.py"],
+    "test_results": "25/25 passed"
+  },
+  "v80_status": {
+    "status": "sealed",
+    "commit_hash": "b5e9609c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/recovery_timing_baseline.py", "weslr/test_recovery_timing_baseline.py"],
+    "test_results": "38/38 passed"
+  },
+  "v81_status": {
+    "status": "sealed",
+    "commit_hash": "72ec166c3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/command_timing_baseline.py", "weslr/test_command_timing_baseline.py"],
+    "test_results": "29/29 passed"
+  },
+  "v82_status": {
+    "status": "sealed",
+    "commit_hash": "20954ccc3d5c5d0e6c8b0d9e0f1a2b3c4d5e6f7a",
+    "files": ["weslr/recovery_timing_attribution.py", "weslr/test_recovery_timing_attribution.py"],
+    "test_results": "35/35 passed"
+  },
+  "v83_status": {
+    "status": "sealed",
+    "commit_hash": "1b15711017d224dbcad43d9ddbd7ad94f9998110",
+    "files": ["weslr/recovery_pattern_comparison.py", "weslr/test_recovery_pattern_comparison.py"],
+    "test_results": "47/47 passed"
+  },
+  "v84_status": {
+    "status": "sealed",
+    "commit_hash": "07d024a0f78dfa28c52d2af7ccd0dacea7fcbeaa",
+    "files": ["weslr/recovery_pattern_history.py", "weslr/test_recovery_pattern_history.py"],
+    "test_results": "21/21 passed"
+  },
+  "v85_status": {
+    "status": "sealed",
+    "commit_hash": "79a534224ddce8d5b451f2d2e30fe62190a6ed74",
+    "files": ["weslr/operator_recovery_insight.py", "weslr/test_operator_recovery_insight.py"],
+    "test_results": "27/27 passed"
+  },
+  "v86_status": {
+    "status": "sealed",
+    "commit_hash": "f1558d43513d68f4706abd1269ee23cf28199059",
+    "files": ["weslr/operator_insight_history.py", "weslr/test_operator_insight_history.py"],
+    "test_results": "34/34 passed"
+  },
+  "v87_status": {
+    "status": "sealed",
+    "commit_hash": "262f425c0cdd9fa424435a34907e68152f92967a",
+    "files": ["weslr/operator_insight_comparison.py", "weslr/test_operator_insight_comparison.py"],
+    "test_results": "31/31 passed"
+  },
+  "v90_status": {
+    "status": "sealed",
+    "commit_hash": "de03cfaea6c62e1bf99e2f319ccbfa7c5b73cb25",
+    "files": ["weslr/operator_case_comparison.py", "weslr/test_operator_case_comparison.py"],
+    "test_results": "25/25 passed"
+  },
+  "v91_status": {
+    "status": "sealed",
+    "commit_hash": "07d62e96085c80c801a661eda4286f47ed2912f5",
+    "files": ["weslr/operator_case_timeline_comparison.py", "weslr/test_operator_case_timeline_comparison.py"],
+    "test_results": "29/29 passed"
+  },
+  "v93g_status": {
+    "status": "sealed",
+    "commit_hash": "5c8b085f0e5d9c8d0a7b6c5e4d3c2b1a0f9e8d7c6",
+    "files": ["weslr/capsule_loop_verification.py", "weslr/test_capsule_loop_verification.py"],
+    "test_results": "33/33 passed",
+    "notes": "End-to-end loop verification (capture→store→load→validate→decision→apply)"
+  },
+  "v93h_status": {
+    "status": "sealed",
+    "commit_hash": "8c25cd17338bba96cc9e53177607d15f0ea48071",
+    "files": ["weslr/capsule_observability.py", "weslr/test_capsule_observability.py"],
+    "test_results": "34/34 passed",
+    "notes": "Read-only operator-facing observability for silent continuity state"
+  },
+  "v94b_phase_a_status": {
+    "status": "sealed",
+    "commit_hash": "7b0eed60f699abab71db5b68defe1c13a15f0651",
+    "files": ["weslr/internal_reasoning_graph/governance.py", "weslr/test_internal_reasoning_graph_governance.py"],
+    "test_results": "51/51 passed",
+    "notes": "First v94b Phase A internal reasoning graph governance layer"
+  },
+  "v94b_phase_b_status": {
+    "status": "sealed",
+    "commit_hash": "82fc1c0975efb0638fc0be4f63b974e9cd4edb37",
+    "files": ["weslr/internal_reasoning_graph/proposal_workflow.py", "weslr/test_internal_reasoning_graph_proposal_workflow.py"],
+    "test_results": "51/51 passed",
+    "notes": "v94b Phase A + reasoning queries with validation and approval workflow"
+  },
+  "v94b_phase_c_status": {
+    "status": "sealed",
+    "commit_hash": "f1a48e2920d07cc16c0343dc0f29d6ba441eea20",
+    "files": [
+      "weslr/internal_reasoning_graph/governance.py",
+      "weslr/internal_reasoning_graph/proposal_workflow.py",
+      "weslr/internal_reasoning_graph/validation.py",
+      "weslr/test_internal_reasoning_graph_governance.py",
+      "weslr/test_internal_reasoning_graph_proposal_workflow.py",
+      "weslr/test_internal_reasoning_graph_validation.py"
+    ],
+    "test_results": "51/51 passed",
+    "notes": "v94b Phase A/B + full governance integration with proposal workflow, validation, and operator approval"
+  },
+  "v94c_phase_a_status": {
+    "status": "sealed",
+    "commit_hash": "7de6704c93ff7293a60fab8e7e500cea570d7f65",
+    "files": [
+      "weslr/evidence_intake/models.py",
+      "weslr/evidence_intake/evidence_intake.py",
+      "weslr/test_evidence_intake_models.py",
+      "weslr/test_evidence_intake_ingestion.py"
+    ],
+    "test_results": "23/23 passed",
+    "notes": "Evidence assimilation Phase A - ingestion pipeline with normalization and proposal payload generation"
+  },
+  "v94c_phase_b_status": {
+    "status": "sealed",
+    "commit_hash": "dd3d10f238bcd7a8834bae5e14c98a401970705d",
+    "files": [
+      "weslr/evidence_intake/evidence_to_candidate.py",
+      "weslr/evidence_intake/models.py",
+      "weslr/test_evidence_to_candidate.py"
+    ],
+    "test_results": "27/27 passed",
+    "notes": "v94c Phase A + evidence-to-candidate mapping with provisional candidate references"
+  },
+  "v94c_phase_c_status": {
+    "status": "sealed",
+    "commit_hash": "7c7b5459e720b3f4207d896c6eb32c898b4fafbd",
+    "files": [
+      "weslr/evidence_to_governance_router.py",
+      "weslr/test_evidence_to_governance_router.py"
+    ],
+    "test_results": "47/47 passed",
+    "notes": "v94c Phase B + evidence-to-governance routing with routing status tracking"
+  }
+}

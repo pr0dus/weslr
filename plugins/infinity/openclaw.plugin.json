@@ -1,0 +1,22 @@
+{
+  "id": "infinity",
+  "name": "Infinity",
+  "description": "Session immortality layer - silent continuity for OpenClaw",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "autoCaptureEnabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable automatic capsule capture before /reset, /new, or context overflow"
+      },
+      "autoRestoreEnabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable automatic capsule restore on init (silent, safe subset only)"
+      }
+    }
+  },
+  "register": "./index.js"
+}

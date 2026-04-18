@@ -1,0 +1,28 @@
+[Unit]
+Description=WESLR Entity Intelligence Runtime
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=u0_a547
+Group=u0_a547
+WorkingDirectory=/data/data/com.termux/files/home/.openclaw/workspace
+Environment="PYTHONUNBUFFERED=1"
+Environment="WESLR_HOST=0.0.0.0"
+ExecStart=/data/data/com.termux/files/home/.openclaw/workspace/scripts/weslr-start.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=weslr
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/data/com.termux/files/home/.openclaw/workspace/.runtime
+
+[Install]
+WantedBy=multi-user.target

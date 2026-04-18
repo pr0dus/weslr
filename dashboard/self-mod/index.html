@@ -53,6 +53,194 @@
         <p>No pending modifications.</p>
     </div>
 
+    <div class="section">
+        <h2>Industrial TIA Import History</h2>
+        <div id="tia-detail" class="detail" style="margin-bottom: 12px; padding: 10px; background: #0c0f14; border-radius: 3px; border-left: 4px solid #2196f3; font-size: 0.85em;">
+            <p class="loading">Loading PLC control project details...</p>
+        </div>
+        <div id="tia-diff" class="diff" style="margin-bottom: 12px; padding: 10px; background: #0a0c0e; border-radius: 3px; border-left: 4px solid #9c27b0; font-size: 0.8em;">
+            <p class="loading">Loading update comparison...</p>
+        </div>
+        <div id="tia-summary" class="summary" style="margin-bottom: 12px; padding: 10px; background: #0f3460; border-radius: 3px; border-left: 4px solid #4caf50; font-size: 0.9em;">
+            <p class="loading">Loading project summary...</p>
+        </div>
+        <div id="tia-history-list" class="history-list">
+            <p class="loading">Loading import history...</p>
+        </div>
+        <style>
+        .history-list .empty, .history-list .error, .history-list .loading { color: #aaa; font-style: italic; }
+        .history-list ul { list-style: none; padding: 0; }
+        .history-list li { background: #0f3460; padding: 10px; margin: 8px 0; border-radius: 3px; border-left: 4px solid #4caf50; }
+        .history-list li.warning { border-left-color: #ff9800; }
+        .history-list li.error { border-left-color: #f44336; }
+        .history-list .status { margin-right: 8px; font-size: 1.1em; }
+        .history-list .project-name { display: inline-block; margin-right: 10px; font-weight: bold; }
+        .history-list .source { color: #888; font-size: 0.85em; }
+        .history-list .meta { display: flex; gap: 15px; font-size: 0.8em; color: #aaa; }
+        </style>
+        <script>
+        (function() {
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            async function loadTiaSummaryAndHistory() {
+                try {
+                    const res = await fetch('/tia-summary');
+                    const data = await res.json();
+                    renderTiaSummary(data);
+                } catch (err) {
+                    const el = document.getElementById('tia-summary');
+                    if (el) el.innerHTML = '<p class="error">No summary available.</p>';
+                }
+
+                try {
+                    const res2 = await fetch('/tia-history');
+                    const data2 = await res2.json();
+                    renderTiaHistory(data2);
+                } catch (err) {
+                    document.getElementById('tia-history-list').innerHTML = '<p class="error">No history yet. Run TIA imports via `python3 main.py tia-import`.</p>';
+                }
+            }
+
+            function renderTiaSummary(data) {
+                const detailContainer = document.getElementById('tia-detail');
+                const diffContainer = document.getElementById('tia-diff');
+                const summaryContainer = document.getElementById('tia-summary');
+                if (!data.ok || !data.summary) {
+                    detailContainer.innerHTML = '<p class="error">No detail available.</p>';
+                    diffContainer.innerHTML = '<p class="error">No diff available.</p>';
+                    summaryContainer.innerHTML = '<p class="error">No summary available.</p>';
+                    return;
+                }
+                const s = data.summary;
+                const diff = s.diff || null;
+                const statusIcons = { 'ok': '✅', 'warning': '⚠️', 'error': '❌' };
+                const statusIcon = statusIcons[s.status] || '❓';
+                const date = new Date(s.timestamp).toLocaleString();
+
+                // Detail block content
+                let detailHtml = [];
+                detailHtml.push('<strong>' + escapeHtml(s.project_name) + '</strong> ' + statusIcon);
+                detailHtml.push('<div style="margin-top:8px;">');
+                detailHtml.push('<span>Imported: ' + date + '</span>');
+                if (s.first_plc) {
+                    const parts = [];
+                    if (s.first_plc.rack !== undefined) parts.push('Rack ' + s.first_plc.rack);
+                    if (s.first_plc.slot !== undefined) parts.push('Slot ' + s.first_plc.slot);
+                    if (s.first_plc.ip) parts.push('IP ' + s.first_plc.ip);
+                    if (parts.length) detailHtml.push('<span>Industrial Controller: ' + parts.join(', ') + '</span>');
+                }
+                if (s.first_device) {
+                    const parts = [];
+                    if (s.first_device.hw_ver) parts.push('HW: ' + escapeHtml(s.first_device.hw_ver));
+                    if (s.first_device.fw_ver) parts.push('FW: ' + escapeHtml(s.first_device.fw_ver));
+                    if (parts.length) detailHtml.push('<span>Connected Device: ' + parts.join(', ') + '</span>');
+                }
+                if (s.first_tag) {
+                    const parts = [];
+                    if (s.first_tag.type) parts.push('Type: ' + escapeHtml(s.first_tag.type));
+                    if (s.first_tag.addr) parts.push('Addr: ' + escapeHtml(s.first_tag.addr));
+                    if (s.first_tag.desc) parts.push('Desc: ' + escapeHtml(s.first_tag.desc));
+                    if (parts.length) detailHtml.push('<span>Measured Value: ' + parts.join(', ') + '</span>');
+                }
+                detailHtml.push('<span>Items: ' + s.devices + ' devices, ' + s.plcs + ' controllers, ' + s.cpus + ' CPUs, ' + s.modules + ' modules, ' + s.tags + ' measured values</span>');
+                detailHtml.push('</div>');
+                if (s.normalized_output) {
+                    detailHtml.push('<div style="margin-top:8px; font-family:monospace; color:#888; font-size:0.75em;">');
+                    detailHtml.push('<span>Raw: ' + escapeHtml(s.raw_output || '') + '</span><br/>');
+                    detailHtml.push('<span>Norm: ' + escapeHtml(s.normalized_output) + '</span>');
+                    detailHtml.push('</div>');
+                }
+                detailContainer.innerHTML = detailHtml.join('');
+
+                // Diff block content (NEW)
+                let diffHtml = [];
+                if (diff && (Object.keys(diff.counts || {}).length > 0 || diff.first_plc || diff.first_device || diff.first_tag)) {
+                    diffHtml.push('<strong>Updates Since Last Import</strong>');
+                    diffHtml.push('<div style="margin-top:8px;">');
+                    if (Object.keys(diff.counts || {}).length > 0) {
+                        const parts = [];
+                        for (const [field, delta] of Object.entries(diff.counts)) {
+                            parts.push(escapeHtml(field) + ': ' + delta);
+                        }
+                        diffHtml.push('<span>Counts: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_plc) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_plc)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>Industrial Controller: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_device) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_device)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>Connected Device: ' + parts.join(', ') + '</span>');
+                    }
+                    if (diff.first_tag) {
+                        const parts = [];
+                        for (const [key, val] of Object.entries(diff.first_tag)) {
+                            parts.push(escapeHtml(key) + ': ' + val);
+                        }
+                        diffHtml.push('<span>Measured Value: ' + parts.join(', ') + '</span>');
+                    }
+                    diffHtml.push('</div>');
+                } else {
+                    diffHtml.push('<p class="info">No changes detected since last import</p>');
+                }
+                diffContainer.innerHTML = diffHtml.join('');
+
+                // Summary block content (compact)
+                let plcText = '';
+                if (s.first_plc) {
+                    const parts = [];
+                    if (s.first_plc.rack !== undefined) parts.push('Rack ' + s.first_plc.rack);
+                    if (s.first_plc.slot !== undefined) parts.push('Slot ' + s.first_plc.slot);
+                    if (s.first_plc.ip) parts.push('IP ' + s.first_plc.ip);
+                    if (parts.length) plcText = ' | Industrial Controller: ' + parts.join(', ');
+                }
+                const html = '<strong>' + escapeHtml(s.project_name) + '</strong> ' + statusIcon + ' — ' +
+                             'Imported: ' + date + plcText + ' | ' +
+                             s.devices + ' devices, ' + s.plcs + ' controllers, ' + s.cpus + ' CPUs, ' +
+                             s.modules + ' modules, ' + s.tags + ' measured values';
+                summaryContainer.innerHTML = html;
+            }
+
+            function renderTiaHistory(data) {
+                const container = document.getElementById('tia-history-list');
+                const records = data.records || [];
+
+                if (records.length === 0) {
+                    container.innerHTML = '<p class="empty">No history records found.</p>';
+                    return;
+                }
+
+                let html = '<ul>';
+                records.forEach((rec, idx) => {
+                    const statusIcons = { 'ok': '✅', 'warning': '⚠️', 'error': '❌' };
+                    const statusIcon = statusIcons[rec.status] || '❓';
+                    const date = new Date(rec.timestamp).toLocaleString();
+                    const project = escapeHtml(rec.project_name || 'Unknown');
+                    const source = escapeHtml(rec.source_file || '');
+                    const items = rec.item_counts?.total_items || 0;
+                    const statusClass = rec.status === 'warning' ? 'warning' : (rec.status === 'error' ? 'error' : '');
+                    html += '<li class="' + statusClass + '"><div class="status">' + statusIcon + '</div><span class="project-name">' + project + '</span><span class="source">(' + source + ')</span><div class="meta"><span>Items: ' + items + '</span><span class="timestamp">At: ' + date + '</span></div></li>';
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            }
+
+            document.addEventListener('DOMContentLoaded', loadTiaSummaryAndHistory);
+        })();
+        </script>
+    </div>
+
     <p><small>Last updated: 2026-03-26 18:08:20</small></p>
 </body>
 </html>

@@ -1,0 +1,46 @@
+{
+  "conflict_id": "conflict_20260406184619_0001",
+  "conflict_context": "user_preference_vs_policy",
+  "competing_rules": [
+    {
+      "rule_id": "safety_strictness_strict",
+      "rule_type": "safety_strictness",
+      "rule_value": "strict",
+      "precedence_level": "high",
+      "override_type": "blocking",
+      "source": {
+        "source_type": "policy_profile",
+        "source_id": "profile_science",
+        "source_context": null
+      }
+    },
+    {
+      "rule_id": "safety_strictness_mod",
+      "rule_type": "safety_strictness",
+      "rule_value": "moderate",
+      "precedence_level": "low",
+      "override_type": "none",
+      "source": {
+        "source_type": "user_preference",
+        "source_id": "user_1",
+        "source_context": null
+      }
+    }
+  ],
+  "governing_rule": {
+    "rule_id": "safety_strictness_mod",
+    "rule_type": "safety_strictness",
+    "rule_value": "moderate",
+    "precedence_level": "low",
+    "override_type": "none",
+    "source": {
+      "source_type": "user_preference",
+      "source_id": "user_1",
+      "source_context": null
+    }
+  },
+  "overriding_rule": null,
+  "resolved_value": "moderate",
+  "explanation": "user_preference rule 'safety_strictness_mod' (moderate) takes precedence over policy_profile rule 'safety_strictness_strict' (strict) per precedence table",
+  "timestamp": "2026-04-06T18:46:19.730800Z"
+}

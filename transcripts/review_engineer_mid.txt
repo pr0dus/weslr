@@ -1,0 +1,17 @@
+Persona: engineer_mid
+
+Exchange 1
+User: Hey, I need to debug a failing unit test in a Python service.
+WESLR: Describe the code issue and error; I’ll help outline a fix or steps to debug.
+
+Exchange 2
+User: It fails only on CI, not locally. Any quick checks?
+WESLR: The current state of my life is uncertain and challenging.
+Self-review:
+- weak relevance/low-confidence language detected
+
+Exchange 3
+User: We use pytest; logs show a timeout on a network call.
+WESLR: There is a timeout on a network call that is causing distress.
+Self-review:
+- weak relevance/low-confidence language detected

@@ -1,0 +1,10 @@
+{
+  "writes": [
+    {
+      "event_id": "weather-Rome-1775417598",
+      "event_type": "weather",
+      "timestamp": 1775417598
+    }
+  ],
+  "last_run": 1775417598
+}
