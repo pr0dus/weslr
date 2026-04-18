@@ -551,6 +551,25 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         likely_need = str(latest_human.get("likely_need") or interpreted_turn.get("likely_need") or "direct_answer")
 
         lower_message = last_message.lower()
+
+        # ── Response evaluation signals (for governed evolution) ─────────────
+        # Makes answers inspectable. Internal-only, never exposed to users.
+        # Additive, minimal, reversible.
+        _response_signals = {
+            "path": None,
+            "evaluation_class": "unknown",
+            "llm_used": False,
+            "internal_capability": False,
+            "confidence": "low",
+        }
+        def _set_signal(path: str, **kw) -> None:
+            """Update _response_signals. Call at each message = branch."""
+            nonlocal _response_signals
+            _response_signals["path"] = path
+            for k, v in kw.items():
+                if k in _response_signals:
+                    _response_signals[k] = v
+
         asks_what_should_improve_first = (
             any(token in lower_message for token in ["what should improve first", "what should you focus on", "what should improve", "improve first"])
             and any(token in lower_message for token in ["understand each other", "understand me", "understanding"])
@@ -597,6 +616,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     from datetime import datetime, timezone
                     now = datetime.now(timezone.utc)
                     local = now.astimezone()
+                    _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
                     internal_routed = True
                 elif any(p in msg_lower for p in status_patterns):
@@ -605,12 +625,14 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     llm = load_llm_status()
                     init = "initialized" if fs.get("initialized") else "not yet initialized"
                     prov = llm.get("provider", "unknown")
+                    _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"I am {init}. LLM provider: {prov}."
                     internal_routed = True
                 elif any(p in msg_lower for p in health_patterns):
                     from sim import load_failsafe_status
                     fs = load_failsafe_status()
                     mode = fs.get("mode", "unknown")
+                    _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"Running in {mode} mode. All systems operational."
                     internal_routed = True
 
@@ -750,6 +772,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             now = datetime.now(timezone.utc)
                             tz = "Europe/Berlin"
                             local = now.astimezone()
+                            _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"It is {local.strftime('%H:%M')} local time ({tz}). UTC is {now.strftime('%H:%M')}."
                         elif any(p in lower_message for p in status_patterns):
                             from sim import load_failsafe_status, load_llm_status
@@ -757,13 +780,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             llm = load_llm_status()
                             healthy = "healthy" if fs.get("initialized") else "not yet initialized"
                             prov = llm.get("provider", "unknown")
+                            _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"I'm {healthy}. LLM provider: {prov}."
                         elif any(p in lower_message for p in capability_patterns):
+                            _set_signal("capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
                         elif any(p in lower_message for p in health_patterns):
                             from sim import load_failsafe_status
                             fs = load_failsafe_status()
                             mode = fs.get("mode", "unknown")
+                            _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"Running in {mode} mode. All systems operational."
                         else:
                             message = _get_language_module().simple_response()
@@ -816,6 +842,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 from datetime import datetime, timezone
                 now = datetime.now(timezone.utc)
                 local = now.astimezone()
+                _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
                 internal_routed = True
             elif any(p in lower_message for p in status_patterns):
@@ -824,15 +851,18 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 llm = load_llm_status()
                 init = "initialized" if fs.get("initialized") else "not yet initialized"
                 prov = llm.get("provider", "unknown")
+                _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"I am {init}. LLM provider: {prov}."
                 internal_routed = True
             elif any(p in lower_message for p in health_patterns):
                 from sim import load_failsafe_status
                 fs = load_failsafe_status()
                 mode = fs.get("mode", "unknown")
+                _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"Running in {mode} mode. All systems operational."
                 internal_routed = True
             elif any(p in lower_message for p in capability_patterns):
+                _set_signal("capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
                 internal_routed = True
 
@@ -956,7 +986,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         # Lifecycle-aware memory retrieval: assemble targeted anchors
         targeted_anchors = _get_targeted_anchors(last_message, topic_list)
 
-        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors}
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors, "_response_signals": _response_signals}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -989,13 +1019,13 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         # Lifecycle-aware memory retrieval: assemble targeted anchors
         targeted_anchors = _get_targeted_anchors(topic if isinstance(topic, str) else None)
 
-        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors}
+        return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors, "_response_signals": _response_signals}
 
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
     source = "fallback"
 
-    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors()}
+    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(), "_response_signals": _response_signals}
     
     # Route through outbox for unified communication
     try:
