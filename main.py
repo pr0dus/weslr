@@ -2275,7 +2275,7 @@ def cmd_serve(args):
                     # Lightweight provider availability check (cheap only)
                     provider_ok = False
                     try:
-                        from llm_runtime import get_provider as _get_provider
+                        from weslr.providers import get_provider as _get_provider
                         _get_provider()  # just check it doesn't raise
                         provider_ok = True
                     except Exception:
