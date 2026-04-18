@@ -586,33 +586,62 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             if "reason" in topic_lower:
                 message = "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
             else:
-                # Get enriched context
-                introspection = _get_introspection_context()
-                valence = _get_valence_context()
-                
-                # Try synthesis first with enriched context
-                synthesis = synthesize_concept_or_self_reply(
-                    likely_need=likely_need,
-                    lead_topic=lead_topic,
-                    self_model=communicator_self.get("self_model", {}),
-                    narrative_state=communicator_self.get("narrative_state", {}),
-                    research_context=research_context,
-                )
-                if synthesis:
-                    message = synthesis
-                else:
-                    # Try enriched self-report
-                    enriched = _generate_enriched_self_report(communicator_self, introspection, valence)
-                    if enriched:
-                        message = enriched
+                # ── Internal fact routing ──────────────────────────────────────
+                time_patterns = ["what time is it", "what's the time", "tell me the time", "current time", "time is it"]
+                status_patterns = ["system status", "your status", "how are you doing", "how are you feeling", "what's happening", "what can you do", "your capabilities"]
+                health_patterns = ["are you healthy", "are you ok", "are you okay", "are you working", "are you functional", "are you running", "are you operational"]
+
+                internal_routed = False
+                msg_lower = lower_message
+                if any(p in msg_lower for p in time_patterns):
+                    from datetime import datetime, timezone
+                    now = datetime.now(timezone.utc)
+                    local = now.astimezone()
+                    message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
+                    internal_routed = True
+                elif any(p in msg_lower for p in status_patterns):
+                    from sim import load_failsafe_status, load_llm_status
+                    fs = load_failsafe_status()
+                    llm = load_llm_status()
+                    init = "initialized" if fs.get("initialized") else "not yet initialized"
+                    prov = llm.get("provider", "unknown")
+                    message = f"I am {init}. LLM provider: {prov}."
+                    internal_routed = True
+                elif any(p in msg_lower for p in health_patterns):
+                    from sim import load_failsafe_status
+                    fs = load_failsafe_status()
+                    mode = fs.get("mode", "unknown")
+                    message = f"Running in {mode} mode. All systems operational."
+                    internal_routed = True
+
+                if not internal_routed:
+                    # Get enriched context
+                    introspection = _get_introspection_context()
+                    valence = _get_valence_context()
+
+                    # Try synthesis first with enriched context
+                    synthesis = synthesize_concept_or_self_reply(
+                        likely_need=likely_need,
+                        lead_topic=lead_topic,
+                        self_model=communicator_self.get("self_model", {}),
+                        narrative_state=communicator_self.get("narrative_state", {}),
+                        research_context=research_context,
+                    )
+                    if synthesis:
+                        message = synthesis
                     else:
-                        # Fallback to original behavior
-                        message = _get_language_module().how_are_you_response()
-                # Enrich with internal-doc themes (one short sentence)
-                doc_context = get_internal_docs_context("self_report")
-                if doc_context.get("used") and doc_context.get("themes"):
-                    first_theme = doc_context["themes"][0]
-                    message = f"{message} {first_theme}"
+                        # Try enriched self-report
+                        enriched = _generate_enriched_self_report(communicator_self, introspection, valence)
+                        if enriched:
+                            message = enriched
+                        else:
+                            # Fallback to original behavior
+                            message = _get_language_module().how_are_you_response()
+                    # Enrich with internal-doc themes (one short sentence)
+                    doc_context = get_internal_docs_context("self_report")
+                    if doc_context.get("used") and doc_context.get("themes"):
+                        first_theme = doc_context["themes"][0]
+                        message = f"{message} {first_theme}"
         elif likely_need == "concept_plus_self_position":
             # Check for internal concept allowlist first
             lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
@@ -708,8 +737,36 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     if any(token in lower_message for token in ["is it raining", "is it raining?", "is it raining .", "is it raining."]) or lead_topic.lower() in {"rain", "raining", "weather"}:
                         message = "I can't tell from here unless I have live weather or local context."
                     else:
-                        # Fallback - simple response for other cases
-                        message = _get_language_module().simple_response()
+                        # ── Internal fact routing ──────────────────────────────────────
+                        # Route factual/system questions through WESLR's own capabilities
+                        # before falling back to the generic LLM response.
+                        time_patterns = ["what time is it", "what's the time", "tell me the time", "current time", "time is it"]
+                        status_patterns = ["system status", "how are you", "are you healthy", "what's your status", "how are you doing"]
+                        capability_patterns = ["what can you do", "what are your capabilities", "what do you know", "your capabilities", "can you tell me"]
+                        health_patterns = ["are you ok", "are you okay", "are you working", "are you functional", "are you running"]
+
+                        if any(p in lower_message for p in time_patterns):
+                            from datetime import datetime, timezone
+                            now = datetime.now(timezone.utc)
+                            tz = "Europe/Berlin"
+                            local = now.astimezone()
+                            message = f"It is {local.strftime('%H:%M')} local time ({tz}). UTC is {now.strftime('%H:%M')}."
+                        elif any(p in lower_message for p in status_patterns):
+                            from sim import load_failsafe_status, load_llm_status
+                            fs = load_failsafe_status()
+                            llm = load_llm_status()
+                            healthy = "healthy" if fs.get("initialized") else "not yet initialized"
+                            prov = llm.get("provider", "unknown")
+                            message = f"I'm {healthy}. LLM provider: {prov}."
+                        elif any(p in lower_message for p in capability_patterns):
+                            message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
+                        elif any(p in lower_message for p in health_patterns):
+                            from sim import load_failsafe_status
+                            fs = load_failsafe_status()
+                            mode = fs.get("mode", "unknown")
+                            message = f"Running in {mode} mode. All systems operational."
+                        else:
+                            message = _get_language_module().simple_response()
         elif likely_need == "light_acknowledgment":
             message = "I'm here and responding."
         elif likely_need == "clearer_explanation":
@@ -745,19 +802,54 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             else:
                 message = "I can't directly observe that from here."
         elif likely_need == "concept_explanation":
-            # Try synthesis first
-            synthesis = synthesize_concept_or_self_reply(
-                likely_need=likely_need,
-                lead_topic=lead_topic,
-                self_model=communicator_self.get("self_model", {}),
-                narrative_state=communicator_self.get("narrative_state", {}),
-                research_context=research_context,
-            )
-            if synthesis:
-                message = synthesis
-            else:
-                # Simple factual answer for "what is X" style questions
-                has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
+            # ── Internal fact routing ──────────────────────────────────────────
+            # Route factual/system questions through WESLR's own capabilities
+            # before falling back to the concept synthesis path.
+            time_patterns = ["what time is it", "what's the time", "tell me the time", "current time", "time is it"]
+            status_patterns = ["system status", "your status", "how are you doing", "how are you feeling", "what's happening"]
+            health_patterns = ["are you healthy", "are you ok", "are you okay", "are you working", "are you functional", "are you running", "are you operational"]
+            capability_patterns = ["what can you do", "what are your capabilities", "your capabilities", "can you tell me", "what do you know"]
+            about_patterns = ["about yourself", "about you", "about weslr", "about me"]
+
+            internal_routed = False
+            if any(p in lower_message for p in time_patterns):
+                from datetime import datetime, timezone
+                now = datetime.now(timezone.utc)
+                local = now.astimezone()
+                message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
+                internal_routed = True
+            elif any(p in lower_message for p in status_patterns):
+                from sim import load_failsafe_status, load_llm_status
+                fs = load_failsafe_status()
+                llm = load_llm_status()
+                init = "initialized" if fs.get("initialized") else "not yet initialized"
+                prov = llm.get("provider", "unknown")
+                message = f"I am {init}. LLM provider: {prov}."
+                internal_routed = True
+            elif any(p in lower_message for p in health_patterns):
+                from sim import load_failsafe_status
+                fs = load_failsafe_status()
+                mode = fs.get("mode", "unknown")
+                message = f"Running in {mode} mode. All systems operational."
+                internal_routed = True
+            elif any(p in lower_message for p in capability_patterns):
+                message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
+                internal_routed = True
+
+            if not internal_routed:
+                # Try synthesis first
+                synthesis = synthesize_concept_or_self_reply(
+                    likely_need=likely_need,
+                    lead_topic=lead_topic,
+                    self_model=communicator_self.get("self_model", {}),
+                    narrative_state=communicator_self.get("narrative_state", {}),
+                    research_context=research_context,
+                )
+                if synthesis:
+                    message = synthesis
+                else:
+                    # Simple factual answer for "what is X" style questions
+                    has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
                 if has_research_answer:
                     # Fallback to original research answer behavior
                     message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
