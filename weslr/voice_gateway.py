@@ -200,9 +200,48 @@ async def voice_connection(ws, path=None):
 
         async for raw_msg in ws:
             if isinstance(raw_msg, bytes):
-                # Binary audio — in shim mode, discarded
-                # In production, pass to stt_transcribe()
-                logger.debug(f"Received {len(raw_msg)} bytes of audio (shim mode — discarded)")
+                # Binary audio — call STT (shim in Phase 1B, real engine later)
+                audio_data = raw_msg
+                logger.debug(f"Received {len(audio_data)} bytes of audio — calling STT")
+                try:
+                    stt_result = await stt_transcribe(audio_data, format="webm")
+                    transcript = stt_result.get("text", "").strip()
+                    language = stt_result.get("language", "en")
+                    confidence = stt_result.get("confidence", 1.0)
+                    duration_s = stt_result.get("duration_s", 0.0)
+                except Exception as e:
+                    logger.error(f"STT failed: {e}")
+                    transcript = ""
+
+                if not transcript:
+                    await ws.send(json.dumps({
+                        "type": "response",
+                        "text": "I couldn't understand that. Could you try again?",
+                        "should_speak": True,
+                    }))
+                    continue
+
+                logger.info(f"Voice transcript: {transcript[:60]}")
+                chat_response = weslr_chat(transcript, timeline_id=timeline_id)
+                response_text = chat_response.get("message", "")
+                source = chat_response.get("source", "weslr")
+                should_speak = bool(response_text)
+                await ws.send(json.dumps({
+                    "type": "response",
+                    "text": response_text,
+                    "should_speak": should_speak,
+                    "source": source,
+                }))
+                log_voice_event(
+                    transcript=transcript,
+                    response_text=response_text,
+                    timeline_id=timeline_id,
+                    turn_id=turn_id,
+                    interrupted=False,
+                    stt_provider=stt_result.get("shim_mode") and "shim" or "unknown",
+                    confidence=confidence,
+                    duration_s=duration_s,
+                )
                 continue
 
             try:

@@ -126,6 +126,7 @@
       <textarea id="voice-text" placeholder="Type here and press Send…" rows="2" style="width:100%;resize:none;font-family:inherit;padding:6px;border:1px solid #333;background:#1a1a1a;color:#ccc;border-radius:4px;"></textarea>
       <div class="btn-row" style="margin-top:6px;">
         <button id="voice-send-btn" style="background:#2a7;border-color:#2a7;color:#000;">Send to WESLR</button>
+        <button id="voice-mic-btn" style="background:#333;border-color:#444;color:#ccc;">🎤 Hold to Talk</button>
       </div>
       <div id="voice-response" style="margin-top:8px;padding:8px;background:#111;border-radius:4px;min-height:40px;color:#ccc;font-size:0.9em;display:none;"></div>
       <div id="voice-status" style="margin-top:4px;font-size:0.8em;color:#888;"></div>
@@ -441,13 +442,25 @@
       if (chv) chv.textContent = 'failed';
     });
 
-  /* ---- Voice: Phase 1A STT shim via WebSocket ---- */
+  /* ---- Voice: Phase 1B — real mic capture, STT shim fallback ---- */
   (function () {
     var ws = null;
     var voicePort = 8778;
     var voiceHost = window.location.hostname || '127.0.0.1';
     var wsUrl = 'ws://' + voiceHost + ':' + voicePort;
     var isConnected = false;
+
+    // ── Audio capture state ─────────────────────────────────────────────────
+    var mediaRecorder = null;
+    var audioChunks = [];
+    var isCapturing = false;
+    var micStream = null;
+
+    // ── DOM helpers ─────────────────────────────────────────────────────────
+    function setStatus(text) {
+      var el = document.getElementById('voice-status');
+      if (el) el.textContent = text;
+    }
 
     function appendVoiceLine(text, cls) {
       var el = document.getElementById('voice-response');
@@ -461,73 +474,153 @@
       el.scrollTop = el.scrollHeight;
     }
 
+    // ── WebSocket ──────────────────────────────────────────────────────────
     function connectWS() {
+      if (ws && ws.readyState === WebSocket.OPEN) return;
       try {
         ws = new WebSocket(wsUrl);
       } catch (e) {
-        var statusEl = document.getElementById('voice-status');
-        if (statusEl) statusEl.textContent = 'WebSocket unavailable in this browser.';
+        setStatus('WebSocket unavailable in this browser.');
         return;
       }
 
       ws.onopen = function () {
         isConnected = true;
-        var statusEl = document.getElementById('voice-status');
-        if (statusEl) statusEl.textContent = 'Voice gateway connected. Type a message.';
+        setStatus('Voice gateway connected. Ready.');
         var btn = document.getElementById('voice-send-btn');
         if (btn) btn.disabled = false;
+        var micBtn = document.getElementById('voice-mic-btn');
+        if (micBtn) micBtn.disabled = false;
       };
 
       ws.onmessage = function (event) {
         try {
           var msg = JSON.parse(event.data);
-        } catch (e) {
-          return;
-        }
+        } catch (e) { return; }
+
         if (msg.type === 'ready') {
-          var statusEl = document.getElementById('voice-status');
-          if (statusEl) statusEl.textContent = 'Ready. Type and send.';
+          setStatus('Ready. Hold 🎤 to talk, or type a message.');
         } else if (msg.type === 'response') {
-          var text = msg.text || '';
-          appendVoiceLine(text, 'weslr');
-          if (text && window.speechSynthesis) {
+          appendVoiceLine(msg.text || '', 'weslr');
+          if (msg.text && window.speechSynthesis) {
             window.speechSynthesis.cancel();
-            var u = new SpeechSynthesisUtterance(text);
+            var u = new SpeechSynthesisUtterance(msg.text);
             u.rate = 1.1;
             u.pitch = 1.0;
             window.speechSynthesis.speak(u);
           }
         } else if (msg.type === 'error') {
-          var statusEl = document.getElementById('voice-status');
-          if (statusEl) statusEl.textContent = 'Error: ' + (msg.message || 'unknown');
+          setStatus('Error: ' + (msg.message || 'unknown'));
         }
       };
 
       ws.onclose = function () {
         isConnected = false;
-        var statusEl = document.getElementById('voice-status');
-        if (statusEl) statusEl.textContent = 'Disconnected. Refresh to reconnect.';
+        setStatus('Disconnected. Refresh to reconnect.');
         var btn = document.getElementById('voice-send-btn');
         if (btn) btn.disabled = true;
+        var micBtn = document.getElementById('voice-mic-btn');
+        if (micBtn) { micBtn.disabled = true; micBtn.style.background = '#333'; }
       };
 
       ws.onerror = function () {
-        var statusEl = document.getElementById('voice-status');
-        if (statusEl) statusEl.textContent = 'Connection failed. Is the voice gateway running?';
+        setStatus('Connection failed. Is the voice gateway running?');
         isConnected = false;
       };
     }
 
     connectWS();
 
+    // ── Mic capture ─────────────────────────────────────────────────────────
+    function startCapture() {
+      if (isCapturing) return;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus('Microphone not available in this browser.');
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then(function (stream) {
+          micStream = stream;
+          audioChunks = [];
+          // Prefer opus; fall back to any available codec
+          var mimeType = 'audio/ogg;codecs=opus' in navigator ? 'audio/ogg;codecs=opus' : 'audio/webm';
+          try {
+            mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+          } catch (e) {
+            // Fallback without mimeType hint
+            mediaRecorder = new MediaRecorder(stream);
+          }
+          mediaRecorder.ondataavailable = function (e) {
+            if (e.data && e.data.size > 0) audioChunks.push(e.data);
+          };
+          mediaRecorder.onstop = sendAudioChunks;
+          mediaRecorder.start();
+          isCapturing = true;
+          var micBtn = document.getElementById('voice-mic-btn');
+          if (micBtn) { micBtn.style.background = '#c44'; micBtn.textContent = '🎤 Release to send'; }
+          setStatus('Recording… release to send.');
+        })
+        .catch(function (err) {
+          setStatus('Microphone permission denied: ' + err.message);
+        });
+    }
+
+    function stopCapture() {
+      if (!isCapturing || !mediaRecorder) return;
+      isCapturing = false;
+      var micBtn = document.getElementById('voice-mic-btn');
+      if (micBtn) { micBtn.style.background = '#333'; micBtn.textContent = '🎤 Hold to Talk'; }
+      setStatus('Processing…');
+      mediaRecorder.stop();
+      // Stop all tracks to release mic
+      if (micStream) {
+        micStream.getTracks().forEach(function (t) { t.stop(); });
+        micStream = null;
+      }
+    }
+
+    function sendAudioChunks() {
+      if (!audioChunks.length) {
+        setStatus('No audio captured. Try again.');
+        return;
+      }
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        setStatus('Not connected. Retrying…');
+        connectWS();
+        return;
+      }
+      var blob = new Blob(audioChunks, { type: mediaRecorder ? mediaRecorder.mimeType : 'audio/webm' });
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        // Send as binary ArrayBuffer
+        ws.send(reader.result);
+        setStatus('Audio sent. Waiting for response…');
+      };
+      reader.readAsArrayBuffer(blob);
+    }
+
+    // ── Mic button events (mouse) ───────────────────────────────────────────
+    var micBtn = document.getElementById('voice-mic-btn');
+    if (micBtn) {
+      micBtn.addEventListener('mousedown', function (e) { e.preventDefault(); startCapture(); });
+      micBtn.addEventListener('mouseup', function (e) { e.preventDefault(); stopCapture(); });
+      micBtn.addEventListener('mouseleave', function () { if (isCapturing) stopCapture(); });
+    }
+
+    // ── Mic button events (touch — mobile) ──────────────────────────────────
+    if (micBtn) {
+      micBtn.addEventListener('touchstart', function (e) { e.preventDefault(); startCapture(); }, { passive: false });
+      micBtn.addEventListener('touchend', function (e) { e.preventDefault(); stopCapture(); }, { passive: false });
+    }
+
+    // ── Text fallback ───────────────────────────────────────────────────────
     document.getElementById('voice-send-btn').addEventListener('click', function () {
       var input = document.getElementById('voice-text');
       if (!input) return;
       var text = input.value.trim();
       if (!text) return;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        var statusEl = document.getElementById('voice-status');
-        if (statusEl) statusEl.textContent = 'Not connected. Retrying…';
+        setStatus('Not connected. Retrying…');
         connectWS();
         return;
       }
