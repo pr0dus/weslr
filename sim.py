@@ -1091,7 +1091,25 @@ def get_relevant_semantic_anchors(
 
 
 def load_communicator_self() -> dict:
-    """Load communicator self state with mtime-aware in-process caching.
+    """Load the full communicator self state — L3 (deep state / background tier).
+
+    Architecture (4 tiers):
+        L0  — identity core (~255 bytes): always loaded, /chat hot path
+        L1  — operating facts (~713 bytes): always loaded, /chat hot path
+        L2  — session state (~672 bytes): always loaded, /chat hot path
+        L3  — this function: full state for background/background sync only
+
+    L3 is used for:
+        - propagation.py (identity propagation, continuity sync)
+        - autonomous_expression.py
+        - cmd_* CLI handlers
+        - build_identity_core_report()
+        - any archive/evolution/history operations
+
+    L3 is NOT required for /chat hot path — L0+L1+L2 cover all fields
+    that affect message generation. The full loader is called on /chat as a
+    fallback/legacy path, but its output is entirely overwritten by tier injections.
+    Removal from /chat is deferred pending full tier coverage validation.
 
     Returns a cached result when the file has not changed since last load.
     The cache is invalidated whenever save_communicator_self() is called.
@@ -1127,6 +1145,7 @@ def load_tier(tier: str) -> dict | None:
         l0  — identity core (~255 bytes): identity_anchor, core_drives, operator info
         l1  — operating facts (~713 bytes): affect, narrative, intent, governance
         l2  — session state (~672 bytes): identity_state, continuity
+        l3  — alias to load_communicator_self(): full state, background sync only
 
     Returns None if the file is missing or invalid. Callers must handle None
     and fall back to their own defaults.
@@ -1139,6 +1158,11 @@ def load_tier(tier: str) -> dict | None:
             path = base / ".weslr" / "memory_tiers" / "l1_operating.json"
         elif tier == "l2":
             path = base / ".weslr" / "memory_tiers" / "l2_session.json"
+        elif tier == "l3":
+            # l3 is the full communicator_self — background sync tier.
+            # Implemented as an alias to load_communicator_self() so the tier
+            # API is uniform across all four levels.
+            return load_communicator_self()
         else:
             return None
         if not path.exists():

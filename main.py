@@ -2086,6 +2086,15 @@ def cmd_serve(args):
                             "error": "chat service busy, try again shortly"
                         }).encode("utf-8"))
                         return
+                    # Memory tier architecture (4 levels):
+                    #   L0 — identity core, always loaded
+                    #   L1 — operating facts, always loaded
+                    #   L2 — session state, always loaded
+                    #   L3 — full communicator_self, background/sync only
+                    # Primary data for /chat comes from L0+L1+L2 via tier injections.
+                    # load_communicator_self() below is a legacy fallback; its output is
+                    # entirely overwritten by tier injections on the hot path.
+                    # Future: remove full loader from /chat once tier coverage is validated.
                     try:
                         fut = _CHAT_EXECUTOR.submit(
                             build_communicator_message_payload,
