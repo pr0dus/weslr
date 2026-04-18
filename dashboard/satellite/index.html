@@ -121,11 +121,11 @@
     </div>
 
     <div class="actions-sub">
-      <h3>🎤 Voice (Phase 1A — STT shim)</h3>
+      <h3>🎤 Voice + Text Chat (Phase 2 — shared WS transport)</h3>
       <p class="empty-state" style="font-size:0.8em;color:#888;">Type your message. WESLR will respond below.</p>
-      <textarea id="voice-text" placeholder="Type here and press Send…" rows="2" style="width:100%;resize:none;font-family:inherit;padding:6px;border:1px solid #333;background:#1a1a1a;color:#ccc;border-radius:4px;"></textarea>
+      <textarea id="voice-text" placeholder="Ask anything — text or voice. Try 'What time is it?'…" rows="2" style="width:100%;resize:none;font-family:inherit;padding:6px;border:1px solid #333;background:#1a1a1a;color:#ccc;border-radius:4px;"></textarea>
       <div class="btn-row" style="margin-top:6px;">
-        <button id="voice-send-btn" style="background:#2a7;border-color:#2a7;color:#000;">Send to WESLR</button>
+        <button id="voice-send-btn" style="background:#2a7;border-color:#2a7;color:#000;">Ask WESLR</button>
         <button id="voice-mic-btn" style="background:#333;border-color:#444;color:#ccc;">🎤 Hold to Talk</button>
       </div>
       <div id="voice-response" style="margin-top:8px;padding:8px;background:#111;border-radius:4px;min-height:40px;color:#ccc;font-size:0.9em;display:none;"></div>
@@ -442,7 +442,7 @@
       if (chv) chv.textContent = 'failed';
     });
 
-  /* ---- Voice: Phase 1B — real mic capture, STT shim fallback ---- */
+  /* ---- Voice + Text Chat: Phase 2 — shared WS transport ---- */
   (function () {
     var ws = null;
     var voicePort = 8778;
@@ -499,7 +499,7 @@
         } catch (e) { return; }
 
         if (msg.type === 'ready') {
-          setStatus('Ready. Hold 🎤 to talk, or type a message.');
+          setStatus('Ready. Text or voice — try a question like "What time is it?".');
         } else if (msg.type === 'response') {
           appendVoiceLine(msg.text || '', 'weslr');
           if (msg.text && window.speechSynthesis) {
