@@ -76,36 +76,66 @@ def _find_whisper_cli() -> tuple[str, str] | tuple[None, None]:
 
 
 async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
-    """Transcribe audio to text using whisper-cli subprocess.
+    """Transcribe audio to text using whisper-cli subprocess with ffmpeg normalization.
 
-    Accepts: raw audio bytes (ogg, wav, mp3, flac)
+    Accepts: raw audio bytes from browser (ogg, webm, mp3, flac)
     Returns: {"text": str, "language": str, "confidence": float, "duration_s": float}
 
-    Falls back to empty text if whisper-cli is unavailable or fails.
-    The gateway will return a "couldn't understand" response, preserving
-    the shim fallback.
+    All audio is converted to 16kHz mono WAV via ffmpeg before transcription.
+    This ensures whisper-cli receives a known-compatible format regardless of
+    the browser's actual output (ogg/webm/opus/vorbis/etc.).
+
+    Falls back to empty text if whisper-cli or ffmpeg is unavailable or fails.
+    The gateway will return a "couldn't understand" response.
     """
     import os
     import tempfile
     import json as _json
-    import subprocess
+    import shutil
 
     cli_path, model_path = _find_whisper_cli()
     if not cli_path or not model_path:
         logger.warning("whisper-cli or model not found — shim fallback")
         return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
 
-    # Write audio to a temp file — whisper-cli reads ogg/wav/mp3/flac directly
+    ffmpeg_path = shutil.which("ffmpeg")
+    if not ffmpeg_path:
+        logger.warning("ffmpeg not found — shim fallback")
+        return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+
+    # Write raw audio to a temp file with the detected extension
     suffix = f".{format}" if format in ("ogg", "wav", "mp3", "flac") else ".ogg"
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_in:
+            tmp_in.write(audio_bytes)
+            tmp_in_path = tmp_in.name
     except Exception as e:
         logger.error(f"Failed to write audio temp file: {e}")
         return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
 
+    # Convert to 16kHz mono WAV via ffmpeg, then transcribe with whisper-cli
     try:
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
+            tmp_wav_path = tmp_wav.name
+
+        conv_proc = await asyncio.create_subprocess_exec(
+            ffmpeg_path,
+            "-i", tmp_in_path,
+            "-ar", "16000",
+            "-ac", "1",
+            "-c:a", "pcm_s16le",
+            "-y",
+            "-hide_banner",
+            "-loglevel", "error",
+            tmp_wav_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        _, _ = await asyncio.wait_for(conv_proc.communicate(), timeout=30)
+        if conv_proc.returncode != 0:
+            logger.warning(f"ffmpeg conversion failed (code {conv_proc.returncode})")
+            return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+
         proc = await asyncio.create_subprocess_exec(
             cli_path,
             "-t", "4",
@@ -114,7 +144,7 @@ async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
             "-oj",
             "-np",
             "-nt",
-            "-f", tmp_path,
+            "-f", tmp_wav_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
@@ -125,12 +155,9 @@ async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
             return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
 
         raw = stdout.decode("utf-8", errors="replace").strip()
-
         if not raw:
             return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": False}
 
-        # Try JSON first (whisper-cli with -oj may produce single-line JSON).
-        # If it's plain text instead, take it directly.
         try:
             result = _json.loads(raw)
             text = (
@@ -143,11 +170,9 @@ async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
                 )
             ).strip()
         except _json.JSONDecodeError:
-            # Plain text output — take the whole thing as the transcript
             text = raw.strip()
 
-        # Estimate duration: 16kHz mono s16 → ~32 kB/s; ogg is variable, use 16 kB/s
-        duration_s = os.path.getsize(tmp_path) / 16000
+        duration_s = os.path.getsize(tmp_wav_path) / 32000
 
         return {
             "text": text,
@@ -158,18 +183,17 @@ async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
         }
 
     except asyncio.TimeoutError:
-        logger.warning("whisper-cli timed out after 60s")
+        logger.warning("STT timed out")
         return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
     except Exception as e:
         logger.error(f"STT error: {e}")
         return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
     finally:
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
-
-
+        for p in (tmp_in_path, tmp_wav_path):
+            try:
+                os.unlink(p)
+            except Exception:
+                pass
 
 
 # ── Chat Integration ──────────────────────────────────────────────────────────
@@ -201,7 +225,6 @@ def weslr_chat(text: str, timeline_id: str = "tl_default") -> dict:
     except Exception as e:
         logger.error(f"/chat call failed: {e}")
         return {"error": str(e), "message": "Voice gateway could not reach WESLR."}
-
 
 # ── Timeline Event Logging ────────────────────────────────────────────────────
 
@@ -259,7 +282,6 @@ def log_voice_event(
 
     return event_id
 
-
 # ── WebSocket Message Types ───────────────────────────────────────────────────
 
 # Browser → Gateway:
@@ -273,7 +295,6 @@ def log_voice_event(
 #   response    — WESLR /chat response text
 #   ready       — gateway ready signal
 #   error       — error message
-
 
 # ── WebSocket Gateway ────────────────────────────────────────────────────────
 
@@ -411,12 +432,10 @@ async def voice_connection(ws, path=None):
         except Exception:
             pass
 
-
 # ── Server Launcher ──────────────────────────────────────────────────────────
 
 _voice_server: Optional["websockets.WebSocketServer"] = None
 _voice_thread: Optional[threading.Thread] = None
-
 
 def start_voice_gateway(port: int = 8778, host: str = "127.0.0.1"):
     """Start the voice gateway WebSocket server in a background thread.
@@ -447,7 +466,6 @@ def start_voice_gateway(port: int = 8778, host: str = "127.0.0.1"):
     _voice_thread = threading.Thread(target=run_async, daemon=True, name="voice-gateway")
     _voice_thread.start()
 
-
 def stop_voice_gateway():
     global _voice_server, _voice_thread
     if _voice_server is not None:
@@ -456,7 +474,6 @@ def stop_voice_gateway():
     if _voice_thread is not None:
         _voice_thread = None
     logger.info("Voice gateway stopped")
-
 
 if __name__ == "__main__":
     import argparse

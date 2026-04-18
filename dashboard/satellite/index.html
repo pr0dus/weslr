@@ -543,7 +543,9 @@
           micStream = stream;
           audioChunks = [];
           // Prefer opus; fall back to any available codec
-          var mimeType = 'audio/ogg;codecs=opus' in navigator ? 'audio/ogg;codecs=opus' : 'audio/webm';
+          var mimeType = 'audio/ogg;codecs=opus';
+          if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
+          if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
           try {
             mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
           } catch (e) {
