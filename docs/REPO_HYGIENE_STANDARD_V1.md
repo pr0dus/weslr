@@ -30,6 +30,9 @@ without them, and they are small enough to review in full.
 |---|---|
 | `.weslr/memory_tiers/l0_identity.json` | Identity core: identity_anchor, core_drives, operator name/role |
 | `.weslr/memory_tiers/l1_operating.json` | Operating facts: affect, narrative, intent, governance |
+| `.weslr/memory_tiers/l2_session.json` | Session state: identity_state, continuity |
+
+**Combined L0+L1+L2: ~1,640 bytes vs ~4,560 bytes for full communicator_self.json (2.8× reduction).**
 
 **Adding a new tier file to .weslr/memory_tiers/:**
 1. Seed the file with meaningful initial data

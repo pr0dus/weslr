@@ -1124,9 +1124,9 @@ def load_tier(tier: str) -> dict | None:
     """Load a compact memory tier file with safe fallback.
 
     Currently implements:
-        l0  — identity core (~286 bytes): identity_anchor, core_drives, operator info
-        l1  — operating facts (~800 bytes): affect, narrative, intent, governance
-        l2  — session state (~775 bytes): identity_state, continuity
+        l0  — identity core (~255 bytes): identity_anchor, core_drives, operator info
+        l1  — operating facts (~713 bytes): affect, narrative, intent, governance
+        l2  — session state (~672 bytes): identity_state, continuity
 
     Returns None if the file is missing or invalid. Callers must handle None
     and fall back to their own defaults.
