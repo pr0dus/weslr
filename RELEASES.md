@@ -87,6 +87,24 @@ Recommended rollback order:
 - commit: `4c96141`
 - tag: `v0.7.5`
 
+### v0.8.0
+- Memory Tiers V1 — tiered runtime memory architecture (hot-path reduction: 2.8×)
+- L0: identity tier — `.weslr/memory_tiers/l0_identity.json` (~255B): identity_anchor, core_drives, operator name/role/adaptation_level
+- L1: operating facts tier — `.weslr/memory_tiers/l1_operating.json` (~713B): affect, narrative, current_intent, governance, active_concerns
+- L2: session state tier — `.weslr/memory_tiers/l2_session.json` (~672B): identity_state, continuity
+- L3: `load_communicator_self()` formalized as background/sync tier (propagation, autonomous expression, governance, evolution — NOT /chat hot path)
+- `/chat` hot path now uses L0+L1+L2 via `load_tier()` API; full loader retained as fallback
+- `load_tier()` in `sim.py` handles all four tiers uniformly: l0, l1, l2, l3
+- Tier injection in `build_communicator_message_payload()` (dialogue.py): injects tier data into communicator_self dict so all downstream consumers receive tier data without explicit changes
+- `REPO_HYGIENE_STANDARD_V1.md` created: defines canonical .weslr/ boundary (tracked tier files vs ignored runtime state)
+- `.gitignore` updated: `*.jsonl`, `weslr/tests/continuity/` now explicitly excluded
+- Dead weight removed: `_onboarding_history` stripped from communicator_self load path (~1KB reduction)
+- All 5 self-test checks pass, 0 regressions confirmed
+- strict rules respected: no behavior changes to non-chat paths, background sync untouched, full loader unchanged for propagation/archival
+- intended direction: establish tiered memory architecture as foundation for future hot-path optimization; full loader removal from /chat deferred until tier coverage validated
+- commits: `fa698e4`, `603dab0`, `741e852`, `a4decf0`, `abcbcb0`, `2214bda`, `085e71f`, `02ace75`, `9a9f0aa`
+- backup: `Weslr-backup-20260418-tiers-v1.tar.gz`
+
 ### v0.7.6
 - operator case comparison / escalation summary layer (v90) - WESLR Python only, additive only, read-only
 - CaseComparisonSummary dataclass with operator-readable + machine-readable output
