@@ -47,32 +47,129 @@ def set_weslr_http_port(port: int):
 
 # ── STT Shim Interface ────────────────────────────────────────────────────────
 
-async def stt_transcribe(audio_bytes: bytes, format: str = "wav") -> dict:
-    """Transcribe audio to text.
+# whisper-cli path — set once at module load
+_whisper_cli_path: str | None = None
+_whisper_model_path: str | None = None
 
-    Phase 1A: This is a SHIM that accepts text injection from the browser.
-    The browser sends a JSON control message with the transcript directly,
-    bypassing STT. This proves the full transport and integration loop.
 
-    Replace this function with the actual STT engine:
-        - faster-whisper or openai-whisper (local)
-        - whisper.cpp CLI subprocess
-        - Groq Whisper API
+def _find_whisper_cli() -> tuple[str, str] | tuple[None, None]:
+    """Locate whisper-cli binary and a model. Cached after first call."""
+    global _whisper_cli_path, _whisper_model_path
+    if _whisper_cli_path is not None:
+        return _whisper_cli_path, _whisper_model_path
 
-    Returns:
-        dict with keys:
-            text: str — transcription text
-            language: str — detected or assumed language
-            confidence: float — confidence 0.0–1.0
-            duration_s: float — audio duration in seconds
+    import os
+    candidates = [
+        "/data/data/com.termux/files/home/whisper.cpp/build/bin/whisper-cli",
+        "/usr/local/bin/whisper-cli",
+        "whisper-cli",
+    ]
+    model_candidates = [
+        "/data/data/com.termux/files/home/whisper.cpp/models/ggml-base.bin",
+        "/data/data/com.termux/files/home/whisper.cpp/models/ggml-tiny.en.bin",
+    ]
+    cli = next((c for c in candidates if os.path.isfile(c)), None)
+    model = next((m for m in model_candidates if os.path.isfile(m)), None)
+    _whisper_cli_path = cli
+    _whisper_model_path = model
+    return cli, model
+
+
+async def stt_transcribe(audio_bytes: bytes, format: str = "ogg") -> dict:
+    """Transcribe audio to text using whisper-cli subprocess.
+
+    Accepts: raw audio bytes (ogg, wav, mp3, flac)
+    Returns: {"text": str, "language": str, "confidence": float, "duration_s": float}
+
+    Falls back to empty text if whisper-cli is unavailable or fails.
+    The gateway will return a "couldn't understand" response, preserving
+    the shim fallback.
     """
-    return {
-        "text": "",
-        "language": "en",
-        "confidence": 1.0,
-        "duration_s": 0.0,
-        "shim_mode": True,
-    }
+    import os
+    import tempfile
+    import json as _json
+    import subprocess
+
+    cli_path, model_path = _find_whisper_cli()
+    if not cli_path or not model_path:
+        logger.warning("whisper-cli or model not found — shim fallback")
+        return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+
+    # Write audio to a temp file — whisper-cli reads ogg/wav/mp3/flac directly
+    suffix = f".{format}" if format in ("ogg", "wav", "mp3", "flac") else ".ogg"
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+    except Exception as e:
+        logger.error(f"Failed to write audio temp file: {e}")
+        return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            cli_path,
+            "-t", "4",
+            "-m", model_path,
+            "-l", "en",
+            "-oj",
+            "-np",
+            "-nt",
+            "-f", tmp_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=60)
+
+        if proc.returncode != 0:
+            logger.warning(f"whisper-cli exited code {proc.returncode}")
+            return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+
+        raw = stdout.decode("utf-8", errors="replace").strip()
+
+        if not raw:
+            return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": False}
+
+        # Try JSON first (whisper-cli with -oj may produce single-line JSON).
+        # If it's plain text instead, take it directly.
+        try:
+            result = _json.loads(raw)
+            text = (
+                result.get("transcription")
+                or result.get("text", "")
+                or "\n".join(
+                    ln.get("transcription", ln.get("text", ""))
+                    for ln in (result if isinstance(result, list) else [result])
+                    if ln.get("transcription") or ln.get("text")
+                )
+            ).strip()
+        except _json.JSONDecodeError:
+            # Plain text output — take the whole thing as the transcript
+            text = raw.strip()
+
+        # Estimate duration: 16kHz mono s16 → ~32 kB/s; ogg is variable, use 16 kB/s
+        duration_s = os.path.getsize(tmp_path) / 16000
+
+        return {
+            "text": text,
+            "language": "en",
+            "confidence": 1.0 if text else 0.0,
+            "duration_s": duration_s,
+            "shim_mode": False,
+        }
+
+    except asyncio.TimeoutError:
+        logger.warning("whisper-cli timed out after 60s")
+        return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+    except Exception as e:
+        logger.error(f"STT error: {e}")
+        return {"text": "", "language": "en", "confidence": 0.0, "duration_s": 0.0, "shim_mode": True}
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+
+
 
 
 # ── Chat Integration ──────────────────────────────────────────────────────────
