@@ -51,6 +51,26 @@ Web Speech API is the browser-native TTS that works *today*. XTTS and Silero VAD
 
 No commercial licenses required for v1 components.
 
+### GPU Requirements — V1 vs Future
+
+One of the practical benefits of the v1 decision lock is that **GPU is not required**.
+
+| Component | V1 Approach | Local GPU needed? |
+|---|---|---|
+| **LLM (WESLR reasoning)** | API-based (Groq/cloud) | No |
+| **STT (speech-to-text)** | Groq Whisper API | No |
+| **TTS (text-to-speech)** | Web Speech API (browser) | No |
+| **Voice Gateway** | Python WebSocket server | No |
+| **Future local TTS (coqui-ai XTTS)** | Local inference | **Yes — GPU strongly recommended, CPU acceptable with quantize=q8_0** |
+| **Future local STT (Whisper.cpp)** | Local inference | **No — runs on CPU, 2× real-time** |
+| **Future local VAD (Silero)** | Local inference | **No — runs on CPU or WebAssembly** |
+
+**What this means for the WESLR server:** A standard VPS or Termux device with no GPU is sufficient to run the full v1 voice system. The voice gateway and WESLR itself do not need a GPU.
+
+**When GPU becomes relevant:** Only when coqui-ai XTTS becomes the primary TTS engine (v2). XTTS with `--quantize q8_0` on a modern CPU (4+ cores) produces acceptable quality without a GPU, but a GPU significantly improves synthesis speed.
+
+**Storage note:** Groq Whisper requires an API key and sends audio to Groq's servers. If privacy of voice data is a concern, the local Whisper.cpp fallback (v2) addresses this without GPU requirements.
+
 ---
 
 ## 4. Latency Roadmap
