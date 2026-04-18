@@ -14,19 +14,21 @@ Changes require an operator-approved update to this file.
 These decisions are final for v1. Do not revisit without operator approval.
 
 | Decision | Choice | Rationale |
-|---|---|---|
-| STT | **Groq Whisper** (cloud API) | Fastest streaming STT available. ~300ms latency. Simple API. No local GPU required. |
-| TTS | **Web Speech API** (browser-native) | Zero setup. Works immediately. No server infrastructure. Quality is acceptable for short WESLR responses. |
-| Transport | **WebSocket** | Bidirectional, low-latency, well-understood. Audio sent as binary PCM/Opus frames. |
+|---|---|
+| STT | **`whisper-cli`** (local subprocess, `ggml-base.bin`) | Zero cloud cost. Runs offline. ffmpeg pre-normalizes any browser audio format to 16kHz mono WAV before transcription. |
+| TTS | **Web Speech API** (browser-native) | Zero setup. Works immediately. No server infrastructure. |
+| Transport | **WebSocket** — shared for binary audio + JSON text-chat | One connection carries both binary audio frames and JSON `chat_text`/`chat_text_response` frames. Text chat reuses the same `/chat` logic as HTTP. |
 | Interaction model | **Push-to-talk** | Primary v1. Human presses button to speak, releases to send. Wake word is v2+. |
-| Latency target | **4–7 seconds** end-to-end | Realistic for browser + cloud STT + WESLR /chat. Optimistic path: 2.4s. |
+| Text input | **`chat_text` frame** over same WS connection | Typing sends `{"type":"chat_text","text":"..."}` — reuses WESLR `/chat` logic. |
+| Latency target | **4-7 seconds** end-to-end | Realistic for browser + local STT + WESLR /chat. |
 
-### Why Not coqui-ai XTTS / Whisper.cpp / Silero VAD Yet
+### Why Not coqui-ai XTTS / Silero VAD Yet
 
 These are the right long-term choices but are not v1:
 - **coqui-ai XTTS** requires GPU for real-time synthesis. Adds infrastructure complexity before voice is validated.
-- **Whisper.cpp** runs locally but is 2× real-time — latency too high without Groq.
 - **Silero VAD** is excellent for turn detection but adds complexity. PTT handles turn detection in v1.
+
+**Whisper.cpp** is now in production (Phase 1C): `whisper-cli` runs locally as a subprocess with `ggml-base.bin`. ffmpeg pre-normalizes browser audio (OGG/WebM) to 16kHz mono WAV before transcription. No cloud API required.
 
 Web Speech API is the browser-native TTS that works *today*. XTTS and Silero VAD are v2 upgrade candidates.
 
@@ -38,8 +40,8 @@ Web Speech API is the browser-native TTS that works *today*. XTTS and Silero VAD
 
 | Dependency | Type | Risk | Mitigation |
 |---|---|---|---|
-| **Groq API** | Cloud STT | Vendor lock-in, API key required, cost per minute | Local Whisper.cpp fallback in v2 |
-| **Web Speech API** | Browser-native | Inconsistent across browsers (Chrome best, Safari limited) | XTTS local fallback in v2 |
+| **whisper-cli** (local) | STT (via ffmpeg + ggml-base.bin) | No cloud dependency. Offline-capable. | Cloud STT only if local STT fails. |
+| **Web Speech API** | Browser-native TTS | Inconsistent across browsers (Chrome best, Safari limited) | XTTS local fallback in v2 |
 
 ### Future Dependencies (v2+)
 
@@ -58,11 +60,10 @@ One of the practical benefits of the v1 decision lock is that **GPU is not requi
 | Component | V1 Approach | Local GPU needed? |
 |---|---|---|
 | **LLM (WESLR reasoning)** | API-based (Groq/cloud) | No |
-| **STT (speech-to-text)** | Groq Whisper API | No |
+| **STT (speech-to-text)** | whisper-cli + ggml-base.bin (local) | No |
 | **TTS (text-to-speech)** | Web Speech API (browser) | No |
 | **Voice Gateway** | Python WebSocket server | No |
 | **Future local TTS (coqui-ai XTTS)** | Local inference | **Yes — GPU strongly recommended, CPU acceptable with quantize=q8_0** |
-| **Future local STT (Whisper.cpp)** | Local inference | **No — runs on CPU, 2× real-time** |
 | **Future local VAD (Silero)** | Local inference | **No — runs on CPU or WebAssembly** |
 
 **What this means for the WESLR server:** A standard VPS or Termux device with no GPU is sufficient to run the full v1 voice system. The voice gateway and WESLR itself do not need a GPU.
@@ -77,11 +78,11 @@ One of the practical benefits of the v1 decision lock is that **GPU is not requi
 
 ```
 V1 — 4–7s round-trip (acceptable)
-  └── Groq Whisper (streaming) + Web Speech API + /chat on cloud LLM
+  └── whisper-cli STT (local) + Web Speech API + /chat on cloud LLM
        Best case: 3s. Worst case: 10s.
 
 V2 — 2–4s round-trip (optimization)
-  └── Groq Whisper (streaming partials to /chat) + coqui-ai XTTS local
+  └── whisper-cli with ggml-tiny.en.bin (77MB, faster) + coqui-ai XTTS local
        Best case: 1.5s. Worst case: 5s.
 
 V3 — <2s round-trip (advanced streaming)
@@ -105,18 +106,19 @@ V3 — <2s round-trip (advanced streaming)
 ```
 [Browser / Phone]          [WESLR Server]              [External]
        │                         │                           │
-       │ WebSocket (PCM 16kHz)   │                           │
+       │ WebSocket (binary + JSON)                           │
        │ ───────────────────────► │                           │
        │                         ▼                           │
        │                  [Voice Gateway]                    │
        │                         │                           │
-       │                         ├──► Groq Whisper API ◄──── │
+       │                         ├──► whisper-cli STT       │
+       │                         │    (ffmpeg WAV normalize) │
        │                         │                           │
-       │                         ├──► /chat integration       │
-       │                         │       (text in)            │
+       │                         ├──► /chat (text + WS)     │
        │                         │                           │
        │  ◄───────────────────────│                           │
-       │   WebSocket (TTS audio) │                           │
+       │   JSON voice response    │                           │
+       │   or chat_text_response │                           │
        │                         ▼                           │
        │                  [Timeline Logger]                  │
        │                  .weslr/timelines/                  │
@@ -126,10 +128,40 @@ V3 — <2s round-trip (advanced streaming)
 
 **Phone / browser as dumb client only:**
 - No local AI processing
-- No local STT or TTS in v1 (Web Speech API is browser-native but server-driven synthesis is v2)
-- Client role: mic → raw audio → WebSocket → receive audio → playback
+- No local STT or TTS in v1 (Web Speech API is browser-native)
+- Client role: mic → raw audio → WebSocket → receive response → TTS playback
+- Client role (Phase 2): text → `chat_text` JSON frame → WebSocket → receive response → TTS playback
 
 ---
+
+## 6. Scope Boundaries — V1
+
+### Phase 2 — Shared Text+Voice WS Transport (Implemented)
+
+One shared WebSocket connection carries both binary audio and JSON text-chat frames.
+
+**Supported WS frame types:**
+
+Client → Server (binary):
+- Raw `ArrayBuffer` (MediaRecorder output) — browser sends OGG/WebM audio directly. Server runs ffmpeg → WAV → whisper-cli.
+
+Client → Server (JSON):
+- `{"type": "chat_text", "text": "..."}` — typed text from Satellite UI or any WS client. Reuses `/chat` logic via `weslr_chat()`.
+- `{"type": "start"}` — begin voice turn (existing)
+- `{"type": "transcript", "text": "...", ...}` — legacy shim transcript frame (existing)
+- `{"type": "end"}` — end voice turn (existing)
+
+Server → Client (JSON):
+- `{"type": "ready", "connection_id": "..."}` — connection established
+- `{"type": "response", "text": "...", "should_speak": bool}` — voice transcript response (binary path)
+- `{"type": "chat_text_response", "text": "...", "source": "..."}` — text-chat response (Phase 2)
+- `{"type": "error", "message": "..."}` — bounded error, does not break session
+
+**Shared `/chat` routing:** HTTP `/chat`, WS `transcript`, and WS `chat_text` all call the same `weslr_chat()` function. Internal capability routing (time, status, health, capability) applies equally across all three entrypoints.
+
+**Validated demux (Phase 2.1):** JSON text frame → binary WAV frame → JSON text frame on one connection — all three steps confirmed working with no interference.
+
+**UI exposure:** Satellite UI (`/satellite`) uses the shared WS connection for both text input (`chat_text`) and microphone (`binary ArrayBuffer`). Same `ws://host:8778` endpoint.
 
 ## 6. Scope Boundaries — V1
 
@@ -164,7 +196,7 @@ Voice inputs produce the same event structure as text, with modality-specific fi
     "confidence": 0.94,
     "duration_s": 2.3,
     "turn_id": "string",
-    "stt_provider": "groq-whisper"
+    "stt_provider": "shim" (text-injection) or "whisper-cli" (real STT, Phase 1C+)
   },
   "frame": "string",
   "source": "operator",
