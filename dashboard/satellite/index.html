@@ -509,6 +509,15 @@
             u.pitch = 1.0;
             window.speechSynthesis.speak(u);
           }
+        } else if (msg.type === 'chat_text_response') {
+          // Phase 2: JSON text-chat response over existing WS transport
+          appendVoiceLine(msg.text || '', 'weslr');
+          if (msg.text && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(msg.text);
+            u.rate = 1.1; u.pitch = 1.0;
+            window.speechSynthesis.speak(u);
+          }
         } else if (msg.type === 'error') {
           setStatus('Error: ' + (msg.message || 'unknown'));
         }
@@ -628,7 +637,7 @@
       }
       appendVoiceLine(text, 'user');
       input.value = '';
-      ws.send(JSON.stringify({ type: 'transcript', text: text }));
+      ws.send(JSON.stringify({ type: 'chat_text', text: text }));
     });
 
     document.getElementById('voice-text').addEventListener('keydown', function (e) {
