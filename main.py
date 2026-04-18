@@ -5,6 +5,7 @@ import json
 import socket
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timezone
 from datetime import datetime, timezone
@@ -880,7 +881,27 @@ def _launch_dashboard_server(project_dir: Path, host: str, port: int):
 def cmd_serve(args):
     dashboard_dir = Path(__file__).resolve().parent / "dashboard"
     base_dir = Path(__file__).resolve().parent
-    
+
+    # Start voice gateway as subprocess (Phase 1A: STT shim mode)
+    # Threading caused asyncio event-loop conflicts; subprocess gives clean
+    # process isolation and matches the _launch_dashboard_server pattern.
+    _voice_port = getattr(args, "voice_port", 8778)
+    _voice_host = getattr(args, "voice_host", "127.0.0.1")
+    _base = Path(__file__).resolve().parent
+    subprocess.Popen(
+        [sys.executable, str(_base / "weslr" / "voice_gateway.py"),
+         "--port", str(_voice_port), "--host", _voice_host,
+         "--weslr-http-port", str(args.port)],
+        cwd=str(_base),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    import time
+    time.sleep(1.5)
+    print(f"Voice gateway active on ws://{_voice_host}:{_voice_port}")
+
     # Custom handler that adds /chat endpoint to existing static file serving
     class ChatHandler(SimpleHTTPRequestHandler):
         def _serve_state_file(self, path: str) -> None:

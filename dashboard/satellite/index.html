@@ -119,6 +119,17 @@
       <h3>Capabilities</h3>
       <div id="caps-content"><p class="empty-state">Loading capabilities…</p></div>
     </div>
+
+    <div class="actions-sub">
+      <h3>🎤 Voice (Phase 1A — STT shim)</h3>
+      <p class="empty-state" style="font-size:0.8em;color:#888;">Type your message. WESLR will respond below.</p>
+      <textarea id="voice-text" placeholder="Type here and press Send…" rows="2" style="width:100%;resize:none;font-family:inherit;padding:6px;border:1px solid #333;background:#1a1a1a;color:#ccc;border-radius:4px;"></textarea>
+      <div class="btn-row" style="margin-top:6px;">
+        <button id="voice-send-btn" style="background:#2a7;border-color:#2a7;color:#000;">Send to WESLR</button>
+      </div>
+      <div id="voice-response" style="margin-top:8px;padding:8px;background:#111;border-radius:4px;min-height:40px;color:#ccc;font-size:0.9em;display:none;"></div>
+      <div id="voice-status" style="margin-top:4px;font-size:0.8em;color:#888;"></div>
+    </div>
   </div>
 
   <div id="charter-card" class="card hidden">
@@ -429,6 +440,109 @@
       var chv = document.getElementById('dbg-charter-val');
       if (chv) chv.textContent = 'failed';
     });
+
+  /* ---- Voice: Phase 1A STT shim via WebSocket ---- */
+  (function () {
+    var ws = null;
+    var voicePort = 8778;
+    var voiceHost = window.location.hostname || '127.0.0.1';
+    var wsUrl = 'ws://' + voiceHost + ':' + voicePort;
+    var isConnected = false;
+
+    function appendVoiceLine(text, cls) {
+      var el = document.getElementById('voice-response');
+      if (!el) return;
+      el.style.display = 'block';
+      var line = document.createElement('div');
+      line.style.marginBottom = '4px';
+      line.style.color = (cls === 'user') ? '#8af' : '#aaa';
+      line.textContent = ((cls === 'user') ? 'You: ' : 'WESLR: ') + text;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function connectWS() {
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch (e) {
+        var statusEl = document.getElementById('voice-status');
+        if (statusEl) statusEl.textContent = 'WebSocket unavailable in this browser.';
+        return;
+      }
+
+      ws.onopen = function () {
+        isConnected = true;
+        var statusEl = document.getElementById('voice-status');
+        if (statusEl) statusEl.textContent = 'Voice gateway connected. Type a message.';
+        var btn = document.getElementById('voice-send-btn');
+        if (btn) btn.disabled = false;
+      };
+
+      ws.onmessage = function (event) {
+        try {
+          var msg = JSON.parse(event.data);
+        } catch (e) {
+          return;
+        }
+        if (msg.type === 'ready') {
+          var statusEl = document.getElementById('voice-status');
+          if (statusEl) statusEl.textContent = 'Ready. Type and send.';
+        } else if (msg.type === 'response') {
+          var text = msg.text || '';
+          appendVoiceLine(text, 'weslr');
+          if (text && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.rate = 1.1;
+            u.pitch = 1.0;
+            window.speechSynthesis.speak(u);
+          }
+        } else if (msg.type === 'error') {
+          var statusEl = document.getElementById('voice-status');
+          if (statusEl) statusEl.textContent = 'Error: ' + (msg.message || 'unknown');
+        }
+      };
+
+      ws.onclose = function () {
+        isConnected = false;
+        var statusEl = document.getElementById('voice-status');
+        if (statusEl) statusEl.textContent = 'Disconnected. Refresh to reconnect.';
+        var btn = document.getElementById('voice-send-btn');
+        if (btn) btn.disabled = true;
+      };
+
+      ws.onerror = function () {
+        var statusEl = document.getElementById('voice-status');
+        if (statusEl) statusEl.textContent = 'Connection failed. Is the voice gateway running?';
+        isConnected = false;
+      };
+    }
+
+    connectWS();
+
+    document.getElementById('voice-send-btn').addEventListener('click', function () {
+      var input = document.getElementById('voice-text');
+      if (!input) return;
+      var text = input.value.trim();
+      if (!text) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        var statusEl = document.getElementById('voice-status');
+        if (statusEl) statusEl.textContent = 'Not connected. Retrying…';
+        connectWS();
+        return;
+      }
+      appendVoiceLine(text, 'user');
+      input.value = '';
+      ws.send(JSON.stringify({ type: 'transcript', text: text }));
+    });
+
+    document.getElementById('voice-text').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('voice-send-btn').click();
+      }
+    });
+  })();
 })();
 </script>
 
