@@ -500,10 +500,17 @@ def _get_targeted_anchors(message: str | None = None, topics: list | None = None
     return anchors
 
 
-def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None) -> dict:
+def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None) -> dict:
     from sim import load_communicator_self
     
     communicator_self = load_communicator_self()
+
+    # Inject L0 tier if provided (reversible: no-op when l0_identity is None).
+    # This makes L0 facts available to all downstream narrative_state consumers
+    # without modifying any existing get() calls.
+    if l0_identity:
+        narrative_state = communicator_self.get("narrative_state", {})
+        narrative_state["l0_identity"] = l0_identity
     
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()

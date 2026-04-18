@@ -1120,6 +1120,27 @@ def save_communicator_self(payload: dict) -> None:
     _SELF_CACHE.pop(str(COMMUNICATOR_SELF_PATH), None)
 
 
+def load_tier(tier: str) -> dict | None:
+    """Load a compact memory tier file with safe fallback.
+
+    Currently implements:
+        l0  — identity core (~286 bytes): identity_anchor, core_drives, operator info
+
+    Returns None if the file is missing or invalid. Callers must handle None
+    and fall back to their own defaults.
+    """
+    if tier == "l0":
+        try:
+            base = Path(__file__).resolve().parent
+            path = base / ".weslr" / "memory_tiers" / "l0_identity.json"
+            if not path.exists():
+                return None
+            return json.loads(path.read_text("utf-8"))
+        except Exception:
+            return None
+    return None
+
+
 def load_experiments() -> list[dict]:
     return read_json_file(EXPERIMENTS_PATH, [])
 
