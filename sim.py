@@ -1105,6 +1105,10 @@ def load_communicator_self() -> dict:
         if cached is not None and cached[0] == mtime:
             return cached[1]
         result = ensure_memory_layers(read_json_file(COMMUNICATOR_SELF_PATH, _default_communicator_self()))
+        # Strip dead weight: _onboarding_history is stored by update_operator_profile()
+        # but never read by any consumer. Removing it here saves ~1KB per load with
+        # zero behavioral change (operator_profile.json is the authoritative source).
+        result.pop("_onboarding_history", None)
         _SELF_CACHE[str(COMMUNICATOR_SELF_PATH)] = (mtime, result)
         return result
     except Exception:
