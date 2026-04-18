@@ -99,3 +99,4 @@ collector/obj/
 
 # Test continuity artifacts
 weslr/tests/continuity/
+entity_graph.json

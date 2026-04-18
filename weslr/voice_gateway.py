@@ -302,6 +302,8 @@ def start_voice_gateway(port: int = 8778, host: str = "127.0.0.1"):
             port,
         )
         logger.info(f"Voice gateway started on ws://{host}:{port}")
+        # Keep event loop alive so background tasks keep running after serve() returns
+        await asyncio.Event().wait()
 
     def run_async():
         asyncio.run(run())
