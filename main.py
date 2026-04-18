@@ -2095,6 +2095,7 @@ def cmd_serve(args):
                             latest_human={"message": message},
                             research_context=None,
                             l0_identity=load_tier("l0"),
+                            l1_operating=load_tier("l1"),
                         )
                         try:
                             payload = fut.result(timeout=float(CHAT_LLM_TIMEOUT_SECONDS))

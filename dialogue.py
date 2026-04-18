@@ -500,7 +500,7 @@ def _get_targeted_anchors(message: str | None = None, topics: list | None = None
     return anchors
 
 
-def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None) -> dict:
+def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None) -> dict:
     from sim import load_communicator_self
     
     communicator_self = load_communicator_self()
@@ -511,6 +511,25 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     if l0_identity:
         narrative_state = communicator_self.get("narrative_state", {})
         narrative_state["l0_identity"] = l0_identity
+
+    # Inject L1 tier if provided — operating facts (affect, narrative, intent, concerns).
+    # These override the defaults from the loaded communicator_self so all downstream
+    # consumers (synthesis, enrichment, self-report) receive the tier data automatically.
+    if l1_operating:
+        affect = l1_operating.get("affect")
+        if affect:
+            communicator_self["affect"] = affect
+        narrative_l1 = l1_operating.get("narrative")
+        if narrative_l1:
+            ns = communicator_self.get("narrative_state", {})
+            ns.update(narrative_l1)
+            communicator_self["narrative_state"] = ns
+        active_concerns = l1_operating.get("active_concerns")
+        if active_concerns is not None:
+            communicator_self["active_concerns"] = active_concerns
+        current_intent = l1_operating.get("current_intent")
+        if current_intent:
+            communicator_self["current_intent"] = current_intent
     
     if latest_human:
         last_message = str(latest_human.get("message") or "").strip()
