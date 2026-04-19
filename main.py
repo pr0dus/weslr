@@ -1046,6 +1046,170 @@ table-formatted
     }
 
 
+# ── Research Visual Artifacts (Phase R4) ────────────────────────────────────
+# Governance event timeline diagram from existing events.jsonl.
+# No new observation collection. No LLM. Pure read from timeline.
+
+
+def _generate_governance_timeline_diagram(timeline_id: str = "tl_default") -> dict:
+    """Generate a Mermaid gantt diagram from governance events in events.jsonl.
+
+    Reads .weslr/timelines/{timeline_id}/events.jsonl and produces a Mermaid
+    gantt showing the sequence of governance.observation, confusion.signal,
+    and adaptive.hint events.
+
+    Uses only existing timeline data — no new observation collection.
+    No LLM synthesis — direct transformation only.
+
+    Args:
+        timeline_id: str — timeline name (default "tl_default")
+
+    Returns:
+        dict: {
+            "diagram_type": "governance_timeline",
+            "format": "mermaid",
+            "content": str,         # Mermaid gantt markdown
+            "timeline_id": str,
+            "event_count": int,    # how many events included
+            "generated_by": "weslr",
+            "generated_at": str,
+        }
+    """
+    import json
+    import os
+    from datetime import datetime, timezone
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    events_path = f".weslr/timelines/{timeline_id}/events.jsonl"
+
+    if not os.path.exists(events_path):
+        mermaid_content = """```mermaid
+---
+title: Governance Timeline (No Data)
+---
+gantt
+    section No Events
+    No events found :done, 0, 0d
+```"""
+        return {
+            "diagram_type": "governance_timeline",
+            "format": "mermaid",
+            "content": mermaid_content,
+            "timeline_id": timeline_id,
+            "event_count": 0,
+            "generated_by": "weslr",
+            "generated_at": timestamp,
+        }
+
+    # Read and parse events
+    with open(events_path) as f:
+        lines = f.readlines()
+
+    target_types = {"governance.observation", "confusion.signal", "adaptive.hint"}
+    events = []
+
+    for line in reversed(lines):
+        if len(events) >= 20:  # cap at 20 events
+            break
+        try:
+            d = json.loads(line.strip())
+            et = d.get("event_type", "")
+            if et in target_types:
+                data = d.get("data", {})
+                # Extract short label for the event
+                if et == "governance.observation":
+                    label = data.get("watch_triggered", "governance_observation")
+                    detail = data.get("quality_class", "")
+                elif et == "confusion.signal":
+                    label = data.get("confusion_type", "confusion_signal")
+                    detail = data.get("confidence", "")
+                elif et == "adaptive.hint":
+                    label = data.get("recommended_next_action", "adaptive_hint")
+                    detail = data.get("confusion_type", "")
+                else:
+                    label = et
+                    detail = ""
+
+                events.append({
+                    "timestamp": d.get("timestamp", ""),
+                    "event_type": et,
+                    "label": label,
+                    "detail": detail,
+                    "message_snippet": data.get("message_snippet", "")[:40] if data.get("message_snippet") else "",
+                })
+        except (json.JSONDecodeError, KeyError):
+            continue
+
+    # Reverse to chronological order (oldest first for gantt)
+    events.reverse()
+
+    if not events:
+        mermaid_content = """```mermaid
+---
+title: Governance Timeline (No Relevant Events)
+---
+gantt
+    section Empty
+    No governance events yet :done, 0, 0d
+```"""
+        return {
+            "diagram_type": "governance_timeline",
+            "format": "mermaid",
+            "content": mermaid_content,
+            "timeline_id": timeline_id,
+            "event_count": 0,
+            "generated_by": "weslr",
+            "generated_at": timestamp,
+        }
+
+    # Build Mermaid gantt
+    # Mermaid gantt format:
+    # title Governance Timeline
+    # dateFormat YYYY-MM-DDTHH:mm:ss
+    # section [event_type]
+    # [label] : [start], [end], [status]
+
+    lines_out = ["```mermaid", "---", f"title: Governance Timeline — {timeline_id}", "---", "gantt", "    dateFormat YYYY-MM-DDTHH:mm:ss", ""]
+
+    current_section = None
+    section_colors = {
+        "governance.observation": "governance",
+        "confusion.signal": "confusion",
+        "adaptive.hint": "adaptation",
+    }
+
+    for ev in events:
+        et = ev["event_type"]
+        section = section_colors.get(et, "other")
+
+        if section != current_section:
+            lines_out.append(f"    section {section.capitalize()}")
+            current_section = section
+
+        # Format: label : start, duration, status
+        ts = ev["timestamp"]
+        # Truncate label if too long
+        label = f"{ev['label']}"[:40]
+        if ev.get("detail"):
+            label += f" ({ev['detail']})"[:50]
+
+        # Use milestone for single-point events (zero duration)
+        # For gantt we use done milestone format
+        lines_out.append(f"    {label} : {ts}, 0d, done")
+
+    mermaid_content = "\n".join(lines_out) + "\n```"
+
+    return {
+        "diagram_type": "governance_timeline",
+        "format": "mermaid",
+        "content": mermaid_content,
+        "timeline_id": timeline_id,
+        "event_count": len(events),
+        "generated_by": "weslr",
+        "generated_at": timestamp,
+    }
+
+
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
     """Minimal TelemetryEventEmitter for v71 diagnostics."""
