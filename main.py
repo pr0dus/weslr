@@ -2220,6 +2220,8 @@ def cmd_serve(args):
                     self._log_timeline_event(tl_id, "chat.message", {
                         "message_length": len(message),
                         "has_clearance": bool(token_id),
+                        "quality_class": qclass,
+                        "quality_note": qnote if qnote else None,
                     }, frame=frame, source="operator", trust_level="direct")
                 except TimeoutError:
                     self.send_response(504)
