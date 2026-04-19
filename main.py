@@ -267,6 +267,44 @@ def _derive_improvement_recommendation(qnote: str, qclass: str, lneed: str, mess
     }
 
 
+# ── Tier-A Safe Auto-Adaptation: Simplification Request Companion ──────────
+# When confusion_type == simplification_request and simplification was
+# explicitly requested, append a bounded one-sentence simpler companion
+# to the response. This is the first Tier-A auto-correction — minimal,
+# safe, reversible. Only fires for simplification_request.
+# No routing change, no truth_guard change, no governance change.
+
+
+def _generate_simpler_reanswer(topic: str, topic_lower: str) -> str | None:
+    """Generate a one-sentence simplified re-answer for a topic.
+
+    Bounded companion — does NOT replace the main answer.
+    Returns None on failure — caller falls back gracefully.
+    """
+    try:
+        from weslr.providers import get_provider
+        # Ask for a simple one-sentence version of the topic
+        result = get_provider().generate(
+            "simplification",
+            {
+                "message": f"Explain '{topic}' in the simplest possible way, one sentence only.",
+                "identity": "Weslr",
+                "turn_type": "question",
+                "reply_shape": "answer_directly",
+            },
+            chat_mode=True,
+        )
+        if result and result.strip():
+            # Bound to one sentence — strip after first period
+            text = result.strip()
+            if text.count('.') > 1:
+                text = text[:text.index('.') + 1]
+            return text
+    except Exception:
+        pass
+    return None
+
+
 def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
     """Check if quality_class has repeated 3+ times for same likely_need.
 
@@ -2583,6 +2621,22 @@ def cmd_serve(args):
                         hint = _derive_adaptive_hint(cstate["confusion_signal"], cstate["confusion_type"])
                         if hint:
                             payload["_adaptive_hint"] = hint
+                            # ── Tier-A Safe Auto-Adaptation ─────────────────────
+                            # When confusion_type is simplification_request,
+                            # append a one-sentence simpler companion to the response.
+                            # This is the first Tier-A auto-correction — bounded, reversible.
+                            if cstate["confusion_type"] == "simplification_request":
+                                topic_for_simpler = itrn.get("lead_topic") or itrn.get("topics", [None])[0] or message
+                                topic_lower = topic_for_simpler.lower().strip()
+                                simpler = _generate_simpler_reanswer(topic_for_simpler, topic_lower)
+                                if simpler:
+                                    orig = payload.get("message", "")
+                                    # Avoid redundant repetition if answer is already very short
+                                    if len(orig) > 80:
+                                        payload["message"] = f"{orig.rstrip('. ')}. In simpler terms: {simpler}"
+                                    else:
+                                        payload["message"] = f"{orig} {simpler}"
+                                    payload["_auto_adaptation_applied"] = "simplification_request"
                             self._log_timeline_event(tl_id, "adaptive.hint", {
                                 "confusion_type": cstate["confusion_type"],
                                 "recommended_next_action": hint["recommended_next_action"],
