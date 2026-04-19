@@ -505,6 +505,231 @@ def _derive_adaptive_hint(confusion_signal: bool, confusion_type: str | None) ->
     return None
 
 
+# ── Research Artifact Generation Layer (Phase R1) ─────────────────────────
+# Evidence-first scientific artifact generation using existing WESLR state.
+# LLM is formatting/synthesis layer only — evidence must precede generation.
+# Bounded output (~800 words). Labeled as draft. Operator review required.
+# No external effects. No new observation collection. No /chat behavior changes.
+
+
+def _generate_research_memo(
+    title: str,
+    research_question: str,
+    observations: list[dict],
+    hypothesis: str,
+    context: str = "",
+) -> dict:
+    """Generate a bounded research memo from WESLR evidence package.
+
+    Uses existing WESLR state as evidence (no new observation gathering).
+    LLM synthesis is the final formatting step — evidence must precede generation.
+
+    Output conforms to research memo schema (~800 word target).
+    Always labeled as draft: operator_review_required before any external use.
+
+    Args:
+        title: Human-readable memo title
+        research_question: What WESLR was investigating
+        observations: List of evidence items from existing WESLR state
+            (each dict: {event, source, timestamp, quality_class, truth_class})
+        hypothesis: WESLR's current interpretation
+        context: Why this question matters, what's already known
+
+    Returns:
+        dict conforming to research memo schema:
+        {
+            title, research_question, context, observations,
+            hypothesis, supporting_evidence, confidence: {level, truth_class, verified, explanation},
+            limitations, alternative_interpretations, next_experiment,
+            generated_by: "weslr", generated_at, draft_status: "operator_review_required"
+        }
+
+    The LLM is used for formatting/synthesis only. If evidence is insufficient,
+    limitations section will reflect that.
+    """
+    from datetime import datetime, timezone
+    import json
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    # Build evidence summary from observations
+    obs_bullets = []
+    for obs in observations[:10]:  # cap at 10 observations
+        qc = obs.get("quality_class", "unknown")
+        tc = obs.get("truth_class", "unknown")
+        ev = obs.get("event", obs.get("message_snippet", ""))
+        src = obs.get("source", obs.get("event_type", ""))
+        ts = obs.get("timestamp", "")
+        obs_bullets.append(f"- [{ts}] {ev} (quality={qc}, truth={tc}, source={src})")
+
+    obs_text = "\n".join(obs_bullets) if obs_bullets else "- No observations available"
+
+    # Synthesize confidence from observations
+    qc_values = [o.get("quality_class", "unknown") for o in observations]
+    if not qc_values:
+        conf_level = "unknown"
+        conf_explanation = "No quality class data available from observations."
+    elif all(q in ("strong_verified",) for q in qc_values):
+        conf_level = "high"
+        conf_explanation = "All observations have strong_verified quality class with internal capability routing."
+    elif any(q in ("fallback", "weak_reasoning") for q in qc_values):
+        conf_level = "low"
+        conf_explanation = "Some observations show fallback or weak_reasoning quality — evidence is degraded."
+    elif any(q in ("grounded_reasoning") for q in qc_values):
+        conf_level = "medium"
+        conf_explanation = "Observations include grounded_reasoning quality — evidence is present but not verified."
+    else:
+        conf_level = "medium"
+        conf_explanation = "Mixed quality classes observed; evidence is partial."
+
+    tc_values = list(set(o.get("truth_class", "unknown") for o in observations))
+    verified_values = [o.get("verified", False) for o in observations if "verified" in o]
+
+    # Generate memo via LLM synthesis (formatting only — evidence provided above)
+    try:
+        from weslr.providers import get_provider
+
+        prompt = f"""You are WESLR's research memo generator. Generate a structured research memo from the evidence below.
+
+TITLE: {title}
+RESEARCH QUESTION: {research_question}
+CONTEXT: {context or "No prior context provided."}
+
+OBSERVATIONS (from WESLR internal state):
+{obs_text}
+
+HYPOTHESIS: {hypothesis}
+
+Generate a research memo with exactly these sections (keep each section concise, memo target ~600-800 words total):
+
+## Summary
+2-3 sentences summarizing the finding.
+
+## Observations
+Bullet list of key observations from the evidence above.
+
+## Analysis
+Paragraph explaining the hypothesis given the evidence.
+
+## Confidence Assessment
+Explicit confidence level (high/medium/low) with one sentence of reasoning. Note verified vs unverified status.
+
+## Limitations
+2-3 bullets stating what is not known, what could be wrong, or what evidence is missing.
+
+## Alternative Interpretations
+1-2 bullets on what else the evidence could mean.
+
+## Next Steps
+One sentence on what would confirm or refine this hypothesis.
+
+Rules:
+- Be precise about confidence — do not overstate certainty
+- If evidence is weak or missing, say so explicitly in Limitations
+- Do not invent evidence not in the observations above
+- Use plain scientific language
+- This is a draft memo — operator review required before any external use"""
+
+        result = get_provider().generate(
+            "research_memo",
+            {
+                "message": prompt,
+                "identity": "Weslr",
+                "turn_type": "question",
+                "reply_shape": "answer_directly",
+            },
+            chat_mode=True,
+        )
+
+        if result and result.strip():
+            memo_text = result.strip()
+            # Parse sections from generated memo
+            sections = {}
+            current_section = None
+            current_content = []
+
+            for line in memo_text.split("\n"):
+                if line.startswith("## "):
+                    if current_section:
+                        sections[current_section] = "\n".join(current_content).strip()
+                    current_section = line[3:].strip()
+                    current_content = []
+                elif line.startswith("# "):
+                    if current_section:
+                        sections[current_section] = "\n".join(current_content).strip()
+                    current_section = line[2:].strip()
+                    current_content = []
+                else:
+                    current_content.append(line)
+
+            if current_section:
+                sections[current_section] = "\n".join(current_content).strip()
+
+            summary = sections.get("Summary", sections.get("summary", ""))
+            analysis = sections.get("Analysis", sections.get("analysis", ""))
+            observations_out = sections.get("Observations", sections.get("observations", obs_text))
+            limitations = sections.get("Limitations", "- Evidence from WESLR internal state only.\n- No external verification performed.")
+            alt_interp = sections.get("Alternative Interpretations", "- Alternative explanations not yet explored.")
+            next_steps = sections.get("Next Steps", "- Further observation needed.")
+
+            return {
+                "title": title,
+                "research_question": research_question,
+                "context": context,
+                "observations": [{"event": o.get("event", ""), "source": o.get("source", ""),
+                                   "timestamp": o.get("timestamp", ""),
+                                   "quality_class": o.get("quality_class", ""),
+                                   "truth_class": o.get("truth_class", "")}
+                                  for o in observations],
+                "hypothesis": hypothesis,
+                "supporting_evidence": [line.strip("- ").strip() for line in observations_out.split("\n") if line.strip().startswith("-")],
+                "confidence": {
+                    "level": conf_level,
+                    "truth_class": tc_values[0] if tc_values else "unknown",
+                    "verified": any(verified_values) if verified_values else False,
+                    "explanation": conf_explanation,
+                },
+                "limitations": [l.strip("- ").strip() for l in limitations.split("\n") if l.strip()],
+                "alternative_interpretations": [l.strip("- ").strip() for l in alt_interp.split("\n") if l.strip()],
+                "next_experiment": next_steps.strip(),
+                "generated_by": "weslr",
+                "generated_at": timestamp,
+                "draft_status": "operator_review_required",
+            }
+
+    except Exception:
+        pass
+
+    # Fallback: return structured memo without LLM synthesis (still valid, slightly less polished)
+    return {
+        "title": title,
+        "research_question": research_question,
+        "context": context,
+        "observations": observations,
+        "hypothesis": hypothesis,
+        "supporting_evidence": obs_bullets,
+        "confidence": {
+            "level": conf_level,
+            "truth_class": tc_values[0] if tc_values else "unknown",
+            "verified": any(verified_values) if verified_values else False,
+            "explanation": conf_explanation,
+        },
+        "limitations": [
+            "Evidence from WESLR internal state only.",
+            "No external verification performed.",
+            "LLM synthesis unavailable — memo generated from structured fallback.",
+        ],
+        "alternative_interpretations": [
+            "Observations may reflect routing behavior rather than actual query characteristics.",
+            "Quality class distribution may not fully represent actual response quality.",
+        ],
+        "next_experiment": "Verify observations against external data sources.",
+        "generated_by": "weslr",
+        "generated_at": timestamp,
+        "draft_status": "operator_review_required",
+    }
+
+
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
     """Minimal TelemetryEventEmitter for v71 diagnostics."""
