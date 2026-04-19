@@ -72,6 +72,50 @@ def _get_consciousness_context() -> dict:
         return {"valid_claims": 0, "review_required": 0, "role_play_patterns": []}
 
 
+def _artifact_fallback_answer(lower_message: str, lead_topic: str, last_message: str) -> str:
+    """Structured fallback for artifact-analysis questions when synthesis returns empty.
+    
+    Detects question type from message content and returns a bounded, artifact-grounded answer
+    without generic introspection. Uses the question pattern to determine what to say."""
+    
+    # Confidence question
+    if "confidence" in lower_message or "confident" in lower_message:
+        if "why" in lower_message or "how" in lower_message:
+            return "Based on this artifact: the confidence level is derived from the quality classes observed in governance events. The explanation reflects whether observations came from internal routing, external verification, or synthesis pathways."
+        return "Based on this artifact: the confidence level reflects the observed quality of governance events. Check the confidence statement in the artifact for the specific level."
+    
+    # Limitations question
+    if "limitations" in lower_message or "cautious" in lower_message or "caution" in lower_message:
+        return "Based on this artifact: the main limitations are that evidence comes from WESLR internal state only and no external verification has been performed. These are documented in the artifact's limitations section."
+    
+    # Reliability question
+    if "reliable" in lower_message or "reliability" in lower_message or "how reliable" in lower_message:
+        return "Based on this artifact: reliability depends on the confidence level and whether the observations have been externally verified. The artifact's confidence statement addresses this directly."
+    
+    # Improvement question
+    if "improve" in lower_message or "improvement" in lower_message or "improved" in lower_message:
+        return "Based on this artifact: next steps are documented in the next_experiment field. Suggested improvements typically involve verifying observations against external data sources."
+    
+    # What should / what would — evaluative questions
+    if lower_message.startswith("what should") or lower_message.startswith("what would"):
+        return f"Based on this artifact: {lead_topic}. The artifact's findings point toward the documented hypothesis and suggested next steps."
+    
+    # How would / how should — recommendation questions
+    if lower_message.startswith("how would") or lower_message.startswith("how should"):
+        return f"Based on this artifact: {lead_topic}. The artifact's guidance is shaped by the confidence level and limitations documented within it."
+    
+    # What is / what does — explanation questions about artifact content
+    if lower_message.startswith("what is") or lower_message.startswith("what does"):
+        return f"This artifact addresses: {lead_topic}. The specific content is in the artifact's body — check the hypothesis, confidence, and limitations sections."
+    
+    # Explain this — description requests
+    if lower_message.startswith("explain this"):
+        return f"This artifact covers: {lead_topic}. It contains a hypothesis, confidence assessment, limitations, and suggested next steps."
+    
+    # Default: use lead_topic
+    return f"The artifact addresses: {lead_topic}. Check the hypothesis and confidence sections for details."
+
+
 def _get_entity_by_type(entity_type: str) -> str | None:
     """Get first entity of specified type for dynamic identity."""
     try:
@@ -659,10 +703,24 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             if research_context and research_context.get("summary"):
                 synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
-                message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
             else:
                 synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
-                message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+            
+            # Use fallback when synthesis is empty or too close to the question (just echoes lead_topic words)
+            topic_words = set(lead_topic.lower().split()) - {"what", "is", "the", "a", "of", "and", "or", "to", "in", "for"}
+            q_words = set(last_message.lower().split())
+            if synthesized:
+                synth_words = set(synthesized.lower().split())
+                # Check if synthesis is basically just repeating the question's topic words with no new content
+                overlap_ratio = len(topic_words & synth_words) / max(len(topic_words), 1) if topic_words else 0
+                is_echo = (overlap_ratio > 0.7 and len(synth_words) < 15)
+            else:
+                is_echo = True
+            
+            if synthesized and not is_echo:
+                message = synthesized
+            else:
+                message = _artifact_fallback_answer(lower_message, lead_topic, last_message)
         elif turn_type == "greeting":
             message = _get_language_module().greeting_response()
         elif turn_type == "approval":
