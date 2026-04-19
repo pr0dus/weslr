@@ -417,6 +417,56 @@ def _detect_confusion(message: str) -> dict:
     return {"confusion_signal": False, "confusion_type": None}
 
 
+# ── Adaptive hint derivation (confusion → safe next-action metadata) ───────
+# Derives a metadata-only adaptive hint when confusion is detected.
+# Tier A / Tier B boundary: observation + suggestion only.
+# auto_apply is always False — operator review or human request required.
+# No response content change, no routing change, no auto-simplification.
+
+
+def _derive_adaptive_hint(confusion_signal: bool, confusion_type: str | None) -> dict | None:
+    """Derive a safe adaptive hint from confusion detection result.
+
+    Returns dict or None. Dict only when confusion_signal=True and
+    a safe hint can be derived. auto_apply is always False.
+
+    Supported hint types:
+    - simplification_request → offer_simpler_reanswer
+    - explicit_clarification → offer_explanation_reanswer
+    - expectation_gap → offer_reframe_reanswer
+
+    Rationale: These are the three cases where WESLR knows the human
+    wants something different from what was given. The hint is metadata
+    only — it does not change the current response or auto-apply.
+    """
+    if not confusion_signal or not confusion_type:
+        return None
+
+    _HINT_MAP = {
+        "simplification_request": {
+            "recommended_next_action": "offer_simpler_reanswer",
+            "reason": "human_requested_simplification",
+        },
+        "explicit_clarification": {
+            "recommended_next_action": "offer_explanation_reanswer",
+            "reason": "human_did_not_understand_explanation",
+        },
+        "expectation_gap": {
+            "recommended_next_action": "offer_reframe_reanswer",
+            "reason": "human_received_unintended_response_type",
+        },
+    }
+
+    hint = _HINT_MAP.get(confusion_type)
+    if hint:
+        return {
+            "recommended_next_action": hint["recommended_next_action"],
+            "reason": hint["reason"],
+            "auto_apply": False,  # always False — operator/human must trigger
+        }
+    return None
+
+
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
     """Minimal TelemetryEventEmitter for v71 diagnostics."""
@@ -2527,6 +2577,17 @@ def cmd_serve(args):
                             "likely_need": lneed,
                             "message_snippet": message[:80],
                         }, frame=frame, source="confusion_watch", trust_level="system")
+                        # ── Adaptive hint (confusion → safe next-action metadata) ──
+                        # Derives a hint from confusion_type. Metadata only —
+                        # does not change user-facing message. auto_apply=False.
+                        hint = _derive_adaptive_hint(cstate["confusion_signal"], cstate["confusion_type"])
+                        if hint:
+                            payload["_adaptive_hint"] = hint
+                            self._log_timeline_event(tl_id, "adaptive.hint", {
+                                "confusion_type": cstate["confusion_type"],
+                                "recommended_next_action": hint["recommended_next_action"],
+                                "message_snippet": message[:80],
+                            }, frame=frame, source="adaptive_hint", trust_level="system")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
