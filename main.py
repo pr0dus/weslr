@@ -2456,6 +2456,55 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Governance observations endpoint (read-only, bounded)
+            if self.path == "/api/governance/observations":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    limit = min(int(params.get("limit", ["10"])[0]), 50)
+                    # Read governance.observation events from timeline event log
+                    base = Path(__file__).resolve().parent
+                    tl_id = params.get("timeline", ["tl_default"])[0]
+                    event_file = base / ".weslr" / "timelines" / tl_id / "events.jsonl"
+                    entries = []
+                    if event_file.exists():
+                        # Read last N lines (newest entries are at end of append-only file)
+                        with open(event_file, "r") as f:
+                            lines = f.readlines()
+                        for line in reversed(lines[-limit*3:]):  # read more than limit to allow filtering
+                            try:
+                                event = json.loads(line.strip())
+                                if event.get("event_type") == "governance.observation":
+                                    data = event.get("data", {})
+                                    entries.append({
+                                        "timestamp": event.get("timestamp"),
+                                        "watch_triggered": data.get("watch_triggered"),
+                                        "quality_class": data.get("quality_class"),
+                                        "likely_need": data.get("likely_need"),
+                                        "message_snippet": data.get("message_snippet"),
+                                    })
+                                    if len(entries) >= limit:
+                                        break
+                            except Exception:
+                                continue
+                    payload = json.dumps({
+                        "limit": limit,
+                        "total": len(entries),
+                        "entries": entries,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "governance_observations_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
