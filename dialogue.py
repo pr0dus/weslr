@@ -969,6 +969,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     research_context=research_context,
                 )
                 has_research_answer = False
+                has_research_answer = False
                 if synthesis:
                     message = synthesis
                 else:
@@ -1084,6 +1085,20 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                         _set_signal("direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
                         message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
 
+            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
+                # Artifact reflection: questions that reference WESLR's own produced artifact
+                # OR evaluative questions about WESLR's own output
+                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                if research_context and research_context.get("summary"):
+                    synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                    message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+                else:
+                    synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
+                    if synthesized:
+                        message = synthesized
+                    else:
+                        _set_signal("direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
+                        message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
             else:
                 message = _get_language_module().direct_answer_response(lead_topic)
         else:
