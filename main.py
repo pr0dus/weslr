@@ -3794,6 +3794,92 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Research memo: generate from governance observations
+            if self.path == "/api/research/memos/generate":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    research_question = params.get("research_question", [None])[0]
+                    if not research_question:
+                        raise ValueError("research_question query param is required")
+                    tl_id = params.get("timeline", ["tl_default"])[0]
+                    limit = min(int(params.get("limit", ["10"])[0]), 20)
+
+                    # Read governance.observation events from events.jsonl
+                    base = Path(__file__).resolve().parent
+                    event_file = base / ".weslr" / "timelines" / tl_id / "events.jsonl"
+                    observations = []
+                    if event_file.exists():
+                        with open(event_file, "r") as f:
+                            lines = f.readlines()
+                        # Scan all lines, collect governance.observation events (newest first)
+                        for line in reversed(lines):
+                            if len(observations) >= limit:
+                                break
+                            try:
+                                event = json.loads(line.strip())
+                                if event.get("event_type") == "governance.observation":
+                                    data = event.get("data", {})
+                                    obs = {
+                                        "event": data.get("watch_triggered", "unknown"),
+                                        "source": "governance_watch",
+                                        "timestamp": event.get("timestamp", ""),
+                                        "quality_class": data.get("quality_class", "unknown"),
+                                        "truth_class": "model_reasoning",  # inferred from observation nature
+                                        "verified": False,  # observations are inferred, not externally verified
+                                    }
+                                    observations.append(obs)
+                            except Exception:
+                                continue
+
+                    # Derive title from research question
+                    title = research_question[:80] if len(research_question) <= 80 else research_question[:77] + "..."
+
+                    # Derive hypothesis from dominant quality_class pattern
+                    if observations:
+                        qc_counts = {}
+                        for o in observations:
+                            qc = o.get("quality_class", "unknown")
+                            qc_counts[qc] = qc_counts.get(qc, 0) + 1
+                        dominant_qc = max(qc_counts, key=qc_counts.get)
+                        qc_hypothesis_map = {
+                            "fallback": "appears to be a routing or concept coverage gap",
+                            "weak_reasoning": "suggests a synthesis quality or context enrichment issue",
+                            "strong_verified": "indicates reliable internal routing with strong verification",
+                            "grounded_reasoning": "indicates reasoning responses with medium confidence",
+                            "uncertain": "suggests insufficient context or ambiguous query patterns",
+                            "unknown": "pattern unclear — may reflect mixed quality signals",
+                        }
+                        hypothesis_base = qc_hypothesis_map.get(dominant_qc, "pattern unclear")
+                    else:
+                        dominant_qc = "unknown"
+                        hypothesis_base = "insufficient data to form a hypothesis"
+                    hypothesis = f"Quality class '{dominant_qc}' observed — {hypothesis_base}."
+
+                    # Context description
+                    context = f"Timeline '{tl_id}' — {len(observations)} governance observation(s) assembled. Source: events.jsonl."
+
+                    memo = _generate_research_memo(
+                        title=title,
+                        research_question=research_question,
+                        observations=observations,
+                        hypothesis=hypothesis,
+                        context=context,
+                    )
+                    payload = json.dumps(memo, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "memo_generation_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
