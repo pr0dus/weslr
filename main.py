@@ -3501,6 +3501,7 @@ def cmd_serve(args):
                         return
                     # Soft trust signal: inject climate into response (additive, non-blocking)
                     tl_id = data.get("timeline_id", "tl_default")
+                    frame = data.get("frame")  # may be None — _log_timeline_event handles it
                     trust_signal = self._build_trust_signal(tl_id)
                     if trust_signal:
                         payload["_trust_signal"] = trust_signal
@@ -3560,7 +3561,6 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps(payload).encode("utf-8"))
-                    frame = data.get("frame")
                     self._log_timeline_event(tl_id, "chat.message", {
                         "message_length": len(message),
                         "has_clearance": bool(token_id),
