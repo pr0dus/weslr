@@ -93,6 +93,60 @@ _WATCH_MAX = 10
 _WATCH_THRESHOLD = 3  # consecutive same-class+same-need to trigger note
 
 
+# ── Governance candidate derivation (observation → review candidate) ───────
+# Derives a bounded governance candidate from a fired governance observation.
+# For operator review only — no automatic action, no execution.
+# Maps watch_triggered to candidate_type and severity for triage.
+
+
+def _derive_governance_candidate(qnote: str, qclass: str, lneed: str, message: str) -> dict:
+    """Derive a governance candidate from a fired quality watch note.
+    
+    Returns a candidate dict for operator review. auto_apply is always False.
+    No automatic actions are taken — this is observation-only.
+    """
+    # Map watch_triggered to candidate_type
+    _WATCH_CANDIDATE_MAP = {
+        "repeated_fallback_watch": "routing_gap",
+        "repeated_weak_reasoning_watch": "weak_reasoning_pattern",
+        "repeated_grounded_reasoning_watch": "sustained_reasoning_load",
+        "repeated_strong_verified_watch": "stable_verified_pattern",
+    }
+    candidate_type = _WATCH_CANDIDATE_MAP.get(qnote, "unknown_quality_pattern")
+    
+    # Severity based on quality class
+    _SEVERITY_MAP = {
+        "fallback": "high",
+        "weak_reasoning": "medium",
+        "grounded_reasoning": "low",
+        "strong_verified": "info",
+        "uncertain": "medium",
+        "unknown": "low",
+    }
+    severity = _SEVERITY_MAP.get(qclass, "low")
+    
+    # Suggested action based on candidate type
+    _ACTION_MAP = {
+        "routing_gap": "Review why direct_answer queries are falling back to template. Consider extending synthesis gating or concept coverage.",
+        "weak_reasoning_pattern": "Review LLM confidence for this query type. Consider adjusting confidence thresholds or adding research context.",
+        "sustained_reasoning_load": "Sustained medium-quality reasoning observed. Not critical but worth monitoring.",
+        "stable_verified_pattern": "Strong verified responses sustained. Current routing is working correctly.",
+        "unknown_quality_pattern": "Unclassified quality pattern. Review observation for new pattern.",
+    }
+    suggested_action = _ACTION_MAP.get(candidate_type, "Review quality pattern.")
+    
+    return {
+        "candidate_type": candidate_type,
+        "trigger": qnote,
+        "quality_class": qclass,
+        "likely_need": lneed,
+        "severity": severity,
+        "suggested_operator_action": suggested_action,
+        "auto_apply": False,  # always False — operator review only
+        "message_snippet": message[:80],
+    }
+
+
 def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
     """Check if quality_class has repeated 3+ times for same likely_need.
     
@@ -2231,11 +2285,13 @@ def cmd_serve(args):
                     # Separate governance event lane — only fires when watch triggers.
                     # Clean separation from chat.message telemetry.
                     if qnote:
+                        candidate = _derive_governance_candidate(qnote, qclass, lneed, message)
                         self._log_timeline_event(tl_id, "governance.observation", {
                             "watch_triggered": qnote,
                             "quality_class": qclass,
                             "likely_need": lneed,
                             "message_snippet": message[:80],
+                            "_governance_candidate": candidate,
                         }, source="governance_watch", trust_level="system")
                 except TimeoutError:
                     self.send_response(504)
