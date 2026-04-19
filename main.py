@@ -88,6 +88,101 @@ _chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
 _BUNDLE_REGISTRY: dict[str, dict] = {}
 _BUNDLE_REGISTRY_MAX = 20
 
+# ── Publishing Gateway Phase 6.6: Versioned Proposals ──────────────────────
+# Ordered version list per bundle. A=original, B+=proposed revisions.
+# Versions are immutable once created — approval promotes, never mutates.
+_BUNDLE_VERSION_REGISTRY: dict[str, list] = {}
+_VERSION_LABEL_SEQ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def _create_bundle_version(
+    bundle_id: str,
+    source_version_id: str | None,
+    proposal_text: str,
+    revised_content: dict,
+    created_by: str = "weslr",
+) -> dict | None:
+    """Create a proposed revision version derived from an existing version.
+
+    Returns the new version dict or None if source bundle doesn't exist.
+    Does NOT mutate the source version or auto-approve.
+    """
+    if bundle_id not in _BUNDLE_REGISTRY:
+        return None
+    if bundle_id not in _BUNDLE_VERSION_REGISTRY:
+        _BUNDLE_VERSION_REGISTRY[bundle_id] = []
+    versions = _BUNDLE_VERSION_REGISTRY[bundle_id]
+    label_index = len(versions)
+    if label_index >= len(_VERSION_LABEL_SEQ):
+        label_index = len(_VERSION_LABEL_SEQ) - 1
+    version_label = _VERSION_LABEL_SEQ[label_index]
+    version_id = f"{bundle_id}-v{version_label}"
+    new_version = {
+        "version_id": version_id,
+        "version_label": version_label,
+        "source_type": "proposed_revision" if source_version_id else "original",
+        "parent_version_id": source_version_id,
+        "created_by": created_by,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "approval_state": "pending",
+        "proposal_text": proposal_text,
+        "content": revised_content,
+    }
+    versions.append(new_version)
+    return new_version
+
+
+def _get_bundle_versions(bundle_id: str) -> list:
+    return list(_BUNDLE_VERSION_REGISTRY.get(bundle_id, []))
+
+
+def _get_version(bundle_id: str, version_id: str) -> dict | None:
+    for v in _BUNDLE_VERSION_REGISTRY.get(bundle_id, []):
+        if v["version_id"] == version_id:
+            return v
+    return None
+
+
+def _approve_version(bundle_id: str, version_id: str, approved_by: str = "operator") -> dict | None:
+    v = _get_version(bundle_id, version_id)
+    if not v:
+        return None
+    v["approval_state"] = "approved"
+    v["approved_by"] = approved_by
+    v["approved_at"] = datetime.now(timezone.utc).isoformat()
+    return v
+
+
+def _compare_versions(v_a: dict, v_b: dict) -> dict:
+    """Human-readable comparison between two versions. Returns dict with:
+    - changed_fields, field_diff, summary
+    - version approval states
+    """
+    content_a = v_a.get("content", {})
+    content_b = v_b.get("content", {})
+    compare_keys = [
+        "hypothesis", "confidence", "limitations", "next_experiment",
+        "plain_language_summary", "quality_class",
+    ]
+    changed = []
+    diffs = {}
+    for key in compare_keys:
+        val_a = str(content_a.get(key, ""))
+        val_b = str(content_b.get(key, ""))
+        if val_a != val_b:
+            changed.append(key)
+            diffs[key] = {"from": val_a, "to": val_b}
+    return {
+        "version_a": v_a["version_id"],
+        "version_b": v_b["version_id"],
+        "changed_fields": changed,
+        "field_diff": diffs,
+        "summary": f"Changed: {', '.join(changed)}" if changed else "No content differences found",
+        "version_a_approval": v_a.get("approval_state", "unknown"),
+        "version_b_approval": v_b.get("approval_state", "unknown"),
+    }
+
+
 def _register_bundle(bundle_id: str, draft_status: str, generated_at: str, full_memo: dict | None = None) -> None:
     entry = {"bundle_id": bundle_id, "draft_status": draft_status, "generated_at": generated_at}
     if full_memo:
@@ -99,6 +194,20 @@ def _register_bundle(bundle_id: str, draft_status: str, generated_at: str, full_
     if len(_BUNDLE_REGISTRY) > _BUNDLE_REGISTRY_MAX:
         oldest_key = next(iter(_BUNDLE_REGISTRY))
         del _BUNDLE_REGISTRY[oldest_key]
+
+    # Auto-create Version A for every new bundle — the canonical original
+    _BUNDLE_VERSION_REGISTRY[bundle_id] = [{
+        "version_id": f"{bundle_id}-vA",
+        "version_label": "A",
+        "source_type": "original",
+        "parent_version_id": None,
+        "created_by": "weslr",
+        "created_at": generated_at,
+        "approval_state": "pending",
+        "proposal_text": "",
+        "content": full_memo or {},
+    }]
+
 
 def _get_bundle_status(bundle_id: str) -> dict | None:
     return _BUNDLE_REGISTRY.get(bundle_id)
@@ -3847,6 +3956,94 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                     return
 
+            # Phase 6.6: Versioned Proposals — Create version from WESLR proposal
+            # POST /api/research/bundle/version/create?bundle_id=...&source_version_id=...
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/bundle/version/create":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    source_version_id = params.get("source_version_id", [None])[0]
+                    if not bundle_id:
+                        raise ValueError("bundle_id is required")
+
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    data = json.loads(body)
+                    proposal_text = data.get("proposal_text", "")
+                    revised_content = data.get("revised_content", {})
+                    created_by = data.get("created_by", "weslr")
+
+                    version = _create_bundle_version(
+                        bundle_id=bundle_id,
+                        source_version_id=source_version_id,
+                        proposal_text=proposal_text,
+                        revised_content=revised_content,
+                        created_by=created_by,
+                    )
+                    if not version:
+                        payload = json.dumps({"error": "bundle_not_found", "bundle_id": bundle_id}).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+
+                    payload = json.dumps({"ok": True, "version": version}, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as e:
+                    payload = json.dumps({"error": "create_version_failed", "message": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
+            # Phase 6.6: Versioned Proposals — Approve a specific version
+            # POST /api/research/bundle/version/approve?bundle_id=...&version_id=...
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/bundle/version/approve":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    version_id = params.get("version_id", [None])[0]
+                    if not bundle_id or not version_id:
+                        raise ValueError("bundle_id and version_id are required")
+
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    data = json.loads(body)
+                    approved_by = data.get("approved_by", "operator")
+
+                    version = _approve_version(bundle_id, version_id, approved_by)
+                    if not version:
+                        payload = json.dumps({"error": "version_not_found", "bundle_id": bundle_id, "version_id": version_id}).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+
+                    payload = json.dumps({"ok": True, "version": version}, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as e:
+                    payload = json.dumps({"error": "approve_version_failed", "message": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
             # Phase 6.2/6.3: Bundle export endpoint
             # POST /api/research/bundle/export?bundle_id=...&output_mode=...
             elif self.command == "POST" and self.path.split("?")[0] == "/api/research/bundle/export":
@@ -4700,6 +4897,72 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                 return
             # Research memo: render canonical memo in a given mode
+
+            # Phase 6.6: Versioned Proposals — List versions (GET)
+            # GET /api/research/bundle/versions?bundle_id=...
+            if self.path.split("?")[0] == "/api/research/bundle/versions" and self.command == "GET":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    if not bundle_id:
+                        raise ValueError("bundle_id is required")
+                    versions = _get_bundle_versions(bundle_id)
+                    payload = json.dumps({"bundle_id": bundle_id, "versions": versions, "count": len(versions)}, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as e:
+                    payload = json.dumps({"error": "list_versions_failed", "message": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
+            # Phase 6.6: Versioned Proposals — Compare two versions (GET)
+            # GET /api/research/bundle/compare?bundle_id=...&v_a=...&v_b=...
+            if self.path.split("?")[0] == "/api/research/bundle/compare" and self.command == "GET":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    v_a_id = params.get("v_a", [None])[0]
+                    v_b_id = params.get("v_b", [None])[0]
+                    if not bundle_id or not v_a_id or not v_b_id:
+                        raise ValueError("bundle_id, v_a, and v_b are all required")
+                    v_a = _get_version(bundle_id, v_a_id)
+                    v_b = _get_version(bundle_id, v_b_id)
+                    if not v_a or not v_b:
+                        missing = []
+                        if not v_a:
+                            missing.append(f"v_a={v_a_id}")
+                        if not v_b:
+                            missing.append(f"v_b={v_b_id}")
+                        payload = json.dumps({"error": "version_not_found", "missing": missing}).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    comparison = _compare_versions(v_a, v_b)
+                    payload = json.dumps(comparison, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as e:
+                    payload = json.dumps({"error": "compare_failed", "message": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
 
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
