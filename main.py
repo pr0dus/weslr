@@ -2222,6 +2222,11 @@ def cmd_serve(args):
                         "has_clearance": bool(token_id),
                         "quality_class": qclass,
                         "quality_note": qnote if qnote else None,
+                        "_governance_observation": {
+                            "watch_triggered": qnote,
+                            "quality_class": qclass,
+                            "likely_need": lneed,
+                        } if qnote else None,
                     }, frame=frame, source="operator", trust_level="direct")
                 except TimeoutError:
                     self.send_response(504)
