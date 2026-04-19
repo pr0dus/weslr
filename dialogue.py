@@ -1128,8 +1128,33 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "policy": "hallucination_guard_active",
         }
 
+        # ── Response quality evaluation (internal, never exposed to users) ─────
+        # Classify quality using existing signals. Additive, inspectable, reversible.
+        evcls = _response_signals.get("evaluation_class", "unknown")
+        llm = _response_signals.get("llm_used", False)
+        icap = _response_signals.get("internal_capability", False)
+        conf = _response_signals.get("confidence", "low")
+        if evcls == "system_fact" and icap:
+            _quality = "strong_verified"
+        elif evcls == "model_reasoning" and llm and conf == "high":
+            _quality = "strong_verified"
+        elif evcls == "model_reasoning" and llm and conf == "medium":
+            _quality = "grounded_reasoning"
+        elif evcls == "model_reasoning" and llm and conf == "low":
+            _quality = "weak_reasoning"
+        elif evcls == "unknown" and llm:
+            # LLM fired but evaluation_class not explicitly set — treat as grounded
+            _quality = "grounded_reasoning"
+        elif evcls in ("fallback_template", "unknown") and not llm and not icap:
+            _quality = "fallback"
+        elif evcls == "uncertain" and not llm and not icap:
+            _quality = "uncertain"
+        else:
+            _quality = "unknown"
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
-               "_response_signals": _response_signals, "_truth_guard": _truth_guard}
+               "_response_signals": _response_signals, "_truth_guard": _truth_guard,
+               "_quality_class": _quality}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -1181,14 +1206,50 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                         "can_be_verified": eval_class in ("system_fact", "memory_fact", "evidence_fact"),
                         "policy": "hallucination_guard_active"}
 
+        # ── Response quality evaluation (internal, never exposed to users) ─────
+        evcls = _response_signals.get("evaluation_class", "unknown")
+        llm = _response_signals.get("llm_used", False)
+        icap = _response_signals.get("internal_capability", False)
+        conf = _response_signals.get("confidence", "low")
+        if evcls == "system_fact" and icap:
+            _quality = "strong_verified"
+        elif evcls == "model_reasoning" and llm and conf == "high":
+            _quality = "strong_verified"
+        elif evcls == "model_reasoning" and llm and conf == "medium":
+            _quality = "grounded_reasoning"
+        elif evcls == "model_reasoning" and llm and conf == "low":
+            _quality = "weak_reasoning"
+        elif evcls == "unknown" and llm:
+            _quality = "grounded_reasoning"
+        elif evcls in ("fallback_template", "unknown") and not llm and not icap:
+            _quality = "fallback"
+        elif evcls == "uncertain" and not llm and not icap:
+            _quality = "uncertain"
+        else:
+            _quality = "unknown"
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
-               "_response_signals": _response_signals, "_truth_guard": _truth_guard}
+               "_response_signals": _response_signals, "_truth_guard": _truth_guard,
+               "_quality_class": _quality}
 
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
     source = "fallback"
 
-    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(), "_response_signals": _response_signals, "_truth_guard": _truth_guard}
+    # ── Response quality evaluation for fallback ───────────────────────────
+    evcls = _response_signals.get("evaluation_class", "unknown")
+    llm = _response_signals.get("llm_used", False)
+    icap = _response_signals.get("internal_capability", False)
+    if evcls in ("fallback_template", "unknown") and not llm and not icap:
+        _quality = "fallback"
+    elif evcls == "uncertain" and not llm and not icap:
+        _quality = "uncertain"
+    else:
+        _quality = "unknown"
+
+    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(),
+              "_response_signals": _response_signals, "_truth_guard": _truth_guard,
+              "_quality_class": _quality}
     
     # Route through outbox for unified communication
     try:
