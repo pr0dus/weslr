@@ -358,6 +358,7 @@
       <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
         <button onclick="loadTimeline()" style="background:#2d333b; color:#fff; border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px;">Load Governance Timeline</button>
         <button onclick="loadConfidenceMatrix()" style="background:#2d333b; color:#fff; border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px;">Load Confidence Matrix</button>
+        <button onclick="exportBundle()" id="export-btn" disabled style="background:#273142; color:#6b7280; border:0; border-radius:8px; padding:9px 16px; cursor:not-allowed; font-size:13px;">Export Bundle</button>
       </div>
 
       <!-- Diagram display -->
@@ -573,6 +574,79 @@
         } catch(e) { alert('Confidence matrix failed: ' + e); }
         finally { btn.textContent = 'Load Confidence Matrix'; btn.disabled = false; }
       }
+
+      // Export research bundle — downloads all current artifacts as JSON
+      var _currentTimelineDiagram = null;
+      var _currentConfidenceDiagram = null;
+      var _currentRenderedMemo = null;
+
+      async function exportBundle() {
+        if (!_currentMemo) { alert('Generate a memo first.'); return; }
+        var exportBtn = document.getElementById('export-btn');
+        exportBtn.textContent = 'Exporting...'; exportBtn.disabled = true;
+        try {
+          // Collect all artifacts
+          var bundle = {
+            exported_at: new Date().toISOString(),
+            research_question: _currentMemo.research_question || document.getElementById('research-question').value.trim() || 'unknown',
+            canonical_memo: _currentMemo,
+            rendered_memo: _currentRenderedMemo || null,
+            confidence_matrix: _currentConfidenceDiagram,
+            governance_timeline: _currentTimelineDiagram,
+            note: 'All artifacts generated from WESLR research pipeline. Operator review required before any external use.'
+          };
+          // Download as JSON file
+          var blob = new Blob([JSON.stringify(bundle, null, 2)], {type: 'application/json'});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+          a.download = 'weslr-research-' + ts + '.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch(e) { alert('Export failed: ' + e); }
+        finally { exportBtn.textContent = 'Export Bundle'; exportBtn.disabled = false; }
+      }
+
+      // Track diagram loads so bundle has current data
+      var _origLoadTimeline = loadTimeline;
+      loadTimeline = async function() {
+        await _origLoadTimeline();
+        // Read diagram content from display
+        var meta = document.getElementById('diagram-meta').textContent || '';
+        var content = document.getElementById('diagram-content').textContent || '';
+        if (meta && content) {
+          _currentTimelineDiagram = {meta: meta, content: content};
+        }
+      };
+      var _origLoadCM = loadConfidenceMatrix;
+      loadConfidenceMatrix = async function() {
+        await _origLoadCM();
+        var meta = document.getElementById('diagram-meta').textContent || '';
+        var content = document.getElementById('diagram-content').textContent || '';
+        if (meta && content) {
+          _currentConfidenceDiagram = {meta: meta, content: content};
+        }
+      };
+      // Track rendered memo so bundle has current render output
+      var _origRenderMemo = renderMemo;
+      renderMemo = async function(mode) {
+        await _origRenderMemo(mode);
+        // Read rendered content from display
+        var out = document.getElementById('memo-rendered-content');
+        if (out && out.textContent) {
+          _currentRenderedMemo = {mode: mode, content: out.textContent};
+        }
+      };
+      // Enable export button once memo is generated
+      var _origGenerate = generateMemo;
+      generateMemo = async function() {
+        await _origGenerate();
+        document.getElementById('export-btn').disabled = false;
+        _currentRenderedMemo = null; _currentTimelineDiagram = null; _currentConfidenceDiagram = null;
+      };
       </script>
     </section>
 
