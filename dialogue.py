@@ -654,7 +654,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             any(token in lower_message for token in ["understand yourself", "understand youself", "understand yourself better", "know yourself better"])
         )
 
-        if turn_type == "greeting":
+        # Artifact reflection: check BEFORE generic routing for questions about WESLR's own output
+        if any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research", "confidence", "limitations", "hypothesis", "next experiment", "operator", "reliable", "reliability", "rely on", "improve", "improved", "improvement"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable")):
+            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+            if research_context and research_context.get("summary"):
+                synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+            else:
+                synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
+                message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+        elif turn_type == "greeting":
             message = _get_language_module().greeting_response()
         elif turn_type == "approval":
             message = _get_language_module().approval_response()
@@ -1071,7 +1080,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
                 else:
                     synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
-                    message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+                    message = synthesized if synthesized else f"My current best answer is that {lead_topic}. The topic is: {lead_topic}."
             elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
                 # Artifact reflection: questions that reference WESLR's own produced artifact
