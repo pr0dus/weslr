@@ -525,6 +525,175 @@ def synthesize_concept_or_self_reply(
     return None
 
 
+def _teach_artifact(level: str, topic: str, content: dict) -> str:
+    """Produce a level-specific explanation of an artifact.
+
+    level: beginner | student | technical | seminar
+    topic: the artifact subject
+    content: dict with hypothesis, confidence, limitations, next_experiment, quality_class
+
+    All explanations are grounded in actual artifact fields — no hallucination.
+    """
+    hyp = str(content.get("hypothesis", "")).strip() or "No hypothesis recorded."
+    conf = content.get("confidence", {})
+    lim = content.get("limitations", [])
+    nxt = str(content.get("next_experiment", "")).strip() or "No next step recorded."
+    qclass = content.get("quality_class", "unknown")
+
+    if isinstance(conf, dict):
+        conf_level = conf.get("level", "unknown")
+        conf_verified = conf.get("verified", False)
+        conf_tclass = conf.get("truth_class", "unknown")
+    else:
+        conf_level = str(conf)
+        conf_verified = False
+        conf_tclass = "unknown"
+
+    lim_list = lim if isinstance(lim, list) else [str(lim)]
+    lim_str = " ".join(l.strip() for l in lim_list if l.strip()) or "No limitations recorded."
+
+    if level == "beginner":
+        return (
+            f"Here's what this artifact is about (simple terms):\n\n"
+            f"**What it says:** {hyp[:200]}\n\n"
+            f"**How confident:** The system rated this as {conf_level} confidence — meaning "
+            f"{'it has checked this internally' if conf_verified else 'it still needs outside checking to be sure'}.\n\n"
+            f"**What might be wrong:** {lim_str[:200]}\n\n"
+            f"**What to do next:** {nxt[:150]}"
+        )
+
+    elif level == "student":
+        return (
+            f"Artifact explanation (student level):\n\n"
+            f"Hypothesis: {hyp[:300]}\n\n"
+            f"Quality class: {qclass} — this tells you how strongly the evidence supports the claim. "
+            f"Confidence level {conf_level} means the system {'has verified this routing internally' if conf_verified else 'has NOT verified this externally — treat as provisional'}.\n\n"
+            f"Limitations: {lim_str[:250]}\n\n"
+            f"Next step: {nxt[:200]}"
+        )
+
+    elif level == "technical":
+        return (
+            f"Technical artifact breakdown:\n\n"
+            f"Quality class: {qclass} | Truth class: {conf_tclass} | Verified: {conf_verified}\n\n"
+            f"Hypothesis: {hyp}\n\n"
+            f"Confidence matrix: level={conf_level}, verified={conf_verified}\n\n"
+            f"Limitations: {lim_str}\n\n"
+            f"Next experiment: {nxt}"
+        )
+
+    elif level == "seminar":
+        return (
+            f"Seminar-focused artifact briefing:\n\n"
+            f"Core claim: {hyp[:400]}\n\n"
+            f"Quality verdict: {qclass} ({conf_level}, verified={conf_verified}, truth_class={conf_tclass})\n\n"
+            f"Key limitation to disclose: {lim_str[:300]}\n\n"
+            f"Recommended focus for discussion: {nxt[:200]}\n\n"
+            f"Note: This artifact {'has been reviewed and approved' if qclass in ('strong_verified', 'grounded_reasoning') else 'remains in draft state — operator review required before external presentation.'}"
+        )
+
+    # Fallback
+    return f"Artifact on {topic}: {hyp[:300]}"
+
+
+def _compare_versions_for_teaching(v_a: dict, v_b: dict, level: str) -> str:
+    """Explain the difference between two artifact versions at a given level.
+
+    level: beginner | student | technical | seminar
+    """
+    content_a = v_a.get("content", {})
+    content_b = v_b.get("content", {})
+
+    label_a = v_a.get("version_label", "?")
+    label_b = v_b.get("version_label", "?")
+    approval_a = v_a.get("approval_state", "unknown")
+    approval_b = v_b.get("approval_state", "unknown")
+
+    changed = []
+    diffs = {}
+    for key in ["hypothesis", "confidence", "limitations", "next_experiment", "quality_class"]:
+        val_a = str(content_a.get(key, "")).strip()
+        val_b = str(content_b.get(key, "")).strip()
+        if val_a != val_b:
+            changed.append(key)
+            diffs[key] = {"from": val_a, "to": val_b}
+
+    if not changed:
+        return f"Version {label_a} and Version {label_b} are substantively identical."
+
+    def _field_summary(key, d):
+        a = str(d["from"])[:80]
+        b = str(d["to"])[:80]
+        return f"- **{key}**: was \"{a}\" → now \"{b}\""
+
+    diff_lines = "\n".join(_field_summary(k, diffs[k]) for k in changed)
+
+    if level == "beginner":
+        improved = [k for k in changed if diffs[k]["to"] not in ("", "unknown")]
+        worse = [k for k in changed if diffs[k]["to"] in ("", "unknown")]
+        improvement_note = ""
+        if improved:
+            improvement_note = f"\n\nThings that got better: {', '.join(improved)}."
+        if worse:
+            improvement_note += f"\n\nThings that may have changed in ways that need checking: {', '.join(worse)}."
+        return (
+            f"Version {label_a} is the original. Version {label_b} is a proposed revision.\n\n"
+            f"What's different:\n{diff_lines}\n\n"
+            f"Approval status: Version {label_a} is {approval_a}. Version {label_b} is {approval_b}. "
+            f"Only an operator can approve.{improvement_note}"
+        )
+
+    elif level == "student":
+        return (
+            f"Version comparison ({label_a} → {label_b}):\n\n"
+            f"Changed fields: {', '.join(changed)}\n\n"
+            f"{diff_lines}\n\n"
+            f"Approval: Version {label_a}={approval_a}, Version {label_b}={approval_b}. "
+            f"Version {label_b} requires operator approval before it can be exported."
+        )
+
+    elif level == "technical":
+        lines = [f"Version {label_a} → {label_b} | Approval: {approval_a} / {approval_b}"]
+        for k in changed:
+            lines.append(f"  {k}: from={str(diffs[k]['from'])[:60]} to={str(diffs[k]['to'])[:60]}")
+        return "\n".join(lines)
+
+    elif level == "seminar":
+        return (
+            f"Seminar version briefing: Version {label_a} (original, {approval_a}) → Version {label_b} (proposed, {approval_b})\n\n"
+            f"Changed: {', '.join(changed)}\n\n{diff_lines}\n\n"
+            f"Version {label_b} requires operator approval. "
+            f"Export of any version requires approval — version B is not auto-promoted."
+        )
+
+    return diff_lines
+
+
+def _misunderstanding_points(content: dict, level: str = "beginner") -> list:
+    """Identify likely misunderstanding points for a given artifact.
+
+    Returns list of (topic, warning) tuples for a student or beginner audience.
+    """
+    points = []
+    conf = content.get("confidence", {})
+    qclass = content.get("quality_class", "unknown")
+    lim = content.get("limitations", [])
+    hyp = content.get("hypothesis", "")
+
+    if isinstance(conf, dict) and not conf.get("verified"):
+        points.append(("Confidence verification", "This finding has NOT been verified externally — it reflects the system's internal routing only."))
+    if not hyp or len(hyp) < 20:
+        points.append(("Weak hypothesis", "The hypothesis is thin — treat findings as preliminary."))
+    if isinstance(lim, list) and len(lim) == 0:
+        points.append(("No limitations noted", "No limitations are documented — this could mean the system hasn't flagged any yet, not that none exist."))
+    if qclass in ("fallback", "uncertain"):
+        points.append(("Low quality class", f"Quality class '{qclass}' means this response may not be reliable — external review recommended."))
+    if not content.get("next_experiment"):
+        points.append(("No next step", "No next experiment is documented — without a verification step, confidence can't improve."))
+
+    return points[:4]  # Cap at 4 points
+
+
 def synthesize_research_answer(topic: str, summary: str) -> str:
     text = str(summary or "").strip()
     if not text:
@@ -895,8 +1064,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "more rigorous", "improve the", "improve this", "better version", "suggest a better",
             "better hypothesis", "better next", "better limitations",
         ]
-        startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
-        startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
+        startswith_tokens = (
+            "what should", "what would", "how would", "what does this", "what is this",
+            "explain this", "how reliable", "which part", "what part",
+            "explain simply", "explain for beginner", "explain for student",
+            "explain technically", "explain for seminar", "what would a student",
+            "what should a seminar", "explain the difference between version",
+            "beginner explain", "student explain", "technical explain", "seminar explain",
+            "explain at level", "explain at beginner", "explain at student",
+            "explain at technical", "explain at seminar",
+            "teach this", "teach me about this", "teach about artifact",
+        )
 
         # Proposal / improvement intent - triggers artifact proposal mode
         # Uses both token substrings AND startswith phrases for natural-language tolerance
@@ -1377,6 +1555,45 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 else:
                     synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
                     message = synthesized if synthesized else f"My current best answer is that {lead_topic}. The topic is: {lead_topic}."
+
+            elif lower_message.startswith(("teach this", "teach me about", "teach about artifact", "explain simply", "explain for beginner", "explain at beginner", "beginner explain")):
+                _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                content = (research_context.get("content") or {}) if research_context else {}
+                message = _teach_artifact("beginner", lead_topic, content)
+            elif lower_message.startswith(("explain for student", "explain at student", "student explain", "explain technically", "explain at technical", "technical explain")):
+                _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                content = (research_context.get("content") or {}) if research_context else {}
+                level = "student" if "student" in lower_message else "technical"
+                message = _teach_artifact(level, lead_topic, content)
+            elif lower_message.startswith(("explain for seminar", "explain at seminar", "seminar explain", "what should a seminar", "seminar audience")):
+                _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                content = (research_context.get("content") or {}) if research_context else {}
+                message = _teach_artifact("seminar", lead_topic, content)
+            elif "student misunderstand" in lower_message or "confusion point" in lower_message or "what might a student miss" in lower_message:
+                _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                content = (research_context.get("content") or {}) if research_context else {}
+                points = _misunderstanding_points(content)
+                if points:
+                    lines = ["Likely confusion points:"]
+                    for topic, warning in points:
+                        lines.append(f"- **{topic}**: {warning}")
+                    message = "\n".join(lines)
+                else:
+                    message = "No obvious confusion points detected in this artifact."
+            elif "difference between version" in lower_message or "compare version" in lower_message or "what changed between version" in lower_message:
+                _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                rc = research_context or {}
+                v_a = rc.get("version_a") or {}
+                v_b = rc.get("version_b") or {}
+                if v_a and v_b:
+                    level = "student"
+                    for lvl in ["beginner", "student", "technical", "seminar"]:
+                        if lvl in lower_message:
+                            level = lvl
+                            break
+                    message = _compare_versions_for_teaching(v_a, v_b, level)
+                else:
+                    message = "To compare versions, I need a bundle_id and two version IDs in the research_context. Use the /chat endpoint with research_context containing version_a and version_b content."
             elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
                 # Artifact reflection: questions that reference WESLR's own produced artifact
