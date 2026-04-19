@@ -2228,6 +2228,15 @@ def cmd_serve(args):
                             "likely_need": lneed,
                         } if qnote else None,
                     }, frame=frame, source="operator", trust_level="direct")
+                    # Separate governance event lane — only fires when watch triggers.
+                    # Clean separation from chat.message telemetry.
+                    if qnote:
+                        self._log_timeline_event(tl_id, "governance.observation", {
+                            "watch_triggered": qnote,
+                            "quality_class": qclass,
+                            "likely_need": lneed,
+                            "message_snippet": message[:80],
+                        }, source="governance_watch", trust_level="system")
                 except TimeoutError:
                     self.send_response(504)
                     self.send_header("Content-Type", "application/json")
