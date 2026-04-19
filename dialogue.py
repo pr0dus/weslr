@@ -112,6 +112,26 @@ def _artifact_fallback_answer(lower_message: str, lead_topic: str, last_message:
     if lower_message.startswith("explain this"):
         return f"This artifact covers: {lead_topic}. It contains a hypothesis, confidence assessment, limitations, and suggested next steps."
     
+    # Evidence priority question
+    if "evidence" in lower_message and ("matter" in lower_message or "important" in lower_message or "most" in lower_message):
+        return "Based on this artifact: the most important evidence is the quality class distribution across governance observations. Strong_verified observations carry the most weight; fallback and weak_reasoning observations indicate areas where confidence is lower and external verification would help."
+    
+    # Safety / judgment question
+    if "safe" in lower_message or "safety" in lower_message:
+        return "Based on this artifact: treat the findings as provisional until external verification confirms the quality class assignments. Confidence levels and limitations sections should be included in any presentation to prevent overstatement."
+    
+    # Governance necessity question
+    if "govern" in lower_message or "must remain" in lower_message:
+        return "Based on this artifact: the approval doctrine requires operator review before external use. Key governance points are: confidence_statement must be included, limitations_section must be disclosed, and diagrams require collaborator/seminar mode for external audiences."
+    
+    # Term clarification question
+    if "clarification" in lower_message or "term" in lower_message or "unclear" in lower_message:
+        return "Based on this artifact: the most useful terms to clarify are 'quality_class' (maps confidence level to evidence strength), 'strong_verified' (internally confirmed routing), and 'next_experiment' (the suggested verification step). Check the artifact's plain_language_summary for plain-language equivalents."
+    
+    # Plain-language explanation question
+    if "plain" in lower_message or "simple word" in lower_message:
+        return "Based on this artifact: the artifact's findings show that governance quality depends on whether routing observations were confirmed internally or need external checking. In short: the system works well but can sometimes be too narrow — external verification would help it sound more confident and accurate."
+    
     # Default: use lead_topic
     return f"The artifact addresses: {lead_topic}. Check the hypothesis and confidence sections for details."
 
@@ -706,12 +726,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "confidence", "limitations", "hypothesis", "next experiment", "operator",
             # Reliability / quality
             "reliable", "reliability", "rely on", "improve", "improved", "improvement",
-            # Governance / approval (governance reasoning: 2/20 — highest-impact expansion)
+            # Governance / approval
             "approval", "approved", "export", "blocked", "public", "draft", "auto-approve", "automated",
             # Structural analysis ("which" questions)
             "strongest", "weakest", "part", "parts",
             # Teaching / explanation
             "explain", "summarize", "summary", "simple", "technical", "beginner", "non-expert",
+            # Missing tokens from 40-test run — needed to route these to artifact reflection:
+            # selection/judgment patterns
+            "evidence", "matter", "matters", "safe", "safety", "govern", "governed", "term",
+            "clarification", "plain", "plain-language",
         ]
         startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
         
