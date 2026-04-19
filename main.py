@@ -3751,6 +3751,49 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Research diagram: governance timeline
+            if self.path == "/api/research/diagrams/governance-timeline":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    tl_id = params.get("timeline", ["tl_default"])[0]
+                    diagram = _generate_governance_timeline_diagram(tl_id)
+                    payload = json.dumps(diagram, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "diagram_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Research diagram: confidence matrix (POST memo → diagram)
+            if self.path == "/api/research/diagrams/confidence-matrix" and self.command == "POST":
+                try:
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length)
+                    memo = json.loads(body.decode("utf-8"))
+                    if not isinstance(memo, dict):
+                        raise ValueError("memo must be a JSON object")
+                    diagram = _generate_confidence_matrix_diagram(memo)
+                    payload = json.dumps(diagram, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "diagram_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
