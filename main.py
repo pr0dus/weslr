@@ -84,6 +84,21 @@ _CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-requ
 _MAX_CONCURRENT_CHAT = 4
 _chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
 
+# ── Publishing Gateway Phase 6.1: Bounded Bundle Status Registry ──────────────
+_BUNDLE_REGISTRY: dict[str, dict] = {}
+_BUNDLE_REGISTRY_MAX = 20
+
+def _register_bundle(bundle_id: str, draft_status: str, generated_at: str) -> None:
+    entry = {"bundle_id": bundle_id, "draft_status": draft_status, "generated_at": generated_at}
+    _BUNDLE_REGISTRY[bundle_id] = entry
+    if len(_BUNDLE_REGISTRY) > _BUNDLE_REGISTRY_MAX:
+        oldest_key = next(iter(_BUNDLE_REGISTRY))
+        del _BUNDLE_REGISTRY[oldest_key]
+
+def _get_bundle_status(bundle_id: str) -> dict | None:
+    return _BUNDLE_REGISTRY.get(bundle_id)
+
+
 # ── Repeated quality watch (governance bridge, metadata only) ───────────
 # Tiny in-memory rolling state. Detects repeated quality degradation patterns.
 # No behavior changes, no automatic actions — metadata only.
@@ -549,6 +564,7 @@ def _generate_research_memo(
     """
     from datetime import datetime, timezone
     import json
+    import uuid
 
     timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -672,6 +688,7 @@ Rules:
             alt_interp = sections.get("Alternative Interpretations", "- Alternative explanations not yet explored.")
             next_steps = sections.get("Next Steps", "- Further observation needed.")
 
+            bundle_id = str(uuid.uuid4())
             return {
                 "title": title,
                 "research_question": research_question,
@@ -695,13 +712,22 @@ Rules:
                 "generated_by": "weslr",
                 "generated_at": timestamp,
                 "draft_status": "operator_review_required",
+                "bundle_id": bundle_id,
+                "approval": {
+                    "approved_by": None,
+                    "approved_at": None,
+                    "output_mode": None,
+                    "note": None,
+                },
             }
+            _register_bundle(bundle_id, "operator_review_required", timestamp)
 
     except Exception:
         pass
 
     # Fallback: return structured memo without LLM synthesis (still valid, slightly less polished)
-    return {
+    fb_bundle_id = str(uuid.uuid4())
+    fb_memo = {
         "title": title,
         "research_question": research_question,
         "context": context,
@@ -727,7 +753,16 @@ Rules:
         "generated_by": "weslr",
         "generated_at": timestamp,
         "draft_status": "operator_review_required",
+        "bundle_id": fb_bundle_id,
+        "approval": {
+            "approved_by": None,
+            "approved_at": None,
+            "output_mode": None,
+            "note": None,
+        },
     }
+    _register_bundle(fb_bundle_id, "operator_review_required", timestamp)
+    return fb_memo
 
 
 # ── Research Artifact Rendering (Phase R2) ─────────────────────────────────
@@ -3951,6 +3986,54 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                 except Exception as e:
                     payload = json.dumps({"error": "diagram_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Publishing Gateway Phase 6.1: Bundle status endpoint
+            if self.path.split("?")[0] == "/api/research/bundle/status":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    if not bundle_id:
+                        raise ValueError("bundle_id query param is required")
+                    reg_entry = _BUNDLE_REGISTRY.get(bundle_id)
+                    if not reg_entry:
+                        payload = json.dumps({
+                            "error": "bundle_not_found",
+                            "bundle_id": bundle_id,
+                            "message": "No bundle found with this ID. Bundles expire after 20 are generated."
+                        }, indent=2).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                    else:
+                        payload = json.dumps({
+                            "bundle_id": bundle_id,
+                            "draft_status": reg_entry.get("draft_status", "unknown"),
+                            "generated_at": reg_entry.get("generated_at", ""),
+                            "approval": {
+                                "approved_by": None,
+                                "approved_at": None,
+                                "output_mode": None,
+                                "note": None,
+                            },
+                        }, indent=2).encode("utf-8")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({
+                        "error": "status_unavailable",
+                        "detail": str(e)
+                    }, indent=2).encode("utf-8")
                     self.send_response(500)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
