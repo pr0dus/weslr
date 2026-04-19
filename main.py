@@ -147,6 +147,126 @@ def _derive_governance_candidate(qnote: str, qclass: str, lneed: str, message: s
     }
 
 
+# ── Improvement recommendation derivation ─────────────────────────────────
+# Observation → Diagnosis → Recommendation → Implementation hint.
+# For operator review only — no auto-apply, no code mutation.
+# Bounded: maps watch types to recommendation shapes.
+
+
+def _derive_improvement_recommendation(qnote: str, qclass: str, lneed: str, message: str) -> dict:
+    """Derive a structured improvement recommendation from a fired quality watch.
+    
+    Returns: {
+        recommendation_type, trigger, diagnosis, recommendation,
+        implementation_hint, confidence, approval_required
+    }
+    
+    approval_required is always True — operator must approve any action.
+    No automatic execution. No code mutation.
+    """
+    # Watch type → recommendation_type
+    _RECO_TYPE_MAP = {
+        "repeated_fallback_watch": "coverage_gap",
+        "repeated_weak_reasoning_watch": "synthesis_quality",
+        "repeated_grounded_reasoning_watch": "grounding_evidence",
+        "repeated_strong_verified_watch": "routing_optimization",
+    }
+    recommendation_type = _RECO_TYPE_MAP.get(qnote, "unknown_pattern")
+
+    # Watch type → diagnosis (what is likely wrong)
+    _DIAGNOSIS_MAP = {
+        "repeated_fallback_watch": (
+            "Direct-answer queries are hitting the template fallback path repeatedly. "
+            "The LLM synthesis path is either not being reached or returning None. "
+            "Likely cause: concept allowlist or routing logic doesn't cover this query type."
+        ),
+        "repeated_weak_reasoning_watch": (
+            "LLM synthesis is producing low-confidence reasoning responses. "
+            "Possible causes: insufficient grounding context, weak synthesis prompt, "
+            "or the topic is outside the model's reliable coverage."
+        ),
+        "repeated_grounded_reasoning_watch": (
+            "Sustained medium-quality reasoning responses detected. "
+            "Not critical — responses are valid but may lack depth or specificity. "
+            "Consider whether research context or anchor context could improve grounding."
+        ),
+        "repeated_strong_verified_watch": (
+            "Consistently strong, verified responses observed. "
+            "Current routing and synthesis are working correctly. "
+            "No immediate action required — pattern indicates healthy operation."
+        ),
+    }
+    diagnosis = _DIAGNOSIS_MAP.get(qnote, "Unclassified quality pattern. Operator review recommended.")
+
+    # Watch type → recommendation (what to do)
+    _RECO_MAP = {
+        "repeated_fallback_watch": (
+            "Extend synthesis gating to cover the triggering query pattern. "
+            "Check whether _generate_concept_synthesis is reachable for this query type "
+            "and whether it returns None (which would cause template fallback)."
+        ),
+        "repeated_weak_reasoning_watch": (
+            "Review the synthesis prompt and context for the triggering query type. "
+            "Consider: (1) adding research_context when available, "
+            "(2) improving anchor context injection, "
+            "(3) verifying LLM provider is operating normally."
+        ),
+        "repeated_grounded_reasoning_watch": (
+            "Monitor the query type for further degradation. "
+            "Consider adding targeted anchor context or research context "
+            "to improve medium-confidence reasoning responses."
+        ),
+        "repeated_strong_verified_watch": (
+            "No action required. Current routing is producing strong verified responses. "
+            "Consider documenting what distinguishes these queries as a reference for future tuning."
+        ),
+    }
+    recommendation = _RECO_MAP.get(qnote, "Review quality pattern. Consult governance observation for details.")
+
+    # Watch type → implementation_hint (concrete next step)
+    _HINT_MAP = {
+        "repeated_fallback_watch": (
+            "In dialogue.py, check the direct_answer branch: ensure _generate_concept_synthesis "
+            "is called and returns non-None for the triggering query pattern. "
+            "Verify the concept allowlist in synthesize_concept_or_self_reply doesn't block it."
+        ),
+        "repeated_weak_reasoning_watch": (
+            "In _generate_concept_synthesis: verify the prompt provides enough context. "
+            "Consider adding anchor_context injection (already implemented but ensure it's active). "
+            "Check get_provider() timeout and retry logic."
+        ),
+        "repeated_grounded_reasoning_watch": (
+            "Review _get_targeted_anchors: ensure anchor context is being populated "
+            "for the relevant likely_need category. "
+            "Consider adding domain-specific anchors for the triggering query type."
+        ),
+        "repeated_strong_verified_watch": (
+            "Document the query pattern and routing in WESLR_CLI.md for reference. "
+            "No code change needed — confirm routing is stable."
+        ),
+    }
+    implementation_hint = _HINT_MAP.get(qnote, "Review the triggering governance.observation event for specifics.")
+
+    # Confidence based on how well-understood this watch type is
+    _CONFIDENCE_MAP = {
+        "repeated_fallback_watch": "high",       # well-understood root cause
+        "repeated_weak_reasoning_watch": "medium",  # likely but needs operator diagnosis
+        "repeated_grounded_reasoning_watch": "medium",  # observable, cause less certain
+        "repeated_strong_verified_watch": "high",   # positive signal, confident
+    }
+    confidence = _CONFIDENCE_MAP.get(qnote, "low")
+
+    return {
+        "recommendation_type": recommendation_type,
+        "trigger": qnote,
+        "diagnosis": diagnosis,
+        "recommendation": recommendation,
+        "implementation_hint": implementation_hint,
+        "confidence": confidence,
+        "approval_required": True,  # always True — operator must approve
+    }
+
+
 def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
     """Check if quality_class has repeated 3+ times for same likely_need.
     
@@ -2286,12 +2406,14 @@ def cmd_serve(args):
                     # Clean separation from chat.message telemetry.
                     if qnote:
                         candidate = _derive_governance_candidate(qnote, qclass, lneed, message)
+                        recommendation = _derive_improvement_recommendation(qnote, qclass, lneed, message)
                         self._log_timeline_event(tl_id, "governance.observation", {
                             "watch_triggered": qnote,
                             "quality_class": qclass,
                             "likely_need": lneed,
                             "message_snippet": message[:80],
                             "_governance_candidate": candidate,
+                            "_improvement_recommendation": recommendation,
                         }, source="governance_watch", trust_level="system")
                 except TimeoutError:
                     self.send_response(504)
