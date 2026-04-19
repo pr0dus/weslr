@@ -136,6 +136,172 @@ def _artifact_fallback_answer(lower_message: str, lead_topic: str, last_message:
     return f"The artifact addresses: {lead_topic}. Check the hypothesis and confidence sections for details."
 
 
+def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_context: dict | None) -> str | None:
+    """Generate a structured proposal for improving an artifact.
+    
+    Returns None if no proposal can be generated (no research context).
+    Does NOT mutate any stored artifact or bundle state.
+    
+    Response structure:
+    1. Brief diagnosis
+    2. Proposed improvements (bullet list)
+    3. Proposed revised version (labeled "Proposed revision:")
+    4. Approval reminder
+    
+    Works with both full memo research_context (from /api/research path)
+    and topic-summary research_context (from HTTP /chat path).
+    """
+    if not research_context:
+        return None
+    
+    # Try full memo first (from /api/research path with canonical memo)
+    memo = research_context.get("memo", {})
+    if memo:
+        hypothesis = str(memo.get("hypothesis") or "")
+        next_experiment = str(memo.get("next_experiment") or "")
+        limitations = memo.get("limitations", [])
+        if isinstance(limitations, list):
+            limitations = " ".join(str(l) for l in limitations)
+        else:
+            limitations = str(limitations or "")
+        confidence = memo.get("confidence", {})
+        conf_level = (confidence.get("level", "unknown") if isinstance(confidence, dict)
+                      else str(confidence))
+    else:
+        # Fall back to topic/summary from HTTP /chat path
+        topic = str(research_context.get("topic", ""))
+        summary = str(research_context.get("summary", ""))
+        title = str(research_context.get("title", ""))
+        hypothesis = summary[:200] if summary else title
+        next_experiment = ""
+        limitations = ""
+        conf_level = "medium"
+    
+    # Determine which section to improve
+    section = "general"
+    if "hypothesis" in lower_message:
+        section = "hypothesis"
+    elif "next experiment" in lower_message or "next step" in lower_message:
+        section = "next_experiment"
+    elif "limitations" in lower_message:
+        section = "limitations"
+    elif "confidence" in lower_message:
+        section = "confidence"
+    
+    # Build diagnosis + proposed revision based on section
+    if section == "hypothesis":
+        diagnosis = (
+            f"The current hypothesis is '{hypothesis[:150]}'. "
+            f"It could be more specific about the causal mechanism and the conditions under which the observation holds."
+        )
+        proposed = f"Proposed revision: [Current: {hypothesis[:100]}...] Refined: specifically identifies [causal mechanism] as the primary driver, with [specific conditions] where this applies and [what external verification would confirm]."
+    elif section == "next_experiment":
+        current_next = next_experiment or "(not specified)"
+        diagnosis = (
+            f"The current next experiment is '{current_next[:150]}'. "
+            f"It could be more concrete with a specific verification action and a clear expected outcome."
+        )
+        proposed = f"Proposed revision: Conduct [specific external verification] to confirm [precise prediction]. Expected outcome: [what confirming vs disconfirming result would show about the hypothesis]."
+    elif section == "limitations":
+        current_lim = limitations or "(not specified)"
+        diagnosis = (
+            f"The current limitations are '{current_lim[:150]}'. "
+            f"They could name specific external checks that would strengthen the evidence."
+        )
+        proposed = f"Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] — if confirmed, [what this would change]."
+    elif section == "confidence":
+        diagnosis = (
+            f"The current confidence is '{conf_level}'. "
+            f"It could be justified by pointing to the strongest quality classes observed."
+        )
+        proposed = f"Proposed revision: Confidence level is {conf_level}, derived from [strong_verified observations as primary evidence]. Key gap: no external verification yet — filling this would raise the level to [higher level]."
+    else:
+        diagnosis = (
+            "The artifact covers governance quality observations. "
+            "Main areas for improvement: specificity of causal claims, concreteness of next steps, and coverage of what external verification would change."
+        )
+        proposed = (
+            "Proposed revision: [Targeted rewrite of the specific section requested]. "
+            "Keep unchanged: sections that are already specific and evidence-grounded."
+        )
+    
+    message = f"{diagnosis}\n\n"
+    message += "Proposed improvements:\n"
+    message += "- Make causal claims specific: what mechanism, under what conditions\n"
+    message += "- Make next steps concrete: specific action + expected outcome\n"
+    message += "- Note what external verification would change about confidence\n"
+    message += f"\n{proposed}\n\n"
+    message += "This is a proposed change only. The original artifact is unchanged until approved."
+    
+    return message
+
+
+
+def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str) -> str | None:
+    """Generate a proposal when no research_context is available.
+    
+    Works from the question content alone — identifies the target section
+    and produces a structural proposal without access to the actual artifact.
+    
+    Returns None if the question is not clearly a proposal intent.
+    """
+    if not any(t in lower_message for t in ["improve", "fix", "propose", "rewrite", "better", "suggest"]):
+        return None
+    
+    section = "general"
+    if "hypothesis" in lower_message:
+        section = "hypothesis"
+    elif "next experiment" in lower_message or "next step" in lower_message:
+        section = "next_experiment"
+    elif "limitations" in lower_message:
+        section = "limitations"
+    elif "confidence" in lower_message:
+        section = "confidence"
+    elif "this artifact" in lower_message or "this" in lower_message:
+        section = "general"
+    
+    diagnosis = ""
+    if section == "hypothesis":
+        diagnosis = (
+            "The hypothesis could be more specific about the causal mechanism "
+            "and the conditions under which the observation holds."
+        )
+        proposed = "Proposed revision: [Current hypothesis] — Refined to specify [causal mechanism] as the primary driver, with [specific conditions] where this applies."
+    elif section == "next_experiment":
+        diagnosis = (
+            "The next step could be more concrete with a specific verification action "
+            "and a clear expected outcome."
+        )
+        proposed = "Proposed revision: Conduct [specific external verification] to confirm [precise prediction]. Expected outcome: [what confirming vs disconfirming result would show]."
+    elif section == "limitations":
+        diagnosis = (
+            "The limitations could name specific external checks that would strengthen the evidence."
+        )
+        proposed = "Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] — if confirmed, [what this would change]."
+    elif section == "confidence":
+        diagnosis = (
+            "The confidence justification could point to the strongest quality classes observed "
+            "and note what external verification would change."
+        )
+        proposed = "Proposed revision: Confidence derived from [strong_verified observations]. Key gap: no external verification — filling this would raise confidence level."
+    else:
+        diagnosis = (
+            "The artifact could be improved by making causal claims more specific, "
+            "making next steps concrete with verification checks, and noting what external data would change."
+        )
+        proposed = "Proposed revision: [Rewrite specific section with]: (1) [causal mechanism + conditions], (2) [concrete next step with expected outcome], (3) [note what external verification would confirm]."
+    
+    message = f"{diagnosis}\n\n"
+    message += "Proposed improvements:\n"
+    message += "- Make causal claims specific: what mechanism, under what conditions\n"
+    message += "- Make next steps concrete: specific action + expected outcome\n"
+    message += "- Note what external verification would change\n"
+    message += f"\n{proposed}\n\n"
+    message += "This is a proposed change only. The original artifact is unchanged until approved."
+    
+    return message
+
+
 def _get_entity_by_type(entity_type: str) -> str | None:
     """Get first entity of specified type for dynamic identity."""
     try:
@@ -697,6 +863,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "internal_capability": False,
             "confidence": "low",
         }
+        message = None  # Ensure message is always initialized
         def _set_signal(path: str, **kw) -> None:
             """Update _response_signals. Call at each message = branch."""
             nonlocal _response_signals
@@ -736,8 +903,39 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             # selection/judgment patterns
             "evidence", "matter", "matters", "safe", "safety", "govern", "governed", "term",
             "clarification", "plain", "plain-language",
+            # Artifact proposal / improvement intent
+            "propose", "proposal", "revision", "revise", "fix the", "fix this", "rewrite",
+            "more rigorous", "improve the", "improve this", "better version", "suggest a better",
+            "better hypothesis", "better next", "better limitations",
         ]
         startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
+        startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
+        
+        # Proposal / improvement intent — triggers artifact proposal mode
+        proposal_tokens = [
+            "propose a", "propose better", "propose revised", "propose an improvement",
+            "how would you improve", "can you improve this", "improve this artifact",
+            "improve the hypothesis", "improve the next experiment", "improve the limitations",
+            "fix the hypothesis", "fix this hypothesis", "fix the next experiment",
+            "rewrite this", "rewrite the", "rewrite it more",
+            "make this more rigorous", "make it more rigorous",
+            "suggest a better", "suggest better", "better version", "better hypothesis",
+            "better next experiment", "better limitations section",
+            "proposal mode", "generate proposal",
+        ]
+        is_proposal_intent = any(token in lower_message for token in proposal_tokens)
+        
+        if is_proposal_intent:
+            _set_signal("proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+            message = _artifact_proposal_answer(lower_message, lead_topic, research_context)
+            if not message:
+                message = _artifact_proposal_answer_from_question(lower_message, lead_topic)
+            if message:
+                _set_signal("proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                _truth_guard = {"truth_class": "model_reasoning", "verified": False}
+                return {"message": message, "audience": "operator", "source": "artifact_proposal",
+                       "targeted_anchors": [], "_response_signals": _response_signals,
+                       "_truth_guard": _truth_guard, "_quality_class": "grounded_reasoning"}
         
         if any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
             _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
