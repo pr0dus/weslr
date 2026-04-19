@@ -699,7 +699,23 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         )
 
         # Artifact reflection: check BEFORE generic routing for questions about WESLR's own output
-        if any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research", "confidence", "limitations", "hypothesis", "next experiment", "operator", "reliable", "reliability", "rely on", "improve", "improved", "improvement"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable")):
+        artifact_tokens = [
+            # Explicit artifact reference
+            "this artifact", "this memo", "this finding", "this output", "this report", "this research",
+            # Artifact content fields
+            "confidence", "limitations", "hypothesis", "next experiment", "operator",
+            # Reliability / quality
+            "reliable", "reliability", "rely on", "improve", "improved", "improvement",
+            # Governance / approval (governance reasoning: 2/20 — highest-impact expansion)
+            "approval", "approved", "export", "blocked", "public", "draft", "auto-approve", "automated",
+            # Structural analysis ("which" questions)
+            "strongest", "weakest", "part", "parts",
+            # Teaching / explanation
+            "explain", "summarize", "summary", "simple", "technical", "beginner", "non-expert",
+        ]
+        startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
+        
+        if any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
             _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             if research_context and research_context.get("summary"):
                 synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
