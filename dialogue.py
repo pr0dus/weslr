@@ -472,7 +472,7 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
 
 
 
-def _generate_concept_synthesis(lead_topic: str, topic_lower: str) -> str | None:
+def _generate_concept_synthesis(lead_topic: str, topic_lower: str, anchor_context: str | None = None) -> str | None:
     """Generate LLM-based synthesis for general concept/explanation queries.
     
     Follows the established _generate_enriched_* pattern. Returns str on success,
@@ -481,6 +481,13 @@ def _generate_concept_synthesis(lead_topic: str, topic_lower: str) -> str | None
     Topic allowlist (memory, identity, reasoning, etc.) is handled separately
     in synthesize_concept_or_self_reply. This function handles general topics
     that are genuine information-seeking concept questions.
+    
+    Args:
+        lead_topic: The topic to explain
+        topic_lower: Lowercase version of lead_topic for matching
+        anchor_context: Optional bounded continuity context (max ~100 chars).
+            If provided, prepended to the synthesis prompt so the LLM has
+            lightweight session continuity without loading full memory blobs.
     
     Returns:
         - str: concise synthesis from LLM (target ~1-2 sentences)
@@ -499,16 +506,18 @@ def _generate_concept_synthesis(lead_topic: str, topic_lower: str) -> str | None
         
         # Build a concise, focused prompt
         prompt_topic = lead_topic.strip() if lead_topic else topic_lower
-        system_prompt = (
-            f"You are a concise, factual explainer. "
-            f"Explain '{prompt_topic}' in 1-2 clear sentences. "
-            f"Be direct. No preamble or follow-up questions."
-        )
+        
+        # Inject bounded anchor context if provided (continuity-light approach)
+        # Anchor context is pre-validated by caller to be short (~100 chars max)
+        if anchor_context:
+            context_line = f"[Session context: {anchor_context[:100]}] "
+        else:
+            context_line = ""
         
         result = get_provider().generate(
             "concept_synthesis",
             {
-                "message": f"Explain {prompt_topic}.",
+                "message": f"{context_line}Explain {prompt_topic}.",
                 "identity": "Weslr",
                 "turn_type": "question",
                 "reply_shape": "answer_directly",
@@ -929,6 +938,28 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 internal_routed = True
 
             if not internal_routed:
+                # ── Bounded memory anchor context for continuity-light synthesis ──
+                # Retrieve only the most relevant anchor hints (max ~120 chars total).
+                # Uses the existing _get_targeted_anchors infrastructure, which is
+                # already bounded per type. No memory blobs injected.
+                _anchor_ctx = ""
+                try:
+                    _raw_anchors = _get_targeted_anchors(last_message, topic_list, max_per_type=1)
+                    # Build a compact continuity string from the most relevant anchors.
+                    # Format: "last topic: X; active concern: Y; core drive: Z"
+                    _parts = []
+                    for _section, _items in [("continuity", _raw_anchors.get("continuity", [])),
+                                              ("goals", _raw_anchors.get("goals", [])),
+                                              ("episodes", _raw_anchors.get("episodes", []))]:
+                        if _items:
+                            _val = next((v for v in (_items[0].values() if isinstance(_items[0], dict) else [_items[0]][:1]) if str(v).strip()), "")
+                            if _val:
+                                _parts.append(f"{_section}: {str(_val)[:40]}")
+                    if _parts:
+                        _anchor_ctx = "; ".join(_parts[:3])  # max 3 sections, ~120 chars
+                except Exception:
+                    _anchor_ctx = ""  # Non-critical: fall back to no context
+
                 # Try synthesis first
                 synthesis = synthesize_concept_or_self_reply(
                     likely_need=likely_need,
@@ -984,7 +1015,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             if lead_topic.lower().startswith(verb):
                                 topic_for_synthesis = lead_topic[len(verb):].strip()
                                 break
-                        synthesis = _generate_concept_synthesis(topic_for_synthesis, topic_for_synthesis.lower())
+                        synthesis = _generate_concept_synthesis(topic_for_synthesis, topic_for_synthesis.lower(), _anchor_ctx)
                         if synthesis:
                             _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                             message = synthesis
@@ -993,7 +1024,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     else:
                         # Try LLM synthesis for any remaining non-trivial query
                         # that wasn't caught by internal routing or special handlers
-                        synthesis = _generate_concept_synthesis(lead_topic, lead_topic.lower())
+                        synthesis = _generate_concept_synthesis(lead_topic, lead_topic.lower(), _anchor_ctx)
                         if synthesis:
                             _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                             message = synthesis
