@@ -245,7 +245,13 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
     
     Returns None if the question is not clearly a proposal intent.
     """
-    if not any(t in lower_message for t in ["improve", "fix", "propose", "rewrite", "better", "suggest"]):
+    # Broad filter — allow any clear improvement intent
+    proposal_verbs = [
+        "improve", "fix", "propose", "rewrite", "better", "suggest", "change",
+        "revise", "revised", "rigorous", "optimize", "refine", "upgrade", "enhance",
+    ]
+    make_patterns = ["make this", "make it", "make the"]
+    if not any(t in lower_message for t in proposal_verbs) and not any(lower_message.startswith(p) or t in lower_message for p in make_patterns for t in [p]):
         return None
     
     section = "general"
@@ -284,6 +290,13 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
             "and note what external verification would change."
         )
         proposed = "Proposed revision: Confidence derived from [strong_verified observations]. Key gap: no external verification — filling this would raise confidence level."
+    elif "make this" in lower_message or "make it" in lower_message:
+        # Structural improvement requests
+        diagnosis = (
+            "The artifact could be more rigorous by strengthening causal specificity, "
+            "making next steps concrete with verification checks, and noting what external data would change."
+        )
+        proposed = "Proposed revision: [Rewrite for rigor] — (1) Specify causal mechanism and conditions, (2) Make next step concrete with expected outcome, (3) Note what external verification confirms."
     else:
         diagnosis = (
             "The artifact could be improved by making causal claims more specific, "
@@ -912,7 +925,9 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
         
         # Proposal / improvement intent — triggers artifact proposal mode
+        # Uses both token substrings AND startswith phrases for natural-language tolerance
         proposal_tokens = [
+            # Full phrase tokens (high-specificity)
             "propose a", "propose better", "propose revised", "propose an improvement",
             "how would you improve", "can you improve this", "improve this artifact",
             "improve the hypothesis", "improve the next experiment", "improve the limitations",
@@ -922,8 +937,19 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "suggest a better", "suggest better", "better version", "better hypothesis",
             "better next experiment", "better limitations section",
             "proposal mode", "generate proposal",
+            # Single improvement verbs (natural-language tolerance)
+            "propose", "improve", "fix", "rewrite", "suggest", "revise", "revised",
+            "change", "optimize", "refine", "upgrade", "enhance", "rigorous",
         ]
-        is_proposal_intent = any(token in lower_message for token in proposal_tokens)
+        proposal_startswith = (
+            "make this", "make it", "make the", "make this more",
+            "what would you change", "what should be changed",
+            "which section is weakest", "which part is weakest",
+        )
+        is_proposal_intent = (
+            any(token in lower_message for token in proposal_tokens) or
+            lower_message.startswith(proposal_startswith)
+        )
         
         if is_proposal_intent:
             _set_signal("proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
