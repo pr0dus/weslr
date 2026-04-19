@@ -269,7 +269,7 @@ def _derive_improvement_recommendation(qnote: str, qclass: str, lneed: str, mess
 
 def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
     """Check if quality_class has repeated 3+ times for same likely_need.
-    
+
     Returns a _quality_note string if threshold is met, None otherwise.
     The note is added to response metadata only — never to the message itself.
     """
@@ -288,6 +288,133 @@ def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
     if count >= _WATCH_THRESHOLD:
         return f"repeated_{quality_class}_watch"
     return None
+
+
+# ── Confusion detection (Phase 1 — human-compatibility first) ───────────────
+# Detects likely human confusion signals from message content.
+# Detection + metadata + logging ONLY — no auto-correction, no response change.
+# Conservative: avoid false positives. Must not change answer content.
+
+
+def _detect_confusion(message: str) -> dict:
+    """Detect likely human confusion from message content.
+
+    Returns dict: {"confusion_signal": bool, "confusion_type": str or None}
+    confusion_type one of: explicit_clarification, expectation_gap,
+    rephrase_signal, simplification_request, unknown
+
+    Rules:
+    - Detection only — does not modify response content
+    - Conservative: explicit phrases only, no heavy state inference
+    - More specific phrases checked before shorter generic ones
+    - confusion_signal=True only when strong signal present
+    """
+    lower = message.lower().strip()
+
+    # Check simplification_request FIRST — most specific, should fire
+    # before the shorter "can you explain" pattern
+    simplification_phrases = [
+        "in plain english",
+        "in plain words",
+        "in simple terms",
+        "in simpler terms",
+        "simple terms",
+        "simpler terms",
+        "layman's terms",
+        "layman terms",
+        "eli5",
+        "explain like i'm 5",
+        "explain like im 5",
+        "explain it to me like",
+        "too complicated",
+        "too technical",
+        "over my head",
+        "i don't follow",
+        "i dont follow",
+        "lost me",
+        "you lost me",
+        "make it simpler",
+        "say it simpler",
+        "say it in simpler",
+        "simplify",
+        "simpler",
+        "less complex",
+    ]
+    for phrase in simplification_phrases:
+        if phrase in lower:
+            return {"confusion_signal": True, "confusion_type": "simplification_request"}
+
+    # Rephrase signal — human is re-formulating (check before explicit clarification)
+    rephrase_phrases = [
+        "i mean",
+        "i meant to say",
+        "let me rephrase",
+        "let me say that differently",
+        "what i'm trying to say",
+        "what im trying to say",
+        "so basically",
+        "in other words",
+        "so essentially",
+        "rephrase that",
+        "rephrase",
+    ]
+    for phrase in rephrase_phrases:
+        if phrase in lower:
+            return {"confusion_signal": True, "confusion_type": "rephrase_signal"}
+
+    # Expectation gap — human says WESLR missed the mark
+    expectation_phrases = [
+        "that's not what i meant",
+        "thats not what i meant",
+        "that's not what i asked",
+        "thats not what i asked",
+        "not what i wanted",
+        "not what i asked",
+        "not this",
+        "wrong",
+        "i meant",
+        "i was asking about",
+        "that's not right",
+        "thats not right",
+        "that's not correct",
+        "thats not correct",
+        "you misunderstood",
+        "you got it wrong",
+        "that's not it",
+        "thats not it",
+    ]
+    for phrase in expectation_phrases:
+        if phrase in lower:
+            return {"confusion_signal": True, "confusion_type": "expectation_gap"}
+
+    # Explicit clarification requests — generic patterns last
+    # (more specific phrases should have matched above)
+    explicit_phrases = [
+        "i don't understand",
+        "i dont understand",
+        "don't understand",
+        "dont understand",
+        "what do you mean",
+        "what does that mean",
+        "can you explain",
+        "could you explain",
+        "say that again",
+        "say it again",
+        "huh",
+        "pardon",
+        "sorry?",
+        "excuse me",
+        "i'm confused",
+        "im confused",
+        "confused",
+        "unclear",
+    ]
+    for phrase in explicit_phrases:
+        if phrase in lower:
+            return {"confusion_signal": True, "confusion_type": "explicit_clarification"}
+
+    # No strong signal detected
+    return {"confusion_signal": False, "confusion_type": None}
 
 
 # Minimal telemetry emitter for v71 diagnostics
@@ -2386,6 +2513,20 @@ def cmd_serve(args):
                     qnote = _check_quality_watch(qclass, lneed)
                     if qnote:
                         payload["_quality_note"] = qnote
+                    # ── Confusion detection (Phase 1 — human-compatibility first) ──
+                    # Detect likely human confusion from message content.
+                    # Metadata only — never changes user-facing message.
+                    cstate = _detect_confusion(message)
+                    payload["_confusion_state"] = {
+                        "confusion_signal": cstate["confusion_signal"],
+                        "confusion_type": cstate["confusion_type"],
+                    }
+                    if cstate["confusion_signal"]:
+                        self._log_timeline_event(tl_id, "confusion.signal", {
+                            "confusion_type": cstate["confusion_type"],
+                            "likely_need": lneed,
+                            "message_snippet": message[:80],
+                        }, frame=frame, source="confusion_watch", trust_level="system")
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
