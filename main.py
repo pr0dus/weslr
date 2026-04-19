@@ -808,6 +808,9 @@ def _render_research_memo(memo: dict, mode: str) -> dict:
 
         obs_short = []
         for o in observations[:8]:
+            if not isinstance(o, dict):
+                obs_short.append(f"- {str(o)[:80]}")
+                continue
             ev = o.get("event", "")
             qc = o.get("quality_class", "")
             # Simplify quality class labels
@@ -934,11 +937,11 @@ def _render_research_memo(memo: dict, mode: str) -> dict:
         # Unknown mode: return researcher as default, with a note
         rendered["error"] = f"Unknown render mode: {mode}. Returning researcher mode."
         # Add plain_language_summary to researcher fallback too
-        rendered["plain_language_summary"] = _generate_plain_language_summary(rendered)
+        rendered["plain_language_summary"] = _generate_plain_language_summary(memo)
         return _render_research_memo(memo, "researcher")
 
     # Add plain_language_summary to all modes before returning
-    rendered["plain_language_summary"] = _generate_plain_language_summary(rendered)
+    rendered["plain_language_summary"] = _generate_plain_language_summary(memo)
 
     return rendered
 
@@ -983,9 +986,14 @@ def _generate_plain_language_summary(memo: dict) -> str:
     # What was observed (dominant quality class)
     if observations:
         qc_counts = {}
+        obs_count = 0
         for o in observations:
+            if not isinstance(o, dict):
+                obs_count += 1
+                continue
             qc = o.get("quality_class", "unknown")
             qc_counts[qc] = qc_counts.get(qc, 0) + 1
+            obs_count += 1
         dominant_qc = max(qc_counts, key=qc_counts.get)
         obs_count = len(observations)
         qc_descriptions = {
@@ -997,10 +1005,13 @@ def _generate_plain_language_summary(memo: dict) -> str:
             "unknown": "responses of unknown quality",
         }
         qc_desc = qc_descriptions.get(dominant_qc, f"responses of type '{dominant_qc}'")
-        sentences.append(
-            f"WESLR observed {obs_count} governance event(s). "
-            f"The most common pattern was: {qc_desc}."
-        )
+        if obs_count > 0:
+            sentences.append(
+                f"WESLR observed {obs_count} governance event(s). "
+                f"The most common pattern was: {qc_desc}."
+            )
+        else:
+            sentences.append("WESLR did not find enough evidence to draw a conclusion.")
     else:
         sentences.append("WESLR did not find enough evidence to draw a conclusion.")
 
@@ -3484,11 +3495,64 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"error": str(e)}).encode("utf-8"))
+            # Research memo: render canonical memo in a given mode (POST only)
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/memos/render":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    mode = params.get("mode", ["researcher"])[0]
+                    if mode not in ("researcher", "student", "seminar"):
+                        mode = "researcher"
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length)
+                    memo = json.loads(body.decode("utf-8"))
+                    if not isinstance(memo, dict):
+                        raise ValueError("memo must be a JSON object")
+                    rendered = _render_research_memo(memo, mode)
+                    payload = json.dumps(rendered, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "render_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Research diagram: confidence matrix (POST memo → diagram)
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/diagrams/confidence-matrix":
+                try:
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length)
+                    memo = json.loads(body.decode("utf-8"))
+                    if not isinstance(memo, dict):
+                        raise ValueError("memo must be a JSON object")
+                    diagram = _generate_confidence_matrix_diagram(memo)
+                    payload = json.dumps(diagram, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "diagram_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             else:
                 self.send_error(404, "Unknown endpoint")
 
         def do_GET(self):
             """Serve GET requests."""
+            import sys
+            sys.stderr.write(f"[do_GET ENTER] path={repr(self.path)}\n")
+            sys.stderr.flush()
             # Onboarding front door
             if self.path == "/onboarding":
                 front_door = base_dir / "front-door" / "index.html"
@@ -3893,8 +3957,9 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                 return
             # Research memo: generate from governance observations
-            if self.path == "/api/research/memos/generate":
+            if self.path.split("?")[0] == "/api/research/memos/generate":
                 try:
+                    import sys
                     from urllib.parse import parse_qs, urlparse
                     parsed = urlparse(self.path)
                     params = parse_qs(parsed.query)
@@ -3979,33 +4044,7 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                 return
             # Research memo: render canonical memo in a given mode
-            if self.path == "/api/research/memos/render":
-                try:
-                    from urllib.parse import parse_qs, urlparse
-                    parsed = urlparse(self.path)
-                    params = parse_qs(parsed.query)
-                    mode = params.get("mode", ["researcher"])[0]
-                    if mode not in ("researcher", "student", "seminar"):
-                        mode = "researcher"
-                    content_length = int(self.headers.get("Content-Length", 0))
-                    body = self.rfile.read(content_length)
-                    memo = json.loads(body.decode("utf-8"))
-                    if not isinstance(memo, dict):
-                        raise ValueError("memo must be a JSON object")
-                    rendered = _render_research_memo(memo, mode)
-                    payload = json.dumps(rendered, indent=2).encode("utf-8")
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(payload)))
-                    self.end_headers()
-                    self.wfile.write(payload)
-                except Exception as e:
-                    payload = json.dumps({"error": "render_unavailable", "detail": str(e)}).encode("utf-8")
-                    self.send_response(500)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                return
+
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
