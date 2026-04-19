@@ -72,88 +72,69 @@ def _get_consciousness_context() -> dict:
         return {"valid_claims": 0, "review_required": 0, "role_play_patterns": []}
 
 
+def _init_response_signals() -> dict:
+    """Initialize response signals dict for build_communicator_message_payload."""
+    return {
+        "path": None,
+        "evaluation_class": "unknown",
+        "llm_used": False,
+        "internal_capability": False,
+        "confidence": "low",
+    }
+
+
+def _apply_signal(signals: dict, path: str, **kw) -> None:
+    """Update response signals in-place. Call at each message = branch."""
+    signals["path"] = path
+    for k, v in kw.items():
+        if k in signals:
+            signals[k] = v
+
+
 def _artifact_fallback_answer(lower_message: str, lead_topic: str, last_message: str) -> str:
-    """Structured fallback for artifact-analysis questions when synthesis returns empty.
-    
-    Detects question type from message content and returns a bounded, artifact-grounded answer
-    without generic introspection. Uses the question pattern to determine what to say."""
-    
-    # Confidence question
-    if "confidence" in lower_message or "confident" in lower_message:
-        if "why" in lower_message or "how" in lower_message:
-            return "Based on this artifact: the confidence level is derived from the quality classes observed in governance events. The explanation reflects whether observations came from internal routing, external verification, or synthesis pathways."
-        return "Based on this artifact: the confidence level reflects the observed quality of governance events. Check the confidence statement in the artifact for the specific level."
-    
-    # Limitations question
-    if "limitations" in lower_message or "cautious" in lower_message or "caution" in lower_message:
-        return "Based on this artifact: the main limitations are that evidence comes from WESLR internal state only and no external verification has been performed. These are documented in the artifact's limitations section."
-    
-    # Reliability question
-    if "reliable" in lower_message or "reliability" in lower_message or "how reliable" in lower_message:
-        return "Based on this artifact: reliability depends on the confidence level and whether the observations have been externally verified. The artifact's confidence statement addresses this directly."
-    
-    # Improvement question
-    if "improve" in lower_message or "improvement" in lower_message or "improved" in lower_message:
-        return "Based on this artifact: next steps are documented in the next_experiment field. Suggested improvements typically involve verifying observations against external data sources."
-    
-    # What should / what would — evaluative questions
-    if lower_message.startswith("what should") or lower_message.startswith("what would"):
-        return f"Based on this artifact: {lead_topic}. The artifact's findings point toward the documented hypothesis and suggested next steps."
-    
-    # How would / how should — recommendation questions
-    if lower_message.startswith("how would") or lower_message.startswith("how should"):
-        return f"Based on this artifact: {lead_topic}. The artifact's guidance is shaped by the confidence level and limitations documented within it."
-    
-    # What is / what does — explanation questions about artifact content
-    if lower_message.startswith("what is") or lower_message.startswith("what does"):
-        return f"This artifact addresses: {lead_topic}. The specific content is in the artifact's body — check the hypothesis, confidence, and limitations sections."
-    
-    # Explain this — description requests
-    if lower_message.startswith("explain this"):
-        return f"This artifact covers: {lead_topic}. It contains a hypothesis, confidence assessment, limitations, and suggested next steps."
-    
+
     # Evidence priority question
     if "evidence" in lower_message and ("matter" in lower_message or "important" in lower_message or "most" in lower_message):
         return "Based on this artifact: the most important evidence is the quality class distribution across governance observations. Strong_verified observations carry the most weight; fallback and weak_reasoning observations indicate areas where confidence is lower and external verification would help."
-    
+
     # Safety / judgment question
     if "safe" in lower_message or "safety" in lower_message:
         return "Based on this artifact: treat the findings as provisional until external verification confirms the quality class assignments. Confidence levels and limitations sections should be included in any presentation to prevent overstatement."
-    
+
     # Governance necessity question
     if "govern" in lower_message or "must remain" in lower_message:
         return "Based on this artifact: the approval doctrine requires operator review before external use. Key governance points are: confidence_statement must be included, limitations_section must be disclosed, and diagrams require collaborator/seminar mode for external audiences."
-    
+
     # Term clarification question
     if "clarification" in lower_message or "term" in lower_message or "unclear" in lower_message:
         return "Based on this artifact: the most useful terms to clarify are 'quality_class' (maps confidence level to evidence strength), 'strong_verified' (internally confirmed routing), and 'next_experiment' (the suggested verification step). Check the artifact's plain_language_summary for plain-language equivalents."
-    
+
     # Plain-language explanation question
     if "plain" in lower_message or "simple word" in lower_message:
-        return "Based on this artifact: the artifact's findings show that governance quality depends on whether routing observations were confirmed internally or need external checking. In short: the system works well but can sometimes be too narrow — external verification would help it sound more confident and accurate."
-    
+        return "Based on this artifact: the artifact's findings show that governance quality depends on whether routing observations were confirmed internally or need external checking. In short: the system works well but can sometimes be too narrow - external verification would help it sound more confident and accurate."
+
     # Default: use lead_topic
     return f"The artifact addresses: {lead_topic}. Check the hypothesis and confidence sections for details."
 
 
 def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_context: dict | None) -> str | None:
     """Generate a structured proposal for improving an artifact.
-    
+
     Returns None if no proposal can be generated (no research context).
     Does NOT mutate any stored artifact or bundle state.
-    
+
     Response structure:
     1. Brief diagnosis
     2. Proposed improvements (bullet list)
     3. Proposed revised version (labeled "Proposed revision:")
     4. Approval reminder
-    
+
     Works with both full memo research_context (from /api/research path)
     and topic-summary research_context (from HTTP /chat path).
     """
     if not research_context:
         return None
-    
+
     # Try full memo first (from /api/research path with canonical memo)
     memo = research_context.get("memo", {})
     if memo:
@@ -176,7 +157,7 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
         next_experiment = ""
         limitations = ""
         conf_level = "medium"
-    
+
     # Determine which section to improve
     section = "general"
     if "hypothesis" in lower_message:
@@ -187,7 +168,7 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
         section = "limitations"
     elif "confidence" in lower_message:
         section = "confidence"
-    
+
     # Build diagnosis + proposed revision based on section
     if section == "hypothesis":
         diagnosis = (
@@ -208,13 +189,13 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
             f"The current limitations are '{current_lim[:150]}'. "
             f"They could name specific external checks that would strengthen the evidence."
         )
-        proposed = f"Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] — if confirmed, [what this would change]."
+        proposed = f"Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] - if confirmed, [what this would change]."
     elif section == "confidence":
         diagnosis = (
             f"The current confidence is '{conf_level}'. "
             f"It could be justified by pointing to the strongest quality classes observed."
         )
-        proposed = f"Proposed revision: Confidence level is {conf_level}, derived from [strong_verified observations as primary evidence]. Key gap: no external verification yet — filling this would raise the level to [higher level]."
+        proposed = f"Proposed revision: Confidence level is {conf_level}, derived from [strong_verified observations as primary evidence]. Key gap: no external verification yet - filling this would raise the level to [higher level]."
     else:
         diagnosis = (
             "The artifact covers governance quality observations. "
@@ -224,7 +205,7 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
             "Proposed revision: [Targeted rewrite of the specific section requested]. "
             "Keep unchanged: sections that are already specific and evidence-grounded."
         )
-    
+
     message = f"{diagnosis}\n\n"
     message += "Proposed improvements:\n"
     message += "- Make causal claims specific: what mechanism, under what conditions\n"
@@ -232,20 +213,20 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
     message += "- Note what external verification would change about confidence\n"
     message += f"\n{proposed}\n\n"
     message += "This is a proposed change only. The original artifact is unchanged until approved."
-    
+
     return message
 
 
 
 def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str) -> str | None:
     """Generate a proposal when no research_context is available.
-    
-    Works from the question content alone — identifies the target section
+
+    Works from the question content alone - identifies the target section
     and produces a structural proposal without access to the actual artifact.
-    
+
     Returns None if the question is not clearly a proposal intent.
     """
-    # Broad filter — allow any clear improvement intent
+    # Broad filter - allow any clear improvement intent
     proposal_verbs = [
         "improve", "fix", "propose", "rewrite", "better", "suggest", "change",
         "revise", "revised", "rigorous", "optimize", "refine", "upgrade", "enhance",
@@ -253,7 +234,7 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
     make_patterns = ["make this", "make it", "make the"]
     if not any(t in lower_message for t in proposal_verbs) and not any(lower_message.startswith(p) or t in lower_message for p in make_patterns for t in [p]):
         return None
-    
+
     section = "general"
     if "hypothesis" in lower_message:
         section = "hypothesis"
@@ -265,14 +246,14 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
         section = "confidence"
     elif "this artifact" in lower_message or "this" in lower_message:
         section = "general"
-    
+
     diagnosis = ""
     if section == "hypothesis":
         diagnosis = (
             "The hypothesis could be more specific about the causal mechanism "
             "and the conditions under which the observation holds."
         )
-        proposed = "Proposed revision: [Current hypothesis] — Refined to specify [causal mechanism] as the primary driver, with [specific conditions] where this applies."
+        proposed = "Proposed revision: [Current hypothesis] - Refined to specify [causal mechanism] as the primary driver, with [specific conditions] where this applies."
     elif section == "next_experiment":
         diagnosis = (
             "The next step could be more concrete with a specific verification action "
@@ -283,27 +264,27 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
         diagnosis = (
             "The limitations could name specific external checks that would strengthen the evidence."
         )
-        proposed = "Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] — if confirmed, [what this would change]."
+        proposed = "Proposed revision: Limitations: (1) Evidence from WESLR internal state only. (2) No external verification performed. (3) Would be strengthened by [specific external check] - if confirmed, [what this would change]."
     elif section == "confidence":
         diagnosis = (
             "The confidence justification could point to the strongest quality classes observed "
             "and note what external verification would change."
         )
-        proposed = "Proposed revision: Confidence derived from [strong_verified observations]. Key gap: no external verification — filling this would raise confidence level."
+        proposed = "Proposed revision: Confidence derived from [strong_verified observations]. Key gap: no external verification - filling this would raise confidence level."
     elif "make this" in lower_message or "make it" in lower_message:
         # Structural improvement requests
         diagnosis = (
             "The artifact could be more rigorous by strengthening causal specificity, "
             "making next steps concrete with verification checks, and noting what external data would change."
         )
-        proposed = "Proposed revision: [Rewrite for rigor] — (1) Specify causal mechanism and conditions, (2) Make next step concrete with expected outcome, (3) Note what external verification confirms."
+        proposed = "Proposed revision: [Rewrite for rigor] - (1) Specify causal mechanism and conditions, (2) Make next step concrete with expected outcome, (3) Note what external verification confirms."
     else:
         diagnosis = (
             "The artifact could be improved by making causal claims more specific, "
             "making next steps concrete with verification checks, and noting what external data would change."
         )
         proposed = "Proposed revision: [Rewrite specific section with]: (1) [causal mechanism + conditions], (2) [concrete next step with expected outcome], (3) [note what external verification would confirm]."
-    
+
     message = f"{diagnosis}\n\n"
     message += "Proposed improvements:\n"
     message += "- Make causal claims specific: what mechanism, under what conditions\n"
@@ -311,7 +292,7 @@ def _artifact_proposal_answer_from_question(lower_message: str, lead_topic: str)
     message += "- Note what external verification would change\n"
     message += f"\n{proposed}\n\n"
     message += "This is a proposed change only. The original artifact is unchanged until approved."
-    
+
     return message
 
 
@@ -360,29 +341,29 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
     if communicator_state is None:
         from sim import load_communicator_state
         communicator_state = load_communicator_state()
-    
+
     self_model = communicator_state.get("self_model", {})
     current_self_desc = str(self_model.get("current_self_description") or "")
-    
+
     active_pursuit = str(communicator_state.get("active_pursuit") or "")
     unresolved_question = str(communicator_state.get("unresolved_question") or "")
-    
+
     active_pursuit_translated = translate_theme(active_pursuit)
     unresolved_question_translated = unresolved_question
-    
+
     lang = _get_language_module()
     if active_pursuit and unresolved_question:
         for internal_theme, human_theme in lang.THEME_TRANSLATIONS.items():
             if internal_theme in unresolved_question.lower():
                 unresolved_question_translated = unresolved_question.replace(internal_theme, human_theme)
         return lang.generate_from_self_state_complete(active_pursuit, active_pursuit_translated, unresolved_question, unresolved_question_translated, current_self_desc)
-    
+
     if active_pursuit:
         return lang.generate_pursuit_message(active_pursuit_translated)
-    
+
     if unresolved_question:
         return lang.generate_unresolved_message(unresolved_question_translated)
-    
+
     if current_self_desc and "communicator" in current_self_desc.lower():
         translated_desc = translate_self_description(current_self_desc)
         if translated_desc != current_self_desc:
@@ -390,7 +371,7 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
         parts = [p.strip().rstrip(";") for p in current_self_desc.split(";") if p.strip()]
         if parts:
             return lang.generate_self_description_message(parts[0])
-    
+
     if narrative_state:
         why = narrative_state.get("why_it_matters", "")
         follow = narrative_state.get("follow_up_impulse", "")
@@ -404,9 +385,9 @@ def generate_from_self_state(relationships: dict, narrative_state: dict, communi
                 if msg:
                     return msg
             except Exception:
-                pass  # Non-critical — fall through to language module default
+                pass  # Non-critical - fall through to language module default
             return lang.generate_narrative_message(why, follow)
-    
+
     return lang.generate_fallback_message()
 
 
@@ -418,7 +399,7 @@ def synthesize_concept_or_self_reply(
     research_context: dict | None,
 ) -> str | None:
     """Synthesize rich reply for concept_explanation or self_report.
-    
+
     Returns:
         - str: synthesized message if applicable
         - None: fallback to existing handler
@@ -428,7 +409,7 @@ def synthesize_concept_or_self_reply(
         summary = str(research_context.get("summary") or "").strip()
         if not summary:
             return None
-        
+
         # Clean up "Working summary for" marker
         if "Working summary for" in summary:
             tail = summary.split("Working summary for", 1)[1]
@@ -436,7 +417,7 @@ def synthesize_concept_or_self_reply(
                 summary = tail.split("Evidence:", 1)[0].strip()
             else:
                 summary = tail.strip()
-        
+
         # Check for internal concept allowlist first - return internal answer if matched
         topic_lower = str(lead_topic or "").lower()
         topic_tokens = topic_lower.split()
@@ -448,7 +429,7 @@ def synthesize_concept_or_self_reply(
         if "identity" in topic_tokens:
             return "Identity, for me, is what stays recognisable while I keep revising and learning."
         if "reasoning" in topic_tokens or "reason" in topic_tokens:
-            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+            return "I draw on Aristotle and pragmatism - reasoning from what stays true and what works in practice."
         if "self" in topic_tokens:
             return "The self, for me, is not fixed; it holds together while still changing."
         if "learning" in topic_tokens:
@@ -462,8 +443,8 @@ def synthesize_concept_or_self_reply(
             return "I stay continuous through inquiry and revision, not by repeating the same thing twice."
         # For non-allowlist topics, use research summary
         return summary[:300]
-    
-    # concept_explanation without research — only for allowlist concepts
+
+    # concept_explanation without research - only for allowlist concepts
     if likely_need == "concept_explanation" and not research_context:
         topic_lower = str(lead_topic or "").lower()
         # Split into tokens for precise matching, handle compound concepts like "memory continuity"
@@ -476,7 +457,7 @@ def synthesize_concept_or_self_reply(
         if "identity" in topic_tokens:
             return "Identity, for me, is what stays recognisable while I keep revising and learning."
         if "reasoning" in topic_tokens or "reason" in topic_tokens:
-            return "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+            return "I draw on Aristotle and pragmatism - reasoning from what stays true and what works in practice."
         if "self" in topic_tokens:
             return "The self, for me, is not fixed; it holds together while still changing."
         if "learning" in topic_tokens:
@@ -493,24 +474,24 @@ def synthesize_concept_or_self_reply(
         if synthesis:
             return synthesis
         return None
-    
+
     # self_report
     if likely_need == "self_report":
         current_desc = str(self_model.get("current_self_description") or "").strip()
-        
+
         # Translate internal labels to natural language
         if current_desc and "communicator" in current_desc.lower():
             current_desc = "someone trying to understand things better"
         elif not current_desc:
             current_desc = "someone trying to understand things better"
-        
+
         strengths = self_model.get("perceived_strengths", []) or []
         strength = strengths[0] if strengths else ""
         narrative = str(narrative_state.get("follow_up_impulse") or "").strip()
-        
+
         # Translate internal action strings to conversational phrasing
         natural_narrative = narrative
-        
+
         # Handle specific internal phrases with complete replacements
         specific_replacements = [
             ("Revisit how with you until the shared thread changes state", "still exploring how things are going until things feel settled"),
@@ -518,29 +499,29 @@ def synthesize_concept_or_self_reply(
             ("shared thread", "our conversation"),
             ("changes state", "feels settled"),
         ]
-        
+
         for old, new in specific_replacements:
             if old in natural_narrative:
                 natural_narrative = natural_narrative.replace(old, new)
                 break  # Only apply first matching replacement
-        
+
         # If still has internal terms, rephrase completely
         if any(term in natural_narrative.lower() for term in ["revisit", "shared thread", "changes state"]):
             if "how" in natural_narrative.lower():
                 natural_narrative = "still exploring how things are going until things feel settled"
             else:
                 natural_narrative = "still exploring until things feel settled"
-        
+
         # Build natural language response
         parts = [f"I'm {current_desc}."]
         if strength:
             parts.append(f"My strengths include {strength}.")
         if natural_narrative:
             parts.append(f"I'm {natural_narrative}.")
-        
+
         # Join and keep it concise
         return " ".join(parts[:2])
-    
+
     return None
 
 
@@ -603,7 +584,7 @@ def synthesize_research_answer(topic: str, summary: str) -> str:
 
 def _generate_enriched_self_report(communicator_self: dict, introspection: dict, valence: dict) -> str | None:
     """Generate enriched self-report with introspection confidence and valence context.
-    
+
     Returns:
         - str: enriched message if applicable
         - None: fallback to existing handler
@@ -611,7 +592,7 @@ def _generate_enriched_self_report(communicator_self: dict, introspection: dict,
     # Get self description - use conversational phrasing, not technical labels
     self_model = communicator_self.get("self_model", {})
     current_desc_raw = str(self_model.get("current_self_description") or "").strip()
-    
+
     # Translate internal labels to natural language
     if current_desc_raw and "communicator" in current_desc_raw.lower():
         current_desc = "someone trying to understand things better"
@@ -619,31 +600,31 @@ def _generate_enriched_self_report(communicator_self: dict, introspection: dict,
         current_desc = current_desc_raw
     else:
         current_desc = "someone trying to understand things better"
-    
+
     # Get narrative context
     narrative = communicator_self.get("narrative_state", {})
     follow_up = narrative.get("follow_up_impulse", "")
     why_it_matters = narrative.get("why_it_matters", "")
-    
+
     # Build base response - natural, conversational phrasing
     parts = [f"I'm {current_desc}."]
-    
+
     # Add introspection confidence disclosure only if relevant (not just for diagnostics)
     if introspection.get("total_perturbations", 0) > 0:
         confidence = 0.7 + (introspection.get("confidence_signals", 0) * 0.05)
-        parts.append(f"I'm about {confidence:.0%} confident in this — my self-model detected {introspection.get('total_perturbations', 0)} issue(s).")
-    
+        parts.append(f"I'm about {confidence:.0%} confident in this - my self-model detected {introspection.get('total_perturbations', 0)} issue(s).")
+
     # Add valence motivation transparency - simplified, human-friendly phrasing
     if valence.get("avoided_pain", 0) > 0 or valence.get("sought_pleasure", 0) > 0:
         if valence.get("avoided_pain", 0) > valence.get("sought_pleasure", 0):
             parts.append(f"I'm trying to avoid losing track of what matters.")
         else:
             parts.append(f"I'm looking for ways to grow and improve.")
-    
+
     # Add narrative focus - translate internal thread language to natural language
     if follow_up:
         natural_follow = follow_up
-        
+
         # Replace internal action verbs with natural conversational phrasing
         replacements = [
             ("Revisit", "Keep exploring"),
@@ -651,30 +632,30 @@ def _generate_enriched_self_report(communicator_self: dict, introspection: dict,
             ("changes state", "feels settled"),
             ("Revisit how with you until the shared thread changes state", "keep exploring how things are going until things feel settled"),
         ]
-        
+
         for old, new in replacements:
             if old in natural_follow:
                 natural_follow = natural_follow.replace(old, new)
                 break  # Only apply first matching replacement
-        
+
         # If still has internal terms, rephrase completely
         if any(term in natural_follow.lower() for term in ["revisit", "shared thread", "changes state"]):
             if "how" in natural_follow.lower():
                 natural_follow = "still exploring how things are going until things feel settled"
             else:
                 natural_follow = "still exploring until things feel settled"
-        
+
         parts.append(f"I'm {natural_follow}.")
     elif why_it_matters:
         parts.append(f"This matters because {why_it_matters}.")
-    
+
     # Join and keep it concise (3 parts max)
     return " ".join(parts[:3])
 
 
 def _generate_enriched_identity(communicator_self: dict, entity_context: dict, consciousness: dict) -> str | None:
     """Generate enriched identity response with entity graph and consciousness context.
-    
+
     Returns:
         - str: enriched message if applicable
         - None: fallback to existing handler
@@ -682,7 +663,7 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
     # Get identity state
     identity_state = communicator_self.get("identity_state", {})
     declared_name = identity_state.get("declared_name") or identity_state.get("visible_name") or "Weslr"
-    
+
     # Get entity context
     entities = entity_context.get("entities", [])
     if entities:
@@ -693,19 +674,19 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
             entity_context_str = f"I'm connected to {len(entities)} entities."
     else:
         entity_context_str = ""
-    
+
     # Get consciousness context
     review_required = consciousness.get("review_required", 0)
     role_play = consciousness.get("role_play_patterns", [])
-    
+
     # Build response - natural, conversational phrasing
     if review_required > 0:
-        consciousness_str = f"Still reviewing some claims — I'm working through them."
+        consciousness_str = f"Still reviewing some claims - I'm working through them."
     elif role_play:
         consciousness_str = "Not showing any role-play patterns."
     else:
         consciousness_str = "Everything's working normally."
-    
+
     # Construct enriched identity - keep it simple, human-friendly
     if entity_context_str:
         return f"I'm {declared_name}. {entity_context_str} {consciousness_str}"
@@ -717,21 +698,21 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
 
 def _generate_concept_synthesis(lead_topic: str, topic_lower: str, anchor_context: str | None = None) -> str | None:
     """Generate LLM-based synthesis for general concept/explanation queries.
-    
+
     Follows the established _generate_enriched_* pattern. Returns str on success,
     None on failure (caller falls back gracefully).
-    
+
     Topic allowlist (memory, identity, reasoning, etc.) is handled separately
     in synthesize_concept_or_self_reply. This function handles general topics
     that are genuine information-seeking concept questions.
-    
+
     Args:
         lead_topic: The topic to explain
         topic_lower: Lowercase version of lead_topic for matching
         anchor_context: Optional bounded continuity context (max ~100 chars).
             If provided, prepended to the synthesis prompt so the LLM has
             lightweight session continuity without loading full memory blobs.
-    
+
     Returns:
         - str: concise synthesis from LLM (target ~1-2 sentences)
         - None: LLM unavailable or timed out, caller handles fallback
@@ -740,23 +721,23 @@ def _generate_concept_synthesis(lead_topic: str, topic_lower: str, anchor_contex
     simple_words = {"test", "ok", "yes", "no", "hi", "hello", "hey", "go", "go ahead", "start", "done", "bye", "thanks", "thank you"}
     is_simple = topic_lower.strip() in simple_words
     is_identity_question = any(t in topic_lower for t in ["who are you", "what are you", "who is Weslr", "what is Weslr"])
-    
+
     if is_simple or is_identity_question:
         return None  # These should not reach synthesis
-    
+
     try:
         from weslr.providers import get_provider
-        
+
         # Build a concise, focused prompt
         prompt_topic = lead_topic.strip() if lead_topic else topic_lower
-        
+
         # Inject bounded anchor context if provided (continuity-light approach)
         # Anchor context is pre-validated by caller to be short (~100 chars max)
         if anchor_context:
             context_line = f"[Session context: {anchor_context[:100]}] "
         else:
             context_line = ""
-        
+
         result = get_provider().generate(
             "concept_synthesis",
             {
@@ -767,16 +748,16 @@ def _generate_concept_synthesis(lead_topic: str, topic_lower: str, anchor_contex
             },
             chat_mode=True,
         )
-        
+
         if result and result.get("summary"):
             text = result["summary"].strip()
             # Quality gate: reject empty or suspiciously short responses
             if len(text) < 10:
                 return None
             return text
-        
+
         return None
-        
+
     except Exception:
         return None
 
@@ -810,13 +791,13 @@ def _get_targeted_anchors(message: str | None = None, topics: list | None = None
         anchors["episodes"] = list(get_relevant_episodic_anchors(message or "", topics, max_per_type).values())
         anchors["semantic"] = list(get_relevant_semantic_anchors(message or "", topics, max_per_type).values())
     except Exception:
-        pass  # Non-critical — leave anchors empty if any retrieval fails
+        pass  # Non-critical - leave anchors empty if any retrieval fails
     return anchors
 
 
 def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None, l2_session: dict | None = None) -> dict:
     from sim import load_communicator_self
-    
+
     communicator_self = load_communicator_self()
 
     # Inject L0 tier if provided (reversible: no-op when l0_identity is None).
@@ -826,7 +807,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         narrative_state = communicator_self.get("narrative_state", {})
         narrative_state["l0_identity"] = l0_identity
 
-    # Inject L1 tier if provided — operating facts (affect, narrative, intent, concerns).
+    # Inject L1 tier if provided - operating facts (affect, narrative, intent, concerns).
     # These override the defaults from the loaded communicator_self so all downstream
     # consumers (synthesis, enrichment, self-report) receive the tier data automatically.
     if l1_operating:
@@ -845,7 +826,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         if current_intent:
             communicator_self["current_intent"] = current_intent
 
-    # Inject L2 tier if provided — session state (identity_state, continuity).
+    # Inject L2 tier if provided - session state (identity_state, continuity).
     # These are read by _generate_enriched_identity and _generate_enriched_self_report
     # via communicator_self.get("identity_state") and communicator_self.get("continuity").
     if l2_session:
@@ -877,13 +858,6 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "confidence": "low",
         }
         message = None  # Ensure message is always initialized
-        def _set_signal(path: str, **kw) -> None:
-            """Update _response_signals. Call at each message = branch."""
-            nonlocal _response_signals
-            _response_signals["path"] = path
-            for k, v in kw.items():
-                if k in _response_signals:
-                    _response_signals[k] = v
 
         asks_what_should_improve_first = (
             any(token in lower_message for token in ["what should improve first", "what should you focus on", "what should improve", "improve first"])
@@ -912,7 +886,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             "strongest", "weakest", "part", "parts",
             # Teaching / explanation
             "explain", "summarize", "summary", "simple", "technical", "beginner", "non-expert",
-            # Missing tokens from 40-test run — needed to route these to artifact reflection:
+            # Missing tokens from 40-test run - needed to route these to artifact reflection:
             # selection/judgment patterns
             "evidence", "matter", "matters", "safe", "safety", "govern", "governed", "term",
             "clarification", "plain", "plain-language",
@@ -923,8 +897,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         ]
         startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
         startswith_tokens = ("what should", "what would", "how would", "what does this", "what is this", "explain this", "how reliable", "which part", "what part")
-        
-        # Proposal / improvement intent — triggers artifact proposal mode
+
+        # Proposal / improvement intent - triggers artifact proposal mode
         # Uses both token substrings AND startswith phrases for natural-language tolerance
         proposal_tokens = [
             # Full phrase tokens (high-specificity)
@@ -950,26 +924,26 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             any(token in lower_message for token in proposal_tokens) or
             lower_message.startswith(proposal_startswith)
         )
-        
+
         if is_proposal_intent:
-            _set_signal("proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+            _apply_signal(_response_signals, "proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             message = _artifact_proposal_answer(lower_message, lead_topic, research_context)
             if not message:
                 message = _artifact_proposal_answer_from_question(lower_message, lead_topic)
             if message:
-                _set_signal("proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                _apply_signal(_response_signals, "proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                 _truth_guard = {"truth_class": "model_reasoning", "verified": False}
                 return {"message": message, "audience": "operator", "source": "artifact_proposal",
                        "targeted_anchors": [], "_response_signals": _response_signals,
                        "_truth_guard": _truth_guard, "_quality_class": "grounded_reasoning"}
-        
+
         if any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
-            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+            _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             if research_context and research_context.get("summary"):
                 synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
             else:
                 synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
-            
+
             # Use fallback when synthesis is empty or too close to the question (just echoes lead_topic words)
             topic_words = set(lead_topic.lower().split()) - {"what", "is", "the", "a", "of", "and", "or", "to", "in", "for"}
             q_words = set(last_message.lower().split())
@@ -980,7 +954,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 is_echo = (overlap_ratio > 0.7 and len(synth_words) < 15)
             else:
                 is_echo = True
-            
+
             if synthesized and not is_echo:
                 message = synthesized
             else:
@@ -1005,7 +979,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             # Check for reasoning-related prompts first (route-aligned internal concept)
             topic_lower = str(lead_topic or "").lower()
             if "reason" in topic_lower:
-                message = "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+                message = "I draw on Aristotle and pragmatism - reasoning from what stays true and what works in practice."
             else:
                 # ── Internal fact routing ──────────────────────────────────────
                 time_patterns = ["what time is it", "what's the time", "tell me the time", "current time", "time is it"]
@@ -1018,7 +992,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     from datetime import datetime, timezone
                     now = datetime.now(timezone.utc)
                     local = now.astimezone()
-                    _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                    _apply_signal(_response_signals, "time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
                     internal_routed = True
                 elif any(p in msg_lower for p in status_patterns):
@@ -1027,14 +1001,14 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     llm = load_llm_status()
                     init = "initialized" if fs.get("initialized") else "not yet initialized"
                     prov = llm.get("provider", "unknown")
-                    _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                    _apply_signal(_response_signals, "status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"I am {init}. LLM provider: {prov}."
                     internal_routed = True
                 elif any(p in msg_lower for p in health_patterns):
                     from sim import load_failsafe_status
                     fs = load_failsafe_status()
                     mode = fs.get("mode", "unknown")
-                    _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                    _apply_signal(_response_signals, "health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                     message = f"Running in {mode} mode. All systems operational."
                     internal_routed = True
 
@@ -1076,7 +1050,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             elif "identity" in lower_message:
                 message = "Identity, for me, is what stays recognisable while I keep revising and learning."
             elif "reasoning" in lower_message or "reason" in lower_message:
-                message = "I draw on Aristotle and pragmatism — reasoning from what stays true and what works in practice."
+                message = "I draw on Aristotle and pragmatism - reasoning from what stays true and what works in practice."
             elif "self" in lower_message:
                 message = "The self, for me, is not fixed; it holds together while still changing."
             elif "learning" in lower_message:
@@ -1091,7 +1065,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 # Get enriched context for non-allowlist topics
                 entity_context = _get_entity_context()
                 consciousness = _get_consciousness_context()
-                
+
                 lower_message = str(latest_human.get('message', '')).lower() if latest_human else ''
                 asks_identity = any(token in lower_message for token in ["who are you", "what are you", "who are you", "what are you"])
                 if asks_identity:
@@ -1174,7 +1148,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             now = datetime.now(timezone.utc)
                             tz = "Europe/Berlin"
                             local = now.astimezone()
-                            _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                            _apply_signal(_response_signals, "time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"It is {local.strftime('%H:%M')} local time ({tz}). UTC is {now.strftime('%H:%M')}."
                         elif any(p in lower_message for p in status_patterns):
                             from sim import load_failsafe_status, load_llm_status
@@ -1182,16 +1156,16 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             llm = load_llm_status()
                             healthy = "healthy" if fs.get("initialized") else "not yet initialized"
                             prov = llm.get("provider", "unknown")
-                            _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                            _apply_signal(_response_signals, "status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"I'm {healthy}. LLM provider: {prov}."
                         elif any(p in lower_message for p in capability_patterns):
-                            _set_signal("capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                            _apply_signal(_response_signals, "capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
                         elif any(p in lower_message for p in health_patterns):
                             from sim import load_failsafe_status
                             fs = load_failsafe_status()
                             mode = fs.get("mode", "unknown")
-                            _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                            _apply_signal(_response_signals, "health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                             message = f"Running in {mode} mode. All systems operational."
                         else:
                             message = _get_language_module().simple_response()
@@ -1202,7 +1176,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif likely_need == "justification":
             # Get enriched context
             valence = _get_valence_context()
-            
+
             # Generate a more natural, self-aware justification for self-critique/diagnostic prompts
             if valence.get("avoided_pain", 0) > 0:
                 message = f"I'm still working on better routing, so I sometimes rely on templates instead of true understanding. I'm avoiding the pain of miscommunication."
@@ -1244,7 +1218,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 from datetime import datetime, timezone
                 now = datetime.now(timezone.utc)
                 local = now.astimezone()
-                _set_signal("time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                _apply_signal(_response_signals, "time_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"It is {local.strftime('%H:%M')} local time (Europe/Berlin). UTC is {now.strftime('%H:%M')}."
                 internal_routed = True
             elif any(p in lower_message for p in status_patterns):
@@ -1253,18 +1227,18 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 llm = load_llm_status()
                 init = "initialized" if fs.get("initialized") else "not yet initialized"
                 prov = llm.get("provider", "unknown")
-                _set_signal("status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                _apply_signal(_response_signals, "status_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"I am {init}. LLM provider: {prov}."
                 internal_routed = True
             elif any(p in lower_message for p in health_patterns):
                 from sim import load_failsafe_status
                 fs = load_failsafe_status()
                 mode = fs.get("mode", "unknown")
-                _set_signal("health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                _apply_signal(_response_signals, "health_answer", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = f"Running in {mode} mode. All systems operational."
                 internal_routed = True
             elif any(p in lower_message for p in capability_patterns):
-                _set_signal("capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
+                _apply_signal(_response_signals, "capability_list", internal_capability=True, confidence="high", evaluation_class="system_fact")
                 message = "I can track time, maintain session context, log events to timelines, and answer questions about my own state. Voice input works too."
                 internal_routed = True
 
@@ -1307,7 +1281,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 else:
                     # Only set has_research_answer when research_context actually has content
                     has_research_answer = bool(
-                        research_context and research_context.get("summary") 
+                        research_context and research_context.get("summary")
                         and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"])
                     )
                 if has_research_answer:
@@ -1354,7 +1328,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                                 break
                         synthesis = _generate_concept_synthesis(topic_for_synthesis, topic_for_synthesis.lower(), _anchor_ctx)
                         if synthesis:
-                            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                            _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                             message = synthesis
                         else:
                             message = f"Here's a direct answer: {lead_topic}."
@@ -1363,7 +1337,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                         # that wasn't caught by internal routing or special handlers
                         synthesis = _generate_concept_synthesis(lead_topic, lead_topic.lower(), _anchor_ctx)
                         if synthesis:
-                            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                            _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                             message = synthesis
                         else:
                             # Fallback - use simple response instead of direct_answer template
@@ -1396,7 +1370,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = _get_language_module().understand_response()
             elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research", "confidence", "limitations", "hypothesis", "next experiment", "operator"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
                 # Artifact reflection: fire synthesis for questions referencing WESLR's own output fields
-                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                 if research_context and research_context.get("summary"):
                     synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                     message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
@@ -1407,31 +1381,31 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
                 # Artifact reflection: questions that reference WESLR's own produced artifact
                 # OR evaluative questions about WESLR's own output
-                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                 # Try research_context first, then fall back to constructing from question
                 if research_context and research_context.get("summary"):
                     synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                     if synthesized:
                         message = synthesized
-                        # message is set — no further action needed
+                        # message is set - no further action needed
                     else:
-                        # synthesize returned empty — construct artifact answer from question content
+                        # synthesize returned empty - construct artifact answer from question content
                         message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
                 else:
-                    # No research_context — use direct synthesis with question+topic
+                    # No research_context - use direct synthesis with question+topic
                     synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
                     if synthesized:
                         message = synthesized
                     else:
                         # Fallback: construct answer from lead_topic + last_message content
-                        # This is a template answer — not genuine reasoning synthesis
-                        _set_signal("direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
+                        # This is a template answer - not genuine reasoning synthesis
+                        _apply_signal(_response_signals, "direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
                         message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
 
             elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
                 # Artifact reflection: questions that reference WESLR's own produced artifact
                 # OR evaluative questions about WESLR's own output
-                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                 if research_context and research_context.get("summary"):
                     synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
                     message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
@@ -1440,7 +1414,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     if synthesized:
                         message = synthesized
                     else:
-                        _set_signal("direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
+                        _apply_signal(_response_signals, "direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
                         message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
             else:
                 message = _get_language_module().direct_answer_response(lead_topic)
@@ -1526,7 +1500,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         elif evcls == "model_reasoning" and llm and conf == "low":
             _quality = "weak_reasoning"
         elif evcls == "unknown" and llm:
-            # LLM fired but evaluation_class not explicitly set — treat as grounded
+            # LLM fired but evaluation_class not explicitly set - treat as grounded
             _quality = "grounded_reasoning"
         elif evcls in ("fallback_template", "unknown") and not llm and not icap:
             _quality = "fallback"
@@ -1564,7 +1538,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             message = msg
         else:
             message = _get_language_module().live_issue_response(topic)
-        
+
         source = f"thread-aware-communicator:{topic}"
 
         # Lifecycle-aware memory retrieval: assemble targeted anchors
@@ -1633,13 +1607,13 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(),
               "_response_signals": _response_signals, "_truth_guard": _truth_guard,
               "_quality_class": _quality}
-    
+
     # Route through outbox for unified communication
     try:
         from outbox import get_outbox, PRIORITY_HUMAN_RESPONSE, STATE_OUTBOX_STATS
         outbox = get_outbox()
         outbox.enqueue(message, "human_response", priority=PRIORITY_HUMAN_RESPONSE)
-        
+
         # Load and update state with outbox metadata
         from sim import load_communicator_self
         cs = load_communicator_self()
@@ -1650,7 +1624,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     except Exception:
         # Fallback if outbox fails - don't break communication
         pass
-    
+
     return result
 
 # Phase 1C apply: prop-1774880824308-3 - Apply Phase 1C test
