@@ -730,6 +730,214 @@ Rules:
     }
 
 
+# ── Research Artifact Rendering (Phase R2) ─────────────────────────────────
+# Transforms one canonical research memo into researcher/student/seminar modes.
+# Always uses the existing canonical memo as sole source. No re-generation.
+# Bounded transformation only — does not invent evidence.
+
+
+def _render_research_memo(memo: dict, mode: str) -> dict:
+    """Render a canonical research memo in the specified mode.
+
+    Modes:
+    - researcher: full detail, all sections, technical language preserved
+    - student: simplified wording, shorter sections, jargon explained
+    - seminar: slide-like structure, concise bullets, speaker-note style
+
+    The canonical memo is used as-is — this is a transformation only.
+    No new evidence is collected. No LLM re-generation required.
+    Limitations and confidence are present in all modes.
+
+    Args:
+        memo: dict — canonical research memo from _generate_research_memo()
+        mode: str — "researcher" | "student" | "seminar"
+
+    Returns:
+        dict with same schema as input, fields transformed per mode:
+        - researcher: all fields, technical wording unchanged
+        - student: simplified language, shorter, jargon explained
+        - seminar: slide structure, bullets, speaker notes
+    """
+    # Copy base fields that are mode-independent
+    rendered = {
+        "title": memo.get("title", ""),
+        "research_question": memo.get("research_question", ""),
+        "generated_by": memo.get("generated_by", "weslr"),
+        "generated_at": memo.get("generated_at", ""),
+        "draft_status": memo.get("draft_status", "operator_review_required"),
+        "render_mode": mode,
+        "source_memo_generated_at": memo.get("generated_at", ""),
+    }
+
+    context = memo.get("context", "")
+    observations = memo.get("observations", [])
+    hypothesis = memo.get("hypothesis", "")
+    supporting = memo.get("supporting_evidence", [])
+    confidence = memo.get("confidence", {})
+    limitations = memo.get("limitations", [])
+    alt_interp = memo.get("alternative_interpretations", [])
+    next_exp = memo.get("next_experiment", "")
+
+    if mode == "researcher":
+        # Researcher: full detail, all sections, technical language preserved
+        rendered["context"] = context
+        rendered["observations"] = observations
+        rendered["hypothesis"] = hypothesis
+        rendered["supporting_evidence"] = supporting
+        rendered["confidence"] = confidence
+        rendered["limitations"] = limitations
+        rendered["alternative_interpretations"] = alt_interp
+        rendered["next_experiment"] = next_exp
+        rendered["disclosure_level"] = "full"
+
+    elif mode == "student":
+        # Student: simplified wording, shorter sections, jargon explained
+        # Simplify context
+        ctx_simple = context
+        for term, explanation in [
+            ("model_reasoning", "WESLR's language model generated this response"),
+            ("system_fact", "WESLR computed this from its own internal modules"),
+            ("verified", "confirmed as accurate by an internal check"),
+            ("fallback", "a simple template was used instead of reasoning"),
+            ("grounded_reasoning", "a reasoning response was generated"),
+            ("quality_class", "a quality label describing how reliable the response was"),
+            ("truth_class", "a classification of what type of knowledge this is"),
+        ]:
+            if term in ctx_simple and explanation not in ctx_simple:
+                ctx_simple += f" ({term}: {explanation})"
+
+        obs_short = []
+        for o in observations[:8]:
+            ev = o.get("event", "")
+            qc = o.get("quality_class", "")
+            # Simplify quality class labels
+            qc_map = {"strong_verified": "high-quality", "grounded_reasoning": "medium-quality",
+                      "weak_reasoning": "lower-quality", "fallback": "template-used",
+                      "uncertain": "unclear-quality"}
+            qc_label = qc_map.get(qc, qc)
+            obs_short.append(f"- {ev} [quality: {qc_label}]")
+
+        conf_level = confidence.get("level", "unknown")
+        conf_exp = confidence.get("explanation", "")
+        conf_map = {"high": "confident this is correct",
+                    "medium": "somewhat confident but not fully verified",
+                    "low": "may not be reliable",
+                    "unknown": "uncertain"}
+        conf_simple = f"Confidence level: {conf_map.get(conf_level, conf_level)}. {conf_exp}"
+
+        lim_plain = [f"- {l}" for l in limitations[:3]]
+
+        alt_plain = [f"- {a}" for a in alt_interp[:2]]
+
+        rendered["context"] = ctx_simple
+        rendered["observations"] = obs_short
+        rendered["hypothesis"] = hypothesis  # keep original — might need simplified version too
+        rendered["supporting_evidence"] = [f"- {s}" for s in supporting[:4]]
+        rendered["confidence"] = {
+            "level": conf_level,
+            "explanation": conf_simple,
+            "truth_class": confidence.get("truth_class", ""),
+            "verified": confidence.get("verified", False),
+        }
+        rendered["limitations"] = lim_plain
+        rendered["alternative_interpretations"] = alt_plain
+        rendered["next_experiment"] = next_exp
+        rendered["disclosure_level"] = "simplified"
+        rendered["student_note"] = (
+            "This memo was generated by WESLR. The confidence level tells you "
+            "how sure WESLR is. 'High' means internal systems confirmed it. "
+            "'Medium' means the language model generated it. "
+            "'Low' means it may need human review."
+        )
+
+    elif mode == "seminar":
+        # Seminar: slide-like structure, concise bullets, speaker-note style
+        rendered["slides"] = []
+
+        # Slide 1: Title + Research Question
+        rendered["slides"].append({
+            "slide_number": 1,
+            "type": "title",
+            "heading": memo.get("title", ""),
+            "subheading": memo.get("research_question", ""),
+            "speaker_notes": f"Start by stating the research question clearly. "
+                             f"This investigation began because: {context[:100]}",
+        })
+
+        # Slide 2: Key Finding (hypothesis)
+        rendered["slides"].append({
+            "slide_number": 2,
+            "type": "finding",
+            "heading": "Key Finding",
+            "bullets": [hypothesis[:200]],
+            "speaker_notes": "Present the main finding concisely. Emphasize what WESLR concluded "
+                             "and why — including the confidence level.",
+        })
+
+        # Slide 3: Supporting Evidence (top 3 bullets)
+        top_evidence = supporting[:3] if supporting else ["- No supporting evidence yet"]
+        rendered["slides"].append({
+            "slide_number": 3,
+            "type": "evidence",
+            "heading": "Supporting Evidence",
+            "bullets": top_evidence if isinstance(top_evidence, list) else [top_evidence],
+            "speaker_notes": "Review the key evidence that supports this finding. "
+                             "Note: evidence quality depends on how WESLR classified each response.",
+        })
+
+        # Slide 4: Confidence Assessment
+        conf_level = confidence.get("level", "unknown")
+        conf_emoji = {"high": "✅", "medium": "⚠️", "low": "❌", "unknown": "❓"}
+        emoji = conf_emoji.get(conf_level, "❓")
+        rendered["slides"].append({
+            "slide_number": 4,
+            "type": "confidence",
+            "heading": f"Confidence {emoji}",
+            "bullets": [
+                f"Level: {conf_level.upper()}",
+                confidence.get("explanation", "")[:150],
+                f"Verified: {'Yes' if confidence.get('verified') else 'No — not confirmed'}",
+            ],
+            "speaker_notes": "Be transparent about confidence. High confidence means WESLR's "
+                             "internal systems confirmed the response. 'Not verified' means it was "
+                             "generated by the language model without internal check.",
+        })
+
+        # Slide 5: Limitations
+        rendered["slides"].append({
+            "slide_number": 5,
+            "type": "limitations",
+            "heading": "Limitations",
+            "bullets": limitations[:3] if limitations else ["- No major limitations noted"],
+            "speaker_notes": "Acknowledge limitations openly. This is how science works — "
+                             "every study has bounds. Knowing them makes the finding more credible.",
+        })
+
+        # Slide 6: Next Steps
+        rendered["slides"].append({
+            "slide_number": 6,
+            "type": "next_steps",
+            "heading": "Next Steps",
+            "bullets": [next_exp] if next_exp else ["- Further observation recommended"],
+            "speaker_notes": "Suggest concrete next steps. What would confirm or refine this finding? "
+                             "WESLR's recommendation is: " + (next_exp[:100] if next_exp else "pending"),
+        })
+
+        # Remove verbose fields not needed in seminar mode
+        for key in ["context", "observations", "hypothesis", "supporting_evidence",
+                    "confidence", "limitations", "alternative_interpretations", "next_experiment"]:
+            rendered.pop(key, None)
+
+        rendered["disclosure_level"] = "slide_format"
+
+    else:
+        # Unknown mode: return researcher as default, with a note
+        rendered["error"] = f"Unknown render mode: {mode}. Returning researcher mode."
+        return _render_research_memo(memo, "researcher")
+
+    return rendered
+
+
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
     """Minimal TelemetryEventEmitter for v71 diagnostics."""
