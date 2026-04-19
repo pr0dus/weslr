@@ -2375,6 +2375,54 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Quality watch status (read-only governance observation)
+            if self.path == "/api/quality-watch":
+                try:
+                    global _WATCH_HISTORY
+                    threshold = _WATCH_THRESHOLD
+                    # Compute current streak
+                    streak_class = None
+                    streak_need = None
+                    streak_count = 0
+                    if _WATCH_HISTORY:
+                        # Scan from newest to oldest, count consecutive matching entries
+                        for i in range(len(_WATCH_HISTORY) - 1, -1, -1):
+                            entry = _WATCH_HISTORY[i]
+                            if streak_class is None:
+                                streak_class = entry["quality_class"]
+                                streak_need = entry["likely_need"]
+                                streak_count = 1
+                            elif (entry["quality_class"] == streak_class and
+                                  entry["likely_need"] == streak_need):
+                                streak_count += 1
+                            else:
+                                break
+                    current_streak = None
+                    if streak_count > 0:
+                        current_streak = {
+                            "quality_class": streak_class,
+                            "likely_need": streak_need,
+                            "count": streak_count,
+                        }
+                    watch_arm_active = (streak_count >= threshold) if streak_count > 0 else False
+                    payload = json.dumps({
+                        "threshold": threshold,
+                        "history_size": len(_WATCH_HISTORY),
+                        "current_streak": current_streak,
+                        "watch_arm_active": watch_arm_active,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "watch_state_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
