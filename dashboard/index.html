@@ -327,6 +327,11 @@
 
       <!-- Memo display -->
       <div id="memo-result" style="display:none; margin-top:14px;">
+        <!-- Plain-language summary — prominent, first -->
+        <div id="memo-summary" style="display:none; background:#0f1a14; border:1px solid #1e3a2a; border-radius:10px; padding:12px 14px; margin-bottom:10px;">
+          <p style="margin:0; color:#6ee7b7; font-size:14px; font-weight:500;">Plain-Language Summary</p>
+          <p id="memo-summary-text" style="margin:6px 0 0; color:#c8d3c4; font-size:13px; line-height:1.5;"></p>
+        </div>
         <div style="background:#0c0f14; border-radius:10px; padding:14px;">
           <h3 id="memo-title" style="margin:0 0 8px; color:#6ee7b7; font-size:15px;"></h3>
           <p id="memo-question" style="margin:0 0 10px; color:#9aa6b2; font-size:13px;"></p>
@@ -440,6 +445,28 @@
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var m = await r.json();
           _currentMemo = m;
+
+          // Immediately render in researcher mode to get plain_language_summary
+          var r2 = await fetch('/api/research/memos/render?mode=researcher', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(m)
+          });
+          if (!r2.ok) throw new Error('Render failed: HTTP ' + r2.status);
+          var rendered = await r2.json();
+
+          // Show plain-language summary prominently
+          var summaryEl = document.getElementById('memo-summary');
+          var summaryTextEl = document.getElementById('memo-summary-text');
+          var summary = rendered.plain_language_summary || '';
+          if (summary) {
+            summaryTextEl.textContent = summary;
+            summaryEl.style.display = 'block';
+          } else {
+            summaryEl.style.display = 'none';
+          }
+
+          // Populate memo fields
           document.getElementById('memo-title').textContent = m.title || '';
           document.getElementById('memo-question').textContent = m.research_question || '';
           document.getElementById('memo-hypothesis').textContent = m.hypothesis || '';
@@ -462,13 +489,31 @@
 
       async function renderMemo(mode) {
         if (!_currentMemo) { alert('Generate a memo first.'); return; }
+        var btn = document.querySelector('button[onclick="renderMemo(\'' + mode + '\')"]');
+        var origText = btn.textContent;
+        btn.textContent = 'Rendering...'; btn.disabled = true;
         try {
-          var rendered = window._renderMemo(_currentMemo, mode);
+          var r = await fetch('/api/research/memos/render?mode=' + mode, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(_currentMemo)
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          var rendered = await r.json();
           var badge = document.getElementById('render-mode-badge');
           badge.textContent = mode; badge.style.display = 'inline-block';
+
+          // Show plain_language_summary prominently first
+          var summary = rendered.plain_language_summary || '';
           var out = document.getElementById('memo-rendered-content');
+
           if (mode === 'seminar' && rendered.slides) {
             var lines = [];
+            if (summary) {
+              lines.push('=== Plain-Language Summary ===');
+              lines.push(summary);
+              lines.push('');
+            }
             rendered.slides.forEach(function(s) {
               lines.push('=== Slide ' + s.slide_number + ': ' + s.heading + ' ===');
               if (s.bullets) s.bullets.forEach(function(b) { lines.push('  • ' + b); });
@@ -477,6 +522,9 @@
             out.textContent = lines.join('\n');
           } else {
             var parts = [];
+            if (summary) {
+              parts.push('--- Summary ---\n' + summary + '\n');
+            }
             ['title','context','observations','hypothesis','supporting_evidence',
              'confidence','limitations','alternative_interpretations','next_experiment'].forEach(function(k) {
               if (rendered[k] !== undefined && rendered[k] !== null && rendered[k] !== '') {
@@ -488,6 +536,7 @@
           }
           document.getElementById('memo-rendered').style.display = 'block';
         } catch(e) { alert('Render failed: ' + e); }
+        finally { btn.textContent = origText; btn.disabled = false; }
       }
 
       async function loadTimeline() {

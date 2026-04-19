@@ -933,9 +933,107 @@ def _render_research_memo(memo: dict, mode: str) -> dict:
     else:
         # Unknown mode: return researcher as default, with a note
         rendered["error"] = f"Unknown render mode: {mode}. Returning researcher mode."
+        # Add plain_language_summary to researcher fallback too
+        rendered["plain_language_summary"] = _generate_plain_language_summary(rendered)
         return _render_research_memo(memo, "researcher")
 
+    # Add plain_language_summary to all modes before returning
+    rendered["plain_language_summary"] = _generate_plain_language_summary(rendered)
+
     return rendered
+
+
+# ── Plain-Language Summary Layer (Phase R5) ──────────────────────────────────
+# Human-readable accessibility layer for every rendered memo.
+# Faithful to evidence, no jargon invention, direct transformation only.
+
+
+def _generate_plain_language_summary(memo: dict) -> str:
+    """Generate a plain-language summary of a research memo.
+
+    Explains: what was studied, what was observed, what WESLR thinks is
+    happening, how confident it is, and what should happen next.
+
+    Rules:
+    - 4-8 short sentences max
+    - Avoid jargon; explain technical terms briefly when necessary
+    - Do NOT invent evidence — faithful to memo fields only
+    - If field is empty/unknown, skip gracefully
+
+    Args:
+        memo: dict — canonical research memo from _generate_research_memo()
+
+    Returns:
+        str — plain-language summary, human-readable
+    """
+    observations = memo.get("observations", [])
+    confidence = memo.get("confidence", {})
+    conf_level = confidence.get("level", "unknown")
+    conf_exp = confidence.get("explanation", "")
+    hypothesis = memo.get("hypothesis", "")
+    next_exp = memo.get("next_experiment", "")
+
+    sentences = []
+
+    # What was studied
+    rq = memo.get("research_question", "")
+    if rq:
+        sentences.append(f"This study asked: {rq[:150]}{'...' if len(rq) > 150 else ''}")
+
+    # What was observed (dominant quality class)
+    if observations:
+        qc_counts = {}
+        for o in observations:
+            qc = o.get("quality_class", "unknown")
+            qc_counts[qc] = qc_counts.get(qc, 0) + 1
+        dominant_qc = max(qc_counts, key=qc_counts.get)
+        obs_count = len(observations)
+        qc_descriptions = {
+            "strong_verified": "high-quality responses (WESLR's internal systems confirmed them)",
+            "grounded_reasoning": "medium-quality reasoning responses (language model generated)",
+            "weak_reasoning": "lower-quality responses with some reasoning",
+            "fallback": "template-based responses (no reasoning triggered)",
+            "uncertain": "unclear-quality responses (ambiguous query pattern)",
+            "unknown": "responses of unknown quality",
+        }
+        qc_desc = qc_descriptions.get(dominant_qc, f"responses of type '{dominant_qc}'")
+        sentences.append(
+            f"WESLR observed {obs_count} governance event(s). "
+            f"The most common pattern was: {qc_desc}."
+        )
+    else:
+        sentences.append("WESLR did not find enough evidence to draw a conclusion.")
+
+    # What WESLR thinks is happening
+    if hypothesis:
+        hyp_short = hypothesis[:100] + ("..." if len(hypothesis) > 100 else "")
+        sentences.append(f"WESLR's current interpretation: {hyp_short}")
+
+    # How confident
+    conf_descriptions = {
+        "high": "WESLR is highly confident — internal systems verified the evidence.",
+        "medium": "WESLR has medium confidence — this is a working interpretation, not confirmed.",
+        "low": "WESLR has low confidence — this may need human review before acting.",
+        "unknown": "WESLR could not determine a confidence level — more evidence is needed.",
+    }
+    conf_desc = conf_descriptions.get(conf_level, f"confidence level is '{conf_level}'")
+    if conf_exp:
+        sentences.append(f"{conf_desc} {conf_exp[:80]}{'...' if len(conf_exp) > 80 else ''}")
+    else:
+        sentences.append(conf_desc)
+
+    # What should happen next
+    if next_exp:
+        sentences.append(f"Recommended next step: {next_exp[:120]}{'...' if len(next_exp) > 120 else ''}")
+    else:
+        sentences.append("No specific next step has been determined yet.")
+
+    sentences = sentences[:8]
+
+    result = " ".join(sentences)
+    if not result:
+        result = "Not enough information to generate a summary."
+    return result
 
 
 # ── Research Visual Artifacts (Phase R3) ────────────────────────────────────
@@ -3875,6 +3973,34 @@ def cmd_serve(args):
                     self.wfile.write(payload)
                 except Exception as e:
                     payload = json.dumps({"error": "memo_generation_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+            # Research memo: render canonical memo in a given mode
+            if self.path == "/api/research/memos/render":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    mode = params.get("mode", ["researcher"])[0]
+                    if mode not in ("researcher", "student", "seminar"):
+                        mode = "researcher"
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length)
+                    memo = json.loads(body.decode("utf-8"))
+                    if not isinstance(memo, dict):
+                        raise ValueError("memo must be a JSON object")
+                    rendered = _render_research_memo(memo, mode)
+                    payload = json.dumps(rendered, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "render_unavailable", "detail": str(e)}).encode("utf-8")
                     self.send_response(500)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
