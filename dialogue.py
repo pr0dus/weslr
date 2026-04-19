@@ -245,7 +245,10 @@ def synthesize_concept_or_self_reply(
         # Fallback for continuity if not caught by compound check above
         if "continuity" in topic_lower:
             return "I stay continuous through inquiry and revision, not by repeating the same thing twice."
-        # For all other concepts, fall back to existing handler (None)
+        # For all other concepts, try LLM synthesis via _generate_concept_synthesis
+        synthesis = _generate_concept_synthesis(lead_topic, topic_lower)
+        if synthesis:
+            return synthesis
         return None
     
     # self_report
@@ -465,6 +468,65 @@ def _generate_enriched_identity(communicator_self: dict, entity_context: dict, c
         return f"I'm {declared_name}. {entity_context_str} {consciousness_str}"
     else:
         return f"I'm {declared_name}. {consciousness_str}"
+
+
+
+
+def _generate_concept_synthesis(lead_topic: str, topic_lower: str) -> str | None:
+    """Generate LLM-based synthesis for general concept/explanation queries.
+    
+    Follows the established _generate_enriched_* pattern. Returns str on success,
+    None on failure (caller falls back gracefully).
+    
+    Topic allowlist (memory, identity, reasoning, etc.) is handled separately
+    in synthesize_concept_or_self_reply. This function handles general topics
+    that are genuine information-seeking concept questions.
+    
+    Returns:
+        - str: concise synthesis from LLM (target ~1-2 sentences)
+        - None: LLM unavailable or timed out, caller handles fallback
+    """
+    # Distinguish genuine information-seeking from simple greetings/commands
+    simple_words = {"test", "ok", "yes", "no", "hi", "hello", "hey", "go", "go ahead", "start", "done", "bye", "thanks", "thank you"}
+    is_simple = topic_lower.strip() in simple_words
+    is_identity_question = any(t in topic_lower for t in ["who are you", "what are you", "who is Weslr", "what is Weslr"])
+    
+    if is_simple or is_identity_question:
+        return None  # These should not reach synthesis
+    
+    try:
+        from weslr.providers import get_provider
+        
+        # Build a concise, focused prompt
+        prompt_topic = lead_topic.strip() if lead_topic else topic_lower
+        system_prompt = (
+            f"You are a concise, factual explainer. "
+            f"Explain '{prompt_topic}' in 1-2 clear sentences. "
+            f"Be direct. No preamble or follow-up questions."
+        )
+        
+        result = get_provider().generate(
+            "concept_synthesis",
+            {
+                "message": f"Explain {prompt_topic}.",
+                "identity": "Weslr",
+                "turn_type": "question",
+                "reply_shape": "answer_directly",
+            },
+            chat_mode=True,
+        )
+        
+        if result and result.get("summary"):
+            text = result["summary"].strip()
+            # Quality gate: reject empty or suspiciously short responses
+            if len(text) < 10:
+                return None
+            return text
+        
+        return None
+        
+    except Exception:
+        return None
 
 
 def _get_targeted_anchors(message: str | None = None, topics: list | None = None, max_per_type: int = 3) -> dict:
@@ -915,10 +977,29 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                             message = _get_language_module().simple_response()
                     elif any(token in lower_message for token in ["who is", "what is", "define", "explain"]):
                         # General factual answer format
-                        message = f"Here's a direct answer: {lead_topic}."
+                        # Try LLM synthesis for concept questions before falling back
+                        # Strip leading verbs from lead_topic for cleaner synthesis
+                        topic_for_synthesis = lead_topic
+                        for verb in ["explain ", "define ", "tell me about ", "what is ", "what are "]:
+                            if lead_topic.lower().startswith(verb):
+                                topic_for_synthesis = lead_topic[len(verb):].strip()
+                                break
+                        synthesis = _generate_concept_synthesis(topic_for_synthesis, topic_for_synthesis.lower())
+                        if synthesis:
+                            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                            message = synthesis
+                        else:
+                            message = f"Here's a direct answer: {lead_topic}."
                     else:
-                        # Fallback - use simple response instead of direct_answer template
-                        message = _get_language_module().simple_response()
+                        # Try LLM synthesis for any remaining non-trivial query
+                        # that wasn't caught by internal routing or special handlers
+                        synthesis = _generate_concept_synthesis(lead_topic, lead_topic.lower())
+                        if synthesis:
+                            _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                            message = synthesis
+                        else:
+                            # Fallback - use simple response instead of direct_answer template
+                            message = _get_language_module().simple_response()
                 # Enrich with internal-doc themes (one short sentence)
                 doc_context = get_internal_docs_context("concept_explanation")
                 if doc_context.get("used") and doc_context.get("themes"):
