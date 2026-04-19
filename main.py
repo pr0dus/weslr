@@ -938,6 +938,114 @@ def _render_research_memo(memo: dict, mode: str) -> dict:
     return rendered
 
 
+# ── Research Visual Artifacts (Phase R3) ────────────────────────────────────
+# Confidence matrix diagram from existing memo/evidence state.
+# No new observation collection. No LLM. Pure transformation.
+
+
+def _generate_confidence_matrix_diagram(memo: dict) -> dict:
+    """Generate a confidence matrix diagram from a canonical research memo.
+
+    Converts observation entries into a Mermaid markdown table showing
+    event, quality_class, truth_class, verified status, and confidence level.
+
+    Uses only existing memo fields — no new observation collection.
+    No LLM synthesis — direct transformation only.
+
+    Args:
+        memo: dict — canonical research memo from _generate_research_memo()
+
+    Returns:
+        dict: {
+            "diagram_type": "confidence_matrix",
+            "format": "mermaid",
+            "content": str,  # Mermaid markdown table
+            "source_memo_generated_at": str,
+            "generated_by": "weslr"
+        }
+    """
+    from datetime import datetime, timezone
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    source_time = memo.get("generated_at", memo.get("source_memo_generated_at", ""))
+
+    observations = memo.get("observations", [])
+    confidence = memo.get("confidence", {})
+    conf_level = confidence.get("level", "unknown")
+    conf_exp = confidence.get("explanation", "")
+
+    if not observations:
+        mermaid_content = """```mermaid
+---
+title: Confidence Matrix (No Observations)
+---
+classDiagram
+    class Observation {
+        <<no observations available>>
+    }
+```"""
+        return {
+            "diagram_type": "confidence_matrix",
+            "format": "mermaid",
+            "content": mermaid_content,
+            "source_memo_generated_at": source_time,
+            "generated_by": "weslr",
+            "generated_at": timestamp,
+        }
+
+    # Build Mermaid table rows from observations
+    # Quality class → color mapping for the table
+    qc_color_map = {
+        "strong_verified": "🟢",
+        "grounded_reasoning": "🔵",
+        "weak_reasoning": "🟡",
+        "fallback": "🟠",
+        "uncertain": "⚪",
+        "unknown": "⚪",
+    }
+
+    # Header row
+    header = "| # | Event | Quality | Truth Class | Verified | Confidence |\n"
+    header += "|---|-------|--------|------------|----------|-------------|\n"
+
+    rows = []
+    for i, obs in enumerate(observations[:15], 1):  # cap at 15 rows
+        event = obs.get("event", "")[:50]  # truncate long event names
+        qc = obs.get("quality_class", "unknown")
+        tc = obs.get("truth_class", "unknown")
+        verified = obs.get("verified", False)
+        qc_emoji = qc_color_map.get(qc, "⚪")
+        verified_str = "✅" if verified else "❌"
+        conf_emoji = {"high": "✅", "medium": "⚠️", "low": "❌", "unknown": "❓"}.get(conf_level, "❓")
+
+        # Compact cell format
+        rows.append(f"| {i} | {event} | {qc_emoji} {qc} | {tc} | {verified_str} | {conf_emoji} {conf_level} |")
+
+    table_body = "\n".join(rows)
+
+    # Overall confidence summary row (appended as footer note)
+    summary_note = f"\n**Overall confidence:** {conf_level.upper()} — {conf_exp[:100]}"
+
+    mermaid_content = f"""```mermaid
+---
+title: Confidence Matrix — {memo.get('title', 'Research Memo')[:60]}
+---
+table-formatted
+{header}
+{table_body}
+{summary_note}
+```"""
+
+    return {
+        "diagram_type": "confidence_matrix",
+        "format": "mermaid",
+        "content": mermaid_content,
+        "source_memo_generated_at": source_time,
+        "generated_by": "weslr",
+        "generated_at": timestamp,
+    }
+
+
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
     """Minimal TelemetryEventEmitter for v71 diagnostics."""
