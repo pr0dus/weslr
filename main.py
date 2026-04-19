@@ -88,8 +88,13 @@ _chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
 _BUNDLE_REGISTRY: dict[str, dict] = {}
 _BUNDLE_REGISTRY_MAX = 20
 
-def _register_bundle(bundle_id: str, draft_status: str, generated_at: str) -> None:
+def _register_bundle(bundle_id: str, draft_status: str, generated_at: str, full_memo: dict | None = None) -> None:
     entry = {"bundle_id": bundle_id, "draft_status": draft_status, "generated_at": generated_at}
+    if full_memo:
+        # Store canonical memo for artifact-aware /chat enrichment (bounded to 5KB)
+        import json
+        memo_json = json.dumps(full_memo, default=str)[:5120]
+        entry["full_memo"] = json.loads(memo_json)
     _BUNDLE_REGISTRY[bundle_id] = entry
     if len(_BUNDLE_REGISTRY) > _BUNDLE_REGISTRY_MAX:
         oldest_key = next(iter(_BUNDLE_REGISTRY))
@@ -97,6 +102,17 @@ def _register_bundle(bundle_id: str, draft_status: str, generated_at: str) -> No
 
 def _get_bundle_status(bundle_id: str) -> dict | None:
     return _BUNDLE_REGISTRY.get(bundle_id)
+
+def _get_most_recent_bundle_with_memo() -> dict | None:
+    """Return the most recently registered bundle that has a full_memo, or None."""
+    entries_with_memo = [
+        (bid, entry) for bid, entry in _BUNDLE_REGISTRY.items()
+        if entry.get("full_memo")
+    ]
+    if not entries_with_memo:
+        return None
+    # Most recent = highest index (insertion order preserved in Python 3.7+)
+    return entries_with_memo[-1][1]
 
 
 def _log_artifact_export_event(bundle_id: str, output_mode: str, approved_by: str | None, research_question: str) -> None:
@@ -746,7 +762,7 @@ Rules:
                     "note": None,
                 },
             }
-            _register_bundle(bundle_id, "operator_review_required", timestamp)
+            _register_bundle(bundle_id, "operator_review_required", timestamp, full_memo=memo)
 
     except Exception:
         pass
@@ -787,7 +803,7 @@ Rules:
             "note": None,
         },
     }
-    _register_bundle(fb_bundle_id, "operator_review_required", timestamp)
+    _register_bundle(fb_bundle_id, "operator_review_required", timestamp, full_memo=fb_memo)
     return fb_memo
 
 
@@ -3427,6 +3443,29 @@ def cmd_serve(args):
                                 _rc = {"topic": _lt, "title": str(_note.get("title","")[:80]), "summary": _raw, "source": str(_note.get("source","")[:60])}
                     except Exception:
                         _rc = None
+                    
+                    # Artifact-aware enrichment: if an artifact-related prompt is detected,
+                    # inject the most recent canonical memo into research_context so
+                    # artifact reflection and proposal mode can use actual memo fields.
+                    try:
+                        _ml_artifact = message.lower().strip()
+                        _artifact_tokens = [
+                            "this artifact", "this memo", "this finding", "confidence", "limitations",
+                            "hypothesis", "next experiment", "evidence", "propose", "improve",
+                            "fix the", "rewrite", "suggest", "revise", "make this more",
+                            "what should", "what would", "how would", "which section",
+                            "how reliable", "operator", "reliable",
+                        ]
+                        if any(t in _ml_artifact for t in _artifact_tokens) or any(_ml_artifact.startswith(p) for p in ["what should", "what would", "how would", "which part"]):
+                            _recent = _get_most_recent_bundle_with_memo()
+                            if _recent and _recent.get("full_memo"):
+                                _fm = _recent["full_memo"]
+                                _rc = _rc or {}
+                                _rc["memo"] = _fm
+                                _rc["bundle_id"] = _recent.get("bundle_id", "")
+                    except Exception:
+                        pass  # Non-critical — keep existing _rc if memo injection fails
+                    
                     try:
                         fut = _CHAT_EXECUTOR.submit(
                             build_communicator_message_payload,
