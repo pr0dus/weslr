@@ -3585,9 +3585,6 @@ def cmd_serve(args):
 
         def do_GET(self):
             """Serve GET requests."""
-            import sys
-            sys.stderr.write(f"[do_GET ENTER] path={repr(self.path)}\n")
-            sys.stderr.flush()
             # Onboarding front door
             if self.path == "/onboarding":
                 front_door = base_dir / "front-door" / "index.html"
