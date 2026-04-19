@@ -2683,6 +2683,66 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Governance recommendations endpoint (read-only, bounded)
+            if self.path == "/api/governance/recommendations/recent":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    limit = min(int(params.get("limit", ["10"])[0]), 50)
+                    rec_type_filter = params.get("recommendation_type", [None])[0]
+                    conf_filter = params.get("confidence", [None])[0]
+                    # Read governance.observation events, extract _improvement_recommendation
+                    base = Path(__file__).resolve().parent
+                    tl_id = params.get("timeline", ["tl_default"])[0]
+                    event_file = base / ".weslr" / "timelines" / tl_id / "events.jsonl"
+                    entries = []
+                    if event_file.exists():
+                        with open(event_file, "r") as f:
+                            lines = f.readlines()
+                        for line in reversed(lines[-limit*3:]):
+                            try:
+                                event = json.loads(line.strip())
+                                if event.get("event_type") == "governance.observation":
+                                    data = event.get("data", {})
+                                    reco = data.get("_improvement_recommendation")
+                                    if reco:
+                                        # Apply filters
+                                        if rec_type_filter and reco.get("recommendation_type") != rec_type_filter:
+                                            continue
+                                        if conf_filter and reco.get("confidence") != conf_filter:
+                                            continue
+                                        entries.append({
+                                            "timestamp": event.get("timestamp"),
+                                            "recommendation_type": reco.get("recommendation_type"),
+                                            "trigger": reco.get("trigger"),
+                                            "diagnosis": reco.get("diagnosis"),
+                                            "recommendation": reco.get("recommendation"),
+                                            "implementation_hint": reco.get("implementation_hint"),
+                                            "confidence": reco.get("confidence"),
+                                            "approval_required": reco.get("approval_required"),
+                                        })
+                                        if len(entries) >= limit:
+                                            break
+                            except Exception:
+                                continue
+                    payload = json.dumps({
+                        "limit": limit,
+                        "total": len(entries),
+                        "entries": entries,
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "recommendations_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
             # State JSON files
             if self.path in {"/state_core.json", "/communicator_self.json", "/review_queue.json"}:
                 self._serve_state_file(self.path)
