@@ -99,6 +99,32 @@ def _get_bundle_status(bundle_id: str) -> dict | None:
     return _BUNDLE_REGISTRY.get(bundle_id)
 
 
+def _log_artifact_export_event(bundle_id: str, output_mode: str, approved_by: str | None, research_question: str) -> None:
+    """Write a governance.artifact.exported audit event to events.jsonl."""
+    try:
+        from pathlib import Path
+        base = Path(__file__).resolve().parent
+        tl_dir = base / ".weslr" / "timelines" / "tl_default"
+        tl_dir.mkdir(parents=True, exist_ok=True)
+        event = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event_type": "governance.artifact.exported",
+            "data": {
+                "bundle_id": bundle_id,
+                "output_mode": output_mode,
+                "approved_by": approved_by,
+                "research_question": research_question[:200] if research_question else "",
+            },
+            "source": "publishing_gateway",
+            "trust_level": "direct",
+        }
+        event_file = tl_dir / "events.jsonl"
+        with open(event_file, "a") as f:
+            f.write(json.dumps(event) + "\n")
+    except Exception:
+        pass
+
+
 # ── Repeated quality watch (governance bridge, metadata only) ───────────
 # Tiny in-memory rolling state. Detects repeated quality degradation patterns.
 # No behavior changes, no automatic actions — metadata only.
@@ -3580,6 +3606,194 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                 return
+            # Phase 6.2/6.3: Bundle approval endpoint
+            # POST /api/research/bundle/approve?bundle_id=... 
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/bundle/approve":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    if not bundle_id:
+                        raise ValueError("bundle_id query param is required")
+
+                    status = _get_bundle_status(bundle_id)
+                    if status is None:
+                        payload = json.dumps({"error": "bundle_not_found", "bundle_id": bundle_id}).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    data = json.loads(body)
+                    approved_by = data.get("approved_by", "operator")
+                    note = data.get("note", "")
+                    output_mode = data.get("output_mode", "collaborator")
+
+                    from datetime import datetime, timezone
+                    ts = datetime.now(timezone.utc).isoformat()
+                    status["draft_status"] = "approved_for_collaborator"
+                    status["approval"] = {
+                        "approved_by": approved_by,
+                        "approved_at": ts,
+                        "output_mode": output_mode,
+                        "note": note,
+                    }
+                    _BUNDLE_REGISTRY[bundle_id] = status
+
+                    payload = json.dumps({"ok": True, "bundle_id": bundle_id, "draft_status": status["draft_status"], "approval": status["approval"]}, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as exc:
+                    payload = json.dumps({"error": "approval_failed", "message": str(exc)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
+            # Phase 6.2/6.3: Bundle export endpoint
+            # POST /api/research/bundle/export?bundle_id=...&output_mode=...
+            elif self.command == "POST" and self.path.split("?")[0] == "/api/research/bundle/export":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    bundle_id = params.get("bundle_id", [None])[0]
+                    output_mode = params.get("output_mode", [None])[0]
+                    if not bundle_id:
+                        raise ValueError("bundle_id query param is required")
+                    if not output_mode:
+                        raise ValueError("output_mode query param is required")
+                    if output_mode not in ("collaborator", "public", "seminar"):
+                        raise ValueError("output_mode must be one of: collaborator, public, seminar")
+
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    memo = json.loads(body)
+                    if not isinstance(memo, dict):
+                        raise ValueError("body must be a JSON object (canonical memo)")
+
+                    status = _get_bundle_status(bundle_id)
+                    if status is None:
+                        payload = json.dumps({
+                            "error": "bundle_not_found",
+                            "bundle_id": bundle_id,
+                            "message": "No bundle found with this ID. Bundles expire after 20 are generated.",
+                        }, indent=2).encode("utf-8")
+                        self.send_response(404)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+
+                    draft_status = status.get("draft_status", "operator_review_required")
+
+                    # Gate: block unapproved bundles
+                    if draft_status == "operator_review_required":
+                        payload = json.dumps({
+                            "error": "requires_approval",
+                            "bundle_id": bundle_id,
+                            "draft_status": draft_status,
+                            "message": "This bundle requires operator approval before export. Use the dashboard to review and approve.",
+                        }, indent=2).encode("utf-8")
+                        self.send_response(403)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+
+                    # Build export bundle (approved path only)
+                    from datetime import datetime, timezone
+                    exported_at = datetime.now(timezone.utc).isoformat()
+
+                    mode_map = {"collaborator": "researcher", "public": "student", "seminar": "seminar"}
+                    render_mode = mode_map.get(output_mode, "researcher")
+                    rendered = _render_research_memo(memo, render_mode)
+                    plain_summary = _generate_plain_language_summary(memo)
+
+                    conf_level = (memo.get("confidence") or {}).get("level", "unknown")
+                    conf_statement = (
+                        f"This is a{'n' if conf_level[0] in 'aeiou' else ''} {conf_level} confidence "
+                        f"research artifact generated by WESLR. Human review required before any external use. "
+                        f"Draft status: {draft_status}."
+                    )
+
+                    limitations_raw = memo.get("limitations", [])
+                    if isinstance(limitations_raw, list):
+                        limitations_text = "\n".join(f"- {l}" for l in limitations_raw if l)
+                    else:
+                        limitations_text = str(limitations_raw)
+
+                    export_bundle = {
+                        "bundle_id": bundle_id,
+                        "generated_at": memo.get("generated_at", ""),
+                        "exported_at": exported_at,
+                        "research_question": memo.get("research_question", ""),
+                        "draft_status": draft_status,
+                        "approval": memo.get("approval", {}),
+                        "canonical_memo": memo,
+                        "rendered_memo": {"mode": render_mode, "content": rendered},
+                        "plain_language_summary": plain_summary,
+                        "confidence_statement": conf_statement,
+                        "limitations_section": limitations_text,
+                        "source_systems": ["weslr", "governance_watch", "event_timeline"],
+                        "weslr_version": "0.8.x",
+                    }
+
+                    if output_mode in ("collaborator", "seminar"):
+                        try:
+                            conf_diagram = _generate_confidence_matrix_diagram(memo)
+                            export_bundle["confidence_matrix"] = {
+                                "meta": conf_diagram.get("meta", ""),
+                                "content": conf_diagram.get("content", ""),
+                            }
+                        except Exception:
+                            pass
+                        try:
+                            tl_id = status.get("timeline_id", "tl_default")
+                            tl_diagram = _generate_governance_timeline_diagram(tl_id)
+                            export_bundle["governance_timeline"] = {
+                                "meta": tl_diagram.get("meta", ""),
+                                "content": tl_diagram.get("content", ""),
+                            }
+                        except Exception:
+                            pass
+
+                    approved_by = (memo.get("approval") or {}).get("approved_by")
+                    _log_artifact_export_event(bundle_id, output_mode, approved_by, memo.get("research_question", ""))
+
+                    payload = json.dumps(export_bundle, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
+                except ValueError as ve:
+                    payload = json.dumps({"error": "bad_request", "message": str(ve)}).encode("utf-8")
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except Exception as exc:
+                    payload = json.dumps({"error": "export_failed", "message": str(exc)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
             else:
                 self.send_error(404, "Unknown endpoint")
 
