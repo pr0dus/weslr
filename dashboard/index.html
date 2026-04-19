@@ -48,6 +48,7 @@
       <a href="#communicator-self">Communicator Self</a> ·
       <a href="#memory-lifecycle">Memory Lifecycle</a> ·
       <a href="#themes">Themes</a> ·
+      <a href="#research">Research</a> ·
       <a href="#packs">Packs</a> ·
       <a href="#artifacts">Artifacts</a> ·
       <a href="#chat">Chat</a> ·
@@ -311,6 +312,219 @@
       <h2>Variation Generation</h2>
       <div id="variations-container"><p class="muted">Loading variation data...</p></div>
       <p class="muted">No variations generated yet.</p>
+    </section>
+
+    <!-- Research Panel (R3/R4/R5/R6 endpoints) -->
+    <section class="card" style="margin-top:16px;" id="research">
+      <h2>Research Artifact Generator</h2>
+      <p class="muted">Generate research memos and visual diagrams from WESLR governance state.</p>
+
+      <div style="margin:14px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <input id="research-question" type="text" placeholder="Research question (e.g. why is quality degrading?)"
+               style="flex:1; min-width:260px; background:#11141a; border:1px solid #2a2f3a; color:#fff; padding:9px 12px; border-radius:8px; font-size:14px;" />
+        <button onclick="generateMemo()" style="background:#4f8cff; color:#fff; border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:14px;">Generate Memo</button>
+      </div>
+
+      <!-- Memo display -->
+      <div id="memo-result" style="display:none; margin-top:14px;">
+        <div style="background:#0c0f14; border-radius:10px; padding:14px;">
+          <h3 id="memo-title" style="margin:0 0 8px; color:#6ee7b7; font-size:15px;"></h3>
+          <p id="memo-question" style="margin:0 0 10px; color:#9aa6b2; font-size:13px;"></p>
+          <details style="margin-top:8px;"><summary style="cursor:pointer; color:#9aa6b2; font-size:13px;">Hypothesis</summary><p id="memo-hypothesis" style="color:#e7ecf3; font-size:13px; margin:6px 0 0;"></p></details>
+          <details style="margin-top:6px;"><summary style="cursor:pointer; color:#9aa6b2; font-size:13px;">Confidence</summary><p id="memo-confidence" style="color:#e7ecf3; font-size:13px; margin:6px 0 0;"></p></details>
+          <details style="margin-top:6px;"><summary style="cursor:pointer; color:#9aa6b2; font-size:13px;">Limitations</summary><pre id="memo-limitations" style="font-size:12px; margin:4px 0 0;"></pre></details>
+          <details style="margin-top:6px;"><summary style="cursor:pointer; color:#9aa6b2; font-size:13px;">Next Experiment</summary><p id="memo-next" style="color:#e7ecf3; font-size:13px; margin:6px 0 0;"></p></details>
+        </div>
+        <!-- Render mode selector -->
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          <span style="color:#9aa6b2; font-size:13px;">Render:</span>
+          <button onclick="renderMemo('researcher')" style="background:#2d333b; color:#fff; border:0; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">Researcher</button>
+          <button onclick="renderMemo('student')" style="background:#2d333b; color:#fff; border:0; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">Student</button>
+          <button onclick="renderMemo('seminar')" style="background:#2d333b; color:#fff; border:0; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">Seminar</button>
+          <span id="render-mode-badge" style="display:none; background:#273142; color:#6ee7b7; padding:3px 10px; border-radius:999px; font-size:12px;"></span>
+        </div>
+        <!-- Rendered output -->
+        <div id="memo-rendered" style="display:none; margin-top:10px; background:#0c0f14; border-radius:10px; padding:12px;">
+          <pre id="memo-rendered-content" style="white-space:pre-wrap; word-break:break-word; font-size:12px; margin:0; color:#e7ecf3;"></pre>
+        </div>
+      </div>
+
+      <!-- Diagram buttons -->
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button onclick="loadTimeline()" style="background:#2d333b; color:#fff; border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px;">Load Governance Timeline</button>
+        <button onclick="loadConfidenceMatrix()" style="background:#2d333b; color:#fff; border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px;">Load Confidence Matrix</button>
+      </div>
+
+      <!-- Diagram display -->
+      <div id="diagram-result" style="display:none; margin-top:12px;">
+        <div style="background:#0c0f14; border-radius:10px; padding:14px;">
+          <p id="diagram-meta" style="margin:0 0 8px; color:#9aa6b2; font-size:12px;"></p>
+          <pre id="diagram-content" style="white-space:pre-wrap; word-break:break-word; font-size:12px; margin:0; color:#e7ecf3; max-height:320px; overflow:auto;"></pre>
+        </div>
+      </div>
+
+      <script>
+      let _currentMemo = null;
+
+      // Client-side memo renderer — mirrors _render_research_memo logic
+      window._renderMemo = function(memo, mode) {
+        var conf = memo.confidence || {};
+        var confLevel = conf.level || 'unknown';
+        var confExp = conf.explanation || '';
+
+        if (mode === 'researcher') return memo;
+
+        if (mode === 'student') {
+          var qcMap = {'strong_verified':'high-quality','grounded_reasoning':'medium-quality',
+                       'weak_reasoning':'lower-quality','fallback':'template-used',
+                       'uncertain':'unclear-quality','unknown':'unknown'};
+          var confMap = {'high':'confident this is correct','medium':'somewhat confident but not fully verified',
+                         'low':'may not be reliable','unknown':'uncertain'};
+          var obs = (memo.observations||[]).slice(0,8).map(function(o){
+            return '- '+(o.event||'')+' [quality: '+(qcMap[o.quality_class]||o.quality_class)+']';
+          });
+          return {
+            title: memo.title, research_question: memo.research_question,
+            context: (memo.context||'')+' (model_reasoning: WESLR language model generated this)',
+            observations: obs, hypothesis: memo.hypothesis||'',
+            supporting_evidence: (memo.supporting_evidence||[]).slice(0,4).map(function(s){return '- '+s;}),
+            confidence: {level:confLevel, explanation:'Confidence: '+(confMap[confLevel]||confLevel)+'. '+confExp,
+                         truth_class:conf.truth_class||'', verified:!!conf.verified},
+            limitations: (memo.limitations||[]).slice(0,3).map(function(l){return '- '+l;}),
+            alternative_interpretations: (memo.alternative_interpretations||[]).slice(0,2).map(function(a){return '- '+a;}),
+            next_experiment: memo.next_experiment||'',
+            student_note: "High=internal systems confirmed. Medium=LLM generated. Low=may need human review.",
+            generated_by:'weslr', generated_at: memo.generated_at||'',
+            draft_status: memo.draft_status||'operator_review_required',
+            render_mode:'student', disclosure_level:'simplified'
+          };
+        }
+
+        if (mode === 'seminar') {
+          var emoji = {'high':'✅','medium':'⚠️','low':'❌','unknown':'❓'}[confLevel]||'❓';
+          var topEv = ((memo.supporting_evidence||[]).slice(0,3)||['- No supporting evidence yet']);
+          if (!Array.isArray(topEv)) topEv = [topEv];
+          return {
+            title: memo.title, research_question: memo.research_question,
+            generated_by:'weslr', generated_at: memo.generated_at||'',
+            draft_status: memo.draft_status||'operator_review_required',
+            render_mode:'seminar', source_memo_generated_at: memo.generated_at||'',
+            disclosure_level:'slide_format',
+            slides: [
+              {slide_number:1,type:'title',heading:memo.title||'',subheading:memo.research_question||'',
+               speaker_notes:'State the research question clearly.'},
+              {slide_number:2,type:'finding',heading:'Key Finding',bullets:[(memo.hypothesis||'')].slice(0,200),
+               speaker_notes:'Present the main finding. Confidence: '+confLevel.toUpperCase()+' '+emoji},
+              {slide_number:3,type:'evidence',heading:'Supporting Evidence',bullets:topEv,
+               speaker_notes:'Evidence quality depends on WESLR classification.'},
+              {slide_number:4,type:'confidence',heading:'Confidence '+emoji,bullets:['Level: '+confLevel.toUpperCase(),(confExp||'').slice(0,150),'Verified: '+(conf.verified?'Yes':'No — not confirmed')],
+               speaker_notes:'Be transparent about confidence.'},
+              {slide_number:5,type:'limitations',heading:'Limitations',bullets:((memo.limitations||[]).slice(0,3)||['- No major limitations noted']),
+               speaker_notes:'Acknowledge limitations openly.'},
+              {slide_number:6,type:'next_steps',heading:'Next Steps',bullets:[memo.next_experiment||'Further observation recommended'],
+               speaker_notes:'What would confirm this finding? WESLR: '+(memo.next_experiment||'pending').slice(0,100)}
+            ]
+          };
+        }
+
+        return memo;
+      };
+
+      async function generateMemo() {
+        var q = document.getElementById('research-question').value.trim();
+        if (!q) { alert('Please enter a research question.'); return; }
+        var btn = document.querySelector('button[onclick="generateMemo()"]');
+        btn.textContent = 'Generating...'; btn.disabled = true;
+        try {
+          var r = await fetch('/api/research/memos/generate?research_question=' + encodeURIComponent(q));
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          var m = await r.json();
+          _currentMemo = m;
+          document.getElementById('memo-title').textContent = m.title || '';
+          document.getElementById('memo-question').textContent = m.research_question || '';
+          document.getElementById('memo-hypothesis').textContent = m.hypothesis || '';
+          var conf = m.confidence || {};
+          document.getElementById('memo-confidence').textContent =
+            (conf.level || 'unknown').toUpperCase() + ' — ' + (conf.explanation || '');
+          var lims = (m.limitations || []).slice(0, 3);
+          document.getElementById('memo-limitations').textContent = lims.length ? lims.join('\n') : '(none)';
+          document.getElementById('memo-next').textContent = m.next_experiment || '(not specified)';
+          document.getElementById('memo-result').style.display = 'block';
+          document.getElementById('memo-rendered').style.display = 'none';
+          document.getElementById('render-mode-badge').style.display = 'none';
+          document.getElementById('diagram-result').style.display = 'none';
+        } catch(e) {
+          alert('Memo generation failed: ' + e);
+        } finally {
+          btn.textContent = 'Generate Memo'; btn.disabled = false;
+        }
+      }
+
+      async function renderMemo(mode) {
+        if (!_currentMemo) { alert('Generate a memo first.'); return; }
+        try {
+          var rendered = window._renderMemo(_currentMemo, mode);
+          var badge = document.getElementById('render-mode-badge');
+          badge.textContent = mode; badge.style.display = 'inline-block';
+          var out = document.getElementById('memo-rendered-content');
+          if (mode === 'seminar' && rendered.slides) {
+            var lines = [];
+            rendered.slides.forEach(function(s) {
+              lines.push('=== Slide ' + s.slide_number + ': ' + s.heading + ' ===');
+              if (s.bullets) s.bullets.forEach(function(b) { lines.push('  • ' + b); });
+              if (s.speaker_notes) lines.push('  [Note: ' + s.speaker_notes + ']');
+            });
+            out.textContent = lines.join('\n');
+          } else {
+            var parts = [];
+            ['title','context','observations','hypothesis','supporting_evidence',
+             'confidence','limitations','alternative_interpretations','next_experiment'].forEach(function(k) {
+              if (rendered[k] !== undefined && rendered[k] !== null && rendered[k] !== '') {
+                var v = Array.isArray(rendered[k]) ? rendered[k].join('\n') : String(rendered[k]);
+                parts.push('--- ' + k + ' ---\n' + v);
+              }
+            });
+            out.textContent = parts.join('\n\n');
+          }
+          document.getElementById('memo-rendered').style.display = 'block';
+        } catch(e) { alert('Render failed: ' + e); }
+      }
+
+      async function loadTimeline() {
+        var btn = document.querySelector('button[onclick="loadTimeline()"]');
+        btn.textContent = 'Loading...'; btn.disabled = true;
+        try {
+          var r = await fetch('/api/research/diagrams/governance-timeline');
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          var d = await r.json();
+          document.getElementById('diagram-meta').textContent =
+            'Governance Timeline · ' + d.event_count + ' events · tl_default';
+          document.getElementById('diagram-content').textContent = d.content || '';
+          document.getElementById('diagram-result').style.display = 'block';
+        } catch(e) { alert('Timeline load failed: ' + e); }
+        finally { btn.textContent = 'Load Governance Timeline'; btn.disabled = false; }
+      }
+
+      async function loadConfidenceMatrix() {
+        if (!_currentMemo) { alert('Generate a memo first to get observations.'); return; }
+        var btn = document.querySelector('button[onclick="loadConfidenceMatrix()"]');
+        btn.textContent = 'Loading...'; btn.disabled = true;
+        try {
+          var r = await fetch('/api/research/diagrams/confidence-matrix', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(_currentMemo)
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          var d = await r.json();
+          document.getElementById('diagram-meta').textContent =
+            'Confidence Matrix · source: ' + (d.source_memo_generated_at || 'unknown');
+          document.getElementById('diagram-content').textContent = d.content || '';
+          document.getElementById('diagram-result').style.display = 'block';
+        } catch(e) { alert('Confidence matrix failed: ' + e); }
+        finally { btn.textContent = 'Load Confidence Matrix'; btn.disabled = false; }
+      }
+      </script>
     </section>
 
     <div class="grid" style="margin-top:16px;" id="packs">
