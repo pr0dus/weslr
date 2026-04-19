@@ -1060,16 +1060,30 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = _get_language_module().understand_response()
             elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
-            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]):
+            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
                 # Artifact reflection: questions that reference WESLR's own produced artifact
-                # These should be treated as concept_explanation even without research_context
+                # OR evaluative questions about WESLR's own output
+                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                # Try research_context first, then fall back to constructing from question
                 if research_context and research_context.get("summary"):
-                    message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or _get_language_module().direct_answer_response(lead_topic)
+                    synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                    if synthesized:
+                        message = synthesized
+                        # message is set — no further action needed
+                    else:
+                        # synthesize returned empty — construct artifact answer from question content
+                        message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
                 else:
-                    message = _get_language_module().direct_answer_response(lead_topic)
-            elif lower_message.startswith("what should") or lower_message.startswith("what would") or lower_message.startswith("how would"):
-                # Evaluative questions that need a direct analytical answer
-                message = _get_language_module().direct_answer_response(lead_topic)
+                    # No research_context — use direct synthesis with question+topic
+                    synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
+                    if synthesized:
+                        message = synthesized
+                    else:
+                        # Fallback: construct answer from lead_topic + last_message content
+                        # This is a template answer — not genuine reasoning synthesis
+                        _set_signal("direct_answer", evaluation_class="fallback_template", llm_used=False, confidence="low")
+                        message = f"My current best answer is that {lead_topic}. {last_message[:200]}"
+
             else:
                 message = _get_language_module().direct_answer_response(lead_topic)
         else:
