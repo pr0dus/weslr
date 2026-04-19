@@ -970,11 +970,15 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 )
                 has_research_answer = False
                 has_research_answer = False
+                has_research_answer = False
                 if synthesis:
                     message = synthesis
                 else:
-                    # Simple factual answer for "what is X" style questions
-                    has_research_answer = bool(research_context and research_context.get("summary") and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"]))
+                    # Only set has_research_answer when research_context actually has content
+                    has_research_answer = bool(
+                        research_context and research_context.get("summary") 
+                        and any(token in lower_message for token in ["what is", "what are", "why", "how", "explain", "define"])
+                    )
                 if has_research_answer:
                     # Fallback to original research answer behavior
                     message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
@@ -1059,9 +1063,17 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = _get_language_module().learn_about_response()
             elif asks_about_its_own_understanding:
                 message = _get_language_module().understand_response()
+            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research", "confidence", "limitations", "hypothesis", "next experiment", "operator"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
+                # Artifact reflection: fire synthesis for questions referencing WESLR's own output fields
+                _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
+                if research_context and research_context.get("summary"):
+                    synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
+                    message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
+                else:
+                    synthesized = synthesize_research_answer(lead_topic, f"{lead_topic}. {last_message[:200]}")
+                    message = synthesized if synthesized else f"My current best answer is that {lead_topic}. {last_message[:200]}"
             elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
                 message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
-            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]) or lower_message.startswith(("what should", "what would", "how would", "what does this", "what is this", "explain this")):
                 # Artifact reflection: questions that reference WESLR's own produced artifact
                 # OR evaluative questions about WESLR's own output
                 _set_signal("synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
