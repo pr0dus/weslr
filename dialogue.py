@@ -968,6 +968,7 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     narrative_state=communicator_self.get("narrative_state", {}),
                     research_context=research_context,
                 )
+                has_research_answer = False
                 if synthesis:
                     message = synthesis
                 else:
@@ -1053,12 +1054,22 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = _get_language_module().actual_coding_response()
             elif asks_can_you_implement:
                 message = _get_language_module().can_implement_response()
-            elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
-                message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
             elif asks_about_its_own_learning:
                 message = _get_language_module().learn_about_response()
             elif asks_about_its_own_understanding:
                 message = _get_language_module().understand_response()
+            elif has_research_answer and not asks_about_its_own_learning and not asks_about_its_own_understanding:
+                message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or str(research_context.get("summary") or "")[:360]
+            elif any(token in lower_message for token in ["this artifact", "this memo", "this finding", "this output", "this report", "this research"]):
+                # Artifact reflection: questions that reference WESLR's own produced artifact
+                # These should be treated as concept_explanation even without research_context
+                if research_context and research_context.get("summary"):
+                    message = synthesize_research_answer(lead_topic, str(research_context.get("summary") or "")) or _get_language_module().direct_answer_response(lead_topic)
+                else:
+                    message = _get_language_module().direct_answer_response(lead_topic)
+            elif lower_message.startswith("what should") or lower_message.startswith("what would") or lower_message.startswith("how would"):
+                # Evaluative questions that need a direct analytical answer
+                message = _get_language_module().direct_answer_response(lead_topic)
             else:
                 message = _get_language_module().direct_answer_response(lead_topic)
         else:
