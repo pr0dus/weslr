@@ -84,6 +84,37 @@ _CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-requ
 _MAX_CONCURRENT_CHAT = 4
 _chat_semaphore = __import__("threading").Semaphore(_MAX_CONCURRENT_CHAT)
 
+# ── Repeated quality watch (governance bridge, metadata only) ───────────
+# Tiny in-memory rolling state. Detects repeated quality degradation patterns.
+# No behavior changes, no automatic actions — metadata only.
+# Bounded: max 10 entries, oldest dropped when full.
+_WATCH_HISTORY: list[dict] = []  # [{"quality_class": str, "likely_need": str}]
+_WATCH_MAX = 10
+_WATCH_THRESHOLD = 3  # consecutive same-class+same-need to trigger note
+
+
+def _check_quality_watch(quality_class: str, likely_need: str) -> str | None:
+    """Check if quality_class has repeated 3+ times for same likely_need.
+    
+    Returns a _quality_note string if threshold is met, None otherwise.
+    The note is added to response metadata only — never to the message itself.
+    """
+    global _WATCH_HISTORY
+    # Maintain bounded rolling window
+    entry = {"quality_class": quality_class, "likely_need": likely_need}
+    # Drop oldest if full
+    if len(_WATCH_HISTORY) >= _WATCH_MAX:
+        _WATCH_HISTORY = _WATCH_HISTORY[1:]
+    _WATCH_HISTORY.append(entry)
+    # Count consecutive occurrences of this (quality_class, likely_need) pair
+    count = sum(
+        1 for e in _WATCH_HISTORY
+        if e["quality_class"] == quality_class and e["likely_need"] == likely_need
+    )
+    if count >= _WATCH_THRESHOLD:
+        return f"repeated_{quality_class}_watch"
+    return None
+
 
 # Minimal telemetry emitter for v71 diagnostics
 class _MinimalTelemetryEmitter:
@@ -2170,6 +2201,17 @@ def cmd_serve(args):
                     trust_signal = self._build_trust_signal(tl_id)
                     if trust_signal:
                         payload["_trust_signal"] = trust_signal
+                    # ── Repeated quality watch (governance bridge, metadata only) ──
+                    # Detect repeated quality degradation for same need category.
+                    # Threshold: 3 consecutive same (quality_class, likely_need) pairs.
+                    # Note is metadata only — never changes user-facing message.
+                    from interpretation import interpret_human_turn
+                    qclass = payload.get("_quality_class") or "unknown"
+                    itrn = interpret_human_turn(message)
+                    lneed = str(itrn.get("likely_need") or "unknown")
+                    qnote = _check_quality_watch(qclass, lneed)
+                    if qnote:
+                        payload["_quality_note"] = qnote
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
