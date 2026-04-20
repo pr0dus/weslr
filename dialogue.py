@@ -532,7 +532,16 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
     topic: the artifact subject
     content: dict with hypothesis, confidence, limitations, next_experiment, quality_class
 
-    All explanations are grounded in actual artifact fields — no hallucination.
+    Doctrine enforcement:
+    - If artifact present: must include what it says + (confidence OR limitation)
+    - If proposal context present: must include why change was suggested
+    - Never generic summaries, never hidden certainty, never pretending applied
+
+    Level behavior:
+    - beginner: simple explanation, minimal jargon
+    - student: explain change + why it matters
+    - technical: include confidence, limitations, structure
+    - seminar: include implications + discussion points
     """
     hyp = str(content.get("hypothesis", "")).strip() or "No hypothesis recorded."
     conf = content.get("confidence", {})
@@ -552,44 +561,71 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
     lim_list = lim if isinstance(lim, list) else [str(lim)]
     lim_str = " ".join(l.strip() for l in lim_list if l.strip()) or "No limitations recorded."
 
+    # Confidence label for display
+    conf_label = f"{conf_level}" + (" (verified internally)" if conf_verified else " (not verified externally)")
+
+    # Proposal context: surfaced when present
+    proposal_text = str(content.get("proposal_text") or "").strip()
+    why_note = f"\n\nWhy this was suggested: {proposal_text[:150]}" if proposal_text else ""
+
     if level == "beginner":
+        # Must include: what it says + (confidence OR limitation), minimal jargon
         return (
             f"Here's what this artifact is about (simple terms):\n\n"
             f"**What it says:** {hyp[:200]}\n\n"
             f"**How confident:** The system rated this as {conf_level} confidence — meaning "
             f"{'it has checked this internally' if conf_verified else 'it still needs outside checking to be sure'}.\n\n"
             f"**What might be wrong:** {lim_str[:200]}\n\n"
-            f"**What to do next:** {nxt[:150]}"
+            f"**What to do next:** {nxt[:150]}{why_note}"
         )
 
     elif level == "student":
+        # Must include: what changed + why it matters, explain confidence, limitations
+        confidence_note = (
+            f"Confidence is {conf_level} — "
+            f"{'the system has verified this internally.' if conf_verified else 'the system has NOT verified this externally — treat as provisional.'}"
+        )
         return (
             f"Artifact explanation (student level):\n\n"
             f"Hypothesis: {hyp[:300]}\n\n"
-            f"Quality class: {qclass} — this tells you how strongly the evidence supports the claim. "
-            f"Confidence level {conf_level} means the system {'has verified this routing internally' if conf_verified else 'has NOT verified this externally — treat as provisional'}.\n\n"
+            f"Quality class: {qclass} — this tells you how strongly the evidence supports the claim.\n"
+            f"Confidence: {confidence_note}\n\n"
             f"Limitations: {lim_str[:250]}\n\n"
-            f"Next step: {nxt[:200]}"
+            f"Next step: {nxt[:200]}{why_note}"
         )
 
     elif level == "technical":
+        # Must include: confidence, limitations, structure
         return (
             f"Technical artifact breakdown:\n\n"
             f"Quality class: {qclass} | Truth class: {conf_tclass} | Verified: {conf_verified}\n\n"
             f"Hypothesis: {hyp}\n\n"
-            f"Confidence matrix: level={conf_level}, verified={conf_verified}\n\n"
+            f"Confidence matrix: level={conf_level}, verified={conf_verified}, truth_class={conf_tclass}\n\n"
             f"Limitations: {lim_str}\n\n"
-            f"Next experiment: {nxt}"
+            f"Next experiment: {nxt}{why_note}"
         )
 
     elif level == "seminar":
+        # Must include: implications + discussion points, approval status
+        approved = qclass in ("strong_verified", "grounded_reasoning")
+        approval_note = (
+            "This artifact has been reviewed and approved."
+            if approved
+            else "This artifact remains in draft state — operator review required before external presentation."
+        )
+        discussion_points = (
+            f"\n\nSuggested discussion points:\n"
+            f"- What would external verification look like for this claim?\n"
+            f"- How do the limitations affect the strength of the hypothesis?\n"
+            f"- What would the next experiment need to confirm or refute?"
+            if nxt else ""
+        )
         return (
             f"Seminar-focused artifact briefing:\n\n"
             f"Core claim: {hyp[:400]}\n\n"
-            f"Quality verdict: {qclass} ({conf_level}, verified={conf_verified}, truth_class={conf_tclass})\n\n"
+            f"Quality verdict: {qclass} ({conf_label})\n\n"
             f"Key limitation to disclose: {lim_str[:300]}\n\n"
-            f"Recommended focus for discussion: {nxt[:200]}\n\n"
-            f"Note: This artifact {'has been reviewed and approved' if qclass in ('strong_verified', 'grounded_reasoning') else 'remains in draft state — operator review required before external presentation.'}"
+            f"{approval_note}{why_note}{discussion_points}"
         )
 
     # Fallback
@@ -600,6 +636,11 @@ def _compare_versions_for_teaching(v_a: dict, v_b: dict, level: str) -> str:
     """Explain the difference between two artifact versions at a given level.
 
     level: beginner | student | technical | seminar
+
+    Doctrine enforcement:
+    - Must include: what changed, whether Version B is proposed or approved
+    - Must include: why the revision was suggested (proposal_text from Version B)
+    - Never pretend Version B is already applied or approved
     """
     content_a = v_a.get("content", {})
     content_b = v_b.get("content", {})
@@ -608,6 +649,8 @@ def _compare_versions_for_teaching(v_a: dict, v_b: dict, level: str) -> str:
     label_b = v_b.get("version_label", "?")
     approval_a = v_a.get("approval_state", "unknown")
     approval_b = v_b.get("approval_state", "unknown")
+    proposal_text = str(v_b.get("proposal_text") or "").strip()
+    source_type = v_b.get("source_type", "unknown")
 
     changed = []
     diffs = {}
@@ -619,28 +662,30 @@ def _compare_versions_for_teaching(v_a: dict, v_b: dict, level: str) -> str:
             diffs[key] = {"from": val_a, "to": val_b}
 
     if not changed:
-        return f"Version {label_a} and Version {label_b} are substantively identical."
+        base = f"Version {label_a} and Version {label_b} are substantively identical."
+        if proposal_text:
+            base += f" Note: WESLR proposed this revision for the following reason: {proposal_text[:200]}"
+        return base
 
-    def _field_summary(key, d):
-        a = str(d["from"])[:80]
-        b = str(d["to"])[:80]
-        return f"- **{key}**: was \"{a}\" → now \"{b}\""
+    diff_lines = "\n".join(f"- **{k}**: was \"{str(diffs[k]['from'])[:80]}\" → now \"{str(diffs[k]['to'])[:80]}\"" for k in changed)
 
-    diff_lines = "\n".join(_field_summary(k, diffs[k]) for k in changed)
+    # Build why note — always surfaced so user knows why the revision was suggested
+    why_note = ""
+    if proposal_text:
+        why_note = f"\n\nWhy the revision was suggested: {proposal_text[:200]}"
+    elif source_type == "proposed_revision" and not proposal_text:
+        why_note = "\n\nWhy the revision was suggested: No specific diagnosis recorded for this revision."
+
+    # Status label for Version B
+    status_b = f"Version {label_b} is {approval_b}. Only an operator can approve and export it."
+    if approval_b == "approved":
+        status_b = f"Version {label_b} has been approved. It is still a proposed revision — the original Version {label_a} is retained as the canonical record."
 
     if level == "beginner":
-        improved = [k for k in changed if diffs[k]["to"] not in ("", "unknown")]
-        worse = [k for k in changed if diffs[k]["to"] in ("", "unknown")]
-        improvement_note = ""
-        if improved:
-            improvement_note = f"\n\nThings that got better: {', '.join(improved)}."
-        if worse:
-            improvement_note += f"\n\nThings that may have changed in ways that need checking: {', '.join(worse)}."
         return (
-            f"Version {label_a} is the original. Version {label_b} is a proposed revision.\n\n"
+            f"Version {label_a} is the original. Version {label_b} is a proposed revision — it has not been approved yet.\n\n"
             f"What's different:\n{diff_lines}\n\n"
-            f"Approval status: Version {label_a} is {approval_a}. Version {label_b} is {approval_b}. "
-            f"Only an operator can approve.{improvement_note}"
+            f"Approval status: Version {label_a} is {approval_a}. {status_b}{why_note}"
         )
 
     elif level == "student":
@@ -649,21 +694,22 @@ def _compare_versions_for_teaching(v_a: dict, v_b: dict, level: str) -> str:
             f"Changed fields: {', '.join(changed)}\n\n"
             f"{diff_lines}\n\n"
             f"Approval: Version {label_a}={approval_a}, Version {label_b}={approval_b}. "
-            f"Version {label_b} requires operator approval before it can be exported."
+            f"Version {label_b} requires operator approval before it can be exported.{why_note}"
         )
 
     elif level == "technical":
         lines = [f"Version {label_a} → {label_b} | Approval: {approval_a} / {approval_b}"]
         for k in changed:
             lines.append(f"  {k}: from={str(diffs[k]['from'])[:60]} to={str(diffs[k]['to'])[:60]}")
+        if why_note:
+            lines.append(f"  Revision reason:{proposal_text[:120] if proposal_text else ' (not recorded)'}")
         return "\n".join(lines)
 
     elif level == "seminar":
         return (
             f"Seminar version briefing: Version {label_a} (original, {approval_a}) → Version {label_b} (proposed, {approval_b})\n\n"
             f"Changed: {', '.join(changed)}\n\n{diff_lines}\n\n"
-            f"Version {label_b} requires operator approval. "
-            f"Export of any version requires approval — version B is not auto-promoted."
+            f"{status_b}{why_note}"
         )
 
     return diff_lines
