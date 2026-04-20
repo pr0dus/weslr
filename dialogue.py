@@ -57,6 +57,41 @@ def _get_valence_context() -> dict:
         return {"avoided_pain": 0, "sought_pleasure": 0, "total_tradeoffs": 0}
 
 
+def _build_cross_modal_context(research_context: dict | None) -> dict | None:
+    """Build cross-modal linking metadata from research_context.
+
+    Light linking so teaching outputs, version comparisons, and diagrams
+    can reference the same artifact/version context. Additive only.
+    """
+    if not research_context:
+        return None
+    _bid = research_context.get("bundle_id") or research_context.get("memo", {}).get("bundle_id")
+    _vid = research_context.get("version_id")
+    _content = research_context.get("content") or {}
+    _memo = research_context.get("memo", {})
+    _cmc = {}
+    if _bid:
+        _cmc["bundle_id"] = _bid
+    if _vid:
+        _cmc["version_id"] = _vid
+    elif _content.get("version_label"):
+        _cmc["version_id"] = f"{_bid}-v{_content['version_label']}" if _bid else None
+    if research_context.get("version_a") or research_context.get("version_b"):
+        _cmc["comparison_mode"] = True
+        _cmc["versions"] = [
+            research_context.get("version_a", {}).get("version_id"),
+            research_context.get("version_b", {}).get("version_id"),
+        ]
+    if _memo.get("confidence_matrix") or _memo.get("governance_timeline"):
+        _cmc["diagrams_available"] = []
+        if _memo.get("confidence_matrix"):
+            _cmc["diagrams_available"].append("confidence_matrix")
+        if _memo.get("governance_timeline"):
+            _cmc["diagrams_available"].append("governance_timeline")
+    _cmc["research_question"] = research_context.get("topic") or research_context.get("title")
+    return _cmc if _cmc else None
+
+
 def _get_consciousness_context() -> dict:
     """Get consciousness detector context for safety transparency."""
     try:
@@ -525,7 +560,7 @@ def synthesize_concept_or_self_reply(
     return None
 
 
-def _teach_artifact(level: str, topic: str, content: dict) -> str:
+def _teach_artifact(level: str, topic: str, content: dict, bundle_id: str | None = None, version_id: str | None = None, diagrams: list | None = None, research_question: str | None = None) -> str:
     """Produce a level-specific explanation of an artifact.
 
     level: beginner | student | technical | seminar
@@ -568,6 +603,22 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
     proposal_text = str(content.get("proposal_text") or "").strip()
     why_note = f"\n\nWhy this was suggested: {proposal_text[:150]}" if proposal_text else ""
 
+    # Cross-modal links in output
+    context_note = ""
+    if bundle_id or version_id:
+        parts = []
+        if version_id:
+            parts.append(f"Version {version_id.split('-')[-1]}")
+        if bundle_id:
+            parts.append(f"Bundle {bundle_id[:8]}...")
+        context_note = f"\n\n[This explanation refers to {' / '.join(parts)}]"
+    if diagrams:
+        context_note += f" | Diagrams available: {', '.join(diagrams)}"
+    if research_question:
+        context_note += f" | Research question: {research_question[:80]}"
+    if context_note and context_note not in why_note:
+        context_note = context_note.replace("\n\n", "\n")  # keep single line for cleanliness
+
     if level == "beginner":
         # Must include: what it says + (confidence OR limitation), minimal jargon
         return (
@@ -576,7 +627,7 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
             f"**How confident:** The system rated this as {conf_level} confidence — meaning "
             f"{'it has checked this internally' if conf_verified else 'it still needs outside checking to be sure'}.\n\n"
             f"**What might be wrong:** {lim_str[:200]}\n\n"
-            f"**What to do next:** {nxt[:150]}{why_note}"
+            f"**What to do next:** {nxt[:150]}{why_note}{context_note}"
         )
 
     elif level == "student":
@@ -591,14 +642,14 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
             f"Quality class: {qclass} — this tells you how strongly the evidence supports the claim.\n"
             f"Confidence: {confidence_note}\n\n"
             f"Limitations: {lim_str[:250]}\n\n"
-            f"Next step: {nxt[:200]}{why_note}"
+            f"Next step: {nxt[:200]}{why_note}{context_note}"
         )
 
     elif level == "technical":
         # Must include: confidence, limitations, structure
         return (
             f"Technical artifact breakdown:\n\n"
-            f"Quality class: {qclass} | Truth class: {conf_tclass} | Verified: {conf_verified}\n\n"
+            f"Quality class: {qclass} | Truth class: {conf_tclass} | Verified: {conf_verified}{context_note}\n\n"
             f"Hypothesis: {hyp}\n\n"
             f"Confidence matrix: level={conf_level}, verified={conf_verified}, truth_class={conf_tclass}\n\n"
             f"Limitations: {lim_str}\n\n"
@@ -625,7 +676,7 @@ def _teach_artifact(level: str, topic: str, content: dict) -> str:
             f"Core claim: {hyp[:400]}\n\n"
             f"Quality verdict: {qclass} ({conf_label})\n\n"
             f"Key limitation to disclose: {lim_str[:300]}\n\n"
-            f"{approval_note}{why_note}{discussion_points}"
+            f"{approval_note}{why_note}{discussion_points}{context_note}"
         )
 
     # Fallback
@@ -1604,17 +1655,26 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
 
             elif lower_message.startswith(("teach this", "teach me about", "teach about artifact", "explain simply", "explain for beginner", "explain at beginner", "beginner explain")):
                 _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
-                content = (research_context.get("content") or {}) if research_context else {}
-                message = _teach_artifact("beginner", lead_topic, content)
+                rc = research_context or {}
+                content = rc.get("content") or {}
+                bid = rc.get("bundle_id")
+                vid = rc.get("version_id")
+                diagrams = None
+                rq = rc.get("topic") or rc.get("title")
+                message = _teach_artifact("beginner", lead_topic, content, bundle_id=bid, version_id=vid, diagrams=diagrams, research_question=rq)
             elif lower_message.startswith(("explain for student", "explain at student", "student explain", "explain technically", "explain at technical", "technical explain")):
                 _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
-                content = (research_context.get("content") or {}) if research_context else {}
+                rc = research_context or {}
+                content = rc.get("content") or {}
+                bid = rc.get("bundle_id")
+                vid = rc.get("version_id")
                 level = "student" if "student" in lower_message else "technical"
-                message = _teach_artifact(level, lead_topic, content)
+                message = _teach_artifact(level, lead_topic, content, bundle_id=bid, version_id=vid, diagrams=None, research_question=rc.get("topic") or rc.get("title"))
             elif lower_message.startswith(("explain for seminar", "explain at seminar", "seminar explain", "what should a seminar", "seminar audience")):
                 _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
-                content = (research_context.get("content") or {}) if research_context else {}
-                message = _teach_artifact("seminar", lead_topic, content)
+                rc = research_context or {}
+                content = rc.get("content") or {}
+                message = _teach_artifact("seminar", lead_topic, content, bundle_id=rc.get("bundle_id"), version_id=rc.get("version_id"), diagrams=None, research_question=rc.get("topic") or rc.get("title"))
             elif "student misunderstand" in lower_message or "confusion point" in lower_message or "what might a student miss" in lower_message:
                 _apply_signal(_response_signals, "teaching", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
                 content = (research_context.get("content") or {}) if research_context else {}
@@ -1772,9 +1832,38 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         else:
             _quality = "unknown"
 
+        # ── Cross-modal context linking ─────────────────────────────────────
+        # Light linking so teaching outputs, version comparisons, and diagrams
+        # can reference the same artifact/version context. Additive only.
+        _cmc = {}
+        if research_context:
+            _bid = research_context.get("bundle_id") or research_context.get("memo", {}).get("bundle_id")
+            _vid = research_context.get("version_id")
+            _content = research_context.get("content") or {}
+            _memo = research_context.get("memo", {})
+            if _bid:
+                _cmc["bundle_id"] = _bid
+            if _vid:
+                _cmc["version_id"] = _vid
+            elif _content.get("version_label"):
+                _cmc["version_id"] = f"{_bid}-v{_content['version_label']}" if _bid else None
+            if research_context.get("version_a") or research_context.get("version_b"):
+                _cmc["comparison_mode"] = True
+                _cmc["versions"] = [
+                    research_context.get("version_a", {}).get("version_id"),
+                    research_context.get("version_b", {}).get("version_id"),
+                ]
+            if _memo.get("confidence_matrix") or _memo.get("governance_timeline"):
+                _cmc["diagrams_available"] = []
+                if _memo.get("confidence_matrix"):
+                    _cmc["diagrams_available"].append("confidence_matrix")
+                if _memo.get("governance_timeline"):
+                    _cmc["diagrams_available"].append("governance_timeline")
+            _cmc["research_question"] = research_context.get("topic") or research_context.get("title")
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
-               "_quality_class": _quality}
+               "_quality_class": _quality, "_cross_modal_context": _build_cross_modal_context(research_context)}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
