@@ -4352,6 +4352,77 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(payload)
                     return
+            # Question Review API — POST answer
+            elif self.path.split("?")[0].startswith("/api/questions/") and self.path.split("?")[0].endswith("/answer") and self.command == "POST":
+                try:
+                    match = __import__("re").match(r"^/api/questions/([^/]+)/answer$", self.path.split("?")[0])
+                    if not match:
+                        raise ValueError("invalid path")
+                    question_id = match.group(1)
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    data = json.loads(body) if body else {}
+                    summary = data.get("answer_summary", "").strip()
+                    if not summary:
+                        payload = json.dumps({"error": "answer_summary_required"}).encode("utf-8")
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
+                    from weslr.open_question_registry import mark_answered
+                    ok = mark_answered(question_id, summary)
+                    if ok:
+                        payload = json.dumps({"result": "answered", "question_id": question_id}).encode("utf-8")
+                        self.send_response(200)
+                    else:
+                        payload = json.dumps({"error": "not_found", "question_id": question_id}).encode("utf-8")
+                        self.send_response(404)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "answer_failed", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
+            # Question Review API — POST defer
+            elif self.path.split("?")[0].startswith("/api/questions/") and self.path.split("?")[0].endswith("/defer") and self.command == "POST":
+                try:
+                    match = __import__("re").match(r"^/api/questions/([^/]+)/defer$", self.path.split("?")[0])
+                    if not match:
+                        raise ValueError("invalid path")
+                    question_id = match.group(1)
+                    content_length = int(self.headers.get("Content-Length", 0))
+                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                    data = json.loads(body) if body else {}
+                    reason = data.get("reason", "").strip()
+                    if not reason:
+                        reason = "operator deferred"
+                    from weslr.open_question_registry import mark_deferred
+                    ok = mark_deferred(question_id, reason)
+                    if ok:
+                        payload = json.dumps({"result": "deferred", "question_id": question_id}).encode("utf-8")
+                        self.send_response(200)
+                    else:
+                        payload = json.dumps({"error": "not_found", "question_id": question_id}).encode("utf-8")
+                        self.send_response(404)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "defer_failed", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
 
             else:
                 self.send_error(404, "Unknown endpoint")
@@ -4428,6 +4499,53 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(payload)
+            # GET /api/questions — list open questions with optional resolution info
+            path = self.path.split("?")[0]
+            if path == "/api/questions" and self.command == "GET":
+                try:
+                    from urllib.parse import parse_qs, urlparse
+                    parsed = urlparse(self.path)
+                    params = parse_qs(parsed.query)
+                    state_filter = params.get("state", ["open"])[0]
+                    limit = min(int(params.get("limit", ["20"])[0]), 50)
+
+                    from weslr.open_question_registry import load_registry
+                    data = load_registry()
+
+                    if state_filter == "all":
+                        items = data.get("open", []) + data.get("closed", [])
+                    elif state_filter == "closed":
+                        items = data.get("closed", [])
+                    else:
+                        items = data.get("open", [])
+
+                    items = items[:limit]
+
+                    enriched = []
+                    for item in items:
+                        enriched_item = dict(item)
+                        enriched_item["_has_resolution"] = False
+                        enriched_item["_resolution"] = None
+                        enriched.append(enriched_item)
+
+                    payload = json.dumps({
+                        "state_filter": state_filter,
+                        "count": len(enriched),
+                        "items": enriched,
+                    }, indent=2).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except Exception as e:
+                    payload = json.dumps({"error": "questions_unavailable", "detail": str(e)}).encode("utf-8")
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(payload)
+                return
+
                 return
             # Machine-readable health check — lightweight, no expensive paths
             if self.path == "/api/health":

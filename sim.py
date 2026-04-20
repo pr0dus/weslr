@@ -3247,7 +3247,16 @@ def explain_artifact(meta: Dict) -> list[str]:
         reasons.append("artifact has external rejection evidence and needs rework")
     if meta.get("family"):
         reasons.append(f"artifact fits the {meta.get('family')} family")
-    return reasons[:5] or ["early artifact with limited explanation signals so far"]
+    from weslr.artifact_inquiry import suggest_inquiry_for_artifact, surface_inquiry_item, suggest_resolution_for_artifact, surface_resolution_item
+    exclude_ids = set()
+    inquiry_item = suggest_inquiry_for_artifact(meta)
+    if inquiry_item:
+        reasons.append(surface_inquiry_item(inquiry_item))
+        exclude_ids.add(inquiry_item["id"])
+    resolution = suggest_resolution_for_artifact(meta, exclude_question_ids=exclude_ids)
+    if resolution:
+        reasons.append(surface_resolution_item(resolution))
+    return reasons[:7] or ["early artifact with limited explanation signals so far"]
 
 
 def summarize_pack(pack: Dict) -> str:

@@ -100,3 +100,6 @@ collector/obj/
 # Test continuity artifacts
 weslr/tests/continuity/
 entity_graph.json
+
+# Open question registry (runtime state)
+open_question_registry.json
