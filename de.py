@@ -12,6 +12,11 @@ THEME_TRANSLATIONS = {
 }
 
 
+def uncertainty_response() -> str:
+    """Return a human-friendly uncertainty clarification request."""
+    return "Ich verstehe vielleicht nicht genau, was du meinst — kannst du genauer sagen, worauf du hinaus willst?"
+
+
 def translate_theme(theme: str) -> str:
     """Übersetze ein internes Thema ins Deutsche."""
     if not theme:

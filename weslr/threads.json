@@ -1,0 +1,383 @@
+{
+  "threads": [
+    {
+      "name": "PV Efficiency Work",
+      "id": "thr-8d47936d",
+      "state": "active",
+      "created_at": "2026-04-22T06:09:01.659530+00:00",
+      "updated_at": "2026-04-22T06:09:26.960912+00:00",
+      "tags": [
+        "photovoltaic",
+        "efficiency"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776838166957-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "timeline_resolution",
+          "added_at": "2026-04-22T06:09:26.959227+00:00",
+          "note": "Linked via timeline_resolution active thread"
+        },
+        {
+          "item_id": "art-1776838166959-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "timeline_resolution",
+          "added_at": "2026-04-22T06:09:26.960882+00:00",
+          "note": "Linked via timeline_resolution active thread"
+        }
+      ]
+    },
+    {
+      "name": "Work Session A",
+      "id": "thr-d3faaeba",
+      "state": "active",
+      "created_at": "2026-04-22T06:11:28.973684+00:00",
+      "updated_at": "2026-04-22T06:11:28.979909+00:00",
+      "tags": [
+        "test"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776838288975-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "timeline_resolution",
+          "added_at": "2026-04-22T06:11:28.976941+00:00",
+          "note": "Linked via timeline_resolution active thread"
+        },
+        {
+          "item_id": "art-1776838288977-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "timeline_resolution",
+          "added_at": "2026-04-22T06:11:28.979874+00:00",
+          "note": "Linked via timeline_resolution active thread"
+        }
+      ]
+    },
+    {
+      "name": "Integration Test Thread",
+      "id": "thr-1838ef0e",
+      "state": "active",
+      "created_at": "2026-04-22T06:18:33.333096+00:00",
+      "updated_at": "2026-04-22T06:18:33.338232+00:00",
+      "tags": [
+        "test"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776838713334-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "test",
+          "added_at": "2026-04-22T06:18:33.336578+00:00",
+          "note": ""
+        },
+        {
+          "item_id": "art-1776838713337-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "test",
+          "added_at": "2026-04-22T06:18:33.338204+00:00",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-session-a",
+      "id": "thr-4c3dda69",
+      "state": "active",
+      "created_at": "2026-04-22T06:50:14.706284+00:00",
+      "updated_at": "2026-04-22T06:50:14.717598+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776840614713-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T06:50:14.717549+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-session-a",
+      "id": "thr-bb8aab08",
+      "state": "active",
+      "created_at": "2026-04-22T06:50:14.741237+00:00",
+      "updated_at": "2026-04-22T06:50:14.742976+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776840614742-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T06:50:14.742950+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-session-a",
+      "id": "thr-05f61ba5",
+      "state": "active",
+      "created_at": "2026-04-22T06:51:36.349654+00:00",
+      "updated_at": "2026-04-22T06:51:36.356220+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776840696354-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T06:51:36.356115+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-session-a",
+      "id": "thr-6a7d0e2d",
+      "state": "active",
+      "created_at": "2026-04-22T06:51:48.565394+00:00",
+      "updated_at": "2026-04-22T06:51:48.569265+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776840708567-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T06:51:48.569224+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-session-a",
+      "id": "thr-c7f3b909",
+      "state": "active",
+      "created_at": "2026-04-22T07:35:56.552941+00:00",
+      "updated_at": "2026-04-22T07:35:56.558706+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776843356556-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T07:35:56.558677+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-session-a",
+      "id": "thr-088113be",
+      "state": "active",
+      "created_at": "2026-04-22T07:35:56.573809+00:00",
+      "updated_at": "2026-04-22T07:35:56.575803+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776843356574-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T07:35:56.575773+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-user",
+      "id": "thr-89874317",
+      "state": "active",
+      "created_at": "2026-04-22T09:29:47.874809+00:00",
+      "updated_at": "2026-04-22T09:29:47.878959+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776850187877-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T09:29:47.878941+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-user",
+      "id": "thr-1e3fc262",
+      "state": "active",
+      "created_at": "2026-04-22T09:29:47.924128+00:00",
+      "updated_at": "2026-04-22T09:29:47.925273+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776850187924-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T09:29:47.925258+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-user",
+      "id": "thr-50698e05",
+      "state": "active",
+      "created_at": "2026-04-22T09:59:11.489873+00:00",
+      "updated_at": "2026-04-22T09:59:11.493924+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776851951492-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T09:59:11.493907+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-user",
+      "id": "thr-4903ebb5",
+      "state": "active",
+      "created_at": "2026-04-22T09:59:11.541580+00:00",
+      "updated_at": "2026-04-22T09:59:11.542866+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776851951542-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T09:59:11.542848+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-user",
+      "id": "thr-3b005ca3",
+      "state": "active",
+      "created_at": "2026-04-22T19:26:26.465348+00:00",
+      "updated_at": "2026-04-22T19:26:26.469062+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776885986468-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T19:26:26.469044+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-user",
+      "id": "thr-66d7f3c5",
+      "state": "active",
+      "created_at": "2026-04-22T19:26:26.514176+00:00",
+      "updated_at": "2026-04-22T19:26:26.515487+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776885986514-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T19:26:26.515471+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc001-user",
+      "id": "thr-f43cc4db",
+      "state": "active",
+      "created_at": "2026-04-22T19:41:16.953706+00:00",
+      "updated_at": "2026-04-22T19:41:16.957625+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776886876956-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T19:41:16.957604+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    },
+    {
+      "name": "Eval Thread for csc008-user",
+      "id": "thr-871619e7",
+      "state": "active",
+      "created_at": "2026-04-22T19:41:17.048459+00:00",
+      "updated_at": "2026-04-22T19:41:17.049929+00:00",
+      "tags": [
+        "eval",
+        "cross-session"
+      ],
+      "items": [
+        {
+          "item_id": "art-1776886877049-1",
+          "item_type": "artifact",
+          "link_type": "explicit",
+          "added_by": "cross_session_artifact_eval",
+          "added_at": "2026-04-22T19:41:17.049911+00:00",
+          "note": "Linked via cross_session_artifact_eval Session A setup"
+        }
+      ]
+    }
+  ]
+}

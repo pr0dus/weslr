@@ -1,0 +1,34 @@
+# Restart Prompt — Clean Infinity Continuation
+
+## Workspace
+`/data/data/com.termux/files/home/.openclaw/workspace`
+
+## Exact Scope Boundaries
+- DO NOT touch WESLR continuity files (`.weslr/`, `continuity/`)
+- DO NOT trim or edit any session JSONL files
+- DO NOT redesign session-memory or compaction architecture
+- DO NOT change model config or Telegram settings
+
+## Current OpenClaw Facts
+- Primary model: `ollama/minimax-m2.7:cloud`, maxTokens: 16,384, context: 196,608
+- Telegram: DISABLED
+- Archived 303 inactive sessions (~217 MB) to `sessions/_archived_2026-04-22/`
+- Compaction mode: safeguard (not yet triggered, compactionCount: 0)
+- Active session: `agents/main/sessions/55a1f787-ce89-4c63-bade-978cd58112fc.jsonl` (~479 KB, raw full replay)
+
+## Infinity Facts
+- Main plugin: `plugins/infinity/` — MANIFEST SHOWS `enabled: false`
+- Commercial plugin, session immortality layer
+- Entry: `plugins/infinity/index.js`
+- Hooks: `plugins/infinity/hooks/` (on_capture, on_restore, etc.)
+- License: production 1oc tier, expires 2027-04-09, bound to website-oc-host
+- Staged plugin: `plugins/infinity-internal/` — manifest shows `enabled: true`, recently modified
+- Capsules: check `.openclaw/capsules/` for existing capsules
+
+## First Task
+Read the handoff in `reports/infinity_handoff_2026-04-22/`, then:
+1. Inspect `plugins/infinity/index.js` and `plugins/infinity/README.md`
+2. Inspect `plugins/infinity-internal/index.js`
+3. Check `.openclaw/capsules/` and `plugins/infinity/storage/` for any saved state
+4. Determine the minimal change to enable the commercial `infinity` plugin
+5. Report findings — do NOT make changes until findings are reviewed

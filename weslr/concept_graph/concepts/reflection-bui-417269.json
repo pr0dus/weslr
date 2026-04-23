@@ -1,0 +1,33 @@
+{
+  "id": "reflection-bui-417269",
+  "name": "Reflection: builder",
+  "type": "concept",
+  "description": "Inner thought from builder role",
+  "aliases": [],
+  "tags": [
+    "reflection",
+    "self",
+    "thought"
+  ],
+  "confidence": 0.7,
+  "created_at": 1776843389,
+  "last_updated": 1776843389,
+  "is_temporary": false,
+  "is_ghost": false,
+  "links": [],
+  "evidence": [
+    {
+      "source_id": "reflection-bui-417269",
+      "source_type": "model_reasoning",
+      "content": "{\"kind\": \"inner_thought\", \"role\": \"builder\", \"summary\": \"Current time: 2026-04-05.\", \"concern\": \"Time tracking.\", \"intent\": \"Maintain awareness.\", \"should_speak\": false, \"self_mod_hint\": \"\"}",
+      "confidence": 0.7,
+      "timestamp": 1776843389,
+      "category": "model-asserted",
+      "traceable": true,
+      "reason": "Inner thought from builder role",
+      "source_file": "llm_runtime.py",
+      "source_message_id": null
+    }
+  ],
+  "metadata": {}
+}

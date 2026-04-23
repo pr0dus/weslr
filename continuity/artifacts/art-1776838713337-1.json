@@ -1,0 +1,10 @@
+{
+  "artifact_id": "art-1776838713337-1",
+  "created_at": "2026-04-22T06:18:33Z",
+  "type": "artifact_revision",
+  "content": "Second artifact content \u2014 LATEST in thread",
+  "source": "test",
+  "context": {
+    "thread_id": "thr-1838ef0e"
+  }
+}

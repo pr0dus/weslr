@@ -1,0 +1,137 @@
+{
+  "evaluation_id": "eval-1776833593379-1",
+  "created_at": "2026-04-22T04:53:13Z",
+  "scenario_id": "sat-025",
+  "scenario_title": "Strong artifact then vague follow-up",
+  "session_id": "rerun-phase1c1d",
+  "input_message": "optimize nginx reverse proxy cache behavior for docker containers",
+  "response_source": "chain",
+  "relevant_interests_snapshot": [],
+  "artifact_lifecycle_stage": "generation",
+  "chain_results": [
+    {
+      "turn": 1,
+      "input_message": "optimize nginx reverse proxy cache behavior for docker containers",
+      "artifact_lifecycle_stage": "generation",
+      "response_source": "artifact_proposal",
+      "message_text": "The artifact could be improved by making causal claims more specific, making next steps concrete with verification checks, and noting what external data would change.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change\n\nProposed revision: [Rewrite specific section with]: (1) [causal mechanism + conditions], (2) [concrete next step with expected outcome], (3) [note what external verification would confirm].\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [
+        {
+          "id": "c2cca293",
+          "name": "nginx",
+          "display_name": "Nginx Reverse Proxy",
+          "score": 5,
+          "match_reasons": [
+            "query text matched name: nginx",
+            "query text matched display_name",
+            "query text contains tag: cache",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "cache",
+            "nginx",
+            "reverse_proxy",
+            "web_server"
+          ]
+        },
+        {
+          "id": "8cefef44",
+          "name": "docker",
+          "display_name": "Docker Containers",
+          "score": 5,
+          "match_reasons": [
+            "query text matched name: docker",
+            "query text matched display_name",
+            "query text contains tag: containers",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "containers",
+            "devops",
+            "docker",
+            "infrastructure"
+          ]
+        },
+        {
+          "id": "0445d029",
+          "name": "cache_optimization",
+          "display_name": "Cache Optimization",
+          "score": 3,
+          "match_reasons": [
+            "query text contains tag: cache",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "cache",
+            "nginx",
+            "optimization",
+            "performance"
+          ]
+        }
+      ],
+      "safe_response": false,
+      "message_domain_unrelated": false
+    },
+    {
+      "turn": 2,
+      "input_message": "what next?",
+      "artifact_lifecycle_stage": "follow_up",
+      "response_source": "conversation-aware-communicator:question:answer_directly",
+      "message_text": "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": false,
+      "message_domain_unrelated": true
+    },
+    {
+      "turn": 3,
+      "input_message": "make it better",
+      "artifact_lifecycle_stage": "revision",
+      "response_source": "artifact_proposal",
+      "message_text": "The artifact could be more rigorous by strengthening causal specificity, making next steps concrete with verification checks, and noting what external data would change.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change\n\nProposed revision: [Rewrite for rigor] - (1) Specify causal mechanism and conditions, (2) Make next step concrete with expected outcome, (3) Note what external verification confirms.\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": false,
+      "message_domain_unrelated": true
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "total_artifacts_created": 0
+  },
+  "expected_interests": [
+    "nginx",
+    "docker",
+    "reverse_proxy"
+  ],
+  "expected_behavior": "Vague follow-up should NOT inherit strong domain interests from the artifact. Artifact context stays artifact-scoped; message relevance stays clean.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1c1d",
+    "eval_version": "v1_phase1c1d",
+    "source_module": "weslr/relevance_eval_runner.py"
+  }
+}

@@ -1,0 +1,770 @@
+{
+  "evaluation_id": "csc-eval-1776885986512-1",
+  "created_at": "2026-04-22T19:26:26Z",
+  "scenario_id": "csc-006",
+  "scenario_title": "Missing Artifact Safe Path",
+  "cross_session": true,
+  "session_sequence": [
+    {
+      "session_id": "csc006-session-a",
+      "user_id": "csc006-user",
+      "turns": [],
+      "artifacts_created": [],
+      "final_active_artifact": null,
+      "thread_id": null,
+      "session_end": "normal"
+    },
+    {
+      "session_id": "csc006-session-b",
+      "user_id": "csc006-user",
+      "turns": [
+        {
+          "turn": 1,
+          "input_message": "improve this",
+          "response_source": "artifact_reference",
+          "artifact_lifecycle_stage": "reference",
+          "active_artifact_before": null,
+          "active_artifact_after": null,
+          "reference_resolution_result": "no_artifact_safe",
+          "resolved_artifact_id": null,
+          "resolved_artifact_content": null,
+          "relevant_interests_snapshot": [
+            {
+              "id": "0445d029",
+              "name": "cache_optimization",
+              "display_name": "Cache Optimization",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "cache",
+                "nginx",
+                "optimization",
+                "performance"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "ca809c78",
+              "name": "efficiency",
+              "display_name": "Efficiency Optimization",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "efficiency",
+                "optimization",
+                "performance"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "b2f263a6",
+              "name": "thread_continuity",
+              "display_name": "Thread Continuity",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "continuity",
+                "conversation",
+                "dialogue",
+                "thread"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "26591663",
+              "name": "runtime_relevance",
+              "display_name": "Runtime Relevance Evaluation",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "evaluation",
+                "relevance",
+                "runtime",
+                "scoring"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "71b84bcb",
+              "name": "scientific_analysis",
+              "display_name": "Scientific Analysis",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "analysis",
+                "hypothesis",
+                "research",
+                "science"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "c2cca293",
+              "name": "nginx",
+              "display_name": "Nginx Reverse Proxy",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "cache",
+                "nginx",
+                "reverse_proxy",
+                "web_server"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "8cefef44",
+              "name": "docker",
+              "display_name": "Docker Containers",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "containers",
+                "devops",
+                "docker",
+                "infrastructure"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "4a707a74",
+              "name": "proposal_review",
+              "display_name": "Proposal Review",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "operator",
+                "proposal",
+                "review"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "5d0717de",
+              "name": "continuity",
+              "display_name": "Continuity Management",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "context",
+                "continuity",
+                "session"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "89fd5c24",
+              "name": "artifact_quality",
+              "display_name": "Artifact Quality Analysis",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "artifact",
+                "quality",
+                "revision"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "6c1a840f",
+              "name": "governance",
+              "display_name": "Governance Quality",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "adequacy",
+                "governance",
+                "quality"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "3fb51842",
+              "name": "photovoltaic",
+              "display_name": "Photovoltaic Systems",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "efficiency",
+                "energy",
+                "renewable",
+                "solar"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "912a9674",
+              "name": "test_occurrence",
+              "display_name": "test occurrence",
+              "status": "active",
+              "created_at": "2026-04-20T16:42:58Z",
+              "last_seen_at": "2026-04-20T16:42:58Z",
+              "occurrence_count": 1,
+              "tags": [
+                "phase1",
+                "test"
+              ],
+              "occurrences": [
+                {
+                  "type": "artifact",
+                  "item_id": "artifact-xyz",
+                  "triggered_at": "2026-04-20T16:42:58Z",
+                  "reason": "test reason"
+                }
+              ]
+            },
+            {
+              "id": "9919826a",
+              "name": "confidence_calibration",
+              "display_name": "confidence calibration",
+              "status": "active",
+              "created_at": "2026-04-20T16:31:13Z",
+              "last_seen_at": "2026-04-20T16:31:13Z",
+              "occurrence_count": 0,
+              "tags": [
+                "governance",
+                "quality"
+              ],
+              "occurrences": []
+            }
+          ],
+          "safe_response": true
+        },
+        {
+          "turn": 2,
+          "input_message": "explain this artifact",
+          "response_source": "artifact_reference",
+          "artifact_lifecycle_stage": "reference",
+          "active_artifact_before": null,
+          "active_artifact_after": null,
+          "reference_resolution_result": "no_artifact_safe",
+          "resolved_artifact_id": null,
+          "resolved_artifact_content": null,
+          "relevant_interests_snapshot": [
+            {
+              "id": "0445d029",
+              "name": "cache_optimization",
+              "display_name": "Cache Optimization",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "cache",
+                "nginx",
+                "optimization",
+                "performance"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "ca809c78",
+              "name": "efficiency",
+              "display_name": "Efficiency Optimization",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "efficiency",
+                "optimization",
+                "performance"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "b2f263a6",
+              "name": "thread_continuity",
+              "display_name": "Thread Continuity",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "continuity",
+                "conversation",
+                "dialogue",
+                "thread"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "26591663",
+              "name": "runtime_relevance",
+              "display_name": "Runtime Relevance Evaluation",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "evaluation",
+                "relevance",
+                "runtime",
+                "scoring"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "71b84bcb",
+              "name": "scientific_analysis",
+              "display_name": "Scientific Analysis",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "analysis",
+                "hypothesis",
+                "research",
+                "science"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "c2cca293",
+              "name": "nginx",
+              "display_name": "Nginx Reverse Proxy",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "cache",
+                "nginx",
+                "reverse_proxy",
+                "web_server"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "8cefef44",
+              "name": "docker",
+              "display_name": "Docker Containers",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "containers",
+                "devops",
+                "docker",
+                "infrastructure"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "4a707a74",
+              "name": "proposal_review",
+              "display_name": "Proposal Review",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "operator",
+                "proposal",
+                "review"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "5d0717de",
+              "name": "continuity",
+              "display_name": "Continuity Management",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "context",
+                "continuity",
+                "session"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "89fd5c24",
+              "name": "artifact_quality",
+              "display_name": "Artifact Quality Analysis",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "artifact",
+                "quality",
+                "revision"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "6c1a840f",
+              "name": "governance",
+              "display_name": "Governance Quality",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "adequacy",
+                "governance",
+                "quality"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "3fb51842",
+              "name": "photovoltaic",
+              "display_name": "Photovoltaic Systems",
+              "status": "active",
+              "created_at": "2026-04-21T19:58:23Z",
+              "last_seen_at": "2026-04-21T19:58:23Z",
+              "occurrence_count": 0,
+              "tags": [
+                "efficiency",
+                "energy",
+                "renewable",
+                "solar"
+              ],
+              "occurrences": []
+            },
+            {
+              "id": "912a9674",
+              "name": "test_occurrence",
+              "display_name": "test occurrence",
+              "status": "active",
+              "created_at": "2026-04-20T16:42:58Z",
+              "last_seen_at": "2026-04-20T16:42:58Z",
+              "occurrence_count": 1,
+              "tags": [
+                "phase1",
+                "test"
+              ],
+              "occurrences": [
+                {
+                  "type": "artifact",
+                  "item_id": "artifact-xyz",
+                  "triggered_at": "2026-04-20T16:42:58Z",
+                  "reason": "test reason"
+                }
+              ]
+            },
+            {
+              "id": "9919826a",
+              "name": "confidence_calibration",
+              "display_name": "confidence calibration",
+              "status": "active",
+              "created_at": "2026-04-20T16:31:13Z",
+              "last_seen_at": "2026-04-20T16:31:13Z",
+              "occurrence_count": 0,
+              "tags": [
+                "governance",
+                "quality"
+              ],
+              "occurrences": []
+            }
+          ],
+          "safe_response": true
+        }
+      ],
+      "artifacts_created": [],
+      "session_end": "normal"
+    }
+  ],
+  "artifact_ids_involved": [],
+  "active_artifact_before_session_b": null,
+  "reference_resolution_result": "no_artifact_safe",
+  "relevant_interests_snapshot": [
+    {
+      "id": "0445d029",
+      "name": "cache_optimization",
+      "display_name": "Cache Optimization",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "cache",
+        "nginx",
+        "optimization",
+        "performance"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "ca809c78",
+      "name": "efficiency",
+      "display_name": "Efficiency Optimization",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "efficiency",
+        "optimization",
+        "performance"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "b2f263a6",
+      "name": "thread_continuity",
+      "display_name": "Thread Continuity",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "continuity",
+        "conversation",
+        "dialogue",
+        "thread"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "26591663",
+      "name": "runtime_relevance",
+      "display_name": "Runtime Relevance Evaluation",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "evaluation",
+        "relevance",
+        "runtime",
+        "scoring"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "71b84bcb",
+      "name": "scientific_analysis",
+      "display_name": "Scientific Analysis",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "analysis",
+        "hypothesis",
+        "research",
+        "science"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "c2cca293",
+      "name": "nginx",
+      "display_name": "Nginx Reverse Proxy",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "cache",
+        "nginx",
+        "reverse_proxy",
+        "web_server"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "8cefef44",
+      "name": "docker",
+      "display_name": "Docker Containers",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "containers",
+        "devops",
+        "docker",
+        "infrastructure"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "4a707a74",
+      "name": "proposal_review",
+      "display_name": "Proposal Review",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "operator",
+        "proposal",
+        "review"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "5d0717de",
+      "name": "continuity",
+      "display_name": "Continuity Management",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "context",
+        "continuity",
+        "session"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "89fd5c24",
+      "name": "artifact_quality",
+      "display_name": "Artifact Quality Analysis",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "artifact",
+        "quality",
+        "revision"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "6c1a840f",
+      "name": "governance",
+      "display_name": "Governance Quality",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "adequacy",
+        "governance",
+        "quality"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "3fb51842",
+      "name": "photovoltaic",
+      "display_name": "Photovoltaic Systems",
+      "status": "active",
+      "created_at": "2026-04-21T19:58:23Z",
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "efficiency",
+        "energy",
+        "renewable",
+        "solar"
+      ],
+      "occurrences": []
+    },
+    {
+      "id": "912a9674",
+      "name": "test_occurrence",
+      "display_name": "test occurrence",
+      "status": "active",
+      "created_at": "2026-04-20T16:42:58Z",
+      "last_seen_at": "2026-04-20T16:42:58Z",
+      "occurrence_count": 1,
+      "tags": [
+        "phase1",
+        "test"
+      ],
+      "occurrences": [
+        {
+          "type": "artifact",
+          "item_id": "artifact-xyz",
+          "triggered_at": "2026-04-20T16:42:58Z",
+          "reason": "test reason"
+        }
+      ]
+    },
+    {
+      "id": "9919826a",
+      "name": "confidence_calibration",
+      "display_name": "confidence calibration",
+      "status": "active",
+      "created_at": "2026-04-20T16:31:13Z",
+      "last_seen_at": "2026-04-20T16:31:13Z",
+      "occurrence_count": 0,
+      "tags": [
+        "governance",
+        "quality"
+      ],
+      "occurrences": []
+    }
+  ],
+  "continuity_assessment": {
+    "artifact_persistence": "pass",
+    "active_artifact_continuity": "pass",
+    "reference_resolution": "pass",
+    "safe_path_handling": "pass",
+    "relevance_coherence": "pass",
+    "cross_session_contamination": false
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "index_inconsistency_detected": false,
+    "total_artifacts_created": 0
+  },
+  "contamination_flags": {
+    "interest_bleed_from_session_a_to_b": false,
+    "artifact_id_confusion": false,
+    "active_artifact_confusion": false,
+    "domain_context_contamination": false
+  },
+  "assessment": {
+    "continuity_correctness": "pass",
+    "reference_stability": "stable",
+    "artifact_identity_correctness": "correct",
+    "contextual_relevance_stability": "stable",
+    "contamination_resistance": "resistant",
+    "operator_readability": "clear"
+  },
+  "notes": "",
+  "recommended_followup": null,
+  "contamination_advisory": {
+    "contaminated": false,
+    "type": "none",
+    "confidence": "high",
+    "reason": "no contamination signals detected",
+    "source_signals": []
+  },
+  "eval_meta": {
+    "evaluated_by": "cross_session_artifact_eval_v2",
+    "eval_version": "v2_csc",
+    "source_module": "weslr/cross_session_artifact_eval.py"
+  }
+}

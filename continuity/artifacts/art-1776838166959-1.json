@@ -1,0 +1,11 @@
+{
+  "artifact_id": "art-1776838166959-1",
+  "created_at": "2026-04-22T06:09:26Z",
+  "type": "artifact_revision",
+  "content": "Revised PV improvements: shading analysis shows east-side panel array needs microinverters. Temperature management via passive ventilation added.",
+  "source": "test",
+  "context": {
+    "thread_id": "thr-8d47936d",
+    "artifact_lifecycle_stage": "revision"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "infinity-internal",
+  "name": "Infinity Internal",
+  "version": "0.1.0",
+  "description": "Staged deterministic restart capsule for OpenClaw. Captures git state and active files for restart continuity.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "openclaw": {
+    "pluginVersion": 1,
+    "capabilities": ["capture", "restore"]
+  }
+}

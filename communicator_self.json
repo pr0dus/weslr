@@ -25,7 +25,92 @@
     "known_humans": [],
     "last_human_topic": "",
     "human_profiles": {},
-    "recent_human_messages": [],
+    "recent_human_messages": [
+      {
+        "id": "direct-1776788774",
+        "human": "you",
+        "message": "hello",
+        "topics": [],
+        "timestamp": 1776788774
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "hello",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "explain this artifact",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "hello explain this",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "what is python",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "how are you doing",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "hello",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "explain this artifact",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "hello explain this",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "what is python",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793448",
+        "human": "you",
+        "message": "how are you doing",
+        "topics": [],
+        "timestamp": 1776793448
+      },
+      {
+        "id": "direct-1776793497",
+        "human": "you",
+        "message": "hello",
+        "topics": [],
+        "timestamp": 1776793497
+      }
+    ],
     "recent_human_exchanges": [],
     "conversation_threads": {},
     "unresolved_shared_threads": []
@@ -197,5 +282,8 @@
     "last_biography_refresh_at": 1774820805
   },
   "self_evolution_log": [],
-  "updated_at": 1774820805
+  "updated_at": 1774820805,
+  "outbox_stats": {
+    "last_outbox_type": "human_response"
+  }
 }

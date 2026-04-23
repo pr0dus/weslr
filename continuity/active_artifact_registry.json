@@ -1,0 +1,66 @@
+{
+  "session-001": {
+    "current_artifact_id": "art-1776800203429-1",
+    "last_updated": 1776800203430
+  },
+  "test-lifecycle": {
+    "current_artifact_id": "art-1776802663441-1",
+    "last_updated": 1776802663441
+  },
+  "debug-phase1b": {
+    "current_artifact_id": "art-1776802702297-1",
+    "last_updated": 1776802702298
+  },
+  "s2": {
+    "current_artifact_id": "art-1776802809252-1",
+    "last_updated": 1776802809254
+  },
+  "lifecycle-test": {
+    "current_artifact_id": "art-1776802819173-1",
+    "last_updated": 1776802819174
+  },
+  "final-verify": {
+    "current_artifact_id": "art-1776802843477-1",
+    "last_updated": 1776802843478
+  },
+  "full-lifecycle": {
+    "current_artifact_id": "art-1776802878687-1",
+    "last_updated": 1776802878688
+  },
+  "rescore-test": {
+    "current_artifact_id": "art-1776802905796-1",
+    "last_updated": 1776802905796
+  },
+  "sat011-verify": {
+    "current_artifact_id": "art-1776802924102-1",
+    "last_updated": 1776802924102
+  },
+  "test-phase1b": {
+    "current_artifact_id": "art-1776802982043-1",
+    "last_updated": 1776802982059
+  },
+  "csc001-session-a": {
+    "current_artifact_id": "art-1776886876956-1",
+    "last_updated": 1776886876957
+  },
+  "csc008-session-a": {
+    "current_artifact_id": "art-1776886877049-1",
+    "last_updated": 1776886877049
+  },
+  "test-user-001": {
+    "current_artifact_id": "art-1776838166959-1",
+    "last_updated": 1776838166960
+  },
+  "user-a-001": {
+    "current_artifact_id": "art-1776838288977-1",
+    "last_updated": 1776838288979
+  },
+  "user-c-002": {
+    "current_artifact_id": "art-1776838288980-1",
+    "last_updated": 1776838288981
+  },
+  "testuser-001": {
+    "current_artifact_id": "art-1776838713337-1",
+    "last_updated": 1776838713338
+  }
+}

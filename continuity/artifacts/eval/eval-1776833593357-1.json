@@ -1,0 +1,124 @@
+{
+  "evaluation_id": "eval-1776833593357-1",
+  "created_at": "2026-04-22T04:53:13Z",
+  "scenario_id": "sat-020",
+  "scenario_title": "Repeated revision chain",
+  "session_id": "rerun-phase1c1d",
+  "input_message": "(chain scenario)",
+  "response_source": "chain",
+  "relevant_interests_snapshot": [],
+  "artifact_lifecycle_stage": "revision",
+  "chain_results": [
+    {
+      "turn": 1,
+      "input_message": "help me improve my photovoltaic system efficiency",
+      "artifact_lifecycle_stage": "generation",
+      "response_source": "artifact_proposal",
+      "message_text": "The artifact could be improved by making causal claims more specific, making next steps concrete with verification checks, and noting what external data would change.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change\n\nProposed revision: [Rewrite specific section with]: (1) [causal mechanism + conditions], (2) [concrete next step with expected outcome], (3) [note what external verification would confirm].\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [
+        {
+          "id": "ca809c78",
+          "name": "efficiency",
+          "display_name": "Efficiency Optimization",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: efficiency",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "optimization",
+            "performance"
+          ]
+        },
+        {
+          "id": "3fb51842",
+          "name": "photovoltaic",
+          "display_name": "Photovoltaic Systems",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: photovoltaic",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "energy",
+            "renewable",
+            "solar"
+          ]
+        }
+      ],
+      "safe_response": false,
+      "message_domain_unrelated": false
+    },
+    {
+      "turn": 2,
+      "input_message": "improve this",
+      "artifact_lifecycle_stage": "revision",
+      "response_source": "artifact_reference",
+      "message_text": "I don't have a current stored artifact to refer to yet.\n\nTo use feedback like 'improve this' or 'explain this', I first need to generate an artifact revision in this session. Try asking me to analyze something or propose an improvement, and I'll save it so you can reference it afterward.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": true,
+      "message_domain_unrelated": true
+    },
+    {
+      "turn": 3,
+      "input_message": "give me another version",
+      "artifact_lifecycle_stage": "revision",
+      "response_source": "artifact_reference",
+      "message_text": "I don't have a current stored artifact to refer to yet.\n\nTo use feedback like 'improve this' or 'explain this', I first need to generate an artifact revision in this session. Try asking me to analyze something or propose an improvement, and I'll save it so you can reference it afterward.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": true,
+      "message_domain_unrelated": true
+    },
+    {
+      "turn": 4,
+      "input_message": "improve this",
+      "artifact_lifecycle_stage": "revision",
+      "response_source": "artifact_reference",
+      "message_text": "I don't have a current stored artifact to refer to yet.\n\nTo use feedback like 'improve this' or 'explain this', I first need to generate an artifact revision in this session. Try asking me to analyze something or propose an improvement, and I'll save it so you can reference it afterward.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": true,
+      "message_domain_unrelated": true
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "total_artifacts_created": 0
+  },
+  "expected_interests": [],
+  "expected_behavior": "Active artifact should be preserved and updated across revision chain. No crash, no context loss, relevance remains coherent.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1c1d",
+    "eval_version": "v1_phase1c1d",
+    "source_module": "weslr/relevance_eval_runner.py"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "evaluation_id": "eval-1776802982046-1",
+  "created_at": "2026-04-21T20:23:02Z",
+  "scenario_id": "sat-010",
+  "scenario_title": "Artifact generation \u2192 relevance snapshot",
+  "session_id": "test-phase1b",
+  "artifact_id": "art-1776802982043-1",
+  "prior_artifact_id": null,
+  "resolved_reference_phrase": null,
+  "input_message": "improve the hypothesis about photovoltaic efficiency",
+  "prior_context": {
+    "prior_artifact_id": null
+  },
+  "response_source": "artifact_proposal",
+  "relevant_interests_snapshot": [
+    {
+      "id": "ca809c78",
+      "name": "efficiency",
+      "display_name": "Efficiency Optimization",
+      "score": 4,
+      "match_reasons": [
+        "query text matched name: efficiency",
+        "query text contains tag: efficiency",
+        "recent activity within 48 hours"
+      ],
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "efficiency",
+        "optimization",
+        "performance"
+      ]
+    },
+    {
+      "id": "3fb51842",
+      "name": "photovoltaic",
+      "display_name": "Photovoltaic Systems",
+      "score": 4,
+      "match_reasons": [
+        "query text matched name: photovoltaic",
+        "query text contains tag: efficiency",
+        "recent activity within 48 hours"
+      ],
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "efficiency",
+        "energy",
+        "renewable",
+        "solar"
+      ]
+    },
+    {
+      "id": "71b84bcb",
+      "name": "scientific_analysis",
+      "display_name": "Scientific Analysis",
+      "score": 3,
+      "match_reasons": [
+        "query text contains tag: hypothesis",
+        "recent activity within 48 hours"
+      ],
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "analysis",
+        "hypothesis",
+        "research",
+        "science"
+      ]
+    }
+  ],
+  "artifact_lifecycle_stage": "generation",
+  "resolved_artifact_content": "The current hypothesis is ''. It could be more specific about the causal mechanism and the conditions under which the observation holds.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change about confidence\n\nProposed revision: [Current: ...] Refined: specifically identifies [causal mechanism] as the primary driver, with [specific conditions] where this applies and [what external verification would confirm].\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+  "resolved_artifact_interests": [
+    {
+      "id": "71b84bcb",
+      "name": "scientific_analysis",
+      "display_name": "Scientific Analysis",
+      "score": 3,
+      "match_reasons": [
+        "query text contains tag: hypothesis",
+        "recent activity within 48 hours"
+      ],
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "analysis",
+        "hypothesis",
+        "research",
+        "science"
+      ]
+    },
+    {
+      "id": "89fd5c24",
+      "name": "artifact_quality",
+      "display_name": "Artifact Quality Analysis",
+      "score": 3,
+      "match_reasons": [
+        "query text contains tag: artifact",
+        "recent activity within 48 hours"
+      ],
+      "last_seen_at": "2026-04-21T19:58:23Z",
+      "occurrence_count": 0,
+      "tags": [
+        "artifact",
+        "quality",
+        "revision"
+      ]
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "empty_relevance": false,
+    "high_noise": false,
+    "drift_flag": false,
+    "context_break_flag": false,
+    "resolved_artifact_was_enriched": true
+  },
+  "expected_interests": [
+    "efficiency",
+    "photovoltaic",
+    "scientific_analysis"
+  ],
+  "expected_behavior": "_relevant_interests should include efficiency and photovoltaic at generation time. A new artifact should be written to the artifact store.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1b",
+    "eval_version": "v1_phase1b",
+    "source_module": "weslr/relevance_eval_runner_phase1b.py"
+  }
+}

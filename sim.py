@@ -4097,7 +4097,37 @@ def write_artifact_metadata(agent: Dict, agent_dir: Path, artifact_slug: str, ar
         "approved_for_export": False,
         "export_path": None,
     }
+    # ARTIFACT QUALITY FEEDBACK LOOP v1 — Slice 1
+    # Capture proof signals BEFORE update_artifact_scores overwrites them from SQLite.
+    # The original meta proof_signals reflect the generation-time state accurately;
+    # SQLite may have no record for this artifact, returning zeros and losing the real values.
+    original_proof_signals = payload.get("proof_signals", {})
     payload = update_artifact_scores(payload)
+    # Restore original proof_signals so quality_feedback reflects generation-time state
+    payload["proof_signals"] = original_proof_signals
+    # Build quality_feedback from the scored meta, using restored proof_signals for accuracy
+    explainability = build_artifact_explainability(payload)
+    proof = payload.get("proof_signals", {})
+    quality_summary_parts = []
+    if explainability.get("internal_strength") and explainability["internal_strength"] != ["early artifact with partial internal signals"]:
+        quality_summary_parts.append("decent internal quality")
+    elif explainability.get("risks") and "thin" in str(explainability["risks"]).lower():
+        quality_summary_parts.append("early-stage, substance still forming")
+    else:
+        quality_summary_parts.append("newly created artifact")
+    if explainability.get("external_proof") and "no durable external proof yet" not in str(explainability["external_proof"]):
+        quality_summary_parts.append("has external proof")
+    payload["quality_feedback"] = {
+        "quality_summary": "; ".join(quality_summary_parts) if quality_summary_parts else "newly created artifact",
+        "weakness_summary": explainability.get("risks", ["no major risks"])[0] if explainability.get("risks") else "no major risks identified",
+        "recommended_next_action": explainability.get("next_actions", ["continue validation"])[0] if explainability.get("next_actions") else "continue validation",
+        "proof_summary": {
+            "human_approvals": int(proof.get("human_approvals", 0)),
+            "real_usage_hits": int(proof.get("real_usage_hits", 0)),
+            "handoff_acceptances": int(proof.get("handoff_acceptances", 0)),
+            "external_validation_state": proof.get("external_validation_state", "unvalidated"),
+        },
+    }
     write_json_file(meta_path, payload)
     return meta_path.name
 
@@ -7681,6 +7711,98 @@ def build_identity_trend_report(history: list[dict], window: int = 8) -> dict:
     }
 
 
+# ARTIFACT QUALITY FEEDBACK LOOP v1 — Slice 2
+# Bridge candidate preview helper
+def build_artifact_candidate_preview(meta: Dict) -> Dict | None:
+    """Compute a read-only bridge candidate preview from artifact metadata.
+
+    Returns a preview dict if the artifact qualifies for escalation review,
+    or None if it does not. This is display-only: it does not create a bridge
+    object, does not write to the spine, and does not trigger any escalation.
+
+    Eligibility rules (all must be met):
+    - review_status is not one of: approved, export_ready, packed, deployed
+    - No prior bridge confirmation on this artifact
+    - Urgency is 'medium' or 'high' from existing quality/weakness signals
+    - At least one weakness indicator present (thin, substance, weak proof, early-stage)
+    """
+    if not meta:
+        return None
+
+    # Exclude already-resolved artifacts
+    resolved_statuses = {"approved", "export_ready", "packed", "deployed"}
+    review_status = meta.get("review_status", "unreviewed")
+    if review_status in resolved_statuses:
+        return None
+
+    # Exclude artifacts already confirmed through the bridge
+    if meta.get("bridge_confirmed"):
+        return None
+
+    quality_feedback = meta.get("quality_feedback")
+    if not quality_feedback:
+        return None
+
+    # Derive urgency from existing quality signals
+    # HIGH: recurring limitation indicators (thin/substance in weakness_summary or risks)
+    # MEDIUM: no recurring limitation but weak external proof + other risk flags
+    weakness_summary = str(quality_feedback.get("weakness_summary", "")).lower()
+    quality_summary = str(quality_feedback.get("quality_summary", "")).lower()
+    recommended_action = quality_feedback.get("recommended_next_action", "")
+
+    recurring_indicators = ["thin", "substance", "rejected", "description appears stronger"]
+    early_indicators = ["early-stage", "substance still forming", "early artifact"]
+
+    has_recurring = any(ind in weakness_summary for ind in recurring_indicators)
+    has_early = any(ind in quality_summary or ind in weakness_summary for ind in early_indicators)
+
+    if has_recurring:
+        urgency = "high"
+        urgency_note = "recurring limitation"
+    elif has_early:
+        urgency = "medium"
+        urgency_note = "early-stage artifact"
+    else:
+        # Not a clear weakness candidate
+        return None
+
+    # Build weakness reasons list
+    why: List[str] = []
+    ws = quality_feedback.get("weakness_summary", "")
+    if ws and ws not in ("no major risks identified",):
+        why.append(ws)
+    ps = quality_feedback.get("proof_summary", {})
+    if ps:
+        if ps.get("human_approvals", 0) == 0 and ps.get("real_usage_hits", 0) == 0 and ps.get("handoff_acceptances", 0) == 0:
+            why.append("no durable external proof yet")
+    if why[:2]:
+        why = why[:2]
+
+    # Confidence estimate — derived from internal_score if available
+    confidence = float(meta.get("internal_score", 0.0) or 0.3)
+
+    artifact_id = meta.get("id", "")
+    confirm_command = f"weslr spine bridge --from-artifact {artifact_id} --confirm"
+
+    from datetime import datetime, timezone
+    preview_generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    return {
+        "candidate": True,
+        "surface_type": "artifact_weakness",
+        "spine_target": "step1_inadequacy_signal",
+        "urgency": urgency,
+        "urgency_note": urgency_note,
+        "confidence": round(confidence, 3),
+        "why": why,
+        "recommended_action": recommended_action or "Review artifact quality and decide on next step",
+        "confirm_command": confirm_command,
+        "requires_confirm": True,
+        "preview_generated_at": preview_generated_at,
+        "preview_source": "quality_feedback",
+    }
+
+
 def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dict], artifact_packs: list[dict]) -> list[dict]:
     by_id = {}
     for item in export_queue + review_queue:
@@ -7692,6 +7814,7 @@ def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dic
                 by_id[item['id']] = item
     details = []
     for artifact_id, item in list(by_id.items())[:16]:
+        preview = build_artifact_candidate_preview(item)
         details.append({
             'id': artifact_id,
             'anchor': f"artifact-{slugify(artifact_id)}",
@@ -7707,6 +7830,8 @@ def build_artifact_detail_views(export_queue: list[dict], review_queue: list[dic
                 'internal': item.get('internal_score'),
                 'opportunity': item.get('opportunity_score'),
             },
+            'quality_feedback': item.get('quality_feedback'),  # ARTIFACT QUALITY FEEDBACK LOOP v1 — Slice 1
+            'bridge_candidate_preview': preview,  # ARTIFACT QUALITY FEEDBACK LOOP v1 — Slice 2
             'review_status': item.get('review_status'),
             'price_band_guess': item.get('price_band_guess'),
             'delivery_mode': item.get('delivery_mode'),
@@ -8392,7 +8517,9 @@ def render_dashboard(auto_refresh_seconds: int = 0) -> dict:
       if (artifactsSection) artifactsSection.innerHTML = `
         <h2>Artifact Detail Views</h2>
         <div class="grid">
-          ${{artifactDetails.map((artifact) => `<section class='card' id='${{esc(artifact.anchor)}}'><h3>${{esc(artifact.title || artifact.id || 'artifact')}}</h3><p class='muted'><code>${{esc(artifact.id || '')}}</code> · ${{esc(artifact.family || artifact.category || 'uncategorized')}}</p><p>${{esc(artifact.summary || 'No summary yet.')}}</p><ul><li>theme: ${{esc(artifact.niche_theme || '—')}}</li><li>target: ${{esc(artifact.target_user || 'tbd')}}</li><li>review: ${{esc(artifact.review_status || 'unreviewed')}}</li><li>sellability: ${{artifact.scores?.sellability ?? ''}}</li><li>price band: ${{esc(artifact.price_band_guess || 'tbd')}}</li><li>delivery: ${{esc(artifact.delivery_mode || 'tbd')}}</li></ul></section>`).join('') || '<p class="muted">No artifact details available yet.</p>'}}
+        const _urgNote = (a) => a ? ` (${{esc(a)}})` : '';
+        const _confCmd = (a) => a ? `<code>${{esc(a)}}</code>` : '';
+          ${{artifactDetails.map((artifact) => `<section class='card' id='${{esc(artifact.anchor)}}'><h3>${{esc(artifact.title || artifact.id || 'artifact')}}</h3><p class='muted'><code>${{esc(artifact.id || '')}}</code> · ${{esc(artifact.family || artifact.category || 'uncategorized')}}</p><p>${{esc(artifact.summary || 'No summary yet.')}}</p><ul><li>theme: ${{esc(artifact.niche_theme || '—')}}</li><li>target: ${{esc(artifact.target_user || 'tbd')}}</li><li>review: ${{esc(artifact.review_status || 'unreviewed')}}</li><li>sellability: ${{artifact.scores?.sellability ?? ''}}</li><li>price band: ${{esc(artifact.price_band_guess || 'tbd')}}</li><li>delivery: ${{esc(artifact.delivery_mode || 'tbd')}}</li></ul>${{(artifact.quality_feedback) ? `<div class='quality-feedback'><strong>WESLR Self-Assessment</strong><br>Quality: ${{esc(artifact.quality_feedback?.quality_summary || '—')}}<br>Weakness: ${{esc(artifact.quality_feedback?.weakness_summary || '—')}}<br>Next: ${{esc(artifact.quality_feedback?.recommended_next_action || '—')}}</div>` : ''}}}}${{(artifact.bridge_candidate_preview) ? `<div class='escalation-preview'><strong>⚠️ Escalation Candidate</strong><br>Urgency: ${{esc(artifact.bridge_candidate_preview?.urgency || '—')}}${{(artifact.bridge_candidate_preview?.urgency_note) ? ` (${{esc(artifact.bridge_candidate_preview?.urgency_note)}})` : ''}}<br>Confidence: ${{artifact.bridge_candidate_preview?.confidence ?? ''}}<br>Why: ${{esc((artifact.bridge_candidate_preview?.why || []).join('; '))}}<br>Command: <code>${{esc(artifact.bridge_candidate_preview?.confirm_command || '')}}</code><br><em>Preview only — no action taken.</em></div>` : ''}}}}</section>`).join('') || '<p class="muted">No artifact details available yet.</p>'}}}}
         </div>`;
 
       const worldObjectGrids = document.querySelectorAll('#world-objects section');
@@ -8565,6 +8692,9 @@ def build_communicator_message() -> dict:
         active_thread=active_thread,
         latest_human=latest_human,
         research_context=research_context,
+        l0_identity=load_tier("l0"),
+        l1_operating=load_tier("l1"),
+        l2_session=load_tier("l2"),
     )
 
 
@@ -8714,6 +8844,110 @@ def handoff_summary(limit: int = 5) -> Dict:
     }
 
 
+
+def _get_thread_refs(item_id: str) -> list:
+    """
+    Return thread reference summaries for an artifact (read-only metadata).
+    Slice 1: Read-only thread membership exposure.
+    - Does not modify threads.json
+    - Does not create threads
+    - Does not add items
+    - Does not change thread state
+    """
+    try:
+        from weslr.thread_tracker import get_threads_for_item
+        return get_threads_for_item(item_id)
+    except Exception:
+        return []
+
+
+def _derive_suggestions(enriched, relevant_interests):
+    """
+    Derive structured suggestion objects from relevance results (metadata only).
+    Slice A2: Adds ephemeral cooldown for occurrence suggestions.
+    """
+    COOLDOWN_SECONDS = 12 * 3600
+
+    if not hasattr(_derive_suggestions, "_cooldown_store"):
+        _derive_suggestions._cooldown_store = {}
+
+    suggestions = []
+    if not relevant_interests:
+        return suggestions
+
+    item_id = enriched.get("id") or enriched.get("title", "unknown")
+
+    for interest in relevant_interests:
+        score_val = interest.get("score", 0)
+        if score_val <= 0:
+            continue
+
+        interest_id = interest.get("id", "")
+        cooldown_key = f"{interest_id}:{item_id}:interest_occurrence"
+        now = time.time()
+        last_suggested = _derive_suggestions._cooldown_store.get(cooldown_key, 0)
+        if now - last_suggested < COOLDOWN_SECONDS:
+            continue
+
+        reasons = interest.get("match_reasons", [])
+        confidence = min(score_val / 11.0, 1.0)
+        display = interest.get("display_name", interest.get("name", "unknown"))
+
+        suggestion = {
+            "type": "interest_occurrence",
+            "message": f"This artifact relates to your tracked interest '{display}'. Should I record an occurrence?",
+            "confidence": round(confidence, 2),
+            "reasons": list(reasons),
+            "action": {
+                "command": "record_occurrence",
+                "interest_id": interest.get("id"),
+                "interest_name": interest.get("name"),
+                "item_id": item_id,
+                "requires_approval": True,
+            },
+        }
+        suggestions.append(suggestion)
+        _derive_suggestions._cooldown_store[cooldown_key] = time.time()
+
+    return suggestions
+
+
+def _derive_relevant_interests(enriched):
+    """
+    Derive relevant tracked interests for an artifact (advisory metadata only).
+    """
+    try:
+        from weslr.relevance_surface import query_relevant_interests
+
+        query_parts = []
+        for field in ("title", "niche_theme", "problem_statement", "family", "target_user"):
+            val = enriched.get(field, "")
+            if isinstance(val, str) and val.strip():
+                query_parts.append(val.strip())
+
+        text_query = " ".join(query_parts) if query_parts else None
+
+        artifact_tags = enriched.get("tags", [])
+        if isinstance(artifact_tags, list) and artifact_tags:
+            tags_query = artifact_tags
+        else:
+            tags_query = None
+
+        if not text_query and not tags_query:
+            return []
+
+        return query_relevant_interests(
+            text=text_query,
+            tags=tags_query,
+            top_n=3,
+            status="active",
+        )
+    except Exception:
+        return []
+
+
+
+
 def explain_item(item_id: str) -> Dict:
     conn = connect()
     for meta_file in AGENTS_DIR.glob("*/artifacts/*.meta.json"):
@@ -8740,6 +8974,9 @@ def explain_item(item_id: str) -> Dict:
                 "proof_signals": enriched.get("proof_signals", {}),
                 "explainability": build_artifact_explainability(enriched),
                 "reasons": explain_artifact(enriched),
+                "_relevant_interests": _derive_relevant_interests(enriched),
+                "_suggestions": _derive_suggestions(enriched, _derive_relevant_interests(enriched)),
+                "_thread_refs": _get_thread_refs(item_id),
             }
 
     packs = read_json_file(PACKS_PATH, [])

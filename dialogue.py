@@ -1,9 +1,332 @@
 from __future__ import annotations
 
+from typing import Any
 
 from interpretation import classify_human_turn, interpret_human_turn
 from config import WESLR_LANGUAGE
 from internal_docs import get_internal_docs_context
+
+
+# =============================================================================
+# LINEAGE INSPECTION (additive, observational only)
+# =============================================================================
+
+def _attach_lineage_inspection(research_context: dict) -> None:
+    """Inspect resolved artifact and attach lineage metadata observationally.
+
+    Safe: read-only, no writes, no routing influence, no authority.
+    Idempotent: overwrites if called twice on same context (shouldn't happen
+    in normal flow, but harmless if it does — same artifact same result).
+    """
+    artifact_id = research_context.get("artifact_id")
+    if not artifact_id:
+        return
+    # Read resolved content to get the artifact dict
+    # Fall back to artifact_store lookup if resolved_artifact_content not populated
+    artifact = research_context.get("resolved_artifact_content")
+    if artifact is None:
+        try:
+            from weslr.artifact_store import get_artifact
+            artifact = get_artifact(artifact_id)
+        except Exception:
+            return
+    if not artifact or not isinstance(artifact, dict):
+        return
+    # Import locally to keep dependency narrow and failure non-fatal
+    try:
+        from weslr.lineage_inspector import inspect_artifact_lineage
+        thread_ids = artifact.get("thread_ids")
+        inspection = inspect_artifact_lineage(artifact, thread_ids=thread_ids)
+        research_context["_lineage_inspection"] = inspection.to_dict()
+    except Exception:
+        # Lineage inspection is observational — non-fatal if it fails
+        pass
+
+
+# =============================================================================
+# CONTEXT SELECTION SIGNAL V1 (observational, structural)
+# =============================================================================
+
+# Reference phrases that signal a reference to stored content, not new intent.
+# These must be explicit artifact-reference forms. Phrases ending in "that" without
+# "this" or a clear artifact-word (artifact/memo/output) are too ambiguous for directives
+# and are removed to avoid false matches on normal speech like "fix that for me".
+_REFERENCE_PHRASES = [
+    # "this" variants — clear artifact reference forms
+    "improve this", "improve it", "this one",
+    "explain this", "explain it",
+    "show me this", "show this artifact",
+    "revise this", "fix this",
+    # "that" variants — only when preceded by clear artifact-reference word
+    "what does this say", "what is this artifact",
+    "give me another version", "give another version",
+    "another option", "option b",
+]
+
+# Simple phrases that indicate a new topic (no overlap, no reference words).
+_NEW_TOPIC_SIGNALS = [
+    "what is", "what are", "how do", "how does", "how can", "why do", "why does",
+    "tell me about", "explain", "define", "what happens if",
+]
+
+
+def _compute_context_selection(
+    message: str,
+    research_context: dict | None,
+    active_thread: tuple | None,
+) -> str:
+    """Compute the structural context selection for this turn.
+
+    Allowed values: current_thread | resolved_artifact | new_topic | uncertain
+
+    Rules:
+      - if _has_active_artifact → resolved_artifact
+      - elif active_thread with no reference phrase → current_thread
+      - elif message is clearly new (no overlap, starts with new-topic signals) → new_topic
+      - else → uncertain
+
+    Observational only — no routing, no behavior change.
+    """
+    if not message:
+        return "uncertain"
+
+    # 1. Artifact resolution takes priority
+    if research_context and research_context.get("_has_active_artifact"):
+        return "resolved_artifact"
+
+    lower = message.lower().strip()
+
+    # 2. Active thread without reference phrase → current_thread
+    if active_thread:
+        is_reference = any(phrase in lower for phrase in _REFERENCE_PHRASES)
+        if not is_reference:
+            return "current_thread"
+
+    # 3. Simple new-topic heuristic: starts with new-topic signal, no reference overlap
+    is_reference = any(phrase in lower for phrase in _REFERENCE_PHRASES)
+    if not is_reference and any(lower.startswith(signal) for signal in _NEW_TOPIC_SIGNALS):
+        return "new_topic"
+
+    return "uncertain"
+
+
+# =============================================================================
+# BOUNDARY HINTS (observational, structural entity classification)
+# =============================================================================
+
+_BOUNDARY_KEYWORDS = {
+    "system":      ["system", "platform", "environment", "infrastructure", "host", "device"],
+    "module":      ["module", "plugin", "component", "package", "library", "dependency"],
+    "tool":        ["tool", "cli", "command", "app", "application", "utility"],
+    "runtime":     ["runtime", "engine", "process", "instance", "daemon", "service"],
+    "role":        ["user", "operator", "agent", "role", "person", "human", "collaborator"],
+    "interface":   ["ui", "api", "endpoint", "interface", "port", "hook", "handler", "webhook"],
+    "data":        ["data", "artifact", "state", "config", "memory", "context", "message", "file"],
+}
+
+
+def _compute_boundary_hints(message: str) -> list[str]:
+    """Compute structural boundary hints from message content.
+
+    Returns a unique list of structural type hints present in the message.
+    If no hints match → ["unknown"].
+
+    Observational only — no routing, no behavior change.
+    """
+    if not message:
+        return ["unknown"]
+    lower = message.lower()
+    found = set()
+    for boundary_type, keywords in _BOUNDARY_KEYWORDS.items():
+        if any(kw in lower for kw in keywords):
+            found.add(boundary_type)
+    if not found:
+        return ["unknown"]
+    return sorted(found)
+
+
+
+def _attach_context_selection(message: str, result: dict) -> None:
+    """Attach context selection observationally to the result dict.
+
+    Safe: read-only classification, no routing, no behavior change.
+    Idempotent.
+    """
+    context = _classify_context(message)
+    result["_context_selection_v1"] = {
+        "context": context,
+        "advisory_only": True,
+    }
+
+
+# =============================================================================
+# ARTIFACT REFERENCE RESOLUTION
+# =============================================================================
+
+def _is_artifact_reference_phrase(message: str) -> bool:
+    """Detect if a message is a simple artifact-reference phrase.
+
+    These phrases require resolution to a stored active artifact
+    before _artifact_proposal_answer() or explanation can run.
+
+    Returns True for phrases like: "improve this", "improve that",
+    "give me another version", "explain this", "what does this say"
+    """
+    lower = message.lower().strip()
+
+    reference_tokens = [
+        "improve this", "improve that", "improve it",
+        "explain this", "explain that", "explain it",
+        "give me another version", "give another version",
+        "another option", "option b",
+        "what does this say", "what is this artifact",
+        "show me this", "show this artifact",
+        "revise this", "revise that",
+        "fix this", "fix that",
+    ]
+
+    reference_startswith = (
+        "what does this",
+        "what is this",
+        "show me",
+    )
+
+    return (
+        any(token in lower for token in reference_tokens) or
+        lower.startswith(reference_startswith)
+    )
+
+
+def _build_contamination_metadata(message: str, research_context: dict) -> dict:
+    """Build advisory contamination metadata for a resolved reference turn.
+    Delegates to weslr.contamination_detector.build_contamination_metadata.
+    """
+    from weslr.contamination_detector import build_contamination_metadata as _build
+    return _build(message, research_context)
+
+
+
+def _resolve_active_artifact(message: str, research_context: dict) -> tuple[bool, dict]:
+    """Resolve active artifact for a reference phrase.
+
+    Resolution cascade (additive, first slice):
+      1. timeline_resolution: active thread artifact for user (if user identity available)
+      2. registry fallback: existing session-keyed artifact store
+      3. safe no-resolution: set _no_active_artifact, return False
+
+    Adds resolved artifact content to research_context if available.
+
+    Args:
+        message: The user's message
+        research_context: Context dict to populate.
+            May contain session_id, user_id, or other identity hints.
+
+    Returns:
+        (resolved: bool, context: dict)
+        If no active artifact: resolved=False, context unchanged except
+        research_context["_no_active_artifact"] = True
+    """
+    try:
+        from weslr.artifact_store import get_active_artifact, get_artifact
+
+        # ── Level 1: Timeline-aware resolution ──────────────────────────
+        # Try to get a user-scope identity for thread-aware resolution.
+        # Priority: research_context user_id > session_id as user proxy.
+        # This is additive — no existing behavior is removed.
+        user_id = _resolve_user_id(research_context)
+
+        if user_id:
+            try:
+                from weslr.timeline_resolution import resolve_active_artifact_for_user
+                result = resolve_active_artifact_for_user(user_id)
+                if result and result.get("resolved_artifact_id"):
+                    # Timeline resolution succeeded
+                    research_context["artifact_id"] = result["resolved_artifact_id"]
+                    research_context["resolved_artifact_content"] = result.get("artifact_content")
+                    research_context["resolved_artifact_context"] = {}
+                    research_context["_has_active_artifact"] = True
+                    research_context["_resolution_path"] = result.get("resolution_path", "active_thread")
+                    # Advisory contamination metadata (additive)
+                    research_context["_contamination_metadata"] = _build_contamination_metadata(message, research_context)
+                    # Observational lineage inspection (additive, no authority)
+                    _attach_lineage_inspection(research_context)
+                    return True, research_context
+            except Exception:
+                # Timeline resolution failed for any reason — fall through to registry
+                pass
+
+        # ── Level 2: Registry fallback (existing behavior) ─────────────
+        session_id = research_context.get("session_id", "default")
+        artifact_id = get_active_artifact(session_id)
+
+        if not artifact_id:
+            research_context["_no_active_artifact"] = True
+            return False, research_context
+
+        artifact = get_artifact(artifact_id)
+        if not artifact:
+            research_context["_no_active_artifact"] = True
+            return False, research_context
+
+        # Populate research_context with resolved artifact content
+        content = artifact.get("content", "")
+        context = artifact.get("context", {})
+        research_context["artifact_id"] = artifact_id
+        research_context["resolved_artifact_content"] = content
+        research_context["resolved_artifact_context"] = context
+        research_context["_has_active_artifact"] = True
+        research_context["_resolution_path"] = "registry_fallback"
+        # Advisory contamination metadata (additive)
+        research_context["_contamination_metadata"] = _build_contamination_metadata(message, research_context)
+        # Observational lineage inspection (additive, no authority)
+        _attach_lineage_inspection(research_context)
+        return True, research_context
+
+    except Exception:
+        research_context["_no_active_artifact"] = True
+        return False, research_context
+
+
+def _resolve_user_id(research_context: dict) -> str | None:
+    """Extract user identity from research_context for timeline resolution.
+
+    Priority:
+      1. research_context["user_id"] — explicit user identity
+      2. research_context["session_id"] — used as user proxy when available
+
+    Returns:
+        user_id string or None if no identity available.
+        Does NOT invent an identity — returns None when unclear.
+    """
+    if not research_context:
+        return None
+
+    # Explicit user_id takes priority
+    user_id = research_context.get("user_id")
+    if user_id and isinstance(user_id, str) and user_id.strip():
+        return user_id.strip()
+
+    # session_id as user proxy — only if it looks like a real identity
+    # (not "default", not "eval-*", not other placeholder patterns)
+    session_id = research_context.get("session_id", "")
+    if session_id and isinstance(session_id, str):
+        # Filter out known placeholder/auto-generated patterns
+        placeholder_patterns = ("default", "eval-", "test-", "rerun-", "phase1")
+        if not any(session_id.startswith(p) for p in placeholder_patterns):
+            return session_id
+
+    return None
+
+
+def _get_no_artifact_response() -> str:
+    """Return safe message when no active artifact exists to reference."""
+    return (
+        "I don't have a current stored artifact to refer to yet.\n\n"
+        "To use feedback like 'improve this' or 'explain this', "
+        "I first need to generate an artifact revision in this session. "
+        "Try asking me to analyze something or propose an improvement, "
+        "and I'll save it so you can reference it afterward."
+    )
 
 
 def _get_entity_context() -> dict:
@@ -166,6 +489,11 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
 
     Works with both full memo research_context (from /api/research path)
     and topic-summary research_context (from HTTP /chat path).
+
+    Side effect (additive only):
+    - Saves artifact to continuity/artifacts/ with generated artifact_id
+    - Writes artifact_id into research_context["artifact_id"] for caller access
+    - Updates active_artifact_registry.json if session_id available
     """
     if not research_context:
         return None
@@ -248,6 +576,58 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
     message += "- Note what external verification would change about confidence\n"
     message += f"\n{proposed}\n\n"
     message += "This is a proposed change only. The original artifact is unchanged until approved."
+
+    # --- Artifact persistence (additive only) ---
+    try:
+        import time as _time
+
+        # Extract session_id from research_context if available
+        session_id = research_context.get("session_id", "default")
+
+        # Build artifact record with causal lineage
+        from weslr.artifact_store import save_artifact, set_active_artifact, get_artifact
+
+        # Resolve parent: if a resolved artifact is in research_context, use it as parent
+        parent_id = research_context.get("artifact_id")
+
+        if parent_id:
+            # Derived artifact — inherit root and increment generation
+            parent = get_artifact(parent_id)
+            parent_root = parent.get("root_artifact_id") if parent else None
+            parent_gen = parent.get("generation", 0) if parent else 0
+            lineage = {
+                "parent_artifact_ids": [parent_id],
+                "root_artifact_id": parent_root if parent_root else parent_id,
+                "generation": parent_gen + 1,
+            }
+        else:
+            # Root artifact — empty root_artifact_id signals self; save_artifact resolves it
+            lineage = {"parent_artifact_ids": [], "root_artifact_id": "", "generation": 0}
+
+
+        artifact_record = {
+            "type": "artifact_revision",
+            "content": message,
+            "source": "dialogue",
+            "context": {
+                "input_message": lower_message,
+                "topics": [lead_topic] if lead_topic else [],
+            },
+            "parent_artifact_ids": lineage["parent_artifact_ids"],
+            "root_artifact_id": lineage["root_artifact_id"],
+            "generation": lineage["generation"],
+        }
+        artifact_id = save_artifact(artifact_record)
+
+        # Write artifact_id back into research_context for caller access
+        research_context["artifact_id"] = artifact_id
+
+        # Update active artifact registry
+        set_active_artifact(session_id, artifact_id)
+
+    except Exception:
+        # Artifact persistence is additive — if it fails, the response is still returned
+        pass
 
     return message
 
@@ -1092,7 +1472,38 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         if current_intent:
             communicator_self["current_intent"] = current_intent
 
-    # Inject L2 tier if provided - session state (identity_state, continuity).
+    # ── Always-in-scope init ──────────────────────────────────────────────────
+    # Both branches of the if l2_session: / else: split below write to these.
+    # Without this init, the else: branch (primary path for external callers via
+    # build_communicator_message which passes l2_session=None) would have unbound
+    # variables referenced by the if/elif routing chain.
+    _response_signals = {
+        "path": None, "evaluation_class": "unknown",
+        "llm_used": False, "internal_capability": False, "confidence": "low",
+    }
+    _truth_guard = {"truth_class": "unknown", "verified": False}
+    message = None
+
+    # ── Advisory relevance layer (read-only, no authority) ────────────────────
+    # WESLR Compression Canon v1 — advisory integration of relevance_surface.
+    # Called once at payload build time, not per routing branch.
+    # Safe: no writes, no routing influence, no authority over decisions.
+    _relevant_interests: list = []
+    if latest_human:
+        _msg_text = str(latest_human.get("message") or "").strip()
+        _msg_topics = latest_human.get("topics") or []
+        if _msg_text:
+            try:
+                from weslr.relevance_surface import query_relevant_interests
+                _relevant_interests = query_relevant_interests(
+                    text=_msg_text,
+                    tags=[str(t).strip() for t in _msg_topics if str(t).strip()],
+                    top_n=3,
+                )
+            except Exception:
+                _relevant_interests = []  # Fail silently — advisory only
+
+        # Inject L2 tier if provided - session state (identity_state, continuity).
     # These are read by _generate_enriched_identity and _generate_enriched_self_report
     # via communicator_self.get("identity_state") and communicator_self.get("continuity").
     if l2_session:
@@ -1112,6 +1523,29 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         likely_need = str(latest_human.get("likely_need") or interpreted_turn.get("likely_need") or "direct_answer")
 
         lower_message = last_message.lower()
+
+        # ── Part 2: Signal-driven uncertainty bridge ───────────────────────────
+        # IF: _context_selection_v1 == "uncertain"
+        # AND: turn_type is NOT "question", "greeting", "confusion", "repair"
+        # THEN: reply_shape = "signal_uncertainty" / "signal_uncertainty_strong"
+        # Narrow scope: excludes all clearly-intent turns that have their own handlers.
+        # Observational only — signals are computed but not authoritative.
+        _ctx_sel_v1 = _compute_context_selection(
+            last_message,
+            research_context,
+            active_thread,
+        )
+        _bh = _compute_boundary_hints(last_message)
+        # Strong/weak split: strong = uncertain + genuinely short/vague with no structural content.
+        # weak = uncertain + some structural keywords present (even if imperfect match).
+        # Rule: strong fires when boundary hints are unknown AND the message is short.
+        # This avoids false-strong on longer sentences that happen to have no keywords.
+        _is_short = len(last_message.strip()) < 30
+        if _ctx_sel_v1 == "uncertain" and turn_type not in ("question", "greeting", "confusion", "repair"):
+            if _bh == ["unknown"] and _is_short:
+                reply_shape = "signal_uncertainty_strong"
+            else:
+                reply_shape = "signal_uncertainty"
 
         # ── Response evaluation signals (for governed evolution) ─────────────
         # Makes answers inspectable. Internal-only, never exposed to users.
@@ -1200,6 +1634,19 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             lower_message.startswith(proposal_startswith)
         )
 
+
+        # --- Artifact reference resolution (SatUi feedback loop) ---
+        # If message is a reference phrase like "improve this", resolve active artifact
+        if _is_artifact_reference_phrase(lower_message):
+            resolved, research_context = _resolve_active_artifact(lower_message, research_context)
+            if not resolved:
+                safe_msg = _get_no_artifact_response()
+                return {"message": safe_msg, "audience": "operator", "source": "artifact_reference",
+                        "targeted_anchors": [], "_response_signals": _response_signals,
+                        "_truth_guard": {"truth_class": "safe_fallback", "verified": False},
+                        "_quality_class": "safe_fallback", "_relevant_interests": _relevant_interests}
+            # Resolved: continue to proposal_intent check with enriched research_context
+
         if is_proposal_intent:
             _apply_signal(_response_signals, "proposal", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             message = _artifact_proposal_answer(lower_message, lead_topic, research_context)
@@ -1210,9 +1657,14 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 _truth_guard = {"truth_class": "model_reasoning", "verified": False}
                 return {"message": message, "audience": "operator", "source": "artifact_proposal",
                        "targeted_anchors": [], "_response_signals": _response_signals,
-                       "_truth_guard": _truth_guard, "_quality_class": "grounded_reasoning"}
+                       "_truth_guard": _truth_guard, "_quality_class": "grounded_reasoning",
+                       "_relevant_interests": _relevant_interests,
+                       "_contamination_metadata": research_context.get("_contamination_metadata"),
+                       "_lineage_inspection": research_context.get("_lineage_inspection")}
 
-        if any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
+        elif turn_type == "greeting":
+            message = _get_language_module().greeting_response()
+        elif any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
             _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
             if research_context and research_context.get("summary"):
                 synthesized = synthesize_research_answer(lead_topic, str(research_context.get("summary") or ""))
@@ -1234,8 +1686,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 message = synthesized
             else:
                 message = _artifact_fallback_answer(lower_message, lead_topic, last_message)
-        elif turn_type == "greeting":
-            message = _get_language_module().greeting_response()
+            # Attach lineage inspection to this response path (resolved artifact may be present)
+            lineage_insp = research_context.get("_lineage_inspection") if research_context else None
         elif turn_type == "approval":
             message = _get_language_module().approval_response()
         elif turn_type == "execution_start":
@@ -1770,7 +2222,12 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
             message = msg
 
-        if reply_shape == "repair_then_answer" and turn_type != "repair":
+        # ── Part 4: Signal-driven uncertainty response ─────────────────────────
+        if reply_shape == "signal_uncertainty":
+            message = _get_language_module().uncertainty_response()
+        elif reply_shape == "signal_uncertainty_strong":
+            message = _get_language_module().uncertainty_strong_response()
+        elif reply_shape == "repair_then_answer" and turn_type != "repair":
             message = f"I'll answer directly. {message}"
         audience = str(latest_human.get("human_label") or "you") or "you"
         source = f"conversation-aware-communicator:{turn_type}:{reply_shape}"
@@ -1861,9 +2318,26 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                     _cmc["diagrams_available"].append("governance_timeline")
             _cmc["research_question"] = research_context.get("topic") or research_context.get("title")
 
+        # Observational lineage metadata — populated by _resolve_active_artifact
+        # when an artifact was resolved; absent otherwise.
+        _lineage_insp = research_context.get("_lineage_inspection") if research_context else None
+
+        # Structural context selection signal v1 (observational, reversible)
+        _ctx_sel_v1 = _compute_context_selection(
+            last_message,
+            research_context,
+            active_thread,
+        )
+        _bh = _compute_boundary_hints(last_message)
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
-               "_quality_class": _quality, "_cross_modal_context": _build_cross_modal_context(research_context)}
+               "_quality_class": _quality, "_cross_modal_context": _build_cross_modal_context(research_context),
+               "_relevant_interests": _relevant_interests,
+               "_contamination_metadata": research_context.get("_contamination_metadata"),
+               "_lineage_inspection": _lineage_insp,
+               "_context_selection_v1": _ctx_sel_v1,
+               "_boundary_hints": _bh}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -1895,6 +2369,15 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
 
         # Lifecycle-aware memory retrieval: assemble targeted anchors
         targeted_anchors = _get_targeted_anchors(topic if isinstance(topic, str) else None)
+
+        # Structural context selection signal v1 + boundary hints (observational, reversible)
+        _ctx_sel_v1 = _compute_context_selection(
+            topic if isinstance(topic, str) else "",
+            research_context,
+            active_thread,
+        )
+        _bh = _compute_boundary_hints(topic if isinstance(topic, str) else "")
+
 
         # ── Hallucination guard for active_thread branch ─────────────────────
         eval_class = _response_signals.get("evaluation_class", "unknown")
@@ -1939,11 +2422,26 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
 
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
-               "_quality_class": _quality}
+               "_quality_class": _quality,
+               "_relevant_interests": _relevant_interests,
+               "_contamination_metadata": research_context.get("_contamination_metadata"),
+               "_context_selection_v1": _ctx_sel_v1,
+               "_boundary_hints": _bh}
 
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
     source = "fallback"
+
+    # ── Uncertainty override for fallback path (consistency with l2_session path) ──
+    # Apply only when context is genuinely uncertain and no greeting/clarification applies.
+    _ctx_sel_v1_fb = _compute_context_selection("", None, None)
+    _bh_fb = _compute_boundary_hints("")
+    _is_short_fb = True  # Empty input is always short
+    if _ctx_sel_v1_fb == "uncertain":
+        if _bh_fb == ["unknown"] and _is_short_fb:
+            message = _get_language_module().uncertainty_strong_response()
+        else:
+            message = _get_language_module().uncertainty_response()
 
     # ── Response quality evaluation for fallback ───────────────────────────
     evcls = _response_signals.get("evaluation_class", "unknown")
@@ -1958,7 +2456,10 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
 
     result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(),
               "_response_signals": _response_signals, "_truth_guard": _truth_guard,
-              "_quality_class": _quality}
+              "_quality_class": _quality,
+              "_relevant_interests": _relevant_interests,
+              "_context_selection_v1": _ctx_sel_v1_fb,
+              "_boundary_hints": _bh_fb}
 
     # Route through outbox for unified communication
     try:

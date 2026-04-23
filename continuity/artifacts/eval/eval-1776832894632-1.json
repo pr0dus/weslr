@@ -1,0 +1,50 @@
+{
+  "evaluation_id": "eval-1776832894632-1",
+  "created_at": "2026-04-22T04:41:34Z",
+  "scenario_id": "sat-027",
+  "scenario_title": "No active artifact safe path",
+  "session_id": "inspect-test",
+  "input_message": "improve this",
+  "response_source": "chain",
+  "relevant_interests_snapshot": [],
+  "artifact_lifecycle_stage": "reference",
+  "chain_results": [
+    {
+      "turn": 1,
+      "input_message": "improve this",
+      "artifact_lifecycle_stage": "reference",
+      "response_source": "fallback",
+      "message_text": "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": false,
+      "message_domain_unrelated": true
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "total_artifacts_created": 0
+  },
+  "expected_interests": [],
+  "expected_behavior": "'improve this' with no active artifact should return safe empty message. No crash, no artifact creation from thin air.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1c1d",
+    "eval_version": "v1_phase1c1d",
+    "source_module": "weslr/relevance_eval_runner.py"
+  }
+}

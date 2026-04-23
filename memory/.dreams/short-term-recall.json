@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-23T11:54:50.611Z",
+  "entries": {
+    "memory:memory/2026-04-04.md:1:2": {
+      "key": "memory:memory/2026-04-04.md:1:2",
+      "path": "memory/2026-04-04.md",
+      "startLine": 1,
+      "endLine": 2,
+      "source": "memory",
+      "snippet": "# 2026-04-04",
+      "recallCount": 3,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1.5427200078426027,
+      "maxScore": 0.5525732986901647,
+      "firstRecalledAt": "2026-04-22T16:15:58.551Z",
+      "lastRecalledAt": "2026-04-22T18:32:17.235Z",
+      "queryHashes": [
+        "463eccda6c63",
+        "5e3eb0b6e900",
+        "b07a3cca3356"
+      ],
+      "recallDays": [
+        "2026-04-22"
+      ],
+      "conceptTags": []
+    },
+    "memory:memory/2026-04-05.md:1:2": {
+      "key": "memory:memory/2026-04-05.md:1:2",
+      "path": "memory/2026-04-05.md",
+      "startLine": 1,
+      "endLine": 2,
+      "source": "memory",
+      "snippet": "# 2026-04-05",
+      "recallCount": 3,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1.525431539479377,
+      "maxScore": 0.5446105834305897,
+      "firstRecalledAt": "2026-04-22T16:15:58.551Z",
+      "lastRecalledAt": "2026-04-22T18:32:17.235Z",
+      "queryHashes": [
+        "463eccda6c63",
+        "5e3eb0b6e900",
+        "b07a3cca3356"
+      ],
+      "recallDays": [
+        "2026-04-22"
+      ],
+      "conceptTags": []
+    },
+    "memory:memory/2026-04-22.md:1:24": {
+      "key": "memory:memory/2026-04-22.md:1:24",
+      "path": "memory/2026-04-22.md",
+      "startLine": 1,
+      "endLine": 24,
+      "source": "memory",
+      "snippet": "# 2026-04-22 — Identity Fix + OpenClaw Context ## Identity Update - `IDENTITY.md` was wrong (said \"Qwen\"), now fixed to \"WESLR\" per `SOUL.md` - `USER.md` was empty, now populated with known human context - This was the correct thing to do — alignment confirmed ## Env Status - Android 14 / Termux / arm64 — exec heavily restricted (`Permission denied` on most binaries) - OpenClaw binary shebang issue: `/usr/bin/env: bad interpreter` - Model: minimax-m2.7:cloud via Ollama - Gateway running but cannot be restarted via `openclaw` CLI ## Changes Made Today 1. `auto-trigger.js` — `loadState()` null guard: returns `{}` instead of `null` on missing/invalid state (fixed null crash) 2. `openclaw.jso",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.39101447710916987,
+      "maxScore": 0.39101447710916987,
+      "firstRecalledAt": "2026-04-23T11:54:50.611Z",
+      "lastRecalledAt": "2026-04-23T11:54:50.611Z",
+      "queryHashes": [
+        "30ed3e193aa1"
+      ],
+      "recallDays": [
+        "2026-04-23"
+      ],
+      "conceptTags": [
+        "gateway",
+        "identity.md",
+        "soul.md",
+        "user.md",
+        "usr/bin/env",
+        "minimax-m2.7",
+        "auto-trigger.js",
+        "missing/invalid"
+      ]
+    }
+  }
+}

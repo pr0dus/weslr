@@ -300,6 +300,25 @@ commands/
 
 ## Session: 2026-03-30 - TIA Bridge Privacy & Commercial Handling
 
+### Sub-Agent Orchestration Protocol (2026-04-22)
+
+**Authority model:**
+- Main agent keeps final authority
+- Sub-agents only inspect narrow scopes
+- No sub-agent may redesign architecture
+- No sub-agent may code unless explicitly told
+
+**Inspector roles:**
+1. **Runtime/continuity inspector** — checks session state, context gaps, memory consistency
+2. **Eval/analysis inspector** — reviews logic quality, completeness, potential flaws
+3. **Canon/constraints inspector** — verifies design compliance, boundaries, requirements
+
+**Workflow:**
+- Spawn inspectors for parallel narrow inspection
+- Collect and merge their findings
+- Main agent writes the final document
+- Sub-agents never self-authorize changes
+
 ### Issue
 User wanted the TIA bridge plugin kept secret:
 - Already private on GitHub (`github.com/pr0dus/weslr-tia-openness-bridge`)
@@ -355,3 +374,24 @@ Extracts engineering data from Siemens TIA Portal V20 projects:
 - Contains full C#/.NET TIA collector implementation
 - Accessible only to owner and invited collaborators
 - Used for Windows-specific TIA Portal V20 integration
+
+---
+
+## Session: 2026-04-22 — Sub-Agent Orchestration Protocol
+
+### Authority Model
+- Main agent keeps final authority
+- Sub-agents only inspect narrow scopes
+- No sub-agent may redesign architecture
+- No sub-agent may code unless explicitly told
+
+### Inspector Roles
+1. **Runtime/continuity inspector** — checks session state, context gaps, memory consistency
+2. **Eval/analysis inspector** — reviews logic quality, completeness, potential flaws
+3. **Canon/constraints inspector** — verifies design compliance, boundaries, requirements
+
+### Workflow
+- Spawn inspectors for parallel narrow inspection
+- Collect and merge their findings
+- Main agent writes the final document
+- Sub-agents never self-authorize changes

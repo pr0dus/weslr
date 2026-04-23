@@ -1,0 +1,33 @@
+{
+  "id": "time-493567",
+  "name": "Time: 2026-04-22 09:00",
+  "type": "concept",
+  "description": "System time observation",
+  "aliases": [],
+  "tags": [
+    "time",
+    "temporal",
+    "observation"
+  ],
+  "confidence": 1.0,
+  "created_at": 1776843389,
+  "last_updated": 1776843389,
+  "is_temporary": false,
+  "is_ghost": false,
+  "links": [],
+  "evidence": [
+    {
+      "source_id": "test-dedup-1",
+      "source_type": "system_time",
+      "content": "Timestamp: 1776843389",
+      "confidence": 1.0,
+      "timestamp": 1776843389,
+      "category": "source-backed",
+      "traceable": true,
+      "reason": "System timestamp reference",
+      "source_file": "system_time.json",
+      "source_message_id": null
+    }
+  ],
+  "metadata": {}
+}

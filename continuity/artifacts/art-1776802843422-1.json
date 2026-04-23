@@ -1,0 +1,13 @@
+{
+  "artifact_id": "art-1776802843422-1",
+  "created_at": "2026-04-21T20:20:43Z",
+  "type": "artifact_revision",
+  "content": "Proposed revision: The photovoltaic efficiency hypothesis should specify the causal mechanism under specific irradiance conditions.",
+  "source": "dialogue",
+  "context": {
+    "topics": [
+      "photovoltaic",
+      "efficiency"
+    ]
+  }
+}

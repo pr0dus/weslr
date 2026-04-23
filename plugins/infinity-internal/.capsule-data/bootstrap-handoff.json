@@ -1,0 +1,29 @@
+{
+  "timestamp": 1776950118382,
+  "branch": "main",
+  "commit": "26878bee19c4159abef7745e58212054c75572ce",
+  "hasGit": true,
+  "dirty": true,
+  "activeFiles": [
+    "DENTITY.md",
+    "MEMORY.md",
+    "SOUL.md",
+    "USER.md",
+    "chat_ui.py",
+    "communicator_self.json",
+    "de.py",
+    "dialogue.py",
+    "en.py",
+    "plugins/infinity-internal/capsule/utils.js",
+    "plugins/infinity-internal/index.js",
+    "sim.py",
+    "weslr/concept_graph/bridge/runtime_writes.json",
+    "weslr/concept_graph/concepts/weather-rome.json",
+    "weslr/concept_graph/metadata.json",
+    "weslr/tests/continuity/governance_scorecards.json"
+  ],
+  "latestTask": null,
+  "reason": "risk-triggered-critical-risk",
+  "capsuleCommit": "26878bee19c4159abef7745e58212054c75572ce",
+  "capsuleReason": "risk-triggered-critical-risk"
+}

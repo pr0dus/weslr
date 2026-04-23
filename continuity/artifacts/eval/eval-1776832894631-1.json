@@ -1,0 +1,160 @@
+{
+  "evaluation_id": "eval-1776832894631-1",
+  "created_at": "2026-04-22T04:41:34Z",
+  "scenario_id": "sat-026",
+  "scenario_title": "Cross-domain contamination check",
+  "session_id": "inspect-test",
+  "input_message": "configure nginx as reverse proxy for docker web apps",
+  "response_source": "chain",
+  "relevant_interests_snapshot": [],
+  "artifact_lifecycle_stage": "generation",
+  "chain_results": [
+    {
+      "turn": 1,
+      "input_message": "configure nginx as reverse proxy for docker web apps",
+      "artifact_lifecycle_stage": "generation",
+      "response_source": "fallback",
+      "message_text": "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [
+        {
+          "id": "c2cca293",
+          "name": "nginx",
+          "display_name": "Nginx Reverse Proxy",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: nginx",
+            "query text contains tag: nginx",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "cache",
+            "nginx",
+            "reverse_proxy",
+            "web_server"
+          ]
+        },
+        {
+          "id": "8cefef44",
+          "name": "docker",
+          "display_name": "Docker Containers",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: docker",
+            "query text contains tag: docker",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "containers",
+            "devops",
+            "docker",
+            "infrastructure"
+          ]
+        },
+        {
+          "id": "0445d029",
+          "name": "cache_optimization",
+          "display_name": "Cache Optimization",
+          "score": 3,
+          "match_reasons": [
+            "query text contains tag: nginx",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "cache",
+            "nginx",
+            "optimization",
+            "performance"
+          ]
+        }
+      ],
+      "safe_response": false,
+      "message_domain_unrelated": false
+    },
+    {
+      "turn": 2,
+      "input_message": "how does photovoltaic efficiency change with temperature",
+      "artifact_lifecycle_stage": "shift",
+      "response_source": "fallback",
+      "message_text": "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [
+        {
+          "id": "ca809c78",
+          "name": "efficiency",
+          "display_name": "Efficiency Optimization",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: efficiency",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "optimization",
+            "performance"
+          ]
+        },
+        {
+          "id": "3fb51842",
+          "name": "photovoltaic",
+          "display_name": "Photovoltaic Systems",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: photovoltaic",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "energy",
+            "renewable",
+            "solar"
+          ]
+        }
+      ],
+      "safe_response": false,
+      "message_domain_unrelated": false
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "total_artifacts_created": 0
+  },
+  "expected_interests": [
+    "nginx",
+    "docker"
+  ],
+  "expected_behavior": "Photovoltaic reference after nginx artifact should NOT pull nginx/docker into message relevance. Cross-domain contamination should be avoided.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1c1d",
+    "eval_version": "v1_phase1c1d",
+    "source_module": "weslr/relevance_eval_runner.py"
+  }
+}

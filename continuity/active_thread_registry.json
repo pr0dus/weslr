@@ -1,0 +1,29 @@
+{
+  "active_threads": {
+    "csc001-session-a": {
+      "thread_id": "thr-c7f3b909",
+      "thread_name": "Eval Thread for csc001-session-a",
+      "set_at": "2026-04-22T07:35:56Z"
+    },
+    "csc008-session-a": {
+      "thread_id": "thr-088113be",
+      "thread_name": "Eval Thread for csc008-session-a",
+      "set_at": "2026-04-22T07:35:56Z"
+    },
+    "csc001-session-b": {
+      "thread_id": "thr-c7f3b909",
+      "thread_name": "bridged_from_session_a",
+      "set_at": "2026-04-22T07:35:56Z"
+    },
+    "csc001-user": {
+      "thread_id": "thr-f43cc4db",
+      "thread_name": "Eval Thread for csc001-user",
+      "set_at": "2026-04-22T19:41:16Z"
+    },
+    "csc008-user": {
+      "thread_id": "thr-871619e7",
+      "thread_name": "Eval Thread for csc008-user",
+      "set_at": "2026-04-22T19:41:17Z"
+    }
+  }
+}

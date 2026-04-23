@@ -1,0 +1,100 @@
+{
+  "evaluation_id": "eval-1776833378431-1",
+  "created_at": "2026-04-22T04:49:38Z",
+  "scenario_id": "sat-022",
+  "scenario_title": "Topic shift after active artifact",
+  "session_id": "rerun-phase1c1d",
+  "input_message": "(chain scenario)",
+  "response_source": "chain",
+  "relevant_interests_snapshot": [],
+  "artifact_lifecycle_stage": "shift",
+  "chain_results": [
+    {
+      "turn": 1,
+      "input_message": "help me improve my photovoltaic system efficiency",
+      "artifact_lifecycle_stage": "generation",
+      "response_source": "artifact_proposal",
+      "message_text": "The artifact could be improved by making causal claims more specific, making next steps concrete with verification checks, and noting what external data would change.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change\n\nProposed revision: [Rewrite specific section with]: (1) [causal mechanism + conditions], (2) [concrete next step with expected outcome], (3) [note what external verification would confirm].\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [
+        {
+          "id": "ca809c78",
+          "name": "efficiency",
+          "display_name": "Efficiency Optimization",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: efficiency",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "optimization",
+            "performance"
+          ]
+        },
+        {
+          "id": "3fb51842",
+          "name": "photovoltaic",
+          "display_name": "Photovoltaic Systems",
+          "score": 4,
+          "match_reasons": [
+            "query text matched name: photovoltaic",
+            "query text contains tag: efficiency",
+            "recent activity within 48 hours"
+          ],
+          "last_seen_at": "2026-04-21T19:58:23Z",
+          "occurrence_count": 0,
+          "tags": [
+            "efficiency",
+            "energy",
+            "renewable",
+            "solar"
+          ]
+        }
+      ],
+      "safe_response": false,
+      "message_domain_unrelated": false
+    },
+    {
+      "turn": 2,
+      "input_message": "what is the capital of France",
+      "artifact_lifecycle_stage": "shift",
+      "response_source": "conversation-aware-communicator:question:answer_directly",
+      "message_text": "I'm here. Say something simple and I'll try to answer directly rather than hiding behind internal phrasing.",
+      "active_artifact_before": null,
+      "active_artifact_after": null,
+      "relevant_interests_snapshot": [],
+      "safe_response": false,
+      "message_domain_unrelated": true
+    }
+  ],
+  "assessment": {
+    "accuracy": null,
+    "restraint": null,
+    "ranking_quality": null,
+    "explainability": null,
+    "runtime_usefulness": null,
+    "satellite_readability": null
+  },
+  "auto_flags": {
+    "revision_drift": false,
+    "artifact_context_leak_flag": false,
+    "cross_domain_contamination_flag": false,
+    "incorrect_continuity": false,
+    "safe_path_ok": true,
+    "total_artifacts_created": 0
+  },
+  "expected_interests": [],
+  "expected_behavior": "Second message (unrelated domain) should NOT inherit artifact-context relevance. No domain contamination.",
+  "notes": "",
+  "recommended_followup": null,
+  "eval_meta": {
+    "evaluated_by": "relevance_eval_runner_phase1c1d",
+    "eval_version": "v1_phase1c1d",
+    "source_module": "weslr/relevance_eval_runner.py"
+  }
+}

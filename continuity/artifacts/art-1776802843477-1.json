@@ -1,0 +1,13 @@
+{
+  "artifact_id": "art-1776802843477-1",
+  "created_at": "2026-04-21T20:20:43Z",
+  "type": "artifact_revision",
+  "content": "The artifact covers governance quality observations. Main areas for improvement: specificity of causal claims, concreteness of next steps, and coverage of what external verification would change.\n\nProposed improvements:\n- Make causal claims specific: what mechanism, under what conditions\n- Make next steps concrete: specific action + expected outcome\n- Note what external verification would change about confidence\n\nProposed revision: [Targeted rewrite of the specific section requested]. Keep unchanged: sections that are already specific and evidence-grounded.\n\nThis is a proposed change only. The original artifact is unchanged until approved.",
+  "source": "dialogue",
+  "context": {
+    "input_message": "improve this",
+    "topics": [
+      "improve"
+    ]
+  }
+}
