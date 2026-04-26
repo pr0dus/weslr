@@ -763,12 +763,33 @@ def interpret_human_turn(message: str) -> dict:
         }
     if "what can't you do" in lowered or "what are you missing" in lowered or "what are your limitations" in lowered or "what can you not do" in lowered:
         missing = [k for k, v in _CAPABILITIES.items() if v is False]
+        # ISS bridge: include diagnostic gap signals in visibility only
+        iss_gap_summaries = []
+        try:
+            records = load_iss_diagnostics(50)
+            iss_gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
+            iss_gap_summaries = [
+                {
+                    "gap_id": r.get("gap_id"),
+                    "summary": r.get("summary"),
+                    "severity": r.get("severity"),
+                    "confidence": r.get("confidence"),
+                    "source_probe_id": r.get("source_probe_id"),
+                }
+                for r in iss_gaps
+            ]
+        except Exception:
+            pass  # must never break C3
+        iss_note = ""
+        if iss_gap_summaries:
+            iss_note = f" Observed ISS diagnostic gaps: {len(iss_gap_summaries)}. Use 'show gaps' for details."
         return {
             "message": message,
             "response_text": (
                 "I currently do not have the following capabilities: "
                 + ", ".join(missing)
                 + ". These represent areas where functionality is not yet implemented."
+                + iss_note
             ),
             "confidence": "high",
             "suggested_mode": "observe",
@@ -782,6 +803,8 @@ def interpret_human_turn(message: str) -> dict:
             "mode_suggestion": None,
             "suggestion_surface": {"show": False, "priority": "low"},
             "missing_capabilities": missing,
+            "iss_gap_signals": iss_gap_summaries,
+            "iss_gap_count": len(iss_gap_summaries),
             "_weslr_deterministic": True,
         }
     if "how can you improve" in lowered or "what could be added" in lowered or "what are possible improvements" in lowered or "can you add intelligence layers" in lowered or "how can you become better" in lowered:
