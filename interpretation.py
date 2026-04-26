@@ -1391,6 +1391,18 @@ def interpret_human_turn(message: str) -> dict:
             "_weslr_deterministic": True,
         }
 
+    # ---- proposal_id normalizer (private helper) ----
+    _STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
+
+    def _normalize_proposal_id(raw: str) -> str:
+        value = raw.strip().strip('"').strip("'").strip()
+        lowered = value.lower()
+        for suffix in _STOP_SUFFIXES:
+            if lowered.endswith(suffix):
+                value = value[: -len(suffix)].strip()
+                lowered = value.lower()
+        return value
+
     # Proposal explanation layer (read-only)
     _explain_triggers = ["why is ", "explain proposal ", "why prioritize "]
     if any(lowered.startswith(t) for t in _explain_triggers):
@@ -1399,7 +1411,7 @@ def interpret_human_turn(message: str) -> dict:
             if t in lowered:
                 raw = lowered[lowered.index(t) + len(t):].strip().strip('"').strip("'")
                 break
-        proposal_id = raw.strip()
+        proposal_id = _normalize_proposal_id(raw)
         if not proposal_id:
             return {
                 "message": message,
