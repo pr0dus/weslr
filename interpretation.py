@@ -1346,6 +1346,51 @@ def interpret_human_turn(message: str) -> dict:
                 "_weslr_deterministic": True,
             }
 
+    # Operator system overview (read-only, aggregates checkpoint + ISS + plans)
+    _ov_triggers = [
+        "show system overview", "weslr overview", "system overview", "show full status",
+    ]
+    if any(lowered.startswith(t) or lowered == t for t in _ov_triggers):
+        checkpoint = get_state_checkpoint()
+        diagnostics = load_iss_diagnostics(20)
+        plans = load_implementation_plans(10)
+        gaps = [d for d in diagnostics if d.get("type") == "iss_gap_signal"]
+        probes = [d for d in diagnostics if d.get("type") == "iss_probe_result"]
+        ok_count = sum(1 for p in probes if p.get("status") == "ok")
+        deg_count = sum(1 for p in probes if p.get("status") == "degraded")
+        layer_ids = [l["id"] for l in checkpoint.get("layers", [])]
+
+        response_text = (
+            f"WESLR overview:\n"
+            f"- {len(layer_ids)} layers confirmed\n"
+            f"- {len(gaps)} diagnostic gap(s)\n"
+            f"- {len(plans)} implementation plan(s)\n"
+            f"- ISS probes: {ok_count} ok, {deg_count} degraded\n"
+            f"System is deterministic, non-executing, and operator-controlled."
+        )
+
+        return {
+            "message": message,
+            "response_text": response_text,
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "System overview query"},
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "overview": {
+                "checkpoint": checkpoint,
+                "gaps": gaps,
+                "plans": plans,
+                "summary": {
+                    "layers_confirmed": len(layer_ids),
+                    "gap_count": len(gaps),
+                    "plan_count": len(plans),
+                },
+            },
+            "path": "operator_overview",
+            "_weslr_deterministic": True,
+        }
+
     # State checkpoint query (read-only)
     _ck_triggers = [
         "show weslr status", "show architecture status",
