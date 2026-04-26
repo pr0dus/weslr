@@ -46,6 +46,12 @@ def create_implementation_plan(proposal_id: str, proposal_content: dict) -> dict
         },
     ]
 
+    decision_timestamp = proposal_content.get("decision_timestamp")
+    trace_ref = {
+        "proposal_created": None,
+        "proposal_decision": decision_timestamp,
+    }
+
     return {
         "type": "implementation_plan",
         "plan_id": plan_id,
@@ -53,6 +59,8 @@ def create_implementation_plan(proposal_id: str, proposal_content: dict) -> dict
         "status": "planned",
         "execution_allowed": _EXECUTION_ALLOWED,
         "created_at": time.time(),
+        "decision_timestamp": decision_timestamp,
+        "trace_reference": trace_ref,
         "proposal_summary": summary,
         "proposal_score": score,
         "proposal_tier": tier,

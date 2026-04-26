@@ -871,9 +871,11 @@ def interpret_human_turn(message: str) -> dict:
         record_decision(cap, decision)
         impl_plan = None
         if decision == "accepted":
+            import time as _time
             proposal_content = {
                 "summary": f"Approved proposal: {cap}",
                 "decision": decision,
+                "decision_timestamp": _time.time(),
             }
             impl_plan = create_implementation_plan(cap, proposal_content)
             record_implementation_plan(impl_plan)
