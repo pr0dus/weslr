@@ -10,6 +10,7 @@ import json as _json
 from pathlib import Path as _Path
 from weslr.proposal_traceability import record_proposal, record_decision
 from weslr.implementation_planning import create_implementation_plan, record_implementation_plan, load_implementation_plans
+from weslr.iss.diagnostic_records import load_iss_diagnostics
 from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
@@ -1181,6 +1182,64 @@ def interpret_human_turn(message: str) -> dict:
         show_suggestion = False
         suggestion_priority = "low"
 
+
+    # ISSQ: read-only ISS diagnostics query
+    _iss_triggers = ["show diagnostics", "show iss diagnostics", "list diagnostics",
+                     "show gaps", "show probe results"]
+    if any(lowered.startswith(t) or lowered == t for t in _iss_triggers):
+        records = load_iss_diagnostics(20)
+        probes = [r for r in records if r.get("type") == "iss_probe_result"]
+        gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
+        if "gap" in lowered:
+            response_text = (
+                f"Gaps: {len(gaps)} " + ", ".join(f"[{g.get('severity')}] {g.get('summary', '')[:60]}" for g in gaps[-5:]) if gaps else "No gap signals recorded."
+            )
+            return {
+                "message": message,
+                "response_text": response_text,
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "gaps": gaps[-5:],
+                "path": "ISS_query_gaps",
+                "_weslr_deterministic": True,
+            }
+        elif "probe" in lowered:
+            response_text = (
+                f"Probe results: {len(probes)} " + ", ".join(f"[{p.get('status')}] {p.get('target', '')[:60]} ({p.get('confidence')})" for p in probes[-5:]) if probes else "No probe results recorded."
+            )
+            return {
+                "message": message,
+                "response_text": response_text,
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "probes": probes[-5:],
+                "path": "ISS_query_probes",
+                "_weslr_deterministic": True,
+            }
+        else:
+            ok_count = sum(1 for p in probes if p.get("status") == "ok")
+            deg_count = sum(1 for p in probes if p.get("status") == "degraded")
+            response_text = (
+                f"Diagnostics: Probes: {ok_count} ok, {deg_count} degraded. Gaps: {len(gaps)} total"
+            )
+            return {
+                "message": message,
+                "response_text": response_text,
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "diagnostics": records,
+                "path": "ISS_query_all",
+                "_weslr_deterministic": True,
+            }
 
     # B1_REAL: response_text construction
     prefix = (
