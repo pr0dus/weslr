@@ -1522,18 +1522,44 @@ def interpret_human_turn(message: str) -> dict:
         if not iss_intake_proposals:
             response_text = "No ISS intake proposals found."
         else:
-            lines = [f"Found {len(iss_intake_proposals)} ISS intake proposal(s):"]
+            # Group by proposal_id for deduplicated view (trace records unchanged)
+            grouped = {}
             for p in iss_intake_proposals:
+                pid = p["proposal_id"]
+                ts = p.get("timestamp")
+                if pid not in grouped:
+                    grouped[pid] = {
+                        "proposal_id": pid,
+                        "source_gap_id": p["source_gap_id"],
+                        "summary": p["summary"],
+                        "severity": p["severity"],
+                        "confidence": p.get("confidence", ""),
+                        "count": 0,
+                        "first_seen": ts,
+                        "last_seen": ts,
+                    }
+                grouped[pid]["count"] += 1
+                if ts is not None:
+                    if grouped[pid]["first_seen"] is None or ts < grouped[pid]["first_seen"]:
+                        grouped[pid]["first_seen"] = ts
+                    if ts > grouped[pid]["last_seen"]:
+                        grouped[pid]["last_seen"] = ts
+            iss_intake_grouped = list(grouped.values())
+            total_events = len(iss_intake_proposals)
+            lines = [f"Found {len(iss_intake_grouped)} unique ISS intake proposal(s) from {total_events} trace event(s):"]
+            for g in iss_intake_grouped:
                 lines.append(
-                    f"- {p['proposal_id']} from {p['source_gap_id']} "
-                    f"({p['severity']}) [proposed]"
+                    f"- {g['proposal_id']} from {g['source_gap_id']} "
+                    f"({g['severity']}), seen {g['count']} time(s)"
                 )
             response_text = "\n".join(lines)
         return {
             "message": message,
             "response_text": response_text,
             "iss_intake_proposals": iss_intake_proposals,
+            "iss_intake_grouped": iss_intake_grouped,
             "iss_intake_count": len(iss_intake_proposals),
+            "iss_intake_unique_count": len(iss_intake_grouped),
             "path": "ISS_intake_query",
             "_weslr_deterministic": True,
             "confidence": "high",
