@@ -9,7 +9,7 @@ _B9_STATE = {
 import json as _json
 from pathlib import Path as _Path
 from weslr.proposal_traceability import record_proposal, record_decision
-from weslr.implementation_planning import create_implementation_plan, record_implementation_plan
+from weslr.implementation_planning import create_implementation_plan, record_implementation_plan, load_implementation_plans
 from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
@@ -901,6 +901,96 @@ def interpret_human_turn(message: str) -> dict:
                 "operator_approval_required": impl_plan["operator_approval_required"] if impl_plan else None,
             } if impl_plan else None,
         }
+
+    # C8Q: implementation plan queries (read-only)
+    _plan_triggers = [
+        "show implementation plans",
+        "show plans",
+        "list plans",
+        "show plan for ",
+        "get plan ",
+    ]
+    if any(lowered.startswith(t) or lowered == t for t in _plan_triggers):
+        if "show plan for " in lowered or "get plan " in lowered:
+            # Single plan query
+            parts = lowered.split(" for ") if " for " in lowered else lowered.split(" plan ")
+            target_id = parts[-1].strip().strip('"').strip("'")
+            plans = load_implementation_plans(50)
+            matched = [p for p in plans if p.get("proposal_id") == target_id]
+            if matched:
+                plan = matched[-1]
+                steps_str = " → ".join(s["title"].split(" ", 1)[1] if " " in s["title"] else s["title"] for s in plan.get("steps", []) if s.get("allowed"))
+                response_text = (
+                    f"Plan for {target_id}: Steps: {steps_str}. Status: {plan.get('status')}. Execution allowed: {plan.get('execution_allowed')}. Operator approval required: {plan.get('operator_approval_required')}. Plan ID: {plan.get('plan_id')}"
+                )
+                return {
+                    "message": message,
+                    "response_text": response_text,
+                    "confidence": "high",
+                    "suggested_mode": "observe",
+                    "mode_analysis": {
+                        "current_mode": None,
+                        "suggested_mode": "observe",
+                        "match": True,
+                        "mismatch": False,
+                        "reason": "Implementation plan query",
+                    },
+                    "mode_suggestion": None,
+                    "suggestion_surface": {"show": False, "priority": "low"},
+                    "plan": plan,
+                    "path": "C8_plan_query_single",
+                    "_weslr_deterministic": True,
+                }
+            else:
+                return {
+                    "message": message,
+                    "response_text": f"No plan found for '{target_id}'.",
+                    "confidence": "high",
+                    "suggested_mode": "observe",
+                    "mode_analysis": {
+                        "current_mode": None,
+                        "suggested_mode": "observe",
+                        "match": True,
+                        "mismatch": False,
+                        "reason": "Implementation plan query",
+                    },
+                    "mode_suggestion": None,
+                    "suggestion_surface": {"show": False, "priority": "low"},
+                    "path": "C8_plan_query_single",
+                    "_weslr_deterministic": True,
+                }
+        else:
+            # List plans
+            plans = load_implementation_plans(10)
+            if plans:
+                lines = [f"Found {len(plans)} implementation plan(s):"]
+                for p in plans:
+                    lines.append(
+                        f"- {p.get('proposal_id')} ({p.get('status')}) "
+                        f"[exec={p.get('execution_allowed')}]"
+                    )
+                response_text = "\n".join(lines)
+            else:
+                response_text = "No implementation plans found."
+            return {
+                "message": message,
+                "response_text": response_text,
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {
+                    "current_mode": None,
+                    "suggested_mode": "observe",
+                    "match": True,
+                    "mismatch": False,
+                    "reason": "Implementation plan list query",
+                },
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "plans": plans,
+                "path": "C8_plan_query_list",
+                "_weslr_deterministic": True,
+            }
+
     if "who are you" in lowered or "what are you" in lowered:
         return {
             "message": message,
