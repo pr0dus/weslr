@@ -1493,6 +1493,53 @@ def interpret_human_turn(message: str) -> dict:
             },
         }
 
+    # ---- ISS intake proposal query (read-only) ----
+    _iss_intake_triggers = [
+        "show iss intake proposals",
+        "show proposals from iss",
+        "show converted iss proposals",
+        "list iss proposals",
+    ]
+    if any(lowered.startswith(t) for t in _iss_intake_triggers):
+        try:
+            from weslr.proposal_traceability import load_trace
+            trace = load_trace(100)
+        except Exception:
+            trace = []
+        iss_intake_proposals = [
+            {
+                "proposal_id": r.get("proposal_id"),
+                "source_gap_id": r.get("content", {}).get("source_gap_id", ""),
+                "summary": r.get("content", {}).get("summary", ""),
+                "severity": r.get("content", {}).get("severity", ""),
+                "timestamp": r.get("timestamp"),
+            }
+            for r in trace
+            if r.get("type") == "proposal_created"
+            and r.get("content", {}).get("source") == "ISS"
+            and r.get("content", {}).get("operator_requested_intake") is True
+        ]
+        if not iss_intake_proposals:
+            response_text = "No ISS intake proposals found."
+        else:
+            lines = [f"Found {len(iss_intake_proposals)} ISS intake proposal(s):"]
+            for p in iss_intake_proposals:
+                lines.append(
+                    f"- {p['proposal_id']} from {p['source_gap_id']} "
+                    f"({p['severity']}) [proposed]"
+                )
+            response_text = "\n".join(lines)
+        return {
+            "message": message,
+            "response_text": response_text,
+            "iss_intake_proposals": iss_intake_proposals,
+            "iss_intake_count": len(iss_intake_proposals),
+            "path": "ISS_intake_query",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "suggested_mode": "observe",
+        }
+
     # Proposal explanation layer (read-only)
     _explain_triggers = ["why is ", "explain proposal ", "why prioritize "]
     if any(lowered.startswith(t) for t in _explain_triggers):
