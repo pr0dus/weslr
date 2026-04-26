@@ -9,6 +9,7 @@ _B9_STATE = {
 import json as _json
 from pathlib import Path as _Path
 from weslr.proposal_traceability import record_proposal, record_decision
+from weslr.implementation_planning import create_implementation_plan, record_implementation_plan
 from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
@@ -868,6 +869,14 @@ def interpret_human_turn(message: str) -> dict:
         event = {"operator_decision": decision, "capability": cap, "type": "capability_proposal"}
         log_operator_feedback(event)
         record_decision(cap, decision)
+        impl_plan = None
+        if decision == "accepted":
+            proposal_content = {
+                "summary": f"Approved proposal: {cap}",
+                "decision": decision,
+            }
+            impl_plan = create_implementation_plan(cap, proposal_content)
+            record_implementation_plan(impl_plan)
         return {
             "message": message,
             "response_text": f"Proposal '{cap}' has been {decision} by the operator. No changes have been applied.",
@@ -884,6 +893,13 @@ def interpret_human_turn(message: str) -> dict:
             "suggestion_surface": {"show": False, "priority": "low"},
             "decision_recorded": True,
             "_weslr_deterministic": True,
+            "implementation_plan": {
+                "plan_id": impl_plan["plan_id"] if impl_plan else None,
+                "proposal_id": impl_plan["proposal_id"] if impl_plan else None,
+                "status": impl_plan["status"] if impl_plan else None,
+                "execution_allowed": impl_plan["execution_allowed"] if impl_plan else None,
+                "operator_approval_required": impl_plan["operator_approval_required"] if impl_plan else None,
+            } if impl_plan else None,
         }
     if "who are you" in lowered or "what are you" in lowered:
         return {
