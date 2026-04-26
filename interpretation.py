@@ -1403,6 +1403,96 @@ def interpret_human_turn(message: str) -> dict:
                 lowered = value.lower()
         return value
 
+    # ---- ISS controlled proposal intake (read-only, operator-requested only) ----
+    _intake_triggers = [
+        "convert iss suggestion ",
+        "convert iss gap ",
+        "create proposal from iss ",
+        "turn iss gap ",
+    ]
+    if any(lowered.startswith(t) for t in _intake_triggers):
+        for t in _intake_triggers:
+            if lowered.startswith(t):
+                raw = lowered[len(t):].strip().strip('"').strip("'")
+                break
+        if not raw:
+            return {
+                "message": message,
+                "response_text": "No ISS gap ID provided.",
+                "path": "ISS_controlled_proposal_intake",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "intake_result": {"created": False, "reason": "missing_id"},
+            }
+
+        # Normalize: handle "gap.xxx" prefix
+        if raw.startswith("gap."):
+            requested_gap_id = raw
+            proposal_id = raw[4:].strip()
+        else:
+            proposal_id = raw
+            requested_gap_id = "gap." + raw
+
+        # Load ISS records and find matching gap
+        try:
+            records = load_iss_diagnostics(50)
+        except Exception:
+            try:
+                from weslr.iss.diagnostic_records import load_iss_diagnostics as _lid
+                records = _lid(50)
+            except Exception:
+                records = []
+
+        gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
+        matched = None
+        for g in gaps:
+            if g.get("gap_id") == requested_gap_id or g.get("gap_id", "").endswith(proposal_id):
+                matched = g
+                break
+
+        if not matched:
+            return {
+                "message": message,
+                "response_text": f"No ISS gap found for '{raw}'. Use 'show gaps' to inspect available gaps.",
+                "path": "ISS_controlled_proposal_intake",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "intake_result": {
+                    "created": False,
+                    "reason": "gap_not_found",
+                    "requested_id": raw,
+                },
+            }
+
+        # Record proposal trace (created, not approved)
+        from weslr.proposal_traceability import record_proposal
+        proposal_payload = {
+            "summary": matched.get("summary", ""),
+            "source": "ISS",
+            "source_gap_id": matched.get("gap_id", ""),
+            "severity": matched.get("severity", "medium"),
+            "confidence": matched.get("confidence", "medium"),
+            "suggested": True,
+            "operator_requested_intake": True,
+        }
+        record_proposal(proposal_id, proposal_payload)
+
+        return {
+            "message": message,
+            "response_text": f"ISS suggestion '{proposal_id}' was converted into a traced proposal. It is not approved and no implementation plan was created.",
+            "path": "ISS_controlled_proposal_intake",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "intake_result": {
+                "created": True,
+                "proposal_id": proposal_id,
+                "source_gap_id": matched.get("gap_id", ""),
+                "approval_status": "not_approved",
+                "plan_created": False,
+                "execution_allowed": False,
+            },
+        }
+
     # Proposal explanation layer (read-only)
     _explain_triggers = ["why is ", "explain proposal ", "why prioritize "]
     if any(lowered.startswith(t) for t in _explain_triggers):
