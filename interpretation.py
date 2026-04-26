@@ -58,6 +58,38 @@ def rank_capability_proposals(proposals: list[dict]) -> dict:
     Read-only: get_interest_summary() + summarize_operator_feedback().
     No writes, no learning, no mutation beyond adding score metadata.
     """
+    # History imports (read-only)
+    try:
+        from weslr.proposal_traceability import load_trace
+        from weslr.implementation_planning import load_implementation_plans
+        trace_records = load_trace(100)
+        plan_records = load_implementation_plans(100)
+        # Build per-proposal history counts
+        history = {}
+        for r in trace_records:
+            pid = r.get("proposal_id", "")
+            if pid not in history:
+                history[pid] = {"proposed": 0, "accepted": 0, "rejected": 0}
+            if r.get("type") == "proposal_created":
+                history[pid]["proposed"] = history[pid].get("proposed", 0) + 1
+            elif r.get("type") == "proposal_decision":
+                d = r.get("decision", "")
+                if d == "accepted":
+                    history[pid]["accepted"] = history[pid].get("accepted", 0) + 1
+                elif d == "rejected":
+                    history[pid]["rejected"] = history[pid].get("rejected", 0) + 1
+        for r in plan_records:
+            pid = r.get("proposal_id", "")
+            if pid not in history:
+                history[pid] = {"proposed": 0, "accepted": 0, "rejected": 0, "planned": 0}
+            if "planned" not in history[pid]:
+                history[pid]["planned"] = 0
+            history[pid]["planned"] = history[pid].get("planned", 0) + 1
+        history_checked = True
+    except Exception:
+        history = {}
+        history_checked = False
+
     # Step 1: read interests (read-only)
     try:
         from interpretation import get_interest_summary
@@ -95,7 +127,21 @@ def rank_capability_proposals(proposals: list[dict]) -> dict:
                 boost += 0.2
 
         base = 0.5
-        final = min(1.0, base + boost)
+        # History modifiers (read-only)
+        hist = history.get(cap, {})
+        proposed = hist.get("proposed", 0)
+        accepted = hist.get("accepted", 0)
+        rejected = hist.get("rejected", 0)
+        planned = hist.get("planned", 0)
+        if proposed > 1:
+            boost += 0.1
+        if accepted > 0:
+            boost += 0.2
+        if rejected > 2:
+            boost -= 0.2
+        if accepted > 0 and planned == 0:
+            boost += 0.2
+        final = min(1.0, max(0.0, base + boost))
 
         # build reason string
         if boost == 0.0:
@@ -118,6 +164,12 @@ def rank_capability_proposals(proposals: list[dict]) -> dict:
                 "feedback_used": feedback_checked,
             },
             "ranking_reason": reason,
+            "history_signal": {
+                "proposed": proposed,
+                "accepted": accepted,
+                "rejected": rejected,
+                "planned": planned,
+            },
         })
 
     # Step 4: sort by tier then alphabetically (deterministic, no randomness)
@@ -129,6 +181,7 @@ def rank_capability_proposals(proposals: list[dict]) -> dict:
         "signal_summary": {
             "interests_checked": interests_checked,
             "feedback_checked": feedback_checked,
+            "history_checked": history_checked,
         },
     }
 
