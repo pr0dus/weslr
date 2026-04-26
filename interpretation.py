@@ -961,17 +961,24 @@ def interpret_human_turn(message: str) -> dict:
         decision = "rejected"
         cap = lower_msg[len("deny proposal "):].strip()
     if decision is not None:
+        # Allow any proposal_id (including dot-separated like iss.not_integrated)
+        # The check against _CAPABILITIES is removed so ISS intake proposals can be approved
         if cap not in _CAPABILITIES:
-            return {
-                "message": message,
-                "response_text": f"Capability '{cap}' is not a recognized proposal.",
-                "confidence": "high",
-                "suggested_mode": "observe",
-                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Operator decision recorded"},
-                "mode_suggestion": None,
-                "suggestion_surface": {"show": False, "priority": "low"},
-                "decision_recorded": False,
-            }
+            # Fallback: check if it's a known proposal in trace history
+            from weslr.proposal_traceability import load_trace
+            trace = load_trace(100)
+            known_ids = set(r.get("proposal_id") for r in trace if r.get("type") == "proposal_created")
+            if cap not in known_ids:
+                return {
+                    "message": message,
+                    "response_text": f"Capability '{cap}' is not a recognized proposal.",
+                    "confidence": "high",
+                    "suggested_mode": "observe",
+                    "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Operator decision recorded"},
+                    "mode_suggestion": None,
+                    "suggestion_surface": {"show": False, "priority": "low"},
+                    "decision_recorded": False,
+                }
         event = {"operator_decision": decision, "capability": cap, "type": "capability_proposal"}
         log_operator_feedback(event)
         record_decision(cap, decision)
