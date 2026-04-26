@@ -892,6 +892,31 @@ def interpret_human_turn(message: str) -> dict:
             ranked_proposals = raw_proposals
             signal_summary = {"interests_checked": False, "feedback_checked": False}
 
+        # ISS bridge: surface gap-derived suggestions (non-binding, separate from ranked proposals)
+        iss_suggestions = []
+        try:
+            iss_records = load_iss_diagnostics(50)
+            for gap in iss_records:
+                if gap.get("type") != "iss_gap_signal":
+                    continue
+                gap_id = gap.get("gap_id", "")
+                # Strip "gap." prefix to form proposal_id
+                proposal_id = gap_id[4:] if gap_id.startswith("gap.") else gap_id
+                iss_suggestions.append({
+                    "proposal_id": proposal_id,
+                    "source": "ISS",
+                    "summary": gap.get("summary", ""),
+                    "severity": gap.get("severity", "medium"),
+                    "confidence": gap.get("confidence", "medium"),
+                    "suggested": True,
+                })
+        except Exception:
+            pass  # must never break C4
+
+        iss_note = ""
+        if iss_suggestions:
+            iss_note = f" ISS suggests {len(iss_suggestions)} additional capability area(s). These are diagnostic suggestions, not active proposals."
+
         proposal_texts = [p["proposal"] for p in ranked_proposals]
         return {
             "message": message,
@@ -899,6 +924,7 @@ def interpret_human_turn(message: str) -> dict:
                 "Based on my current limitations, the following improvements could be considered: "
                 + "; ".join(proposal_texts)
                 + ". These are suggestions only and would require operator approval to implement."
+                + iss_note
             ),
             "confidence": "high",
             "suggested_mode": "observe",
@@ -913,6 +939,8 @@ def interpret_human_turn(message: str) -> dict:
             "suggestion_surface": {"show": False, "priority": "low"},
             "proposed_capabilities": ranked_proposals,
             "proposal_signal_summary": signal_summary,
+            "iss_suggested_proposals": iss_suggestions,
+            "iss_suggestion_count": len(iss_suggestions),
             "_weslr_deterministic": True,
         }
     # C6_REAL: operator approval workflow
