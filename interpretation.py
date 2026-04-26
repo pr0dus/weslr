@@ -11,6 +11,7 @@ from pathlib import Path as _Path
 from weslr.proposal_traceability import record_proposal, record_decision
 from weslr.implementation_planning import create_implementation_plan, record_implementation_plan, load_implementation_plans
 from weslr.iss.diagnostic_records import load_iss_diagnostics
+from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
@@ -1344,6 +1345,34 @@ def interpret_human_turn(message: str) -> dict:
                 "path": "ISS_query_all",
                 "_weslr_deterministic": True,
             }
+
+    # State checkpoint query (read-only)
+    _ck_triggers = [
+        "show weslr status", "show architecture status",
+        "show state checkpoint", "weslr checkpoint", "system checkpoint",
+    ]
+    if any(lowered.startswith(t) or lowered == t for t in _ck_triggers):
+        cp = get_state_checkpoint()
+        layer_ids = [l["id"] for l in cp.get("layers", [])]
+        response_text = (
+            f"WESLR checkpoint {cp['version']}: {cp['status']}. "
+            f"Confirmed layers: {', '.join(layer_ids)}. "
+            f"Execution allowed: {cp['execution_allowed']}. "
+            f"Learning enabled: {cp['learning_enabled']}. "
+            f"Autonomous changes: {cp['autonomous_changes_enabled']}."
+        )
+        return {
+            "message": message,
+            "response_text": response_text,
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "State checkpoint query"},
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "state_checkpoint": cp,
+            "path": "state_checkpoint_query",
+            "_weslr_deterministic": True,
+        }
 
     # B1_REAL: response_text construction
     prefix = (
