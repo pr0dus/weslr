@@ -1,5 +1,201 @@
 from __future__ import annotations
 
+# B9: pattern escalation across turns (session-only, no persistence)
+_B9_STATE = {
+    "low_confidence_count": 0,
+    "mismatch_count": 0,
+}
+# B12.1: operator feedback log - separate from graph/proposals
+import json as _json
+from pathlib import Path as _Path
+
+_FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
+
+_VALID_DECISIONS = frozenset({"accepted", "rejected", "modified", "deferred"})
+
+
+def log_operator_feedback(event: dict) -> None:
+    """Append one operator feedback event to operator_feedback_log.jsonl."""
+    decision = event.get("operator_decision", "")
+    if decision not in _VALID_DECISIONS:
+        raise ValueError("Invalid operator_decision: %r. Must be one of %s." % (decision, list(_VALID_DECISIONS)))
+    if "timestamp" not in event:
+        import datetime as _dt
+        event["timestamp"] = _dt.datetime.now().astimezone().isoformat()
+    _FEEDBACK_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(_FEEDBACK_LOG_PATH, "a", encoding="utf-8") as fh:
+        fh.write(_json.dumps(event, ensure_ascii=False) + chr(10))
+
+
+def get_operator_feedback_log(limit: int = 50) -> list[dict]:
+    """Read last N operator feedback events. Returns [] on missing or corrupt entries."""
+    if not _FEEDBACK_LOG_PATH.exists():
+        return []
+    events = []
+    with open(_FEEDBACK_LOG_PATH, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(_json.loads(line))
+            except Exception:
+                continue
+    return events[-limit:] if limit > 0 else events
+
+    return events[-limit:] if limit > 0 else events
+
+
+def build_operator_feedback_event(
+    *,
+    message: str,
+    mode_analysis: dict,
+    mode_suggestion: dict,
+    operator_decision: str,
+    modified_value: str | None = None,
+    notes: str | None = None,
+) -> dict:
+    """Build a well-formed operator feedback event dict. Pure — no writes."""
+    # Validate operator_decision
+    if operator_decision not in _VALID_DECISIONS:
+        raise ValueError(
+            "operator_decision must be one of %s, got %r."
+            % (list(_VALID_DECISIONS), operator_decision)
+        )
+    # Validate message non-empty
+    if not message:
+        raise ValueError("message must be a non-empty string")
+    # Validate dict types
+    if not isinstance(mode_analysis, dict):
+        raise TypeError("mode_analysis must be a dict")
+    if not isinstance(mode_suggestion, dict):
+        raise TypeError("mode_suggestion must be a dict")
+    # Validate modified_value rules
+    if operator_decision == "modified":
+        if not modified_value:
+            raise ValueError("modified decision requires a non-None modified_value")
+    else:
+        if modified_value is not None:
+            raise ValueError(
+                "modified_value must be None when operator_decision is not 'modified', got %r"
+                % modified_value
+            )
+    # Build turn_context
+    turn_context = {
+        "message": message[:500],
+        "mode_before": mode_analysis.get("current_mode"),
+        "suggested_mode": mode_analysis.get("suggested_mode"),
+    }
+    # Build suggestion block
+    suggestion = {
+        "type": "mode_switch",
+        "suggest_switch": mode_suggestion.get("suggest_switch", False),
+        "from_mode": mode_suggestion.get("from"),
+        "to_mode": mode_suggestion.get("to"),
+        "reason": mode_analysis.get("reason"),
+    }
+    # Auto-add timestamp
+    import datetime as _dt
+    timestamp = _dt.datetime.now().astimezone().isoformat()
+    event = {
+        "timestamp": timestamp,
+        "turn_context": turn_context,
+        "suggestion": suggestion,
+        "operator_decision": operator_decision,
+        "modified_value": modified_value,
+        "notes": notes,
+    }
+    return event
+
+    return event
+
+
+def record_mode_feedback(
+    *,
+    message: str,
+    result: dict,
+    operator_decision: str,
+    modified_value: str | None = None,
+    notes: str | None = None,
+) -> dict:
+    """Build and log an operator feedback event from an interpret_human_turn result. Explicit call only — no auto-logging."""
+    mode_analysis = result.get("mode_analysis", {})
+    mode_suggestion = result.get("mode_suggestion", {})
+    event = build_operator_feedback_event(
+        message=message,
+        mode_analysis=mode_analysis,
+        mode_suggestion=mode_suggestion,
+        operator_decision=operator_decision,
+        modified_value=modified_value,
+        notes=notes,
+    )
+    log_operator_feedback(event)
+    return event
+    log_operator_feedback(event)
+    return event
+
+
+def summarize_operator_feedback(limit: int = 100) -> dict:
+    """Read last N feedback entries and return aggregated statistics. Read-only."""
+    entries = get_operator_feedback_log(limit=limit)
+    total = len(entries)
+    if total == 0:
+        return {
+            "total": 0,
+            "by_decision": {},
+            "acceptance_rate": None,
+            "most_recent": None,
+        }
+    by_decision = {}
+    for e in entries:
+        d = e.get("operator_decision", "unknown")
+        by_decision[d] = by_decision.get(d, 0) + 1
+    accepted = by_decision.get("accepted", 0)
+    acceptance_rate = round(accepted / total, 3) if total > 0 else None
+    return {
+        "total": total,
+        "by_decision": by_decision,
+        "acceptance_rate": acceptance_rate,
+        "most_recent": entries[-1] if entries else None,
+    }
+
+
+def get_recent_operator_feedback(limit: int = 20) -> list[dict]:
+    """Return the most recent N feedback entries. Read-only."""
+    return get_operator_feedback_log(limit=limit)
+
+    return get_operator_feedback_log(limit=limit)
+
+
+def get_operator_feedback_visibility(limit: int = 20) -> dict:
+    """Return operator-facing feedback visibility bundle. Read-only."""
+    recent = get_recent_operator_feedback(limit=limit)
+    summary = summarize_operator_feedback(limit=limit)
+
+    total = summary.get("total", 0)
+    by_decision = summary.get("by_decision", {})
+    acceptance_rate = summary.get("acceptance_rate")
+
+    status_text = (
+        "No feedback recorded"
+        if total == 0
+        else (
+            f"{total} feedback events — "
+            f"accepted: {by_decision.get('accepted', 0)}, "
+            f"rejected: {by_decision.get('rejected', 0)}, "
+            f"modified: {by_decision.get('modified', 0)}, "
+            f"deferred: {by_decision.get('deferred', 0)}, "
+            f"acceptance_rate: {acceptance_rate}"
+        )
+    )
+
+    return {
+        "summary": summary,
+        "recent": recent,
+        "status_text": status_text,
+    }
+
+
 
 LOW_INFORMATION_REFERENTIAL_PHRASES = [
     "no, i mean",

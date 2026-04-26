@@ -22,6 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent
 EXTRACTION_HISTORY_PATH = BASE_DIR / "extraction_history.json"
 ENTITY_EXTRACTOR_CONFIG_PATH = BASE_DIR / "entity_extractor_config.json"
 
+# Verb/form tokens used to reject multi-word inflated entities (J3 fix)
+_VERB_FILTER_TOKENS = {
+    "is", "are", "was", "were",
+    "work", "works", "working",
+    "connect", "connects", "connected", "connecting",
+    "use", "uses", "used", "using",
+    "build", "builds", "built", "building",
+    "run", "runs", "running",
+    "deploy", "deploys", "deployed", "deploying",
+}
+
 
 @dataclass
 class ExtractionResult:
@@ -107,6 +118,14 @@ DEFAULT_PATTERNS = [
         confidence=0.9,
         description="Project identifiers"
     ),
+    # Software/project names (single capitalized identifiers)
+    Pattern(
+        name="software_name",
+        regex=r"\b([A-Z][a-zA-Z0-9]{2,})\b",
+        entity_type="software",
+        confidence=0.8,
+        description="Software/project names (single capitalized identifiers)"
+    ),
     # Date expressions
     Pattern(
         name="date",
@@ -160,6 +179,19 @@ class EntityExtractor:
                 if len(entity_name) < 2:
                     continue
                 if re.match(r"^[a-z_]+$", entity_name):
+                    continue
+
+                # Stopword filter: reject entity names containing connector/verb stopwords
+                _STOPWORD_TOKENS = {
+                    "and", "or", "but", "with", "for", "the", "a", "an", "of", "in", "on",
+                    "at", "to", "is", "are", "was", "were", "be", "been", "being", "has",
+                    "have", "had", "do", "does", "did", "will", "would", "could", "should"
+                }
+                if any(tok in entity_name.lower().split() for tok in _STOPWORD_TOKENS):
+                    continue
+                # Reject multi-word candidates containing verbs (J3 fix — also blocks graph extraction)
+                tokens = entity_name.lower().split()
+                if len(tokens) > 1 and any(tok in _VERB_FILTER_TOKENS for tok in tokens):
                     continue
 
                 # Check for ghost entity
@@ -421,6 +453,75 @@ def save_extractor_config(config: Dict[str, Any], path: Path = ENTITY_EXTRACTOR_
     """Save entity extractor configuration."""
     with open(path, "w") as f:
         json.dump(config, f, indent=2)
+
+
+def extract_entity_names_from_text(text: str) -> list[str]:
+    """Extract entity names from text without graph side effects.
+
+    Applies the same supervised regex patterns and stopword/size filters
+    as extract_from_text(), but returns only names — no graph writes,
+    no Evidence objects, no ExtractionResult objects.
+
+    Returns unique names in order of first appearance.
+    """
+    if not text:
+        return []
+
+    _STOPWORD_TOKENS = {
+        "and", "or", "but", "with", "for", "the", "a", "an", "of", "in", "on",
+        "at", "to", "is", "are", "was", "were", "be", "been", "being", "has",
+        "have", "had", "do", "does", "did", "will", "would", "could", "should"
+    }
+
+    seen = set()
+    names = []
+
+    # Supervised extraction via regex patterns
+    extractor = EntityExtractor()  # loads DEFAULT_PATTERNS
+    for pattern in extractor.patterns:
+        for match in pattern.compile().finditer(text):
+            entity_name = match.group(1) if match.groups() else match.group(0)
+
+            # Skip: too short or all-lowercase variable
+            if len(entity_name) < 2:
+                continue
+            if re.match(r"^[a-z_]+$", entity_name):
+                continue
+
+            # Stopword filter
+            if any(tok in entity_name.lower().split() for tok in _STOPWORD_TOKENS):
+                continue
+            # Reject multi-word candidates containing verbs (J3 fix)
+            tokens = entity_name.lower().split()
+            if len(tokens) > 1 and any(tok in _VERB_FILTER_TOKENS for tok in tokens):
+                continue
+
+            # Dedup preserving order
+            if entity_name not in seen:
+                seen.add(entity_name)
+                names.append(entity_name)
+
+    # Unsupervised extraction via n-gram clustering
+    words = re.findall(r"\b[A-Z][a-z]+\b", text)
+    bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1) if len(words) > 1]
+    freq: Dict[str, int] = {}
+    for candidate in words + bigrams:
+        freq[candidate] = freq.get(candidate, 0) + 1
+
+    for candidate, count in freq.items():
+        if count < 2 or len(candidate) <= 3:
+            continue
+        if any(tok in candidate.lower().split() for tok in _STOPWORD_TOKENS):
+            continue
+        # Reject multi-word candidates containing verbs (J3 fix)
+        tokens = candidate.lower().split()
+        if len(tokens) > 1 and any(tok in _VERB_FILTER_TOKENS for tok in tokens):
+            continue
+        if candidate not in seen:
+            seen.add(candidate)
+            names.append(candidate)
+
+    return names
 
 
 def main():
