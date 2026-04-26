@@ -8,10 +8,127 @@ _B9_STATE = {
 # B12.1: operator feedback log - separate from graph/proposals
 import json as _json
 from pathlib import Path as _Path
+from weslr.proposal_traceability import record_proposal, record_decision
+from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
 
 _VALID_DECISIONS = frozenset({"accepted", "rejected", "modified", "deferred"})
+
+# C2_REAL: grounded capability map — reflects live code only, no future claims
+_CAPABILITIES = {
+    "interpretation": True,
+    "entity_detection": True,
+    "topic_detection": True,
+    "confidence_assessment": True,
+    "structured_response_text": True,
+    "suggested_mode": True,
+    "mode_analysis": True,
+    "mode_explanation": True,
+    "operator_suggestion": True,
+    "interest_tracking": True,
+    "interest_surfacing": True,
+    "feedback_logging": True,
+    "feedback_visibility": True,
+    "write_control_modes": False,
+    "autonomous_action": False,
+    "self_modification": False,
+    "learning_from_feedback": False,
+    "capability_gap_detection": False,
+    "capability_proposals": False,
+    "ISS": False,
+}
+
+
+def _score_to_tier(score: float) -> str:
+    if score >= 0.8:
+        return "critical"
+    if score >= 0.65:
+        return "high"
+    if score >= 0.5:
+        return "medium"
+    return "low"
+
+
+def rank_capability_proposals(proposals: list[dict]) -> dict:
+    """
+    Rank C4 proposals by deterministic scoring against read-only signals.
+    Read-only: get_interest_summary() + summarize_operator_feedback().
+    No writes, no learning, no mutation beyond adding score metadata.
+    """
+    # Step 1: read interests (read-only)
+    try:
+        from interpretation import get_interest_summary
+        interest_summary = get_interest_summary(limit=20)
+        interests_checked = True
+    except Exception:
+        interest_summary = {}
+        interests_checked = False
+
+    # Step 2: read feedback (read-only)
+    try:
+        from interpretation import summarize_operator_feedback
+        fb_summary = summarize_operator_feedback(limit=100)
+        feedback_checked = True
+    except Exception:
+        fb_summary = {}
+        feedback_checked = False
+
+    # Step 3: score each proposal
+    scored = []
+    for p in proposals:
+        cap = p["capability"]
+        boost = 0.0
+
+        # +0.1 if top interests exist
+        if interests_checked and interest_summary:
+            top = interest_summary.get("top_interests", [])
+            if top:
+                boost += 0.1
+
+        # +0.2 if feedback summary has accepted count > 0
+        if feedback_checked and fb_summary:
+            accepted_count = fb_summary.get("total_accepted", 0)
+            if accepted_count > 0:
+                boost += 0.2
+
+        base = 0.5
+        final = min(1.0, base + boost)
+
+        # build reason string
+        if boost == 0.0:
+            reason = f"Baseline score only; no active operator signal for {cap}"
+        else:
+            parts = ["operator interest signal"] if boost >= 0.1 else []
+            if boost >= 0.2:
+                parts.append("positive feedback signal")
+            reason = f"Score boosted ({', '.join(parts)}) for {cap}"
+
+        scored.append({
+            "capability": cap,
+            "proposal": p["proposal"],
+            "base_score": base,
+            "signal_boost": boost,
+            "final_score": final,
+            "tier": _score_to_tier(final),
+            "signal_source": {
+                "interests_used": interests_checked,
+                "feedback_used": feedback_checked,
+            },
+            "ranking_reason": reason,
+        })
+
+    # Step 4: sort by tier then alphabetically (deterministic, no randomness)
+    tier_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    ranked = sorted(scored, key=lambda x: (tier_order[x["tier"]], x["capability"]))
+
+    return {
+        "ranked_proposals": ranked,
+        "signal_summary": {
+            "interests_checked": interests_checked,
+            "feedback_checked": feedback_checked,
+        },
+    }
 
 
 def log_operator_feedback(event: dict) -> None:
@@ -196,6 +313,266 @@ def get_operator_feedback_visibility(limit: int = 20) -> dict:
     }
 
 
+# Interest Tracker v1 — additive pattern tracking, no graph/proposal mutation
+
+_INTEREST_TRACKER_PATH = _Path(__file__).resolve().parent / "weslr" / "interest_tracker.json"
+
+_SOURCE_MULTIPLIERS = {
+    "topic": 1.0,
+    "entity": 1.5,
+    "mode_suggestion": 0.5,
+    "feedback_accepted": 2.0,
+    "feedback_rejected": 0.0,  # recorded as evidence but does NOT reset count/score (v1)
+}
+
+_MAX_EVIDENCE_PER_INTEREST = 10
+
+
+def _load_interest_tracker_state() -> dict:
+    """Read current interest_tracker.json or return empty structure."""
+    if not _INTEREST_TRACKER_PATH.exists():
+        return {"interests": {}, "last_updated": None}
+    with open(_INTEREST_TRACKER_PATH, "r", encoding="utf-8") as fh:
+        return _json.loads(fh.read())
+
+
+def _save_interest_tracker_state(state: dict) -> None:
+    """Write state to interest_tracker.json."""
+    _INTEREST_TRACKER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    import datetime as _dt
+    state["last_updated"] = _dt.datetime.now().astimezone().isoformat()
+    with open(_INTEREST_TRACKER_PATH, "w", encoding="utf-8") as fh:
+        fh.write(_json.dumps(state, ensure_ascii=False, indent=2))
+
+
+def record_interest_signal(
+    *,
+    topics: list[str] | None = None,
+    entities: list[str] | None = None,
+    suggested_mode: str | None = None,
+    mode_mismatch: bool = False,
+    escalation_level: str | None = None,
+    operator_decision: str | None = None,
+) -> dict:
+    """Record one turn's interest signals. Additive only — no deletion, no auto-learning."""
+    import datetime as _dt
+    now = _dt.datetime.now().astimezone().isoformat()
+
+    state = _load_interest_tracker_state()
+    interests = state.get("interests", {})
+    recorded_keys = []
+
+    # Topics
+    if topics:
+        for topic in topics:
+            key = topic.lower().strip()
+            if key not in interests:
+                interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                                  "sources": [], "evidence": [], "score": 0.0}
+            interests[key]["count"] += 1
+            interests[key]["last_seen"] = now
+            if "topic" not in interests[key]["sources"]:
+                interests[key]["sources"].append("topic")
+            interests[key]["evidence"].append({"type": "topic", "value": topic, "at": now})
+            if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+                interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+            _recompute_interest_score(interests[key])
+            recorded_keys.append(key)
+
+    # Entities
+    if entities:
+        for entity in entities:
+            key = entity.lower().strip()
+            if key not in interests:
+                interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                                  "sources": [], "evidence": [], "score": 0.0}
+            interests[key]["count"] += 1
+            interests[key]["last_seen"] = now
+            if "entity" not in interests[key]["sources"]:
+                interests[key]["sources"].append("entity")
+            interests[key]["evidence"].append({"type": "entity", "value": entity, "at": now})
+            if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+                interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+            _recompute_interest_score(interests[key])
+            recorded_keys.append(key)
+
+    # Mode suggestion
+    if suggested_mode:
+        key = suggested_mode.lower().strip()
+        if key not in interests:
+            interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                              "sources": [], "evidence": [], "score": 0.0}
+        interests[key]["count"] += 1
+        interests[key]["last_seen"] = now
+        if "mode_suggestion" not in interests[key]["sources"]:
+            interests[key]["sources"].append("mode_suggestion")
+        interests[key]["evidence"].append({"type": "mode_suggestion", "value": suggested_mode, "at": now})
+        if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+            interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+        _recompute_interest_score(interests[key])
+        recorded_keys.append(key)
+
+    # Mode mismatch flag
+    if mode_mismatch:
+        key = "mode_mismatch"
+        if key not in interests:
+            interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                              "sources": [], "evidence": [], "score": 0.0}
+        interests[key]["count"] += 1
+        interests[key]["last_seen"] = now
+        if "mode_mismatch" not in interests[key]["sources"]:
+            interests[key]["sources"].append("mode_mismatch")
+        interests[key]["evidence"].append({"type": "mode_mismatch", "value": "true", "at": now})
+        if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+            interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+        _recompute_interest_score(interests[key])
+        recorded_keys.append(key)
+
+    # Escalation level
+    if escalation_level:
+        key = "escalation_" + escalation_level
+        if key not in interests:
+            interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                              "sources": [], "evidence": [], "score": 0.0}
+        interests[key]["count"] += 1
+        interests[key]["last_seen"] = now
+        if "escalation" not in interests[key]["sources"]:
+            interests[key]["sources"].append("escalation")
+        interests[key]["evidence"].append({"type": "escalation", "value": escalation_level, "at": now})
+        if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+            interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+        _recompute_interest_score(interests[key])
+        recorded_keys.append(key)
+
+    # Operator feedback decision
+    if operator_decision:
+        key = "feedback_" + operator_decision
+        if key not in interests:
+            interests[key] = {"key": key, "count": 0, "first_seen": now, "last_seen": now,
+                              "sources": [], "evidence": [], "score": 0.0}
+        interests[key]["count"] += 1
+        interests[key]["last_seen"] = now
+        src = "feedback_" + operator_decision
+        if src not in interests[key]["sources"]:
+            interests[key]["sources"].append(src)
+        interests[key]["evidence"].append({"type": "feedback", "value": operator_decision, "at": now})
+        if len(interests[key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+            interests[key]["evidence"] = interests[key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+        _recompute_interest_score(interests[key])
+        recorded_keys.append(key)
+
+        # Also record suggestion_accepted when feedback is accepted
+        if operator_decision == "accepted":
+            accepted_key = "suggestion_accepted"
+            if accepted_key not in interests:
+                interests[accepted_key] = {"key": accepted_key, "count": 0, "first_seen": now, "last_seen": now,
+                                            "sources": [], "evidence": [], "score": 0.0}
+            interests[accepted_key]["count"] += 1
+            interests[accepted_key]["last_seen"] = now
+            if "feedback_accepted" not in interests[accepted_key]["sources"]:
+                interests[accepted_key]["sources"].append("feedback_accepted")
+            interests[accepted_key]["evidence"].append({"type": "feedback", "value": "accepted", "at": now})
+            if len(interests[accepted_key]["evidence"]) > _MAX_EVIDENCE_PER_INTEREST:
+                interests[accepted_key]["evidence"] = interests[accepted_key]["evidence"][-_MAX_EVIDENCE_PER_INTEREST:]
+            _recompute_interest_score(interests[accepted_key])
+
+    state["interests"] = interests
+    _save_interest_tracker_state(state)
+
+    return {"recorded": True, "interests_updated": list(set(recorded_keys))}
+
+
+def _recompute_interest_score(interest: dict) -> None:
+    """Recompute score from count and source multipliers. Deterministic only."""
+    count = interest.get("count", 0)
+    total_mult = 0.0
+    for src in interest.get("sources", []):
+        total_mult += _SOURCE_MULTIPLIERS.get(src, 0.0)
+    interest["score"] = round(count * total_mult, 3)
+
+
+def get_interest_summary(limit: int = 20) -> dict:
+    """Return top interests sorted by score descending. Read-only."""
+    state = _load_interest_tracker_state()
+    interests = sorted(
+        state.get("interests", {}).values(),
+        key=lambda x: x.get("score", 0.0),
+        reverse=True,
+    )[:limit]
+    return {
+        "total_interests": len(state.get("interests", {})),
+        "last_updated": state.get("last_updated"),
+        "top_interests": interests,
+    }
+
+
+def list_top_interests(n: int = 10) -> list[dict]:
+    """Return top N interests by score. Convenience wrapper."""
+    summary = get_interest_summary(limit=n)
+    return summary["top_interests"]
+
+
+def get_interest_visibility(limit: int = 10) -> dict:
+    """Return operator-facing interest visibility. Read-only."""
+    summary = get_interest_summary(limit=limit)
+    top = summary.get("top_interests", [])
+
+    if not top:
+        status_text = "No recurring interests detected"
+    else:
+        formatted = ", ".join(
+            f"{i['key']} ({round(i.get('score', 0), 2)})"
+            for i in top[:5]
+        )
+        status_text = f"Top interests: {formatted}"
+
+    return {
+        "summary": summary,
+        "top": top,
+        "status_text": status_text,
+    }
+
+
+def should_surface_interests(limit: int = 10) -> dict:
+    """Determine if interest patterns should be surfaced. Read-only."""
+    summary = get_interest_summary(limit=limit)
+    top = summary.get("top_interests", [])
+
+    if not top:
+        return {"show": False, "reason": "no_interests"}
+
+    highest = top[0]
+    count = highest.get("count", 0)
+    score = highest.get("score", 0.0)
+
+    # simple deterministic thresholds
+    if count >= 3:
+        return {
+            "show": True,
+            "reason": "repeated_interest",
+            "interest": highest["key"],
+            "count": count,
+            "score": score,
+        }
+
+    return {"show": False, "reason": "below_threshold"}
+
+
+def format_interest_for_chat(limit: int = 10) -> str | None:
+    """Return chat-safe interest observation line, or None."""
+    surface = should_surface_interests(limit=limit)
+
+    if not surface.get("show"):
+        return None
+
+    interest = surface.get("interest")
+    count = surface.get("count")
+
+    if not interest:
+        return None
+
+    return f"Observation: You have repeatedly interacted with '{interest}' ({count} times)."
+
 
 LOW_INFORMATION_REFERENTIAL_PHRASES = [
     "no, i mean",
@@ -357,6 +734,180 @@ def classify_human_turn(message: str) -> str:
 
 def interpret_human_turn(message: str) -> dict:
     text = str(message or "").strip()
+    lowered = text.lower()
+    # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
+    if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
+        return {
+            "message": message,
+            "response_text": (
+                "I can analyze input for entities and topics, assess confidence, "
+                "produce structured response text, suggest interpretation modes, explain those suggestions, "
+                "track repeated interests, surface repeated interests, and record operator feedback. "
+                "I cannot currently act autonomously, modify myself, learn from feedback, or generate capability proposals."
+            ),
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {
+                "current_mode": None,
+                "suggested_mode": "observe",
+                "match": True,
+                "mismatch": False,
+                "reason": "Capability query"
+            },
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "capabilities": _CAPABILITIES,
+            "_weslr_deterministic": True,
+        }
+    if "what can't you do" in lowered or "what are you missing" in lowered or "what are your limitations" in lowered or "what can you not do" in lowered:
+        missing = [k for k, v in _CAPABILITIES.items() if v is False]
+        return {
+            "message": message,
+            "response_text": (
+                "I currently do not have the following capabilities: "
+                + ", ".join(missing)
+                + ". These represent areas where functionality is not yet implemented."
+            ),
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {
+                "current_mode": None,
+                "suggested_mode": "observe",
+                "match": True,
+                "mismatch": False,
+                "reason": "Capability gap query"
+            },
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "missing_capabilities": missing,
+            "_weslr_deterministic": True,
+        }
+    if "how can you improve" in lowered or "what could be added" in lowered or "what are possible improvements" in lowered or "can you add intelligence layers" in lowered or "how can you become better" in lowered:
+        missing = [k for k, v in _CAPABILITIES.items() if v is False]
+        proposals = []
+        # build proposal dicts for ranking
+        raw_proposals = []
+        if "learning_from_feedback" in missing:
+            raw_proposals.append({"capability": "learning_from_feedback", "proposal": "A feedback learning layer to analyze accepted/rejected suggestions"})
+        if "capability_gap_detection" in missing:
+            raw_proposals.append({"capability": "capability_gap_detection", "proposal": "A capability gap detection layer to identify missing functionality automatically"})
+        if "capability_proposals" in missing:
+            raw_proposals.append({"capability": "capability_proposals", "proposal": "A capability proposal system to suggest new modules based on usage patterns"})
+        if "autonomous_action" in missing:
+            raw_proposals.append({"capability": "autonomous_action", "proposal": "A controlled execution layer for safe, operator-approved actions"})
+
+        # C5_REAL: rank proposals (read-only, no writes)
+        try:
+            ranked = rank_capability_proposals(raw_proposals)
+            ranked_proposals = ranked["ranked_proposals"]
+            signal_summary = ranked["signal_summary"]
+            for p in ranked_proposals:
+                record_proposal(p["capability"], {
+                    "proposal": p["proposal"],
+                    "base_score": p["base_score"],
+                    "signal_boost": p["signal_boost"],
+                    "final_score": p["final_score"],
+                    "tier": p["tier"],
+                    "ranking_reason": p["ranking_reason"],
+                })
+        except Exception:
+            ranked_proposals = raw_proposals
+            signal_summary = {"interests_checked": False, "feedback_checked": False}
+
+        proposal_texts = [p["proposal"] for p in ranked_proposals]
+        return {
+            "message": message,
+            "response_text": (
+                "Based on my current limitations, the following improvements could be considered: "
+                + "; ".join(proposal_texts)
+                + ". These are suggestions only and would require operator approval to implement."
+            ),
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {
+                "current_mode": None,
+                "suggested_mode": "observe",
+                "match": True,
+                "mismatch": False,
+                "reason": "Capability proposal query"
+            },
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "proposed_capabilities": ranked_proposals,
+            "proposal_signal_summary": signal_summary,
+            "_weslr_deterministic": True,
+        }
+    # C6_REAL: operator approval workflow
+    lower_msg = lowered
+    decision = None
+    cap = None
+    if lower_msg.startswith("accept proposal "):
+        decision = "accepted"
+        cap = lower_msg[len("accept proposal "):].strip()
+    elif lower_msg.startswith("approve proposal "):
+        decision = "accepted"
+        cap = lower_msg[len("approve proposal "):].strip()
+    elif lower_msg.startswith("reject proposal "):
+        decision = "rejected"
+        cap = lower_msg[len("reject proposal "):].strip()
+    elif lower_msg.startswith("deny proposal "):
+        decision = "rejected"
+        cap = lower_msg[len("deny proposal "):].strip()
+    if decision is not None:
+        if cap not in _CAPABILITIES:
+            return {
+                "message": message,
+                "response_text": f"Capability '{cap}' is not a recognized proposal.",
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Operator decision recorded"},
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "decision_recorded": False,
+            }
+        event = {"operator_decision": decision, "capability": cap, "type": "capability_proposal"}
+        log_operator_feedback(event)
+        record_decision(cap, decision)
+        return {
+            "message": message,
+            "response_text": f"Proposal '{cap}' has been {decision} by the operator. No changes have been applied.",
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {
+                "current_mode": None,
+                "suggested_mode": "observe",
+                "match": True,
+                "mismatch": False,
+                "reason": "Operator decision recorded"
+            },
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "decision_recorded": True,
+            "_weslr_deterministic": True,
+        }
+    if "who are you" in lowered or "what are you" in lowered:
+        return {
+            "message": message,
+            "response_text": (
+                "I am Weslr, a structured interpretation system. "
+                "I analyze input for entities and topics, assess confidence, "
+                "suggest interpretation modes, and track repeated patterns over time. "
+                "I do not act autonomously or modify my own behavior. "
+                "All suggestions are advisory and operator-controlled."
+            ),
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {
+                "current_mode": None,
+                "suggested_mode": "observe",
+                "match": True,
+                "mismatch": False,
+                "reason": "System self-description request"
+            },
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "_weslr_deterministic": True,
+        }
     topics = infer_human_topics(text)
     clarified_target = extract_clarified_target(text)
     if clarified_target and clarified_target not in topics:
@@ -446,8 +997,124 @@ def interpret_human_turn(message: str) -> dict:
     elif turn_type == "statement" and text.lower().strip() in {"test", "ok", "ready", "go", "start"}:
         likely_need = "light_acknowledgment"
 
+    # IT1.1: passive interest tracking (non-blocking, no side effects)
+    try:
+        record_interest_signal(
+            topics=topics,
+            entities=None,
+            suggested_mode=None,
+            mode_mismatch=False,
+            escalation_level=None,
+            operator_decision=None,
+        )
+    except Exception:
+        pass  # must never break main flow
+
+    surface = should_surface_interests(limit=10)
+
+    # B1_REAL: confidence assessment
+    try:
+        entity_names = extract_entity_names_from_text(message)
+    except Exception:
+        entity_names = []
+    if entity_names and len(entity_names) >= 2:
+        confidence = "high"
+    elif entity_names or topics:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    # B3_REAL: suggested_mode advisory
+    if confidence == "low":
+        suggested_mode = "observe"
+    elif len(entity_names) >= 2:
+        suggested_mode = "entity_only"
+    elif topics:
+        suggested_mode = "topic_only"
+    else:
+        suggested_mode = "normal"
+
+    # B4_REAL: mode_analysis structure
+    # current_mode not yet available as input — for now always match
+    mode_match = True
+    mode_mismatch = False
+
+    # B5_REAL: explanation of why suggested_mode was chosen
+    if suggested_mode == "observe":
+        mode_reason = "Low signal detected; observation mode is appropriate"
+    elif suggested_mode == "entity_only":
+        mode_reason = f"Detected {len(entity_names)} entities; structural interpretation is appropriate"
+    elif suggested_mode == "topic_only":
+        mode_reason = "Detected topics; pattern-level interpretation is appropriate"
+    else:
+        mode_reason = "Default interpretation is appropriate"
+
+    # B6_REAL: operator-facing suggestion
+    if suggested_mode == "entity_only":
+        mode_suggestion = f"Consider focusing on entity relationships for this input"
+    elif suggested_mode == "topic_only":
+        mode_suggestion = f"Consider focusing on topic patterns for this input"
+    elif suggested_mode == "observe":
+        mode_suggestion = f"Consider gathering more input before deeper interpretation"
+    else:
+        mode_suggestion = None
+
+    # B7_REAL: controlled suggestion surfacing
+    if confidence == "low":
+        show_suggestion = True
+        suggestion_priority = "medium"
+    elif suggested_mode == "entity_only":
+        show_suggestion = True
+        suggestion_priority = "high"
+    elif suggested_mode == "topic_only":
+        show_suggestion = True
+        suggestion_priority = "medium"
+    else:
+        show_suggestion = False
+        suggestion_priority = "low"
+
+
+    # B1_REAL: response_text construction
+    prefix = (
+        "Limited signal detected. "
+        if confidence == "low"
+        else "The message suggests: "
+        if confidence == "medium"
+        else "This clearly indicates: "
+    )
+    # B2_REAL: meaningful core content
+    if entity_names and len(entity_names) >= 2:
+        core = "Entities detected: " + ", ".join(entity_names)
+    elif entity_names:
+        core = "Entity detected: " + entity_names[0]
+    elif topics:
+        core = "Topics detected: " + ", ".join(topics)
+    else:
+        core = "No significant signal detected"
+    response_text = prefix + core
+
+    # IT1.6: append interest footer to response_text
+    interest_line = format_interest_for_chat(limit=10)
+    if interest_line:
+        response_text = response_text + "\n" + interest_line
+
     return {
         "message": text,
+        "response_text": response_text,
+        "confidence": confidence,
+        "suggested_mode": suggested_mode,
+        "mode_suggestion": mode_suggestion,
+        "suggestion_surface": {
+            "show": show_suggestion,
+            "priority": suggestion_priority,
+        },
+        "mode_analysis": {
+            "current_mode": None,
+            "suggested_mode": suggested_mode,
+            "match": mode_match,
+            "mismatch": mode_mismatch,
+            "reason": mode_reason,
+        },
         "turn_type": turn_type,
         "topics": topics,
         "primary_topic": topics[0] if topics else "",
@@ -462,4 +1129,6 @@ def interpret_human_turn(message: str) -> dict:
         "probes_identity": turn_type == "identity_probe",
         "probes_memory": turn_type == "memory_probe",
         "reply_shape": reply_shape,
+        "interest_surface": surface,
+        "response_text": response_text,
     }
