@@ -61,8 +61,6 @@ def rank_capability_proposals(proposals: list[dict]) -> dict:
     """
     # History imports (read-only)
     try:
-        from weslr.proposal_traceability import load_trace
-        from weslr.implementation_planning import load_implementation_plans
         trace_records = load_trace(100)
         plan_records = load_implementation_plans(100)
         # Build per-proposal history counts
@@ -965,7 +963,6 @@ def interpret_human_turn(message: str) -> dict:
         # The check against _CAPABILITIES is removed so ISS intake proposals can be approved
         if cap not in _CAPABILITIES:
             # Fallback: check if it's a known proposal in trace history
-            from weslr.proposal_traceability import load_trace
             trace = load_trace(100)
             known_ids = set(r.get("proposal_id") for r in trace if r.get("type") == "proposal_created")
             if cap not in known_ids:
@@ -1509,7 +1506,6 @@ def interpret_human_turn(message: str) -> dict:
     ]
     if any(lowered.startswith(t) for t in _iss_intake_triggers):
         try:
-            from weslr.proposal_traceability import load_trace
             trace = load_trace(100)
         except Exception:
             trace = []
@@ -1661,7 +1657,7 @@ def interpret_human_turn(message: str) -> dict:
         if source_gap_ids:
             response_text = (
                 "Plan '" + plan.get("plan_id", "") + "' exists because proposal '" + proposal_id + "' "
-                + "was created from ISS gap(s) " + str(source_gap_ids) + " and later " + latest_decision + " by the operator. "
+                + "was created from ISS gap '" + str(source_gap_ids[0]) + "' and later accepted by the operator. "
                 + "The plan is non-executing: execution_allowed=" + str(plan.get("execution_allowed", False)) + ", "
                 + "operator_approval_required=" + str(plan.get("operator_approval_required", True)) + "."
             )
