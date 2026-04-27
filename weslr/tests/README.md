@@ -65,6 +65,48 @@ _t6_full_smoke()   # read-only
 - **T4** — 3 file hash comparisons
 - **T6** — 31 command smoke cases
 
+## Release Gate
+
+Run the release gate before committing any WESLR change:
+
+```bash
+python3 weslr/tests/release_gate_v1.py
+```
+
+**What it checks:**
+
+| Gate | What it checks |
+|---|---|
+| G1 | test_harness_v1.py passes (TEST_HARNESS_V1_OK) |
+| G2 | Staged files are within allowed scope (weslr/** or interpretation.py only) |
+| G3 | No `execution_allowed=True` in production weslr/*.py |
+| G4 | No OpenClaw core or TIA C# files in staged scope |
+
+**Expected output:**
+
+```
+==================================================
+WESLR Release Gate V1
+==================================================
+
+GATE 1: test harness passed
+GATE 2: N staged file(s) — all in allowed scope
+GATE 3: no execution_allowed=True in production weslr/*.py
+GATE 4: no OpenClaw core or TIA C# in staged scope
+==================================================
+WESLR_RELEASE_GATE_V1_OK
+```
+
+**Important:** Stage only WESLR files before running. The gate checks whatever is `git add`-ed but not yet committed:
+
+```bash
+# Stage only WESLR files
+git add weslr/ interpretation.py
+git status  # confirm only expected files staged
+python3 weslr/tests/release_gate_v1.py
+git commit
+```
+
 ## Non-Goals
 
 - T5 (regression layer-by-layer) is documented in `TEST_STRATEGY_V1.md` but not yet in this harness
