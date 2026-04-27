@@ -12,6 +12,7 @@ from weslr.proposal_traceability import record_proposal, record_decision, load_t
 from weslr.implementation_planning import create_implementation_plan, record_implementation_plan, load_implementation_plans
 from weslr.iss.diagnostic_records import load_iss_diagnostics
 from weslr.iss.probe_registry import get_probe_registry
+from weslr.iss.probe_planning import create_probe_plan
 from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
@@ -1694,6 +1695,38 @@ def interpret_human_turn(message: str) -> dict:
             "probe_registry": probes,
             "probe_count": len(probes),
             "path": "ISS_probe_registry_query",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "suggested_mode": "observe",
+        }
+
+    # ISS probe planning (declarative, non-executing)
+    _plan_probe_triggers = ["plan probe ", "how would you check "]
+    _triggered_plan = None
+    for t in _plan_probe_triggers:
+        if lowered.startswith(t):
+            _triggered_plan = t
+            break
+    if _triggered_plan:
+        raw_probe_id = lowered[len(_triggered_plan):].strip().strip('"').strip("'")
+        probe_id = raw_probe_id.strip()
+        probes = get_probe_registry()
+        matched = next((p for p in probes if p["probe_id"] == probe_id), None)
+        if not matched:
+            return {
+                "message": message,
+                "response_text": "No probe found for '" + probe_id + "'",
+                "path": "ISS_probe_plan",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "suggested_mode": "observe",
+            }
+        plan = create_probe_plan(matched)
+        return {
+            "message": message,
+            "response_text": "Probe '" + probe_id + "' can be checked in " + str(len(plan["steps"])) + " steps. Execution is not allowed.",
+            "probe_plan": plan,
+            "path": "ISS_probe_plan",
             "_weslr_deterministic": True,
             "confidence": "high",
             "suggested_mode": "observe",
