@@ -1794,6 +1794,441 @@ def interpret_human_turn(message: str) -> dict:
             "_weslr_deterministic": True,
         }
 
+    # ---- proposal_id normalizer (private helper) ----
+    _STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
+
+    def _normalize_proposal_id(raw: str) -> str:
+        value = raw.strip().strip('"').strip("'").strip()
+        lowered = value.lower()
+        for suffix in _STOP_SUFFIXES:
+            if lowered.endswith(suffix):
+                value = value[: -len(suffix)].strip()
+                lowered = value.lower()
+        return value
+
+    # ---- ISS controlled proposal intake (read-only, operator-requested only) ----
+    _intake_triggers = [
+        "convert iss suggestion ",
+        "convert iss gap ",
+        "create proposal from iss ",
+        "turn iss gap ",
+    ]
+    if any(lowered.startswith(t) for t in _intake_triggers):
+        for t in _intake_triggers:
+            if lowered.startswith(t):
+                raw = lowered[len(t):].strip().strip('"').strip("'")
+                break
+        if not raw:
+            return {
+                "message": message,
+                "response_text": "No ISS gap ID provided.",
+                "path": "ISS_controlled_proposal_intake",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "intake_result": {"created": False, "reason": "missing_id"},
+            }
+
+        # Normalize: handle "gap.xxx" prefix
+        if raw.startswith("gap."):
+            requested_gap_id = raw
+            proposal_id = raw[4:].strip()
+        else:
+            proposal_id = raw
+            requested_gap_id = "gap." + raw
+
+        # Load ISS records and find matching gap
+        try:
+            records = load_iss_diagnostics(50)
+        except Exception:
+            try:
+                from weslr.iss.diagnostic_records import load_iss_diagnostics as _lid
+                records = _lid(50)
+            except Exception:
+                records = []
+
+        gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
+        matched = None
+        for g in gaps:
+            if g.get("gap_id") == requested_gap_id or g.get("gap_id", "").endswith(proposal_id):
+                matched = g
+                break
+
+        if not matched:
+            return {
+                "message": message,
+                "response_text": f"No ISS gap found for '{raw}'. Use 'show gaps' to inspect available gaps.",
+                "path": "ISS_controlled_proposal_intake",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "intake_result": {
+                    "created": False,
+                    "reason": "gap_not_found",
+                    "requested_id": raw,
+                },
+            }
+
+        # Record proposal trace (created, not approved)
+        from weslr.proposal_traceability import record_proposal
+        proposal_payload = {
+            "summary": matched.get("summary", ""),
+            "source": "ISS",
+            "source_gap_id": matched.get("gap_id", ""),
+            "severity": matched.get("severity", "medium"),
+            "confidence": matched.get("confidence", "medium"),
+            "suggested": True,
+            "operator_requested_intake": True,
+        }
+        record_proposal(proposal_id, proposal_payload)
+
+        return {
+            "message": message,
+            "response_text": f"ISS suggestion '{proposal_id}' was converted into a traced proposal. It is not approved and no implementation plan was created.",
+            "path": "ISS_controlled_proposal_intake",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "intake_result": {
+                "created": True,
+                "proposal_id": proposal_id,
+                "source_gap_id": matched.get("gap_id", ""),
+                "approval_status": "not_approved",
+                "plan_created": False,
+                "execution_allowed": False,
+            },
+        }
+
+    # ---- ISS intake proposal query (read-only) ----
+    _iss_intake_triggers = [
+        "show iss intake proposals",
+        "show proposals from iss",
+        "show converted iss proposals",
+        "list iss proposals",
+    ]
+    if any(lowered.startswith(t) for t in _iss_intake_triggers):
+        try:
+            trace = load_trace(100)
+        except Exception:
+            trace = []
+        iss_intake_proposals = [
+            {
+                "proposal_id": r.get("proposal_id"),
+                "source_gap_id": r.get("content", {}).get("source_gap_id", ""),
+                "summary": r.get("content", {}).get("summary", ""),
+                "severity": r.get("content", {}).get("severity", ""),
+                "timestamp": r.get("timestamp"),
+            }
+            for r in trace
+            if r.get("type") == "proposal_created"
+            and r.get("content", {}).get("source") == "ISS"
+            and r.get("content", {}).get("operator_requested_intake") is True
+        ]
+        if not iss_intake_proposals:
+            response_text = "No ISS intake proposals found."
+        else:
+            # Group by proposal_id for deduplicated view (trace records unchanged)
+            grouped = {}
+            for p in iss_intake_proposals:
+                pid = p["proposal_id"]
+                ts = p.get("timestamp")
+                if pid not in grouped:
+                    grouped[pid] = {
+                        "proposal_id": pid,
+                        "source_gap_id": p["source_gap_id"],
+                        "summary": p["summary"],
+                        "severity": p["severity"],
+                        "confidence": p.get("confidence", ""),
+                        "count": 0,
+                        "first_seen": ts,
+                        "last_seen": ts,
+                    }
+                grouped[pid]["count"] += 1
+                if ts is not None:
+                    if grouped[pid]["first_seen"] is None or ts < grouped[pid]["first_seen"]:
+                        grouped[pid]["first_seen"] = ts
+                    if ts > grouped[pid]["last_seen"]:
+                        grouped[pid]["last_seen"] = ts
+            iss_intake_grouped = list(grouped.values())
+            total_events = len(iss_intake_proposals)
+            lines = [f"Found {len(iss_intake_grouped)} unique ISS intake proposal(s) from {total_events} trace event(s):"]
+            for g in iss_intake_grouped:
+                lines.append(
+                    f"- {g['proposal_id']} from {g['source_gap_id']} "
+                    f"({g['severity']}), seen {g['count']} time(s)"
+                )
+            response_text = "\n".join(lines)
+        return {
+            "message": message,
+            "response_text": response_text,
+            "iss_intake_proposals": iss_intake_proposals,
+            "iss_intake_grouped": iss_intake_grouped,
+            "iss_intake_count": len(iss_intake_proposals),
+            "iss_intake_unique_count": len(iss_intake_grouped),
+            "path": "ISS_intake_query",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "suggested_mode": "observe",
+        }
+
+    # ---- Plan explanation (read-only) ----
+    _plan_explain_triggers = ["why does plan ", "explain plan ", "why was plan "]
+    if any(lowered.startswith(t) for t in _plan_explain_triggers):
+        for t in _plan_explain_triggers:
+            if lowered.startswith(t):
+                raw = lowered[len(t):].strip().strip('"').strip("'")
+                break
+        for suffix in [" exist", " created", "?", " exist?", " created?"]:
+            if raw.endswith(suffix):
+                raw = raw[:-len(suffix)].strip()
+        proposal_id = raw
+        if not proposal_id:
+            return {
+                "message": message,
+                "response_text": "No proposal ID provided.",
+                "path": "plan_explanation",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "plan_explanation": {"proposal_id": "", "plan_found": False},
+            }
+
+        plans = []
+        trace = []
+        diagnostics = []
+        try:
+            plans = load_implementation_plans(100)
+        except Exception:
+            pass
+        try:
+            trace = load_trace(200)
+        except Exception:
+            pass
+        try:
+            diagnostics = load_iss_diagnostics(100)
+        except Exception:
+            pass
+
+        matched_plans = [p for p in plans if p.get("proposal_id") == proposal_id]
+        plan = matched_plans[-1] if matched_plans else None
+
+        if not plan:
+            return {
+                "message": message,
+                "response_text": "No implementation plan found for '" + proposal_id + "'.",
+                "path": "plan_explanation",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "plan_explanation": {"proposal_id": proposal_id, "plan_found": False},
+            }
+
+        created_records = [r for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_created"]
+        decision_records = [r for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision"]
+        proposal_created_count = len(created_records)
+        decision_count = len(decision_records)
+        latest_decision = decision_records[-1]["decision"] if decision_records else "unknown"
+
+        source_gap_ids = []
+        for r in created_records:
+            gap_id = r.get("content", {}).get("source_gap_id", "")
+            if gap_id and gap_id not in source_gap_ids:
+                source_gap_ids.append(gap_id)
+
+        iss_gaps = [d for d in diagnostics if d.get("type") == "iss_gap_signal"]
+        iss_related_gaps = []
+        for g in iss_gaps:
+            gid = g.get("gap_id", "")
+            if any(gid == sg or gid.endswith(sg) or sg.endswith(gid) for sg in source_gap_ids):
+                iss_related_gaps.append({"gap_id": gid, "summary": g.get("summary", ""), "severity": g.get("severity", "")})
+            elif proposal_id in (g.get("summary", "") or ""):
+                iss_related_gaps.append({"gap_id": gid, "summary": g.get("summary", ""), "severity": g.get("severity", "")})
+
+        plan_explanation = {
+            "proposal_id": proposal_id,
+            "plan_found": True,
+            "plan_id": plan.get("plan_id", ""),
+            "plan_status": plan.get("status", ""),
+            "execution_allowed": plan.get("execution_allowed", False),
+            "operator_approval_required": plan.get("operator_approval_required", True),
+            "proposal_created_count": proposal_created_count,
+            "decision_count": decision_count,
+            "latest_decision": latest_decision,
+            "source_gap_ids": source_gap_ids,
+            "iss_related_gaps": iss_related_gaps,
+        }
+
+        if source_gap_ids:
+            response_text = (
+                "Plan '" + plan.get("plan_id", "") + "' exists because proposal '" + proposal_id + "' "
+                + "was created from ISS gap '" + str(source_gap_ids[0]) + "' and later accepted by the operator. "
+                + "The plan is non-executing: execution_allowed=" + str(plan.get("execution_allowed", False)) + ", "
+                + "operator_approval_required=" + str(plan.get("operator_approval_required", True)) + "."
+            )
+        else:
+            response_text = (
+                "Plan '" + plan.get("plan_id", "") + "' exists because proposal '" + proposal_id + "' "
+                + "was accepted by the operator. No ISS source gap is linked. "
+                + "The plan is non-executing: execution_allowed=" + str(plan.get("execution_allowed", False)) + ", "
+                + "operator_approval_required=" + str(plan.get("operator_approval_required", True)) + "."
+            )
+
+        return {
+            "message": message,
+            "response_text": response_text,
+            "path": "plan_explanation",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "plan_explanation": plan_explanation,
+        }
+
+    # ISS probe planning (declarative, non-executing) — now in deterministic_handlers.py
+
+    # ISS probe execution (governed, simulated)
+    _execute_triggers = ["execute probe "]
+    _triggered_execute = None
+    for t in _execute_triggers:
+        if lowered.startswith(t):
+            _triggered_execute = t
+            break
+    if _triggered_execute:
+        raw_input = lowered[len(_triggered_execute):].strip().strip('"').strip("'")
+        requires_confirm = " confirm" in raw_input
+        probe_id = raw_input.replace(" confirm", "").strip()
+        probes = get_probe_registry()
+        matched = next((p for p in probes if p["probe_id"] == probe_id), None)
+        if not matched:
+            return {
+                "message": message,
+                "response_text": "No probe found for '" + probe_id + "'. Use 'show iss probes' to inspect available probes.",
+                "path": "ISS_probe_execution",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "probe_execution": {
+                    "executed": False,
+                    "requires_confirmation": False,
+                    "mode": "simulated",
+                    "probe_id": probe_id,
+                },
+            }
+        if not requires_confirm:
+            return {
+                "message": message,
+                "response_text": "Probe execution requires confirmation. Say: 'execute probe " + probe_id + " confirm'. This will run simulated execution only.",
+                "path": "ISS_probe_execution",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "probe_execution": {
+                    "executed": False,
+                    "requires_confirmation": True,
+                    "mode": "simulated",
+                    "probe_id": probe_id,
+                },
+            }
+        result = execute_probe_simulated(matched)
+        return {
+            "message": message,
+            "response_text": "Probe '" + probe_id + "' executed in simulated mode. Status: " + str(result["status"]) + ".",
+            "path": "ISS_probe_execution",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "probe_execution": {
+                "executed": True,
+                "mode": "simulated",
+                "result": result,
+            },
+        }
+
+    # Proposal explanation layer (read-only)
+    _explain_triggers = ["why is ", "explain proposal ", "why prioritize "]
+    if any(lowered.startswith(t) for t in _explain_triggers):
+        # Extract proposal_id
+        for t in _explain_triggers:
+            if t in lowered:
+                raw = lowered[lowered.index(t) + len(t):].strip().strip('"').strip("'")
+                break
+        proposal_id = _normalize_proposal_id(raw)
+        if not proposal_id:
+            return {
+                "message": message,
+                "response_text": "No proposal ID provided.",
+                "confidence": "high",
+                "suggested_mode": "observe",
+                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Proposal explanation query"},
+                "mode_suggestion": None,
+                "suggestion_surface": {"show": False, "priority": "low"},
+                "path": "proposal_explanation",
+                "_weslr_deterministic": True,
+            }
+
+        # Collect history from proposal_trace
+        trace = load_trace(100)
+        proposed_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_created")
+        accepted_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision" and r.get("decision") == "accepted")
+        rejected_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision" and r.get("decision") == "rejected")
+
+        # Collect plan count
+        plans = load_implementation_plans(100)
+        planned_count = sum(1 for p in plans if p.get("proposal_id") == proposal_id)
+
+        # Collect related ISS gaps
+        iss_records = load_iss_diagnostics(50)
+        related_gaps = [
+            {"gap_id": g.get("gap_id"), "summary": g.get("summary"), "severity": g.get("severity")}
+            for g in iss_records
+            if g.get("type") == "iss_gap_signal" and (
+                proposal_id in (g.get("gap_id") or "")
+                or proposal_id in (g.get("summary") or "")
+            )
+        ]
+
+        # Build priority reasoning
+        if accepted_count > 0 and planned_count > 0:
+            priority_reasoning = f"Strong operator alignment: accepted {accepted_count} time(s), {planned_count} plan(s) exist. High priority."
+        elif accepted_count > 0:
+            priority_reasoning = f"Positive operator signal: accepted {accepted_count} time(s) but no plans yet. Consider planning."
+        elif proposed_count > 2:
+            priority_reasoning = f"Frequently proposed ({proposed_count} times) but not yet accepted. Needs operator review."
+        elif proposed_count > 0:
+            priority_reasoning = f"Proposed {proposed_count} time(s). No acceptance yet. Baseline priority."
+        else:
+            priority_reasoning = "No history found. Baseline priority based on proposal system."
+
+        if related_gaps:
+            priority_reasoning += f" {len(related_gaps)} related ISS gap(s) also detected."
+
+        history = {
+            "proposed": proposed_count,
+            "accepted": accepted_count,
+            "rejected": rejected_count,
+            "planned": planned_count,
+        }
+
+        parts = [f"Proposal '{proposal_id}' is important because:"]
+        parts.append(f"- proposed {proposed_count} time(s)")
+        if accepted_count:
+            parts.append(f"- accepted {accepted_count} time(s)")
+        if rejected_count:
+            parts.append(f"- rejected {rejected_count} time(s)")
+        if planned_count:
+            parts.append(f"- planned {planned_count} time(s)")
+        parts.append(f"- {len(related_gaps)} related ISS gap(s)")
+        parts.append(f"\n{priority_reasoning}")
+        response_text = "\n".join(parts)
+
+        return {
+            "message": message,
+            "response_text": response_text,
+            "confidence": "high",
+            "suggested_mode": "observe",
+            "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Proposal explanation query"},
+            "mode_suggestion": None,
+            "suggestion_surface": {"show": False, "priority": "low"},
+            "explanation": {
+                "proposal_id": proposal_id,
+                "history": history,
+                "iss_related_gaps": related_gaps,
+                "priority_reasoning": priority_reasoning,
+            },
+            "path": "proposal_explanation",
+            "_weslr_deterministic": True,
+        }
+
     # State checkpoint query (read-only)
     _ck_triggers = [
         "show weslr status", "show architecture status",

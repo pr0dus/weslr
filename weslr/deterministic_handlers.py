@@ -119,6 +119,37 @@ def handle_operator_overview(message: str, lowered: str) -> dict:
     return result
 
 
+def handle_state_checkpoint(message: str, lowered: str) -> dict:
+    """State checkpoint query — read-only."""
+    cp = get_state_checkpoint()
+    layer_ids = [l["id"] for l in cp.get("layers", [])]
+    response_text = (
+        f"WESLR checkpoint {cp['version']}: {cp['status']}. "
+        f"Confirmed layers: {', '.join(layer_ids)}. "
+        f"Execution allowed: {cp['execution_allowed']}. "
+        f"Learning enabled: {cp['learning_enabled']}. "
+        f"Autonomous changes: {cp['autonomous_changes_enabled']}."
+    )
+    result = build_deterministic_response(
+        message=message,
+        path="state_checkpoint_query",
+        response_text=response_text,
+        payload={"state_checkpoint": cp},
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["mode_analysis"] = {
+        "current_mode": None,
+        "suggested_mode": "observe",
+        "match": True,
+        "mismatch": False,
+        "reason": "State checkpoint query",
+    }
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    return result
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -163,6 +194,24 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 75,
         "handler_fn": "handle_operator_overview",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "operator",
+    },
+    {
+        "id": "state_checkpoint_query",
+        "path": "state_checkpoint_query",
+        "triggers": [
+            "show weslr status",
+            "show architecture status",
+            "show state checkpoint",
+            "weslr checkpoint",
+            "system checkpoint",
+        ],
+        "match_type": "prefix",
+        "priority": 74,
+        "handler_fn": "handle_state_checkpoint",
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
