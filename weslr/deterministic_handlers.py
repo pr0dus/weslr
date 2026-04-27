@@ -26,6 +26,7 @@ from weslr.iss.probe_planning import create_probe_plan
 from weslr.state_checkpoint import get_state_checkpoint
 from weslr.iss.diagnostic_records import load_iss_diagnostics
 from weslr.implementation_planning import load_implementation_plans
+from weslr.proposal_traceability import load_trace
 
 
 # ---- Handler functions ----
@@ -230,6 +231,117 @@ def handle_iss_query_probes(message: str, lowered: str) -> dict:
     return _iss_mode(result)
 
 
+def handle_plan_explanation(message: str, lowered: str) -> dict:
+    """Plan explanation — read-only. Explains why a plan exists."""
+    _triggers = ["why does plan ", "explain plan ", "why was plan "]
+    for t in _triggers:
+        if lowered.startswith(t):
+            raw = lowered[len(t):].strip().strip('"').strip("'")
+            break
+    for suffix in [" exist", " created", "?", " exist?", " created?"]:
+        if raw.endswith(suffix):
+            raw = raw[:-len(suffix)].strip()
+    proposal_id = raw
+
+    if not proposal_id:
+        return build_deterministic_response(
+            message=message,
+            path="plan_explanation",
+            response_text="No proposal ID provided.",
+            confidence="high",
+            suggested_mode="observe",
+            payload={"plan_explanation": {"proposal_id": "", "plan_found": False}},
+        )
+
+    plans = []
+    trace = []
+    diagnostics = []
+    try:
+        plans = load_implementation_plans(100)
+    except Exception:
+        pass
+    try:
+        trace = load_trace(200)
+    except Exception:
+        pass
+    try:
+        diagnostics = load_iss_diagnostics(100)
+    except Exception:
+        pass
+
+    matched_plans = [p for p in plans if p.get("proposal_id") == proposal_id]
+    plan = matched_plans[-1] if matched_plans else None
+
+    if not plan:
+        return build_deterministic_response(
+            message=message,
+            path="plan_explanation",
+            response_text="No implementation plan found for '" + proposal_id + "'.",
+            confidence="high",
+            suggested_mode="observe",
+            payload={"plan_explanation": {"proposal_id": proposal_id, "plan_found": False}},
+        )
+
+    created_records = [r for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_created"]
+    decision_records = [r for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision"]
+    proposal_created_count = len(created_records)
+    decision_count = len(decision_records)
+    latest_decision = decision_records[-1]["decision"] if decision_records else "unknown"
+
+    source_gap_ids = []
+    for r in created_records:
+        gap_id = r.get("content", {}).get("source_gap_id", "")
+        if gap_id and gap_id not in source_gap_ids:
+            source_gap_ids.append(gap_id)
+
+    iss_gaps = [d for d in diagnostics if d.get("type") == "iss_gap_signal"]
+    iss_related_gaps = []
+    for g in iss_gaps:
+        gid = g.get("gap_id", "")
+        if any(gid == sg or gid.endswith(sg) or sg.endswith(gid) for sg in source_gap_ids):
+            iss_related_gaps.append({"gap_id": gid, "summary": g.get("summary", ""), "severity": g.get("severity", "")})
+        elif proposal_id in (g.get("summary", "") or ""):
+            iss_related_gaps.append({"gap_id": gid, "summary": g.get("summary", ""), "severity": g.get("severity", "")})
+
+    plan_explanation = {
+        "proposal_id": proposal_id,
+        "plan_found": True,
+        "plan_id": plan.get("plan_id", ""),
+        "plan_status": plan.get("status", ""),
+        "execution_allowed": plan.get("execution_allowed", False),
+        "operator_approval_required": plan.get("operator_approval_required", True),
+        "proposal_created_count": proposal_created_count,
+        "decision_count": decision_count,
+        "latest_decision": latest_decision,
+        "source_gap_ids": source_gap_ids,
+        "iss_related_gaps": iss_related_gaps,
+    }
+
+    if source_gap_ids:
+        response_text = (
+            "Plan '" + plan.get("plan_id", "") + "' exists because proposal '" + proposal_id + "' "
+            + "was created from ISS gap '" + str(source_gap_ids[0]) + "' and later accepted by the operator. "
+            + "The plan is non-executing: execution_allowed=" + str(plan.get("execution_allowed", False)) + ", "
+            + "operator_approval_required=" + str(plan.get("operator_approval_required", True)) + "."
+        )
+    else:
+        response_text = (
+            "Plan '" + plan.get("plan_id", "") + "' exists because proposal '" + proposal_id + "' "
+            + "was accepted by the operator. No ISS source gap is linked. "
+            + "The plan is non-executing: execution_allowed=" + str(plan.get("execution_allowed", False)) + ", "
+            + "operator_approval_required=" + str(plan.get("operator_approval_required", True)) + "."
+        )
+
+    return build_deterministic_response(
+        message=message,
+        path="plan_explanation",
+        response_text=response_text,
+        payload={"plan_explanation": plan_explanation},
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -336,6 +448,18 @@ HANDLER_REGISTRY = [
         "writes": [],
         "requires_confirmation": False,
         "category": "iss",
+    },
+    {
+        "id": "plan_explanation",
+        "path": "plan_explanation",
+        "triggers": ["why does plan ", "explain plan ", "why was plan "],
+        "match_type": "prefix",
+        "priority": 73,
+        "handler_fn": "handle_plan_explanation",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "explanation",
     },
 ]
 
