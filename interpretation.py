@@ -15,6 +15,7 @@ from weslr.iss.probe_registry import get_probe_registry
 from weslr.iss.probe_planning import create_probe_plan
 from weslr.iss.probe_execution import execute_probe_simulated
 from weslr.response_formatter import build_deterministic_response
+from weslr.deterministic_handlers import dispatch_deterministic_handler
 from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
@@ -793,6 +794,10 @@ def classify_human_turn(message: str) -> str:
 def interpret_human_turn(message: str) -> dict:
     text = str(message or "").strip()
     lowered = text.lower()
+    # Handler registry dispatch — read-only queries first
+    dispatched = dispatch_deterministic_handler(message, lowered)
+    if dispatched is not None:
+        return dispatched
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
         return {
@@ -1681,24 +1686,6 @@ def interpret_human_turn(message: str) -> dict:
             "confidence": "high",
             "plan_explanation": plan_explanation,
         }
-
-    # ISS probe registry query (read-only, non-executing)
-    _probe_triggers = [
-        "show iss probes",
-        "show probe registry",
-        "list probes",
-        "what can iss check",
-    ]
-    if any(lowered.startswith(t) for t in _probe_triggers):
-        probes = get_probe_registry()
-        return build_deterministic_response(
-            message=message,
-            path="ISS_probe_registry_query",
-            response_text="ISS has " + str(len(probes)) + " defined probe stubs. Execution allowed: False for all.",
-            payload={"probe_registry": probes, "probe_count": len(probes)},
-            confidence="high",
-            suggested_mode="observe",
-        )
 
     # ISS probe planning (declarative, non-executing)
     _plan_probe_triggers = ["plan probe ", "how would you check "]
