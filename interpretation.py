@@ -975,10 +975,68 @@ def interpret_human_turn(message: str) -> dict:
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
         return dispatched
+
+    # ISS probe execution (governed, simulated) — inline, not in deterministic_handlers
+    # because it requires confirmation logic and simulated execution state.
+    _execute_triggers = ["execute probe "]
+    _triggered_execute = None
+    for t in _execute_triggers:
+        if lowered.startswith(t):
+            _triggered_execute = t
+            break
+    if _triggered_execute:
+        raw_input = lowered[len(_triggered_execute):].strip().strip('"').strip("'")
+        requires_confirm = " confirm" in raw_input
+        probe_id = raw_input.replace(" confirm", "").strip()
+        probes = get_probe_registry()
+        matched = next((p for p in probes if p["probe_id"] == probe_id), None)
+        if not matched:
+            return {
+                "message": message,
+                "response_text": "No probe found for '" + probe_id + "'. Use 'show iss probes' to inspect available probes.",
+                "path": "ISS_probe_execution",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "probe_execution": {
+                    "executed": False,
+                    "requires_confirmation": False,
+                    "mode": "simulated",
+                    "probe_id": probe_id,
+                },
+            }
+        if not requires_confirm:
+            return {
+                "message": message,
+                "response_text": "Probe execution requires confirmation. Say: 'execute probe " + probe_id + " confirm'. This will run simulated execution only.",
+                "path": "ISS_probe_execution",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "probe_execution": {
+                    "executed": False,
+                    "requires_confirmation": True,
+                    "mode": "simulated",
+                    "probe_id": probe_id,
+                },
+            }
+        result = execute_probe_simulated(matched)
+        return {
+            "message": message,
+            "response_text": "Probe '" + probe_id + "' executed in simulated mode. Status: " + str(result["status"]) + ".",
+            "path": "ISS_probe_execution",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "probe_execution": {
+                "executed": True,
+                "mode": "simulated",
+                "result": result,
+            },
+        }
+
     # Write handler dispatch — state-changing operations
     write_result = dispatch_write_handler(message, lowered)
     if write_result is not None:
         return write_result
+
     # Safe fallback for None returns
     return _build_safe_response(
         message=message,

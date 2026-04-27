@@ -53,7 +53,7 @@ def _t1_routes():
         ("system checkpoint",       "state_checkpoint_query",  "state_checkpoint", dict),
         ("explain plan iss.not_integrated", "plan_explanation", "plan_explanation", dict),
         ("execute probe probe.front_door.chat", "ISS_probe_execution", "probe_execution", dict),
-        ("tell me about solar panels", None, None, None),
+        ("tell me about solar panels", "fallback_safe", None, None),
     ]
 
     passed = 0
