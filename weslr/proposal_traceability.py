@@ -5,6 +5,8 @@ from pathlib import Path
 _BASE_DIR = Path(__file__).resolve().parent
 TRACE_FILE = _BASE_DIR / "proposal_trace.jsonl"
 
+_KNOWN_TRACE_TYPES = frozenset({"proposal_created", "proposal_decision"})
+
 
 def _write_event(event: dict):
     TRACE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -46,17 +48,35 @@ def record_decision(proposal_id: str, decision: str):
     })
 
 
+def _validate_trace_record_read(record: dict) -> bool:
+    """
+    Lightweight read-side validation for trace records.
+    Returns True if structurally valid, False otherwise.
+    Silently skips invalid records — does not raise.
+    """
+    if not isinstance(record, dict):
+        return False
+    if record.get("type") not in _KNOWN_TRACE_TYPES:
+        return False
+    if not isinstance(record.get("proposal_id"), str) or not record["proposal_id"].strip():
+        return False
+    if "timestamp" not in record:
+        return False
+    return True
+
+
 def load_trace(limit: int = 50):
     if not TRACE_FILE.exists():
         return []
-
     with open(TRACE_FILE, "r", encoding="utf-8") as f:
         lines = f.readlines()[-limit:]
-
     records = []
     for line in lines:
         try:
-            records.append(json.loads(line))
+            record = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if not _validate_trace_record_read(record):
+            continue
+        records.append(record)
     return records

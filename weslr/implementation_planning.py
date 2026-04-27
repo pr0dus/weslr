@@ -4,7 +4,6 @@ from pathlib import Path
 _BASE_DIR = Path(__file__).resolve().parent
 PLAN_FILE = _BASE_DIR / "implementation_plans.jsonl"
 
-# Hard rule: execution is never allowed in this module
 _EXECUTION_ALLOWED = False
 
 
@@ -15,44 +14,17 @@ def _write_plan(plan: dict):
 
 
 def create_implementation_plan(proposal_id: str, proposal_content: dict) -> dict:
-    """
-    Build a structured implementation plan from a proposal_id + content.
-    execution_allowed is ALWAYS False — this module never executes.
-    """
     summary = proposal_content.get("summary") or proposal_content.get("proposal", "")
     score = proposal_content.get("score", 0.0)
     tier = proposal_content.get("tier", "medium")
-
     plan_id = f"plan-{proposal_id}-{int(time.time())}"
-
-    # Three-phase safe plan: inspect → design → validate
     steps = [
-        {
-            "order": 1,
-            "title": f"Inspect existing {proposal_id} implementation",
-            "kind": "inspect",
-            "allowed": True,
-        },
-        {
-            "order": 2,
-            "title": f"Design implementation approach for {proposal_id}",
-            "kind": "design",
-            "allowed": True,
-        },
-        {
-            "order": 3,
-            "title": f"Validate plan for {proposal_id} before operator review",
-            "kind": "validate",
-            "allowed": True,
-        },
+        {"order": 1, "title": f"Inspect existing {proposal_id} implementation", "kind": "inspect", "allowed": True},
+        {"order": 2, "title": f"Design implementation approach for {proposal_id}", "kind": "design", "allowed": True},
+        {"order": 3, "title": f"Validate plan for {proposal_id} before operator review", "kind": "validate", "allowed": True},
     ]
-
     decision_timestamp = proposal_content.get("decision_timestamp")
-    trace_ref = {
-        "proposal_created": None,
-        "proposal_decision": decision_timestamp,
-    }
-
+    trace_ref = {"proposal_created": None, "proposal_decision": decision_timestamp}
     return {
         "type": "implementation_plan",
         "plan_id": plan_id,
@@ -92,29 +64,41 @@ def _validate_implementation_plan(plan: dict):
 
 
 def record_implementation_plan(plan: dict) -> None:
-    """
-    Append a plan to the JSONL log.
-    The plan must have been created by create_implementation_plan.
-    """
     _validate_implementation_plan(plan)
     _write_plan(plan)
 
 
+def _validate_plan_record_read(record: dict) -> bool:
+    """
+    Lightweight read-side validation for implementation plan records.
+    Returns True if structurally valid, False otherwise.
+    Silently skips invalid records — does not raise.
+    """
+    if not isinstance(record, dict):
+        return False
+    if record.get("type") != "implementation_plan":
+        return False
+    if not isinstance(record.get("plan_id"), str) or not record["plan_id"].strip():
+        return False
+    if not isinstance(record.get("proposal_id"), str) or not record["proposal_id"].strip():
+        return False
+    if record.get("execution_allowed") is not False:
+        return False
+    return True
+
+
 def load_implementation_plans(limit: int = 50) -> list[dict]:
-    """
-    Read the last `limit` plan records from the JSONL log.
-    Returns oldest-first (chronological).
-    """
     if not PLAN_FILE.exists():
         return []
-
     with open(PLAN_FILE, "r", encoding="utf-8") as f:
         all_lines = f.readlines()
-
     records = []
     for l in all_lines[-limit:]:
         try:
-            records.append(__import__("json").loads(l))
+            record = __import__("json").loads(l)
         except __import__("json").JSONDecodeError:
             continue
+        if not _validate_plan_record_read(record):
+            continue
+        records.append(record)
     return records

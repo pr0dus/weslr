@@ -111,10 +111,30 @@ def record_iss_diagnostic(record: dict) -> None:
         f.write(json.dumps(record) + "\n")
 
 
+_KNOWN_ISS_TYPES = frozenset({"iss_probe_result", "iss_gap_signal"})
+
+
+
+def _validate_iss_record_read(record: dict) -> bool:
+    """
+    Lightweight read-side validation for ISS diagnostic records.
+    Returns True if record is structurally valid, False otherwise.
+    Does not raise — skips invalid records silently.
+    """
+    if not isinstance(record, dict):
+        return False
+    if record.get("type") not in _KNOWN_ISS_TYPES:
+        return False
+    if "timestamp" not in record:
+        return False
+    return True
+
+
 def load_iss_diagnostics(limit: int = 50) -> list[dict]:
     """
     Load the last `limit` ISS diagnostic records.
     Returns an empty list if the file does not exist.
+    Skips malformed or structurally invalid records silently.
     """
     if not RECORD_FILE.exists():
         return []
@@ -123,7 +143,10 @@ def load_iss_diagnostics(limit: int = 50) -> list[dict]:
     records = []
     for l in all_lines[-limit:]:
         try:
-            records.append(json.loads(l))
+            record = json.loads(l)
         except json.JSONDecodeError:
             continue
+        if not _validate_iss_record_read(record):
+            continue
+        records.append(record)
     return records
