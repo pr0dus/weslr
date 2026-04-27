@@ -442,6 +442,68 @@ def handle_proposal_explanation(message: str, lowered: str) -> dict:
     return result
 
 
+def handle_plan_query_list(message: str, lowered: str) -> dict:
+    """Plan list query — read-only."""
+    plans = load_implementation_plans(10)
+    if plans:
+        lines = [f"Found {len(plans)} implementation plan(s):"]
+        for p in plans:
+            lines.append(
+                f"- {p.get('proposal_id')} ({p.get('status')}) "
+                f"[exec={p.get('execution_allowed')}]"
+            )
+        response_text = "\n".join(lines)
+    else:
+        response_text = "No implementation plans found."
+    result = build_deterministic_response(
+        message=message,
+        path="C8_plan_query_list",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Implementation plan list query"}
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    result["plans"] = plans
+    return result
+
+
+def handle_plan_query_single(message: str, lowered: str) -> dict:
+    """Single plan query — read-only."""
+    parts = lowered.split(" for ") if " for " in lowered else lowered.split(" plan ")
+    target_id = parts[-1].strip().strip('"').strip("'")
+    plans = load_implementation_plans(50)
+    matched = [p for p in plans if p.get("proposal_id") == target_id]
+    if matched:
+        plan = matched[-1]
+        steps_str = " → ".join(
+            s["title"].split(" ", 1)[1] if " " in s["title"] else s["title"]
+            for s in plan.get("steps", []) if s.get("allowed")
+        )
+        response_text = (
+            f"Plan for {target_id}: Steps: {steps_str}. Status: {plan.get('status')}. "
+            f"Execution allowed: {plan.get('execution_allowed')}. "
+            f"Operator approval required: {plan.get('operator_approval_required')}. "
+            f"Plan ID: {plan.get('plan_id')}"
+        )
+    else:
+        response_text = f"No plan found for '{target_id}'."
+    result = build_deterministic_response(
+        message=message,
+        path="C8_plan_query_single",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Implementation plan query"}
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    if matched:
+        result["plan"] = plan
+    return result
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -572,6 +634,30 @@ HANDLER_REGISTRY = [
         "writes": [],
         "requires_confirmation": False,
         "category": "explanation",
+    },
+    {
+        "id": "plan_query_list",
+        "path": "C8_plan_query_list",
+        "triggers": ["show implementation plans", "list plans", "show plans"],
+        "match_type": "prefix",
+        "priority": 70,
+        "handler_fn": "handle_plan_query_list",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "plan",
+    },
+    {
+        "id": "plan_query_single",
+        "path": "C8_plan_query_single",
+        "triggers": ["show plan for ", "get plan for "],
+        "match_type": "prefix",
+        "priority": 71,
+        "handler_fn": "handle_plan_query_single",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "plan",
     },
 ]
 
