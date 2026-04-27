@@ -9,12 +9,6 @@ SELLABILITY_SIGNAL_THRESHOLD = 0.7
 PROJECT_NAME = "Weslr"
 PROJECT_SLUG = "weslr"
 
-# ── Identity (Bundle G v1) ──────────────────────────────────────────────────
-# Fallback defaults until onboarding/user registry becomes source of truth.
-# KNOWN_PRINCIPALS expands when invite-code or user registry is implemented.
-DEFAULT_PRINCIPAL = "operator"
-KNOWN_PRINCIPALS = {"operator"}
-
 BASE_DIR = Path(__file__).resolve().parent
 AGENTS_DIR = BASE_DIR / "agents"
 DB_PATH = BASE_DIR / "world.db"

@@ -3436,98 +3436,6 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(payload)
-            elif self.path == "/thread/create" and self.command == "POST":
-                content_length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
-                try:
-                    import json as _json
-                    from weslr.identity import get_current_principal
-                    from weslr.thread_tracker import create_thread
-                    from weslr.timeline_resolution import set_active_thread
-                    data = _json.loads(body) if body else {}
-                    name = data.get("name", "").strip() if isinstance(data.get("name"), str) else ""
-                    if not name:
-                        payload = _json.dumps({"ok": False, "error": "name is required"}).encode("utf-8")
-                        self.send_response(400)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(payload)
-                        return
-                    tags = data.get("tags")
-                    if tags and not isinstance(tags, list):
-                        tags = []
-                    user_id = data.get("user_id", "") or ""
-                    principal = get_current_principal(user_id, None)
-                    thread = create_thread(name=name, tags=tags)
-                    set_active_thread(principal, thread["id"], thread["name"])
-                    payload = _json.dumps({
-                        "ok": True,
-                        "thread": thread,
-                        "activated": True,
-                        "principal": principal,
-                    }).encode("utf-8")
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                except Exception as e:
-                    payload = _json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
-                    self.send_response(500)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                return
-
-            # Thread state transition — PATCH /thread/{thread_id}/state
-            elif self.command == "PATCH" and self.path.startswith("/thread/") and self.path.endswith("/state"):
-                thread_id = self.path.split("/")[2]
-                if not thread_id:
-                    payload = json.dumps({"ok": False, "error": "thread_id is required"}).encode("utf-8")
-                    self.send_response(400)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                    return
-                try:
-                    content_length = int(self.headers.get("Content-Length", 0))
-                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
-                    data = json.loads(body) if body else {}
-                    state = data.get("state", "").strip()
-                    if not state:
-                        payload = json.dumps({"ok": False, "error": "state is required"}).encode("utf-8")
-                        self.send_response(400)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(payload)
-                        return
-                    from weslr.thread_tracker import set_state
-                    from weslr.thread_tracker import VALID_STATES
-                    if state not in VALID_STATES:
-                        payload = json.dumps({"ok": False, "error": f"invalid state: must be one of {list(VALID_STATES)}"}).encode("utf-8")
-                        self.send_response(400)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(payload)
-                        return
-                    ok = set_state(thread_id, state)
-                    if ok:
-                        payload = json.dumps({"ok": True, "thread_id": thread_id, "state": state}).encode("utf-8")
-                        self.send_response(200)
-                    else:
-                        payload = json.dumps({"ok": False, "error": "thread not found"}).encode("utf-8")
-                        self.send_response(404)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                    return
-                except Exception as e:
-                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
-                    self.send_response(500)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(payload)
-                    return
-
             elif self.path == "/chat":
                 content_length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
@@ -3711,27 +3619,8 @@ def cmd_serve(args):
                     # Threshold: 3 consecutive same (quality_class, likely_need) pairs.
                     # Note is metadata only — never changes user-facing message.
                     from interpretation import interpret_human_turn
-                    itrn = interpret_human_turn(message)
-
-                    # W1_REAL: deterministic routing — bypass LLM for C1–C6 queries
-                    if itrn.get("_weslr_deterministic"):
-                        _chat_semaphore.release()  # release before early return
-                        payload["message"] = itrn.get("response_text", "")
-                        payload["_weslr_deterministic"] = True
-                        payload["_weslr_structured"] = {
-                            k: itrn[k] for k in [
-                                "confidence", "suggested_mode", "mode_analysis",
-                                "proposed_capabilities", "proposal_signal_summary",
-                                "decision_recorded", "capabilities", "missing_capabilities",
-                            ] if k in itrn
-                        }
-                        self.send_response(200)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(_json.dumps(payload).encode("utf-8"))
-                        return
-
                     qclass = payload.get("_quality_class") or "unknown"
+                    itrn = interpret_human_turn(message)
                     lneed = str(itrn.get("likely_need") or "unknown")
                     qnote = _check_quality_watch(qclass, lneed)
                     if qnote:
@@ -3785,7 +3674,6 @@ def cmd_serve(args):
                         "message_length": len(message),
                         "has_clearance": bool(token_id),
                         "quality_class": qclass,
-                        "_weslr_deterministic": False,
                         "quality_note": qnote if qnote else None,
                         "_governance_observation": {
                             "watch_triggered": qnote,
@@ -4557,63 +4445,6 @@ def cmd_serve(args):
                     self.end_headers()
                     self.wfile.write(f"Error: {e}".encode("utf-8"))
                 return
-            # Thread creation — Bundle E v1: activate thread on creation
-            elif self.command == "POST" and self.path == "/thread/create":
-                try:
-                    content_length = int(self.headers.get("Content-Length", 0))
-                    body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
-                    data = json.loads(body) if body else {}
-                    from weslr.identity import get_current_principal
-                    principal = get_current_principal(data.get("user_id", ""), None)
-                    name = data.get("name", "").strip()
-                    tags = data.get("tags") or []
-                    if not name:
-                        payload = json.dumps({
-                            "ok": False,
-                            "error": "name is required",
-                        }, indent=2).encode("utf-8")
-                        self.send_response(400)
-                        self.send_header("Content-Type", "application/json")
-                        self.send_header("Content-Length", str(len(payload)))
-                        self.end_headers()
-                        self.wfile.write(payload)
-                        return
-                    from weslr.thread_tracker import create_thread
-                    from weslr.timeline_resolution import set_active_thread
-                    thread = create_thread(name=name, tags=tags)
-                    if not thread:
-                        payload = json.dumps({
-                            "ok": False,
-                            "error": "thread creation failed",
-                        }, indent=2).encode("utf-8")
-                        self.send_response(500)
-                        self.send_header("Content-Type", "application/json")
-                        self.send_header("Content-Length", str(len(payload)))
-                        self.end_headers()
-                        self.wfile.write(payload)
-                        return
-                    set_active_thread(principal, thread["id"], thread["name"])
-                    payload = json.dumps({
-                        "ok": True,
-                        "thread": thread,
-                        "activated": True,
-                        "principal": principal,
-                    }, indent=2).encode("utf-8")
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(payload)))
-                    self.end_headers()
-                    self.wfile.write(payload)
-                    return
-                except Exception as e:
-                    payload = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
-                    self.send_response(500)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(payload)))
-                    self.end_headers()
-                    self.wfile.write(payload)
-                    return
-
             # Machine-readable first-run detection
             if self.path == "/api/first-run":
                 try:
@@ -5608,33 +5439,6 @@ def cmd_serve(args):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(_json.dumps({"ok": False, "summary": None, "error": str(e)}).encode("utf-8"))
-                return
-
-        def do_PATCH(self):
-            """Handle PATCH requests — delegates to do_POST routing chain."""
-            self.do_POST()
-
-            # Thread list — GET /thread?state=active&limit=50
-            if urlparse(self.path).path == "/thread" and self.command == "GET":
-                from urllib.parse import parse_qs
-                parsed = urlparse(self.path)
-                params = parse_qs(parsed.query)
-                state = params.get("state", [None])[0]
-                limit = min(int(params.get("limit", ["50"])[0]), 100)
-                from weslr.thread_tracker import list_threads
-                threads = list_threads(state=state, limit=limit)
-                for t in threads:
-                    t["item_count"] = len(t.get("items", []))
-                payload = json.dumps({
-                    "ok": True,
-                    "threads": threads,
-                    "total": len(threads),
-                    "limit": limit,
-                }).encode("utf-8")
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(payload)
                 return
             # Fall back to default handler for other GET requests
             super().do_GET()

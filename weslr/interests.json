@@ -1,39 +1,6 @@
 {
   "interests": [
     {
-      "id": "d28abca2",
-      "name": "weslr_works",
-      "display_name": "weslr works",
-      "status": "active",
-      "created_at": "2026-04-26T16:48:58Z",
-      "last_seen_at": "2026-04-26T16:48:58Z",
-      "occurrence_count": 0,
-      "tags": [],
-      "occurrences": []
-    },
-    {
-      "id": "dd11ee71",
-      "name": "weslr_openclaw_connect",
-      "display_name": "weslr openclaw connect",
-      "status": "active",
-      "created_at": "2026-04-26T16:45:51Z",
-      "last_seen_at": "2026-04-26T16:45:51Z",
-      "occurrence_count": 0,
-      "tags": [],
-      "occurrences": []
-    },
-    {
-      "id": "2f8e7c36",
-      "name": "weslr_openclaw_connected",
-      "display_name": "weslr openclaw connected",
-      "status": "active",
-      "created_at": "2026-04-26T13:49:52Z",
-      "last_seen_at": "2026-04-26T13:49:52Z",
-      "occurrence_count": 0,
-      "tags": [],
-      "occurrences": []
-    },
-    {
       "id": "0445d029",
       "name": "cache_optimization",
       "display_name": "Cache Optimization",

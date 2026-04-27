@@ -101,24 +101,7 @@ def inspect_artifact_lineage(
             notes="Artifact predates lineage fields; parent/root/generation unknown.",
         )
 
-    # Read explicit lineage_intent if present
-    lineage_intent = artifact.get("lineage_intent")
-
-    # Explicit root intent — return immediately
-    if lineage_intent == "root":
-        return ArtifactLineageInspection(
-            artifact_id=artifact_id,
-            lineage_status="root",
-            parent_artifact_ids=[],
-            root_artifact_id=artifact_id,
-            generation=0,
-            thread_ids=thread_ids or [],
-            lineage_complete=True,
-            notes="Explicit root intent.",
-        )
-
     # Detect incomplete: parent refs present but root_artifact_id absent
-    # Must run before derived classification
     if parent_ids and root_id is None:
         return ArtifactLineageInspection(
             artifact_id=artifact_id,
@@ -131,20 +114,7 @@ def inspect_artifact_lineage(
             notes="Parent references present but root_artifact_id is unset; lineage incomplete.",
         )
 
-    # Explicit derived intent — return after incomplete check passes
-    if lineage_intent == "derived":
-        return ArtifactLineageInspection(
-            artifact_id=artifact_id,
-            lineage_status="derived",
-            parent_artifact_ids=list(parent_ids),
-            root_artifact_id=root_id,
-            generation=int(generation) if generation is not None else None,
-            thread_ids=thread_ids or [],
-            lineage_complete=True,
-            notes="Explicit derived intent.",
-        )
-
-    # Classify root vs derived (no explicit intent — legacy behavior)
+    # Classify root vs derived
     if not parent_ids and generation == 0:
         return ArtifactLineageInspection(
             artifact_id=artifact_id,
@@ -157,7 +127,7 @@ def inspect_artifact_lineage(
             notes="Root artifact.",
         )
 
-    # derived (legacy fallback)
+    # derived
     return ArtifactLineageInspection(
         artifact_id=artifact_id,
         lineage_status="derived",
@@ -166,9 +136,7 @@ def inspect_artifact_lineage(
         generation=int(generation) if generation is not None else None,
         thread_ids=thread_ids or [],
         lineage_complete=True,
-        notes="Derived from {} parent{}.".format(
-            len(parent_ids), "s" if len(parent_ids) != 1 else ""
-        ),
+        notes=f"Derived from {len(parent_ids)} parent{'s' if len(parent_ids) != 1 else ''}.",
     )
 
 
