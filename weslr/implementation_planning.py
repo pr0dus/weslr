@@ -111,5 +111,10 @@ def load_implementation_plans(limit: int = 50) -> list[dict]:
     with open(PLAN_FILE, "r", encoding="utf-8") as f:
         all_lines = f.readlines()
 
-    records = [__import__("json").loads(l) for l in all_lines[-limit:]]
+    records = []
+    for l in all_lines[-limit:]:
+        try:
+            records.append(__import__("json").loads(l))
+        except __import__("json").JSONDecodeError:
+            continue
     return records

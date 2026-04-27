@@ -120,4 +120,10 @@ def load_iss_diagnostics(limit: int = 50) -> list[dict]:
         return []
     with open(RECORD_FILE, "r", encoding="utf-8") as f:
         all_lines = f.readlines()
-    return [json.loads(l) for l in all_lines[-limit:]]
+    records = []
+    for l in all_lines[-limit:]:
+        try:
+            records.append(json.loads(l))
+        except json.JSONDecodeError:
+            continue
+    return records

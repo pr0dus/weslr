@@ -53,4 +53,10 @@ def load_trace(limit: int = 50):
     with open(TRACE_FILE, "r", encoding="utf-8") as f:
         lines = f.readlines()[-limit:]
 
-    return [json.loads(l) for l in lines]
+    records = []
+    for line in lines:
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return records
