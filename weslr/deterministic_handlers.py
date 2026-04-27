@@ -23,6 +23,9 @@ from typing import Optional
 from weslr.response_formatter import build_deterministic_response
 from weslr.iss.probe_registry import get_probe_registry
 from weslr.iss.probe_planning import create_probe_plan
+from weslr.state_checkpoint import get_state_checkpoint
+from weslr.iss.diagnostic_records import load_iss_diagnostics
+from weslr.implementation_planning import load_implementation_plans
 
 
 # ---- Handler functions ----
@@ -65,6 +68,57 @@ def handle_iss_probe_registry(message: str, lowered: str) -> dict:
     )
 
 
+def handle_operator_overview(message: str, lowered: str) -> dict:
+    """Operator system overview — read-only, aggregates checkpoint + ISS + plans."""
+    checkpoint = get_state_checkpoint()
+    diagnostics = load_iss_diagnostics(20)
+    plans = load_implementation_plans(10)
+    gaps = [d for d in diagnostics if d.get("type") == "iss_gap_signal"]
+    probes = [d for d in diagnostics if d.get("type") == "iss_probe_result"]
+    ok_count = sum(1 for p in probes if p.get("status") == "ok")
+    deg_count = sum(1 for p in probes if p.get("status") == "degraded")
+    layer_ids = [l["id"] for l in checkpoint.get("layers", [])]
+
+    response_text = (
+        f"WESLR overview:\n"
+        f"- {len(layer_ids)} layers confirmed\n"
+        f"- {len(gaps)} diagnostic gap(s)\n"
+        f"- {len(plans)} implementation plan(s)\n"
+        f"- ISS probes: {ok_count} ok, {deg_count} degraded\n"
+        f"System is deterministic, non-executing, and operator-controlled."
+    )
+
+    result = build_deterministic_response(
+        message=message,
+        path="operator_overview",
+        response_text=response_text,
+        payload={
+            "overview": {
+                "checkpoint": checkpoint,
+                "gaps": gaps,
+                "plans": plans,
+                "summary": {
+                    "layers_confirmed": len(layer_ids),
+                    "gap_count": len(gaps),
+                    "plan_count": len(plans),
+                },
+            },
+        },
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["mode_analysis"] = {
+        "current_mode": None,
+        "suggested_mode": "observe",
+        "match": True,
+        "mismatch": False,
+        "reason": "System overview query",
+    }
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    return result
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -96,6 +150,23 @@ HANDLER_REGISTRY = [
         "writes": [],
         "requires_confirmation": False,
         "category": "iss",
+    },
+    {
+        "id": "operator_overview",
+        "path": "operator_overview",
+        "triggers": [
+            "show system overview",
+            "weslr overview",
+            "system overview",
+            "show full status",
+        ],
+        "match_type": "prefix",
+        "priority": 75,
+        "handler_fn": "handle_operator_overview",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "operator",
     },
 ]
 

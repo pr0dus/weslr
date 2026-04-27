@@ -1359,53 +1359,6 @@ def interpret_human_turn(message: str) -> dict:
             result["suggestion_surface"] = {"show": False, "priority": "low"}
             return result
 
-    # Operator system overview (read-only, aggregates checkpoint + ISS + plans)
-    _ov_triggers = [
-        "show system overview", "weslr overview", "system overview", "show full status",
-    ]
-    if any(lowered.startswith(t) or lowered == t for t in _ov_triggers):
-        checkpoint = get_state_checkpoint()
-        diagnostics = load_iss_diagnostics(20)
-        plans = load_implementation_plans(10)
-        gaps = [d for d in diagnostics if d.get("type") == "iss_gap_signal"]
-        probes = [d for d in diagnostics if d.get("type") == "iss_probe_result"]
-        ok_count = sum(1 for p in probes if p.get("status") == "ok")
-        deg_count = sum(1 for p in probes if p.get("status") == "degraded")
-        layer_ids = [l["id"] for l in checkpoint.get("layers", [])]
-
-        response_text = (
-            f"WESLR overview:\n"
-            f"- {len(layer_ids)} layers confirmed\n"
-            f"- {len(gaps)} diagnostic gap(s)\n"
-            f"- {len(plans)} implementation plan(s)\n"
-            f"- ISS probes: {ok_count} ok, {deg_count} degraded\n"
-            f"System is deterministic, non-executing, and operator-controlled."
-        )
-
-        result = build_deterministic_response(
-            message=message,
-            path="operator_overview",
-            response_text=response_text,
-            payload={
-                "overview": {
-                    "checkpoint": checkpoint,
-                    "gaps": gaps,
-                    "plans": plans,
-                    "summary": {
-                        "layers_confirmed": len(layer_ids),
-                        "gap_count": len(gaps),
-                        "plan_count": len(plans),
-                    },
-                },
-            },
-            confidence="high",
-            suggested_mode="observe",
-        )
-        result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "System overview query"}
-        result["mode_suggestion"] = None
-        result["suggestion_surface"] = {"show": False, "priority": "low"}
-        return result
-
     # ---- proposal_id normalizer (private helper) ----
     _STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
 
