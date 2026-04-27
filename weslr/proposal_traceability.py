@@ -12,7 +12,22 @@ def _write_event(event: dict):
         f.write(json.dumps(event) + "\n")
 
 
+def _validate_proposal_created(proposal_id: str, content: dict):
+    if not isinstance(proposal_id, str) or not proposal_id.strip():
+        raise ValueError(f"proposal_id must be a non-empty string, got {proposal_id!r}")
+    if not isinstance(content, dict):
+        raise ValueError(f"content must be a dict, got {type(content).__name__}")
+
+
+def _validate_proposal_decision(proposal_id: str, decision: str):
+    if not isinstance(proposal_id, str) or not proposal_id.strip():
+        raise ValueError(f"proposal_id must be a non-empty string, got {proposal_id!r}")
+    if not isinstance(decision, str) or not decision.strip():
+        raise ValueError(f"decision must be a non-empty string, got {decision!r}")
+
+
 def record_proposal(proposal_id: str, content: dict):
+    _validate_proposal_created(proposal_id, content)
     _write_event({
         "type": "proposal_created",
         "proposal_id": proposal_id,
@@ -22,6 +37,7 @@ def record_proposal(proposal_id: str, content: dict):
 
 
 def record_decision(proposal_id: str, decision: str):
+    _validate_proposal_decision(proposal_id, decision)
     _write_event({
         "type": "proposal_decision",
         "proposal_id": proposal_id,

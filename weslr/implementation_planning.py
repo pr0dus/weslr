@@ -72,11 +72,31 @@ def create_implementation_plan(proposal_id: str, proposal_content: dict) -> dict
     }
 
 
+def _validate_implementation_plan(plan: dict):
+    if plan.get("type") != "implementation_plan":
+        raise ValueError(f"type must be 'implementation_plan', got {plan.get('type')!r}")
+    if not isinstance(plan.get("plan_id"), str) or not plan["plan_id"].strip():
+        raise ValueError(f"plan_id must be a non-empty string")
+    if not isinstance(plan.get("proposal_id"), str) or not plan["proposal_id"].strip():
+        raise ValueError(f"proposal_id must be a non-empty string")
+    if plan.get("execution_allowed") is not False:
+        raise ValueError(f"execution_allowed must be False, got {plan.get('execution_allowed')!r}")
+    if plan.get("operator_approval_required") is not True:
+        raise ValueError(f"operator_approval_required must be True")
+    if not isinstance(plan.get("steps"), list) or len(plan["steps"]) == 0:
+        raise ValueError(f"steps must be a non-empty list")
+    if not isinstance(plan.get("risks"), list):
+        raise ValueError(f"risks must be a list")
+    if not isinstance(plan.get("rollback_notes"), list):
+        raise ValueError(f"rollback_notes must be a list")
+
+
 def record_implementation_plan(plan: dict) -> None:
     """
     Append a plan to the JSONL log.
     The plan must have been created by create_implementation_plan.
     """
+    _validate_implementation_plan(plan)
     _write_plan(plan)
 
 
