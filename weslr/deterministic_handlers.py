@@ -659,7 +659,85 @@ HANDLER_REGISTRY = [
         "requires_confirmation": False,
         "category": "plan",
     },
+    {
+        "id": "iss_intake_query",
+        "path": "ISS_intake_query",
+        "triggers": ["show iss intake proposals", "show proposals from iss", "show converted iss proposals", "list iss proposals"],
+        "match_type": "prefix",
+        "priority": 67,
+        "handler_fn": "handle_iss_intake_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "iss",
+    },
 ]
+
+
+def handle_iss_intake_query(message: str, lowered: str) -> dict:
+    """ISS intake proposal query — read-only."""
+    try:
+        trace = load_trace(100)
+    except Exception:
+        trace = []
+    iss_intake_proposals = [
+        {
+            "proposal_id": r.get("proposal_id"),
+            "source_gap_id": r.get("content", {}).get("source_gap_id", ""),
+            "summary": r.get("content", {}).get("summary", ""),
+            "severity": r.get("content", {}).get("severity", ""),
+            "timestamp": r.get("timestamp"),
+        }
+        for r in trace
+        if r.get("type") == "proposal_created"
+        and r.get("content", {}).get("source") == "ISS"
+        and r.get("content", {}).get("operator_requested_intake") is True
+    ]
+    if not iss_intake_proposals:
+        response_text = "No ISS intake proposals found."
+    else:
+        grouped = {}
+        for p in iss_intake_proposals:
+            pid = p["proposal_id"]
+            ts = p.get("timestamp")
+            if pid not in grouped:
+                grouped[pid] = {
+                    "proposal_id": pid,
+                    "source_gap_id": p["source_gap_id"],
+                    "summary": p["summary"],
+                    "severity": p["severity"],
+                    "confidence": p.get("confidence", ""),
+                    "count": 0,
+                    "first_seen": ts,
+                    "last_seen": ts,
+                }
+            grouped[pid]["count"] += 1
+            if ts is not None:
+                if grouped[pid]["first_seen"] is None or ts < grouped[pid]["first_seen"]:
+                    grouped[pid]["first_seen"] = ts
+                if ts > grouped[pid]["last_seen"]:
+                    grouped[pid]["last_seen"] = ts
+        iss_intake_grouped = list(grouped.values())
+        total_events = len(iss_intake_proposals)
+        lines = [f"Found {len(iss_intake_grouped)} unique ISS intake proposal(s) from {total_events} trace event(s):"]
+        for g in iss_intake_grouped:
+            lines.append(
+                f"- {g['proposal_id']} from {g['source_gap_id']} "
+                f"({g['severity']}), seen {g['count']} time(s)"
+            )
+        response_text = "\n".join(lines)
+    result = build_deterministic_response(
+        message=message,
+        path="ISS_intake_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["iss_intake_proposals"] = iss_intake_proposals
+    result["iss_intake_grouped"] = iss_intake_grouped
+    result["iss_intake_count"] = len(iss_intake_proposals)
+    result["iss_intake_unique_count"] = len(iss_intake_grouped)
+    return result
 
 
 # ---- Dispatch ----
