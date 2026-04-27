@@ -5,6 +5,128 @@ _B9_STATE = {
     "low_confidence_count": 0,
     "mismatch_count": 0,
 }
+# ---- Public demo mode guard ----
+
+# Modes: private_dev | local_demo | public_demo_readonly
+# Default is private_dev (no restrictions, developer/operator use)
+_WESLR_MODE = "private_dev"
+
+# Per-session request tracking for rate limiting (session-only, no persistence)
+# Structure: {session_id: [timestamp, ...]}
+_RATE_LIMIT_STATE: dict[str, list[float]] = {}
+
+# Per-session LLM call tracking (only meaningful in LLM-enabled modes)
+_LLM_CALL_STATE: dict[str, int] = {}
+
+# Rate limit constants
+_MAX_REQUESTS_PER_MINUTE = 10   # public_demo_readonly
+_MAX_LLM_CALLS_PER_SESSION = 5  # public_demo_readonly
+
+
+def _get_session_id() -> str:
+    """Return a session identifier for rate limiting.
+    
+    In webchat/CLI context, use a fixed 'default' session marker.
+    In production, this would be replaced with real session IDs from the transport layer.
+    """
+    return "default"
+
+
+def _is_public_demo_readonly() -> bool:
+    return _WESLR_MODE == "public_demo_readonly"
+
+
+def _check_rate_limit() -> tuple[bool, str]:
+    """Check if current session is within rate limit.
+    
+    Returns (allowed, reason). If not allowed, reason explains why.
+    """
+    import time
+    if not _is_public_demo_readonly():
+        return True, ""
+    
+    session_id = _get_session_id()
+    now = time.time()
+    window = 60.0  # 1-minute window
+    
+    # Initialize or clean old timestamps
+    if session_id not in _RATE_LIMIT_STATE:
+        _RATE_LIMIT_STATE[session_id] = []
+    
+    # Remove timestamps outside the window
+    _RATE_LIMIT_STATE[session_id] = [
+        ts for ts in _RATE_LIMIT_STATE[session_id]
+        if now - ts < window
+    ]
+    
+    if len(_RATE_LIMIT_STATE[session_id]) >= _MAX_REQUESTS_PER_MINUTE:
+        return False, (
+            f"Rate limit exceeded. Please wait. "
+            f"({_MAX_REQUESTS_PER_MINUTE} requests/minute in public demo mode.)"
+        )
+    
+    _RATE_LIMIT_STATE[session_id].append(now)
+    return True, ""
+
+
+def _check_llm_limit() -> tuple[bool, str]:
+    """Check if LLM calls are still allowed in current session.
+    
+    Returns (allowed, reason). Only meaningful in public_demo_readonly mode.
+    """
+    if not _is_public_demo_readonly():
+        return True, ""
+    
+    session_id = _get_session_id()
+    count = _LLM_CALL_STATE.get(session_id, 0)
+    
+    if count >= _MAX_LLM_CALLS_PER_SESSION:
+        return False, (
+            f"Model usage limit reached for demo. "
+            f"Try again later. ({_MAX_LLM_CALLS_PER_SESSION} LLM calls allowed per session.)"
+        )
+    
+    _LLM_CALL_STATE[session_id] = count + 1
+    return True, ""
+
+
+def _build_safe_response(message: str, path: str, response_text: str, confidence: str = "low") -> dict:
+    """Build a sanitized response that never leaks internal state."""
+    return {
+        "path": path,
+        "response_text": response_text,
+        "confidence": confidence,
+        "message": message,
+        "_weslr_mode": _WESLR_MODE,
+    }
+
+
+def set_weslr_mode(mode: str) -> None:
+    """Set WESLR operating mode. Call this before interpret_human_turn in demo deployments.
+    
+    Valid modes: private_dev | local_demo | public_demo_readonly
+    """
+    global _WESLR_MODE
+    if mode not in ("private_dev", "local_demo", "public_demo_readonly"):
+        raise ValueError(f"Unknown WESLR mode: {mode!r}")
+    _WESLR_MODE = mode
+
+
+def get_weslr_mode() -> str:
+    """Return the current WESLR operating mode."""
+    return _WESLR_MODE
+
+
+def _log_minimal_access(message: str, path: str, latency: float) -> None:
+    """Minimal logging for public demo mode. Logs only route, timestamp, latency.
+    
+    DO NOT log raw user input, personal data, or internal paths.
+    """
+    # In public_demo_readonly, this would write to an access log.
+    # In private_dev/local_demo, this is a no-op by default.
+    pass
+
+
 # B12.1: operator feedback log - separate from graph/proposals
 import json as _json
 from pathlib import Path as _Path
@@ -793,8 +915,62 @@ def classify_human_turn(message: str) -> str:
 
 
 def interpret_human_turn(message: str) -> dict:
+    import time as _time
+    _t0 = _time.perf_counter()
     text = str(message or "").strip()
     lowered = text.lower()
+
+    # SECTION 1/3 — Rate limit check (public_demo_readonly)
+    rate_ok, rate_reason = _check_rate_limit()
+    if not rate_ok:
+        return _build_safe_response(
+            message=message,
+            path="rate_limited",
+            response_text=rate_reason,
+            confidence="high",
+        )
+
+    # SECTION 2/3 — Write handler block (public_demo_readonly)
+    # In public_demo_readonly, write handlers are never dispatched.
+    if _is_public_demo_readonly():
+        # First check if a write handler would have matched.
+        # We inspect the triggers without calling the handler (avoids side effects).
+        from weslr.write_handlers import WRITE_HANDLER_REGISTRY
+        write_triggered = False
+        for entry in sorted(WRITE_HANDLER_REGISTRY, key=lambda h: h["priority"], reverse=True):
+            for trigger in entry["triggers"]:
+                if lowered.startswith(trigger):
+                    write_triggered = True
+                    break
+                # Also check bare trigger without trailing space (e.g. "convert iss suggestion")
+                if lowered == trigger.rstrip():
+                    write_triggered = True
+                    break
+            if write_triggered:
+                break
+
+        if write_triggered:
+            return _build_safe_response(
+                message=message,
+                path="blocked_write",
+                response_text="This action is disabled in public demo mode.",
+                confidence="high",
+            )
+
+        # Not a write — try deterministic (read-only) handlers
+        dispatched = dispatch_deterministic_handler(message, lowered)
+        if dispatched is not None:
+            return dispatched
+
+        # No handler matched at all — safe fallback
+        return _build_safe_response(
+            message=message,
+            path="fallback_safe",
+            response_text="I'm not able to process that request.",
+            confidence="low",
+        )
+
+    # SECTION 3/3 — Normal flow (private_dev / local_demo)
     # Handler registry dispatch — read-only queries first
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
@@ -803,6 +979,13 @@ def interpret_human_turn(message: str) -> dict:
     write_result = dispatch_write_handler(message, lowered)
     if write_result is not None:
         return write_result
+    # Safe fallback for None returns
+    return _build_safe_response(
+        message=message,
+        path="fallback_safe",
+        response_text="I'm not able to process that request.",
+        confidence="low",
+    )
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
         return {
