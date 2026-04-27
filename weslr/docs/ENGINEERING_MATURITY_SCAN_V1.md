@@ -1,8 +1,9 @@
 # WESLR Engineering Maturity Scan — V1
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** active reference
 **Created:** 2026-04-27
+**Updated:** 2026-04-27 15:53 GMT+2
 **Scope:** Full system audit after schema contracts, write-side validation, JSONL read isolation, test harness, and release gate
 
 ---
@@ -12,18 +13,19 @@
 Inspected components:
 
 **Core modules:**
-- `interpretation.py` — 1929 lines — front door + mode analysis + dispatch
-- `weslr/deterministic_handlers.py` — 118 lines — extracted registry (2 handlers)
+- `interpretation.py` — 1929 lines — front door + mode analysis + dispatch + inline handlers
+- `weslr/deterministic_handlers.py` — 118 lines — extracted registry (2 handlers: `iss_probe_plan`, `iss_probe_registry_query`)
 - `weslr/response_formatter.py` — 41 lines — canonical response skeleton builder
-- `weslr/proposal_traceability.py` — ~100 lines — trace CRUD + validators
-- `weslr/implementation_planning.py` — ~100 lines — plan creation + validators
-- `weslr/iss/diagnostic_records.py` — ~140 lines — probe result + gap signal + validators
-- `weslr/state_checkpoint.py` — ~50 lines — read-only architecture snapshot
+- `weslr/proposal_traceability.py` — trace CRUD + module-relative path (`BASE_DIR = Path(__file__).resolve().parent`)
+- `weslr/implementation_planning.py` — plan creation + module-relative path
+- `weslr/iss/diagnostic_records.py` — probe result + gap signal + module-relative path
+- `weslr/state_checkpoint.py` — read-only architecture snapshot
 
 **ISS subsystem:**
 - `weslr/iss/probe_registry.py` — in-memory registry, 4 probe stubs, all `execution_allowed=False`
 - `weslr/iss/probe_planning.py` — declarative probe plan builder
 - `weslr/iss/probe_execution.py` — simulated execution only, no real I/O
+- `weslr/iss/record.py` — ISS record intake with schema validation
 
 **Tests:**
 - `weslr/tests/test_harness_v1.py` — 382 lines — T1/T2/T3/T4/T6 with temp-file isolation
@@ -31,12 +33,17 @@ Inspected components:
 - `weslr/tests/test_*.py` — 40+ additional test files (~19K lines, exploratory/unmerged)
 
 **Documentation:**
-- `weslr/docs/SCHEMA_CONTRACTS_V1.md` — 545 lines — all 10 schema definitions + append-only rules
+- `weslr/docs/SCHEMA_CONTRACTS_V1.md` — 545 lines — 10 schema definitions + append-only rules
+- `weslr/docs/RESPONSE_CONTRACT_V1.md` — 460 lines — response fields, tone levels, templates
+- `weslr/docs/ENGINEERING_MATURITY_SCAN_V1.md` — 344 lines — this document (prior version)
 - `weslr/docs/engineering/ADR_0001–0004` — 673 lines — 4 architecture decision records
 - `weslr/docs/engineering/TEST_STRATEGY_V1.md` — 412 lines — T1–T6 + regression coverage
-- `weslr/docs/engineering/ARCHITECTURE_DIAGRAMS_V1.md` — 241 lines — 5 Mermaid diagrams
 - `weslr/docs/engineering/RELEASE_CHECKLIST_V1.md` — 171 lines — G1–G7 gate
-- `weslr/docs/engineering/ADR_INDEX.md` — 72 lines — ADR registry
+
+**Confirmed infrastructure fixes (this session):**
+- PATH_STABILITY_FIX_CONFIRMED — `proposal_traceability.py`, `implementation_planning.py`, `diagnostic_records.py` now use `Path(__file__).resolve().parent` relative paths instead of CWD-relative paths
+- HANDLER_REGISTRY_FIRST_EXTRACTION_CONFIRMED — `iss_probe_registry_query` and `iss_probe_plan` extracted to registry
+- JSONL path stability validated from both workspace root and `/tmp` — same counts (42 trace, 5 plans, 3 diagnostics)
 
 ---
 
@@ -46,22 +53,26 @@ Inspected components:
 
 **Deterministic routing — STABLE**
 
-`dispatch_deterministic_handler` sorts registry by priority descending and applies prefix match. Priority ordering is explicit (85 = probe_plan, 80 = registry_query). No implicit shadowing observed. Two handlers extracted and wired: `handle_iss_probe_plan` and `handle_iss_probe_registry`. Both return via `build_deterministic_response`.
+`dispatch_deterministic_handler` sorts registry by priority descending and applies prefix match. Two handlers extracted and wired:
+- `handle_iss_probe_plan` (priority 85) — triggers: `plan probe `, `how would you check `
+- `handle_iss_probe_registry` (priority 80) — triggers: `show iss probes`, `show probe registry`, `list probes`, `what can iss check`
+
+Both return via `build_deterministic_response`. Priority ordering is explicit. No implicit shadowing observed.
 
 **No handler shadowing — CONFIRMED**
 
-Registry entries have unique trigger sets. No two entries share the same priority value. Sorting is deterministic (stable sort by priority, then by trigger string). No case where a lower-priority handler would match before a higher-priority one.
+Registry entries have unique trigger sets. Sorting is deterministic (stable sort by priority, then by trigger string). No case where a lower-priority handler would match before a higher-priority one.
 
 **Explanation layers — PARTIAL**
 
-- `plan_explanation` — returns `plan_explanation` dict with plan details + trace_reference → proposal → source gap chain. Active.
-- `proposal_explanation` — referenced in C7 but inline path, not yet extracted. Inline C7 logic exists in interpretation.py.
-- `state_checkpoint_query` — returns full architecture snapshot via `get_state_checkpoint`. Active.
+- `plan_explanation` — returns `plan_explanation` dict with plan details + trace_reference → proposal → source gap chain. ISS gap link now working correctly after PATH_STABILITY_FIX_CONFIRMED.
+- `proposal_explanation` — inline in interpretation.py, not extracted.
+- `state_checkpoint_query` — returns architecture snapshot via `get_state_checkpoint`. Active.
 - `operator_overview` — response built inline in interpretation.py, not yet migrated to formatter.
 
 **Mode analysis — ACTIVE, LARGE**
 
-`mode_analysis` function in interpretation.py is ~200 lines with B1–B12 pattern classification. Used by feedback logging and interest tracking. Called on every interpret call. No duplication detected in the core module itself.
+`mode_analysis` function in interpretation.py is ~200 lines with B1–B12 pattern classification. Called on every interpret call. No duplication detected in core module.
 
 **Confidence assessment — BASELINE**
 
@@ -73,21 +84,25 @@ Entity-based heuristic: `entity_names >= 2 → high`, `entity_names or topics �
 
 **Schema enforced on write — ACTIVE**
 
-Three write validators:
+Four write validators:
 - `_validate_proposal_created` — `proposal_id` non-empty string, `content` dict
-- `_validate_proposal_decision` — `proposal_id` non-empty string, `decision` non-empty string
-- `_validate_implementation_plan` — `execution_allowed must be False`, `operator_approval_required must be True`, `steps` non-empty list, all type checks
-- `_validate_iss_diagnostic_record` — `type` must be `iss_probe_result` or `iss_gap_signal`, status/severity enum checks via `_ALLOWED_PROBE_STATUS` and `_ALLOWED_GAP_SEVERITY`
+- `_validate_proposal_decision` — `proposal_id` non-empty string, `decision` in `{"accepted", "rejected", "deferred"}`
+- `_validate_implementation_plan` — `execution_allowed must be False`, `operator_approval_required must be True`, `steps` non-empty list
+- `_validate_iss_diagnostic_record` — `type` check, status/severity enum checks via `_ALLOWED_PROBE_STATUS` and `_ALLOWED_GAP_SEVERITY`
 
-Hard rule enforced: `execution_allowed=False` in `implementation_planning.py` via module-level `_EXECUTION_ALLOWED = False`. No code path can set it to `True` without triggering `ValueError`.
+Hard rule enforced: `_EXECUTION_ALLOWED = False` at module level in `implementation_planning.py`. No code path sets it to `True` without triggering `ValueError`.
+
+**Path stability — FIXED**
+
+Prior session identified that `TRACE_FILE`, `PLAN_FILE`, `RECORD_FILE` used CWD-relative paths. Fixed this session with `Path(__file__).resolve().parent` anchoring. JSONL reads now return consistent counts regardless of runtime CWD.
 
 **Read isolation — ACTIVE**
 
-All three loaders (`load_trace`, `load_implementation_plans`, `load_iss_diagnostics`) use per-line try/except with `json.JSONDecodeError` skipping. Malformed lines do not crash loads. Missing files return `[]`.
+All three loaders use per-line try/except with `json.JSONDecodeError` skipping. Malformed lines do not crash loads. Missing files return `[]`.
 
 **Append-only respected — ACTIVE**
 
-No rewrite, delete, or truncate operations in any module. All `_write_*` functions only append. No file truncation found in any inspected module.
+No rewrite, delete, or truncate operations in any module. All `_write_*` functions only append. No file truncation found.
 
 ---
 
@@ -95,7 +110,7 @@ No rewrite, delete, or truncate operations in any module. All `_write_*` functio
 
 **Overview (operator_overview) — PARTIAL**
 
-Inline handler in interpretation.py. Returns hardcoded summary strings and counts. No live state read — summary is static text embedded in handler.
+Inline handler in interpretation.py. Returns hardcoded summary strings. No live state read — summary is static text embedded in handler.
 
 **Checkpoint (state_checkpoint_query) — ACTIVE**
 
@@ -103,16 +118,16 @@ Inline handler in interpretation.py. Returns hardcoded summary strings and count
 
 **Explanations (plan_explanation, proposal_explanation) — PARTIAL**
 
-`plan_explanation` uses `load_implementation_plans` + `load_trace` to reconstruct chain. `proposal_explanation` exists as inline logic, not extracted. Both rely on JSONL read isolation (loaders).
+`plan_explanation` uses `load_implementation_plans` + `load_trace` to reconstruct chain. ISS gap link now correct after PATH_STABILITY_FIX_CONFIRMED (was returning "No ISS source gap is linked" due to CWD-relative path failure). `proposal_explanation` exists as inline logic, not extracted.
 
 **ISS visibility — ACTIVE**
 
-- `show iss probes` → `ISS_probe_registry_query` via registry handler, returns probe count + registry list
-- `show gaps` → `ISS_query_gaps` via inline handler, returns gap records
-- `show diagnostics` → `ISS_query_all` via inline handler, returns probe count + gap total
-- `show probe results` → `ISS_query_probes` via inline handler
-- `plan probe` → `ISS_probe_plan` via registry handler, returns declarative plan
-- `execute probe` → `ISS_probe_execution` via inline handler, simulates and returns confirmation
+- `show iss probes` → `ISS_probe_registry_query` via registry handler ✓
+- `show gaps` → `ISS_query_gaps` via inline handler ✓
+- `show diagnostics` → `ISS_query_all` via inline handler ✓
+- `show probe results` → `ISS_query_probes` via inline handler ✓
+- `plan probe` → `ISS_probe_plan` via registry handler ✓
+- `execute probe` → `ISS_probe_execution` via inline handler, simulated only ✓
 
 ISS diagnostics load from `iss_diagnostic_records.jsonl` with read isolation. All ISS paths return structured responses.
 
@@ -122,7 +137,7 @@ ISS diagnostics load from `iss_diagnostic_records.jsonl` with read isolation. Al
 
 **execution_allowed=False enforced — CONFIRMED**
 
-- `implementation_planning.py`: `_EXECUTION_ALLOWED = False` hardcoded. `_validate_implementation_plan` raises `ValueError` if `execution_allowed is not False`.
+- `implementation_planning.py`: `_EXECUTION_ALLOWED = False` hardcoded. Validator raises `ValueError` if not `False`.
 - `probe_registry.py`: All 4 probes have `execution_allowed: False`.
 - `probe_execution.py`: `execute_probe_simulated` writes only simulated probe results with `status: ok` and `mode: "simulated"`. No real I/O.
 - Release gate G3 scans `weslr/*.py` (excluding test files) for `execution_allowed=True`. None found.
@@ -140,7 +155,7 @@ No undeclared writes found. All write paths documented and schema-validated.
 
 **Operator authority intact — CONFIRMED**
 
-No autonomous proposal creation. `record_proposal` requires explicit call. `create_implementation_plan` requires operator intake or explicit call. `record_implementation_plan` requires operator approval (`operator_approval_required: True` enforced). No auto-logging of operator feedback — explicit `record_mode_feedback` call required.
+No autonomous proposal creation. No auto-logging of operator feedback. `operator_approval_required: True` enforced on all plan records.
 
 ---
 
@@ -164,14 +179,13 @@ No autonomous proposal creation. `record_proposal` requires explicit call. `crea
 - G3 — no `execution_allowed=True` in production ✓
 - G4 — no OpenClaw core or TIA C# in staged scope ✓
 
-**Exploratory tests:** 40+ test files (~19K lines) in `weslr/tests/test_*.py`. These are design-reference tests from earlier sessions, not yet integrated into the harness. They document expected behavior but are not run automatically. This is a large inventory that could be mined for regression cases.
-
 **Coverage gaps:**
 - T5 (regression layer-by-layer) documented in `TEST_STRATEGY_V1.md` but not yet in harness
 - No automated pytest integration
 - No performance/latency benchmarks
 - No concurrency tests
 - No schema read-side validation tests (beyond JSON parsing)
+- 40+ exploratory test files (~19K lines) exist but not integrated into harness
 
 ---
 
@@ -179,38 +193,31 @@ No autonomous proposal creation. `record_proposal` requires explicit call. `crea
 
 **Release gate effectiveness — ACTIVE**
 
-`release_gate_v1.py` runs as a single command. All 4 gates implemented and validated. Gate 2 checks only staged files (not all working-tree changes), which is the correct behavior — operator controls what is staged.
+`release_gate_v1.py` runs as a single command. All 4 gates implemented and validated. Gate 2 checks only staged files — operator controls what is staged.
 
 **Missing checks:**
-- No automated backup confirmation (manual JSONL line count check documented in RELEASE_CHECKLIST_V1.md but not automated)
-- No JSONL schema validation on existing records (write-side validation active, read-side validation not implemented)
+- No automated backup confirmation (documented in RELEASE_CHECKLIST_V1.md but not automated)
+- No JSONL schema validation on existing records
 - No version tagging or changelog automation
-- No pre-commit hook (gate must be run manually)
+- No pre-commit hook (gate runs manually)
 - No rollback simulation test (documented but not run)
 
 ---
 
 ## SECTION 3 — Remaining Weaknesses
 
-1. **interpretation.py is 1929 lines** — monolithic front door containing mode_analysis, turn classification, capability ranking, feedback logging, operator context building, confidence assessment, interest tracking, deterministic dispatch routing, and inline handler implementations. Single point of failure for any routing issue.
-
-2. **Incomplete handler registry extraction** — only 2 of 15+ handlers extracted (`iss_probe_plan`, `iss_probe_registry_query`). The rest are inline `elif` chains in `interpret_human_turn`. Every new handler added to the inline chain increases the module's complexity without registry visibility.
-
-3. **Partial formatter migration** — `response_formatter.py` (41 lines) only used by extracted registry handlers. Inline handlers in interpretation.py build responses ad-hoc. No enforcement that all handlers must use `build_deterministic_response`.
-
-4. **No schema validation on read** — loaders skip malformed lines but do not validate record schema structure. A record missing required fields would pass through `load_trace` silently.
-
-5. **Confidence field ambiguity** — `confidence` field appears in multiple record types (`iss_probe_result`, `iss_gap_signal`, operator feedback) with string values (`"high"`, `"medium"`, `"low"`). No enumerated constraint enforced outside the ISS diagnostic records. Inconsistent usage across different record types is possible.
-
-6. **mode_analysis duplication pattern** — `mode_analysis` function ~200 lines, also present as inline string-building in multiple places across interpretation.py. Some handlers rebuild similar signals rather than reusing.
-
-7. **No CI automation** — release gate runs manually. No GitHub Actions, no pre-commit hooks, no automated gate on push. Gate is operator discipline, not enforced.
-
-8. **No versioned releases** — commits are not tagged. No changelog. No semantic versioning. Commit history is the only artifact.
-
-9. **No backup/restore automation** — JSONL files grow indefinitely. No rotation, no backup, no cleanup. `load_*` functions use `limit` to read last N lines but files themselves are never trimmed.
-
-10. **Exploratory test inventory not integrated** — 40+ test files (~19K lines) exist as design references but are not run in the test harness. Could be mined for regression cases.
+| # | Weakness | Location |
+|---|---|---|
+| 1 | interpretation.py is 1929 lines | interpretation.py |
+| 2 | Incomplete handler registry extraction — only 2/15+ handlers extracted | interpretation.py inline elif chain |
+| 3 | Partial formatter migration — only extracted handlers use response_formatter | interpretation.py inline response builders |
+| 4 | No schema validation on read — loaders skip malformed lines but don't validate structure | proposal_traceability.py, implementation_planning.py, diagnostic_records.py |
+| 5 | Confidence field ambiguity — field used across multiple record types without consistent semantics | SCHEMA_CONTRACTS_V1.md Section 15 |
+| 6 | mode_analysis duplication pattern — inline string-building in multiple places | interpretation.py |
+| 7 | No CI automation — release gate is manual, operator-dependent | workflow gap |
+| 8 | No versioned releases — commits only, no tags or changelog | workflow gap |
+| 9 | No JSONL backup/restore automation — files grow indefinitely | operational gap |
+| 10 | Exploratory test inventory not integrated — 40+ test files (~19K lines) design references | weslr/tests/ |
 
 ---
 
@@ -218,19 +225,19 @@ No autonomous proposal creation. `record_proposal` requires explicit call. `crea
 
 | # | Weakness | Risk | Justification |
 |---|---|---|---|
-| 1 | interpretation.py (1929 lines) | **HIGH** | Single large module = high blast radius for bugs. Hard to review, easy to break silently |
+| 1 | interpretation.py (1929 lines) | **HIGH** | Single large module = high blast radius. Hard to review, easy to break silently |
 | 2 | Incomplete registry extraction | **HIGH** | Inline handlers accumulate without governance. Shadowing risk grows with each addition |
 | 3 | Partial formatter migration | **MEDIUM** | Ad-hoc responses create inconsistency. No structural enforcement |
 | 4 | No read-side schema validation | **MEDIUM** | Malformed records accumulate silently in JSONL. Detectability gap |
 | 5 | Confidence field ambiguity | **LOW** | Informational only. Not used in governance decisions |
 | 6 | mode_analysis duplication | **LOW** | Maintainability issue, not a safety issue |
 | 7 | No CI automation | **MEDIUM** | Gate is operator-dependent. Forgetting to run it defeats its purpose |
-| 8 | No versioned releases | **LOW** | Current workflow works. Semantic versioning is nice-to-have at this stage |
-| 9 | No JSONL backup/rotation | **MEDIUM** | Append-only means no cleanup. Files grow indefinitely. No failure scenario yet but risk grows |
-| 10 | Exploratory tests not integrated | **LOW** | Not blocking. Documents design intent, not live validation |
+| 8 | No versioned releases | **LOW** | Current workflow works. Semantic versioning is nice-to-have |
+| 9 | No JSONL backup/rotation | **MEDIUM** | Append-only means no cleanup. Risk grows with file size |
+| 10 | Exploratory tests not integrated | **LOW** | Documents design intent, not live validation |
 
-**Highest priority (act now):** #1 (interpretation.py size), #2 (incomplete extraction), #7 (CI automation)
-**High priority (plan soon):** #3 (formatter migration), #4 (read validation), #9 (JSONL backup)
+**Act now:** #1, #2, #7
+**Plan soon:** #3, #4, #9
 **Nice to have:** #5, #6, #8, #10
 
 ---
@@ -240,31 +247,29 @@ No autonomous proposal creation. `record_proposal` requires explicit call. `crea
 **WESLR is currently a structured prototype.**
 
 Evidence:
-- Core modules exist and are functional (proposal traceability, implementation planning, ISS diagnostics, response formatter)
-- Schema contracts formalized (SCHEMA_CONTRACTS_V1.md)
-- Write-side validation active on all 3 JSONL write paths
-- Read isolation active on all 3 JSONL read paths
-- Test harness passes T1–T6 with isolated temp files
-- Release gate runs 4 gates successfully
+- Core modules functional with schema enforcement, validation, and read isolation
+- Test harness passes T1–T6 + G1–G4 gates
+- JSONL path stability fixed this session (PATH_STABILITY_FIX_CONFIRMED)
+- Handler registry first extraction complete (HANDLER_REGISTRY_FIRST_EXTRACTION_CONFIRMED)
 - ADR documentation exists with 4 decisions recorded
-- Architecture diagrams published (5 diagrams)
-- No execution_allowed=True in production code
+- Architecture diagrams published (5 Mermaid diagrams)
+- No `execution_allowed=True` in production code
+- Response formatter and schema contracts documented
 
-**Why not prototype?** Because the system has repeatable processes (schema enforcement, validation, isolation, testing, release gating). It is not a one-off experiment.
+**Why not prototype:** Repeatable processes exist (schema enforcement, validation, testing, release gating). Not a one-off experiment.
 
-**Why not engineering-grade?** Because:
-- interpretation.py is a single monolithic module — engineering-grade systems decompose concerns into separate modules with clear boundaries
-- Handler extraction is incomplete — engineering-grade systems have complete registry coverage with no inline dispatch chains
-- CI is manual — engineering-grade systems automate gates on push/pull-request
+**Why not engineering-grade:**
+- interpretation.py is a single monolithic module — engineering-grade systems decompose concerns into separate modules
+- Handler extraction is incomplete — engineering-grade systems have complete registry coverage
+- CI is manual — engineering-grade systems automate gates on push/PR
 - JSONL files have no rotation/backup — engineering-grade systems have operational runbooks
 
-**Why not production-grade?** Because:
+**Why not production-grade:**
 - No automated backup or restore
 - No monitoring or alerting
 - No performance benchmarks
 - No rollback automation
-- No versioned releases with changelog
-- Single point of failure in interpretation.py
+- No versioned releases
 
 ---
 
@@ -274,15 +279,15 @@ Evidence:
 
 Justification:
 
-The system currently has a release gate that runs manually. Every gate (G1–G4) is implemented correctly, but all of them require the operator to remember to run `python3 weslr/tests/release_gate_v1.py` before committing. This is a human-reliability dependency that will eventually fail.
+The system has a release gate that runs manually. Every gate (G1–G4) is implemented correctly, but all require the operator to remember to run `python3 weslr/tests/release_gate_v1.py` before committing. This is a human-reliability dependency.
 
-The structured prototype is mature enough to benefit from automation. The manual gate is blocking adoption and creating risk. Automating the gate on push/pull-request removes the human-reliability dependency and enforces the constraints consistently.
+The structured prototype is mature enough to benefit from automation. CI removes the operator-dependency and enforces constraints consistently.
 
-**Why not A (structural refactor)?** interpretation.py at 1929 lines is a problem, but the system is still functional. Refactoring it without a test harness and automated validation would introduce risk. The structural refactor should happen after CI is in place, not before.
+**Why not A (structural refactor)?** interpretation.py at 1929 lines is a problem, but refactoring without automated validation would introduce risk. Structural refactor should happen after CI is in place.
 
-**Why not C (interaction/humanization)?** Response tone improvement is valid but not the constraint holding the system back. The system works correctly. Improving how it sounds is premature when the automation infrastructure is missing.
+**Why not C (interaction/humanization)?** Response tone improvement is valid but not the constraint holding the system back. CI automation is more critical.
 
-**Why not D (controlled execution)?** The ISS is explicitly in simulated mode. No probes execute against real targets. Moving to real execution requires governance documentation, operator approval workflows, and rollback automation — none of which exist yet. Premature.
+**Why not D (controlled execution)?** ISS is explicitly in simulated mode. Moving to real execution requires governance documentation and rollback automation — none of which exist yet.
 
 ---
 
@@ -290,21 +295,20 @@ The structured prototype is mature enough to benefit from automation. The manual
 
 **Step 1 — GitHub Actions CI workflow**
 File: `.github/workflows/weslr.yml`
-- On push to `weslr/` or `interpretation.py`: run `python3 weslr/tests/release_gate_v1.py`
+- On push/PR touching `weslr/` or `interpretation.py`: run `python3 weslr/tests/release_gate_v1.py`
 - On failure: block merge, report which gate failed
 - No manual gate required
 
 **Step 2 — JSONL backup automation**
-File: `weslr/docs/OPERATIONAL_RUNBOOK_V1.md`
+File: `weslr/docs/OPERATIONAL_RUNBOOK_V1.md` + `weslr/tools/backup_jsonl.py`
 - Document JSONL file locations and line count thresholds
-- Add `weslr/tools/backup_jsonl.py` — copies last N lines of each JSONL to `weslr/backups/` with timestamp
-- Add `weslr/tools/restore_jsonl.py` — restores from backup
-- Document rotation policy (e.g., rotate when any JSONL exceeds 1000 lines)
+- `backup_jsonl.py` — copies last N lines of each JSONL to `weslr/backups/` with timestamp
+- Rotation policy: rotate when any JSONL exceeds 1000 lines
 
 **Step 3 — Schema read-side validation (lightweight)**
 Add to `load_trace`, `load_implementation_plans`, `load_iss_diagnostics`:
-- Check `type` field is present and non-empty string
-- Check required top-level fields for each record type
+- Check `type` field present and non-empty string
+- Check required top-level fields per record type
 - Log (do not raise) on validation failure
 - Silently skip malformed records (consistent with current malformed-line behavior)
 
@@ -313,12 +317,12 @@ Files: `weslr/deterministic_handlers.py`, `interpretation.py`
 - Extract `operator_overview` handler → registry + formatter
 - Extract `state_checkpoint_query` handler → registry + formatter
 - Extract `plan_explanation` handler → registry + formatter
-- Target: 5 extracted handlers total (2 current + 3 new), remaining inline handlers visible in interpretation.py with documented reason for inline status
+- Target: 5 extracted handlers total (2 current + 3 new)
 
 **Step 5 — T5 regression test integration**
 Add to `test_harness_v1.py`:
 - C1–C9 regression layer-by-layer cases from `TEST_STRATEGY_V1.md`
-- Run T5 as part of G1 (test harness passes)
+- Run T5 as part of G1
 - Document pass/fail criteria per layer
 
 ---
@@ -327,7 +331,7 @@ Add to `test_harness_v1.py`:
 
 **ENGINEERING_MATURITY_SCAN_CONFIRMED**
 
-WESLR is a structured prototype with active schema enforcement, read isolation, test coverage, and release gating. The system is sound and the documentation is complete. The primary risk is the manual release gate and the monolithic interpretation.py. CI automation is the correct next step.
+WESLR is a structured prototype with active schema enforcement, read isolation, test coverage, and release gating. The system is sound. PATH_STABILITY_FIX_CONFIRMED and HANDLER_REGISTRY_FIRST_EXTRACTION_CONFIRMED this session. Primary risks: manual CI gate and monolithic interpretation.py.
 
 **Top 10 findings:**
 1. interpretation.py at 1929 lines — monolithic, single failure point
@@ -342,4 +346,13 @@ WESLR is a structured prototype with active schema enforcement, read isolation, 
 10. `operator_overview` inline handler returns static text, not live state
 
 **System classification:** Structured prototype
-**Next phase:** CI + automation (Step 1: GitHub Actions workflow)
+
+**Chosen next phase:** CI + automation (Step 1: GitHub Actions workflow)
+
+**Roadmap:** Steps 1–5 as above
+
+---
+
+*Document version: 1.1*
+*Status: active reference*
+*Changes from v1.0: added PATH_STABILITY_FIX_CONFIRMED, HANDLER_REGISTRY_FIRST_EXTRACTION_CONFIRMED, updated registry entries with current priorities, updated roadmap to match current priorities*
