@@ -14,6 +14,7 @@ from weslr.iss.diagnostic_records import load_iss_diagnostics
 from weslr.iss.probe_registry import get_probe_registry
 from weslr.iss.probe_planning import create_probe_plan
 from weslr.iss.probe_execution import execute_probe_simulated
+from weslr.response_formatter import build_deterministic_response
 from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
@@ -1690,16 +1691,14 @@ def interpret_human_turn(message: str) -> dict:
     ]
     if any(lowered.startswith(t) for t in _probe_triggers):
         probes = get_probe_registry()
-        return {
-            "message": message,
-            "response_text": "ISS has " + str(len(probes)) + " defined probe stubs. Execution allowed: False for all.",
-            "probe_registry": probes,
-            "probe_count": len(probes),
-            "path": "ISS_probe_registry_query",
-            "_weslr_deterministic": True,
-            "confidence": "high",
-            "suggested_mode": "observe",
-        }
+        return build_deterministic_response(
+            message=message,
+            path="ISS_probe_registry_query",
+            response_text="ISS has " + str(len(probes)) + " defined probe stubs. Execution allowed: False for all.",
+            payload={"probe_registry": probes, "probe_count": len(probes)},
+            confidence="high",
+            suggested_mode="observe",
+        )
 
     # ISS probe planning (declarative, non-executing)
     _plan_probe_triggers = ["plan probe ", "how would you check "]
@@ -1714,24 +1713,22 @@ def interpret_human_turn(message: str) -> dict:
         probes = get_probe_registry()
         matched = next((p for p in probes if p["probe_id"] == probe_id), None)
         if not matched:
-            return {
-                "message": message,
-                "response_text": "No probe found for '" + probe_id + "'",
-                "path": "ISS_probe_plan",
-                "_weslr_deterministic": True,
-                "confidence": "high",
-                "suggested_mode": "observe",
-            }
+            return build_deterministic_response(
+                message=message,
+                path="ISS_probe_plan",
+                response_text="No probe found for '" + probe_id + "'",
+                confidence="high",
+                suggested_mode="observe",
+            )
         plan = create_probe_plan(matched)
-        return {
-            "message": message,
-            "response_text": "Probe '" + probe_id + "' can be checked in " + str(len(plan["steps"])) + " steps. Execution is not allowed.",
-            "probe_plan": plan,
-            "path": "ISS_probe_plan",
-            "_weslr_deterministic": True,
-            "confidence": "high",
-            "suggested_mode": "observe",
-        }
+        return build_deterministic_response(
+            message=message,
+            path="ISS_probe_plan",
+            response_text="Probe '" + probe_id + "' can be checked in " + str(len(plan["steps"])) + " steps. Execution is not allowed.",
+            payload={"probe_plan": plan},
+            confidence="high",
+            suggested_mode="observe",
+        )
 
     # ISS probe execution (governed, simulated)
     _execute_triggers = ["execute probe "]
