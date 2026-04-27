@@ -1687,35 +1687,7 @@ def interpret_human_turn(message: str) -> dict:
             "plan_explanation": plan_explanation,
         }
 
-    # ISS probe planning (declarative, non-executing)
-    _plan_probe_triggers = ["plan probe ", "how would you check "]
-    _triggered_plan = None
-    for t in _plan_probe_triggers:
-        if lowered.startswith(t):
-            _triggered_plan = t
-            break
-    if _triggered_plan:
-        raw_probe_id = lowered[len(_triggered_plan):].strip().strip('"').strip("'")
-        probe_id = raw_probe_id.strip()
-        probes = get_probe_registry()
-        matched = next((p for p in probes if p["probe_id"] == probe_id), None)
-        if not matched:
-            return build_deterministic_response(
-                message=message,
-                path="ISS_probe_plan",
-                response_text="No probe found for '" + probe_id + "'",
-                confidence="high",
-                suggested_mode="observe",
-            )
-        plan = create_probe_plan(matched)
-        return build_deterministic_response(
-            message=message,
-            path="ISS_probe_plan",
-            response_text="Probe '" + probe_id + "' can be checked in " + str(len(plan["steps"])) + " steps. Execution is not allowed.",
-            payload={"probe_plan": plan},
-            confidence="high",
-            suggested_mode="observe",
-        )
+    # ISS probe planning (declarative, non-executing) — now in deterministic_handlers.py
 
     # ISS probe execution (governed, simulated)
     _execute_triggers = ["execute probe "]
