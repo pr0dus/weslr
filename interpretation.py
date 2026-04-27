@@ -1312,52 +1312,52 @@ def interpret_human_turn(message: str) -> dict:
             response_text = (
                 f"Gaps: {len(gaps)} " + ", ".join(f"[{g.get('severity')}] {g.get('summary', '')[:60]}" for g in gaps[-5:]) if gaps else "No gap signals recorded."
             )
-            return {
-                "message": message,
-                "response_text": response_text,
-                "confidence": "high",
-                "suggested_mode": "observe",
-                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
-                "mode_suggestion": None,
-                "suggestion_surface": {"show": False, "priority": "low"},
-                "gaps": gaps[-5:],
-                "path": "ISS_query_gaps",
-                "_weslr_deterministic": True,
-            }
+            result = build_deterministic_response(
+                message=message,
+                path="ISS_query_gaps",
+                response_text=response_text,
+                payload={"gaps": gaps[-5:]},
+                confidence="high",
+                suggested_mode="observe",
+            )
+            result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"}
+            result["mode_suggestion"] = None
+            result["suggestion_surface"] = {"show": False, "priority": "low"}
+            return result
         elif "probe" in lowered:
             response_text = (
                 f"Probe results: {len(probes)} " + ", ".join(f"[{p.get('status')}] {p.get('target', '')[:60]} ({p.get('confidence')})" for p in probes[-5:]) if probes else "No probe results recorded."
             )
-            return {
-                "message": message,
-                "response_text": response_text,
-                "confidence": "high",
-                "suggested_mode": "observe",
-                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
-                "mode_suggestion": None,
-                "suggestion_surface": {"show": False, "priority": "low"},
-                "probes": probes[-5:],
-                "path": "ISS_query_probes",
-                "_weslr_deterministic": True,
-            }
+            result = build_deterministic_response(
+                message=message,
+                path="ISS_query_probes",
+                response_text=response_text,
+                payload={"probes": probes[-5:]},
+                confidence="high",
+                suggested_mode="observe",
+            )
+            result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"}
+            result["mode_suggestion"] = None
+            result["suggestion_surface"] = {"show": False, "priority": "low"}
+            return result
         else:
             ok_count = sum(1 for p in probes if p.get("status") == "ok")
             deg_count = sum(1 for p in probes if p.get("status") == "degraded")
             response_text = (
                 f"Diagnostics: Probes: {ok_count} ok, {deg_count} degraded. Gaps: {len(gaps)} total"
             )
-            return {
-                "message": message,
-                "response_text": response_text,
-                "confidence": "high",
-                "suggested_mode": "observe",
-                "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"},
-                "mode_suggestion": None,
-                "suggestion_surface": {"show": False, "priority": "low"},
-                "diagnostics": records,
-                "path": "ISS_query_all",
-                "_weslr_deterministic": True,
-            }
+            result = build_deterministic_response(
+                message=message,
+                path="ISS_query_all",
+                response_text=response_text,
+                payload={"diagnostics": records},
+                confidence="high",
+                suggested_mode="observe",
+            )
+            result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "ISS diagnostics query"}
+            result["mode_suggestion"] = None
+            result["suggestion_surface"] = {"show": False, "priority": "low"}
+            return result
 
     # Operator system overview (read-only, aggregates checkpoint + ISS + plans)
     _ov_triggers = [
