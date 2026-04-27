@@ -16,6 +16,7 @@ from weslr.iss.probe_planning import create_probe_plan
 from weslr.iss.probe_execution import execute_probe_simulated
 from weslr.response_formatter import build_deterministic_response
 from weslr.deterministic_handlers import dispatch_deterministic_handler
+from weslr.write_handlers import dispatch_write_handler
 from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
@@ -798,6 +799,10 @@ def interpret_human_turn(message: str) -> dict:
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
         return dispatched
+    # Write handler dispatch — state-changing operations
+    write_result = dispatch_write_handler(message, lowered)
+    if write_result is not None:
+        return write_result
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
         return {
@@ -1225,110 +1230,7 @@ def interpret_human_turn(message: str) -> dict:
                 lowered = value.lower()
         return value
 
-    # ---- ISS controlled proposal intake (read-only, operator-requested only) ----
-    _intake_triggers = [
-        "convert iss suggestion ",
-        "convert iss gap ",
-        "create proposal from iss ",
-        "turn iss gap ",
-    ]
-    if any(lowered.startswith(t) for t in _intake_triggers):
-        for t in _intake_triggers:
-            if lowered.startswith(t):
-                raw = lowered[len(t):].strip().strip('"').strip("'")
-                break
-        if not raw:
-            return {
-                "message": message,
-                "response_text": "No ISS gap ID provided.",
-                "path": "ISS_controlled_proposal_intake",
-                "_weslr_deterministic": True,
-                "confidence": "high",
-                "intake_result": {"created": False, "reason": "missing_id"},
-            }
-
-        # Normalize: handle "gap.xxx" prefix
-        if raw.startswith("gap."):
-            requested_gap_id = raw
-            proposal_id = raw[4:].strip()
-        else:
-            proposal_id = raw
-            requested_gap_id = "gap." + raw
-
-        # Load ISS records and find matching gap
-        try:
-            records = load_iss_diagnostics(50)
-        except Exception:
-            try:
-                from weslr.iss.diagnostic_records import load_iss_diagnostics as _lid
-                records = _lid(50)
-            except Exception:
-                records = []
-
-        gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
-        matched = None
-        for g in gaps:
-            if g.get("gap_id") == requested_gap_id or g.get("gap_id", "").endswith(proposal_id):
-                matched = g
-                break
-
-        if not matched:
-            return {
-                "message": message,
-                "response_text": f"No ISS gap found for '{raw}'. Use 'show gaps' to inspect available gaps.",
-                "path": "ISS_controlled_proposal_intake",
-                "_weslr_deterministic": True,
-                "confidence": "high",
-                "intake_result": {
-                    "created": False,
-                    "reason": "gap_not_found",
-                    "requested_id": raw,
-                },
-            }
-
-        # Record proposal trace (created, not approved)
-        from weslr.proposal_traceability import record_proposal, proposal_exists
-        source_gap_id = matched.get("gap_id", "")
-        if proposal_exists(proposal_id, source_gap_id):
-            return {
-                "message": message,
-                "response_text": f"ISS suggestion '{proposal_id}' is already a traced proposal.",
-                "path": "ISS_controlled_proposal_intake",
-                "_weslr_deterministic": True,
-                "confidence": "high",
-                "intake_result": {
-                    "created": False,
-                    "reason": "already_exists",
-                    "proposal_id": proposal_id,
-                    "source_gap_id": source_gap_id,
-                },
-            }
-        proposal_payload = {
-            "summary": matched.get("summary", ""),
-            "source": "ISS",
-            "source_gap_id": source_gap_id,
-            "severity": matched.get("severity", "medium"),
-            "confidence": matched.get("confidence", "medium"),
-            "suggested": True,
-            "operator_requested_intake": True,
-        }
-        record_proposal(proposal_id, proposal_payload)
-
-        return {
-            "message": message,
-            "response_text": f"ISS suggestion '{proposal_id}' was converted into a traced proposal. It is not approved and no implementation plan was created.",
-            "path": "ISS_controlled_proposal_intake",
-            "_weslr_deterministic": True,
-            "confidence": "high",
-            "intake_result": {
-                "created": True,
-                "proposal_id": proposal_id,
-                "source_gap_id": matched.get("gap_id", ""),
-                "approval_status": "not_approved",
-                "plan_created": False,
-                "execution_allowed": False,
-            },
-        }
+    # ---- ISS controlled proposal intake — now in weslr/write_handlers.py
 
     # ---- ISS intake proposal query (read-only) — now in deterministic_handlers.py
 
