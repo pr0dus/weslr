@@ -11,6 +11,7 @@ from pathlib import Path as _Path
 from weslr.proposal_traceability import record_proposal, record_decision, load_trace
 from weslr.implementation_planning import create_implementation_plan, record_implementation_plan, load_implementation_plans
 from weslr.iss.diagnostic_records import load_iss_diagnostics
+from weslr.iss.probe_registry import get_probe_registry
 from weslr.state_checkpoint import get_state_checkpoint
 from entity_extractor import extract_entity_names_from_text
 
@@ -1676,6 +1677,26 @@ def interpret_human_turn(message: str) -> dict:
             "_weslr_deterministic": True,
             "confidence": "high",
             "plan_explanation": plan_explanation,
+        }
+
+    # ISS probe registry query (read-only, non-executing)
+    _probe_triggers = [
+        "show iss probes",
+        "show probe registry",
+        "list probes",
+        "what can iss check",
+    ]
+    if any(lowered.startswith(t) for t in _probe_triggers):
+        probes = get_probe_registry()
+        return {
+            "message": message,
+            "response_text": "ISS has " + str(len(probes)) + " defined probe stubs. Execution allowed: False for all.",
+            "probe_registry": probes,
+            "probe_count": len(probes),
+            "path": "ISS_probe_registry_query",
+            "_weslr_deterministic": True,
+            "confidence": "high",
+            "suggested_mode": "observe",
         }
 
     # Proposal explanation layer (read-only)
