@@ -150,6 +150,86 @@ def handle_state_checkpoint(message: str, lowered: str) -> dict:
     return result
 
 
+def _iss_base():
+    """Shared ISS diagnostics loading — read-only."""
+    records = load_iss_diagnostics(20)
+    probes = [r for r in records if r.get("type") == "iss_probe_result"]
+    gaps = [r for r in records if r.get("type") == "iss_gap_signal"]
+    return records, probes, gaps
+
+
+def _iss_mode(result: dict) -> dict:
+    """Attach mode_analysis and suggestion surface to an ISS response."""
+    result["mode_analysis"] = {
+        "current_mode": None,
+        "suggested_mode": "observe",
+        "match": True,
+        "mismatch": False,
+        "reason": "ISS diagnostics query",
+    }
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    return result
+
+
+def handle_iss_query_all(message: str, lowered: str) -> dict:
+    """ISS full diagnostics query — read-only."""
+    records, probes, gaps = _iss_base()
+    ok_count = sum(1 for p in probes if p.get("status") == "ok")
+    deg_count = sum(1 for p in probes if p.get("status") == "degraded")
+    response_text = (
+        f"Diagnostics: Probes: {ok_count} ok, {deg_count} degraded. Gaps: {len(gaps)} total"
+    )
+    result = build_deterministic_response(
+        message=message,
+        path="ISS_query_all",
+        response_text=response_text,
+        payload={"diagnostics": records},
+        confidence="high",
+        suggested_mode="observe",
+    )
+    return _iss_mode(result)
+
+
+def handle_iss_query_gaps(message: str, lowered: str) -> dict:
+    """ISS gap signals query — read-only."""
+    records, probes, gaps = _iss_base()
+    response_text = (
+        f"Gaps: {len(gaps)} " + ", ".join(
+            f"[{g.get('severity')}] {g.get('summary', '')[:60]}" for g in gaps[-5:]
+        ) if gaps else "No gap signals recorded."
+    )
+    result = build_deterministic_response(
+        message=message,
+        path="ISS_query_gaps",
+        response_text=response_text,
+        payload={"gaps": gaps[-5:]},
+        confidence="high",
+        suggested_mode="observe",
+    )
+    return _iss_mode(result)
+
+
+def handle_iss_query_probes(message: str, lowered: str) -> dict:
+    """ISS probe results query — read-only."""
+    records, probes, gaps = _iss_base()
+    response_text = (
+        f"Probe results: {len(probes)} " + ", ".join(
+            f"[{p.get('status')}] {p.get('target', '')[:60]} ({p.get('confidence')})"
+            for p in probes[-5:]
+        ) if probes else "No probe results recorded."
+    )
+    result = build_deterministic_response(
+        message=message,
+        path="ISS_query_probes",
+        response_text=response_text,
+        payload={"probes": probes[-5:]},
+        confidence="high",
+        suggested_mode="observe",
+    )
+    return _iss_mode(result)
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -216,6 +296,46 @@ HANDLER_REGISTRY = [
         "writes": [],
         "requires_confirmation": False,
         "category": "operator",
+    },
+    {
+        "id": "iss_query_all",
+        "path": "ISS_query_all",
+        "triggers": [
+            "show diagnostics",
+            "show iss diagnostics",
+            "list diagnostics",
+        ],
+        "match_type": "prefix",
+        "priority": 70,
+        "handler_fn": "handle_iss_query_all",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "iss",
+    },
+    {
+        "id": "iss_query_gaps",
+        "path": "ISS_query_gaps",
+        "triggers": ["show gaps"],
+        "match_type": "prefix",
+        "priority": 69,
+        "handler_fn": "handle_iss_query_gaps",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "iss",
+    },
+    {
+        "id": "iss_query_probes",
+        "path": "ISS_query_probes",
+        "triggers": ["show probe results"],
+        "match_type": "prefix",
+        "priority": 68,
+        "handler_fn": "handle_iss_query_probes",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "iss",
     },
 ]
 
