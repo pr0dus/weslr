@@ -1856,18 +1856,18 @@ def interpret_human_turn(message: str) -> dict:
             f"Learning enabled: {cp['learning_enabled']}. "
             f"Autonomous changes: {cp['autonomous_changes_enabled']}."
         )
-        return {
-            "message": message,
-            "response_text": response_text,
-            "confidence": "high",
-            "suggested_mode": "observe",
-            "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "State checkpoint query"},
-            "mode_suggestion": None,
-            "suggestion_surface": {"show": False, "priority": "low"},
-            "state_checkpoint": cp,
-            "path": "state_checkpoint_query",
-            "_weslr_deterministic": True,
-        }
+        result = build_deterministic_response(
+            message=message,
+            path="state_checkpoint_query",
+            response_text=response_text,
+            payload={"state_checkpoint": cp},
+            confidence="high",
+            suggested_mode="observe",
+        )
+        result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "State checkpoint query"}
+        result["mode_suggestion"] = None
+        result["suggestion_surface"] = {"show": False, "priority": "low"}
+        return result
 
     # B1_REAL: response_text construction
     prefix = (
