@@ -2,7 +2,8 @@ import json
 import time
 from pathlib import Path
 
-TRACE_FILE = Path("weslr/proposal_trace.jsonl")
+_BASE_DIR = Path(__file__).resolve().parent
+TRACE_FILE = _BASE_DIR / "proposal_trace.jsonl"
 
 
 def _write_event(event: dict):

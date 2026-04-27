@@ -2,7 +2,8 @@ import time
 import json
 from pathlib import Path
 
-RECORD_FILE = Path("weslr/iss/iss_diagnostic_records.jsonl")
+_BASE_DIR = Path(__file__).resolve().parent
+RECORD_FILE = _BASE_DIR / "iss_diagnostic_records.jsonl"
 
 _ALLOWED_PROBE_STATUS = frozenset({"ok", "degraded", "missing", "unknown"})
 _ALLOWED_GAP_SEVERITY = frozenset({"low", "medium", "high"})

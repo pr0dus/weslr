@@ -1,7 +1,8 @@
 import time
 from pathlib import Path
 
-PLAN_FILE = Path("weslr/implementation_plans.jsonl")
+_BASE_DIR = Path(__file__).resolve().parent
+PLAN_FILE = _BASE_DIR / "implementation_plans.jsonl"
 
 # Hard rule: execution is never allowed in this module
 _EXECUTION_ALLOWED = False
