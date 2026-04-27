@@ -3,7 +3,7 @@
 WESLR Test Harness V1
 Runs: T1 (route), T2 (schema guards), T3 (malformed-line read), T4 (no-write safety), T6 (full smoke)
 Confirms: TEST_HARNESS_V1_OK
-Side effect: T2 appends valid schema-smoke records to real JSONL files.
+Isolation: T2 uses temp files only — no production JSONL modified.
 """
 
 import sys
@@ -79,73 +79,96 @@ def _t1_routes():
 
 
 def _t2_schema_guards():
-    """T2 — Write-side schema guard tests. Valid writes execute (appends to JSONL)."""
+    """T2 — Write-side schema guard tests using temp files only (no production JSONL)."""
+    import json
     from weslr.proposal_traceability import record_proposal, record_decision
     from weslr.implementation_planning import create_implementation_plan, record_implementation_plan
     from weslr.iss.diagnostic_records import make_probe_result, make_gap_signal, record_iss_diagnostic
 
-    record_proposal("t2.schema.smoke", {"summary": "T2 smoke test"})
-    record_decision("t2.schema.smoke", "accepted")
-    plan = create_implementation_plan("t2.schema.smoke", {"summary": "T2 smoke test"})
-    record_implementation_plan(plan)
-    probe = make_probe_result("t2.probe.smoke", "t2 target", "ok", {"mode": "test"}, "high")
-    record_iss_diagnostic(probe)
-    gap = make_gap_signal("gap.t2.smoke", "t2.probe.smoke", "T2 gap smoke", "low", {"mode": "test"}, "high")
-    record_iss_diagnostic(gap)
+    # Save original file constants
+    ORIG_TRACE = proposal_traceability.TRACE_FILE
+    ORIG_PLAN  = implementation_planning.PLAN_FILE
+    ORIG_REC   = diagnostic_records.RECORD_FILE
 
-    failed = 0
+    tmpdir = tempfile.TemporaryDirectory()
     try:
-        record_proposal("", {})
-        print("T2 FAIL: empty proposal_id accepted")
-        failed += 1
-    except ValueError:
-        pass
+        td = pathlib.Path(tmpdir.name)
 
-    try:
-        record_proposal("p1", "not-dict")
-        print("T2 FAIL: non-dict content accepted")
-        failed += 1
-    except (ValueError, TypeError):
-        pass
+        # Monkeypatch all 3 modules to use temp files
+        proposal_traceability.TRACE_FILE = td / "proposal_trace.jsonl"
+        implementation_planning.PLAN_FILE = td / "implementation_plans.jsonl"
+        diagnostic_records.RECORD_FILE = td / "iss_diagnostic_records.jsonl"
 
-    try:
-        record_decision("", "accepted")
-        print("T2 FAIL: empty decision proposal_id accepted")
-        failed += 1
-    except ValueError:
-        pass
+        # Valid writes: these go to temp files only
+        record_proposal("t2.schema.smoke", {"summary": "T2 smoke test"})
+        record_decision("t2.schema.smoke", "accepted")
+        plan = create_implementation_plan("t2.schema.smoke", {"summary": "T2 smoke test"})
+        record_implementation_plan(plan)
+        probe = make_probe_result("t2.probe.smoke", "t2 target", "ok", {"mode": "test"}, "high")
+        record_iss_diagnostic(probe)
+        gap = make_gap_signal("gap.t2.smoke", "t2.probe.smoke", "T2 gap smoke", "low", {"mode": "test"}, "high")
+        record_iss_diagnostic(gap)
 
-    bad_plan = dict(plan)
-    bad_plan["execution_allowed"] = True
-    try:
-        record_implementation_plan(bad_plan)
-        print("T2 FAIL: execution_allowed=True accepted")
-        failed += 1
-    except ValueError:
-        pass
+        failed = 0
+        try:
+            record_proposal("", {})
+            print("T2 FAIL: empty proposal_id accepted")
+            failed += 1
+        except ValueError:
+            pass
 
-    try:
-        record_iss_diagnostic({
-            "type": "iss_probe_result", "probe_id": "p", "target": "t",
-            "status": "broken", "evidence": {}, "confidence": "h", "timestamp": 1
-        })
-        print("T2 FAIL: invalid probe status accepted")
-        failed += 1
-    except ValueError:
-        pass
+        try:
+            record_proposal("p1", "not-dict")
+            print("T2 FAIL: non-dict content accepted")
+            failed += 1
+        except (ValueError, TypeError):
+            pass
 
-    try:
-        record_iss_diagnostic({
-            "type": "iss_gap_signal", "gap_id": "g", "source_probe_id": "p",
-            "summary": "s", "severity": "critical", "evidence": {}, "confidence": "h", "timestamp": 1
-        })
-        print("T2 FAIL: invalid gap severity accepted")
-        failed += 1
-    except ValueError:
-        pass
+        try:
+            record_decision("", "accepted")
+            print("T2 FAIL: empty decision proposal_id accepted")
+            failed += 1
+        except ValueError:
+            pass
 
-    print(f"T2: {6 - failed}/6 invalid writes rejected (T2 valid writes appended 5 records to JSONL)")
-    return failed == 0
+        bad_plan = dict(plan)
+        bad_plan["execution_allowed"] = True
+        try:
+            record_implementation_plan(bad_plan)
+            print("T2 FAIL: execution_allowed=True accepted")
+            failed += 1
+        except ValueError:
+            pass
+
+        try:
+            record_iss_diagnostic({
+                "type": "iss_probe_result", "probe_id": "p", "target": "t",
+                "status": "broken", "evidence": {}, "confidence": "h", "timestamp": 1
+            })
+            print("T2 FAIL: invalid probe status accepted")
+            failed += 1
+        except ValueError:
+            pass
+
+        try:
+            record_iss_diagnostic({
+                "type": "iss_gap_signal", "gap_id": "g", "source_probe_id": "p",
+                "summary": "s", "severity": "critical", "evidence": {}, "confidence": "h", "timestamp": 1
+            })
+            print("T2 FAIL: invalid gap severity accepted")
+            failed += 1
+        except ValueError:
+            pass
+
+        print(f"T2: {6 - failed}/6 invalid writes rejected (0 production records written)")
+        return failed == 0
+
+    finally:
+        # Restore original constants
+        proposal_traceability.TRACE_FILE = ORIG_TRACE
+        implementation_planning.PLAN_FILE = ORIG_PLAN
+        diagnostic_records.RECORD_FILE = ORIG_REC
+        tmpdir.cleanup()
 
 
 def _t3_malformed_line_read():
@@ -228,7 +251,7 @@ def _t3_malformed_line_read():
         diagnostic_records.RECORD_FILE = ORIG_REC
         os.unlink(tmp_rec)
 
-    # T3.4 missing file returns empty list (3 separate checks, 1 subtest)
+    # T3.4 missing file returns empty list (1 subtest, 3 loaders)
     subtests += 1
     with tempfile.TemporaryDirectory() as d:
         p = pathlib.Path(d) / "nonexistent.jsonl"
