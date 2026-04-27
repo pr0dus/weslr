@@ -342,6 +342,106 @@ def handle_plan_explanation(message: str, lowered: str) -> dict:
     )
 
 
+# ---- proposal_id normalizer (private helper, copied from interpretation.py) ----
+_STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
+
+def _normalize_proposal_id(raw: str) -> str:
+    value = raw.strip().strip('"').strip("'").strip()
+    lowered = value.lower()
+    for suffix in _STOP_SUFFIXES:
+        if lowered.endswith(suffix):
+            value = value[: -len(suffix)].strip()
+            lowered = value.lower()
+    return value
+
+
+def handle_proposal_explanation(message: str, lowered: str) -> dict:
+    """Proposal explanation — read-only. Explains why a proposal is important."""
+    _triggers = ["why is ", "explain proposal ", "why prioritize "]
+    for t in _triggers:
+        if t in lowered:
+            raw = lowered[lowered.index(t) + len(t):].strip().strip('"').strip("'")
+            break
+    proposal_id = _normalize_proposal_id(raw)
+
+    if not proposal_id:
+        result = build_deterministic_response(
+            message=message,
+            path="proposal_explanation",
+            response_text="No proposal ID provided.",
+            confidence="high",
+            suggested_mode="observe",
+        )
+        result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Proposal explanation query"}
+        result["mode_suggestion"] = None
+        result["suggestion_surface"] = {"show": False, "priority": "low"}
+        return result
+
+    trace = load_trace(100)
+    proposed_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_created")
+    accepted_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision" and r.get("decision") == "accepted")
+    rejected_count = sum(1 for r in trace if r.get("proposal_id") == proposal_id and r.get("type") == "proposal_decision" and r.get("decision") == "rejected")
+
+    plans = load_implementation_plans(100)
+    planned_count = sum(1 for p in plans if p.get("proposal_id") == proposal_id)
+
+    iss_records = load_iss_diagnostics(50)
+    related_gaps = [
+        {"gap_id": g.get("gap_id"), "summary": g.get("summary"), "severity": g.get("severity")}
+        for g in iss_records
+        if g.get("type") == "iss_gap_signal" and (
+            proposal_id in (g.get("gap_id") or "")
+            or proposal_id in (g.get("summary") or "")
+        )
+    ]
+
+    if accepted_count > 0 and planned_count > 0:
+        priority_reasoning = f"Strong operator alignment: accepted {accepted_count} time(s), {planned_count} plan(s) exist. High priority."
+    elif accepted_count > 0:
+        priority_reasoning = f"Positive operator signal: accepted {accepted_count} time(s) but no plans yet. Consider planning."
+    elif proposed_count > 2:
+        priority_reasoning = f"Frequently proposed ({proposed_count} times) but not yet accepted. Needs operator review."
+    elif proposed_count > 0:
+        priority_reasoning = f"Proposed {proposed_count} time(s). No acceptance yet. Baseline priority."
+    else:
+        priority_reasoning = "No history found. Baseline priority based on proposal system."
+
+    if related_gaps:
+        priority_reasoning += f" {len(related_gaps)} related ISS gap(s) also detected."
+
+    history = {"proposed": proposed_count, "accepted": accepted_count, "rejected": rejected_count, "planned": planned_count}
+
+    parts = [f"Proposal '{proposal_id}' is important because:"]
+    parts.append(f"- proposed {proposed_count} time(s)")
+    if accepted_count:
+        parts.append(f"- accepted {accepted_count} time(s)")
+    if rejected_count:
+        parts.append(f"- rejected {rejected_count} time(s)")
+    if planned_count:
+        parts.append(f"- planned {planned_count} time(s)")
+    parts.append(f"- {len(related_gaps)} related ISS gap(s)")
+    parts.append(f"\n{priority_reasoning}")
+    response_text = "\n".join(parts)
+
+    result = build_deterministic_response(
+        message=message,
+        path="proposal_explanation",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+    result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "Proposal explanation query"}
+    result["mode_suggestion"] = None
+    result["suggestion_surface"] = {"show": False, "priority": "low"}
+    result["explanation"] = {
+        "proposal_id": proposal_id,
+        "history": history,
+        "iss_related_gaps": related_gaps,
+        "priority_reasoning": priority_reasoning,
+    }
+    return result
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -456,6 +556,18 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 73,
         "handler_fn": "handle_plan_explanation",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "category": "explanation",
+    },
+    {
+        "id": "proposal_explanation",
+        "path": "proposal_explanation",
+        "triggers": ["why is ", "explain proposal ", "why prioritize "],
+        "match_type": "prefix",
+        "priority": 72,
+        "handler_fn": "handle_proposal_explanation",
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
