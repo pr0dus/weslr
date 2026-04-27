@@ -80,3 +80,14 @@ def load_trace(limit: int = 50):
             continue
         records.append(record)
     return records
+
+
+def proposal_exists(proposal_id: str, source_gap_id: str) -> bool:
+    """Check if a proposal with the given ID and source gap already exists."""
+    records = load_trace(200)
+    for r in records:
+        if r.get("type") == "proposal_created":
+            if r.get("proposal_id") == proposal_id:
+                if r.get("content", {}).get("source_gap_id") == source_gap_id:
+                    return True
+    return False

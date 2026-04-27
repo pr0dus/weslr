@@ -1287,11 +1287,26 @@ def interpret_human_turn(message: str) -> dict:
             }
 
         # Record proposal trace (created, not approved)
-        from weslr.proposal_traceability import record_proposal
+        from weslr.proposal_traceability import record_proposal, proposal_exists
+        source_gap_id = matched.get("gap_id", "")
+        if proposal_exists(proposal_id, source_gap_id):
+            return {
+                "message": message,
+                "response_text": f"ISS suggestion '{proposal_id}' is already a traced proposal.",
+                "path": "ISS_controlled_proposal_intake",
+                "_weslr_deterministic": True,
+                "confidence": "high",
+                "intake_result": {
+                    "created": False,
+                    "reason": "already_exists",
+                    "proposal_id": proposal_id,
+                    "source_gap_id": source_gap_id,
+                },
+            }
         proposal_payload = {
             "summary": matched.get("summary", ""),
             "source": "ISS",
-            "source_gap_id": matched.get("gap_id", ""),
+            "source_gap_id": source_gap_id,
             "severity": matched.get("severity", "medium"),
             "confidence": matched.get("confidence", "medium"),
             "suggested": True,
