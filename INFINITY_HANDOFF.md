@@ -8,11 +8,11 @@ metadata: {"openclaw": {"auto": "infinity-internal"}}
 
 | Field | Value |
 |---|---|
-| timestamp | 1776950118382 |
+| timestamp | 1776970870509 |
 | branch | main |
-| commit | 26878bee19c4159abef7745e58212054c75572ce |
+| commit | d5e929689938badc80221c557821af1f28625b04 |
 | hasGit | true |
 | dirty | true |
 | reason | risk-triggered-critical-risk |
-| activeFiles | DENTITY.md, MEMORY.md, SOUL.md, USER.md, chat_ui.py, communicator_self.json, de.py, dialogue.py |
+| activeFiles | NFINITY_HANDOFF.md, dialogue.py, memory/2026-04-23-identity-fix.md, memory/2026-04-23-request-timed-out-before-a-res.md, plugins/.capsule-data/auto-state.json, plugins/infinity-internal/.capsule-data/bootstrap-handoff.json, plugins/infinity-internal/.capsule-data/latest-capsule.json, weslr/relevance_eval_analysis.py |
 | latestTask | — |

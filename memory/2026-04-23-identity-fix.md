@@ -1,7 +1,7 @@
-# Session: 2026-04-23 12:29:37 UTC
+# Session: 2026-04-23 17:16:15 UTC
 
 - **Session Key**: agent:main:main
-- **Session ID**: 1780a74e-fcf8-4a4f-9563-e33a08ddf372
+- **Session ID**: 725f3f69-7349-41a1-8525-dd0aafd01102
 - **Source**: webchat
 
 ## Conversation Summary
@@ -42,291 +42,57 @@ BEGIN_QUOTED_NOTES
 END_QUOTED_NOTES
 
 A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. If BOOTSTRAP.md exists in the provided Project Context, read it and follow its instructions first. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.
-Current time: Thursday, April 23rd, 2026 - 2:25 PM (Europe/Berlin) / 2026-04-23 12:25 UTC
+Current time: Thursday, April 23rd, 2026 - 7:13 PM (Europe/Berlin) / 2026-04-23 17:13 UTC
 
 [Bootstrap truncation warning]
 Some workspace bootstrap files were truncated before injection.
 Treat Project Context as partial and read the relevant files directly if details seem missing.
 - MEMORY.md: 17166 raw -> 11999 injected (~30% removed; max/file).
 - If unintentional, raise agents.defaults.bootstrapMaxChars and/or agents.defaults.bootstrapTotalMaxChars.
-assistant: Hey pr0dus — OCC here, fresh session. Last time we were wrapping up the sub-agent orchestration protocol and confirming the TIA bridge is cleanly separated. What are we working on today?
-user: Sender (untrusted metadata):
-```json
-{
-  "label": "openclaw-control-ui",
-  "id": "openclaw-control-ui"
-}
-```
-
-[Thu 2026-04-23 14:26 GMT+2] WESLR — BOTTLENECK RESOLUTION PASS V1
-FIND WHAT IS MISSING BEFORE ADDING DOCTRINE
-
-STRICT MODE
-
-- inspection and analysis only
-- no code changes
-- no doctrine additions yet
-- no redesign proposals yet
-- factual + structural reasoning only
-- goal is to identify bottlenecks, root causes, and missing layers
-
-AUTHORITATIVE GOAL
-
-We do NOT want to add doctrine first.
-
-We want to:
-
-1. inspect current Weslr
-2. identify bottlenecks
-3. determine what is implementation weakness vs missing structural layer
-4. only afterward decide what missing layers or doctrine completions are truly needed
-
-TARGET
-
-Inspect the current WESLR working codebase and current canon/design docs together.
-
-READ FIRST
-
-- "ARCHITECTURE_DOCTRINE_ADDENDUM.md"
-- "docs/ARTIFACT_TYPES_AND_LIFECYCLE_V1.md"
-- "docs/ARTIFACT_LINEAGE_AND_GRAPH_MODEL_V1.md"
-- "docs/CONTEXT_AND_BOUNDARY_SIGNALS_V1.md"
-- "docs/CONTINUITY_CONTAMINATION_CONTROL_V1.md"
-- "docs/TIMELINE_NATIVE_CONTINUITY_RESOLUTION_V1.md"
-- "docs/WESLR_FUNCTIONAL_TREE_MAP_V1.md"
-
-And inspect key implementation areas:
-
-- "dialogue.py"
-- "chat_ui.py"
-- "weslr/timeline_resolution.py"
-- "weslr/artifact_store.py"
-- "weslr/lineage_inspector.py"
-- "weslr/relevance_eval_analysis.py"
-- "weslr/cross_session_artifact_eval.py"
-- "weslr/chat_responder.py"
-- "interpretation.py"
-
-REQUIRED STRUCTURE
-
-SECTION 1 — CURRENT MAJOR SUBSYSTEMS
-List the current real subsystems Weslr now has, as implemented and/or canonized.
-
-SECTION 2 — BOTTLENECK INVENTORY
-Identify the top current bottlenecks.
-For each bottleneck:
-
-- what the symptom is
-- where it appears
-- why it matters
-
-Focus on real bottlenecks such as:
-
-- context selection
-- concept boundary confusion
-- file-native understanding
-- artifact unification
-- eval/analysis feedback loop
-- operator visibility
-- implementation fragmentation
-- prompt dependence
-- weak generalization across file types
-
-SECTION 3 — ROOT CAUSE CLASSIFICATION
-For each bottleneck, classify the root cause as one of:
-
-- implementation gap
-- missing connection between existing layers
-- missing structural layer
-- missing doctrine/canon clarity
-- intentionally deferred capability
-
-SECTION 4 — BOTTLENECK SEVERITY + ORDER
-Rank bottlenecks by:
-
-- severity
-- frequency
-- upstream leverage
-- risk if left unresolved
-
-SECTION 5 — WHAT IS MISSING IN CURRENT DESIGN
-From the bottlenecks, identify what appears structurally missing.
-Do NOT jump to canonization yet.
-Just name candidate missing layers or missing design completions.
-
-SECTION 6 — WHAT SHOULD BE RESOLVED BEFORE NEW DOCTRINE
-Explicitly state which bottlenecks should be solved in implementation first before adding any more doctrine.
-
-SECTION 7 — WHICH CANDIDATE MISSING LAYERS LOOK REAL
-Now, and only now, name candidate missing layers that seem justified by repeated bottlenecks.
-These should be construction-derived, not speculative.
-
-SECTION 8 — RECOMMENDED NEXT 3 MOVES
-Give the next 3 highest-value moves in order:
-
-- implementation
-- inspection
-- canonization
- Choose the right order, not all doctrine.
-
-SECTION 9 — STOP LINE
-
-- no code changes
-- no doctrine additions yet
-- no new canon docs yet
-- bottleneck analysis only
-
-OUTPUT FORMAT
-
-SECTION 1 — FILES READ
-SECTION 2 — CURRENT SUBSYSTEMS
-SECTION 3 — BOTTLENECK INVENTORY
-SECTION 4 — ROOT CAUSE CLASSIFICATION
-SECTION 5 — SEVERITY / ORDER
-SECTION 6 — WHAT IS MISSING IN CURRENT DESIGN
-SECTION 7 — WHAT TO RESOLVE BEFORE NEW DOCTRINE
-SECTION 8 — CANDIDATE MISSING LAYERS
-SECTION 9 — RECOMMENDED NEXT 3 MOVES
-SECTION 10 — STOP LINE
-assistant: Reading all specified canon/docs and implementation files now.
-
-assistant: Now reading the implementation files.
-
-user: Sender (untrusted metadata):
-```json
-{
-  "label": "openclaw-control-ui",
-  "id": "openclaw-control-ui"
-}
-```
-
-[Thu 2026-04-23 14:26 GMT+2] WESLR — BOTTLENECK RESOLUTION PASS V1
-FIND WHAT IS MISSING BEFORE ADDING DOCTRINE
-
-STRICT MODE
-
-- inspection and analysis only
-- no code changes
-- no doctrine additions yet
-- no redesign proposals yet
-- factual + structural reasoning only
-- goal is to identify bottlenecks, root causes, and missing layers
-
-AUTHORITATIVE GOAL
-
-We do NOT want to add doctrine first.
-
-We want to:
-
-1. inspect current Weslr
-2. identify bottlenecks
-3. determine what is implementation weakness vs missing structural layer
-4. only afterward decide what missing layers or doctrine completions are truly needed
-
-TARGET
-
-Inspect the current WESLR working codebase and current canon/design docs together.
-
-READ FIRST
-
-- "ARCHITECTURE_DOCTRINE_ADDENDUM.md"
-- "docs/ARTIFACT_TYPES_AND_LIFECYCLE_V1.md"
-- "docs/ARTIFACT_LINEAGE_AND_GRAPH_MODEL_V1.md"
-- "docs/CONTEXT_AND_BOUNDARY_SIGNALS_V1.md"
-- "docs/CONTINUITY_CONTAMINATION_CONTROL_V1.md"
-- "docs/TIMELINE_NATIVE_CONTINUITY_RESOLUTION_V1.md"
-- "docs/WESLR_FUNCTIONAL_TREE_MAP_V1.md"
-
-And inspect key implementation areas:
-
-- "dialogue.py"
-- "chat_ui.py"
-- "weslr/timeline_resolution.py"
-- "weslr/artifact_store.py"
-- "weslr/lineage_inspector.py"
-- "weslr/relevance_eval_analysis.py"
-- "weslr/cross_session_artifact_eval.py"
-- "weslr/chat_responder.py"
-- "interpretation.py"
-
-REQUIRED STRUCTURE
-
-SECTION 1 — CURRENT MAJOR SUBSYSTEMS
-List the current real subsystems Weslr now has, as implemented and/or canonized.
-
-SECTION 2 — BOTTLENECK INVENTORY
-Identify the top current bottlenecks.
-For each bottleneck:
-
-- what the symptom is
-- where it appears
-- why it matters
-
-Focus on real bottlenecks such as:
-
-- context selection
-- concept boundary confusion
-- file-native understanding
-- artifact unification
-- eval/analysis feedback loop
-- operator visibility
-- implementation fragmentation
-- prompt dependence
-- weak generalization across file types
-
-SECTION 3 — ROOT CAUSE CLASSIFICATION
-For each bottleneck, classify the root cause as one of:
-
-- implementation gap
-- missing connection between existing layers
-- missing structural layer
-- missing doctrine/canon clarity
-- intentionally deferred capability
-
-SECTION 4 — BOTTLENECK SEVERITY + ORDER
-Rank bottlenecks by:
-
-- severity
-- frequency
-- upstream leverage
-- risk if left unresolved
-
-SECTION 5 — WHAT IS MISSING IN CURRENT DESIGN
-From the bottlenecks, identify what appears structurally missing.
-Do NOT jump to canonization yet.
-Just name candidate missing layers or missing design completions.
-
-SECTION 6 — WHAT SHOULD BE RESOLVED BEFORE NEW DOCTRINE
-Explicitly state which bottlenecks should be solved in implementation first before adding any more doctrine.
-
-SECTION 7 — WHICH CANDIDATE MISSING LAYERS LOOK REAL
-Now, and only now, name candidate missing layers that seem justified by repeated bottlenecks.
-These should be construction-derived, not speculative.
-
-SECTION 8 — RECOMMENDED NEXT 3 MOVES
-Give the next 3 highest-value moves in order:
-
-- implementation
-- inspection
-- canonization
- Choose the right order, not all doctrine.
-
-SECTION 9 — STOP LINE
-
-- no code changes
-- no doctrine additions yet
-- no new canon docs yet
-- bottleneck analysis only
-
-OUTPUT FORMAT
-
-SECTION 1 — FILES READ
-SECTION 2 — CURRENT SUBSYSTEMS
-SECTION 3 — BOTTLENECK INVENTORY
-SECTION 4 — ROOT CAUSE CLASSIFICATION
-SECTION 5 — SEVERITY / ORDER
-SECTION 6 — WHAT IS MISSING IN CURRENT DESIGN
-SECTION 7 — WHAT TO RESOLVE BEFORE NEW DOCTRINE
-SECTION 8 — CANDIDATE MISSING LAYERS
-SECTION 9 — RECOMMENDED NEXT 3 MOVES
-SECTION 10 — STOP LINE
+assistant: Hey — OCC here, fresh session. It's Thursday evening, 23 April 2026. Last active session was yesterday (April 22nd) — handled identity fixes and a sub-agent orchestration protocol setup. No pending tasks flagged.
+
+What's on your mind?
+assistant: 🦞 OpenClaw 2026.4.21 (f788c88)
+🧠 Model: ollama/minimax-m2.7:cloud · 🔑 unknown
+🧮 Tokens: 64k in / 466 out
+📚 Context: 24k/197k (12%) · 🧹 Compactions: 0
+🧵 Session: agent:main:main • updated just now
+⚙️ Runtime: direct · Think: low
+🔊 Voice: inbound · provider=microsoft · limit=1500 · summary=on
+🪢 Queue: collect (depth 0)
+assistant: 🧠 Context breakdown
+Workspace: /data/data/com.termux/files/home/.openclaw/workspace
+Bootstrap max/file: 12,000 chars
+Bootstrap max/total: 60,000 chars
+Sandbox: mode=off sandboxed=false
+System prompt (run): 46,884 chars (~11,721 tok) (Project Context 28,473 chars (~7,119 tok))
+
+⚠ Bootstrap context is over configured limits: 1 file(s) truncated (33,385 raw chars -> 28,218 injected chars).
+Causes: 1 file(s) exceeded max/file.
+Tip: increase `agents.defaults.bootstrapMaxChars` and/or `agents.defaults.bootstrapTotalMaxChars` if this truncation is not intentional.
+
+Injected workspace files:
+- AGENTS.md: OK | raw 7,809 chars (~1,953 tok) | injected 7,809 chars (~1,953 tok)
+- SOUL.md: OK | raw 4,616 chars (~1,154 tok) | injected 4,616 chars (~1,154 tok)
+- TOOLS.md: OK | raw 850 chars (~213 tok) | injected 850 chars (~213 tok)
+- IDENTITY.md: OK | raw 1,314 chars (~329 tok) | injected 1,314 chars (~329 tok)
+- USER.md: OK | raw 1,463 chars (~366 tok) | injected 1,463 chars (~366 tok)
+- HEARTBEAT.md: OK | raw 167 chars (~42 tok) | injected 167 chars (~42 tok)
+- BOOTSTRAP.md: MISSING | raw 0 | injected 0
+- MEMORY.md: TRUNCATED | raw 17,166 chars (~4,292 tok) | injected 11,999 chars (~3,000 tok)
+
+Skills list (system prompt text): 5,973 chars (~1,494 tok) (11 skills)
+Skills: gh-issues, github, healthcheck, mcporter, node-connect, self-improvement, skill-creator, taskflow, taskflow-inbox-triage, video-frames, weather
+Tool list (system prompt text): 0 chars (~0 tok)
+Tool schemas (JSON): 18,596 chars (~4,649 tok) (counts toward context; not shown as text)
+Tools: read, edit, write, exec, process, cron, image_generate, video_generate, sessions_list, sessions_history, sessions_send, sessions_yield, sessions_spawn, subagents, session_status, web_fetch, image, memory_search, memory_get
+
+Session tokens (cached): 23,903 total / ctx=196,608
+
+Inline shortcut: a command token inside normal text (e.g. “hey /status”) that runs immediately (allowlisted senders only) and is stripped before the model sees the remaining message.
+assistant: Dreaming enabled.
+
+Dreaming status:
+- enabled: on
+- sweep cadence: 0 3 * * *
+- promotion policy: score>=0.8, recalls>=3, uniqueQueries>=3

@@ -99,6 +99,11 @@
     <div class="grid" style="margin-top:16px;">
       <section class="card">
         <h2>Operator Actions</h2>
+        <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;">
+          <input id="thread-name-input" type="text" placeholder="thread name" style="flex:1;min-width:0;border-radius:8px;border:1px solid #2a2f3a;background:#11141a;color:#fff;padding:6px 10px;font-size:13px;">
+          <button onclick="createThread()" style="border-radius:8px;border:0;padding:6px 12px;background:#4f8cff;color:white;cursor:pointer;font-size:13px;">Create Thread</button>
+        </div>
+        <div id="thread-result" style="font-size:13px;margin-bottom:8px;"></div>
         <ul><li><strong>Explain artifact agent-1-module_export_candidate-1774618803</strong><br><code>python3 main.py explain agent-1-module_export_candidate-1774618803</code></li><li><strong>Approve artifact agent-1-module_export_candidate-1774618803</strong><br><code>python3 main.py review agent-1-module_export_candidate-1774618803 approve --note &#x27;operator-approved from dashboard&#x27;</code></li><li><strong>Explain artifact agent-4-module_export_candidate-1774616034</strong><br><code>python3 main.py explain agent-4-module_export_candidate-1774616034</code></li><li><strong>Approve artifact agent-4-module_export_candidate-1774616034</strong><br><code>python3 main.py review agent-4-module_export_candidate-1774616034 approve --note &#x27;operator-approved from dashboard&#x27;</code></li><li><strong>Explain artifact agent-2-module_export_candidate-1774618513</strong><br><code>python3 main.py explain agent-2-module_export_candidate-1774618513</code></li><li><strong>Approve artifact agent-2-module_export_candidate-1774618513</strong><br><code>python3 main.py review agent-2-module_export_candidate-1774618513 approve --note &#x27;operator-approved from dashboard&#x27;</code></li></ul>
       </section>
       <section class="card">
@@ -1718,12 +1723,38 @@ Recommended rollback order:
       synth.speak(utterance);
     }
 
+    function createThread() {
+      var input = document.getElementById('thread-name-input');
+      var resultDiv = document.getElementById('thread-result');
+      var name = (input && input.value.trim()) || '';
+      if (!name) {
+        resultDiv.innerHTML = '<span style="color:#f87171">Enter a thread name first.</span>';
+        return;
+      }
+      fetch('/thread/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: 'operator', name: name, tags: []})
+      }).then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.ok && data.thread) {
+            resultDiv.innerHTML = '<span style="color:#6ee7b7">Thread created: ' + data.thread.id + ' — ' + data.thread.name + '</span>';
+            input.value = '';
+          } else {
+            resultDiv.innerHTML = '<span style="color:#f87171">Error: ' + (data.error || 'unknown') + '</span>';
+          }
+        })
+        .catch(function(e) {
+          resultDiv.innerHTML = '<span style="color:#f87171">Request failed: ' + e.message + '</span>';
+        });
+    }
+
     // Initialize on load
     document.addEventListener('DOMContentLoaded', () => {
       loadChatState();
       renderChat();
       initVoice();
-      
+
       const sendBtn = document.getElementById('send');
       const msgInput = document.getElementById('msg');
       if (sendBtn) sendBtn.onclick = sendMessage;

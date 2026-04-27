@@ -3,6 +3,86 @@
 
 ---
 
+## ⚠️ CORRECTION — DOCS_AHEAD_OF_CODE (2026-04-26)
+
+**This document describes the DESIGNED behavior specification for Weslr. It is NOT a live implementation audit.**
+
+
+**Live `interpret_human_turn()` signature (verified 2026-04-26):**
+```
+def interpret_human_turn(message: str) -> dict
+```
+
+**Live return dict now includes:**
+- `message` — raw input text
+- `response_text` — confidence prefix + core text + optional interest footer (B1_REAL, 2026-04-26)
+- `confidence` — `"low"` / `"medium"` / `"high"`
+- `interest_surface` — surfacing signal from Interest Tracker v1
+- All existing fields: turn_type, topics, intent, stance, etc.
+
+
+**What IS verified live in `interpretation.py`:**
+- **B1_REAL + B2_REAL + B3_REAL + B4_REAL (2026-04-26)**: `response_text` + confidence + `suggested_mode` advisory
+  - `"hello"` → `confidence: 'low'`, `response_text: 'Limited signal detected. No significant signal detected'`
+  - `"Weslr"` → `confidence: 'medium'`, `response_text: 'The message suggests: Entity detected: Weslr'`
+  - `"Weslr connects OpenClaw"` → `confidence: 'high'`, `response_text: 'This clearly indicates: Entities detected: Weslr, OpenClaw'`
+  - interest footer appended to `response_text` only; `message` stays clean
+- **B2.1 (2026-04-26)**: entity extraction wired via `extract_entity_names_from_text(message)` with safe try/except fallback to `[]`
+- **B3_REAL (2026-04-26)**: `suggested_mode` advisory — deterministic, informational only, no auto-switching
+  - low confidence → `observe`, 2+ entities → `entity_only`, topics only → `topic_only`, none → `normal`
+  - verified: `"hello"→observe`, `"Weslr"→topic_only`, `"Weslr connects OpenClaw"→entity_only`, `"test topic here"→topic_only`
+- **B4_REAL (2026-04-26)**: `mode_analysis` dict
+  - **C1_REAL (2026-04-26)**: System self-description for `"who are you"` / `"what are you"` — deterministic, reflects ONLY real implemented features
+  - Real: entity/topic analysis, confidence, suggested_mode, mode_reason, mode_suggestion, interest tracking, feedback logging
+  - Claims: no autonomous action, no self-modification, operator-controlled suggestions
+  - No hallucination: no LLM/mode-execution/learning/ISS claims
+- **C2_REAL (2026-04-26)**: `_CAPABILITIES` map via `"what can you do"` / `"your capabilities"` — 13 True, 7 False, live code only
+- **C3_REAL (2026-04-26)**: capability gap via `"what can't you do"` / `"what are your limitations"` / `"what are you missing"` — `missing_capabilities` from `_CAPABILITIES`, handler ordered before C1; informational only, mismatch always False until `current_mode` available
+- **C4_REAL (2026-04-26)**: capability proposal layer — `"how can you improve"` / `"what could be added"` / `"what are possible improvements"` / `"can you add intelligence layers"` / `"how can you become better"` — proposals from `_CAPABILITIES` False entries, advisory only
+- **C5_REAL (2026-04-26)**: proposal prioritization via `rank_capability_proposals()` — base=0.5, +0.1(interests), +0.2(accepted feedback); tiers: critical/high/medium/low; deterministic tier+alpha sort; `proposed_capabilities` annotated dicts + `proposal_signal_summary`; read-only signals only
+- **C6_REAL (2026-04-26)**: operator approval workflow — `accept/reject/approve/deny proposal <cap>` — validates `_CAPABILITIES`, calls `log_operator_feedback()`, returns `decision_recorded`; invariants: `_CAPABILITIES` NOT modified, no capability activated, no behavior change
+  - verified: `"hello"→suggested=observe,match=True`, `"Weslr connects OpenClaw"→suggested=entity_only,match=True` `suggested_mode` advisory — deterministic, informational only, no auto-switching
+  - low confidence → `observe`, 2+ entities → `entity_only`, topics only → `topic_only`, none → `normal`
+  - verified: `"hello"→observe`, `"Weslr"→topic_only`, `"Weslr connects OpenClaw"→entity_only`, `"test topic here"→topic_only`
+- Topic extraction + `infer_human_topics()` / `classify_human_turn()`
+- Interest Tracker v1 (IT1.1–IT1.6) — all primitives + visibility functions
+- B12.1/B12.2/B12.3 operator feedback primitives
+- M0–M8 co-occurrence signal layer + proposal stability helpers
+- Entity extraction wiring (J1), topic tracking (F1), interest promotion (H1/I1)
+- Thread state endpoints (K1/K2)
+
+**What is NOT live (spec only):**
+- Full mode system (`mode` parameter, observe/entity_only/topic_only/normal routing)
+- `write_mode` / `write_effect` / `dry_run` / `write_control` (M9 pipeline)
+- B3 suggested_mode advisory, B4 escalation, B5–B11 behavior layers
+- Full B13/B14 feedback visibility helpers (B12.1–B12.3 primitives are live; composites are spec-only)
+- No auto-switching, no auto-learning, no graph/proposal mutation from interpret_human_turn
+
+**Known limitations:**
+- `extract_entity_names_from_text()` is heuristic; phrase-like strings may be extracted as entity-like names — extractor-quality trait, not B2.1 wiring failure
+
+**LIVE_CODE_CONFIRMATION_PASS (2026-04-26 22:00 GMT+2) — VERDICT: FULLY_LIVE_CONFIRMED**
+
+Fresh Python process used. All systems verified:
+
+- **B1_REAL + B2_REAL + B2.1**: All `interpret_human_turn()` outputs include `message`, `response_text`, `confidence`
+  - `"hello"` → `Limited signal detected. No significant signal detected`
+  - `"Weslr"` → `Entity detected: Weslr`
+  - `"Weslr connects OpenClaw"` → `Entities detected: Weslr, OpenClaw`
+  - repeated `"Module Alpha connects to Module Beta"` → interest footer fires at run 3
+  - `message` field remains clean throughout
+- **IT1.x interest footer**: appended to `response_text` only, count tracked correctly
+- **B12.x feedback loop**: `record_mode_feedback()` returns event, appends to `weslr/operator_feedback_log.jsonl` with timestamp
+
+**Next step:**
+WIRING_PLAN — route C1–C6 deterministic responses to front door (FRONT_DOOR_LIVE_CONFIRMATION complete: PYTHON_ONLY_LIVE / FRONT_DOOR_NOT_WIRED) (manual, explicit, no auto-execution) (safe, advisory, operator-controlled) (why suggested_mode was chosen).
+
+**Items in this document marked as B1–B14 / M9 are DESIGN SPECS unless confirmed against live code.**
+
+
+---
+
+
 ## SECTION 1 — SYSTEM OVERVIEW
 
 Weslr is an entity intelligence system with consciousness signatures. It processes human input through `interpret_human_turn(message)` and returns a structured analysis dictionary containing:

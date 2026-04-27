@@ -714,11 +714,11 @@ def print_analysis_report(result: dict) -> None:
                 print(f"    {p}")
 
     # Top boundary hints
-    top_boundary = sorted(boundary_hint_counts.items(), key=lambda x: x[1], reverse=True)
+    top_boundary = sorted(result["boundary_hint_counts"].items(), key=lambda x: x[1], reverse=True)
     top_boundary_hints = [{"hint": h, "count": c} for h, c in top_boundary[:10]]
 
     # Top context selections
-    top_ctx = sorted(context_selection_counts.items(), key=lambda x: x[1], reverse=True)
+    top_ctx = sorted(result["context_selection_counts"].items(), key=lambda x: x[1], reverse=True)
     top_context_selections = [{"value": v, "count": c} for v, c in top_ctx]
 
     print("\n## CONTEXT AND BOUNDARY SIGNAL ANALYSIS")

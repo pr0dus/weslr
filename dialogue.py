@@ -5,6 +5,7 @@ from typing import Any
 from interpretation import classify_human_turn, interpret_human_turn
 from config import WESLR_LANGUAGE
 from internal_docs import get_internal_docs_context
+from weslr.identity import get_current_principal
 
 
 # =============================================================================
@@ -41,6 +42,171 @@ def _attach_lineage_inspection(research_context: dict) -> None:
     except Exception:
         # Lineage inspection is observational — non-fatal if it fails
         pass
+
+
+from weslr.identity import get_current_principal
+
+
+# =============================================================================
+# RECURRING TOPIC SURFACING — Bundle F2
+# =============================================================================
+
+def _surface_recurring_topic(message: str, topic_list: list, research_context: dict) -> str | None:
+    """Surface a recurring topic prompt if its conditions are met.
+
+    Reads from weslr/topic_tracking.json.
+    Triggers when: message non-empty, topic matches, user matches, count >= 3,
+    last_surfaced missing or older than 30 minutes.
+
+    Returns None when no surface is needed; returns the prepended message string
+    when a surface is triggered (caller prepends to the generated response).
+    """
+    if not message or not isinstance(message, str) or not message.strip():
+        return None
+    if not topic_list:
+        return None
+
+    principal = _resolve_user_id(research_context)
+
+    import json, time
+    from pathlib import Path
+    tracking_path = Path(__file__).resolve().parent / "weslr" / "topic_tracking.json"
+    if not tracking_path.exists():
+        return None
+
+    try:
+        with open(tracking_path, "r", encoding="utf-8") as f:
+            tracking = json.load(f)
+    except Exception:
+        return None
+
+    entries = tracking if isinstance(tracking, list) else tracking.get("topics", [])
+    current = tracking.get("current_topics", []) if isinstance(tracking, dict) else []
+
+    # Find matching entry for the lead topic
+    lead_topic = (current[0] if current else None) if isinstance(current, list) else None
+    if not lead_topic:
+        return None
+
+    matching = None
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        entry_name = entry.get("topic", "") or entry.get("name", "")
+        if entry_name != lead_topic:
+            continue
+        if entry.get("user_id", "") != principal:
+            continue
+        if (entry.get("count", 0) or 0) < 3:
+            continue
+        last_surfaced = entry.get("last_surfaced")
+        if last_surfaced:
+            try:
+                if (int(time.time() * 1000) - int(last_surfaced)) < 30 * 60 * 1000:
+                    continue  # surfaced recently, skip
+            except Exception:
+                pass
+        matching = entry
+        break
+
+    if not matching:
+        return None
+
+    display = matching.get("display", lead_topic)
+    # Bundle L4a: check if topic is a known interest with linked entity
+    try:
+        from entity_graph import get_linked_entity
+        from weslr.interest_tracker import get_interest
+        normalized_topic = str(display).lower().strip().replace(" ", "_").replace("-", "_")
+        interest = get_interest(normalized_topic)
+        if interest:
+            linked = get_linked_entity(interest.get("id", ""))
+            if linked:
+                research_context["_topic_entity_link"] = {
+                    "topic": display,
+                    "is_known_interest": True,
+                    "linked_entity": linked.get("name"),
+                    "entity_id": linked.get("id"),
+                }
+    except Exception:
+        pass
+
+    # Update last_surfaced
+    try:
+        matching["last_surfaced"] = int(time.time() * 1000)
+        with open(tracking_path, "w", encoding="utf-8") as f:
+            json.dump(tracking, f, indent=2)
+    except Exception:
+        pass
+
+    return f"I've noticed {display} comes up often for you. Want to go deeper into it? "
+
+
+# =============================================================================
+# BUNDLE M2 — CO-OCCURRENCE CONTROLLED CONSUMER
+# =============================================================================
+
+_RELATED_CONTEXT_PHRASES = [
+    "what else is related", "what else comes up with", "what connects to",
+    "any related entities", "any related topics", "what else do you know about",
+    "what else on this", "who else is involved", "what else comes up",
+    "related", "connected",
+]
+
+
+def _format_cooc_note(target: str, cooc_list: list, explicit_need: bool) -> str | None:
+    """Format co-occurrence data into a phrasing variant.
+
+    Variant selection:
+    - explicit_need=True  → conversational, query-responsive phrasing
+    - explicit_need=False → neutral, background-note phrasing
+    """
+    if not cooc_list:
+        return None
+    primary = cooc_list[0]
+    other = primary["entities"][1] if primary["entities"][0].lower() == target.lower() else primary["entities"][0]
+    count = primary["count"]
+
+    if explicit_need:
+        return f"When you mention {target}, {other} also comes up often ({count} times)."
+    return f"{target} sometimes ties in with {other}."
+
+
+def _get_related_context_note(target: str, explicit_need: bool = True) -> str | None:
+    """Return co-occurrence note if signal is fresh and meets M3 quality gate, else None."""
+    if not target:
+        return None
+    from interpretation import get_cooccurrence
+    from datetime import datetime, timezone
+
+    cooc = get_cooccurrence(entity=target, min_count=2, limit=5)
+    if not cooc:
+        return None
+
+    # M3 quality gate: require count >= 3 and last_seen within 30 days
+    now_ts = datetime.now(timezone.utc).timestamp()
+    fresh = []
+    for entry in cooc:
+        try:
+            last_seen_str = entry.get("last_seen", "")
+            if not last_seen_str:
+                continue
+            last_seen = datetime.fromisoformat(last_seen_str.replace("Z", "+00:00"))
+            age_days = (now_ts - last_seen.timestamp()) / 86400
+            if entry["count"] >= 3 and age_days <= 30:
+                fresh.append(entry)
+        except Exception:
+            continue
+    if not fresh:
+        return None
+
+    return _format_cooc_note(target, fresh[:5], explicit_need)
+
+
+def _append_cooc_note(message: str, cooc_note: str) -> str:
+    if cooc_note and message:
+        return message + cooc_note
+    return message
 
 
 # =============================================================================
@@ -287,35 +453,19 @@ def _resolve_active_artifact(message: str, research_context: dict) -> tuple[bool
         return False, research_context
 
 
-def _resolve_user_id(research_context: dict) -> str | None:
+def _resolve_user_id(research_context: dict) -> str:
     """Extract user identity from research_context for timeline resolution.
 
-    Priority:
-      1. research_context["user_id"] — explicit user identity
-      2. research_context["session_id"] — used as user proxy when available
+    Delegates to get_current_principal() as the single canonical identity resolver.
+    Never returns None — always produces a known principal.
+
+    Args:
+        research_context: Context dict that may contain user_id or session_id hints.
 
     Returns:
-        user_id string or None if no identity available.
-        Does NOT invent an identity — returns None when unclear.
+        A known principal string. Never returns None.
     """
-    if not research_context:
-        return None
-
-    # Explicit user_id takes priority
-    user_id = research_context.get("user_id")
-    if user_id and isinstance(user_id, str) and user_id.strip():
-        return user_id.strip()
-
-    # session_id as user proxy — only if it looks like a real identity
-    # (not "default", not "eval-*", not other placeholder patterns)
-    session_id = research_context.get("session_id", "")
-    if session_id and isinstance(session_id, str):
-        # Filter out known placeholder/auto-generated patterns
-        placeholder_patterns = ("default", "eval-", "test-", "rerun-", "phase1")
-        if not any(session_id.startswith(p) for p in placeholder_patterns):
-            return session_id
-
-    return None
+    return get_current_principal(user_id=None, context=research_context)
 
 
 def _get_no_artifact_response() -> str:
@@ -624,6 +774,14 @@ def _artifact_proposal_answer(lower_message: str, lead_topic: str, research_cont
 
         # Update active artifact registry
         set_active_artifact(session_id, artifact_id)
+
+        # ── Thread linking (additive only) ──────────────────────────────────
+        # Wire artifact into active thread if one is set for this user.
+        # No-op if no active thread. Failure is silent — linking is best-effort.
+        user_id = _resolve_user_id(research_context)
+        if user_id:
+            from weslr.timeline_resolution import link_artifact_to_active_thread
+            link_artifact_to_active_thread(user_id, artifact_id)
 
     except Exception:
         # Artifact persistence is additive — if it fails, the response is still returned
@@ -1572,6 +1730,34 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
             any(token in lower_message for token in ["understand yourself", "understand youself", "understand yourself better", "know yourself better"])
         )
 
+        # Bundle M2: co-occurrence for related-context queries
+        _wants_related_context = any(p in lower_message for p in _RELATED_CONTEXT_PHRASES)
+        _target_for_cooc = (clarified_target or lead_topic) if _wants_related_context else ""
+        _cooc_note = _get_related_context_note(_target_for_cooc, explicit_need=True) if _target_for_cooc else ""
+
+        # Bundle M4: contextual relevance gate — internal guard for future co-occurrence use
+        # Computed here but NOT used to change behavior yet; future bundles (L4c, N) will consume it
+        _EXCLUDED_TURNS = {"greeting", "repair", "confusion", "approval", "execution_start", "completion_notify"}
+        _EXCLUDED_NEEDS = {"conversation_repair", "memory_scope_check", "unknown_world_state"}
+        _is_explicit_query = _wants_related_context
+        _target_for_cooc_gate = clarified_target or lead_topic
+        _has_cooc_signal = bool(_get_related_context_note(_target_for_cooc_gate)) if _target_for_cooc_gate else False
+        _has_meaningful_topic = bool(clarified_target or (lead_topic and lead_topic not in {"that", "this", "it"}))
+        _is_substantive_turn = len(last_message.strip()) >= 12
+        _is_compatible_turn = turn_type not in _EXCLUDED_TURNS
+        _is_compatible_need = likely_need not in _EXCLUDED_NEEDS
+        _should_use_cooc = (
+            _is_explicit_query
+            or (
+                _is_compatible_turn
+                and _is_compatible_need
+                and _is_substantive_turn
+                and _has_meaningful_topic
+                and _has_cooc_signal
+                and not needs_repair
+            )
+        )
+
         # Artifact reflection: check BEFORE generic routing for questions about WESLR's own output
         artifact_tokens = [
             # Explicit artifact reference
@@ -2330,6 +2516,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         )
         _bh = _compute_boundary_hints(last_message)
 
+        message = _append_cooc_note(message, _cooc_note)
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
                "_quality_class": _quality, "_cross_modal_context": _build_cross_modal_context(research_context),
@@ -2420,6 +2608,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         else:
             _quality = "unknown"
 
+        message = _append_cooc_note(message, _cooc_note)
+
         return {"message": message, "audience": audience, "source": source, "targeted_anchors": targeted_anchors,
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
                "_quality_class": _quality,
@@ -2454,7 +2644,10 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
     else:
         _quality = "unknown"
 
-    result = {"message": message, "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(),
+    principal = _resolve_user_id(research_context)
+    message = _surface_recurring_topic(message, topic_list, research_context)
+
+    result = {"message": _append_cooc_note(message, _cooc_note), "audience": "you", "source": source, "targeted_anchors": _get_targeted_anchors(),
               "_response_signals": _response_signals, "_truth_guard": _truth_guard,
               "_quality_class": _quality,
               "_relevant_interests": _relevant_interests,

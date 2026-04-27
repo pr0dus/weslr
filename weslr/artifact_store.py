@@ -120,6 +120,7 @@ def save_artifact(record: dict) -> str:
     artifact["parent_artifact_ids"] = parent_ids
     artifact["root_artifact_id"] = root_artifact_id if root_artifact_id else artifact_id
     artifact["generation"] = generation
+    artifact["lineage_intent"] = "derived" if parent_ids else "root"
 
     # Save artifact file
     _ensure_artifacts_dir()
@@ -225,6 +226,57 @@ def search_artifacts(
             break
 
     return results
+
+
+def archive_artifacts(max_count: int = 1000) -> dict:
+    """Archive oldest artifacts when count exceeds max_count.
+
+    Moves artifact JSON files to continuity/artifacts/archive/.
+    Updates the artifact index to remove archived entries.
+    Fully reversible — files remain on disk.
+    No automatic invocation; call explicitly when ready to prune.
+
+    Args:
+        max_count: Maximum artifacts to retain. Defaults to 1000.
+
+    Returns:
+        dict with keys: archived_count, archived_ids, remaining_count, archive_dir
+    """
+    import shutil
+
+    index = _load_index()
+    if len(index) <= max_count:
+        return {
+            "archived_count": 0,
+            "archived_ids": [],
+            "remaining_count": len(index),
+            "archive_dir": str(ARTIFACTS_DIR / "archive"),
+        }
+
+    surplus = len(index) - max_count
+    to_archive = index[:surplus]  # oldest entries are first in index
+
+    archive_dir = ARTIFACTS_DIR / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    archived_ids = []
+    for artifact_id in to_archive:
+        src = ARTIFACTS_DIR / f"{artifact_id}.json"
+        dst = archive_dir / f"{artifact_id}.json"
+        if src.exists():
+            shutil.move(str(src), str(dst))
+            archived_ids.append(artifact_id)
+
+    # Update index: remove archived entries
+    new_index = [aid for aid in index if aid not in set(archived_ids)]
+    _save_index(new_index)
+
+    return {
+        "archived_count": len(archived_ids),
+        "archived_ids": archived_ids,
+        "remaining_count": len(new_index),
+        "archive_dir": str(archive_dir),
+    }
 
 
 # =============================================================================

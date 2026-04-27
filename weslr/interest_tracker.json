@@ -1,0 +1,2204 @@
+{
+  "interests": {
+    "module alpha connects": {
+      "key": "module alpha connects",
+      "count": 4,
+      "first_seen": "2026-04-26T22:00:24.778798+02:00",
+      "last_seen": "2026-04-26T22:00:24.785443+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "module alpha connects",
+          "at": "2026-04-26T22:00:24.778798+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "module alpha connects",
+          "at": "2026-04-26T22:00:24.783885+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "module alpha connects",
+          "at": "2026-04-26T22:00:24.784665+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "module alpha connects",
+          "at": "2026-04-26T22:00:24.785443+02:00"
+        }
+      ],
+      "score": 4.0
+    },
+    "weslr": {
+      "key": "weslr",
+      "count": 4,
+      "first_seen": "2026-04-26T22:04:15.999602+02:00",
+      "last_seen": "2026-04-26T22:14:15.804298+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "weslr",
+          "at": "2026-04-26T22:04:15.999602+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr",
+          "at": "2026-04-26T22:11:48.734672+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr",
+          "at": "2026-04-26T22:13:11.818194+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr",
+          "at": "2026-04-26T22:14:15.804298+02:00"
+        }
+      ],
+      "score": 4.0
+    },
+    "weslr connects openclaw": {
+      "key": "weslr connects openclaw",
+      "count": 5,
+      "first_seen": "2026-04-26T22:04:16.000473+02:00",
+      "last_seen": "2026-04-26T22:14:15.805242+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "weslr connects openclaw",
+          "at": "2026-04-26T22:04:16.000473+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr connects openclaw",
+          "at": "2026-04-26T22:07:58.820129+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr connects openclaw",
+          "at": "2026-04-26T22:11:48.735696+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr connects openclaw",
+          "at": "2026-04-26T22:13:11.819057+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr connects openclaw",
+          "at": "2026-04-26T22:14:15.805242+02:00"
+        }
+      ],
+      "score": 5.0
+    },
+    "test topic here": {
+      "key": "test topic here",
+      "count": 1,
+      "first_seen": "2026-04-26T22:04:16.001277+02:00",
+      "last_seen": "2026-04-26T22:04:16.001277+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "test topic here",
+          "at": "2026-04-26T22:04:16.001277+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "what cant": {
+      "key": "what cant",
+      "count": 1,
+      "first_seen": "2026-04-26T23:08:47.414126+02:00",
+      "last_seen": "2026-04-26T23:08:47.414126+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "what cant",
+          "at": "2026-04-26T23:08:47.414126+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "tell solar panels": {
+      "key": "tell solar panels",
+      "count": 89,
+      "first_seen": "2026-04-26T23:10:57.096459+02:00",
+      "last_seen": "2026-04-27T18:57:47.182701+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:45:02.694804+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:47:40.971985+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:47:45.761443+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:47:45.777734+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:50:04.037744+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:50:04.074835+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:52:25.985210+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:52:26.006622+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:57:47.163638+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "tell solar panels",
+          "at": "2026-04-27T18:57:47.182701+02:00"
+        }
+      ],
+      "score": 89.0
+    },
+    "show diagnostics": {
+      "key": "show diagnostics",
+      "count": 48,
+      "first_seen": "2026-04-26T23:42:04.550205+02:00",
+      "last_seen": "2026-04-27T17:43:00.844534+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:22:31.077895+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:24:10.215164+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:24:19.957229+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:24:19.996720+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:24:20.006306+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:33:18.059746+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:33:22.802808+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:33:22.836090+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:33:22.843753+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show diagnostics",
+          "at": "2026-04-27T17:43:00.844534+02:00"
+        }
+      ],
+      "score": 48.0
+    },
+    "show gaps": {
+      "key": "show gaps",
+      "count": 43,
+      "first_seen": "2026-04-26T23:42:04.555830+02:00",
+      "last_seen": "2026-04-27T17:43:00.856369+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:18:02.393808+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:22:31.025390+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:22:31.084226+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:24:10.221446+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:24:19.968151+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:24:20.012449+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:33:18.069603+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:33:22.813913+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:33:22.850003+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show gaps",
+          "at": "2026-04-27T17:43:00.856369+02:00"
+        }
+      ],
+      "score": 43.0
+    },
+    "show probe results": {
+      "key": "show probe results",
+      "count": 28,
+      "first_seen": "2026-04-26T23:42:04.556797+02:00",
+      "last_seen": "2026-04-27T17:43:00.858512+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T16:47:47.909076+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:18:02.337468+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:18:02.398390+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:22:31.027406+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:22:31.089335+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:24:19.970355+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:24:20.016942+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:33:22.816007+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:33:22.854442+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe results",
+          "at": "2026-04-27T17:43:00.858512+02:00"
+        }
+      ],
+      "score": 28.0
+    },
+    "show weslr status": {
+      "key": "show weslr status",
+      "count": 39,
+      "first_seen": "2026-04-26T23:49:40.293293+02:00",
+      "last_seen": "2026-04-27T17:31:28.895025+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:18:02.382258+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:18:02.416145+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:22:31.040325+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:22:31.072563+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:22:31.104215+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:24:10.223677+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:24:19.974191+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:24:20.002355+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:24:20.023577+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show weslr status",
+          "at": "2026-04-27T17:31:28.895025+02:00"
+        }
+      ],
+      "score": 39.0
+    },
+    "show architecture status": {
+      "key": "show architecture status",
+      "count": 25,
+      "first_seen": "2026-04-26T23:49:40.299462+02:00",
+      "last_seen": "2026-04-27T17:31:28.901624+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T13:42:03.795421+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T16:47:47.864475+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T16:47:47.924969+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:18:02.351562+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:18:02.422814+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:22:31.042324+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:22:31.106219+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:24:19.976314+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:24:20.025554+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show architecture status",
+          "at": "2026-04-27T17:31:28.901624+02:00"
+        }
+      ],
+      "score": 25.0
+    },
+    "weslr checkpoint": {
+      "key": "weslr checkpoint",
+      "count": 25,
+      "first_seen": "2026-04-26T23:49:40.300493+02:00",
+      "last_seen": "2026-04-27T17:31:28.905644+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T13:42:03.799193+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T16:47:47.868375+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T16:47:47.928750+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:18:02.355738+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:18:02.427339+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:22:31.046140+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:22:31.110119+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:24:19.980198+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:24:20.029367+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr checkpoint",
+          "at": "2026-04-27T17:31:28.905644+02:00"
+        }
+      ],
+      "score": 25.0
+    },
+    "show system overview": {
+      "key": "show system overview",
+      "count": 41,
+      "first_seen": "2026-04-26T23:51:25.283584+02:00",
+      "last_seen": "2026-04-27T17:22:39.868141+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T16:47:47.852811+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T16:47:47.891145+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T16:47:47.914147+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:18:02.339582+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:18:02.379864+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:18:02.404581+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:22:31.029502+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:22:31.070034+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:22:31.094721+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show system overview",
+          "at": "2026-04-27T17:22:39.868141+02:00"
+        }
+      ],
+      "score": 41.0
+    },
+    "testers and feedback": {
+      "key": "testers and feedback",
+      "count": 15,
+      "first_seen": "2026-04-27T00:03:08.315531+02:00",
+      "last_seen": "2026-04-27T18:45:09.787675+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T06:19:43.485092+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T17:57:47.445250+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T17:59:23.095324+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:06:50.347561+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:11:49.767262+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:16:00.078476+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:17:05.567445+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:19:24.180222+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:21:28.590667+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "testers and feedback",
+          "at": "2026-04-27T18:45:09.787675+02:00"
+        }
+      ],
+      "score": 15.0
+    },
+    "learning": {
+      "key": "learning",
+      "count": 15,
+      "first_seen": "2026-04-27T00:03:08.315531+02:00",
+      "last_seen": "2026-04-27T18:45:09.787675+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T06:19:43.485092+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T17:57:47.445250+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T17:59:23.095324+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:06:50.347561+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:11:49.767262+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:16:00.078476+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:17:05.567445+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:19:24.180222+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:21:28.590667+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "learning",
+          "at": "2026-04-27T18:45:09.787675+02:00"
+        }
+      ],
+      "score": 15.0
+    },
+    "explain proposal autonomous_action": {
+      "key": "explain proposal autonomous_action",
+      "count": 1,
+      "first_seen": "2026-04-27T00:03:28.933030+02:00",
+      "last_seen": "2026-04-27T00:03:28.933030+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain proposal autonomous_action",
+          "at": "2026-04-27T00:03:28.933030+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "why prioritize capability_gap_detection": {
+      "key": "why prioritize capability_gap_detection",
+      "count": 2,
+      "first_seen": "2026-04-27T00:03:28.934554+02:00",
+      "last_seen": "2026-04-27T18:45:09.791536+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "why prioritize capability_gap_detection",
+          "at": "2026-04-27T00:03:28.934554+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why prioritize capability_gap_detection",
+          "at": "2026-04-27T18:45:09.791536+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "why autonomous_action important": {
+      "key": "why autonomous_action important",
+      "count": 1,
+      "first_seen": "2026-04-27T00:13:37.848077+02:00",
+      "last_seen": "2026-04-27T00:13:37.848077+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "why autonomous_action important",
+          "at": "2026-04-27T00:13:37.848077+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "explain proposal capability_gap_detection": {
+      "key": "explain proposal capability_gap_detection",
+      "count": 1,
+      "first_seen": "2026-04-27T00:13:37.849796+02:00",
+      "last_seen": "2026-04-27T00:13:37.849796+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain proposal capability_gap_detection",
+          "at": "2026-04-27T00:13:37.849796+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "why prioritize capability_proposals": {
+      "key": "why prioritize capability_proposals",
+      "count": 1,
+      "first_seen": "2026-04-27T00:13:37.851231+02:00",
+      "last_seen": "2026-04-27T00:13:37.851231+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "why prioritize capability_proposals",
+          "at": "2026-04-27T00:13:37.851231+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "convert iss suggestion": {
+      "key": "convert iss suggestion",
+      "count": 9,
+      "first_seen": "2026-04-27T00:17:52.865677+02:00",
+      "last_seen": "2026-04-27T18:21:28.575181+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T00:17:52.865677+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T00:17:52.873863+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T17:57:47.409763+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T17:59:23.080394+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T18:06:50.333673+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T18:11:49.747436+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T18:16:00.066496+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T18:17:05.557169+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss suggestion",
+          "at": "2026-04-27T18:21:28.575181+02:00"
+        }
+      ],
+      "score": 9.0
+    },
+    "convert iss gap": {
+      "key": "convert iss gap",
+      "count": 8,
+      "first_seen": "2026-04-27T00:17:52.872562+02:00",
+      "last_seen": "2026-04-27T18:21:28.582091+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T00:17:52.872562+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T17:57:47.421175+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T17:59:23.087245+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T18:06:50.339857+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T18:11:49.755544+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T18:16:00.071955+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T18:17:05.561799+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "convert iss gap",
+          "at": "2026-04-27T18:21:28.582091+02:00"
+        }
+      ],
+      "score": 8.0
+    },
+    "show iss intake": {
+      "key": "show iss intake",
+      "count": 11,
+      "first_seen": "2026-04-27T00:19:58.738046+02:00",
+      "last_seen": "2026-04-27T18:21:28.584603+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T00:21:41.558832+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T00:23:27.857365+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T17:57:47.429739+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T17:59:23.089727+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:06:50.341592+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:11:49.758841+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:16:00.073752+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:17:05.563481+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:19:24.183449+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss intake",
+          "at": "2026-04-27T18:21:28.584603+02:00"
+        }
+      ],
+      "score": 11.0
+    },
+    "show proposals from": {
+      "key": "show proposals from",
+      "count": 1,
+      "first_seen": "2026-04-27T00:19:58.744049+02:00",
+      "last_seen": "2026-04-27T00:19:58.744049+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show proposals from",
+          "at": "2026-04-27T00:19:58.744049+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "show converted iss": {
+      "key": "show converted iss",
+      "count": 1,
+      "first_seen": "2026-04-27T00:19:58.745610+02:00",
+      "last_seen": "2026-04-27T00:19:58.745610+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show converted iss",
+          "at": "2026-04-27T00:19:58.745610+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "list iss proposals": {
+      "key": "list iss proposals",
+      "count": 1,
+      "first_seen": "2026-04-27T00:19:58.746976+02:00",
+      "last_seen": "2026-04-27T00:19:58.746976+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "list iss proposals",
+          "at": "2026-04-27T00:19:58.746976+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "why plan iss.not_integrated": {
+      "key": "why plan iss.not_integrated",
+      "count": 37,
+      "first_seen": "2026-04-27T00:25:59.507579+02:00",
+      "last_seen": "2026-04-27T18:26:55.004717+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T13:41:17.315301+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T13:42:03.760426+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T16:47:47.888437+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T17:18:02.377020+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T17:22:31.067054+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T17:24:19.999089+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T17:33:22.838584+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T17:44:11.703673+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T18:26:55.001543+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan iss.not_integrated",
+          "at": "2026-04-27T18:26:55.004717+02:00"
+        }
+      ],
+      "score": 37.0
+    },
+    "why plan autonomous_action": {
+      "key": "why plan autonomous_action",
+      "count": 2,
+      "first_seen": "2026-04-27T00:25:59.524948+02:00",
+      "last_seen": "2026-04-27T00:28:48.461113+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "why plan autonomous_action",
+          "at": "2026-04-27T00:25:59.524948+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "why plan autonomous_action",
+          "at": "2026-04-27T00:28:48.461113+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "explain plan unknown_plan": {
+      "key": "explain plan unknown_plan",
+      "count": 3,
+      "first_seen": "2026-04-27T00:25:59.526699+02:00",
+      "last_seen": "2026-04-27T18:26:55.009018+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain plan unknown_plan",
+          "at": "2026-04-27T00:25:59.526699+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan unknown_plan",
+          "at": "2026-04-27T00:28:48.462501+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan unknown_plan",
+          "at": "2026-04-27T18:26:55.009018+02:00"
+        }
+      ],
+      "score": 3.0
+    },
+    "show iss probes": {
+      "key": "show iss probes",
+      "count": 4,
+      "first_seen": "2026-04-27T06:43:47.901988+02:00",
+      "last_seen": "2026-04-27T07:07:38.749104+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show iss probes",
+          "at": "2026-04-27T06:43:47.901988+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss probes",
+          "at": "2026-04-27T06:46:39.701396+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss probes",
+          "at": "2026-04-27T06:52:59.833850+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss probes",
+          "at": "2026-04-27T07:07:38.749104+02:00"
+        }
+      ],
+      "score": 4.0
+    },
+    "show probe registry": {
+      "key": "show probe registry",
+      "count": 2,
+      "first_seen": "2026-04-27T06:43:47.908064+02:00",
+      "last_seen": "2026-04-27T07:07:38.755049+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show probe registry",
+          "at": "2026-04-27T06:43:47.908064+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show probe registry",
+          "at": "2026-04-27T07:07:38.755049+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "list probes": {
+      "key": "list probes",
+      "count": 2,
+      "first_seen": "2026-04-27T06:43:47.909932+02:00",
+      "last_seen": "2026-04-27T07:07:38.756528+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "list probes",
+          "at": "2026-04-27T06:43:47.909932+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list probes",
+          "at": "2026-04-27T07:07:38.756528+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "what can iss": {
+      "key": "what can iss",
+      "count": 2,
+      "first_seen": "2026-04-27T06:43:47.911717+02:00",
+      "last_seen": "2026-04-27T07:07:38.757819+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "what can iss",
+          "at": "2026-04-27T06:43:47.911717+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "what can iss",
+          "at": "2026-04-27T07:07:38.757819+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "plan probe probe.front_door.chat": {
+      "key": "plan probe probe.front_door.chat",
+      "count": 3,
+      "first_seen": "2026-04-27T06:46:39.692941+02:00",
+      "last_seen": "2026-04-27T09:04:28.550155+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "plan probe probe.front_door.chat",
+          "at": "2026-04-27T06:46:39.692941+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "plan probe probe.front_door.chat",
+          "at": "2026-04-27T07:07:38.759096+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "plan probe probe.front_door.chat",
+          "at": "2026-04-27T09:04:28.550155+02:00"
+        }
+      ],
+      "score": 3.0
+    },
+    "how check probe.trace.proposals": {
+      "key": "how check probe.trace.proposals",
+      "count": 2,
+      "first_seen": "2026-04-27T06:46:39.698736+02:00",
+      "last_seen": "2026-04-27T07:07:38.760455+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "how check probe.trace.proposals",
+          "at": "2026-04-27T06:46:39.698736+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "how check probe.trace.proposals",
+          "at": "2026-04-27T07:07:38.760455+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "plan probe unknown.probe": {
+      "key": "plan probe unknown.probe",
+      "count": 2,
+      "first_seen": "2026-04-27T06:46:39.700128+02:00",
+      "last_seen": "2026-04-27T07:07:38.762155+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "plan probe unknown.probe",
+          "at": "2026-04-27T06:46:39.700128+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "plan probe unknown.probe",
+          "at": "2026-04-27T07:07:38.762155+02:00"
+        }
+      ],
+      "score": 2.0
+    },
+    "execute probe probe.front_door.chat": {
+      "key": "execute probe probe.front_door.chat",
+      "count": 36,
+      "first_seen": "2026-04-27T06:52:59.823311+02:00",
+      "last_seen": "2026-04-27T18:57:47.156860+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:38:00.946475+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:38:31.338260+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:39:09.330615+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:40:18.529045+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:41:01.014893+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:45:02.665256+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:47:45.754940+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:50:04.026458+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:52:25.974240+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "execute probe probe.front_door.chat",
+          "at": "2026-04-27T18:57:47.156860+02:00"
+        }
+      ],
+      "score": 36.0
+    },
+    "execute probe unknown.probe": {
+      "key": "execute probe unknown.probe",
+      "count": 1,
+      "first_seen": "2026-04-27T06:52:59.831098+02:00",
+      "last_seen": "2026-04-27T06:52:59.831098+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "execute probe unknown.probe",
+          "at": "2026-04-27T06:52:59.831098+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "show iss diagnostics": {
+      "key": "show iss diagnostics",
+      "count": 26,
+      "first_seen": "2026-04-27T11:07:47.632139+02:00",
+      "last_seen": "2026-04-27T17:43:00.851793+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T16:47:47.900622+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:18:02.330559+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:18:02.389557+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:22:31.020755+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:22:31.080027+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:24:19.963805+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:24:20.008345+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:33:22.809427+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:33:22.845916+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss diagnostics",
+          "at": "2026-04-27T17:43:00.851793+02:00"
+        }
+      ],
+      "score": 26.0
+    },
+    "list diagnostics": {
+      "key": "list diagnostics",
+      "count": 26,
+      "first_seen": "2026-04-27T11:07:47.633823+02:00",
+      "last_seen": "2026-04-27T17:43:00.854253+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T16:47:47.902714+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:18:02.333055+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:18:02.391695+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:22:31.023107+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:22:31.082145+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:24:19.966052+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:24:20.010417+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:33:22.811695+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:33:22.847947+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "list diagnostics",
+          "at": "2026-04-27T17:43:00.854253+02:00"
+        }
+      ],
+      "score": 26.0
+    },
+    "weslr overview": {
+      "key": "weslr overview",
+      "count": 23,
+      "first_seen": "2026-04-27T11:26:25.344535+02:00",
+      "last_seen": "2026-04-27T17:22:39.875083+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T13:41:17.341929+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T13:42:03.731029+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T13:42:03.786853+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T16:47:47.855200+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T16:47:47.916391+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T17:18:02.342170+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T17:18:02.407204+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T17:22:31.032966+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T17:22:31.097064+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "weslr overview",
+          "at": "2026-04-27T17:22:39.875083+02:00"
+        }
+      ],
+      "score": 23.0
+    },
+    "system overview": {
+      "key": "system overview",
+      "count": 22,
+      "first_seen": "2026-04-27T11:26:25.346425+02:00",
+      "last_seen": "2026-04-27T17:22:39.877767+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T13:41:17.344103+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T13:42:03.733279+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T13:42:03.789086+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T16:47:47.857605+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T16:47:47.918650+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T17:18:02.344666+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T17:18:02.409847+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T17:22:31.035393+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T17:22:31.099322+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system overview",
+          "at": "2026-04-27T17:22:39.877767+02:00"
+        }
+      ],
+      "score": 22.0
+    },
+    "show full status": {
+      "key": "show full status",
+      "count": 22,
+      "first_seen": "2026-04-27T11:26:25.348081+02:00",
+      "last_seen": "2026-04-27T17:22:39.880344+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T13:41:17.346344+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T13:42:03.735474+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T13:42:03.791308+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T16:47:47.860027+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T16:47:47.920843+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T17:18:02.346978+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T17:18:02.412965+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T17:22:31.038036+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T17:22:31.101796+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show full status",
+          "at": "2026-04-27T17:22:39.880344+02:00"
+        }
+      ],
+      "score": 22.0
+    },
+    "explain plan iss.not_integrated": {
+      "key": "explain plan iss.not_integrated",
+      "count": 42,
+      "first_seen": "2026-04-27T11:27:54.485735+02:00",
+      "last_seen": "2026-04-27T18:26:54.993884+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:11:49.762061+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:11:53.611158+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:15:51.810205+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:16:00.075925+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:16:55.245994+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:17:05.565363+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:19:24.172628+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:21:28.587282+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:26:31.176064+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "explain plan iss.not_integrated",
+          "at": "2026-04-27T18:26:54.993884+02:00"
+        }
+      ],
+      "score": 42.0
+    },
+    "show state checkpoint": {
+      "key": "show state checkpoint",
+      "count": 24,
+      "first_seen": "2026-04-27T12:06:53.645239+02:00",
+      "last_seen": "2026-04-27T17:31:28.903695+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T13:42:03.797290+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T16:47:47.866481+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T16:47:47.926878+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:18:02.353765+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:18:02.425291+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:22:31.044184+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:22:31.108177+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:24:19.978299+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:24:20.027443+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show state checkpoint",
+          "at": "2026-04-27T17:31:28.903695+02:00"
+        }
+      ],
+      "score": 24.0
+    },
+    "system checkpoint": {
+      "key": "system checkpoint",
+      "count": 24,
+      "first_seen": "2026-04-27T12:06:53.648201+02:00",
+      "last_seen": "2026-04-27T17:31:28.907605+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T13:42:03.801032+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T16:47:47.870290+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T16:47:47.930676+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:18:02.357693+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:18:02.429422+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:22:31.047998+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:22:31.111982+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:24:19.982159+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:24:20.031227+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "system checkpoint",
+          "at": "2026-04-27T17:31:28.907605+02:00"
+        }
+      ],
+      "score": 24.0
+    },
+    "show iss gaps": {
+      "key": "show iss gaps",
+      "count": 21,
+      "first_seen": "2026-04-27T12:42:10.281999+02:00",
+      "last_seen": "2026-04-27T18:57:47.177221+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T17:33:22.852006+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T17:44:11.709627+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:40:18.552775+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:40:39.448952+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:41:01.032111+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:45:02.688382+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:47:45.772599+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:50:04.059111+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:52:26.001398+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "show iss gaps",
+          "at": "2026-04-27T18:57:47.177221+02:00"
+        }
+      ],
+      "score": 21.0
+    },
+    "random nonsense xyz": {
+      "key": "random nonsense xyz",
+      "count": 21,
+      "first_seen": "2026-04-27T12:42:10.306931+02:00",
+      "last_seen": "2026-04-27T18:57:47.185014+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T17:33:22.863786+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T17:44:11.720117+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:40:18.560010+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:40:39.457478+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:41:01.039396+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:45:02.698379+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:47:45.779890+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:50:04.121279+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:52:26.008854+02:00"
+        },
+        {
+          "type": "topic",
+          "value": "random nonsense xyz",
+          "at": "2026-04-27T18:57:47.185014+02:00"
+        }
+      ],
+      "score": 21.0
+    },
+    "show": {
+      "key": "show",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.477490+02:00",
+      "last_seen": "2026-04-27T17:47:37.477490+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show",
+          "at": "2026-04-27T17:47:37.477490+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "show everything": {
+      "key": "show everything",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.487237+02:00",
+      "last_seen": "2026-04-27T17:47:37.487237+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "show everything",
+          "at": "2026-04-27T17:47:37.487237+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "plan": {
+      "key": "plan",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.489928+02:00",
+      "last_seen": "2026-04-27T17:47:37.489928+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "plan",
+          "at": "2026-04-27T17:47:37.489928+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "execute": {
+      "key": "execute",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.492388+02:00",
+      "last_seen": "2026-04-27T17:47:37.492388+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "execute",
+          "at": "2026-04-27T17:47:37.492388+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "status": {
+      "key": "status",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.494871+02:00",
+      "last_seen": "2026-04-27T17:47:37.494871+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "status",
+          "at": "2026-04-27T17:47:37.494871+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "diagnostics": {
+      "key": "diagnostics",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.497414+02:00",
+      "last_seen": "2026-04-27T17:47:37.497414+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "diagnostics",
+          "at": "2026-04-27T17:47:37.497414+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "gaps now": {
+      "key": "gaps now",
+      "count": 1,
+      "first_seen": "2026-04-27T17:47:37.499962+02:00",
+      "last_seen": "2026-04-27T17:47:37.499962+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "gaps now",
+          "at": "2026-04-27T17:47:37.499962+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "explain proposal iss.not_integrated": {
+      "key": "explain proposal iss.not_integrated",
+      "count": 1,
+      "first_seen": "2026-04-27T18:45:09.778382+02:00",
+      "last_seen": "2026-04-27T18:45:09.778382+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain proposal iss.not_integrated",
+          "at": "2026-04-27T18:45:09.778382+02:00"
+        }
+      ],
+      "score": 1.0
+    },
+    "explain proposal unknown_proposal": {
+      "key": "explain proposal unknown_proposal",
+      "count": 1,
+      "first_seen": "2026-04-27T18:45:09.795302+02:00",
+      "last_seen": "2026-04-27T18:45:09.795302+02:00",
+      "sources": [
+        "topic"
+      ],
+      "evidence": [
+        {
+          "type": "topic",
+          "value": "explain proposal unknown_proposal",
+          "at": "2026-04-27T18:45:09.795302+02:00"
+        }
+      ],
+      "score": 1.0
+    }
+  },
+  "last_updated": "2026-04-27T18:57:47.185646+02:00"
+}

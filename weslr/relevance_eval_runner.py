@@ -952,7 +952,33 @@ def run_all_scenarios(session_id: str = "eval-full") -> List[Dict[str, Any]]:
         except Exception as e:
             # Log error but continue with remaining scenarios
             print(f"Error running {scenario_id}: {e}")
+    write_eval_latest_summary(artifacts)
     return artifacts
+
+
+def write_eval_latest_summary(results: List[Dict[str, Any]]) -> None:
+    """Write compact eval summary to continuity/eval_latest.json.
+
+    Fields: timestamp, total, passed, failed, scenario_ids, eval_ids.
+    Additive only — does not delete or modify eval artifacts.
+    """
+    import time as _time
+    passed = sum(
+        1 for r in results
+        if not r.get("auto_flags", {}).get("high_noise", False)
+    )
+    summary = {
+        "timestamp": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+        "total": len(results),
+        "passed": passed,
+        "failed": len(results) - passed,
+        "scenario_ids": [r.get("scenario_id") for r in results],
+        "eval_ids": [r.get("evaluation_id") for r in results],
+    }
+    path = BASE_DIR / "continuity" / "eval_latest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
 
 
 def list_evaluations(limit: int = 50) -> List[Dict[str, Any]]:
@@ -988,6 +1014,28 @@ def list_evaluations(limit: int = 50) -> List[Dict[str, Any]]:
             continue
 
     return results
+
+
+def run_eval_cycle() -> dict:
+    """Run full eval cycle and return structured result.
+
+    Calls run_all_scenarios(), writes eval_latest.json, returns summary dict.
+    Callable by CLI, operator, UI, or future internal trigger.
+    """
+    import time as _time
+    results = run_all_scenarios()
+    write_eval_latest_summary(results)
+    passed = sum(
+        1 for r in results
+        if not r.get("auto_flags", {}).get("high_noise", False)
+    )
+    return {
+        "total": len(results),
+        "passed": passed,
+        "failed": len(results) - passed,
+        "eval_ids": [r.get("evaluation_id") for r in results],
+        "timestamp": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+    }
 
 
 # =============================================================================
