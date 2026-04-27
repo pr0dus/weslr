@@ -517,6 +517,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
     {
@@ -534,6 +537,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
     {
@@ -551,6 +557,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "operator",
     },
     {
@@ -569,6 +578,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "operator",
     },
     {
@@ -585,6 +597,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
     {
@@ -597,6 +612,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
     {
@@ -609,6 +627,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
     {
@@ -621,6 +642,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "explanation",
     },
     {
@@ -633,6 +657,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "explanation",
     },
     {
@@ -645,6 +672,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "plan",
     },
     {
@@ -657,6 +687,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "plan",
     },
     {
@@ -669,6 +702,9 @@ HANDLER_REGISTRY = [
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
         "category": "iss",
     },
 ]

@@ -12,6 +12,7 @@ Gates:
   G2 — Staged files are within allowed scope
   G3 — No execution_allowed=True in production weslr/*.py
   G4 — No OpenClaw core or TIA C# in staged scope
+  G5 — Handler registry metadata completeness
 """
 
 import subprocess
@@ -146,6 +147,56 @@ def _check_openclaw_tia():
     return True
 
 
+def _check_handler_registry():
+    """Gate 5 — Handler registry has complete write-metadata fields.
+    
+    Verifies every registry entry has write_paths, side_effects, write_guard.
+    For entries with read_only=True, write_paths and side_effects must be empty.
+    """
+    import sys as _sys
+    handlers_path = _workspace / "weslr" / "deterministic_handlers.py"
+    # Use separate import path so we don't pollute the gate's sys.path permanently
+    _gate_path = str(_workspace)
+    _orig_path = sys.path.copy()
+    if _gate_path not in sys.path:
+        sys.path.insert(0, _gate_path)
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("deterministic_handlers", str(handlers_path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        registry = mod.HANDLER_REGISTRY
+    except Exception as e:
+        print(f"GATE 5 FAILED: could not import HANDLER_REGISTRY: {e}")
+        return False
+    finally:
+        sys.path[:] = _orig_path
+
+    violations = []
+    for entry in registry:
+        entry_id = entry.get("id", "<unknown>")
+        read_only = entry.get("read_only", False)
+
+        for field in ("write_paths", "side_effects", "write_guard"):
+            if field not in entry:
+                violations.append(f"  {entry_id}: missing field {field!r}")
+
+        if read_only:
+            if entry.get("write_paths", []) != []:
+                violations.append(f"  {entry_id}: read_only=True but write_paths={entry.get('write_paths')}")
+            if entry.get("side_effects", []) != []:
+                violations.append(f"  {entry_id}: read_only=True but side_effects={entry.get('side_effects')}")
+
+    if violations:
+        print("GATE 5 FAILED: handler registry metadata issues:")
+        for v in violations:
+            print(v)
+        return False
+
+    print(f"GATE 5: {len(registry)} registry entries — all have write_paths, side_effects, write_guard")
+    return True
+
+
 def main():
     print("=" * 50)
     print("WESLR Release Gate V1")
@@ -160,9 +211,11 @@ def main():
     print()
     g4 = _check_openclaw_tia()
     print()
+    g5 = _check_handler_registry()
+    print()
     print("=" * 50)
 
-    if g1 and g2 and g3 and g4:
+    if g1 and g2 and g3 and g4 and g5:
         print("WESLR_RELEASE_GATE_V1_OK")
         return 0
     else:
