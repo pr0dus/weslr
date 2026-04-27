@@ -1382,27 +1382,29 @@ def interpret_human_turn(message: str) -> dict:
             f"System is deterministic, non-executing, and operator-controlled."
         )
 
-        return {
-            "message": message,
-            "response_text": response_text,
-            "confidence": "high",
-            "suggested_mode": "observe",
-            "mode_analysis": {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "System overview query"},
-            "mode_suggestion": None,
-            "suggestion_surface": {"show": False, "priority": "low"},
-            "overview": {
-                "checkpoint": checkpoint,
-                "gaps": gaps,
-                "plans": plans,
-                "summary": {
-                    "layers_confirmed": len(layer_ids),
-                    "gap_count": len(gaps),
-                    "plan_count": len(plans),
+        result = build_deterministic_response(
+            message=message,
+            path="operator_overview",
+            response_text=response_text,
+            payload={
+                "overview": {
+                    "checkpoint": checkpoint,
+                    "gaps": gaps,
+                    "plans": plans,
+                    "summary": {
+                        "layers_confirmed": len(layer_ids),
+                        "gap_count": len(gaps),
+                        "plan_count": len(plans),
+                    },
                 },
             },
-            "path": "operator_overview",
-            "_weslr_deterministic": True,
-        }
+            confidence="high",
+            suggested_mode="observe",
+        )
+        result["mode_analysis"] = {"current_mode": None, "suggested_mode": "observe", "match": True, "mismatch": False, "reason": "System overview query"}
+        result["mode_suggestion"] = None
+        result["suggestion_surface"] = {"show": False, "priority": "low"}
+        return result
 
     # ---- proposal_id normalizer (private helper) ----
     _STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
