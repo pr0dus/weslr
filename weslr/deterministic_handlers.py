@@ -504,6 +504,158 @@ def handle_plan_query_single(message: str, lowered: str) -> dict:
     return result
 
 
+def handle_system_definition_query(message: str, lowered: str) -> dict:
+    """WESLR system definition — read-only."""
+    response_text = (
+        "WESLR is a Continuity Intelligence System — not a chatbot, but a system that observes, "
+        "reasons, and evolves through structure. It answers using deterministic system knowledge, "
+        "tracks capabilities and gaps over time, and evolves through governed learning rather than "
+        "uncontrolled AI behavior."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="system_definition_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_origin_query(message: str, lowered: str) -> dict:
+    """WESLR origin — read-only."""
+    response_text = (
+        "WESLR was created to demonstrate how intelligent systems can evolve safely — without "
+        "uncontrolled self-modification or data collection. It's a testbed for governed learning, "
+        "where humans remain in control while the system improves through structured observation."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="origin_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_comparison_query(message: str, lowered: str) -> dict:
+    """WESLR vs. other AI — read-only."""
+    response_text = (
+        "WESLR doesn't use LLMs for conversational responses in this demo — it uses deterministic "
+        "system logic. It doesn't generate answers from training data; it answers from registered "
+        "system knowledge and tracked state. The goal is less guessing, more continuity, and no "
+        "uncontrolled self-modification."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="comparison_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_continuity_explanation(message: str, lowered: str) -> dict:
+    """Why continuity matters — read-only."""
+    response_text = (
+        "Continuity matters because intelligence requires consistency over time. WESLR tracks state, "
+        "capabilities, gaps, proposals, and plans across sessions so progress is not lost between "
+        "restarts. This allows governed evolution — improvements are built on previous state instead "
+        "of isolated prompts."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="continuity_explanation",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_improvement_query(message: str, lowered: str) -> dict:
+    """How WESLR improves — read-only."""
+    response_text = (
+        "WESLR improves through governed evolution: gaps are observed, proposals are created, "
+        "decisions are recorded, and implementation plans are linked. There is no uncontrolled "
+        "self-improvement. Every meaningful change must be reviewed, approved, and traceable."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="improvement_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_usage_guidance(message: str, lowered: str) -> dict:
+    """Usage guidance — read-only."""
+    response_text = (
+        "Try these system queries:\n"
+        "- show system overview\n"
+        "- show diagnostics\n"
+        "- show weslr status\n"
+        "- show iss probes\n"
+        "- show implementation plans\n"
+        "- explain plan iss.not_integrated\n"
+        "- explain proposal iss.not_integrated"
+    )
+    return build_deterministic_response(
+        message=message,
+        path="usage_guidance",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_agi_clarification(message: str, lowered: str) -> dict:
+    """AGI clarification — read-only."""
+    response_text = (
+        "No — WESLR is not AGI. It is a governed, deterministic continuity system that uses "
+        "structured state and explicit rules. The goal is safe, observable behavior, not "
+        "uncontrolled general intelligence."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="agi_clarification",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_self_improvement_clarification(message: str, lowered: str) -> dict:
+    """Self-improvement clarification — read-only."""
+    response_text = (
+        "WESLR is not self-improving in the uncontrolled sense. It can evolve only through governed "
+        "processes: gaps, proposals, decisions, plans, approval, and traceable implementation. "
+        "There is no autonomous self-modification."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="self_improvement_clarification",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_learning_clarification(message: str, lowered: str) -> dict:
+    """Learning boundary clarification — read-only."""
+    response_text = (
+        "WESLR does not directly learn from public users. Public interaction may produce anonymous "
+        "operational signals, but it cannot create memories, change behavior, or mutate capabilities. "
+        "WESLR learns from observed patterns only under governance and operator approval."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="learning_clarification",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
 # ---- Registry ----
 
 HANDLER_REGISTRY = [
@@ -706,6 +858,141 @@ HANDLER_REGISTRY = [
         "side_effects": [],
         "write_guard": None,
         "category": "iss",
+    },
+    {
+        "id": "system_definition_query",
+        "path": "system_definition_query",
+        "triggers": ["what is weslr", "what is WESLR"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_system_definition_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "origin_query",
+        "path": "origin_query",
+        "triggers": ["why was weslr created", "why did you create weslr", "why was WESLR created"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_origin_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "comparison_query",
+        "path": "comparison_query",
+        "triggers": ["how is weslr different from", "how is WESLR different from"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_comparison_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "continuity_explanation",
+        "path": "continuity_explanation",
+        "triggers": ["why continuity matters", "why does continuity matter", "why is continuity important"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_continuity_explanation",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "improvement_query",
+        "path": "improvement_query",
+        "triggers": ["how does weslr improve", "how is weslr improved", "how does weslr evolve", "how does WESLR improve", "how is WESLR improved", "how does WESLR evolve"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_improvement_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "usage_guidance",
+        "path": "usage_guidance",
+        "triggers": ["what can i try", "what can i ask", "show me what to try"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_usage_guidance",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "agi_clarification",
+        "path": "agi_clarification",
+        "triggers": ["is this agi", "is weslr agi", "is WESLR agi"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_agi_clarification",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "self_improvement_clarification",
+        "path": "self_improvement_clarification",
+        "triggers": ["is weslr self-improving", "can weslr improve itself", "is WESLR self-improving", "can WESLR improve itself"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_self_improvement_clarification",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
+        "id": "learning_clarification",
+        "path": "learning_clarification",
+        "triggers": ["can weslr learn from users", "does weslr learn from me", "can WESLR learn from users", "does WESLR learn from me"],
+        "match_type": "prefix",
+        "priority": 65,
+        "handler_fn": "handle_learning_clarification",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
     },
 ]
 
