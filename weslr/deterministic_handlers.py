@@ -729,6 +729,7 @@ def handle_iss_intake_query(message: str, lowered: str) -> dict:
         and r.get("content", {}).get("source") == "ISS"
         and r.get("content", {}).get("operator_requested_intake") is True
     ]
+    iss_intake_grouped = []
     if not iss_intake_proposals:
         response_text = "No ISS intake proposals found."
     else:
