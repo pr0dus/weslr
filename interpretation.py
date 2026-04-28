@@ -137,6 +137,8 @@ from weslr.iss.probe_registry import get_probe_registry
 from weslr.iss.probe_planning import create_probe_plan
 from weslr.iss.probe_execution import execute_probe_simulated
 from weslr.response_formatter import build_deterministic_response
+from weslr.omnichat.policy_engine import decide_response_policy
+from weslr.omnichat.response_expander import expand_response
 from weslr.deterministic_handlers import dispatch_deterministic_handler
 from weslr.write_handlers import dispatch_write_handler
 from weslr.state_checkpoint import get_state_checkpoint
@@ -955,31 +957,37 @@ def interpret_human_turn(message: str) -> dict:
                 break
 
         if write_triggered:
-            return _build_safe_response(
+            resp = _build_safe_response(
                 message=message,
                 path="blocked_write",
                 response_text="This action is disabled in public demo mode.",
                 confidence="high",
             )
+            policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+            return expand_response(resp, policy, lowered)
 
         # Not a write — try deterministic (read-only) handlers
         dispatched = dispatch_deterministic_handler(message, lowered)
         if dispatched is not None:
-            return dispatched
+            policy = decide_response_policy(dispatched, lowered, _WESLR_MODE)
+            return expand_response(dispatched, policy, lowered)
 
         # No handler matched at all — safe fallback
-        return _build_safe_response(
+        resp = _build_safe_response(
             message=message,
             path="fallback_safe",
             response_text="I'm not able to process that request.",
             confidence="low",
         )
+        policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+        return expand_response(resp, policy, lowered)
 
     # SECTION 3/3 — Normal flow (private_dev / local_demo)
     # Handler registry dispatch — read-only queries first
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
-        return dispatched
+        policy = decide_response_policy(dispatched, lowered, _WESLR_MODE)
+        return expand_response(dispatched, policy, lowered)
 
     # ISS probe execution (governed, simulated) — inline, not in deterministic_handlers
     # because it requires confirmation logic and simulated execution state.
@@ -1043,12 +1051,14 @@ def interpret_human_turn(message: str) -> dict:
         return write_result
 
     # Safe fallback for None returns
-    return _build_safe_response(
+    resp = _build_safe_response(
         message=message,
         path="fallback_safe",
         response_text="I'm not able to process that request.",
         confidence="low",
     )
+    policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+    return expand_response(resp, policy, lowered)
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
         return {
