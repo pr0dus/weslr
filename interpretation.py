@@ -536,8 +536,13 @@ def record_interest_signal(
     escalation_level: str | None = None,
     operator_decision: str | None = None,
 ) -> dict:
-    """Record one turn's interest signals. Additive only — no deletion, no auto-learning."""
-    import datetime as _dt
+    """Record one turn's interest signals. Additive only — no deletion, no auto-learning.
+    
+    BLOCKED in public_demo_readonly mode — no writes permitted.
+    """
+    # L0-anchored write block: public_demo_readonly must be truly read-only
+    if _is_public_demo_readonly():
+        return {"recorded": False, "interests_updated": []}
     now = _dt.datetime.now().astimezone().isoformat()
 
     state = _load_interest_tracker_state()
@@ -1128,21 +1133,17 @@ def interpret_human_turn(message: str) -> dict:
         if "autonomous_action" in missing:
             raw_proposals.append({"capability": "autonomous_action", "proposal": "A controlled execution layer for safe, operator-approved actions"})
 
-        # C5_REAL: rank proposals (read-only, no writes)
+        # C5_REAL: rank proposals (read-only, no writes to proposal_trace)
         try:
             ranked = rank_capability_proposals(raw_proposals)
             ranked_proposals = ranked["ranked_proposals"]
             signal_summary = ranked["signal_summary"]
-            for p in ranked_proposals:
-                record_proposal(p["capability"], {
-                    "proposal": p["proposal"],
-                    "base_score": p["base_score"],
-                    "signal_boost": p["signal_boost"],
-                    "final_score": p["final_score"],
-                    "tier": p["tier"],
-                    "ranking_reason": p["ranking_reason"],
-                })
+            # NOTE: record_proposal() calls removed — ranking is read-only.
+            # Proposals are returned as response payload only.
         except Exception:
+            ranked_proposals = []
+            signal_summary = {}
+            pass
             ranked_proposals = raw_proposals
             signal_summary = {"interests_checked": False, "feedback_checked": False}
 
