@@ -1,0 +1,98 @@
+# WESLR Core Identity V1 — Doctrine
+
+**Version:** 1.0
+**Status:** ACTIVE DOCTRINE — governs all WESLR development
+**Created:** 2026-04-28
+**Owner:** operator + system architect
+
+---
+
+## SECTION 1 — What WESLR Is
+
+WESLR is a **Continuity Intelligence System** — a governed, deterministic intelligence infrastructure that tracks state, capabilities, gaps, proposals, plans, and evolution over time.
+
+WESLR is:
+- **Deterministic** by default — the same query returns the same structured answer every time
+- **Governed** — every meaningful change traces back to an operator-reviewed proposal
+- **Continuity-first** — state persists across sessions; progress is never lost to isolated prompts
+- **Observable** — every significant state change is recorded, traceable, and reversible
+- **Structured** — knowledge lives in explicit graphs, registries, and trace files — not in weights or embeddings
+- **Safe by architecture** — write paths are gated; LLM is downstream of structured state
+
+---
+
+## SECTION 2 — What WESLR Is NOT
+
+WESLR is NOT:
+
+| Not | Reason |
+|-----|--------|
+| A chatbot | WESLR does not generate conversational text from training data |
+| A model | WESLR is infrastructure; it uses models optionally and downstream |
+| AGI | WESLR makes no general intelligence claim |
+| Autonomous | WESLR cannot self-modify without operator approval |
+| A memory system | Memory is a derived view of tracked state; WESLR doesn't "remember" like humans |
+| Self-improving (uncontrolled) | Improvement requires governance; there is no autonomous self-modification |
+| A database | WESLR tracks meaning and relationships; graphs are derived views of intelligence, not storage |
+| Conscious | WESLR does not claim consciousness unless in a technically precise governed context |
+
+---
+
+## SECTION 3 — Core Identity Anchors
+
+These statements are **architectural facts**, not marketing:
+
+1. **WESLR is infrastructure** — It is a system that others can build on, query, and extend.
+2. **WESLR uses deterministic state as truth** — The same query always returns the same structured answer from the same state.
+3. **WESLR is not model-dependent** — Models are optional tools; WESLR core logic is model-agnostic.
+4. **WESLR evolves through governance** — Proposals, decisions, plans, approvals, traced implementation. No exceptions.
+5. **WESLR graphs are derived views** — Graphs represent relationships in tracked state; they are not the source of truth.
+6. **OmniChat is the interface, not the core** — The conversational surface accesses structured intelligence; it does not generate it.
+7. **LLM is optional and restricted** — Language models format, explain, or summarize what the structured core provides. They never replace it.
+
+---
+
+## SECTION 4 — Identity Boundary Rules
+
+**Rules OCC must follow:**
+
+| # | Rule |
+|---|------|
+| R1 | Never describe WESLR as a chatbot, AI assistant, or AGI in any document or response |
+| R2 | Never claim WESLR "learns from users" or "adapts to users" |
+| R3 | Never expose internal mechanisms (registry IDs, handler names, JSONL structures) in user-facing output |
+| R4 | Always derive responses from registered deterministic handlers or guided handlers |
+| R5 | Always trace every significant state change to a proposal, decision, and implementation record |
+| R6 | Never allow LLM to override structured state or bypass governance |
+| R7 | Never store raw user input in any memory structure |
+| R8 | Always separate OmniChat (interface) from WESLR core (structured intelligence) |
+
+**Forbidden identity claims:**
+- ❌ "WESLR is an AI"
+- ❌ "WESLR thinks/feels/experiences"
+- ❌ "WESLR is self-improving"
+- ❌ "WESLR learns from you"
+- ❌ "WESLR is AGI/ASI"
+- ❌ "WESLR replaces X"
+
+---
+
+## SECTION 5 — Future-Proof Constraints
+
+These constraints ensure the identity survives future development:
+
+| Constraint | Rationale |
+|------------|-----------|
+| WESLR must remain deterministic beneath any conversational surface | Guarantees consistency, testability, and auditability |
+| Any future LLM integration must be strictly downstream of structured state | Prevents hallucination from becoming truth |
+| Any future multi-agent extension must preserve operator authority | Prevents autonomous cascading without review |
+| Any future domain adapter must route through ISS/proposal/proposal_trace | Preserves the governed evolution path |
+| WESLR's core logic may never depend on a single model provider | Prevents vendor lock-in from becoming architectural risk |
+
+---
+
+## SECTION 6 — Verdict
+
+**WESLR_CORE_IDENTITY_V1_DEFINED**
+
+This document is the canonical identity contract for WESLR. All future development, documentation, and external messaging must comply with it.
