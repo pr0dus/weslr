@@ -6,11 +6,30 @@ Rules (V1, no LLM):
 - Never overwrites response_text unless path == fallback_safe
 - Adds _omnichat_policy + expanded_response to the response dict
 - Builds L4 guidance from known WESLR commands only
+- Graph context display (V1): adds graph_summary from _selected_context
 """
 
 from __future__ import annotations
 
 from typing import Dict, Any, List
+
+
+# ─── Constants ────────────────────────────────────────────────────────────────
+
+MAX_DISPLAY_CONNECTIONS = 5
+
+# Source label for safety — never expose raw paths
+_SAFE_SOURCE_LABELS = frozenset({
+    "proposal_trace.jsonl",
+    "implementation_plans.jsonl",
+    "iss_diagnostic_records.jsonl",
+})
+
+# Graph summary note appended to response_text (once)
+_GRAPH_SUMMARY_NOTE = (
+    "Related structured connections were found. "
+    "See expanded_response.graph_summary."
+)
 
 
 # ─── Known WESLR commands for guidance (L4 suggestions) ────────────────────────
@@ -60,6 +79,9 @@ def expand_response(
     # Build expanded_response sub-dict
     expanded: Dict[str, Any] = {}
 
+    # ── Graph context expansion (display-only) ─────────────────────────────
+    _expand_graph_context(response, expanded)
+
     if final_type == "blocked_write":
         expanded["guidance"] = _blocked_write_guidance(response)
         # Replace response_text with expanded guidance
@@ -74,7 +96,6 @@ def expand_response(
         expanded["guidance"] = _guided_guidance(response, path)
         # Add guidance but preserve original response_text
         if response.get("response_text"):
-            # Append guidance to response_text
             response["response_text"] = (
                 response["response_text"].rstrip()
                 + "\n\n"
@@ -110,6 +131,94 @@ def expand_response(
     response["expanded_response"] = expanded
 
     return response
+
+
+# ─── Graph context expansion (display-only) ──────────────────────────────────
+
+def _expand_graph_context(
+    response: Dict[str, Any],
+    expanded: Dict[str, Any],
+) -> None:
+    """
+    If response contains _selected_context with context_type == "graph",
+    add graph_summary to expanded.
+
+    Display rules:
+    - max 5 connections shown
+    - display_truncated = True if more than 5 exist
+    - no raw JSONL paths exposed
+    - source_refs labels only
+    - empty graph_context → count 0, no text append
+    - malformed context → no-op (safe)
+    """
+    try:
+        selected = response.get("_selected_context")
+        if not selected:
+            return
+        if not isinstance(selected, dict):
+            return
+        if selected.get("context_type") != "graph":
+            return
+    except Exception:
+        # Malformed context — safe no-op
+        return
+
+    graph_ctx = selected.get("graph_context")
+    if not graph_ctx or not isinstance(graph_ctx, dict):
+        # Empty → count 0
+        expanded["graph_summary"] = {
+            "root_id": graph_ctx.get("root", {}).get("id", "") if isinstance(graph_ctx, dict) else "",
+            "connection_count": 0,
+            "connections": [],
+            "truncated": False,
+            "display_truncated": False,
+        }
+        return
+
+    root_id = graph_ctx.get("root", {}).get("id", "") if isinstance(graph_ctx.get("root"), dict) else ""
+    raw_connections = graph_ctx.get("connections", [])
+    truncated = bool(graph_ctx.get("truncated", False))
+
+    # Build safe connections list (display-only, max 5)
+    safe_connections: List[Dict[str, Any]] = []
+    display_truncated = False
+
+    if isinstance(raw_connections, list):
+        if len(raw_connections) > MAX_DISPLAY_CONNECTIONS:
+            display_truncated = True
+            display_list = raw_connections[:MAX_DISPLAY_CONNECTIONS]
+        else:
+            display_list = raw_connections
+
+        for conn in display_list:
+            if not isinstance(conn, dict):
+                continue
+            # Strip any keys that might contain raw paths — only keep safe fields
+            safe_connections.append({
+                "type": str(conn.get("type", "")),
+                "id": str(conn.get("id", "")),
+                "relation": str(conn.get("relation", "")),
+                "depth": int(conn.get("depth", 0)),
+            })
+
+    expanded["graph_summary"] = {
+        "root_id": root_id,
+        "connection_count": len(raw_connections) if isinstance(raw_connections, list) else 0,
+        "connections": safe_connections,
+        "truncated": truncated,
+        "display_truncated": display_truncated,
+    }
+
+    # Append note to response_text once (if connections exist)
+    if safe_connections and response.get("response_text") is not None:
+        existing_note = _GRAPH_SUMMARY_NOTE
+        current_text = response.get("response_text", "") or ""
+        if existing_note not in current_text:
+            response["response_text"] = (
+                current_text.rstrip()
+                + "\n\n"
+                + existing_note
+            )
 
 
 # ─── Guidance builders ─────────────────────────────────────────────────────────
