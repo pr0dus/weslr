@@ -1,0 +1,29 @@
+{
+  "weslr_version": "v1",
+  "doctrine_version": "V1_FROZEN",
+  "required_commits": {
+    "tier1_checkpoint": "56b044f",
+    "tier2_graph_chain": "67850e9",
+    "graph_evidence_chain": "bd986be"
+  },
+  "required_tests": [
+    "release_gate_v1.py",
+    "public_readiness_tests.py",
+    "test_omnichat_runtime_v1.py",
+    "test_multi_graph_traversal_v1.py",
+    "test_context_selector_graph_v1.py",
+    "test_graph_response_expansion_v1.py",
+    "test_evidence_graph_overlay_v1.py",
+    "test_graph_evidence_presentation_v1.py",
+    "test_signal_alerting_v1.py",
+    "test_context_decay_policy_v1.py"
+  ],
+  "invariants": {
+    "no_write_in_read_mode": true,
+    "llm_disabled": true,
+    "max_graph_depth": 2,
+    "max_graph_connections": 20,
+    "max_display_connections": 5,
+    "evidence_not_truth": true
+  }
+}
