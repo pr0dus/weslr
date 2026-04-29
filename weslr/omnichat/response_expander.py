@@ -348,11 +348,11 @@ def _is_entry_phrase(message: str) -> bool:
 
 
 def _entry_greeting() -> str:
-    """Return the entry greeting — single natural paragraph."""
+    """Return the entry greeting — single natural paragraph, no quoted commands."""
     return (
         "Hi — I'm WESLR. I can show you how the system works, explain what I am, "
-        "or help you explore a topic safely. You can start with: \"what is WESLR\", "
-        "\"what can I try\", or \"show system overview\"."
+        "explore any topic as evidence, or walk you through the current system state. "
+        "Just tell me what you want to know."
     )
 
 
@@ -370,7 +370,7 @@ def _blocked_write_guidance(response: Dict[str, Any]) -> str:
 
 
 def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
-    """Fallback for unknown queries — entry greeting, natural paragraph, no numbered lists."""
+    """Fallback for unknown queries — entry greeting, natural paragraph, no commands."""
     # If the handler already provided a specific fallback, use it
     base = response.get("response_text", "") or ""
     if base and base != "I'm not able to process that request.":
@@ -380,58 +380,77 @@ def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
     if _is_entry_phrase(message):
         return _entry_greeting()
 
-    # Unknown input — friendly, not robotic
+    # Unknown input — friendly, no commands
     return (
-        "I'm not sure what you want to do yet, but I can help you start. "
-        "Ask what WESLR is, what you can try, or ask me to explore a topic as evidence."
+        "I'm not sure what you had in mind, but I'm ready to help. "
+        "You can ask me what WESLR is, what it can do, or anything on your mind — "
+        "I'll do my best to answer or look it up as evidence."
     )
 
 
+# ─── Capability guidance (inline, no command strings) ───────────────────────────────
+# Maps paths to natural capability descriptions — NO quoted commands.
+_CAPABILITY_MAP: Dict[str, List[str]] = {
+    "system_definition_query": [
+        "explain why WESLR was built and what problem it solves",
+        "compare how WESLR differs from a standard chatbot",
+    ],
+    "operator_overview": [
+        "walk through the current diagnostics",
+        "review the active proposals and their status",
+    ],
+    "ISS_probe_registry_query": [
+        "show the current diagnostics",
+        "display the system overview",
+    ],
+    "ISS_probe_plan": [
+        "list the active ISS probes and what they're tracking",
+        "explain any proposals that aren't yet integrated",
+    ],
+    "implementation_plan_query": [
+        "review the active implementation plans",
+        "show the full system state",
+    ],
+    "proposal_trace_query": [
+        "review the active proposals and their current status",
+        "check the latest diagnostics",
+    ],
+    "state_checkpoint_query": [
+        "show the full system overview",
+        "list active ISS probes",
+    ],
+    "iss_intake_query": [
+        "check the current diagnostics",
+        "show the ISS probe status",
+    ],
+}
+
+
+def _capability_for_path(path: str) -> str:
+    """Return a natural capability description for the given path (no quotes)."""
+    caps = _CAPABILITY_MAP.get(path, [])
+    if len(caps) == 2:
+        return f"I can {caps[0]} or {caps[1]}."
+    elif len(caps) == 1:
+        return f"I can {caps[0]}."
+    return ""
+
+
 def _guided_guidance(response: Dict[str, Any], path: str) -> str:
-    """Guidance for guided responses — inline, conversational."""
-    suggestions = _related_suggestions_for_path(path)
-    if suggestions:
-        return f"You might also find it useful to ask about {suggestions}."
+    """Guidance for guided responses — capability phrasing, no commands."""
+    cap = _capability_for_path(path)
+    if cap:
+        return f"{cap}"
     return ""
 
 
 def _deterministic_guidance(response: Dict[str, Any], path: str) -> str:
-    """Guidance for deterministic responses — inline, conversational."""
-    suggestions = _related_suggestions_for_path(path)
-    if suggestions:
-        return f"You might also try {suggestions} if you want to dig deeper."
+    """Guidance for deterministic responses — capability phrasing, no commands."""
+    cap = _capability_for_path(path)
+    if cap:
+        return f"{cap}"
     return ""
 
 
-def _related_suggestions_for_path(path: str) -> str:
-    """Return comma-separated related suggestions based on handler path."""
-    suggestions_map = {
-        "system_definition_query": ["why was WESLR created", "how is WESLR different from ChatGPT"],
-        "operator_overview": ["show diagnostics", "show proposals"],
-        "ISS_probe_registry_query": ["show diagnostics", "show system overview"],
-        "ISS_probe_plan": ["show iss probes", "explain proposal iss.not_integrated"],
-        "implementation_plan_query": ["show proposals", "show system overview"],
-        "proposal_trace_query": ["show proposals", "show diagnostics"],
-        "state_checkpoint_query": ["show system overview", "show iss probes"],
-        "iss_intake_query": ["show diagnostics", "show iss probes"],
-    }
-    related = suggestions_map.get(path, [])
-    suggestions = related[:2]
-    if len(suggestions) == 2:
-        return f'"{suggestions[0]}" or "{suggestions[1]}"'
-    elif len(suggestions) == 1:
-        return f'"{suggestions[0]}"'
-    return ""
-
-
-def _format_command_suggestions(count: int = 5) -> str:
-    """Format a list of command suggestions — comma-separated natural prose."""
-    cmds = _GUIDANCE_COMMANDS[:count]
-    if len(cmds) == 1:
-        return f'"{cmds[0]}"'
-    elif len(cmds) == 2:
-        return f'"{cmds[0]}" or "{cmds[1]}"'
-    else:
-        last = cmds[-1]
-        rest = cmds[:-1]
-        return ", ".join(f'"{c}"' for c in rest) + f", or \"{last}\""
+# _related_suggestions_for_path and _format_command_suggestions removed.
+# Phase 3: guidance is purely capability-based, no command strings anywhere."

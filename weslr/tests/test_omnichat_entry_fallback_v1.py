@@ -83,11 +83,13 @@ def test_non_entry_not_recognized():
 def test_entry_greeting_content():
     greeting = _entry_greeting()
     assert "I'm WESLR" in greeting
-    assert "what is WESLR" in greeting
-    assert "what can I try" in greeting
-    assert "show system overview" in greeting
+    # Phase 3: no quoted commands — capabilities described naturally
+    assert "I can" in greeting
+    assert "Just tell me" in greeting
     assert "LIMITATION" not in greeting.upper()
     assert "\n" not in greeting  # single paragraph
+    # No command strings
+    assert '"' not in greeting
     print("PASS: test_entry_greeting_content")
 
 
