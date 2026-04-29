@@ -11,7 +11,7 @@ Rules (V1, no LLM):
 
 from __future__ import annotations
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, List
 
 
 # ─── Constants ────────────────────────────────────────────────────────────────
@@ -29,6 +29,11 @@ _SAFE_SOURCE_LABELS = frozenset({
 _GRAPH_SUMMARY_NOTE = (
     "Related structured connections were found. "
     "See expanded_response.graph_summary."
+)
+
+_EXPAND_NOTE = (
+    "Structured relationships and exploratory evidence are available. "
+    "Evidence is not part of confirmed system knowledge."
 )
 
 
@@ -81,6 +86,9 @@ def expand_response(
 
     # ── Graph context expansion (display-only) ─────────────────────────────
     _expand_graph_context(response, expanded)
+
+    # ── Knowledge view: structured graph + evidence overlay ─────────────────
+    _expand_knowledge_view(response, expanded)
 
     if final_type == "blocked_write":
         expanded["guidance"] = _blocked_write_guidance(response)
@@ -218,6 +226,72 @@ def _expand_graph_context(
                 current_text.rstrip()
                 + "\n\n"
                 + existing_note
+            )
+
+
+def _expand_knowledge_view(
+    response: Dict[str, Any],
+    expanded: Dict[str, Any],
+) -> None:
+    """
+    Build expanded_response.knowledge_view from graph_summary + evidence_overlay.
+
+    Display rules:
+    - If graph_summary has connections → show structured section
+    - If evidence_overlay present → show evidence section with label
+    - Never merge graph + evidence into one structure
+    - Never remove evidence label
+    - Never promote evidence to structured truth
+    - No evidence → evidence section omitted entirely
+    - No graph → structured section omitted entirely
+    """
+    graph_summary = expanded.get("graph_summary")
+    evidence_overlay: List[Dict[str, Any]] = []
+
+    # Extract evidence_overlay from _selected_context if present
+    try:
+        selected = response.get("_selected_context")
+        if isinstance(selected, dict):
+            overlay_container = selected.get("evidence_overlay")
+            if isinstance(overlay_container, list):
+                evidence_overlay = overlay_container
+    except Exception:
+        evidence_overlay = []
+
+    has_graph = (
+        graph_summary is not None
+        and isinstance(graph_summary, dict)
+        and bool(graph_summary.get("connections"))
+    )
+    has_evidence = bool(evidence_overlay)
+
+    if not has_graph and not has_evidence:
+        return
+
+    knowledge_view: Dict[str, Any] = {}
+
+    if has_graph:
+        knowledge_view["structured"] = {
+            "connections": graph_summary["connections"],
+            "count": graph_summary.get("connection_count", 0),
+        }
+
+    if has_evidence:
+        knowledge_view["evidence"] = {
+            "items": evidence_overlay,
+            "label": "not part of structured truth",
+        }
+
+    expanded["knowledge_view"] = knowledge_view
+
+    # Append expand note to response_text
+    if response.get("response_text") is not None:
+        current_text = response.get("response_text", "") or ""
+        if _EXPAND_NOTE not in current_text:
+            response["response_text"] = (
+                current_text.rstrip()
+                + "\n\n"
+                + _EXPAND_NOTE
             )
 
 
