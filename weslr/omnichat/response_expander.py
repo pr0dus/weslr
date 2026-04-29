@@ -8,6 +8,7 @@ Rules (V1, no LLM):
 - Builds L4 guidance from known WESLR commands only
 - Graph context display (V1): adds graph_summary from _selected_context
 - Phase 1 unification: response_text is single natural message, all metadata in JSON
+- Phase 2: entry phrases and typo normalization for natural starting experience
 """
 
 from __future__ import annotations
@@ -37,6 +38,31 @@ _EXPAND_NOTE = (
     "Structured relationships and exploratory evidence are available. "
     "Evidence is not part of confirmed system knowledge."
 )
+
+# ─── Entry phrase detection ─────────────────────────────────────────────────────
+
+# Phrases that indicate a user is starting fresh — not asking a real question.
+_ENTRY_PHRASES = frozenset({
+    "hi", "hey", "hello", "hallo", "servus",
+    "start", "help", "what can i do", "what can i do?",
+    "what now", "what now?", "what to do", "what to do?",
+    "what is weslr",  # explicit: weslr? → what is WESLR (normalized)
+    "weslr",          # welsr typo → WESLR → weslr (lower) → entry
+})
+
+# Explicit typo → normalized form mapping (deterministic, allowlist only).
+# No fuzzy matching. No broad normalization. Only these exact inputs.
+_TYPO_MAP: Dict[str, str] = {
+    "hry":   "hey",    # hry → hey
+    "helo":  "hello",  # helo → hello
+    "welsr": "WESLR",  # welsr → WESLR (single transposition)
+}
+
+# Phrases that are clearly asking about WESLR despite surface typos.
+_WESLR_QUERY_TYPOS = frozenset({
+    "weslr?",  # weslr? → what is WESLR
+})
+
 
 # ─── Known WESLR commands for guidance (L4 suggestions) ────────────────────────
 
@@ -75,6 +101,7 @@ def expand_response(
         - Adds expanded_response.guidance based on response type
         - Never invents facts — guidance uses only registered WESLR commands
         - Phase 1: response_text is single natural message; metadata in JSON only
+        - Phase 2: entry phrases produce natural greeting; typos normalized
     """
     # Avoid double-expansion
     if "_omnichat_policy" in response:
@@ -98,9 +125,15 @@ def expand_response(
         response["response_text"] = expanded["guidance"]
 
     elif final_type == "fallback":
-        expanded["guidance"] = _fallback_guidance(response, message)
-        # Replace response_text with natural fallback paragraph
-        response["response_text"] = expanded["guidance"]
+        # Handle entry phrases BEFORE setting guidance
+        # so entry responses don't populate expanded_response.guidance
+        if _is_entry_phrase(message):
+            response["response_text"] = _entry_greeting()
+            expanded["guidance"] = ""
+        else:
+            expanded["guidance"] = _fallback_guidance(response, message)
+            # Replace response_text with natural fallback paragraph
+            response["response_text"] = expanded["guidance"]
 
     elif final_type == "guided":
         expanded["guidance"] = _guided_guidance(response, path)
@@ -284,6 +317,45 @@ def _expand_knowledge_view(
     # Evidence and structured sections stay in expanded_response.knowledge_view only.
 
 
+# ─── Entry phrase detection helpers ─────────────────────────────────────────────
+
+def _normalize_message(message: str) -> str:
+    """Apply explicit typo normalization (deterministic, allowlist only).
+
+    Returns the normalized message string for downstream routing.
+    Only handles the exact entries in _TYPO_MAP and _WESLR_QUERY_TYPOS.
+    """
+    normalized = message.strip().lower()
+    if normalized in _TYPO_MAP:
+        return _TYPO_MAP[normalized]
+    if normalized in _WESLR_QUERY_TYPOS:
+        return "what is WESLR"
+    return message
+
+
+def _is_entry_phrase(message: str) -> bool:
+    """Return True if message is a greeting or starting prompt.
+
+    Case-insensitive. Applies typo normalization before checking.
+    """
+    normalized = message.strip().lower()
+    # Also handle normalized typos
+    if normalized in _TYPO_MAP:
+        normalized = _TYPO_MAP[normalized].lower()
+    if normalized in _WESLR_QUERY_TYPOS:
+        normalized = "what is weslr"
+    return normalized in _ENTRY_PHRASES
+
+
+def _entry_greeting() -> str:
+    """Return the entry greeting — single natural paragraph."""
+    return (
+        "Hi — I'm WESLR. I can show you how the system works, explain what I am, "
+        "or help you explore a topic safely. You can start with: \"what is WESLR\", "
+        "\"what can I try\", or \"show system overview\"."
+    )
+
+
 # ─── Guidance builders (all single natural paragraph, no structural markers) ────
 
 def _blocked_write_guidance(response: Dict[str, Any]) -> str:
@@ -298,18 +370,20 @@ def _blocked_write_guidance(response: Dict[str, Any]) -> str:
 
 
 def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
-    """Fallback for unknown queries — single natural paragraph, no numbered lists."""
-    base = response.get("response_text", "") or ""
+    """Fallback for unknown queries — entry greeting, natural paragraph, no numbered lists."""
     # If the handler already provided a specific fallback, use it
+    base = response.get("response_text", "") or ""
     if base and base != "I'm not able to process that request.":
         return base
 
+    # Handle entry phrases and typos
+    if _is_entry_phrase(message):
+        return _entry_greeting()
+
+    # Unknown input — friendly, not robotic
     return (
-        "I don't have anything built in for that specifically, "
-        "but I can show you how the system works. Try asking what WESLR is, "
-        "or what it can do. You might also find it useful to ask for a system "
-        "overview or to explore related topics. "
-        "I can also look into this as evidence if you'd like — just say the word."
+        "I'm not sure what you want to do yet, but I can help you start. "
+        "Ask what WESLR is, what you can try, or ask me to explore a topic as evidence."
     )
 
 
@@ -317,9 +391,7 @@ def _guided_guidance(response: Dict[str, Any], path: str) -> str:
     """Guidance for guided responses — inline, conversational."""
     suggestions = _related_suggestions_for_path(path)
     if suggestions:
-        return (
-            f"You might also find it useful to ask about {suggestions}."
-        )
+        return f"You might also find it useful to ask about {suggestions}."
     return ""
 
 
@@ -327,9 +399,7 @@ def _deterministic_guidance(response: Dict[str, Any], path: str) -> str:
     """Guidance for deterministic responses — inline, conversational."""
     suggestions = _related_suggestions_for_path(path)
     if suggestions:
-        return (
-            f"You might also try {suggestions} if you want to dig deeper."
-        )
+        return f"You might also try {suggestions} if you want to dig deeper."
     return ""
 
 
