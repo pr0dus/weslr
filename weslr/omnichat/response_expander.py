@@ -7,11 +7,12 @@ Rules (V1, no LLM):
 - Adds _omnichat_policy + expanded_response to the response dict
 - Builds L4 guidance from known WESLR commands only
 - Graph context display (V1): adds graph_summary from _selected_context
+- Phase 1 unification: response_text is single natural message, all metadata in JSON
 """
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, List
+from typing import Dict, Any, List
 
 
 # ─── Constants ────────────────────────────────────────────────────────────────
@@ -25,17 +26,17 @@ _SAFE_SOURCE_LABELS = frozenset({
     "iss_diagnostic_records.jsonl",
 })
 
-# Graph summary note appended to response_text (once)
+# Graph summary note — kept as constant for reference, NOT appended to response_text
 _GRAPH_SUMMARY_NOTE = (
     "Related structured connections were found. "
     "See expanded_response.graph_summary."
 )
 
+# Expand note — kept as constant for reference, NOT appended to response_text
 _EXPAND_NOTE = (
     "Structured relationships and exploratory evidence are available. "
     "Evidence is not part of confirmed system knowledge."
 )
-
 
 # ─── Known WESLR commands for guidance (L4 suggestions) ────────────────────────
 
@@ -73,6 +74,7 @@ def expand_response(
         - Adds _omnichat_policy with policy metadata
         - Adds expanded_response.guidance based on response type
         - Never invents facts — guidance uses only registered WESLR commands
+        - Phase 1: response_text is single natural message; metadata in JSON only
     """
     # Avoid double-expansion
     if "_omnichat_policy" in response:
@@ -92,33 +94,35 @@ def expand_response(
 
     if final_type == "blocked_write":
         expanded["guidance"] = _blocked_write_guidance(response)
-        # Replace response_text with expanded guidance
+        # Replace response_text with natural blocked write response
         response["response_text"] = expanded["guidance"]
 
     elif final_type == "fallback":
         expanded["guidance"] = _fallback_guidance(response, message)
-        # Replace response_text with structured fallback
+        # Replace response_text with natural fallback paragraph
         response["response_text"] = expanded["guidance"]
 
     elif final_type == "guided":
         expanded["guidance"] = _guided_guidance(response, path)
-        # Add guidance but preserve original response_text
+        # Append guidance inline to response_text
         if response.get("response_text"):
-            response["response_text"] = (
-                response["response_text"].rstrip()
-                + "\n\n"
-                + expanded["guidance"]
-            )
+            rt = response["response_text"].rstrip()
+            guidance = expanded["guidance"]
+            if guidance:
+                response["response_text"] = f"{rt} {guidance}"
+            else:
+                response["response_text"] = rt
 
     elif final_type == "deterministic":
         expanded["guidance"] = _deterministic_guidance(response, path)
-        # Add guidance to response_text
+        # Append guidance inline to response_text
         if response.get("response_text"):
-            response["response_text"] = (
-                response["response_text"].rstrip()
-                + "\n\n"
-                + expanded["guidance"]
-            )
+            rt = response["response_text"].rstrip()
+            guidance = expanded["guidance"]
+            if guidance:
+                response["response_text"] = f"{rt} {guidance}"
+            else:
+                response["response_text"] = rt
 
     else:
         # Unknown type — no expansion
@@ -158,6 +162,7 @@ def _expand_graph_context(
     - source_refs labels only
     - empty graph_context → count 0, no text append
     - malformed context → no-op (safe)
+    - Phase 1: graph_summary stays in expanded_response only, NOT in prose
     """
     try:
         selected = response.get("_selected_context")
@@ -216,17 +221,8 @@ def _expand_graph_context(
         "truncated": truncated,
         "display_truncated": display_truncated,
     }
-
-    # Append note to response_text once (if connections exist)
-    if safe_connections and response.get("response_text") is not None:
-        existing_note = _GRAPH_SUMMARY_NOTE
-        current_text = response.get("response_text", "") or ""
-        if existing_note not in current_text:
-            response["response_text"] = (
-                current_text.rstrip()
-                + "\n\n"
-                + existing_note
-            )
+    # NOTE: _GRAPH_SUMMARY_NOTE no longer appended to response_text.
+    # It stays in expanded_response.graph_summary for metadata consumers only.
 
 
 def _expand_knowledge_view(
@@ -237,13 +233,14 @@ def _expand_knowledge_view(
     Build expanded_response.knowledge_view from graph_summary + evidence_overlay.
 
     Display rules:
-    - If graph_summary has connections → show structured section
-    - If evidence_overlay present → show evidence section with label
+    - If graph_summary has connections → structured section in JSON
+    - If evidence_overlay present → evidence section in JSON with label
     - Never merge graph + evidence into one structure
     - Never remove evidence label
     - Never promote evidence to structured truth
     - No evidence → evidence section omitted entirely
     - No graph → structured section omitted entirely
+    - Phase 1: knowledge_view stays in expanded_response only, NOT in prose
     """
     graph_summary = expanded.get("graph_summary")
     evidence_overlay: List[Dict[str, Any]] = []
@@ -283,73 +280,61 @@ def _expand_knowledge_view(
         }
 
     expanded["knowledge_view"] = knowledge_view
-
-    # Append expand note to response_text
-    if response.get("response_text") is not None:
-        current_text = response.get("response_text", "") or ""
-        if _EXPAND_NOTE not in current_text:
-            response["response_text"] = (
-                current_text.rstrip()
-                + "\n\n"
-                + _EXPAND_NOTE
-            )
+    # NOTE: _EXPAND_NOTE no longer appended to response_text.
+    # Evidence and structured sections stay in expanded_response.knowledge_view only.
 
 
-# ─── Guidance builders ─────────────────────────────────────────────────────────
+# ─── Guidance builders (all single natural paragraph, no structural markers) ────
 
 def _blocked_write_guidance(response: Dict[str, Any]) -> str:
-    """Guidance for blocked write responses."""
+    """Guidance for blocked write responses — single natural paragraph."""
     mode = response.get("_weslr_mode", "current mode")
     return (
-        "This action is disabled in the current mode.\n"
-        f"Mode ({mode}) restricts writes for safety.\n"
-        "To proceed, use private_dev mode or submit a proposal for operator review.\n"
-        "\n"
-        "You can also explore this topic via:\n"
-        "- show system overview\n"
-        "- show diagnostics"
+        f"That operation requires write access, which is not available "
+        f"in {mode} mode. If you have access to a developer session, "
+        f"that would be the place to explore it. Otherwise I can log it "
+        f"as a request for the operator."
     )
 
 
 def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
-    """Structured fallback for unknown queries."""
+    """Fallback for unknown queries — single natural paragraph, no numbered lists."""
     base = response.get("response_text", "") or ""
     # If the handler already provided a specific fallback, use it
     if base and base != "I'm not able to process that request.":
         return base
 
-    suggestions = _format_command_suggestions(5)
     return (
-        "I can respond to open-ended chat — but then you would not see "
-        "what I can actually do, or what is real.\n"
-        "\n"
-        "Instead, I can show you how the system works. Try one of these:\n"
-        + suggestions
-        + "\n"
-        "\n"
-        "I can also explore this topic as evidence if you'd like — just ask:\n"
-        "'explore [topic]' or 'research [topic]'"
+        "I don't have anything built in for that specifically, "
+        "but I can show you how the system works. Try asking what WESLR is, "
+        "or what it can do. You might also find it useful to ask for a system "
+        "overview or to explore related topics. "
+        "I can also look into this as evidence if you'd like — just say the word."
     )
 
 
 def _guided_guidance(response: Dict[str, Any], path: str) -> str:
-    """Guidance for guided responses — 2 related suggestions."""
+    """Guidance for guided responses — inline, conversational."""
     suggestions = _related_suggestions_for_path(path)
     if suggestions:
-        return "You might also want to know:\n" + suggestions
+        return (
+            f"You might also find it useful to ask about {suggestions}."
+        )
     return ""
 
 
 def _deterministic_guidance(response: Dict[str, Any], path: str) -> str:
-    """Guidance for deterministic responses — 2 related structured queries."""
+    """Guidance for deterministic responses — inline, conversational."""
     suggestions = _related_suggestions_for_path(path)
     if suggestions:
-        return "Related things you can try:\n" + suggestions
+        return (
+            f"You might also try {suggestions} if you want to dig deeper."
+        )
     return ""
 
 
 def _related_suggestions_for_path(path: str) -> str:
-    """Return 2 related command suggestions based on handler path."""
+    """Return comma-separated related suggestions based on handler path."""
     suggestions_map = {
         "system_definition_query": ["why was WESLR created", "how is WESLR different from ChatGPT"],
         "operator_overview": ["show diagnostics", "show proposals"],
@@ -361,11 +346,22 @@ def _related_suggestions_for_path(path: str) -> str:
         "iss_intake_query": ["show diagnostics", "show iss probes"],
     }
     related = suggestions_map.get(path, [])
-    lines = [f"- {cmd}" for cmd in related[:2]]
-    return "\n".join(lines) if lines else ""
+    suggestions = related[:2]
+    if len(suggestions) == 2:
+        return f'"{suggestions[0]}" or "{suggestions[1]}"'
+    elif len(suggestions) == 1:
+        return f'"{suggestions[0]}"'
+    return ""
 
 
 def _format_command_suggestions(count: int = 5) -> str:
-    """Format a list of command suggestions for fallback."""
+    """Format a list of command suggestions — comma-separated natural prose."""
     cmds = _GUIDANCE_COMMANDS[:count]
-    return "\n".join(f"- {cmd}" for cmd in cmds)
+    if len(cmds) == 1:
+        return f'"{cmds[0]}"'
+    elif len(cmds) == 2:
+        return f'"{cmds[0]}" or "{cmds[1]}"'
+    else:
+        last = cmds[-1]
+        rest = cmds[:-1]
+        return ", ".join(f'"{c}"' for c in rest) + f", or \"{last}\""
