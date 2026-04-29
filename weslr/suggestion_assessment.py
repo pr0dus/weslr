@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 
 # Self-Architecture Core v8: Architecture memory integration
-from architecture_memory import (
+from weslr.architecture_memory import (
     ArchitectureMemory,
     ConsistencyEngine,
     DecisionStatus,
