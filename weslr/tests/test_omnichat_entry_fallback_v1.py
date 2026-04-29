@@ -194,8 +194,9 @@ def test_unknown_input_not_robotic():
     assert "LIMITATION" not in rt.upper()
     assert "not built in" not in rt.lower()
     assert "LIMITATION" not in rt
-    # Friendly
-    assert "not sure" in rt.lower() or "help you start" in rt.lower()
+    # Friendly — Phase 4 evidence offer wording
+    assert any(kw in rt.lower() for kw in ["don't have a confirmed", "look into", "keeping it"]), \
+        f"Unknown input doesn't feel natural: {rt!r}"
     print("PASS: test_unknown_input_not_robotic")
 
 
@@ -209,7 +210,10 @@ def test_unknown_input_still_natural():
     assert "\n- " not in rt
     # No JSON/internal markers
     assert "expanded_response" not in rt
-    assert "structured" not in rt.lower()
+    assert "structured truth" not in rt.lower()
+    # Phase 4: evidence offer is natural, conversational
+    assert any(kw in rt.lower() for kw in ["look into", "what i find", "separate", "confirmed"]), \
+        f"Unknown input doesn't include evidence offer: {rt!r}"
     print("PASS: test_unknown_input_still_natural")
 
 

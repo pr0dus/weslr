@@ -370,7 +370,7 @@ def _blocked_write_guidance(response: Dict[str, Any]) -> str:
 
 
 def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
-    """Fallback for unknown queries — entry greeting, natural paragraph, no commands."""
+    """Fallback for unknown queries — entry greeting or evidence offer, natural paragraph, no commands."""
     # If the handler already provided a specific fallback, use it
     base = response.get("response_text", "") or ""
     if base and base != "I'm not able to process that request.":
@@ -380,11 +380,11 @@ def _fallback_guidance(response: Dict[str, Any], message: str) -> str:
     if _is_entry_phrase(message):
         return _entry_greeting()
 
-    # Unknown input — friendly, no commands
+    # Unknown input — offer to explore as evidence, naturally
     return (
-        "I'm not sure what you had in mind, but I'm ready to help. "
-        "You can ask me what WESLR is, what it can do, or anything on your mind — "
-        "I'll do my best to answer or look it up as evidence."
+        "I don't have a confirmed answer for that yet, "
+        "but I can look into it and show you what I find — "
+        "keeping it separate from structured system knowledge."
     )
 
 
