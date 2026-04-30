@@ -43,10 +43,13 @@ _EXPAND_NOTE = (
 
 # Phrases that indicate a user is starting fresh — not asking a real question.
 _ENTRY_PHRASES = frozenset({
-    "hi", "hey", "hello", "hallo", "servus",
+    # Greetings (primary entry)
+    "hi", "hey", "hello", "hallo", "servus", "yo", "sup",
+    # Start/help prompts
     "start", "help", "what can i do", "what can i do?",
     "what now", "what now?", "what to do", "what to do?",
-    "what is weslr",  # explicit: weslr? → what is WESLR (normalized)
+    # WESLR explicit
+    "what is weslr",  # weslr? → what is WESLR (normalized)
     "weslr",          # welsr typo → WESLR → weslr (lower) → entry
 })
 
@@ -56,6 +59,7 @@ _TYPO_MAP: Dict[str, str] = {
     "hry":   "hey",    # hry → hey
     "helo":  "hello",  # helo → hello
     "welsr": "WESLR",  # welsr → WESLR (single transposition)
+    "yo":    "yo",     # keep as-is (already in _ENTRY_PHRASES)
 }
 
 # Phrases that are clearly asking about WESLR despite surface typos.
