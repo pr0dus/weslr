@@ -32,6 +32,7 @@ _FORBIDDEN_FIELDS: frozenset[str] = frozenset({
     "message",
     "raw_message",
     "prompt",
+    "raw_prompt",
     "user_input",
     "email",
     "phone",
@@ -252,23 +253,6 @@ def build_public_signal_record(event: dict) -> dict:
     """
     classification = classify_public_signal(event)
 
-    if not classification["safe_to_record"]:
-        return {
-            "record_type": "public_signal_v1",
-            "session_id_hash": None,
-            "signal_type": None,
-            "response_path": None,
-            "topic_normalized": None,
-            "timestamp": None,
-            "source": "website_public",
-            "raw_prompt_stored": False,
-            "pii_stored": False,
-            "behavior_change_allowed": False,
-            "value_inference_allowed": False,
-            "safe_to_record": False,
-            "reason": classification["reason"],
-        }
-
     return {
         "record_type": "public_signal_v1",
         "session_id_hash": str(event.get("session_id_hash", "")),
@@ -281,7 +265,7 @@ def build_public_signal_record(event: dict) -> dict:
         "pii_stored": False,
         "behavior_change_allowed": False,
         "value_inference_allowed": False,
-        "safe_to_record": True,
+        "safe_to_record": classification["safe_to_record"],
         "reason": classification["reason"],
     }
 
