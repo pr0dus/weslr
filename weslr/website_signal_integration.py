@@ -47,12 +47,16 @@ def capture_website_signal(
     evidence_offer_accepted: bool,
     topic_normalized: Optional[str],
     fallback_triggered: bool,
+    interpreted: Optional[dict] = None,
 ) -> None:
     """
     Build safe event from /chat response metadata and append via pipeline.
     
     Called after response is built — zero impact on the response itself.
-    Failures are silent and不影响 the caller.
+    Failures are silent and do not affect the caller.
+
+    Optionally accepts the interpreted result from interpret_human_turn()
+    to build a contract_observation record after the public signal is stored.
     """
     try:
         from weslr.user_signal_intake import (
@@ -84,3 +88,17 @@ def capture_website_signal(
         append_public_signal_record(record)
     except Exception:
         return
+
+    # ── Contract observation (fire-and-forget, separate file) ─────────────────
+    # Built after public signal storage; never affects /chat response or public signals.
+    # Errors here are silently ignored — observation must never impact the user.
+    try:
+        if interpreted is not None:
+            from weslr.contract_observation import (
+                build_contract_observation,
+                append_contract_observation,
+            )
+            obs_record = build_contract_observation(event, interpreted, record)
+            append_contract_observation(obs_record)
+    except Exception:
+        pass  # fire-and-forget
