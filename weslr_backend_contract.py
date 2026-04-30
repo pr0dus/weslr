@@ -677,12 +677,10 @@ def chat(message: str) -> Dict[str, Any]:
             "likely_need": interpreted.get("likely_need", "direct_answer"),
         }
         
-        # Get active thread
-        active_thread = []
-        recent_messages = list(relationships.get("recent_human_messages") or [])
-        if recent_messages:
-            r = recent_messages[-1]
-            active_thread = [str(r.get("topics", [])[-1] if r.get("topics") else "")]
+        # Get active thread — pass None (not empty list) to avoid
+        # build_communicator_message_payload unpacking ValueError
+        # when active_thread is empty list and code expects (topic, thread) tuple.
+        active_thread = None
         
         # Build the communicator message payload
         result = build_communicator_message_payload(
