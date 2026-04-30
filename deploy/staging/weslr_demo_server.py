@@ -111,13 +111,44 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
 
     # ── Health ────────────────────────────────────────────────────────────────
 
+    # ── Static / Health ─────────────────────────────────────────────────────
+
+    STATIC_DIR = WORKSPACE / "deploy" / "staging" / "static"
+
     def do_GET(self):
-        if self.path == "/health" or self.path == "/":
+        if self.path == "/" or self.path == "/index.html":
+            index_path = self.STATIC_DIR / "index.html"
+            if index_path.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(index_path.read_bytes())
+                return
+            self.send_error(404, "index.html not found")
+            return
+
+        # Serve static files from /static/ prefix
+        if self.path.startswith("/static/"):
+            rel_path = self.path[len("/static/"):]
+            file_path = self.STATIC_DIR / rel_path
+            if file_path.is_file():
+                import mimetypes
+                mime, _ = mimetypes.guess_type(str(file_path))
+                self.send_response(200)
+                self.send_header("Content-Type", mime or "application/octet-stream")
+                self.end_headers()
+                self.wfile.write(file_path.read_bytes())
+                return
+            self.send_error(404, "not found")
+            return
+
+        if self.path == "/health":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok", "service": "weslr-demo-staging"}).encode())
             return
+
         self.send_error(404, "Not found")
 
     # ── Chat ─────────────────────────────────────────────────────────────────
