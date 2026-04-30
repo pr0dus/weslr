@@ -17,6 +17,19 @@ def uncertainty_response() -> str:
     return "Ich verstehe vielleicht nicht genau, was du meinst — kannst du genauer sagen, worauf du hinaus willst?"
 
 
+def uncertainty_strong_response() -> str:
+    """Return a stronger uncertainty signal when context is genuinely unclear.
+
+    Used by build_communicator_message_payload when reply_shape is
+    signal_uncertainty_strong and by the fallback path when both
+    _ctx_sel_v1 == "uncertain" and _bh_fb == ["unknown"].
+
+    Differs from uncertainty_response in tone — more direct, less tentative,
+    signals that the system genuinely did not understand the input.
+    """
+    return "Ich bin nicht sicher, ob ich das richtig verstanden habe — könntest du umformulieren, worauf du hinauswillst?"
+
+
 def translate_theme(theme: str) -> str:
     """Übersetze ein internes Thema ins Deutsche."""
     if not theme:
