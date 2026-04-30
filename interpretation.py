@@ -894,29 +894,24 @@ def infer_human_topics(message: str) -> list[str]:
     return topics[:4]
 
 
-def _classify_interaction_frame(message: str) -> str:
-    """Classify the interaction frame of a message.
+def _eliminate_impossible_frames(message: str) -> set:
+    """Return set of valid interaction frames for a message.
     
-    Returns one of:
-      - entry          greeting / starting fresh
-      - task_help      user wants to do//learn/build something
-      - explanation    user asks for concept explanation
-      - exploration    user wants to explore a topic
-      - system         system query (overview, diagnostics, plans)
-      - unknown        none of the above
-    
-    Uses keyword-only detection — no LLM, no fuzzy matching.
+    Uses structural keyword filtering — no LLM, no fuzzy matching.
+    Priority tie-break happens in _select_best_frame.
     """
     lowered = str(message or "").strip().lower()
     if not lowered:
-        return "unknown"
+        return {"unknown"}
 
-    # entry: already covered by classify_human_turn greeting
+    valid = set()
+
+    # entry: greeting words
     if lowered in SMALL_TALK_ONLY_MESSAGES:
-        return "entry"
+        valid.add("entry")
 
-    # system: deterministic system queries (checked first to avoid false positives)
-    _system_triggers = [
+    # system: deterministic system queries
+    _system_kw = [
         "show system overview", "show weslr status", "show diagnostics",
         "show iss", "show gaps", "show plan", "show proposal",
         "what is weslr", "why was weslr", "how does weslr",
@@ -924,12 +919,13 @@ def _classify_interaction_frame(message: str) -> str:
         "list plans", "show implementation plans",
         "what can i try", "what can i ask",
     ]
-    for t in _system_triggers:
+    for t in _system_kw:
         if lowered.startswith(t) or lowered == t:
-            return "system"
+            valid.add("system")
+            break
 
-    # task_help: user wants to do/learn/build/understand something
-    _task_help_triggers = [
+    # task_help: action intent (do/learn/build)
+    _task_help_kw = [
         "i want to", "i want a", "help me", "can you help",
         "teach me", "teaching me", "learn to", "learning to",
         "how do i", "how can i", "i'd like to", "i would like to",
@@ -938,39 +934,78 @@ def _classify_interaction_frame(message: str) -> str:
         "build a", "building a", "create a", "creating a",
         "help with", "help understanding",
     ]
-    for t in _task_help_triggers:
+    for t in _task_help_kw:
         if lowered.startswith(t) or lowered == t:
-            return "task_help"
+            valid.add("task_help")
+            valid.add("exploration")
+            break
 
-    # explanation: asking for concept definition
-    _explanation_triggers = [
-        "what is ", "what are ", "what does ",
-        "define ", "definition of",
+    # explanation: concept definition requests
+    _explanation_kw = [
+        "what are ", "what does ",
+        "what are ", "what does ",
+        "what's a", "whats a",
+        "what is a ", "what is an ", "what is the ", "what is this ",
+        "what is ", "define ",
         "why does ", "why is ", "why do ",
         "how does ", "how is ", "how are ",
         "who is ", "who was ",
         "explain ", "explain the",
         "tell me about", "tell me what",
-        "what's a", "whats a",
         "can you explain", "could you explain",
         "understand how", "understand what",
+        "define ", "definition of",
+
     ]
-    for t in _explanation_triggers:
+    for t in _explanation_kw:
         if t in lowered:
-            return "explanation"
+            valid.add("explanation")
+            break
 
     # exploration: open-ended topic queries
-    _exploration_triggers = [
+    _exploration_kw = [
         "tell me more", "more about", "explore ",
         "dig into", "investigate", "look into",
         "what about", "how about", "and ",
         "also ", "what else", "anything else",
     ]
-    for t in _exploration_triggers:
+    for t in _exploration_kw:
         if t in lowered:
-            return "exploration"
+            valid.add("exploration")
+            break
 
+
+    return valid if valid else {"unknown"}
+
+
+def _select_best_frame(valid_frames: set) -> str:
+    """Select best frame from valid frames using priority order.
+    
+    Priority: task_help > explanation > exploration > entry > system > unknown
+    """
+    priority = ["task_help", "system", "explanation", "exploration", "entry", "unknown"]
+    for frame in priority:
+        if frame in valid_frames:
+            return frame
     return "unknown"
+
+
+def _classify_interaction_frame(message: str) -> str:
+    """Classify the interaction frame of a message.
+    
+    Returns one of:
+      - entry          greeting / starting fresh
+      - task_help      user wants to do/learn/build something
+      - explanation    user asks for concept explanation
+      - exploration    user wants to explore a topic
+      - system         system query (overview, diagnostics, plans)
+      - unknown        none of the above
+    
+    Uses two-step structural filtering: eliminate impossible frames,
+    then select the best remaining frame by priority.
+    """
+    valid_frames = _eliminate_impossible_frames(message)
+    return _select_best_frame(valid_frames)
 
 
 def classify_human_turn(message: str) -> str:
@@ -1096,6 +1131,9 @@ def interpret_human_turn(message: str) -> dict:
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
         policy = decide_response_policy(dispatched, lowered, _WESLR_MODE)
+        dispatched["interaction_frame"] = _classify_interaction_frame(text)
+        dispatched["frame_turn_type"] = _turn_type_from_frame(dispatched["interaction_frame"])
+        dispatched["frame_reply_shape"] = _reply_shape_from_frame(dispatched["interaction_frame"])
         return expand_response(dispatched, policy, lowered)
 
     # ISS probe execution (governed, simulated) — inline, not in deterministic_handlers
