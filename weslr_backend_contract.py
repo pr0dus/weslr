@@ -662,7 +662,20 @@ def chat(message: str) -> Dict[str, Any]:
         
         # Interpret the user's message
         interpreted = interpret_human_turn(message)
-        
+
+        # Short-circuit: entry greeting responses go direct, bypassing
+        # build_communicator_message_payload which would overwrite them with
+        # signal_uncertainty_strong_response.
+        _entry_marker = "Hi — I'm WESLR"
+        _resp_text = interpreted.get("response_text", "") or ""
+        if _resp_text.startswith(_entry_marker):
+            return {
+                "success": True,
+                "reply": _resp_text,
+                "intent": interpreted,
+                "source": "deterministic_entry",
+            }
+
         # Load communicator state
         self_state = load_communicator_self()
         narrative = self_state.get("narrative_state") or {}
