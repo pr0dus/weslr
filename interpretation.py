@@ -1059,6 +1059,22 @@ def _reply_shape_from_frame(frame: str) -> str:
     }.get(frame, "answer_directly")
 
 
+def _response_contract_from_frame(frame: str) -> str:
+    """Map interaction frame to WESLR response contract.
+
+    Maps the interaction frame to the corresponding response contract
+    that determines how the reply is shaped and what guidance is offered.
+    """
+    return {
+        "entry": "conversational_entry",
+        "task_help": "guided_help",
+        "explanation": "structured_explanation",
+        "exploration": "exploratory_guidance",
+        "system": "system_answer",
+        "unknown": "uncertainty_boundary",
+    }.get(frame, "uncertainty_boundary")
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1105,6 +1121,9 @@ def interpret_human_turn(message: str) -> dict:
             resp["interaction_frame"] = _classify_interaction_frame(text)
             resp["frame_turn_type"] = _turn_type_from_frame(resp["interaction_frame"])
             resp["frame_reply_shape"] = _reply_shape_from_frame(resp["interaction_frame"])
+            resp["response_contract"] = _response_contract_from_frame(resp["interaction_frame"])
+            resp["turn_type"] = resp["frame_turn_type"]
+            resp["reply_shape"] = resp["frame_reply_shape"]
             return expand_response(resp, policy, lowered)
 
         # Not a write — try deterministic (read-only) handlers
@@ -1114,6 +1133,9 @@ def interpret_human_turn(message: str) -> dict:
             dispatched["interaction_frame"] = _classify_interaction_frame(text)
             dispatched["frame_turn_type"] = _turn_type_from_frame(dispatched["interaction_frame"])
             dispatched["frame_reply_shape"] = _reply_shape_from_frame(dispatched["interaction_frame"])
+            dispatched["response_contract"] = _response_contract_from_frame(dispatched["interaction_frame"])
+            dispatched["turn_type"] = dispatched["frame_turn_type"]
+            dispatched["reply_shape"] = dispatched["frame_reply_shape"]
             return expand_response(dispatched, policy, lowered)
 
         # No handler matched at all — safe fallback
@@ -1124,6 +1146,12 @@ def interpret_human_turn(message: str) -> dict:
             confidence="low",
         )
         policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+        resp["interaction_frame"] = _classify_interaction_frame(text)
+        resp["frame_turn_type"] = _turn_type_from_frame(resp["interaction_frame"])
+        resp["frame_reply_shape"] = _reply_shape_from_frame(resp["interaction_frame"])
+        resp["response_contract"] = _response_contract_from_frame(resp["interaction_frame"])
+        resp["turn_type"] = resp["frame_turn_type"]
+        resp["reply_shape"] = resp["frame_reply_shape"]
         return expand_response(resp, policy, lowered)
 
     # SECTION 3/3 — Normal flow (private_dev / local_demo)
@@ -1134,6 +1162,9 @@ def interpret_human_turn(message: str) -> dict:
         dispatched["interaction_frame"] = _classify_interaction_frame(text)
         dispatched["frame_turn_type"] = _turn_type_from_frame(dispatched["interaction_frame"])
         dispatched["frame_reply_shape"] = _reply_shape_from_frame(dispatched["interaction_frame"])
+        dispatched["response_contract"] = _response_contract_from_frame(dispatched["interaction_frame"])
+        dispatched["turn_type"] = dispatched["frame_turn_type"]
+        dispatched["reply_shape"] = dispatched["frame_reply_shape"]
         return expand_response(dispatched, policy, lowered)
 
     # ISS probe execution (governed, simulated) — inline, not in deterministic_handlers
@@ -1208,6 +1239,9 @@ def interpret_human_turn(message: str) -> dict:
     resp["interaction_frame"] = _classify_interaction_frame(text)
     resp["frame_turn_type"] = _turn_type_from_frame(resp["interaction_frame"])
     resp["frame_reply_shape"] = _reply_shape_from_frame(resp["interaction_frame"])
+    resp["response_contract"] = _response_contract_from_frame(resp["interaction_frame"])
+    resp["turn_type"] = resp["frame_turn_type"]
+    resp["reply_shape"] = resp["frame_reply_shape"]
     return expand_response(resp, policy, lowered)
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:

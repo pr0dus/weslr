@@ -399,6 +399,10 @@ _CAPABILITY_MAP: Dict[str, List[str]] = {
         "explain why WESLR was built and what problem it solves",
         "compare how WESLR differs from a standard chatbot",
     ],
+    "task_help_query": [
+        "break down what you want to achieve into steps",
+        "clarify the goal and find a path forward",
+    ],
     "operator_overview": [
         "walk through the current diagnostics",
         "review the active proposals and their status",

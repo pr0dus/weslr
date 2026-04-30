@@ -687,6 +687,41 @@ def chat(message: str) -> Dict[str, Any]:
                 "source": "deterministic_task_help",
             }
 
+        # Short-circuit: structured_explanation responses (explanation frame)
+        if interpreted.get("response_contract") == "structured_explanation":
+            _expl_text = (
+                "I can explain that clearly. Tell me how deep you want to go, "
+                "and I'll start from there."
+            )
+            return {
+                "success": True,
+                "reply": _expl_text,
+                "intent": interpreted,
+                "source": "deterministic_explanation",
+            }
+
+        # Short-circuit: exploratory_guidance responses (exploration frame)
+        if interpreted.get("response_contract") == "exploratory_guidance":
+            _explore_text = (
+                "We can explore that together. I can start with what is known, "
+                "then map out related ideas."
+            )
+            return {
+                "success": True,
+                "reply": _explore_text,
+                "intent": interpreted,
+                "source": "deterministic_exploration",
+            }
+
+        # Short-circuit: conversational_entry responses (entry frame)
+        if interpreted.get("response_contract") == "conversational_entry":
+            return {
+                "success": True,
+                "reply": _resp_text,
+                "intent": interpreted,
+                "source": "deterministic_entry",
+            }
+
         # Load communicator state
         self_state = load_communicator_self()
         narrative = self_state.get("narrative_state") or {}
