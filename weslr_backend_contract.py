@@ -676,6 +676,17 @@ def chat(message: str) -> Dict[str, Any]:
                 "source": "deterministic_entry",
             }
 
+        # Short-circuit: task_help responses also bypass build_communicator_message_payload
+        # to avoid signal_uncertainty_strong override (task_help path has turn_type=statement
+        # which triggers the uncertainty bridge in dialogue.py).
+        if interpreted.get("path") == "task_help_query":
+            return {
+                "success": True,
+                "reply": _resp_text,
+                "intent": interpreted,
+                "source": "deterministic_task_help",
+            }
+
         # Load communicator state
         self_state = load_communicator_self()
         narrative = self_state.get("narrative_state") or {}

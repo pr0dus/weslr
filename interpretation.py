@@ -894,6 +894,85 @@ def infer_human_topics(message: str) -> list[str]:
     return topics[:4]
 
 
+def _classify_interaction_frame(message: str) -> str:
+    """Classify the interaction frame of a message.
+    
+    Returns one of:
+      - entry          greeting / starting fresh
+      - task_help      user wants to do//learn/build something
+      - explanation    user asks for concept explanation
+      - exploration    user wants to explore a topic
+      - system         system query (overview, diagnostics, plans)
+      - unknown        none of the above
+    
+    Uses keyword-only detection — no LLM, no fuzzy matching.
+    """
+    lowered = str(message or "").strip().lower()
+    if not lowered:
+        return "unknown"
+
+    # entry: already covered by classify_human_turn greeting
+    if lowered in SMALL_TALK_ONLY_MESSAGES:
+        return "entry"
+
+    # system: deterministic system queries (checked first to avoid false positives)
+    _system_triggers = [
+        "show system overview", "show weslr status", "show diagnostics",
+        "show iss", "show gaps", "show plan", "show proposal",
+        "what is weslr", "why was weslr", "how does weslr",
+        "explain plan", "explain proposal",
+        "list plans", "show implementation plans",
+        "what can i try", "what can i ask",
+    ]
+    for t in _system_triggers:
+        if lowered.startswith(t) or lowered == t:
+            return "system"
+
+    # task_help: user wants to do/learn/build/understand something
+    _task_help_triggers = [
+        "i want to", "i want a", "help me", "can you help",
+        "teach me", "teaching me", "learn to", "learning to",
+        "how do i", "how can i", "i'd like to", "i would like to",
+        "i need to", "i'm trying to", "im trying to",
+        "show me how", "explain how to", "guide me through",
+        "build a", "building a", "create a", "creating a",
+        "help with", "help understanding",
+    ]
+    for t in _task_help_triggers:
+        if lowered.startswith(t) or lowered == t:
+            return "task_help"
+
+    # explanation: asking for concept definition
+    _explanation_triggers = [
+        "what is ", "what are ", "what does ",
+        "define ", "definition of",
+        "why does ", "why is ", "why do ",
+        "how does ", "how is ", "how are ",
+        "who is ", "who was ",
+        "explain ", "explain the",
+        "tell me about", "tell me what",
+        "what's a", "whats a",
+        "can you explain", "could you explain",
+        "understand how", "understand what",
+    ]
+    for t in _explanation_triggers:
+        if t in lowered:
+            return "explanation"
+
+    # exploration: open-ended topic queries
+    _exploration_triggers = [
+        "tell me more", "more about", "explore ",
+        "dig into", "investigate", "look into",
+        "what about", "how about", "and ",
+        "also ", "what else", "anything else",
+    ]
+    for t in _exploration_triggers:
+        if t in lowered:
+            return "exploration"
+
+    return "unknown"
+
+
 def classify_human_turn(message: str) -> str:
     lowered = str(message or "").strip().lower()
     if not lowered:
@@ -919,6 +998,30 @@ def classify_human_turn(message: str) -> str:
     if "?" in lowered or lowered.startswith(("do ", "are ", "can ", "will ", "would ", "is ", "should ", "could ", "what ", "why ", "how ", "who ")):
         return "question"
     return "statement"
+
+
+def _turn_type_from_frame(frame: str) -> str:
+    """Map interaction frame to conversational turn type."""
+    return {
+        "entry": "greeting",
+        "task_help": "question",
+        "explanation": "question",
+        "exploration": "question",
+        "system": "question",
+        "unknown": "statement",
+    }.get(frame, "statement")
+
+
+def _reply_shape_from_frame(frame: str) -> str:
+    """Map interaction frame to reply shape."""
+    return {
+        "entry": "conversational_entry",
+        "task_help": "guided_help",
+        "explanation": "structured_answer",
+        "exploration": "open_exploration",
+        "system": "deterministic_answer",
+        "unknown": "answer_directly",
+    }.get(frame, "answer_directly")
 
 
 def interpret_human_turn(message: str) -> dict:
@@ -964,12 +1067,18 @@ def interpret_human_turn(message: str) -> dict:
                 confidence="high",
             )
             policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+            resp["interaction_frame"] = _classify_interaction_frame(text)
+            resp["frame_turn_type"] = _turn_type_from_frame(resp["interaction_frame"])
+            resp["frame_reply_shape"] = _reply_shape_from_frame(resp["interaction_frame"])
             return expand_response(resp, policy, lowered)
 
         # Not a write — try deterministic (read-only) handlers
         dispatched = dispatch_deterministic_handler(message, lowered)
         if dispatched is not None:
             policy = decide_response_policy(dispatched, lowered, _WESLR_MODE)
+            dispatched["interaction_frame"] = _classify_interaction_frame(text)
+            dispatched["frame_turn_type"] = _turn_type_from_frame(dispatched["interaction_frame"])
+            dispatched["frame_reply_shape"] = _reply_shape_from_frame(dispatched["interaction_frame"])
             return expand_response(dispatched, policy, lowered)
 
         # No handler matched at all — safe fallback
@@ -1058,6 +1167,9 @@ def interpret_human_turn(message: str) -> dict:
         confidence="low",
     )
     policy = decide_response_policy(resp, lowered, _WESLR_MODE)
+    resp["interaction_frame"] = _classify_interaction_frame(text)
+    resp["frame_turn_type"] = _turn_type_from_frame(resp["interaction_frame"])
+    resp["frame_reply_shape"] = _reply_shape_from_frame(resp["interaction_frame"])
     return expand_response(resp, policy, lowered)
     # C1/C2/C3 handlers must be ordered: more specific queries before shorter substrings
     if "what can you do" in lowered or "your capabilities" in lowered or "what are your capabilities" in lowered:
@@ -1469,6 +1581,10 @@ def interpret_human_turn(message: str) -> dict:
         show_suggestion = False
         suggestion_priority = "low"
 
+    # ── Interaction frame classification ──────────────────────────────
+    interaction_frame = _classify_interaction_frame(text)
+    frame_turn_type = _turn_type_from_frame(interaction_frame)
+    frame_reply_shape = _reply_shape_from_frame(interaction_frame)
 
     # ---- proposal_id normalizer (private helper) ----
     _STOP_SUFFIXES = [" important", " important?", " high priority", " prioritized", " priority", "?"]
