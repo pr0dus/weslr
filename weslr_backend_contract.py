@@ -687,39 +687,17 @@ def chat(message: str) -> Dict[str, Any]:
                 "source": "deterministic_task_help",
             }
 
-        # Short-circuit: structured_explanation responses (explanation frame)
-        if interpreted.get("response_contract") == "structured_explanation":
-            _expl_text = (
-                "I can explain that clearly. Tell me how deep you want to go, "
-                "and I'll start from there."
-            )
+        # All remaining response contracts are handled by format_reply() —
+        # the single execution surface in response_expander. This ensures
+        # backend never generates contract replies independently.
+        from weslr.omnichat.response_expander import format_reply
+        _contract_reply = format_reply(interpreted)
+        if _contract_reply:
             return {
                 "success": True,
-                "reply": _expl_text,
+                "reply": _contract_reply,
                 "intent": interpreted,
-                "source": "deterministic_explanation",
-            }
-
-        # Short-circuit: exploratory_guidance responses (exploration frame)
-        if interpreted.get("response_contract") == "exploratory_guidance":
-            _explore_text = (
-                "We can explore that together. I can start with what is known, "
-                "then map out related ideas."
-            )
-            return {
-                "success": True,
-                "reply": _explore_text,
-                "intent": interpreted,
-                "source": "deterministic_exploration",
-            }
-
-        # Short-circuit: conversational_entry responses (entry frame)
-        if interpreted.get("response_contract") == "conversational_entry":
-            return {
-                "success": True,
-                "reply": _resp_text,
-                "intent": interpreted,
-                "source": "deterministic_entry",
+                "source": "contract_reply",
             }
 
         # Load communicator state

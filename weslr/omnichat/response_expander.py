@@ -39,6 +39,30 @@ _EXPAND_NOTE = (
     "Evidence is not part of confirmed system knowledge."
 )
 
+# ─── Response contract → natural reply mapping ───────────────────────────────
+
+_CONTRACT_REPLIES = {
+    "conversational_entry": (
+        "Hi — I'm WESLR. I can show you how the system works, explain what I am, "
+        "explore any topic as evidence, or walk you through the current system state. "
+        "Just tell me what you want to know."
+    ),
+    "guided_help": (
+        "I can help with that. Tell me what you'd like to achieve, "
+        "and we'll break it down step by step."
+    ),
+    "structured_explanation": (
+        "I can explain that clearly. Tell me how deep you want to go, "
+        "and I'll start from there."
+    ),
+    "exploratory_guidance": (
+        "We can explore that together. I can start with what is known, "
+        "then map out related ideas."
+    ),
+    "uncertainty_boundary": None,  # Use existing fallback guidance
+    "system_answer": None,          # Pass through to existing handlers
+}
+
 # ─── Entry phrase detection ─────────────────────────────────────────────────────
 
 # Phrases that indicate a user is starting fresh — not asking a real question.
@@ -129,9 +153,13 @@ def expand_response(
         response["response_text"] = expanded["guidance"]
 
     elif final_type == "fallback":
-        # Handle entry phrases BEFORE setting guidance
-        # so entry responses don't populate expanded_response.guidance
-        if _is_entry_phrase(message):
+        # Contract-level replies take precedence over handler response_text.
+        # Unify execution here so backend never generates contract replies.
+        contract = response.get("response_contract", "")
+        if contract in _CONTRACT_REPLIES and _CONTRACT_REPLIES[contract] is not None:
+            response["response_text"] = _CONTRACT_REPLIES[contract]
+            expanded["guidance"] = ""
+        elif _is_entry_phrase(message):
             response["response_text"] = _entry_greeting()
             expanded["guidance"] = ""
         else:
@@ -151,13 +179,19 @@ def expand_response(
                 response["response_text"] = rt
 
     elif final_type == "deterministic":
-        expanded["guidance"] = _deterministic_guidance(response, path)
-        # Append guidance inline to response_text
-        if response.get("response_text"):
-            rt = response["response_text"].rstrip()
-            guidance = expanded["guidance"]
-            if guidance:
-                response["response_text"] = f"{rt} {guidance}"
+        # Contract-level replies take precedence over handler response_text.
+        # Unify execution here so backend never generates contract replies.
+        contract = response.get("response_contract", "")
+        if contract in _CONTRACT_REPLIES and _CONTRACT_REPLIES[contract] is not None:
+            response["response_text"] = _CONTRACT_REPLIES[contract]
+            expanded["guidance"] = ""
+        else:
+            expanded["guidance"] = _deterministic_guidance(response, path)
+            if response.get("response_text"):
+                rt = response["response_text"].rstrip()
+                guidance = expanded["guidance"]
+                if guidance:
+                    response["response_text"] = f"{rt} {guidance}"
             else:
                 response["response_text"] = rt
 
@@ -462,3 +496,57 @@ def _deterministic_guidance(response: Dict[str, Any], path: str) -> str:
 
 # _related_suggestions_for_path and _format_command_suggestions removed.
 # Phase 3: guidance is purely capability-based, no command strings anywhere."
+
+
+# ─── Public reply formatting API ─────────────────────────────────────────────
+
+def format_reply(interpreted: Dict[str, Any]) -> str:
+    """Format a natural reply from an interpreted result.
+
+    Single execution surface for all response contract logic.
+    Applies the correct natural-language reply based on response_contract.
+    Entry phrases are handled via existing _is_entry_phrase logic.
+
+    Args:
+        interpreted: Output from interpret_human_turn() with all frame fields.
+
+    Returns:
+        Natural-language reply string ready for delivery.
+    """
+    contract = interpreted.get("response_contract", "unknown")
+
+    # conversational_entry — use existing greeting logic
+    if contract == "conversational_entry":
+        # Fall back to existing greeting for entry frame
+        greeting = _CONTRACT_REPLIES["conversational_entry"]
+        # If interpret_human_turn already set response_text from entry_greeting
+        # handler, prefer that (it has the "Hi — I'm WESLR" marker).
+        existing = interpreted.get("response_text", "") or ""
+        if existing.strip():
+            return existing
+        return greeting
+
+    # guided_help — step-by-step collaboration
+    if contract == "guided_help":
+        return _CONTRACT_REPLIES["guided_help"]
+
+    # structured_explanation — depth-controlled explanation
+    if contract == "structured_explanation":
+        return _CONTRACT_REPLIES["structured_explanation"]
+
+    # exploratory_guidance — collaborative exploration
+    if contract == "exploratory_guidance":
+        return _CONTRACT_REPLIES["exploratory_guidance"]
+
+    # uncertainty_boundary — pass through to existing fallback guidance
+    # (interpret_human_turn already set response_text via expand_response)
+    if contract == "uncertainty_boundary":
+        return interpreted.get("response_text", "I'm not sure I understood that correctly.")
+
+    # system_answer — pass through to handler's response_text
+    if contract == "system_answer":
+        return interpreted.get("response_text", "")
+
+    # Fallback for unknown contract — use existing response_text
+    return interpreted.get("response_text", "")
+
