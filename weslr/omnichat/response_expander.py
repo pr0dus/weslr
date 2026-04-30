@@ -153,13 +153,9 @@ def expand_response(
         response["response_text"] = expanded["guidance"]
 
     elif final_type == "fallback":
-        # Contract-level replies take precedence over handler response_text.
-        # Unify execution here so backend never generates contract replies.
-        contract = response.get("response_contract", "")
-        if contract in _CONTRACT_REPLIES and _CONTRACT_REPLIES[contract] is not None:
-            response["response_text"] = _CONTRACT_REPLIES[contract]
-            expanded["guidance"] = ""
-        elif _is_entry_phrase(message):
+        # Entry phrases handled via interpret_human_turn → response_contract.
+        # Contract reply execution delegated to format_reply() — single source.
+        if _is_entry_phrase(message):
             response["response_text"] = _entry_greeting()
             expanded["guidance"] = ""
         else:
@@ -179,22 +175,14 @@ def expand_response(
                 response["response_text"] = rt
 
     elif final_type == "deterministic":
-        # Contract-level replies take precedence over handler response_text.
-        # Unify execution here so backend never generates contract replies.
-        contract = response.get("response_contract", "")
-        if contract in _CONTRACT_REPLIES and _CONTRACT_REPLIES[contract] is not None:
-            response["response_text"] = _CONTRACT_REPLIES[contract]
-            expanded["guidance"] = ""
-        else:
-            expanded["guidance"] = _deterministic_guidance(response, path)
-            if response.get("response_text"):
-                rt = response["response_text"].rstrip()
-                guidance = expanded["guidance"]
-                if guidance:
-                    response["response_text"] = f"{rt} {guidance}"
-            else:
-                response["response_text"] = rt
-
+        # Contract reply execution delegated to format_reply() — single source.
+        # expand_response() applies non-contract guidance only.
+        expanded["guidance"] = _deterministic_guidance(response, path)
+        if response.get("response_text"):
+            rt = response["response_text"].rstrip()
+            guidance = expanded["guidance"]
+            if guidance:
+                response["response_text"] = f"{rt} {guidance}"
     else:
         # Unknown type — no expansion
         expanded["guidance"] = ""
