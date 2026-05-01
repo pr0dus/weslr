@@ -134,6 +134,15 @@
 - **Key functions:** `route_request()` with slash-match, trigger scoring, and context boosts
 - **Spec:** `weslr/docs/WESLR_CAPABILITY_INTELLIGENCE_ARCHITECTURE_REVIEW_V1.md`
 
+### Capability Welcome Surface V1
+- **File:** `weslr/capability_welcome_surface.py` — Registry-generated welcome/help surface
+- **Tests:** `weslr/tests/test_capability_welcome_surface_v1.py` — **23 passed** ✅
+- **Status:** IMPLEMENTED / NOT WIRED TO CHAT — read-only welcome and help formatter
+- **Authority:** `registry_generated`; no execution, no JSONL writes, no Ollama, no /chat integration
+- **Key functions:** `build_welcome_overview()`, `build_category_help()`, `build_capability_suggestions()`
+- **Uses:** Capability Registry V1 and Capability Router V1 (read-only)
+- **Spec:** `weslr/docs/WESLR_CAPABILITY_REGISTRY_ROUTER_V1_CHECKPOINT.md`
+
 ### Frontend / UI
 - **Doc:** `weslr/docs/WESLR_FRONTDOOR_UI_SPEC_V1.md` (244 lines)
 - **File:** `weslr/frontdoor_ui_spec.py` — DOES NOT EXIST
@@ -156,6 +165,7 @@
 | Review interface | ✅ LIVE (read-only) | weslr/review_interface.py |
 | Capability Registry V1 | ✅ IMPLEMENTED (read-only, not wired to /chat) | capability_registry.py / capability_registry.json |
 | Capability Router V1 | ✅ IMPLEMENTED (deterministic, not wired to /chat) | capability_router.py |
+| Capability Welcome Surface V1 | ✅ IMPLEMENTED (read-only, not wired to /chat) | capability_welcome_surface.py |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
 | Controlled exposure | ❌ SPEC ONLY | no .py file |
@@ -177,6 +187,9 @@
 | `test_contract_insufficiency_detector_synthetic.py` | ✅ 11 passed |
 | `test_contract_improvement_proposal_bridge_v1.py` | ✅ 15 passed |
 | `test_website_signal_integration_v1.py` | ✅ 15 passed |
+| `test_capability_registry_v1.py` | ✅ 38 passed |
+| `test_capability_router_v1.py` | ✅ 33 passed |
+| `test_capability_welcome_surface_v1.py` | ✅ 23 passed |
 | `self_test.py` | ✅ exit code 0 |
 
 ---
