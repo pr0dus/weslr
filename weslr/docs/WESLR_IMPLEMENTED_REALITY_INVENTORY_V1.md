@@ -298,6 +298,23 @@ Operational docs that define workflows but have no runtime implementation.
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only pipeline, no file writes
 
+### Evidence Chat Bridge V1
+
+- **File:** 
+- **Tests:**  — 19 passed
+- **Status:** IMPLEMENTED GUARDED / SEARCH ENV-GATED
+- **Integration point:** Injected in  POST /chat handler after payload is built, before response is sent
+- **Activation conditions:** search enabled (WESLR_SEARXNG_ENABLED=true), evidence_needed=true, message not self/system, current response is fallback template
+- **Authority:** 
+- **Truth status:** 
+- **Functions:** 
+- **No /chat integration wiring:** Only activated on fallback-template responses — never overrides genuine synthesis
+- **Self/system guard:** Questions like "what are you?", "how do you work?" do not trigger search
+- **No truth writes:**  on all outputs
+- **No memory writes:** No JSONL writes, no artifact storage
+- **No Ollama:** No LLM calls in bridge
+- **No JSONL writes:** Read-only bridge, no file writes
+
 
 ### External Evidence Pipeline V1
 

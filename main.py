@@ -3666,6 +3666,23 @@ def cmd_serve(args):
                                 "recommended_next_action": hint["recommended_next_action"],
                                 "message_snippet": message[:80],
                             }, frame=frame, source="adaptive_hint", trust_level="system")
+                    # ── Evidence Chat Bridge (Tier-A safe injection) ──────────────────
+                    # Only activates when: search enabled, evidence_needed=true,
+                    # current response is fallback/template, message is not self/system.
+                    # Bounded: additive only, never overrides genuine synthesis.
+                    try:
+                        from weslr.evidence_chat_bridge import maybe_answer_with_evidence
+                        _bridge_result = maybe_answer_with_evidence(
+                            message,
+                            payload.get("message"),
+                        )
+                        if _bridge_result:
+                            payload["message"] = _bridge_result["message"]
+                            payload["path"] = _bridge_result["path"]
+                            payload["response_contract"] = _bridge_result.get("response_contract")
+                            payload["_evidence_metadata"] = _bridge_result["evidence_metadata"]
+                    except Exception:
+                        pass  # Non-critical — keep existing payload on any bridge failure
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
