@@ -173,11 +173,16 @@
 |----------|---------|
 | `WESLR_DETERMINISTIC_ANCHOR_AND_PROBABILISTIC_INTERPRETATION_CANON_V1.md` | WESLR_DETERMINISTIC_ANCHOR_AND_PROBABILISTIC_INTERPRETATION_CANON_V1_DEFINED |
 | `WESLR_OBSERVATION_LOOP_PHASE_1_CANNON.md` | WESLR_OBSERVATION_LOOP_PHASE_1_CANNON_DEFINED |
+| `OCC_WESLR_STAGING_TEST_LOOP_V1.md` | OCC_WESLR_STAGING_TEST_LOOP_V1_DEFINED |
 
 ---
 
-## Commit
+## C) OPERATIONAL DOCTRINE / DOCUMENTED
 
-```
-8ce6fec feat: implement contract improvement proposal bridge v1; add proposal review log with deduplication and PII filtering
-```
+Operational docs that define workflows but have no runtime implementation.
+
+### OCC → WESLR Staging Test Loop
+
+- **File:** `OCC_WESLR_STAGING_TEST_LOOP_V1.md`
+- **Status:** OPERATIONAL DOCTRINE / DOCUMENTED
+- **Summary:** Defines safe loop: OCC phone tests staging, OCW repairs only on explicit operator instruction. No automatic wiring. No autonomous repair. Governance boundary preserved.
