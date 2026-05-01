@@ -161,17 +161,20 @@ def detect_insufficiency(
             "frame_distribution": frame_dist,
             "signal_type_distribution": signal_dist,
             "insufficiency_confirmed": True,
-            "stable_across_checks": 1,  # first detection
-            "proposal_ready": False,
         }
+
+        # Wire stability tracker — updates consecutive count and proposal_ready
+        stability = check_stability(pattern_type, contract, evidence)
+        evidence["stable_across_checks"] = stability["consecutive_checks"]
+        evidence["proposal_ready"] = stability["proposal_ready"]
 
         # Append evidence to insufficiency log
         _append_insufficiency_evidence(evidence, insufficiency_log_path=insufficiency_log_path)
         proposal_ready.append({
             "pattern_type": pattern_type,
             "contract": contract,
-            "proposal_ready": False,
-            "stable_across_checks": 1,
+            "proposal_ready": stability["proposal_ready"],
+            "stable_across_checks": stability["consecutive_checks"],
         })
 
     if proposal_ready:

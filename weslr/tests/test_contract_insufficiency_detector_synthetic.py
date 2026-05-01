@@ -366,8 +366,15 @@ class TestDeterministicOutput(unittest.TestCase):
             result2 = self.detect(str(obs), insufficiency_log_path=str(log), window_size=50, min_records=10)
 
             # Remove timestamp-dependent fields for comparison
-            r1 = {k: v for k, v in result1.items() if k != "checked_at"}
-            r2 = {k: v for k, v in result2.items() if k != "checked_at"}
+            r1 = {k: v for k, v in result1.items() if k not in ("checked_at", "stable_across_checks", "proposal_ready")}
+            r2 = {k: v for k, v in result2.items() if k not in ("checked_at", "stable_across_checks", "proposal_ready")}
+            # Also strip stability from nested proposal_ready_patterns
+            for p in r1.get("proposal_ready_patterns", []):
+                p.pop("stable_across_checks", None)
+                p.pop("proposal_ready", None)
+            for p in r2.get("proposal_ready_patterns", []):
+                p.pop("stable_across_checks", None)
+                p.pop("proposal_ready", None)
             self.assertEqual(r1, r2)
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
