@@ -4,9 +4,17 @@ Read-only. No live web calls. No Ollama. No JSONL writes.
 """
 
 import unittest
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from weslr.evidence_pipeline import run_evidence_pipeline, RECORD_TYPE
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment-portable paths
+# ─────────────────────────────────────────────────────────────────────────────
+
+REPO_ROOT = Path(__file__).resolve().parent  # repo root (test files at root)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,21 +173,38 @@ class TestRunEvidencePipeline(unittest.TestCase):
 
 class TestNoSideEffects(unittest.TestCase):
 
+    def test_workspace_accessible(self):
+        """Confirm repo root is accessible (no hardcoded path assertion)."""
+        self.assertTrue(REPO_ROOT.exists())
+        self.assertTrue(REPO_ROOT.is_dir())
+
     def test_no_jsonl_writes(self):
-        import os
-        workspace = "/data/data/com.termux/files/home/.openclaw/workspace"
-        self.assertTrue(os.path.exists(workspace))
+        """JSONL files under weslr/ are not written during tests."""
+        weslr_dir = REPO_ROOT / "weslr"
+        if not weslr_dir.exists():
+            return  # nothing to check
+        before = {}
+        for p in weslr_dir.rglob("*.jsonl"):
+            before[str(p)] = p.stat().st_mtime
+        # Run a minimal pipeline call (will use mocked search)
+        with patch("weslr.evidence_pipeline.classify_evidence_need") as mock_c:
+            mock_c.return_value = MOCK_CLASSIFICATION_NO_EVIDENCE
+            run_evidence_pipeline("hello")
+        for p in weslr_dir.rglob("*.jsonl"):
+            self.assertEqual(p.stat().st_mtime, before.get(str(p)))
 
     def test_no_ollama_import(self):
-        with open("/data/data/com.termux/files/home/.openclaw/workspace/weslr/evidence_pipeline.py") as f:
+        """Confirm evidence_pipeline.py does not import Ollama."""
+        module_path = REPO_ROOT / "weslr" / "evidence_pipeline.py"
+        with open(module_path) as f:
             content = f.read()
         self.assertNotIn("from ollama", content)
         self.assertNotIn("import ollama", content)
 
     def test_not_wired_to_chat(self):
-        import os
-        main_path = "/data/data/com.termux/files/home/.openclaw/workspace/main.py"
-        if os.path.exists(main_path):
+        """Confirm evidence_pipeline is not imported by main.py."""
+        main_path = REPO_ROOT / "main.py"
+        if main_path.exists():
             with open(main_path) as f:
                 main_content = f.read()
             self.assertNotIn("evidence_pipeline", main_content)

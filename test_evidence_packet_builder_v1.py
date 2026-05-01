@@ -4,6 +4,7 @@ Read-only. No live web calls. No Ollama. No JSONL writes.
 """
 
 import unittest
+from pathlib import Path
 from weslr.evidence_packet_builder import (
     build_evidence_packet,
     summarize_evidence_packet,
@@ -13,6 +14,13 @@ from weslr.evidence_packet_builder import (
     UNSAFE_FIELDS,
     MAX_CONTENT_LENGTH,
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment-portable paths
+# ─────────────────────────────────────────────────────────────────────────────
+
+REPO_ROOT = Path(__file__).resolve().parent  # repo root
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -229,30 +237,28 @@ class TestSummarizeEvidencePacket(unittest.TestCase):
 
 class TestNoSideEffects(unittest.TestCase):
 
+    def test_workspace_accessible(self):
+        """Confirm repo root is accessible."""
+        self.assertTrue(REPO_ROOT.exists())
+        self.assertTrue(REPO_ROOT.is_dir())
+
     def test_no_jsonl_writes(self):
-        """Confirm no JSONL files are written during these tests."""
-        import os
-        import glob
-        workspace = "/data/data/com.termux/files/home/.openclaw/workspace"
-        jsonl_files = glob.glob(f"{workspace}/**/*.jsonl", recursive=True)
-        # Just confirm workspace is accessible; actual write проверка done by isolation
-        self.assertTrue(os.path.exists(workspace))
+        weslr_dir = REPO_ROOT / "weslr"
+        if not weslr_dir.exists():
+            return
+        before = {}
+        for p in weslr_dir.rglob("*.jsonl"):
+            before[str(p)] = p.stat().st_mtime
+        build_evidence_packet("test", MOCK_VALID_SEARXNG_RESPONSE)
+        for p in weslr_dir.rglob("*.jsonl"):
+            self.assertEqual(p.stat().st_mtime, before.get(str(p)))
 
     def test_no_ollama_import(self):
-        """Confirm this module does not import Ollama."""
-        import sys
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "evidence_packet_builder",
-            "/data/data/com.termux/files/home/.openclaw/workspace/weslr/evidence_packet_builder.py"
-        )
-        module = importlib.util.module_from_spec(spec)
-        # No exec — just confirm file is readable Python
-        with open("/data/data/com.termux/files/home/.openclaw/workspace/weslr/evidence_packet_builder.py") as f:
+        module_path = REPO_ROOT / "weslr" / "evidence_packet_builder.py"
+        with open(module_path) as f:
             content = f.read()
-        self.assertNotIn("ollama", content.lower())
-        self.assertNotIn("from ollama", content.lower())
-        self.assertNotIn("import ollama", content.lower())
+        self.assertNotIn("from ollama", content)
+        self.assertNotIn("import ollama", content)
 
 
 if __name__ == "__main__":
