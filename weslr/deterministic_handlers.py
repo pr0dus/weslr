@@ -1060,6 +1060,8 @@ HANDLER_REGISTRY = [
             "how do you improve over time",
             "how do you learn",
             "how do you get better",
+            "i want to understand how you improve",
+            "i want to understand how you improve over time",
             "want to understand how you improve",
             "want to understand how you improve over time",
             "understand how you improve",
