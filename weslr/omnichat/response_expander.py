@@ -502,6 +502,24 @@ def format_reply(interpreted: Dict[str, Any]) -> str:
         Natural-language reply string ready for delivery.
     """
     contract = interpreted.get("response_contract", "unknown")
+    path = interpreted.get("path", "")
+
+    # Deterministic handlers - always prefer handler's response_text
+    # These handlers provide their own structured reply
+    deterministic_paths = [
+        "self_identity",
+        "capability_help",
+        "improvement_explanation",
+        "uncertainty_explanation",
+        "memory_boundary",
+        "simple_followup",
+        "usage_guidance",
+        "agi_clarification",
+        "self_improvement_clarification",
+        "learning_clarification",
+    ]
+    if path in deterministic_paths:
+        return interpreted.get("response_text", "")
 
     # conversational_entry — use existing greeting logic
     if contract == "conversational_entry":

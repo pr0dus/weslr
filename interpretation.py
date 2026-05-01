@@ -1070,7 +1070,7 @@ def _response_contract_from_frame(frame: str) -> str:
         "task_help": "guided_help",
         "explanation": "structured_explanation",
         "exploration": "exploratory_guidance",
-        "system": "system_answer",
+        "system": "system_answer",  # Handlers return response_text directly
         "unknown": "uncertainty_boundary",
     }.get(frame, "uncertainty_boundary")
 

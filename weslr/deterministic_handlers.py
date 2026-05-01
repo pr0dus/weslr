@@ -1000,6 +1000,95 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "guided_chat",
     },
+    {
+        "id": "self_identity_query",
+        "path": "self_identity",
+        "triggers": ["what are you", "who are you", "what is this", "what can you do", "what can you help me with", "what can i ask you", "what should i try", "what should i try next"],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_self_identity_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "self",
+    },
+    {
+        "id": "improvement_explanation_query",
+        "path": "improvement_explanation",
+        "triggers": [
+            "how do you improve",
+            "how do you improve over time",
+            "how do you learn",
+            "how do you get better",
+        ],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_improvement_explanation_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "explanation",
+    },
+    {
+        "id": "uncertainty_explanation_query",
+        "path": "uncertainty_explanation",
+        "triggers": [
+            "what happens if you do not know something",
+            "what happens if you don't know",
+            "what if you do not know",
+            "what if you don't know",
+        ],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_uncertainty_explanation_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "boundary",
+    },
+    {
+        "id": "memory_boundary_query",
+        "path": "memory_boundary",
+        "triggers": [
+            "can you remember what we talked about earlier",
+            "do you remember what we talked about",
+            "can you remember this conversation",
+        ],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_memory_boundary_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "boundary",
+    },
+    {
+        "id": "simple_followup_query",
+        "path": "simple_followup",
+        "triggers": ["explain that more simply", "say that simpler", "make it simpler"],
+        "match_type": "prefix",
+        "priority": 55,
+        "handler_fn": "handle_simple_followup_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "simplification",
+    },
 ]
 
 
@@ -1068,6 +1157,111 @@ def handle_iss_intake_query(message: str, lowered: str) -> dict:
     result["iss_intake_count"] = len(iss_intake_proposals)
     result["iss_intake_unique_count"] = len(iss_intake_grouped)
     return result
+
+
+# ---- Natural self-conversation handlers ----
+
+def handle_self_identity_query(message: str, lowered: str) -> dict:
+    """Self identity — explain WESLR briefly as continuity-first system."""
+    response_text = (
+        "I am WESLR — a deterministic continuity system that tracks your interests, "
+        "observes patterns over time, and helps you explore topics with evidence. "
+        "I don't learn from public users, I don't act autonomously, and I don't claim AGI. "
+        "My goal is safe, observable behavior under operator control."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="self_identity",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_capability_help_query(message: str, lowered: str) -> dict:
+    """Capability help — useful examples in natural language."""
+    response_text = (
+        "I can help you explore topics with evidence, track your interests, "
+        "review diagnostic gaps, understand implementation plans, and surface "
+        "consistent patterns across sessions. Try asking about system status, "
+        "diagnostics, or specific topics you want to investigate. "
+        "I can also explain my boundaries and limitations if you're curious."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="capability_help",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_improvement_explanation_query(message: str, lowered: str) -> dict:
+    """Improvement explanation — explain observation→patterns→review→improvement."""
+    response_text = (
+        "I improve by observing patterns across sessions, reviewing diagnostic gaps, "
+        "and evolving under operator guidance. This happens through ISS (ISS Signal System) "
+        "which tracks patterns, proposes improvements, and requires operator approval "
+        "before any changes. There's no autonomous learning — only governed evolution."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="improvement_explanation",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_uncertainty_explanation_query(message: str, lowered: str) -> dict:
+    """Uncertainty explanation — explain boundary when WESLR doesn't know."""
+    response_text = (
+        "If I don't know something or can't find relevant evidence, I'll tell you "
+        "I'm uncertain and keep unverified things separate from established knowledge. "
+        "This boundary helps ensure reliability — I'd rather say 'I don't know' than "
+        "make unverified claims. You can help by providing specific context or evidence."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="uncertainty_explanation",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_memory_boundary_query(message: str, lowered: str) -> dict:
+    """Memory boundary — honest explanation of current staging capabilities."""
+    response_text = (
+        "Current staging preserves session metadata and operational signals for "
+        "pattern observation, but it doesn't store full conversational history "
+        "like human memory. I can track interests and patterns over time, but "
+        "specific conversation details aren't retained between sessions. "
+        "This is intentional — privacy-first design."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="memory_boundary",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_simple_followup_query(message: str, lowered: str) -> dict:
+    """Simple followup — honest no-context boundary in staging."""
+    response_text = (
+        "I can simplify, but I need the topic again because this staging surface "
+        "does not yet use full conversational context. Please tell me what you "
+        "want simplified, and I'll give you a clear, concise explanation."
+    )
+    return build_deterministic_response(
+        message=message,
+        path="simple_followup",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
 
 
 # ---- Dispatch ----
