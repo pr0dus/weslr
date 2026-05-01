@@ -935,6 +935,24 @@ HANDLER_REGISTRY = [
         "category": "guided_chat",
     },
     {
+        "id": "next_step_query",
+        "path": "next_step",
+        "triggers": [
+            "what should i try next",
+            "what should i do next",
+        ],
+        "match_type": "prefix",
+        "priority": 57,
+        "handler_fn": "handle_next_step_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
+    },
+    {
         "id": "usage_guidance",
         "path": "usage_guidance",
         "triggers": [
@@ -1003,7 +1021,7 @@ HANDLER_REGISTRY = [
     {
         "id": "self_identity_query",
         "path": "self_identity",
-        "triggers": ["what are you", "who are you", "what is this", "what can you do", "what can you help me with", "what can i ask you", "what should i try", "what should i try next"],
+        "triggers": ["what are you", "who are you", "what is this", "what can you do"],
         "match_type": "prefix",
         "priority": 60,
         "handler_fn": "handle_self_identity_query",
@@ -1014,6 +1032,25 @@ HANDLER_REGISTRY = [
         "side_effects": [],
         "write_guard": None,
         "category": "self",
+    },
+    {
+        "id": "capability_help_query",
+        "path": "capability_help",
+        "triggers": [
+            "what can you help me with",
+            "what can i ask you",
+            "what can i do",
+        ],
+        "match_type": "prefix",
+        "priority": 58,
+        "handler_fn": "handle_capability_help_query",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "guided_chat",
     },
     {
         "id": "improvement_explanation_query",
@@ -1077,7 +1114,11 @@ HANDLER_REGISTRY = [
     {
         "id": "simple_followup_query",
         "path": "simple_followup",
-        "triggers": ["explain that more simply", "say that simpler", "make it simpler"],
+        "triggers": [
+            "can you explain that more simply",
+            "say that simpler",
+            "make it simpler",
+        ],
         "match_type": "prefix",
         "priority": 55,
         "handler_fn": "handle_simple_followup_query",
@@ -1242,6 +1283,25 @@ def handle_memory_boundary_query(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="memory_boundary",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_next_step_query(message: str, lowered: str) -> dict:
+    """Next step suggestions — helpful next moves for new users."""
+    response_text = (
+        "Here are some things you can try:\n"
+        "- ask what WESLR is\n"
+        "- ask what WESLR can do\n"
+        "- ask how WESLR improves over time\n"
+        "- ask what happens when WESLR is unsure\n"
+        "- ask for a simple explanation of a topic"
+    )
+    return build_deterministic_response(
+        message=message,
+        path="next_step",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",

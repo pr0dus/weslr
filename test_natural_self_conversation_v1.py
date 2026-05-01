@@ -54,12 +54,13 @@ def test_dispatch_works():
     tests = [
         ("what are you?", "self_identity"),
         ("who are you?", "self_identity"),
-        ("what can you do?", "usage_guidance"),
-        ("what can you help me with?", "self_identity"),
+        ("what can you do?", "usage_guidance"),  # usage_guidance handles this too
+        ("what can you help me with?", "capability_help"),
         ("how do you improve over time?", "improvement_explanation"),
         ("what happens if you do not know something?", "uncertainty_explanation"),
         ("can you remember what we talked about earlier?", "memory_boundary"),
-        ("explain that more simply", "simple_followup"),
+        ("what should I try next?", "next_step"),
+        ("can you explain that more simply?", "simple_followup"),
     ]
     for msg, expected_path in tests:
         result = dispatch_deterministic_handler(msg, msg.lower())
@@ -77,7 +78,7 @@ def test_no_uncertainty_boundary():
         "how do you improve over time?",
         "what happens if you do not know something?",
         "can you remember what we talked about earlier?",
-        "explain that more simply",
+        "can you explain that more simply?",  # Full trigger
     ]
     for msg in tests:
         result = dispatch_deterministic_handler(msg, msg.lower())
@@ -124,7 +125,9 @@ def test_no_agi_claims():
     """Test that AGI claims are not made."""
     tests = [
         ("what are you?", "self_identity"),
+        ("what can you help me with?", "capability_help"),
         ("how do you improve over time?", "improvement_explanation"),
+        ("what happens if you do not know something?", "uncertainty_explanation"),
     ]
     for msg, path in tests:
         result = dispatch_deterministic_handler(msg, msg.lower())

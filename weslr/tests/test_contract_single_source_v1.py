@@ -15,7 +15,7 @@ import sys
 import json
 import importlib
 
-sys.path.insert(0, "/data/data/com.termux/files/home/.openclaw/workspace")
+sys.path.insert(0, "/home/pr0/projects/weslr")
 
 import interpretation
 importlib.reload(interpretation)

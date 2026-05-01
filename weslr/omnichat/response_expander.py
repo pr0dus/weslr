@@ -517,6 +517,7 @@ def format_reply(interpreted: Dict[str, Any]) -> str:
         "agi_clarification",
         "self_improvement_clarification",
         "learning_clarification",
+        "task_help_query",  # task_help_query bypasses format_reply contract
     ]
     if path in deterministic_paths:
         return interpreted.get("response_text", "")
