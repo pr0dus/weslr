@@ -80,6 +80,7 @@ def _read_tail(path: str, n: int) -> list[dict]:
 
 def detect_insufficiency(
     observation_path: str | None = None,
+    insufficiency_log_path: str | None = None,
     window_size: int = DEFAULT_WINDOW_SIZE,
     min_records: int = DEFAULT_MIN_RECORDS,
 ) -> dict:
@@ -165,7 +166,7 @@ def detect_insufficiency(
         }
 
         # Append evidence to insufficiency log
-        _append_insufficiency_evidence(evidence)
+        _append_insufficiency_evidence(evidence, insufficiency_log_path=insufficiency_log_path)
         proposal_ready.append({
             "pattern_type": pattern_type,
             "contract": contract,
@@ -180,10 +181,10 @@ def detect_insufficiency(
     return result
 
 
-def _append_insufficiency_evidence(evidence: dict) -> None:
+def _append_insufficiency_evidence(evidence: dict, insufficiency_log_path: str | None = None) -> None:
     """Append insufficiency evidence to local log. Fire-and-forget."""
     try:
-        path = DEFAULT_INSUFFICIENCY_LOG_PATH
+        path = insufficiency_log_path or DEFAULT_INSUFFICIENCY_LOG_PATH
         with open(path, "a") as f:
             f.write(json.dumps(evidence) + "\n")
     except Exception:
@@ -196,6 +197,12 @@ def _append_insufficiency_evidence(evidence: dict) -> None:
 
 _STABILITY_COUNTS: dict[str, int] = {}
 _STABLE_PATTERNS: dict[str, dict] = {}
+
+
+def _get_contract_key(record: dict) -> str | None:
+    """Return contract key value, checking both 'contract' and 'response_contract'."""
+    return record.get("contract") or record.get("response_contract")
+
 
 def check_stability(
     pattern_type: str,
@@ -211,8 +218,9 @@ def check_stability(
     """
     key = f"{pattern_type}::{contract}"
     prev = _STABLE_PATTERNS.get(key)
+    prev_contract = _get_contract_key(prev) if prev else None
 
-    if prev is not None and prev.get("contract") == contract:
+    if prev is not None and prev_contract == contract:
         _STABILITY_COUNTS[key] = _STABILITY_COUNTS.get(key, 0) + 1
     else:
         _STABILITY_COUNTS[key] = 1
@@ -234,6 +242,7 @@ def check_stability(
         # Mark the stored evidence as stable
         _STABLE_PATTERNS[key]["stable_across_checks"] = count
         _STABLE_PATTERNS[key]["proposal_ready"] = True
+
 
     return result
 
