@@ -186,3 +186,22 @@ Operational docs that define workflows but have no runtime implementation.
 - **File:** `OCC_WESLR_STAGING_TEST_LOOP_V1.md`
 - **Status:** OPERATIONAL DOCTRINE / DOCUMENTED
 - **Summary:** Defines safe loop: OCC phone tests staging, OCW repairs only on explicit operator instruction. No automatic wiring. No autonomous repair. Governance boundary preserved.
+
+---
+
+### Composite Analysis Stack V1
+
+- **File:** `weslr/composite_analysis_stack.py`
+- **Tests:** `test_composite_analysis_stack_v1.py` — 34 passed
+- **Status:** IMPLEMENTED READ-ONLY / PASS 1
+- **Authority:** `analysis_only`
+- **Functions:** `classify_structure`, `compute_similarity_score`, `estimate_confidence`, `governance_boundary`, `analyze_item`, `build_composite_summary`
+- **AAI integration:** Reads AAI attention classification if available; graceful fallback if unavailable
+- **No /chat integration:** Does not route through or modify response contracts
+- **No Ollama:** No LLM calls, no formatter integration
+- **No JSONL writes:** Read-only from Pass 1 sources
+
+### Composite Analysis Stack Canon V1
+
+- **File:** `weslr/docs/WESLR_COMPOSITE_ANALYSIS_STACK_CANON_V1.md`
+- **Status:** ACTIVE DOCTRINE — defines purpose, layers, authority boundary, AAI relationship, experiment rules, V1 scope
