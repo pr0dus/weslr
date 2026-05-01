@@ -300,20 +300,23 @@ Operational docs that define workflows but have no runtime implementation.
 
 ### Evidence Chat Bridge V1
 
-- **File:** 
-- **Tests:**  — 19 passed
-- **Status:** IMPLEMENTED GUARDED / SEARCH ENV-GATED
-- **Integration point:** Injected in  POST /chat handler after payload is built, before response is sent
-- **Activation conditions:** search enabled (WESLR_SEARXNG_ENABLED=true), evidence_needed=true, message not self/system, current response is fallback template
-- **Authority:** 
-- **Truth status:** 
-- **Functions:** 
+- **File:** `weslr/evidence_chat_bridge.py`
+- **Tests:** `test_evidence_chat_bridge_v1.py` — 23 passed
+- **Status:** LIVE ON STAGING / GUARDED / ENV-GATED
+- **Runtime:** `deploy/staging/weslr_demo_server.py` (not main.py)
+- **Integration point:** Injected in staging `do_POST` handler after `response = weslr_chat(message)`, before `_capture_signal()`, using `response["reply"]` field
+- **Activation conditions:** search enabled (WESLR_SEARXNG_ENABLED=true), evidence_needed=true, message not self/system, current response is fallback template or generic depth prompt
+- **Fallback signals:** `my current best answer is that`, `i don't have a confirmed answer`, `i can explain that clearly`, `tell me how deep you want to go`
+- **Authority:** `external_evidence_unverified`
+- **Truth status:** `unverified`
+- **Functions:** `maybe_answer_with_evidence(message, current_message)`
 - **No /chat integration wiring:** Only activated on fallback-template responses — never overrides genuine synthesis
 - **Self/system guard:** Questions like "what are you?", "how do you work?" do not trigger search
-- **No truth writes:**  on all outputs
+- **No truth writes:** `automatic_truth_write=false` on all outputs
 - **No memory writes:** No JSONL writes, no artifact storage
 - **No Ollama:** No LLM calls in bridge
 - **No JSONL writes:** Read-only bridge, no file writes
+- **Live-tested:** OCW confirmed 20:39 CEST — "What is entropy?" → `evidence_grounded_answer`, `source_count=5`, `authority=external_evidence_unverified`, `automatic_truth_write=false`
 
 
 ### External Evidence Pipeline V1
