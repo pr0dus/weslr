@@ -205,3 +205,21 @@ Operational docs that define workflows but have no runtime implementation.
 
 - **File:** `weslr/docs/WESLR_COMPOSITE_ANALYSIS_STACK_CANON_V1.md`
 - **Status:** ACTIVE DOCTRINE — defines purpose, layers, authority boundary, AAI relationship, experiment rules, V1 scope
+
+### State Grounded Dialogue Canon V1
+
+- **File:** `weslr/docs/WESLR_STATE_GROUNDED_DIALOGUE_CANON_V1.md`
+- **Status:** DEFINED — doctrine for read-only architecture/system question answering
+
+### State Grounded Dialogue V1
+
+- **File:** `weslr/state_grounded_dialogue.py`
+- **Tests:** `test_state_grounded_dialogue_v1.py` — 32 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `read_only`
+- **Functions:** `classify_state_question`, `load_state_sources`, `answer_state_question`
+- **Question types:** implemented_reality, attention_summary, composite_summary, architecture_boundary, pending_reviews
+- **Sources:** AAI summary, composite summary, implemented reality inventory doc
+- **No /chat integration:** Does not route through or modify response contracts
+- **No Ollama:** No LLM calls, no formatter integration
+- **No JSONL writes:** Read-only from doc files and analysis modules
