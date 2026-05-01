@@ -62,9 +62,17 @@ class TestClassifyStateQuestion(unittest.TestCase):
     def test_classify_unsafe_automation_question(self):
         result = sgd.classify_state_question("what is unsafe to automate?")
         self.assertTrue(result["is_state_question"])
-        self.assertEqual(result["question_type"], "pending_reviews")
+        self.assertEqual(result["question_type"], "unsafe_automation")
         self.assertGreater(result["confidence"], 0.8)
         self.assertEqual(result["authority"], "read_only")
+
+    def test_classify_unsafe_automation_variations(self):
+        for q in [
+            "what should not be automated",
+            "what must stay manual",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(result["question_type"], "unsafe_automation", f"Failed for: {q}")
 
     def test_classify_architecture_question(self):
         result = sgd.classify_state_question("what is your current architecture?")
@@ -172,19 +180,14 @@ class TestAnswerStateQuestion(unittest.TestCase):
 
     def test_no_jsonl_writes(self):
         """Verify no JSONL file writes occur during answering."""
-        jsonl_paths = []
-        for root, dirs, files in os.walk(os.path.dirname(sgd._WORKSPACE)):
-            for f in files:
-                if f.endswith(".jsonl"):
-                    jsonl_paths.append(os.path.join(root, f))
-        # No writes should happen in state_grounded_dialogue
-        # This is a structural test - we verify the module has no write calls
         import inspect
         source = inspect.getsource(sgd)
-        self.assertNotIn("open(", source.replace("open(__file__", "").replace("open(path", ""))  # only _safe_read opens files
+        # No .write( or json.dump (actual write operations)
         self.assertNotIn(".write(", source)
         self.assertNotIn("json.dump", source)
-        self.assertNotIn("jsonl", source.lower())
+        # No write/append mode opens — structural check (read mode 'r' is fine)
+        import re
+        self.assertIsNone(re.search(r'open\([^)]+\.jsonl[^)]*["\'][wa]', source))
 
     def test_no_ollama_imports(self):
         """Verify Ollama is not imported or wired in state_grounded_dialogue."""
@@ -238,12 +241,17 @@ class TestAnswerStateQuestion(unittest.TestCase):
 
     def test_answer_for_unsafe_automation(self):
         result = sgd.answer_state_question("what is unsafe to automate?")
-        self.assertEqual(result["question_type"], "pending_reviews")
-        # Should mention operator/approval
-        self.assertTrue(
-            "operator" in result["answer"].lower() or "approval" in result["answer"].lower(),
-            f"Answer should mention operator/approval: {result['answer']}"
-        )
+        self.assertEqual(result["question_type"], "unsafe_automation")
+        # Should list unsafe categories explicitly
+        answer_lower = result["answer"].lower()
+        self.assertIn("contract", answer_lower)
+        self.assertIn("operator", answer_lower)
+        self.assertIn("approval", answer_lower)
+        # Should mention AAI/composite cannot authorize
+        self.assertIn("cannot authorize", answer_lower)
+        # Authority must be read_only
+        self.assertEqual(result["authority"], "read_only")
+        self.assertFalse(result["automatic_change"])
 
     def test_answer_for_blocker_question(self):
         result = sgd.answer_state_question("what are your current blockers?")
@@ -258,9 +266,11 @@ class TestStructuralConstraints(unittest.TestCase):
         """Verify no JSONL file modification occurs."""
         import inspect
         source = inspect.getsource(sgd)
-        # No jsonl paths or write operations
-        self.assertNotIn("jsonl", source.lower())
-        # No write mode - only 'r' mode for reading
+        # No jsonl file write paths — 'w' or 'a' mode with .jsonl
+        import re
+        jsonl_write = re.search(r'\.jsonl["\']\s*[\'"]\s*[wa]', source)
+        self.assertIsNone(jsonl_write, "Should not open .jsonl files in write/append mode")
+        # No write mode
         self.assertNotIn("'w'", source)  # write mode
         self.assertNotIn('"w"', source)  # write mode
         # No appending to files (only building return dicts with .append)

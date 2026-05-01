@@ -67,11 +67,13 @@ _ARCHITECTURE_PATTERNS = [
 
 _UNSAFE_AUTOMATION_PATTERNS = [
     r"what is unsafe to automate",
+    r"what should not be automated",
     r"what requires approval",
     r"what needs operator",
     r"what cannot be automated",
     r"what is not automatable",
     r"what requires human",
+    r"what must stay manual",
 ]
 
 _BLOCKER_PATTERNS = [
@@ -122,7 +124,7 @@ def classify_state_question(message: str) -> dict:
 
     for pattern in _UNSAFE_AUTOMATION_PATTERNS:
         if re.search(pattern, lower):
-            matched_type = "pending_reviews"
+            matched_type = "unsafe_automation"
             highest_confidence = max(highest_confidence, 0.85)
 
     for pattern in _BLOCKER_PATTERNS:
@@ -314,6 +316,37 @@ def answer_state_question(message: str) -> dict:
             "natural_self_conversation.py (routing), local_ollama_formatter.py (output). "
             "State-grounded dialogue V1 is a read-only helper, not wired into /chat yet. "
             "No Ollama integration in state-grounded surface."
+        )
+
+    elif question_type == "unsafe_automation":
+        # Direct list of categories that require operator approval — not AAI review queue
+        answer_parts.append(
+            "The following may not be automated silently. All require operator approval:"
+        )
+        answer_parts.append(
+            "Contract changes — response contracts, observation rules, improvement proposals; "
+            "Truth/state writes — modifying internal state, memory files, or JSONL records; "
+            "Proposal approval/rejection — accepting or declining improvement proposals; "
+            "Memory integration — adding to or removing from memory, long-term context; "
+            "Governance changes — altering authority boundaries, operator rules, or approval contracts; "
+            "Deployment changes — activating features, pushing updates, changing runtime behavior; "
+            "External actions — network calls, filesystem writes beyond logs, third-party integrations; "
+            "Public-facing behavior changes — anything visible to end users or external systems; "
+            "Security-sensitive changes — authentication, access control, or credential modifications."
+        )
+        # Optionally include current AAI review status after the boundary list
+        if "_error" not in aai and aai.get("record_type"):
+            counts = aai.get("counts", {})
+            operator_msg = aai.get("operator_message", "")
+            answer_parts.append(
+                f"Current AAI review queue: {counts.get('level 2 (propose)', 0)} proposal-ready, "
+                f"{counts.get('level 3 (escalate', 0)} escalated. "
+            )
+            if operator_msg:
+                answer_parts.append(f"Latest notice: {operator_msg}")
+        answer_parts.append(
+            "AAI and composite analysis may observe and rank these items but cannot authorize changes. "
+            "Operator approval is required for all of the above."
         )
 
     elif question_type == "pending_reviews":
