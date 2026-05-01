@@ -105,12 +105,15 @@
 - **File:** `weslr/omni_execution_model.py` — DOES NOT EXIST
 - **Status:** SPEC ONLY — plan defined but no implementation
 
-### Artificial Analysis Index Canon
-- **Doc:** `weslr/docs/WESLR_ARTIFICIAL_ANALYSIS_INDEX_CANON_V1.md` (11,255 bytes)
-- **Status:** DOCTRINE ONLY — no runtime implementation
-- **Canonical statement:** "AAI ranks attention. It does not decide truth."
-- **Attention levels:** 0=suppress, 1=track, 2=summary, 3=ask, 4=interrupt
-- **Scope:** Global filter across all WESLR layers; initial scope from Operator Attention Inventory Pass 1
+### Artificial Analysis Index
+- **File:** `weslr/artificial_analysis_index.py` — LIVE, read-only attention filter
+- **Tests:** `weslr/tests/test_artificial_analysis_index_v1.py` — **33 passed** ✅
+- **Status:** IMPLEMENTED PASS 1 — global attention filter, no state changes
+- **Authority:** `attention_only` on every result; `automatic_change: false`
+- **Scope:** Pass 1 sources only (`public_signals.jsonl`, `contract_observations.jsonl`, `contract_insufficiency_log.jsonl`, `contract_proposal_review_log.jsonl`)
+- **Real-data distribution (2026-05-01):** level 0=31, level 1=240, level 2=1, level 3=1, level 4=0 (273 total)
+- **Key functions:** `classify_attention_item()`, `build_attention_summary()`
+- **Spec:** `weslr/docs/WESLR_ARTIFICIAL_ANALYSIS_INDEX_CANON_V1.md` (doctrine) + `weslr/docs/WESLR_ARTIFICIAL_ANALYSIS_INDEX_V1_CHECKPOINT.md` (implementation)
 
 ### Frontend / UI
 - **Doc:** `weslr/docs/WESLR_FRONTDOOR_UI_SPEC_V1.md` (244 lines)
