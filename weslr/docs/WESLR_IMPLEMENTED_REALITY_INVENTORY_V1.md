@@ -29,49 +29,54 @@
 ### Contract Observation
 - **File:** `weslr/contract_observation.py` (310 lines)
 - **Status:** LIVE — `build_contract_observation()`, `validate_contract_observation()`, `append_contract_observation()`
-- **Storage:** `weslr/contract_observations.jsonl` (19 real records)
+- **Storage:** `weslr/contract_observations.jsonl` (31 real records)
 - **Tests:** `test_contract_observation_v1.py` — **21 passed** ✅
 
 ### Contract Insufficiency Detector
 - **File:** `weslr/contract_insufficiency_detector.py` (267 lines)
-- **Status:** LIVE — `detect_insufficiency()` reads real file, `check_stability()` tracks patterns
-- **Functions:** `detect_insufficiency()`, `_append_insufficiency_evidence()`, `_get_contract_key()`, `check_stability()`
+- **Status:** LIVE — `detect_insufficiency()` reads real file, `check_stability()` wired in
+- **Functions:** `detect_insufficiency()`, `_append_insufficiency_evidence()`, `check_stability()`, `_get_contract_key()`
 - **Tests:** `test_contract_insufficiency_detector_v1.py` — **16 passed** ✅
-- **Synthetic tests:** `test_contract_insufficiency_detector_synthetic.py` — **11 passed** ✅ (isolated via `insufficiency_log_path` parameter)
+- **Synthetic tests:** `test_contract_insufficiency_detector_synthetic.py` — **11 passed** ✅
+- **Stability:** `proposal_ready=true` at `stable_across_checks=3` confirmed on real data
 
 ### Response Contracts
 - **File:** `weslr/contract_observation.py` — `response_contract` field in observation records
 - **Status:** LIVE — contracts assigned per response path in `build_contract_observation()`
-- **Contracts observed in real data:** `conversational_entry`, `guided_help`, `structured_explanation`, `uncertainty_boundary`
+- **Contracts observed in real data:** `conversational_entry`, `guided_help`, `structured_explanation`, `uncertainty_boundary`, `system_answer`
 
-### Bootstrap / OCW Status
-- **File:** `weslr/bootstrap.py` (457 lines)
-- **Status:** IMPLEMENTED — `new_timeline_id()`, `new_activation_token()`, `verify_secret_words()`, `new_pending_bootstrap()`
-- **Purpose:** Timeline creation, bootstrap tokens, secret word verification
+### Proposal Bridge
+- **File:** `weslr/contract_improvement_proposal_bridge.py` (266 lines)
+- **Status:** LIVE (passive/operator-review only) — reads `contract_insufficiency_log.jsonl`, writes `contract_proposal_review_log.jsonl`
+- **Functions:** `generate_proposals()`
+- **Filters:** proposal_ready=true, stable_across_checks>=3, PII/rejected-field checking, deduplication
+- **Output:** `weslr/contract_proposal_review_log.jsonl` — 1 record generated (CP-20260501-001)
+- **Tests:** `test_contract_improvement_proposal_bridge_v1.py` — **15 passed** ✅
+- **Note:** Bridge never auto-approves; `automatic_change=false` on all records; no writes to `proposal_trace.jsonl` or `implementation_plans.json`
 
 ### Response Expander
 - **File:** `weslr/omnichat/response_expander.py` (400+ lines)
 - **Status:** LIVE — deterministic expansion layer, no LLM, adds `_omnichat_policy` + `expanded_response`
 - **Note:** Deterministic V1 rules; never invents facts; builds L4 guidance from known WESLR commands only
 
+### Bootstrap / OCW Status
+- **File:** `weslr/bootstrap.py` (457 lines)
+- **Status:** IMPLEMENTED — `new_timeline_id()`, `new_activation_token()`, `verify_secret_words()`, `new_pending_bootstrap()`
+- **Purpose:** Timeline creation, bootstrap tokens, secret word verification
+
 ---
 
 ## B) SPEC ONLY / DOCTRINE ONLY
 
-### Proposal Bridge
-- **Doc:** `weslr/docs/WESLR_CONTRACT_IMPROVEMENT_PROPOSAL_BRIDGE_V1.md` (111 lines)
-- **File:** `weslr/contract_improvement_proposal_bridge.py` — DOES NOT EXIST
-- **Status:** SPEC ONLY — no implementation. `proposal_ready: false` state used by detector but bridge not wired.
-
 ### Review Interface
 - **Doc:** `weslr/docs/WESLR_REVIEW_INTERFACE_V1.md` (207 lines)
 - **File:** `weslr/review_interface.py` — DOES NOT EXIST
-- **Status:** SPEC ONLY
+- **Status:** SPEC ONLY — operator-facing UI for reviewing proposals not yet built
 
 ### Decision Log
 - **Doc:** `weslr/docs/WESLR_REVIEW_DECISION_LOG_V1.md` (202 lines)
 - **File:** `weslr/review_decision_log.py` — DOES NOT EXIST
-- **Status:** SPEC ONLY
+- **Status:** SPEC ONLY — persistent record of operator decisions not yet built
 
 ### Operator Consistency
 - **Doc:** `weslr/docs/WESLR_OPERATOR_CONSISTENCY_LAYER_V1.md` (161 lines)
@@ -111,7 +116,7 @@
 | Contract observation | ✅ LIVE | contract_observation.py |
 | Contract insufficiency detector | ✅ LIVE | contract_insufficiency_detector.py |
 | Response expander | ✅ LIVE | weslr/omnichat/response_expander.py |
-| Proposal bridge | ❌ SPEC ONLY | no .py file |
+| Proposal bridge | ✅ LIVE (review only) | contract_improvement_proposal_bridge.py |
 | Review interface | ❌ SPEC ONLY | no .py file |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
@@ -120,7 +125,7 @@
 | OmniChat unification | ❌ SPEC ONLY | no .py file |
 | Frontend/UI | ❌ SPEC ONLY | no .py file |
 | Deployment/OCW status | ✅ IMPLEMENTED | bootstrap.py |
-| contract_observations.jsonl | ✅ LIVE (19 records) | weslr/ |
+| contract_observations.jsonl | ✅ LIVE (31 records) | weslr/ |
 
 ---
 
@@ -131,6 +136,7 @@
 | `test_contract_observation_v1.py` | ✅ 21 passed |
 | `test_contract_insufficiency_detector_v1.py` | ✅ 16 passed |
 | `test_contract_insufficiency_detector_synthetic.py` | ✅ 11 passed |
+| `test_contract_improvement_proposal_bridge_v1.py` | ✅ 15 passed |
 | `test_website_signal_integration_v1.py` | ✅ 15 passed |
 | `self_test.py` | ✅ exit code 0 |
 
@@ -138,15 +144,22 @@
 
 ## Current Blocker List
 
-1. **proposal_ready threshold not reached** — `weak_entry_repetition` on `conversational_entry` has 1/3 stability checks; bridge cannot fire until 3
-2. **Proposal bridge not implemented** — no `contract_improvement_proposal_bridge.py`; detector has `proposal_ready` state but nowhere to send it
-3. **Review interface not implemented** — no `review_interface.py`; no operator-facing UI for reviewing proposals
-4. **Decision log not implemented** — no `review_decision_log.py`; no persistent record of operator decisions
+1. **Review interface not implemented** — no `review_interface.py`; no operator-facing UI for reviewing proposals
+2. **Decision log not implemented** — no `review_decision_log.py`; no persistent record of operator decisions
+
+---
+
+## Checkpoints and Canon
+
+| Document | Verdict |
+|----------|---------|
+| `WESLR_CONTRACT_PROPOSAL_REVIEW_BRIDGE_CHECKPOINT_V1.md` | WESLR_CONTRACT_PROPOSAL_REVIEW_BRIDGE_CHECKPOINT_V1_DEFINED |
+| `WESLR_CONTRACT_REVIEW_HANDOFF_CANON_V1.md` | WESLR_CONTRACT_REVIEW_HANDOFF_CANON_V1_DEFINED |
 
 ---
 
 ## Commit
 
 ```
-aaba851 test hygiene: fix test_website_signal_integration_v1 pytest crash, fix synthetic detector isolation, update inventory
+8ce6fec feat: implement contract improvement proposal bridge v1; add proposal review log with deduplication and PII filtering
 ```
