@@ -288,7 +288,8 @@ Operational docs that define workflows but have no runtime implementation.
 
 - **File:** `weslr/source_trust_ranking.py`
 - **Tests:** `test_source_trust_ranking_v1.py` — 29 passed
-- **Status:** IMPLEMENTED DETERMINISTIC RANKING / USED BY EVIDENCE PACKET BUILDER
+- **Status:** LIVE ON STAGING / DETERMINISTIC RANKING / USED BY EVIDENCE PACKET BUILDER
+- **Live entropy ordering confirmed:** wikipedia.org → quantamagazine.org → (britannica.com) → reddit.com → youtube.com
 - **Authority:** `ranking_only` (does not verify truth)
 - **Functions:** `classify_source()`, `score_source()`, `rank_search_results()`
 - **High trust:** Wikipedia, Britannica, Merriam-Webster, Quanta Magazine, .edu, government/official domains
