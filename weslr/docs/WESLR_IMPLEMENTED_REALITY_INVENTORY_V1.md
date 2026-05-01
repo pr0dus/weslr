@@ -68,10 +68,17 @@
 
 ## B) SPEC ONLY / DOCTRINE ONLY
 
+### Deterministic Anchor + Probabilistic Interpretation Canon
+- **Doc:** `weslr/docs/WESLR_DETERMINISTIC_ANCHOR_AND_PROBABILISTIC_INTERPRETATION_CANON_V1.md` (280+ lines)
+- **Status:** DOCTRINE ONLY — no runtime implementation
+- **Canonical statement:** "Determinism governs authority. Probability assists interpretation."
+- **Operator burden boundary:** Probabilistic methods may automate low-risk read-only tasks without operator review loops; high-impact transitions (contract/state/governance/memory/external actions) always require operator authorization
+- **Key principle:** "Less operator micromanagement, not more."
+
 ### Review Interface
 - **Doc:** `weslr/docs/WESLR_REVIEW_INTERFACE_V1.md` (207 lines)
-- **File:** `weslr/review_interface.py` — DOES NOT EXIST
-- **Status:** SPEC ONLY — operator-facing UI for reviewing proposals not yet built
+- **File:** `weslr/review_interface.py` — IMPLEMENTED (read-only inspection, no writes)
+- **Status:** LIVE — operator may inspect proposal review queue
 
 ### Decision Log
 - **Doc:** `weslr/docs/WESLR_REVIEW_DECISION_LOG_V1.md` (202 lines)
@@ -117,7 +124,7 @@
 | Contract insufficiency detector | ✅ LIVE | contract_insufficiency_detector.py |
 | Response expander | ✅ LIVE | weslr/omnichat/response_expander.py |
 | Proposal bridge | ✅ LIVE (review only) | contract_improvement_proposal_bridge.py |
-| Review interface | ❌ SPEC ONLY | no .py file |
+| Review interface | ✅ LIVE (read-only) | weslr/review_interface.py |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
 | Controlled exposure | ❌ SPEC ONLY | no .py file |
@@ -126,6 +133,7 @@
 | Frontend/UI | ❌ SPEC ONLY | no .py file |
 | Deployment/OCW status | ✅ IMPLEMENTED | bootstrap.py |
 | contract_observations.jsonl | ✅ LIVE (31 records) | weslr/ |
+| Observation loop canon | ✅ LIVE (doctrine) | weslr/docs/WESLR_OBSERVATION_LOOP_PHASE_1_CANNON.md |
 
 ---
 
@@ -144,8 +152,8 @@
 
 ## Current Blocker List
 
-1. **Review interface not implemented** — no `review_interface.py`; no operator-facing UI for reviewing proposals
-2. **Decision log not implemented** — no `review_decision_log.py`; no persistent record of operator decisions
+1. **Decision log not implemented** — no `review_decision_log.py`; no persistent record of operator decisions
+2. **Review interface now implemented** — `weslr/review_interface.py` live, read-only inspection operational
 
 ---
 
@@ -153,8 +161,8 @@
 
 | Document | Verdict |
 |----------|---------|
-| `WESLR_CONTRACT_PROPOSAL_REVIEW_BRIDGE_CHECKPOINT_V1.md` | WESLR_CONTRACT_PROPOSAL_REVIEW_BRIDGE_CHECKPOINT_V1_DEFINED |
-| `WESLR_CONTRACT_REVIEW_HANDOFF_CANON_V1.md` | WESLR_CONTRACT_REVIEW_HANDOFF_CANON_V1_DEFINED |
+| `WESLR_DETERMINISTIC_ANCHOR_AND_PROBABILISTIC_INTERPRETATION_CANON_V1.md` | WESLR_DETERMINISTIC_ANCHOR_AND_PROBABILISTIC_INTERPRETATION_CANON_V1_DEFINED |
+| `WESLR_OBSERVATION_LOOP_PHASE_1_CANNON.md` | WESLR_OBSERVATION_LOOP_PHASE_1_CANNON_DEFINED |
 
 ---
 
