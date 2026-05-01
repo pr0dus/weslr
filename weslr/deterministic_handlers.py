@@ -937,7 +937,13 @@ HANDLER_REGISTRY = [
     {
         "id": "usage_guidance",
         "path": "usage_guidance",
-        "triggers": ["what can i try", "what can i ask", "show me what to try"],
+        "triggers": [
+            "what can i try",
+            "what can i ask",
+            "show me what to try",
+            "what can you do",
+            "what can you do?",
+        ],
         "match_type": "prefix",
         "priority": 65,
         "handler_fn": "handle_usage_guidance",
