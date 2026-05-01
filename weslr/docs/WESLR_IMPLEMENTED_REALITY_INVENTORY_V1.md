@@ -143,6 +143,17 @@
 - **Uses:** Capability Registry V1 and Capability Router V1 (read-only)
 - **Spec:** `weslr/docs/WESLR_CAPABILITY_REGISTRY_ROUTER_V1_CHECKPOINT.md`
 
+### Capability Welcome Chat Bridge V1
+- **File:** `weslr/capability_welcome_chat_bridge.py` — Staging-only bridge wiring welcome surface into /chat
+- **Tests:** `test_capability_welcome_chat_bridge_v1.py` — **20 passed** ✅
+- **Runtime integration:** `deploy/staging/weslr_demo_server.py` — wired before evidence bridge in do_POST
+- **Status:** IMPLEMENTED GUARDED / STAGING RUNTIME WIRED
+- **Authority:** `registry_generated`; no execution, no JSONL writes, no Ollama, no evidence search
+- **Handles only:** help/welcome/capability overview queries (what can you do, /help, etc.)
+- **Does NOT handle:** /evidence, /system, /governance, /attention, /sources (future work)
+- **Order:** capability welcome bridge → evidence bridge → signal capture
+- **Spec:** `weslr/docs/WESLR_CAPABILITY_REGISTRY_ROUTER_V1_CHECKPOINT.md`
+
 ### Frontend / UI
 - **Doc:** `weslr/docs/WESLR_FRONTDOOR_UI_SPEC_V1.md` (244 lines)
 - **File:** `weslr/frontdoor_ui_spec.py` — DOES NOT EXIST
@@ -166,6 +177,7 @@
 | Capability Registry V1 | ✅ IMPLEMENTED (read-only, not wired to /chat) | capability_registry.py / capability_registry.json |
 | Capability Router V1 | ✅ IMPLEMENTED (deterministic, not wired to /chat) | capability_router.py |
 | Capability Welcome Surface V1 | ✅ IMPLEMENTED (read-only, not wired to /chat) | capability_welcome_surface.py |
+| Capability Welcome Chat Bridge V1 | ✅ IMPLEMENTED (staging, wired before evidence bridge) | capability_welcome_chat_bridge.py |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
 | Controlled exposure | ❌ SPEC ONLY | no .py file |

@@ -180,6 +180,21 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
         except Exception as e:
             response = {"success": False, "reply": f"Error: {e}", "error": str(e)}
 
+        # ── Capability Welcome Bridge ─────────────────────────────────────────
+        # Only activates for help/welcome/capability overview queries.
+        # Runs BEFORE evidence bridge — /help must never trigger evidence search.
+        # Bounded: additive only, never overrides genuine synthesis.
+        try:
+            from weslr.capability_welcome_chat_bridge import maybe_answer_with_capability_welcome
+            _bridge_result = maybe_answer_with_capability_welcome(message, response)
+            if _bridge_result:
+                response["reply"] = _bridge_result["reply"]
+                response["path"] = _bridge_result["path"]
+                response["response_contract"] = _bridge_result.get("response_contract")
+                response["_capability_metadata"] = _bridge_result["_capability_metadata"]
+        except Exception:
+            pass  # Non-critical — keep existing response on any bridge failure
+
         # ── Evidence Chat Bridge (Tier-A safe injection) ─────────────────────
         # Only activates when: search enabled, evidence_needed=true,
         # current reply is fallback/template/generic, message is not self/system.
