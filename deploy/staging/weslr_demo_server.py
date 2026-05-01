@@ -180,6 +180,24 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
         except Exception as e:
             response = {"success": False, "reply": f"Error: {e}", "error": str(e)}
 
+        # ── Evidence Chat Bridge (Tier-A safe injection) ─────────────────────
+        # Only activates when: search enabled, evidence_needed=true,
+        # current reply is fallback/template/generic, message is not self/system.
+        # Bounded: additive only, never overrides genuine synthesis.
+        try:
+            from weslr.evidence_chat_bridge import maybe_answer_with_evidence
+            _bridge_result = maybe_answer_with_evidence(
+                message,
+                response.get("reply"),
+            )
+            if _bridge_result:
+                response["reply"] = _bridge_result["message"]
+                response["path"] = _bridge_result["path"]
+                response["response_contract"] = _bridge_result.get("response_contract")
+                response["_evidence_metadata"] = _bridge_result["evidence_metadata"]
+        except Exception:
+            pass  # Non-critical — keep existing response on any bridge failure
+
         # ── Signal capture (fire-and-forget, zero user impact) ────────────────
         _capture_signal(message=message, session_id=session_id, response=response)
 
