@@ -283,4 +283,34 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Standalone builder, not yet routed from /chat
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only builder, no file writes
+### External Evidence Pipeline V1
+
+- **File:** `weslr/evidence_pipeline.py`
+- **Tests:** `test_evidence_pipeline_v1.py` — 14 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `external_evidence_unverified`
+- **Truth status:** `unverified`
+- **Functions:** `run_evidence_pipeline()`
+- **Pipeline:** Evidence Needed Detector → SearXNG Search Adapter → Evidence Packet Builder → Evidence Answer Builder
+- **Search disabled by default:** `WESLR_SEARXNG_ENABLED=true` required to activate
+- **No truth writes:** `automatic_truth_write=false` on all pipeline outputs
+- **No /chat integration:** Standalone orchestrator, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only pipeline, no file writes
+
+
+### External Evidence Pipeline V1
+
+- **File:** 
+- **Tests:**  — 14 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** 
+- **Truth status:** 
+- **Functions:** 
+- **Pipeline:** Evidence Needed Detector → SearXNG Search Adapter → Evidence Packet Builder → Evidence Answer Builder
+- **Search disabled by default:**  required to activate
+- **No truth writes:**  on all pipeline outputs
+- **No /chat integration:** Standalone orchestrator, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only pipeline, no file writes
 
