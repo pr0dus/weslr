@@ -24,7 +24,7 @@
 - **File:** `weslr/website_signal_integration.py` (103 lines)
 - **Status:** LIVE — `capture_website_signal()` wired as fire-and-forget in main.py
 - **Functions:** `capture_website_signal()`, `build_public_signal_record()`
-- **Tests:** `test_website_signal_integration_v1.py` (11 tests — has `sys.exit(0)` bug, INTERNALERROR)
+- **Tests:** `test_website_signal_integration_v1.py` — **15 passed** ✅ (unittest rewrite, no sys.exit)
 
 ### Contract Observation
 - **File:** `weslr/contract_observation.py` (310 lines)
@@ -37,7 +37,7 @@
 - **Status:** LIVE — `detect_insufficiency()` reads real file, `check_stability()` tracks patterns
 - **Functions:** `detect_insufficiency()`, `_append_insufficiency_evidence()`, `_get_contract_key()`, `check_stability()`
 - **Tests:** `test_contract_insufficiency_detector_v1.py` — **16 passed** ✅
-- **Note:** `test_contract_insufficiency_detector_synthetic.py` has 1 failure (detector creates real file in certain test setups)
+- **Synthetic tests:** `test_contract_insufficiency_detector_synthetic.py` — **11 passed** ✅ (isolated via `insufficiency_log_path` parameter)
 
 ### Response Contracts
 - **File:** `weslr/contract_observation.py` — `response_contract` field in observation records
@@ -49,18 +49,14 @@
 - **Status:** IMPLEMENTED — `new_timeline_id()`, `new_activation_token()`, `verify_secret_words()`, `new_pending_bootstrap()`
 - **Purpose:** Timeline creation, bootstrap tokens, secret word verification
 
----
-
-## B) IMPLEMENTED BUT NOT FULLY LIVE
-
 ### Response Expander
 - **File:** `weslr/omnichat/response_expander.py` (400+ lines)
-- **Status:** LIVE — deterministic expansion layer, no LLM, adds _omnichat_policy + expanded_response
-- **Note:** Inventory previously listed `weslr/response_expansion.py` — that file does not exist. The actual module is `omnichat/response_expander.py`. Inventory corrected.
+- **Status:** LIVE — deterministic expansion layer, no LLM, adds `_omnichat_policy` + `expanded_response`
+- **Note:** Deterministic V1 rules; never invents facts; builds L4 guidance from known WESLR commands only
 
 ---
 
-## C) SPEC ONLY / DOCTRINE ONLY
+## B) SPEC ONLY / DOCTRINE ONLY
 
 ### Proposal Bridge
 - **Doc:** `weslr/docs/WESLR_CONTRACT_IMPROVEMENT_PROPOSAL_BRIDGE_V1.md` (111 lines)
@@ -104,37 +100,6 @@
 
 ---
 
-## D) NOT IMPLEMENTED
-
-- **File:** `weslr/omnichat/response_expander.py` — EXISTS (was incorrectly listed as non-existent)
-- **Note:** Inventory was wrong — `response_expansion.py` spec file exists but the actual module is `omnichat/response_expander.py`
-
-### Proposal Bridge (Python module)
-- `weslr/contract_improvement_proposal_bridge.py` — DOES NOT EXIST
-
-### Review Interface (Python module)
-- `weslr/review_interface.py` — DOES NOT EXIST
-
-### Decision Log (Python module)
-- `weslr/review_decision_log.py` — DOES NOT EXIST
-
-### Operator Consistency (Python module)
-- `weslr/operator_consistency.py` — DOES NOT EXIST
-
-### Controlled Exposure (Python module)
-- `weslr/controlled_observation_environment.py` — DOES NOT EXIST
-
-### Public Readiness (Python module)
-- `weslr/public_readiness.py` — DOES NOT EXIST
-
-### OmniChat (Python module)
-- `weslr/omni_execution_model.py` — DOES NOT EXIST
-
-### Frontend/UI (Python module)
-- `weslr/frontdoor_ui_spec.py` — DOES NOT EXIST
-
----
-
 ## Summary Table
 
 | Component | Status | File |
@@ -145,13 +110,13 @@
 | Public signal capture | ✅ LIVE | website_signal_integration.py |
 | Contract observation | ✅ LIVE | contract_observation.py |
 | Contract insufficiency detector | ✅ LIVE | contract_insufficiency_detector.py |
+| Response expander | ✅ LIVE | weslr/omnichat/response_expander.py |
 | Proposal bridge | ❌ SPEC ONLY | no .py file |
 | Review interface | ❌ SPEC ONLY | no .py file |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
 | Controlled exposure | ❌ SPEC ONLY | no .py file |
 | Public readiness | ❌ SPEC ONLY | no .py file |
-| Response expander | ❌ SPEC ONLY | no .py file |
 | OmniChat unification | ❌ SPEC ONLY | no .py file |
 | Frontend/UI | ❌ SPEC ONLY | no .py file |
 | Deployment/OCW status | ✅ IMPLEMENTED | bootstrap.py |
@@ -165,8 +130,8 @@
 |------------|--------|
 | `test_contract_observation_v1.py` | ✅ 21 passed |
 | `test_contract_insufficiency_detector_v1.py` | ✅ 16 passed |
-| `test_contract_insufficiency_detector_synthetic.py` | ⚠️ 10 passed, 1 failed (detector creates real file in test isolation) |
-| `test_website_signal_integration_v1.py` | ❌ INTERNALERROR (sys.exit(0) at line 368) |
+| `test_contract_insufficiency_detector_synthetic.py` | ✅ 11 passed |
+| `test_website_signal_integration_v1.py` | ✅ 15 passed |
 | `self_test.py` | ✅ exit code 0 |
 
 ---
@@ -177,12 +142,11 @@
 2. **Proposal bridge not implemented** — no `contract_improvement_proposal_bridge.py`; detector has `proposal_ready` state but nowhere to send it
 3. **Review interface not implemented** — no `review_interface.py`; no operator-facing UI for reviewing proposals
 4. **Decision log not implemented** — no `review_decision_log.py`; no persistent record of operator decisions
-5. **self_test.py output** — appears to run silently with exit 0 but produces no visible output
 
 ---
 
 ## Commit
 
 ```
-b8664aaf42a330f4f097f2f30ed0058aab26235b
+aaba851 test hygiene: fix test_website_signal_integration_v1 pytest crash, fix synthetic detector isolation, update inventory
 ```
