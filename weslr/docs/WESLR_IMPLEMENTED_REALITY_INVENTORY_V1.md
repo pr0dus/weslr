@@ -236,3 +236,17 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Standalone classifier, not yet routed from /chat
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only classification only
+
+### SearXNG Search Adapter V1
+
+- **File:** `weslr/searxng_search_adapter.py`
+- **Tests:** `test_searxng_search_adapter_v1.py` — 26 passed
+- **Status:** IMPLEMENTED DISABLED-BY-DEFAULT / NOT WIRED TO CHAT
+- **Authority:** `external_evidence_unverified`
+- **Functions:** `is_searxng_enabled`, `get_searxng_base_url`, `build_search_url`, `normalize_searxng_result`, `search_searxng`
+- **Enable with:** `WESLR_SEARXNG_ENABLED=true`
+- **Default URL:** `http://localhost:8888` (override with `WESLR_SEARXNG_URL`)
+- **No truth writes:** Results are evidence only, never written to state
+- **No /chat integration:** Standalone adapter, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only adapter, no file writes
