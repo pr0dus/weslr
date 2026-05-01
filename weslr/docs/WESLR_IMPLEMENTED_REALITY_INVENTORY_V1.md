@@ -115,6 +115,25 @@
 - **Key functions:** `classify_attention_item()`, `build_attention_summary()`
 - **Spec:** `weslr/docs/WESLR_ARTIFICIAL_ANALYSIS_INDEX_CANON_V1.md` (doctrine) + `weslr/docs/WESLR_ARTIFICIAL_ANALYSIS_INDEX_V1_CHECKPOINT.md` (implementation)
 
+### Capability Registry V1
+- **File:** `weslr/capability_registry.py` — READ-ONLY registry, no writes, no LLM calls
+- **Data:** `weslr/capability_registry.json` — 10 live capability entries
+- **Tests:** `weslr/tests/test_capability_registry_v1.py` — **38 passed** ✅
+- **Status:** IMPLEMENTED / NOT WIRED TO CHAT — read-only self-map of live capabilities
+- **Authority:** `deterministic` / `read_only` on all entries; `automatic_change: false`
+- **Key functions:** `load_registry()`, `list_capabilities()`, `get_capability()`, `get_by_slash_command()`, `search_by_trigger()`, `group_capabilities_by_category()`
+- **Spec:** `weslr/docs/WESLR_CAPABILITY_INTELLIGENCE_ARCHITECTURE_REVIEW_V1.md`
+
+### Capability Router V1
+- **File:** `weslr/capability_router.py` — DETERMINISTIC routing only, no execution, no LLM calls
+- **Tests:** `weslr/tests/test_capability_router_v1.py` — **33 passed** ✅
+- **Status:** IMPLEMENTED / NOT WIRED TO CHAT — classifies user messages into capability IDs
+- **Authority:** `routing_only`; no execution, no JSONL writes, no Ollama, no /chat integration
+- **Automatic change:** `false` on all routing results
+- **Threshold:** 0.35 confidence minimum for routing decision
+- **Key functions:** `route_request()` with slash-match, trigger scoring, and context boosts
+- **Spec:** `weslr/docs/WESLR_CAPABILITY_INTELLIGENCE_ARCHITECTURE_REVIEW_V1.md`
+
 ### Frontend / UI
 - **Doc:** `weslr/docs/WESLR_FRONTDOOR_UI_SPEC_V1.md` (244 lines)
 - **File:** `weslr/frontdoor_ui_spec.py` — DOES NOT EXIST
@@ -135,6 +154,8 @@
 | Response expander | ✅ LIVE | weslr/omnichat/response_expander.py |
 | Proposal bridge | ✅ LIVE (review only) | contract_improvement_proposal_bridge.py |
 | Review interface | ✅ LIVE (read-only) | weslr/review_interface.py |
+| Capability Registry V1 | ✅ IMPLEMENTED (read-only, not wired to /chat) | capability_registry.py / capability_registry.json |
+| Capability Router V1 | ✅ IMPLEMENTED (deterministic, not wired to /chat) | capability_router.py |
 | Decision log | ❌ SPEC ONLY | no .py file |
 | Operator consistency | ❌ SPEC ONLY | no .py file |
 | Controlled exposure | ❌ SPEC ONLY | no .py file |
