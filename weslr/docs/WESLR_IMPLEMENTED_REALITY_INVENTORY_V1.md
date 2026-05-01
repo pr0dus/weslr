@@ -267,3 +267,20 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Standalone builder, not yet routed from /chat
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only builder, no file writes
+### Evidence Answer Builder V1
+
+- **File:** 
+- **Tests:**  — 23 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** 
+- **Truth status:** 
+- **Functions:** , 
+- **Input:**  (safe_for_answer_builder=true, at least one result)
+- **Output:**  with cautious user-facing answer draft
+- **Depths:** brief (2-3 sentences), normal (concise paragraph + sources), deep (multi-part)
+- **Boundary wording:** Always includes "Based on external search results — not stored WESLR truth"
+- **No truth writes:**  on all answers
+- **No /chat integration:** Standalone builder, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only builder, no file writes
+
