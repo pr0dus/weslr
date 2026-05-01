@@ -223,3 +223,16 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Does not route through or modify response contracts
 - **No Ollama:** No LLM calls, no formatter integration
 - **No JSONL writes:** Read-only from doc files and analysis modules
+
+### Evidence Needed Detector V1
+
+- **File:** `weslr/evidence_needed_detector.py`
+- **Tests:** `test_evidence_needed_detector_v1.py` — 27 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `classification_only`
+- **Functions:** `classify_evidence_need`, `build_evidence_needed_response`
+- **Need types:** definition_request, open_knowledge, source_request, lookup_request, latest_information
+- **No search adapter yet:** Detects evidence need but does not perform web search
+- **No /chat integration:** Standalone classifier, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only classification only
