@@ -3,9 +3,12 @@ External Evidence Packet Builder V1
 
 Builds bounded external evidence packets from normalized SearXNG search results.
 Read-only. No truth writes. No /chat integration.
+Ranking: Sources are ordered by trust tier before packet assembly.
 """
 
 from typing import Any
+
+from weslr.source_trust_ranking import rank_search_results
 
 
 # Fields that are considered safe to include in evidence packets
@@ -122,7 +125,9 @@ def build_evidence_packet(query: str, search_response: dict, max_results: int = 
         }
 
     all_results = search_response.get("results", [])
-    limited = all_results[:max_results]
+    # Rank by trust score before selecting (highest trust first)
+    ranked = rank_search_results(all_results)
+    limited = ranked[:max_results]
 
     safe_results = []
     for r in limited:

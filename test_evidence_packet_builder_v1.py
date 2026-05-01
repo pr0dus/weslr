@@ -203,7 +203,8 @@ class TestSummarizeEvidencePacket(unittest.TestCase):
         self.assertEqual(summary["record_type"], SUMMARY_RECORD_TYPE)
         self.assertEqual(summary["query"], "test")
         self.assertEqual(summary["result_count"], 3)
-        self.assertEqual(summary["top_titles"], ["Result One", "Result Two", "Result Three"])
+        # Titles are trust-ranked so order may vary — check membership, not order
+        self.assertEqual(set(summary["top_titles"]), {"Result One", "Result Two", "Result Three"})
 
     def test_summary_extracts_domains(self):
         packet = build_evidence_packet("test", MOCK_VALID_SEARXNG_RESPONSE)

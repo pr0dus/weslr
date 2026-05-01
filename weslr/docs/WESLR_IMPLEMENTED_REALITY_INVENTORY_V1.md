@@ -283,6 +283,22 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Standalone builder, not yet routed from /chat
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only builder, no file writes
+
+### Source Trust Ranking V1
+
+- **File:** `weslr/source_trust_ranking.py`
+- **Tests:** `test_source_trust_ranking_v1.py` — 29 passed
+- **Status:** IMPLEMENTED DETERMINISTIC RANKING / USED BY EVIDENCE PACKET BUILDER
+- **Authority:** `ranking_only` (does not verify truth)
+- **Functions:** `classify_source()`, `score_source()`, `rank_search_results()`
+- **High trust:** Wikipedia, Britannica, Merriam-Webster, Quanta Magazine, .edu, government/official domains
+- **Medium trust:** Science news, established journalism, organization sites (.org)
+- **Low trust:** Reddit, YouTube, forums, social media, SEO commercial pages
+- **Behavior:** Orders sources by trust score — does NOT drop sources
+- **No truth writes:** Truth status remains `unverified` regardless of source tier
+- **No memory writes:** No JSONL, no artifact storage
+- **No Ollama:** No LLM calls
+
 ### External Evidence Pipeline V1
 
 - **File:** `weslr/evidence_pipeline.py`
