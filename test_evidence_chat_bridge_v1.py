@@ -261,6 +261,36 @@ class TestMaybeAnswerWithEvidence(unittest.TestCase):
         )
         self.assertIsNone(result)
 
+    @patch("weslr.evidence_chat_bridge.is_searxng_enabled")
+    @patch("weslr.evidence_chat_bridge.classify_evidence_need")
+    @patch("weslr.evidence_chat_bridge.run_evidence_pipeline")
+    def test_confirmed_answer_fallback_triggers_bridge(
+        self, mock_pipeline, mock_classify, mock_enabled
+    ):
+        """Live fallback 'I don't have a confirmed answer...' triggers evidence bridge."""
+        mock_classify.return_value = {
+            "record_type": "evidence_need_classification_v1",
+            "query": "What is entropy?",
+            "evidence_needed": True,
+        }
+        mock_enabled.return_value = True
+        mock_pipeline.return_value = MOCK_ENTROPY_PIPELINE_RESULT
+
+        result = maybe_answer_with_evidence(
+            "What is entropy?",
+            "I don't have a confirmed answer for that yet...",
+        )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["path"], "evidence_grounded_answer")
+        self.assertTrue(result["evidence_metadata"]["evidence_used"])
+        self.assertEqual(
+            result["evidence_metadata"]["authority"],
+            "external_evidence_unverified",
+        )
+        self.assertFalse(result["evidence_metadata"]["automatic_truth_write"])
+        mock_pipeline.assert_called_once()
+
 
 class TestSelfSystemPatterns(unittest.TestCase):
 

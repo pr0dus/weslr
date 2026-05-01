@@ -91,6 +91,8 @@ def maybe_answer_with_evidence(message: str, current_message: str | None) -> dic
             "i don't know",
             "i'm not sure",
             "i cannot answer",
+            "i don't have a confirmed answer",
+            "i do not have a confirmed answer",
         ]
         is_fallback = any(s in lower_curr for s in fallback_signals)
         # Only inject if message looks like a template/fallback answer
