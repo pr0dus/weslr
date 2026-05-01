@@ -250,3 +250,20 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat integration:** Standalone adapter, not yet routed from /chat
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only adapter, no file writes
+
+### Evidence Packet Builder V1
+
+- **File:** `weslr/evidence_packet_builder.py`
+- **Tests:** `test_evidence_packet_builder_v1.py` — 20 passed
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `external_evidence_unverified`
+- **Truth status:** `unverified`
+- **Functions:** `build_evidence_packet()`, `summarize_evidence_packet()`
+- **Input:** `searxng_search_response_v1` (ok=true, at least one result)
+- **Output:** `external_evidence_packet_v1` with results truncated and unsafe fields stripped
+- **Max content length:** 2000 chars per result
+- **Safe fields only:** title, url, content, source, authority
+- **No truth writes:** `automatic_truth_write=false` on all packets
+- **No /chat integration:** Standalone builder, not yet routed from /chat
+- **No Ollama:** No LLM calls
+- **No JSONL writes:** Read-only builder, no file writes
