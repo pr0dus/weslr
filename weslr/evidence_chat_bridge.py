@@ -94,9 +94,16 @@ def maybe_answer_with_evidence(message: str, current_message: str | None) -> dic
             "i don't have a confirmed answer",
             "i do not have a confirmed answer",
         ]
+        generic_non_answer_signals = [
+            "i can explain that clearly",
+            "tell me how deep you want to go",
+            "how deep you want to go",
+            "i can walk through that",
+        ]
         is_fallback = any(s in lower_curr for s in fallback_signals)
-        # Only inject if message looks like a template/fallback answer
-        if not is_fallback:
+        is_generic_non_answer = any(s in lower_curr for s in generic_non_answer_signals)
+        # Only inject if message looks like a template/fallback answer or generic depth prompt
+        if not (is_fallback or is_generic_non_answer):
             return None
 
     # Step 5: Run evidence pipeline

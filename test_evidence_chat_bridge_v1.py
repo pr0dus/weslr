@@ -291,6 +291,77 @@ class TestMaybeAnswerWithEvidence(unittest.TestCase):
         self.assertFalse(result["evidence_metadata"]["automatic_truth_write"])
         mock_pipeline.assert_called_once()
 
+    @patch("weslr.evidence_chat_bridge.is_searxng_enabled")
+    @patch("weslr.evidence_chat_bridge.classify_evidence_need")
+    @patch("weslr.evidence_chat_bridge.run_evidence_pipeline")
+    def test_generic_explanation_fallback_triggers_bridge(
+        self, mock_pipeline, mock_classify, mock_enabled
+    ):
+        """Generic 'I can explain that clearly. Tell me how deep...' triggers evidence bridge."""
+        mock_classify.return_value = {
+            "record_type": "evidence_need_classification_v1",
+            "query": "What is entropy?",
+            "evidence_needed": True,
+        }
+        mock_enabled.return_value = True
+        mock_pipeline.return_value = MOCK_ENTROPY_PIPELINE_RESULT
+
+        result = maybe_answer_with_evidence(
+            "What is entropy?",
+            "I can explain that clearly. Tell me how deep you want to go...",
+        )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["path"], "evidence_grounded_answer")
+        self.assertTrue(result["evidence_metadata"]["evidence_used"])
+        self.assertEqual(
+            result["evidence_metadata"]["authority"],
+            "external_evidence_unverified",
+        )
+        self.assertFalse(result["evidence_metadata"]["automatic_truth_write"])
+
+    @patch("weslr.evidence_chat_bridge.is_searxng_enabled")
+    @patch("weslr.evidence_chat_bridge.classify_evidence_need")
+    @patch("weslr.evidence_chat_bridge.run_evidence_pipeline")
+    def test_self_system_question_blocked_by_guard(
+        self, mock_pipeline, mock_classify, mock_enabled
+    ):
+        """Self/system question is blocked even when generic depth prompt is present."""
+        mock_classify.return_value = {
+            "record_type": "evidence_need_classification_v1",
+            "query": "What are you?",
+            "evidence_needed": True,
+        }
+        mock_enabled.return_value = True
+
+        result = maybe_answer_with_evidence(
+            "What are you?",
+            "I can explain that clearly. Tell me how deep you want to go...",
+        )
+
+        self.assertIsNone(result)
+        mock_pipeline.assert_not_called()
+
+    @patch("weslr.evidence_chat_bridge.is_searxng_enabled")
+    @patch("weslr.evidence_chat_bridge.classify_evidence_need")
+    def test_generic_depth_prompt_with_search_disabled(
+        self, mock_classify, mock_enabled
+    ):
+        """Generic depth prompt does not activate when search is disabled."""
+        mock_classify.return_value = {
+            "record_type": "evidence_need_classification_v1",
+            "query": "What is entropy?",
+            "evidence_needed": True,
+        }
+        mock_enabled.return_value = False
+
+        result = maybe_answer_with_evidence(
+            "What is entropy?",
+            "I can explain that clearly. Tell me how deep you want to go...",
+        )
+
+        self.assertIsNone(result)
+
 
 class TestSelfSystemPatterns(unittest.TestCase):
 
