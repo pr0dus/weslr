@@ -34,6 +34,25 @@
 
 ---
 
+## 2b. Timeline-Based Entity Memory (Person / Institution)
+
+**Status: 🚧 Partial — infrastructure exists, not used for human/entity memory**
+
+WESLR already has timeline infrastructure in `.weslr/timelines/`:
+- `tl_default/events.jsonl` — voice event log from `voice_gateway.py`
+- `timeline_resolution.py` (520 lines) — manages **active threads per user_id**, links artifacts to threads, resolves active artifact per user, checks continuity (`has_continuity()`, `get_continuity_status()`)
+- `memory_tiers/l0_identity.json`, `l1_operating.json`, `l2_session.json` — WESLR's own identity/operating/session state tiers
+
+However, this timeline system is used for **WESLR's own artifact and thread continuity** — not for storing a human's model of an external person or institution. The pattern you're describing (a timeline per person/institution that records what was said, what matters, what happened) is not implemented.
+
+**What exists:** Thread registry per user, active artifact resolution, continuity checks.
+
+**What's missing:** Timeline-per-entity for external persons/institutions, event ingestion from `/chat` turns into entity timelines, query by entity name.
+
+**This is a design direction, not a gap in the existing system.** Timelines are a better model than a flat `human_memories/` store — and the existing infrastructure (`timeline_resolution.py`) provides the primitives (thread registry, per-user active thread, continuity status). The missing piece is entity timeline creation and event routing into those timelines.
+
+---
+
 ## 3. Proactive Suggestions
 
 **Status: 🚧 Partial**
@@ -104,26 +123,27 @@
 | Area | Status | Key Files |
 |------|--------|-----------|
 | Voice I/O (STT/TTS) | 🚧 Partial | `voice_gateway.py` — Phase 1A shim, browser-dependent TTS |
-| Persistent cross-session memory | ❌ Not implemented | None — no `human_memories/`, no session summary injection |
+| Persistent cross-session memory | ❌ Not implemented | None — no session summary injection into `/chat` |
+| Timeline-based entity memory | 🚧 Partial design direction | `timeline_resolution.py` — threads for WESLR artifacts, not external entity histories |
 | Proactive suggestions | 🚧 Partial | `capability_suggestion.py`, `suggestion_bridge.py`, `artificial_analysis_index.py` — infrastructure exists, no unprompted trigger |
 | Action execution | ❌ Not implemented | `write_handlers.py` — trace-only, `execution_allowed=False` everywhere |
 | Ambient listening / wake word | ❌ Not implemented | No always-on listener, no VAD, no wake-word loop |
-| Within-session coreference | ❌ Not implemented | No `interpret_human_turn`, no cross-turn context, no antecedent resolution |
+| Within-session coreference | ❌ Not implemented | No cross-turn context, no antecedent resolution |
 | Everyday NL command routing | ❌ Not implemented | All 30+ handlers are WESLR self-queries; zero external world handlers |
 
 ---
 
 ## Recommendation
 
-### Single most impactful next step: **Add session summary injection into `/chat` (Area 2)**
+### Single most impactful next step: **Entity timeline infrastructure (Area 2 + 2b combined)**
 
-Persistent cross-session memory — knowing what the user said *yesterday* — is the single feature that most directly makes WESLR feel like a continuity agent rather than a stateless responder. Without it, every conversation starts from scratch regardless of what was discussed before.
+The session summary idea and the timeline-per-entity idea are actually the same underlying need: continuity across sessions with structured recall. The right implementation path:
 
-**What this requires:**
-1. A `session_summaries/` store (or reuse `memory/` with a naming convention) where each completed session writes a one-paragraph summary.
-2. At `/chat` request time, load the last N session summaries and inject them as prefix context before routing.
-3. Optionally: a lightweight "what did we discuss last time?" surface that the welcome surface can reference.
+1. **Use existing `timeline_resolution.py` primitives** — thread registry, per-user active thread, `has_continuity()`, `get_continuity_status()`. These are designed for exactly this.
+2. **Create entity timelines** — for each person/institution the user mentions, a timeline under `.weslr/timelines/<entity_id>/events.jsonl` that records what was said, what matters, the relationship state.
+3. **Session summary as a special case** — each session produces a summary event that gets appended to the user's own entity timeline (or a special `tl_user_<user_id>`).
+4. **Injection at `/chat` time** — load the last N events from the relevant entity timeline(s) and prepend as context before routing.
 
-This change is low-risk (read-side only, no execution), high-impact (makes every interaction feel continuity-aware), and directly enables the "remember that conversation we had" experience Jarvis has.
+This makes session continuity and entity memory the same system, built on proven timeline infrastructure rather than a flat summary store. Timelines scale better (you can query a specific person's timeline, not just "the last session") and already have the resolution logic (`timeline_resolution.py`).
 
-Everything else on the Jarvis path — wake word, ambient listening, action execution — requires either additional infrastructure (audio pipeline, external action registry with safety guards) or architectural decisions (execution_allowed policy) that go beyond what can be lightly added. Session summary injection is the highest-leverage, lowest-risk starting point.
+Everything else on the Jarvis path — wake word, ambient, action execution — requires additional infrastructure or explicit policy decisions. Entity timelines using existing primitives is the highest-leverage starting point.
