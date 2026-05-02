@@ -357,6 +357,22 @@ Operational docs that define workflows but have no runtime implementation.
 - **Bridging:** reads `build_continuity_note()`, returns `path=continuity_note`, `response_contract=system_answer`
 - **Safe failure:** try/except — bridge failure never crashes the request
 
+### Proactive Suggestions V1
+- **File:** `weslr/proactive_suggestions.py` (245 lines)
+- **Test:** `weslr/tests/test_proactive_suggestions_v1.py` — **34 passed** ✅
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `suggestion_only`
+- **Functions:** `classify_timeline_theme()`, `build_suggestion_from_theme()`, `build_proactive_suggestion()`
+- **Input:** Recent user timeline summaries from `load_recent_session_summaries()`
+- **Themes:** continuity, evidence, capability_discovery, experiment, governance
+- **Output:** One optional suggestion ("You could...", "Would you like to...")
+- **No writes:** No JSONL writes, no memory writes, no action execution
+- **No background loop:** No cron, no heartbeat, no unprompted delivery
+- **No Ollama:** No LLM calls, no external services
+- **No raw prompt storage, no hidden learning**
+- **governance theme** sets `operator_approval_required: true`; all others `false`
+- **Future:** chat surfacing, voice surfacing, cooldowns, operator-only mode
+
 ### Source Trust Ranking V1
 
 - **File:** `weslr/source_trust_ranking.py`
