@@ -137,10 +137,18 @@ _WORKPLACE_SCOPE_PATTERNS = (
     r"\bour team\b",
     r"\bour work\b",
     r"\bthe workplace\b",
+    r"\bour recent\b",
+    r"\bour ideas?\b",
+    r"\bour experiments?\b",
+    r"\bour experiments are pending\b",
+    r"\bour ideas are pending\b",
+    r"\bwhat are we working on\b",
     r"\bpending ideas?\b",
     r"\bpending experiments?\b",
-    r"\bwhat are we working on\b",
-    r"\bour recent\b",
+    r"\bideas are pending\b",
+    r"\bexperiments are pending\b",
+    r"\bwhat experiments are pending\b",
+    r"\bwhat ideas are pending\b",
 )
 
 
@@ -377,8 +385,10 @@ def analyze_turn(message: str, context: Optional[dict] = None) -> dict:
 
     has_context = _has_active_context(context)
 
-    # ── 1. Zero-context bare collective question → clarification ─────────────
-    if not has_context and _is_bare_collective_question(message):
+    # ── 1. Bare collective question → clarification (always, regardless of context) ─
+    # "What can we do?" is genuinely ambiguous even if a stale workplace overview exists.
+    # It must not silently default to a specific layer without user clarification.
+    if _is_bare_collective_question(message):
         return {
             "record_type": "hybrid_turn_analysis_v1",
             "turn_kind": "unknown",

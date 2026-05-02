@@ -124,15 +124,16 @@ class TestZeroContextExternalKnowledge(unittest.TestCase):
 
 
 class TestWorkplaceScopeWithContext(unittest.TestCase):
-    """Test 7: With workplace context → workplace layer"""
+    """Test that workplace scope fires for non-bare questions with workplace context."""
 
-    def test_what_can_we_do_with_workplace_context(self):
+    def test_what_experiments_pending_with_workplace_context(self):
+        """What experiments are pending? with workplace context → workplace"""
         ctx = _ctx(
             user_id="arthur",
             recent_timeline_events=[{"summary": "worked on Jarvis gap"}],
             workplace_overview="WESLR workplace: 1 pending experiment.",
         )
-        result = analyze_turn("What can we do?", context=ctx)
+        result = analyze_turn("What experiments are pending?", context=ctx)
         self.assertEqual(result["selected_layer"], "workplace")
         self.assertEqual(result["turn_kind"], "workplace")
         self.assertEqual(result["ambiguity"], "none")
@@ -141,6 +142,22 @@ class TestWorkplaceScopeWithContext(unittest.TestCase):
         ctx = _ctx(workplace_overview="WESLR overview")
         result = analyze_turn("Show me our workplace.", context=ctx)
         self.assertEqual(result["selected_layer"], "workplace")
+
+    def test_bare_what_can_we_do_with_workplace_context_routes_to_clarification(self):
+        """Bare collective question routes to clarification even with workplace context.
+
+        'What can we do?' is inherently ambiguous and must not silently
+        commit to a layer without user clarification — regardless of whether
+        a stale workplace overview file exists.
+        """
+        ctx = _ctx(
+            user_id="arthur",
+            recent_timeline_events=[{"summary": "worked on Jarvis gap"}],
+            workplace_overview="WESLR workplace: 1 pending experiment.",
+        )
+        result = analyze_turn("What can we do?", context=ctx)
+        self.assertEqual(result["selected_layer"], "clarification")
+        self.assertEqual(result["ambiguity"], "high")
 
 
 class TestContinuityScope(unittest.TestCase):

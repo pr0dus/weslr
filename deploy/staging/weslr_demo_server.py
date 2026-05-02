@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """
-WESLR Staging Demo Server V1
+WESLR Staging Demo Server V1 — With Hybrid Turn Arbiter
 
-Minimal HTTP server for staging validation of public signal capture.
 Provides /chat endpoint, calls weslr_backend_contract.chat(),
-and wires capture_website_signal() after response is built.
+wires arbiter-based dispatch, and logs arbiter decisions.
 
 Rules:
-- return original response unchanged
-- no raw prompt storage
-- no PII
-- no behavior change
-- ignore storage failures
+- Arbiter determines which bridge answers
+- Append-only arbiter decision logging
+- No raw prompt storage
+- No PII
+- No behavior change beyond routing
+- ignore storage failures silently
 """
 
 from __future__ import annotations
 
 import json
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -30,26 +31,186 @@ sys.path.insert(0, str(WORKSPACE))
 from weslr_backend_contract import chat as weslr_chat
 
 
-def _get_session_id(request) -> str:
-    """Derive or generate a session ID from the request.
-    
-    Uses X-Session-ID header if present, otherwise generates
-    an anonymous UUID. Raw session ID is never stored —
-    only its hash goes into signals.
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-session turn history (in-memory, not persisted)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Map from session_id → list of prior analyze_turn results
+_SESSION_HISTORY: dict[str, list] = {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Arbiter decision logger (append-only)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_ARBITER_LOG_PATH = Path(__file__).resolve().parents[1] / "weslr" / "arbiter_decisions.jsonl"
+_ARBITER_LOG_PATH = _ARBITER_LOG_PATH.resolve()
+
+
+def _log_arbiter_decision(
+    user_id: str,
+    session_id: str,
+    message: str,
+    analysis: dict,
+) -> None:
+    """Append an arbiter decision to arbiter_decisions.jsonl.
+
+    Errors are silent — logging failure never affects the response.
     """
+    try:
+        log_entry = {
+            "timestamp": time.time(),
+            "datetime_utc": datetime.now(timezone.utc).isoformat(),
+            "user_id": user_id,
+            "session_id": session_id,
+            "message": message,
+            "selected_layer": analysis.get("selected_layer"),
+            "turn_kind": analysis.get("turn_kind"),
+            "target_scope": analysis.get("target_scope"),
+            "requires_evidence": analysis.get("requires_evidence"),
+            "requires_memory": analysis.get("requires_memory"),
+            "requires_action": analysis.get("requires_action"),
+            "confidence": analysis.get("confidence"),
+            "ambiguity": analysis.get("ambiguity"),
+            "candidate_capabilities": analysis.get("candidate_capabilities", []),
+            "external_topic": analysis.get("external_topic"),
+            "clarification_question": analysis.get("clarification_question"),
+            "authority": analysis.get("authority"),
+            "automatic_action": analysis.get("automatic_action", False),
+        }
+        with open(_ARBITER_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Arbiter dispatch
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _dispatch_by_arbiter(
+    message: str,
+    analysis: dict,
+    user_id: str,
+    session_id: str,
+    original_response: dict,
+) -> dict:
+    """Dispatch to the appropriate bridge based on arbiter selected_layer.
+
+    Each branch returns a response dict with at least: reply, path.
+    """
+    selected = analysis.get("selected_layer", "fallback")
+    continuity_metadata = None
+    workplace_metadata = None
+    capability_metadata = None
+    evidence_metadata = None
+
+    # ── Continuity ──────────────────────────────────────────────────────
+    if selected == "continuity":
+        try:
+            from weslr.continuity_note_chat_bridge import maybe_answer_with_continuity_note
+            result = maybe_answer_with_continuity_note(message)
+            if result:
+                return {
+                    "reply": result["reply"],
+                    "path": result["path"],
+                    "response_contract": result.get("response_contract"),
+                    "_continuity_metadata": result["_continuity_metadata"],
+                }
+        except Exception:
+            pass  # Fall through to next
+
+    # ── Workplace ────────────────────────────────────────────────────────
+    if selected == "workplace":
+        try:
+            from weslr.workplace_chat_bridge import maybe_answer_with_workplace
+            result = maybe_answer_with_workplace(message)
+            if result:
+                return {
+                    "reply": result["reply"],
+                    "path": result["path"],
+                    "response_contract": result.get("response_contract"),
+                    "_workplace_metadata": result["_workplace_metadata"],
+                }
+        except Exception:
+            pass  # Fall through to next
+
+    # ── Clarification ───────────────────────────────────────────────────
+    if selected == "clarification":
+        return {
+            "reply": analysis.get(
+                "clarification_question",
+                "I'm not sure what you're asking. Could you rephrase?",
+            ),
+            "path": "clarification",
+            "response_contract": "clarification",
+            "_arbiter_metadata": {
+                "authority": "routing_analysis_only",
+                "automatic_action": False,
+            },
+        }
+
+    # ── Capability Welcome ──────────────────────────────────────────────
+    if selected == "capability_welcome":
+        try:
+            from weslr.capability_welcome_chat_bridge import maybe_answer_with_capability_welcome
+            result = maybe_answer_with_capability_welcome(message)
+            if result:
+                return {
+                    "reply": result["reply"],
+                    "path": result["path"],
+                    "response_contract": result.get("response_contract"),
+                    "_capability_metadata": result["_capability_metadata"],
+                }
+        except Exception:
+            pass  # Fall through to fallback
+
+    # ── Evidence ────────────────────────────────────────────────────────
+    if selected == "evidence":
+        try:
+            from weslr.evidence_chat_bridge import maybe_answer_with_evidence
+            result = maybe_answer_with_evidence(message, original_response.get("reply"))
+            if result:
+                return {
+                    "reply": result["message"],
+                    "path": result["path"],
+                    "response_contract": result.get("response_contract"),
+                    "_evidence_metadata": result["evidence_metadata"],
+                }
+        except Exception:
+            pass  # Fall through to fallback
+
+    # ── Fallback (including "fallback" layer and any unhandled case) ──
+    return {
+        "reply": original_response.get(
+            "reply",
+            "I'm not sure how to respond to that. Try /help or ask a more specific question.",
+        ),
+        "path": "fallback",
+        "response_contract": "conversational_entry",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _get_session_id(request) -> str:
+    """Derive or generate a session ID from the request."""
     return str(uuid.uuid4())
 
 
+def _get_user_id(data: dict) -> str:
+    """Extract user_id from request data, default 'arthur'."""
+    return data.get("user_id", "arthur")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Signal capture — extracted from response metadata only
+# Signal capture (unchanged)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _extract_signal_fields(response: dict) -> dict:
-    """Extract signal-relevant fields from the chat response dict.
-    
-    Never extracts raw message content — only metadata about
-    the response path and classification.
-    """
+    """Extract signal-relevant fields from the chat response dict."""
     return {
         "response_path": response.get("source") or response.get("intent", {}).get("path") or "unknown",
         "quality_class": response.get("intent", {}).get("_quality_class") or "unknown",
@@ -59,7 +220,7 @@ def _extract_signal_fields(response: dict) -> dict:
             if isinstance(response.get("intent", {}).get("_omnichat_policy"), dict)
             else False
         ),
-        "evidence_offer_accepted": False,  # Not surfaced in response metadata in V1
+        "evidence_offer_accepted": False,
         "fallback_triggered": bool(
             response.get("intent", {}).get("path") in ("fallback_safe", "fallback_template")
         ),
@@ -72,10 +233,7 @@ def _extract_signal_fields(response: dict) -> dict:
 
 
 def _capture_signal(message: str, session_id: str, response: dict) -> None:
-    """Fire-and-forget signal capture after chat response is built.
-    
-    Errors are silent — response is NEVER affected.
-    """
+    """Fire-and-forget signal capture after chat response is built."""
     try:
         from weslr.website_signal_integration import capture_website_signal
     except Exception:
@@ -104,12 +262,10 @@ def _capture_signal(message: str, session_id: str, response: dict) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class WeslrDemoHandler(BaseHTTPRequestHandler):
-    """Handles /chat and health endpoints for staging demo."""
+    """Handles /chat and health endpoints for staging demo with arbiter routing."""
 
     def log_message(self, format, *args):
         pass  # Silent in staging
-
-    # ── Health ────────────────────────────────────────────────────────────────
 
     # ── Static / Health ─────────────────────────────────────────────────────
 
@@ -127,7 +283,6 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
             self.send_error(404, "index.html not found")
             return
 
-        # Serve static files from /static/ prefix
         if self.path.startswith("/static/"):
             rel_path = self.path[len("/static/"):]
             file_path = self.STATIC_DIR / rel_path
@@ -171,82 +326,77 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
             self.send_error(400, "message field required")
             return
 
-        # Generate session ID for this request
+        # ── Session setup ────────────────────────────────────────────────────
         session_id = _get_session_id(self)
+        user_id = _get_user_id(data)
 
-        # ── Build response (original chat behavior unchanged) ────────────────
+        # ── Build original response (for fallback) ────────────────────────────
         try:
-            response = weslr_chat(message)
+            original_response = weslr_chat(message)
         except Exception as e:
-            response = {"success": False, "reply": f"Error: {e}", "error": str(e)}
+            original_response = {"reply": f"Error: {e}", "error": str(e)}
 
-        # ── Continuity Note Bridge ───────────────────────────────────────────
-        # Must run FIRST — continuity queries ("what did we work on last time?")
-        # must not fall through to capability welcome or evidence bridge.
-        # Read-only: no writes, no Ollama, no evidence search.
+        # ── Build arbiter context ─────────────────────────────────────────────
         try:
-            from weslr.continuity_note_chat_bridge import maybe_answer_with_continuity_note
-            _bridge_result = maybe_answer_with_continuity_note(message)
-            if _bridge_result:
-                response["reply"] = _bridge_result["reply"]
-                response["path"] = _bridge_result["path"]
-                response["response_contract"] = _bridge_result.get("response_contract")
-                response["_continuity_metadata"] = _bridge_result["_continuity_metadata"]
-        except Exception:
-            pass  # Non-critical — keep existing response on any bridge failure
-
-        # ── Workplace Chat Bridge ────────────────────────────────────────────────
-        # Must run AFTER continuity bridge — "what are we working on" should
-        # show workplace, not continuity recall.
-        # Read-only: no writes, no Ollama, no evidence search.
-        try:
-            from weslr.workplace_chat_bridge import maybe_answer_with_workplace
-            _bridge_result = maybe_answer_with_workplace(message)
-            if _bridge_result:
-                response["reply"] = _bridge_result["reply"]
-                response["path"] = _bridge_result["path"]
-                response["response_contract"] = _bridge_result.get("response_contract")
-                response["_workplace_metadata"] = _bridge_result["_workplace_metadata"]
-        except Exception:
-            pass  # Non-critical — keep existing response on any bridge failure
-
-        # ── Capability Welcome Bridge ─────────────────────────────────────────
-        # Only activates for help/welcome/capability overview queries.
-        # Runs AFTER continuity bridge — /help must not override continuity recall.
-        # Bounded: additive only, never overrides genuine synthesis.
-        try:
-            from weslr.capability_welcome_chat_bridge import maybe_answer_with_capability_welcome
-            _bridge_result = maybe_answer_with_capability_welcome(message, response)
-            if _bridge_result:
-                response["reply"] = _bridge_result["reply"]
-                response["path"] = _bridge_result["path"]
-                response["response_contract"] = _bridge_result.get("response_contract")
-                response["_capability_metadata"] = _bridge_result["_capability_metadata"]
-        except Exception:
-            pass  # Non-critical — keep existing response on any bridge failure
-
-        # ── Evidence Chat Bridge (Tier-A safe injection) ─────────────────────
-        # Only activates when: search enabled, evidence_needed=true,
-        # current reply is fallback/template/generic, message is not self/system.
-        # Bounded: additive only, never overrides genuine synthesis.
-        try:
-            from weslr.evidence_chat_bridge import maybe_answer_with_evidence
-            _bridge_result = maybe_answer_with_evidence(
-                message,
-                response.get("reply"),
+            from weslr.arbiter_context_builder import build_arbiter_context
+            ctx = build_arbiter_context(
+                user_id=user_id,
+                session_turn_history=_SESSION_HISTORY.get(session_id, []),
             )
-            if _bridge_result:
-                response["reply"] = _bridge_result["message"]
-                response["path"] = _bridge_result["path"]
-                response["response_contract"] = _bridge_result.get("response_contract")
-                response["_evidence_metadata"] = _bridge_result["evidence_metadata"]
         except Exception:
-            pass  # Non-critical — keep existing response on any bridge failure
+            # Non-critical: use minimal context
+            ctx = {
+                "user_id": user_id,
+                "recent_timeline_events": [],
+                "workplace_overview": None,
+                "pending_experiment_proposals": [],
+                "session_turn_history": _SESSION_HISTORY.get(session_id, []),
+            }
+
+        # ── Run arbiter ───────────────────────────────────────────────────────
+        try:
+            from weslr.hybrid_turn_arbiter import analyze_turn
+            analysis = analyze_turn(message, context=ctx)
+        except Exception as e:
+            # Non-critical: fallback routing if arbiter fails
+            analysis = {
+                "selected_layer": "fallback",
+                "turn_kind": "unknown",
+                "ambiguity": "high",
+                "confidence": 0.0,
+                "authority": "routing_analysis_only",
+                "automatic_action": False,
+            }
+
+        # ── Update session history ─────────────────────────────────────────────
+        if session_id not in _SESSION_HISTORY:
+            _SESSION_HISTORY[session_id] = []
+        _SESSION_HISTORY[session_id].append(analysis)
+        # Keep history bounded to last 20 turns
+        if len(_SESSION_HISTORY[session_id]) > 20:
+            _SESSION_HISTORY[session_id] = _SESSION_HISTORY[session_id][-20:]
+
+        # ── Log arbiter decision (append-only) ────────────────────────────────
+        _log_arbiter_decision(
+            user_id=user_id,
+            session_id=session_id,
+            message=message,
+            analysis=analysis,
+        )
+
+        # ── Dispatch to bridge based on arbiter decision ─────────────────────
+        response = _dispatch_by_arbiter(
+            message=message,
+            analysis=analysis,
+            user_id=user_id,
+            session_id=session_id,
+            original_response=original_response,
+        )
 
         # ── Signal capture (fire-and-forget, zero user impact) ────────────────
         _capture_signal(message=message, session_id=session_id, response=response)
 
-        # ── Return original response unchanged ─────────────────────────────────
+        # ── Return response ───────────────────────────────────────────────────
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -268,6 +418,8 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
 def run(port: int = 8080, host: str = "0.0.0.0") -> None:
     server = ThreadingHTTPServer((host, port), WeslrDemoHandler)
     print(f"WESLR Staging Demo Server — http://{host}:{port}/chat")
+    print(f"Arbiter routing: ENABLED")
+    print(f"Arbiter log: {_ARBITER_LOG_PATH}")
     print(f"Signal capture: website_signal_integration.capture_website_signal")
     try:
         server.serve_forever()
