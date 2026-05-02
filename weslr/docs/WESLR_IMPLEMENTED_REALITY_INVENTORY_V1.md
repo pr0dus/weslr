@@ -71,6 +71,15 @@
 - **No raw prompt storage, no hidden learning, no automatic execution**
 - **Operator approval always required** for `self_improvement_suggestion` and `physical_action` types
 - **Duplicate proposals** skipped via dedup key (type + normalized title + timeline_id + related_capability)
+### Workplace Review Surface V1
+- **File:** `weslr/workplace_review_surface.py` (9,214 bytes)
+- **Test:** `weslr/tests/test_workplace_review_surface_v1.py` — **24 passed** ✅
+- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Authority:** `read_only_workplace`
+- **Aggregates:** experiment proposals + recent ideas from timeline + proactive suggestion + next review actions
+- **No execution, no approval/rejection, no JSONL mutation**
+- **No raw prompt storage, no hidden learning**
+
 
 ### Response Expander
 - **File:** `weslr/omnichat/response_expander.py` (400+ lines)
