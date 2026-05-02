@@ -344,9 +344,6 @@ def get_operator_feedback_log(limit: int = 50) -> list[dict]:
                 continue
     return events[-limit:] if limit > 0 else events
 
-    return events[-limit:] if limit > 0 else events
-
-
 def build_operator_feedback_event(
     *,
     message: str,
@@ -464,9 +461,6 @@ def summarize_operator_feedback(limit: int = 100) -> dict:
 def get_recent_operator_feedback(limit: int = 20) -> list[dict]:
     """Return the most recent N feedback entries. Read-only."""
     return get_operator_feedback_log(limit=limit)
-
-    return get_operator_feedback_log(limit=limit)
-
 
 def get_operator_feedback_visibility(limit: int = 20) -> dict:
     """Return operator-facing feedback visibility bundle. Read-only."""
