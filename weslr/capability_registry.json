@@ -240,5 +240,51 @@
     "unavailable_message": "Project planning is not available right now.",
     "operator_required": false,
     "staging_only": false
+  },
+  {
+    "capability_id": "experiments.propose",
+    "category": "experiments/learning",
+    "label": "Experiment Proposals",
+    "description": "Generate governed experiment proposals from timelines, suggestions, insufficiency patterns, and evidence needs. Proposals are append-only, operator-reviewed, and never auto-executed.",
+    "status": "experimental",
+    "risk_level": "medium",
+    "authority": "experiment_proposal_only",
+    "automatic_change": false,
+    "natural_triggers": [
+      "propose an experiment",
+      "what can we test",
+      "suggest an experiment",
+      "design an experiment",
+      "run an experiment"
+    ],
+    "slash_commands": ["/experiment", "/propose"],
+    "modules": ["weslr.experiment_proposal_generator", "weslr.experiment_proposal_store"],
+    "examples": ["Propose an experiment from our recent WESLR continuity work.", "Design an experiment to test the capability router."],
+    "unavailable_message": "Experiment proposal generation is not available right now.",
+    "operator_required": true,
+    "staging_only": true
+  },
+  {
+    "capability_id": "experiments.review",
+    "category": "experiments/learning",
+    "label": "Experiment Review",
+    "description": "List and inspect pending experiment proposals without executing them. Read-only queue query. No execution, no writes.",
+    "status": "experimental",
+    "risk_level": "low",
+    "authority": "experiment_proposal_only",
+    "automatic_change": false,
+    "natural_triggers": [
+      "show experiment proposals",
+      "pending experiments",
+      "review experiments",
+      "list experiments",
+      "what experiments are pending"
+    ],
+    "slash_commands": ["/experiments", "/experiment-review"],
+    "modules": ["weslr.experiment_proposal_store"],
+    "examples": ["Show pending experiment proposals.", "What experiments are pending?"],
+    "unavailable_message": "Experiment review is not available right now.",
+    "operator_required": true,
+    "staging_only": true
   }
 ]

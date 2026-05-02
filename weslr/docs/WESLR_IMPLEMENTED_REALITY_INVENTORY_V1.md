@@ -54,6 +54,24 @@
 - **Tests:** `test_contract_improvement_proposal_bridge_v1.py` — **15 passed** ✅
 - **Note:** Bridge never auto-approves; `automatic_change=false` on all records; no writes to `proposal_trace.jsonl` or `implementation_plans.json`
 
+### Experiment Proposal Store V1
+- **Files:**
+  - `weslr/experiment_proposal_schema.py` — schema + validation + proposal ID generation (11,673 bytes)
+  - `weslr/experiment_proposal_store.py` — append-only queue with read/query API (6,517 bytes)
+  - `weslr/experiment_proposal_generator.py` — proposal generation from timeline themes + SI rules (17,010 bytes)
+- **Tests:**
+  - `weslr/tests/test_experiment_proposal_store_v1.py` — **39 passed** ✅
+  - `weslr/tests/test_experiment_proposal_generator_v1.py` — **17 passed** ✅
+- **Status:** IMPLEMENTED EXPERIMENTAL / NOT WIRED TO CHAT
+- **Authority:** `experiment_proposal_only` — no auto-execution
+- **Schema:** `experiment_proposal_v1` records in `weslr/experiment_proposals.jsonl` (append-only)
+- **Capability entries:** `experiments.propose` + `experiments.review` added to capability registry
+- **Generates:** `search_insight` proposals from timeline themes; `self_improvement_suggestion` proposals from SI rules SI-1 through SI-6
+- **No execution, no runner, no /chat integration**
+- **No raw prompt storage, no hidden learning, no automatic execution**
+- **Operator approval always required** for `self_improvement_suggestion` and `physical_action` types
+- **Duplicate proposals** skipped via dedup key (type + normalized title + timeline_id + related_capability)
+
 ### Response Expander
 - **File:** `weslr/omnichat/response_expander.py` (400+ lines)
 - **Status:** LIVE — deterministic expansion layer, no LLM, adds `_omnichat_policy` + `expanded_response`
