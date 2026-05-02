@@ -341,6 +341,7 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
             from weslr.arbiter_context_builder import build_arbiter_context
             ctx = build_arbiter_context(
                 user_id=user_id,
+                current_message=message,
                 session_turn_history=_SESSION_HISTORY.get(session_id, []),
             )
         except Exception:
@@ -348,6 +349,7 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
             ctx = {
                 "user_id": user_id,
                 "recent_timeline_events": [],
+                "entity_timeline_events": [],
                 "workplace_overview": None,
                 "pending_experiment_proposals": [],
                 "session_turn_history": _SESSION_HISTORY.get(session_id, []),

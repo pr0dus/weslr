@@ -97,11 +97,91 @@ def _load_workplace_overview_text(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Entity timeline events
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _load_entity_timeline_events(
+    user_id: str,
+    current_message: str,
+    recent_timeline_events: List[Dict[str, Any]],
+    limit: int = 3,
+    base_dir: str = ".weslr/timelines",
+) -> List[Dict[str, Any]]:
+    """Load the most relevant entity timeline events based on current message.
+
+    Detects entity IDs mentioned in recent session events or via keyword
+    matching against known entity timelines, then loads the most recent
+    events for up to `limit` entity timelines.
+
+    Args:
+        user_id: User whose timeline is the context.
+        current_message: The current user message (used for keyword matching).
+        recent_timeline_events: Recent session timeline events.
+        limit: Maximum number of entity timelines to load.
+        base_dir: Base timeline directory.
+
+    Returns:
+        List of entity timeline events, most recent first.
+    """
+    try:
+        from weslr.entity_timeline_memory import (
+            normalize_entity_id,
+            load_entity_events,
+            list_entity_timelines,
+            suggest_entity_for_context,
+        )
+    except Exception:
+        return []
+
+    # Collect entity IDs mentioned in recent timeline events
+    candidate_ids: List[str] = []
+    for event in recent_timeline_events:
+        meta = event.get("metadata", {})
+        if isinstance(meta, dict):
+            entity_refs = meta.get("entities_mentioned", [])
+            candidate_ids.extend(entity_refs)
+        tags = event.get("tags", [])
+        if isinstance(tags, list):
+            for tag in tags:
+                if isinstance(tag, str) and "_" in tag:
+                    candidate_ids.append(tag)
+
+    # Also check all known entity timelines for keyword match against message
+    all_entity_ids = list_entity_timelines(base_dir=base_dir)
+    suggested = suggest_entity_for_context(current_message, all_entity_ids)
+    if suggested and suggested not in candidate_ids:
+        candidate_ids.append(suggested)
+
+    if not candidate_ids:
+        return []
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_ids = []
+    for eid in candidate_ids:
+        normalized = normalize_entity_id(eid)
+        if normalized not in seen:
+            seen.add(normalized)
+            unique_ids.append(normalized)
+
+    # Load most recent events for each, up to limit
+    entity_events: List[Dict[str, Any]] = []
+    for entity_id in unique_ids[:limit]:
+        events = load_entity_events(entity_id, limit=5, base_dir=base_dir)
+        for event in events:
+            event["_entity_id"] = entity_id
+            entity_events.append(event)
+
+    return entity_events
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Main context builder
 # ──────────────────────────────────────────────────────────────────────────────
 
 def build_arbiter_context(
     user_id: str = "arthur",
+    current_message: str = "",
     session_turn_history: Optional[List[Dict[str, Any]]] = None,
     proposal_path: Optional[str | pathlib.Path] = None,
     workplace_overview_path: Optional[str | pathlib.Path] = None,
@@ -123,6 +203,7 @@ def build_arbiter_context(
         dict with keys:
             - user_id: str
             - recent_timeline_events: list (from user_timeline_memory)
+            - entity_timeline_events: list (from entity_timeline_memory)
             - workplace_overview: str | None
             - pending_experiment_proposals: list
             - session_turn_history: list (from param)
@@ -147,9 +228,19 @@ def build_arbiter_context(
                 "timestamp": event.get("timestamp"),
                 "source": event.get("source", "unknown"),
                 "tags": event.get("tags", []),
+                "metadata": event.get("metadata", {}),
             })
     except Exception:
         pass
+
+    # ── Entity timeline events ─────────────────────────────────────────────
+    entity_timeline_events = _load_entity_timeline_events(
+        user_id=user_id,
+        current_message=current_message,
+        recent_timeline_events=recent_timeline_events,
+        limit=3,
+        base_dir=timeline_base_dir,
+    )
 
     # ── Workplace overview (file) ─────────────────────────────────────────
     workplace_overview_text = _load_workplace_overview_text(path=workplace_overview_path)
@@ -165,6 +256,7 @@ def build_arbiter_context(
     return {
         "user_id": user_id,
         "recent_timeline_events": recent_timeline_events,
+        "entity_timeline_events": entity_timeline_events,
         "workplace_overview": workplace_overview_text,
         "pending_experiment_proposals": pending_proposals,
         "session_turn_history": turn_history,
