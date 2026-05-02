@@ -330,6 +330,18 @@ Operational docs that define workflows but have no runtime implementation.
 - **No Ollama:** No LLM calls
 - **No JSONL writes:** Read-only builder, no file writes
 
+### User Timeline Memory V1
+- **File:** `weslr/user_timeline_memory.py` (195 lines)
+- **Test:** `weslr/tests/test_user_timeline_memory_v1.py` — **31 passed** ✅
+- **Status:** IMPLEMENTED EXPERIMENTAL / NOT WIRED TO CHAT
+- **Authority:** `user_timeline_memory`
+- **Functions:** `normalize_user_id()`, `get_user_timeline_path()`, `build_session_summary_event()`, `append_session_summary()`, `load_recent_session_summaries()`, `build_continuity_note()`
+- **Path:** `.weslr/timelines/user_<normalized_user_id>/events.jsonl`
+- **Rules enforced:** `raw_prompt_stored=false`, `hidden_learning=false`, `automatic_action=false` on every event
+- **No Ollama:** No LLM calls, no HTTP requests
+- **No /chat wiring:** Explicit write only — no automatic runtime call, no chat injection
+- **Future roadmap:** entity timelines, chat injection (opt-in), voice summary, proactive suggestions
+
 ### Source Trust Ranking V1
 
 - **File:** `weslr/source_trust_ranking.py`
