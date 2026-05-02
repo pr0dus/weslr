@@ -180,9 +180,24 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
         except Exception as e:
             response = {"success": False, "reply": f"Error: {e}", "error": str(e)}
 
+        # ── Continuity Note Bridge ───────────────────────────────────────────
+        # Must run FIRST — continuity queries ("what did we work on last time?")
+        # must not fall through to capability welcome or evidence bridge.
+        # Read-only: no writes, no Ollama, no evidence search.
+        try:
+            from weslr.continuity_note_chat_bridge import maybe_answer_with_continuity_note
+            _bridge_result = maybe_answer_with_continuity_note(message)
+            if _bridge_result:
+                response["reply"] = _bridge_result["reply"]
+                response["path"] = _bridge_result["path"]
+                response["response_contract"] = _bridge_result.get("response_contract")
+                response["_continuity_metadata"] = _bridge_result["_continuity_metadata"]
+        except Exception:
+            pass  # Non-critical — keep existing response on any bridge failure
+
         # ── Capability Welcome Bridge ─────────────────────────────────────────
         # Only activates for help/welcome/capability overview queries.
-        # Runs BEFORE evidence bridge — /help must never trigger evidence search.
+        # Runs AFTER continuity bridge — /help must not override continuity recall.
         # Bounded: additive only, never overrides genuine synthesis.
         try:
             from weslr.capability_welcome_chat_bridge import maybe_answer_with_capability_welcome

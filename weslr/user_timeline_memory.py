@@ -279,12 +279,13 @@ def build_continuity_note(
             "hidden_learning": False,
         }
 
-    # Build message from summaries, most recent first
-    summary_parts = [f"Last time, we were working on {events[0]['summary']}"]
-    for event in events[1:]:
-        summary_parts.append(f"Earlier: {event['summary']}")
-
-    message = " | ".join(summary_parts)
+    if len(events) == 1:
+        message = f"Last time, we worked on: {events[0]['summary']}"
+    else:
+        lines = ["Recently, we worked on:"]
+        for i, event in enumerate(events, 1):
+            lines.append(f" {i}. {event['summary']}")
+        message = "\n".join(lines)
 
     return {
         "record_type": "user_continuity_note_v1",

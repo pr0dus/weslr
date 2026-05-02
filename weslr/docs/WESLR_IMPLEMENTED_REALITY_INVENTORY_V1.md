@@ -342,6 +342,21 @@ Operational docs that define workflows but have no runtime implementation.
 - **No /chat wiring:** Explicit write only — no automatic runtime call, no chat injection
 - **Future roadmap:** entity timelines, chat injection (opt-in), voice summary, proactive suggestions
 
+### Continuity Note Chat Bridge V1
+- **File:** `weslr/continuity_note_chat_bridge.py`
+- **Test:** `test_continuity_note_chat_bridge_v1.py` — **21 passed** ✅
+- **Runtime integration:** `deploy/staging/weslr_demo_server.py` — FIRST bridge in `do_POST`
+- **Integration order:** continuity → capability welcome → evidence → signal capture
+- **Status:** IMPLEMENTED GUARDED / STAGING RUNTIME WIRED
+- **Authority:** `user_timeline_memory`
+- **Functions:** `is_continuity_query()`, `maybe_answer_with_continuity_note()`
+- **Continuity patterns:** "what did we work on last time?", "do you remember...", "continue from last time", etc.
+- **Reads:** `.weslr/timelines/user_<user_id>/events.jsonl` via `build_continuity_note()`
+- **No Ollama:** No LLM calls, no evidence search
+- **No raw prompt storage, no hidden learning, no action execution**
+- **Bridging:** reads `build_continuity_note()`, returns `path=continuity_note`, `response_contract=system_answer`
+- **Safe failure:** try/except — bridge failure never crashes the request
+
 ### Source Trust Ranking V1
 
 - **File:** `weslr/source_trust_ranking.py`
