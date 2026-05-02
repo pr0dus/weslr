@@ -45,18 +45,24 @@ def _normalize_message(message: str) -> str:
     if not message:
         return ""
     
-    # Check if message starts with a slash command
+    # Check if message starts with a slash command (before any lowercasing)
     is_slash = message.startswith("/")
     
-    # Lowercase, strip trailing punctuation
+    # Lowercase
     normalized = message.lower().strip()
     
-    # Remove most punctuation except spaces — but preserve the slash for detection
-    # We handle slash separately, so strip punctuation here
-    normalized = re.sub(r"[^\w\s]", " ", normalized)
+    # Remove punctuation but NOT the slash character itself
+    normalized = re.sub(r"[^\w\s/]", " ", normalized)  # keep /
     normalized = re.sub(r"\s+", " ", normalized).strip()
     
-    return ("/" + normalized) if is_slash else normalized
+    # If it was a slash command, ensure exactly one leading slash
+    if is_slash and not normalized.startswith("/"):
+        normalized = "/" + normalized
+    elif is_slash:
+        # Normalize to exactly one leading slash
+        normalized = "/" + normalized.lstrip("/")
+    
+    return normalized
 
 
 def _score_trigger_match(phrase: str, triggers: List[str]) -> tuple[float, List[str]]:
@@ -176,9 +182,10 @@ def route_request(
     """
     context = context or {}
     normalized = _normalize_message(user_message)
-    
+
     # ---- Step 1: Slash command exact match ----
     if normalized.startswith("/"):
+        # Try exact match first
         slash_candidate = get_by_slash_command(normalized)
         if slash_candidate:
             return {
@@ -192,7 +199,25 @@ def route_request(
                 "automatic_change": False,
                 "operator_required": slash_candidate.get("operator_required", False),
             }
-    
+        # Slash command with args: extract command base and try again
+        # e.g. "/evidence entropy" → "/evidence"
+        m = re.match(r"(/\w+)", normalized)
+        if m:
+            command_base = m.group(1)
+            slash_candidate = get_by_slash_command(command_base)
+            if slash_candidate:
+                return {
+                    "record_type": "capability_route_v1",
+                    "selected_capability": slash_candidate["capability_id"],
+                    "confidence": 0.95,
+                    "method": "slash",
+                    "matched_triggers": [],
+                    "category": slash_candidate.get("category"),
+                    "authority": "routing_only",
+                    "automatic_change": False,
+                    "operator_required": slash_candidate.get("operator_required", False),
+                }
+
     # ---- Step 2: Trigger scoring ----
     all_entries = load_registry()
     trigger_results = search_by_trigger(normalized, all_entries)

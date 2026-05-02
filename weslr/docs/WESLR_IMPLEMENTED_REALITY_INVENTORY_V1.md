@@ -91,6 +91,16 @@
 - **No execution, no approval/rejection, no JSONL mutation**
 - **No hidden learning, no raw prompt storage, no Ollama**
 
+### Hybrid Turn Arbiter V1
+- **File:** `weslr/hybrid_turn_arbiter.py` (20,165 bytes)
+- **Test:** `weslr/tests/test_hybrid_turn_arbiter_v1.py` — **40 passed** ✅
+- **Status:** IMPLEMENTED STANDALONE — not yet wired to /chat runtime
+- **Authority:** `routing_analysis_only`
+- **Purpose:** Read-only turn routing analysis — decides which layer should answer a user message
+- **Handles:** zero-context bare questions → clarification, workplace scope → workplace, continuity scope → continuity, governance scope → capability_welcome, external topics → evidence, WESLR self → capability_welcome, action candidates → capability_welcome
+- **No execution, no JSONL mutation, no hidden learning, no Ollama**
+- **Known fixes:** `_normalize_message()` now preserves leading slash; slash commands with args now extract command base for routing
+
 
 ### Response Expander
 - **File:** `weslr/omnichat/response_expander.py` (400+ lines)
