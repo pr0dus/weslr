@@ -147,3 +147,152 @@ The session summary idea and the timeline-per-entity idea are actually the same 
 This makes session continuity and entity memory the same system, built on proven timeline infrastructure rather than a flat summary store. Timelines scale better (you can query a specific person's timeline, not just "the last session") and already have the resolution logic (`timeline_resolution.py`).
 
 Everything else on the Jarvis path — wake word, ambient, action execution — requires additional infrastructure or explicit policy decisions. Entity timelines using existing primitives is the highest-leverage starting point.
+---
+
+## 8. Doctrine Findings — What's Allowed vs. Forbidden for Action Execution
+
+**Status: 📜 Doctrine defined, code not implemented for Jarvis-style actions**
+
+**Allowed (by doctrine):**
+- `execution_allowed: False` is the system-wide default — writes blocked unless explicit handler enables them
+- `write_handlers.py` has exactly one write handler: `handle_iss_controlled_proposal_intake()` → traces ISS gaps to `proposal_trace.jsonl`
+- Signal aggregation may surface operator suggestions — not system-executed
+- Evidence workspace activated by operator opt-in — read-only exploration only
+- Capability suggestions via `suggestion_bridge.py` — only when requested or bundled
+
+**Forbidden (by doctrine):**
+- No automatic external action execution (email, calendar, reminders, HTTP calls)
+- No direct capability modification without operator-approved proposal
+- No raw user input stored or used as learning signal
+- No LLM-driven policy decisions
+- No signal-triggered direct state modification
+- No dynamic threshold adjustment without operator governance
+- No cross-session user linking in signal aggregation
+
+**Gap:** Doctrine explicitly blocks action execution. Jarvis-style "I'll handle that for you" is not a missing feature — it is forbidden by design. Enabling it requires: (1) new execution policy doctrine, (2) operator-authorized write handlers per action class, (3) governance wiring. Not a small task.
+
+---
+
+## 9. Signal Pipeline Inventory
+
+**Status: 🚧 Infrastructure exists, pipeline partially wired**
+
+### 9a. Signal Aggregation (WESLR_SIGNAL_AGGREGATION_V1.md — active doctrine)
+
+Signal types: S1 (repeated unknown), S2 (evidence usage), S3 (topic cluster), S4 (frequent fallback), S5 (improvement query), S6 (entity co-occurrence)
+
+Pipeline: user query → interpretation → policy_engine → no handler match → S1; evidence mode → S2; fallback → S4. Signals accumulate → threshold check → surfacing to operator if met.
+
+**Verdict:** S1/S2/S4 recorded. Surfacing trigger (cron + deliver) not wired to any channel.
+
+### 9b. AAI (Artificial Analysis Index) — `artificial_analysis_index.py`
+
+Produces severity-ranked alerts. `level_4_count > 0` → `"AAI ALERT: {level_4_count} critical attention item(s) require immediate operator review"`.
+
+Pipeline: artifacts + attention items → AAI scoring → composite_summary in response → operator alert if level_4_count > 0.
+
+**Verdict:** AAI alerts only in `/chat` response. No separate delivery channel.
+
+### 9c. Insufficiency Patterns — `insufficiency.py`, ISS probes
+
+Pipeline: no handler match → iss.probe_registry → iss.probe_planning → handle_iss_controlled_proposal_intake() → proposal_trace.jsonl.
+
+**Verdict:** ISS writes to `proposal_trace.jsonl`. No readback into proactive surfacing.
+
+### 9d. What Could Connect Them
+
+Missing for proactivity: background daemon that reads signal store, delivery channel (webchat push), operator opt-in, throttle logic.
+
+---
+
+## 10. Artifact Taxonomy
+
+**Status: ✅ All four defined**
+
+| File | Purpose | Read By |
+|------|---------|---------|
+| `proposal_trace.jsonl` | ISS gaps → proposals | Governance surface, iss/probe_registry |
+| `contract_observations.jsonl` | Contract violations | artificial_analysis_index.py, AAI scoring |
+| `public_signals.jsonl` | Operator-visible surfacing signals | Operator dashboard (future) |
+| `iss_diagnostic_records.jsonl` | ISS probe diagnostics | ISS probe registry, probe planning |
+
+Key distinction: `proposal_trace.jsonl` = internal governance; `public_signals.jsonl` = operator-facing surfacing; `contract_observations.jsonl` = AAI feed (not directly surfaced); `iss_diagnostic_records.jsonl` = probe metadata.
+
+**Verdict:** All four written. None read back into response path.
+
+---
+
+## 11. Proactivity Infrastructure — Daemon vs. On-Request
+
+**Status: 🚧 Partial daemon, no proactive triggers**
+
+### Currently daemon/background:
+- `voice_gateway.py` — WebSocket on port 8778, daemon thread
+- `unified_continuity.py` — in-memory checkpoint monitor
+- OpenClaw heartbeat (HEARTBEAT.md, not WESLR-specific)
+
+### On-request only (requires `/chat`):
+- All deterministic handlers, policy engine, interpretation engine
+- AAI alerting, signal aggregation, suggestion surface
+- ISS probes
+
+### What proactive daemon needs:
+1. Signal monitor — periodic read of `public_signals.jsonl`
+2. AAI periodic scan — outside `/chat`
+3. Delivery channel — webchat push without inbound message
+4. Throttle — max N messages/hour
+5. Operator opt-in
+
+**Verdict:** No proactive daemon. All WESLR intelligence reactive. Feasible to build on existing signal infrastructure.
+
+---
+
+## Summary Table (updated)
+
+| Area | Status | Key Files | Note |
+|------|--------|-----------|------|
+| Voice I/O (STT/TTS) | 🚧 Partial | `voice_gateway.py` | Phase 1A shim; browser TTS |
+| Persistent cross-session memory | ❌ Not implemented | None | Doctrine allows; code doesn't build yet |
+| Timeline-based entity memory | 🚧 Partial | `timeline_resolution.py` | Threads/artifacts exist; entity timelines unwired |
+| Proactive suggestions | 🚧 Partial | `capability_suggestion.py` | On-request only; no daemon |
+| Action execution | ❌ Not implemented | `write_handlers.py` | Forbidden by doctrine |
+| Ambient listening / wake word | ❌ Not implemented | None | Requires always-on audio |
+| Within-session coreference | ❌ Not implemented | None | OpenClaw handles context; WESLR has no coreference |
+| Everyday NL command routing | ❌ Not implemented | All handlers WESLR self-queries | Doctrine allows expansion; none for external actions |
+| Doctrine (allowed/forbidden) | 📜 Defined | Multiple WESLR_*_V1.md | Action execution forbidden by design |
+| Signal pipeline | 🚧 Partial | insufficiency.py, AAI, signal store | No proactive surfacing daemon |
+| Artifact taxonomy | ✅ Defined | 4 JSONL files | All written; none read back |
+| Proactivity infrastructure | 🚧 Partial | `voice_gateway.py` daemon only | Reactive only; proactive daemon missing |
+
+---
+
+## Recommendation (updated)
+
+### Priority 1: Entity Timeline Infrastructure
+
+Combine Area 2 + 2b using `timeline_resolution.py` primitives:
+1. Thread registry + per-user active thread + continuity status (exists)
+2. Entity timelines under `.weslr/timelines/<entity_id>/events.jsonl`
+3. Session summary → user's entity timeline
+4. Session start: load last N events → prepend as rolling context
+5. Query by entity name → entity-specific history
+
+Uses proven infrastructure, adds doctrine-permitted feature, makes WESLR feel like it knows you.
+
+### Priority 2: Proactivity (if desired)
+
+1. Signal monitor cron job (reads `public_signals.jsonl`)
+2. Wire surfacing to webchat via `message` tool
+3. Operator throttle/opt-in config
+4. Keep operator-facing only to avoid doctrine conflicts
+
+### Priority 3: Action execution (requires explicit operator decision)
+
+1. New execution policy doctrine
+2. Operator authorizes `execution_allowed: True` per action class
+3. Write handlers with approval gates per action type
+4. Governance design task first, implementation second
+
+---
+
+*Assessment expanded: 2026-05-02 17:24 UTC*
