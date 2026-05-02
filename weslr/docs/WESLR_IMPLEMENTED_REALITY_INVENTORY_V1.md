@@ -74,11 +74,22 @@
 ### Workplace Review Surface V1
 - **File:** `weslr/workplace_review_surface.py` (9,214 bytes)
 - **Test:** `weslr/tests/test_workplace_review_surface_v1.py` — **24 passed** ✅
-- **Status:** IMPLEMENTED READ-ONLY / NOT WIRED TO CHAT
+- **Status:** IMPLEMENTED READ-ONLY / SURFACE WIRED TO CHAT
 - **Authority:** `read_only_workplace`
 - **Aggregates:** experiment proposals + recent ideas from timeline + proactive suggestion + next review actions
 - **No execution, no approval/rejection, no JSONL mutation**
 - **No raw prompt storage, no hidden learning**
+
+### Workplace Chat Bridge V1
+- **File:** `weslr/workplace_chat_bridge.py` (3,492 bytes)
+- **Test:** `test_workplace_chat_bridge_v1.py` — **16 passed** ✅
+- **Runtime integration:** `deploy/staging/weslr_demo_server.py`
+- **Status:** IMPLEMENTED GUARDED / STAGING RUNTIME WIRED
+- **Authority:** `read_only_workplace`
+- **Handles:** workplace overview, pending ideas, pending experiments queries
+- **Bridge order:** continuity → workplace → capability_welcome → evidence → signal_capture
+- **No execution, no approval/rejection, no JSONL mutation**
+- **No hidden learning, no raw prompt storage, no Ollama**
 
 
 ### Response Expander

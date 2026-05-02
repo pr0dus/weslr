@@ -195,6 +195,21 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
         except Exception:
             pass  # Non-critical — keep existing response on any bridge failure
 
+        # ── Workplace Chat Bridge ────────────────────────────────────────────────
+        # Must run AFTER continuity bridge — "what are we working on" should
+        # show workplace, not continuity recall.
+        # Read-only: no writes, no Ollama, no evidence search.
+        try:
+            from weslr.workplace_chat_bridge import maybe_answer_with_workplace
+            _bridge_result = maybe_answer_with_workplace(message)
+            if _bridge_result:
+                response["reply"] = _bridge_result["reply"]
+                response["path"] = _bridge_result["path"]
+                response["response_contract"] = _bridge_result.get("response_contract")
+                response["_workplace_metadata"] = _bridge_result["_workplace_metadata"]
+        except Exception:
+            pass  # Non-critical — keep existing response on any bridge failure
+
         # ── Capability Welcome Bridge ─────────────────────────────────────────
         # Only activates for help/welcome/capability overview queries.
         # Runs AFTER continuity bridge — /help must not override continuity recall.

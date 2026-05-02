@@ -286,5 +286,35 @@
     "unavailable_message": "Experiment review is not available right now.",
     "operator_required": true,
     "staging_only": true
+  },
+  {
+    "capability_id": "workplace.overview",
+    "category": "projects/planning",
+    "label": "Workplace Overview",
+    "description": "Shows a read-only workplace overview with pending experiments, recent ideas, proactive suggestions, continuity, and next review actions.",
+    "status": "experimental",
+    "risk_level": "low",
+    "authority": "read_only_workplace",
+    "automatic_change": false,
+    "natural_triggers": [
+      "what are we working on",
+      "show my workplace",
+      "workplace overview",
+      "what ideas are pending",
+      "what experiments are pending",
+      "pending ideas",
+      "pending experiments",
+      "what should we continue"
+    ],
+    "slash_commands": ["/workplace", "/ideas", "/experiments"],
+    "modules": ["weslr.workplace_review_surface", "weslr.workplace_chat_bridge"],
+    "examples": [
+      "Show my workplace.",
+      "What are we working on?",
+      "What experiments are pending?"
+    ],
+    "unavailable_message": "Workplace overview is not available right now.",
+    "operator_required": false,
+    "staging_only": true
   }
 ]
