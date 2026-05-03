@@ -1,0 +1,180 @@
+{
+  "max_odes_per_description": 3,
+  "templates": [
+    {
+      "name": "exponential_growth",
+      "keywords": ["growth", "population", "unlimited", "exponential", "unrestricted", "multiply", "reproduce", "increase"],
+      "equation": "dX/dt = r*X",
+      "variables": {
+        "X": "population or quantity",
+        "r": "growth rate (per unit time)"
+      },
+      "initial_condition_template": "X(t0) = X0",
+      "analytical_solution": "X(t) = X0 * exp(r*t)",
+      "confidence": 0.9,
+      "domain": ["biology", "ecology", "chemistry"]
+    },
+    {
+      "name": "exponential_decay",
+      "keywords": ["decay", "degrade", "eliminate", "decrease", "half-life", "decomposition", "removal", "clearance", "excretion"],
+      "equation": "dX/dt = -k*X",
+      "variables": {
+        "X": "concentration or quantity",
+        "k": "decay rate (per unit time)"
+      },
+      "initial_condition_template": "X(t0) = X0",
+      "analytical_solution": "X(t) = X0 * exp(-k*t)",
+      "confidence": 0.9,
+      "domain": ["chemistry", "pharmacology", "physics"]
+    },
+    {
+      "name": "logistic_growth",
+      "keywords": ["limited resources", "carrying capacity", "logistic", "competition", "sigmoid", "saturation", "resource-limited"],
+      "equation": "dX/dt = r*X*(1 - X/K)",
+      "variables": {
+        "X": "population or quantity",
+        "r": "intrinsic growth rate",
+        "K": "carrying capacity"
+      },
+      "initial_condition_template": "X(t0) = X0",
+      "analytical_solution": "X(t) = K / (1 + ((K - X0)/X0) * exp(-r*t))",
+      "confidence": 0.85,
+      "domain": ["biology", "ecology", "economics"]
+    },
+    {
+      "name": "sir_epidemic",
+      "keywords": ["spread", "infection", "susceptible", "recovered", "epidemic", "disease", "outbreak", "contagion", "SIR"],
+      "equations": ["dS/dt = -beta*S*I", "dI/dt = beta*S*I - gamma*I", "dR/dt = gamma*I"],
+      "variables": {
+        "S": "susceptible individuals",
+        "I": "infected individuals",
+        "R": "recovered/removed individuals",
+        "beta": "infection rate",
+        "gamma": "recovery rate"
+      },
+      "initial_condition_template": "S(t0) = S0, I(t0) = I0, R(t0) = R0",
+      "confidence": 0.8,
+      "domain": ["epidemiology", "public health", "biology"]
+    },
+    {
+      "name": "lotka_volterra",
+      "keywords": ["predator", "prey", "interact", "predation", "lotka", "volterra", "competition", "ecosystem"],
+      "equations": ["dx/dt = alpha*x - beta*x*y", "dy/dt = delta*x*y - gamma*y"],
+      "variables": {
+        "x": "prey population",
+        "y": "predator population",
+        "alpha": "prey birth rate",
+        "beta": "predation rate",
+        "delta": "predator reproduction rate",
+        "gamma": "predator death rate"
+      },
+      "initial_condition_template": "x(t0) = x0, y(t0) = y0",
+      "analytical_solution": "No closed-form analytical solution",
+      "confidence": 0.75,
+      "domain": ["ecology", "biology"]
+    },
+    {
+      "name": "drug_concentration_pk",
+      "keywords": ["drug", "pharmacokinetics", "compartment", "absorption", "bioavailability", "clearance", "IV", "oral"],
+      "equation": "dC/dt = -k*C",
+      "variables": {
+        "C": "drug concentration in compartment",
+        "k": "elimination rate constant"
+      },
+      "initial_condition_template": "C(t0) = C0",
+      "analytical_solution": "C(t) = C0 * exp(-k*t)",
+      "confidence": 0.8,
+      "domain": ["pharmacology", "medicine"]
+    },
+    {
+      "name": "tumor_growth_treatment",
+      "keywords": ["tumor", "treatment", "chemotherapy", "cancer", "therapy", "drug delivery", "oncology", " radiotherapy"],
+      "equations": ["dT/dt = r*T*(1 - T/K) - d*T*C", "dC/dt = -e*C"],
+      "variables": {
+        "T": "tumor size or cell count",
+        "C": "drug concentration",
+        "r": "tumor intrinsic growth rate",
+        "K": "maximum tumor size (carrying capacity)",
+        "d": "drug efficacy on tumor",
+        "e": "drug elimination rate"
+      },
+      "initial_condition_template": "T(t0) = T0, C(t0) = C0",
+      "analytical_solution": "No closed-form analytical solution for coupled system",
+      "confidence": 0.75,
+      "domain": ["oncology", "medicine", "pharmacology"]
+    },
+    {
+      "name": "temperature_cooling_newton",
+      "keywords": ["newton's law", "cooling", "temperature", "heat", "surrounding", "ambient", "environment", "thermal equilibration"],
+      "equation": "dT/dt = -k*(T - T_env)",
+      "variables": {
+        "T": "object temperature",
+        "T_env": "ambient/environment temperature",
+        "k": "cooling rate constant (heat transfer coefficient)"
+      },
+      "initial_condition_template": "T(t0) = T0",
+      "analytical_solution": "T(t) = T_env + (T0 - T_env) * exp(-k*t)",
+      "confidence": 0.85,
+      "domain": ["physics", "thermodynamics", "engineering"]
+    },
+    {
+      "name": "harmonic_oscillator",
+      "keywords": ["oscillate", "oscillation", "spring", "pendulum", "harmonic", "vibrate", "wave", "frequency", "resonance"],
+      "equation": "d^2x/dt^2 + omega^2*x = 0",
+      "variables": {
+        "x": "displacement",
+        "omega": "angular frequency"
+      },
+      "initial_condition_template": "x(t0) = x0, dx/dt(t0) = v0",
+      "analytical_solution": "x(t) = A*cos(omega*t) + B*sin(omega*t)",
+      "confidence": 0.8,
+      "domain": ["physics", "engineering", "mechanics"]
+    },
+    {
+      "name": "diffusion_heat",
+      "keywords": ["diffuse", "diffusion", "heat equation", "concentration gradient", "spread", "disperse"],
+      "equation": "dC/dt = D*(d^2C/dx^2)",
+      "variables": {
+        "C": "concentration or temperature",
+        "D": "diffusion coefficient"
+      },
+      "initial_condition_template": "C(x, t0) = C0(x)",
+      "analytical_solution": "Various – depends on boundary conditions",
+      "confidence": 0.7,
+      "domain": ["physics", "chemistry", "biology"]
+    },
+    {
+      "name": "logistic_interaction",
+      "keywords": ["competition", "species", "coexist", "interfere", "logistic interaction", "mutualism", "symbiosis"],
+      "equations": ["dX/dt = r1*X*(1 - (X + alpha*Y)/K1)", "dY/dt = r2*Y*(1 - (Y + beta*X)/K2)"],
+      "variables": {
+        "X": "population species 1",
+        "Y": "population species 2",
+        "r1": "growth rate of X",
+        "r2": "growth rate of Y",
+        "K1": "carrying capacity of X",
+        "K2": "carrying capacity of Y",
+        "alpha": "competitive effect of Y on X",
+        "beta": "competitive effect of X on Y"
+      },
+      "initial_condition_template": "X(t0) = X0, Y(t0) = Y0",
+      "analytical_solution": "No general closed-form solution",
+      "confidence": 0.7,
+      "domain": ["ecology", "biology"]
+    },
+    {
+      "name": "michaelis_menten_kinetics",
+      "keywords": ["enzyme", "substrate", "kinetics", "michaelis", "menten", "catalysis", "reaction rate"],
+      "equation": "dS/dt = -vmax*S/(Km + S)",
+      "variables": {
+        "S": "substrate concentration",
+        "vmax": "maximum reaction rate",
+        "Km": "Michaelis constant"
+      },
+      "initial_condition_template": "S(t0) = S0",
+      "analytical_solution": "S(t) = Km * W(exp(S0/Km - t*vmax/Km + 1)) (where W is Lambert W)",
+      "confidence": 0.75,
+      "domain": ["biochemistry", "chemistry", "enzymology"]
+    }
+  ]
+}

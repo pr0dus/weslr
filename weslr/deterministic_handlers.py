@@ -1642,6 +1642,51 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "symbolic_math",
     },
+    {
+        "id": "ode_propose",
+        "path": "ode_propose",
+        "triggers": ["/ode propose", "ode propose"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_ode_propose",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "ode",
+    },
+    {
+        "id": "ode_solve",
+        "path": "ode_solve",
+        "triggers": ["/ode solve", "ode solve"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_ode_solve",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "ode",
+    },
+    {
+        "id": "ode_list",
+        "path": "ode_list",
+        "triggers": ["/ode list_templates", "/ode list", "ode list_templates", "ode list"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_ode_list",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "ode",
+    },
 ]
 
 
@@ -3071,6 +3116,105 @@ def handle_optimal(message: str, lowered: str) -> dict:
     text = format_optimal_output(result)
     return build_deterministic_response(
         message=message, path="math_optimal",
+        response_text=text,
+        confidence="high",
+    )
+
+
+# ---- ODE Handlers ----
+
+def handle_ode_propose(message: str, lowered: str) -> dict:
+    """Handle /ode propose <description>."""
+    from weslr.ode_proposer import propose_ode, format_ode_proposal
+
+    body = message  # preserve original case
+    for prefix in ("/ode propose ", "ode propose "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    if not body.strip():
+        return build_deterministic_response(
+            message=message, path="ode_propose",
+            response_text="Usage: /ode propose <description>\nExample: /ode propose tumor growth with chemotherapy",
+            confidence="high",
+        )
+
+    variables = None  # could be extended to parse variables from message
+    candidates = propose_ode(body, variables=variables)
+    text = format_ode_proposal(body, candidates)
+    return build_deterministic_response(
+        message=message, path="ode_propose",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_ode_solve(message: str, lowered: str) -> dict:
+    """Handle /ode solve <equation> [initial=...time=...]."""
+    from weslr.ode_proposer import solve_ode
+
+    body = message  # preserve original case for ODE equations
+    for prefix in ("/ode solve ", "ode solve "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    # Parse initial= and time= kwargs from message (not lowered)
+    initial_conditions = {}
+    time_range = None
+
+    import re
+    ic_match = re.search(r'initial\s*=\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*=\s*[\d.]+\s*,?\s*)+)', body)
+    if ic_match:
+        try:
+            pairs = re.findall(r'([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([\d.]+)', ic_match.group(1))
+            initial_conditions = {k: float(v) for k, v in pairs}
+        except Exception:
+            pass
+
+    time_match = re.search(r'time\s*=\s*\(([\d.]+)\s*,\s*([\d.]+)\)', body)
+    if time_match:
+        time_range = (float(time_match.group(1)), float(time_match.group(2)))
+
+    # Strip kwargs to get ODE string
+    ode_str = re.sub(r'initial\s*=\s*\([^)]{1,200}\)\s*', '', body)
+    ode_str = re.sub(r'time\s*=\s*\([\d.,.\s]{1,50}\)\s*', '', ode_str)
+    ode_str = ode_str.strip()
+
+    if not ode_str:
+        return build_deterministic_response(
+            message=message, path="ode_solve",
+            response_text="Usage: /ode solve <equation> [initial=(var=value,...) time=(t0,t1)]\nExample: /ode solve dX/dt = r*X initial=(X=0.1,r=0.5) time=(0,10)",
+            confidence="high",
+        )
+
+    result = solve_ode(ode_str, initial_conditions=initial_conditions, time_range=time_range)
+    if result["ok"]:
+        text = f"Equation: {ode_str}\nSolution: {result['solution']}\nNote: {result['note']}"
+    else:
+        text = f"Equation: {ode_str}\n{result['note']}"
+    return build_deterministic_response(
+        message=message, path="ode_solve",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_ode_list(message: str, lowered: str) -> dict:
+    """Handle /ode list_templates."""
+    from weslr.ode_proposer import list_templates
+
+    templates = list_templates()
+    lines = [f"Available ODE templates ({len(templates)}):"]
+    for t in templates:
+        eq = t.get("equation", t.get("equation_str", ""))
+        conf = t.get("confidence", 0)
+        domain = ",".join(t.get("domain", []))
+        lines.append(f"  [{t['name']}]  conf={conf}  {eq}  ({domain})")
+    text = "\n".join(lines)
+    return build_deterministic_response(
+        message=message, path="ode_list",
         response_text=text,
         confidence="high",
     )

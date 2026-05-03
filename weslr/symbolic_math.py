@@ -125,9 +125,26 @@ def parse_equation(equation_str: str) -> dict[str, Any]:
         lhs_expr = parse_expr(_normalise_expr(lhs_str), transformations=trans, evaluate=False)
         rhs_expr = parse_expr(_normalise_expr(rhs_str), transformations=trans, evaluate=False)
 
-        # Detect variable: the symbol that appears algebraically
+        # Detect variable: prefer the symbol in lhs that appears most often (likely the "unknown").
+        # Ties broken by alphabetical preference: x > y > z > w > v > u > t > ... > a > b > c > ...
         free = list(lhs_expr.free_symbols | rhs_expr.free_symbols)
-        variable = free[0].name if free else None
+        variable = None
+        if free:
+            names = [s.name for s in free]
+            # Count occurrences in lhs only
+            from sympy import Symbol
+            from sympy.core.basic import Basic
+            counts = {n: 0 for n in names}
+            def walk(node):
+                for child in getattr(node, 'args', []):
+                    walk(child)
+                if isinstance(node, Symbol) and node.name in names:
+                    counts[node.name] += 1
+            walk(lhs_expr)
+            max_count = max(counts.values())
+            candidates = [n for n, c in counts.items() if c == max_count]
+            # Tie-break by reverse-alphabetical (x > y > z > ... > a > b > c)
+            variable = sorted(candidates, key=lambda n: -ord(n[0]))[0]
 
         return {
             "ok": True,
