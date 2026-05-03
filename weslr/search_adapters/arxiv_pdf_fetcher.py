@@ -133,12 +133,6 @@ def ingest_arxiv_paper_by_id(
             file_path=str(pdf_path),
             source_type="arxiv_fulltext",
             domain=domain,
-            tenant_id=tenant_id,
-            metadata={
-                "arxiv_id": aid_base,
-                "pdf_url": pdf_url,
-                **metadata,
-            },
         )
         return {
             "status": "success",
