@@ -37,6 +37,8 @@ from weslr.commands.entities import (
     list_entities_of_type,
     list_relationships_for_entity,
 )
+from weslr.commands.propose import handle_propose_pv_material
+from weslr.combinatorial_materials import handle_propose_combination
 
 import re
 
@@ -1275,19 +1277,34 @@ HANDLER_REGISTRY = [
         "category": "facts",
     },
     {
-        "id": "entity_timeline",
-        "path": "entity_timeline",
-        "triggers": ["/timeline "],
+        "id": "propose_combination",
+        "path": "propose_combination",
+        "triggers": ["/propose combination"],
         "match_type": "prefix",
-        "priority": 85,
-        "handler_fn": "handle_timeline",
+        "priority": 95,
+        "handler_fn": "handle_propose_combination",
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
         "write_paths": [],
         "side_effects": [],
         "write_guard": None,
-        "category": "entity",
+        "category": "propose",
+    },
+    {
+        "id": "propose_pv_material",
+        "path": "propose_pv_material",
+        "triggers": ["/propose pv_material"],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_propose_pv_material",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "propose",
     },
     {
         "id": "action_propose",
