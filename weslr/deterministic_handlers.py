@@ -38,6 +38,9 @@ from weslr.commands.entities import (
     list_relationships_for_entity,
 )
 from weslr.commands.propose import handle_propose_pv_material
+from weslr.commands.discover import handle_discover
+from weslr.nanotechnology_discovery import handle_propose_nanotechnology
+from weslr.communications_discovery import handle_propose_communication
 from weslr.combinatorial_materials import handle_propose_combination
 from weslr.combinatorial_chemistry import handle_propose_chemistry
 from weslr.chemistry_reaction_predictor import handle_predict_reaction as handle_reaction_predict
@@ -1488,6 +1491,36 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "metadata",
     },
+    {
+        "id": "propose_discover_with_domain",
+        "path": "discover",
+        "triggers": [r"^(?:/propose\s+discover|/discover)\s+(\w+)$"],
+        "match_type": "regex",
+        "priority": 97,
+        "handler_fn": "handle_discover_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "propose",
+    },
+    {
+        "id": "propose_discover_no_domain",
+        "path": "discover",
+        "triggers": [r"^(?:/propose\s+discover|/discover)$"],
+        "match_type": "regex",
+        "priority": 96,
+        "handler_fn": "handle_discover_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "propose",
+    },
 ]
 
 
@@ -2600,6 +2633,21 @@ def handle_propose_chemistry_cmd(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="propose_chemistry",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_discover_cmd(message: str, lowered: str) -> dict:
+    """Unified discover command — /propose discover [domain]."""
+    # Extract domain from: /propose discover <domain> or /discover <domain>
+    m = re.match(r"^(?:/propose\s+discover|/discover)(?:\s+(\w+))?$", lowered)
+    domain = m.group(1) if m else None
+    response_text = handle_discover(domain=domain, tenant_id=None, limit=10)
+    return build_deterministic_response(
+        message=message,
+        path="discover",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
