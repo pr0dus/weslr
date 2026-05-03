@@ -1,0 +1,47 @@
+{
+  "rules": [
+    {
+      "name": "replace_ligand",
+      "type": "substitution",
+      "description": "Replace ligand with another",
+      "from_values": ["oleylamine", "CTAB", "PEG", "mercaptoundecanoic acid", "triphenylphosphine", "citrate"],
+      "to_values": ["oleylamine", "CTAB", "PEG", "mercaptoundecanoic acid", "triphenylphosphine", "citrate"],
+      "confidence": 0.70,
+      "provenance_template": "Replaced ligand {from} with {to} — known to affect solubility and bioconjugation"
+    },
+    {
+      "name": "add_shell",
+      "type": "addition",
+      "description": "Add shell to core nanoparticle",
+      "add_values": ["ZnS", "SiO2", "CdSe"],
+      "confidence": 0.60,
+      "provenance_template": "Added {added} shell to {parent} core — shell can passivate surface states and improve quantum yield"
+    },
+    {
+      "name": "core_replacement",
+      "type": "substitution",
+      "description": "Replace core material",
+      "from_values": ["Au", "Ag", "Pt", "Fe2O3", "TiO2", "CdSe", "Fe3O4"],
+      "to_values": ["Au", "Ag", "Pt", "Fe2O3", "TiO2", "CdSe", "Fe3O4"],
+      "confidence": 0.55,
+      "provenance_template": "Replaced core {from} with {to}"
+    },
+    {
+      "name": "combine_core_ligand",
+      "type": "combination",
+      "description": "Combine core with ligand choice",
+      "combine_with": ["oleylamine", "CTAB", "PEG", "mercaptoundecanoic acid"],
+      "confidence": 0.65,
+      "provenance_template": "Combined {component_a} core with {component_b} ligand"
+    },
+    {
+      "name": "bioconjugation_upgrade",
+      "type": "substitution",
+      "description": "Upgrade to bioconjugation ligand",
+      "from_values": ["oleylamine", "CTAB", "triphenylphosphine"],
+      "to_values": ["PEG", "mercaptoundecanoic acid"],
+      "confidence": 0.75,
+      "provenance_template": "Upgraded to biocompatible ligand {to} for bioconjugation applications"
+    }
+  ]
+}

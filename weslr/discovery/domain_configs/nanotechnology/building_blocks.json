@@ -1,0 +1,30 @@
+{
+  "core_material": [
+    {"name": "Au", "description": "Gold nanoparticle core", "trust": 0.90},
+    {"name": "Ag", "description": "Silver nanoparticle core", "trust": 0.90},
+    {"name": "Pt", "description": "Platinum nanoparticle core", "trust": 0.88},
+    {"name": "Fe2O3", "description": "Iron oxide nanoparticle core", "trust": 0.85},
+    {"name": "TiO2", "description": "Titanium dioxide nanoparticle core", "trust": 0.85},
+    {"name": "CdSe", "description": "Cadmium selenide quantum dot", "trust": 0.88},
+    {"name": "Fe3O4", "description": "Magnetite nanoparticle core", "trust": 0.82}
+  ],
+  "shell_material": [
+    {"name": "ZnS", "description": "Zinc sulfide shell", "trust": 0.85},
+    {"name": "SiO2", "description": "Silica shell", "trust": 0.88},
+    {"name": "CdSe", "description": "Cadmium selenide shell", "trust": 0.80},
+    {"name": "none", "description": "No shell (core only)", "trust": 0.70}
+  ],
+  "ligand": [
+    {"name": "oleylamine", "description": "Oleylamine (hydrophobic, long-chain)", "trust": 0.85},
+    {"name": "CTAB", "description": "Cetyltrimethylammonium bromide", "trust": 0.82},
+    {"name": "PEG", "description": "Polyethylene glycol (biocompatible)", "trust": 0.88},
+    {"name": "mercaptoundecanoic acid", "description": "MUA (bifunctional, for bioconjugation)", "trust": 0.80},
+    {"name": "triphenylphosphine", "description": "TPP (water-soluble, small)", "trust": 0.78},
+    {"name": "citrate", "description": "Citrate (biocompatible, ionic)", "trust": 0.82}
+  ],
+  "synthesis_condition": [
+    {"name": "high_temp_synthesis", "description": "Hot injection, 250-320°C", "trust": 0.85},
+    {"name": "low_temp_synthesis", "description": "Wet chemistry, 20-100°C", "trust": 0.80},
+    {"name": "biological_synthesis", "description": "Green synthesis, room temp", "trust": 0.75}
+  ]
+}
