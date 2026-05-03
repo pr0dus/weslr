@@ -557,16 +557,34 @@ def answer_state_question(message: str) -> dict:
 
     elif question_type == "proactive_suggestions":
         sources_used.append("proactive_suggestions.py")
-        answer_parts.append(
-            "Proactive suggestion delivery exists in draft form. "
-            "proactive_suggestions.py generates theme-based suggestions from recent session summaries "
-            "and surfaces them through the workplace bridge when a user asks /workplace or 'what experiments are pending?'. "
-            "However, there is no background daemon — suggestions are only produced on user request. "
-            "No automatic push delivery, no cron-triggered suggestions, no notification channel."
-        )
-        answer_parts.append(
-            "Not implemented yet: proactive_deamon.py, cron-triggered suggestion delivery, notification delivery."
-        )
+        sources_used.append("proactive_daemon.py")
+        import os as _os
+        daemon_exists = _os.path.exists(_os.path.join(_WESLR_ROOT, "proactive_daemon.py"))
+        if daemon_exists:
+            import proactive_daemon as _pd
+            answer_parts.append(
+                "Proactive suggestion delivery is live via a file-based daemon. "
+                "proactive_daemon.py runs as a background thread (daemon=True) that wakes every "
+                f"{_pd._INTERVAL_MINUTES} minutes (configurable via WESLR_PROACTIVE_INTERVAL_MINUTES), "
+                "calls proactive_suggestions.build_proactive_suggestion(), and writes suggestions "
+                "to .weslr/pending_messages.jsonl with queue_type=proactive and priority=medium. "
+                "The /chat endpoint reads from this queue and prepends messages to responses. "
+                f"The daemon is disabled by default (WESLR_PROACTIVE_DAEMON_ENABLED=false) and "
+                "requires explicit operator opt-in via the environment variable. "
+                "A 24-hour deduplication cache (last 5 messages) prevents duplicate suggestions. "
+                "Graceful shutdown via threading.Event."
+            )
+        else:
+            answer_parts.append(
+                "Proactive suggestion delivery exists in draft form. "
+                "proactive_suggestions.py generates theme-based suggestions from recent session summaries "
+                "and surfaces them through the workplace bridge when a user asks /workplace or 'what experiments are pending?'. "
+                "However, there is no background daemon — suggestions are only produced on user request. "
+                "No automatic push delivery, no cron-triggered suggestions, no notification channel."
+            )
+            answer_parts.append(
+                "Not implemented yet: proactive_deamon.py, cron-triggered suggestion delivery, notification delivery."
+            )
         answer_parts.append(
             "Would you like to create a proposal for one of these? Say 'propose a reminder handler' or 'propose a todo system'."
         )

@@ -421,14 +421,19 @@ class TestJarvisCapabilityQuestions(unittest.TestCase):
         self.assertIn("project registry", answer.lower())
         self.assertFalse(result["automatic_change"])
 
-    def test_answer_proactive_suggestions_notices_gaps(self):
+    def test_answer_proactive_suggestions_describes_daemon(self):
         result = sgd.answer_state_question("What proactive suggestion delivery?")
         self.assertEqual(result["question_type"], "proactive_suggestions")
         answer_lower = result["answer"].lower()
-        # Should mention the gap
+        # Should describe the implemented daemon
         self.assertTrue(
-            "no" in answer_lower or "not" in answer_lower or "draft" in answer_lower,
-            f"Answer should acknowledge gaps: {answer_lower[:100]}"
+            "daemon" in answer_lower or "background" in answer_lower,
+            f"Answer should describe the daemon: {answer_lower[:100]}"
+        )
+        # Should mention it's live/implemented
+        self.assertTrue(
+            "live" in answer_lower or "implemented" in answer_lower or "daemon" in answer_lower,
+            f"Answer should confirm it's live: {answer_lower[:100]}"
         )
 
     def test_answer_action_stubs_acknowledges_gaps(self):
