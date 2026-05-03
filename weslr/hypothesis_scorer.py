@@ -305,7 +305,7 @@ def score_hypothesis(
         "source_trust": source_trust,
         "independent_sources": independent_sources,
         "component_support": round(component_support_frac, 2),
-        "component_count": supported_components,
+        "component_count": len(components),
         "novelty": novelty,
         "feasibility": (
             "high" if chem_feas.get("overall_feasible", True) else
@@ -345,7 +345,7 @@ def format_hypothesis(index: int, h: dict) -> str:
 
     conf_bar = "".join("▓" if i < int(conf * 10) else "░" for i in range(10))
     conf_str = f"{conf:.2f}"
-    comp_count = h.get("component_count", "?")
+    comp_count = len(h.get("components", []))
 
     lines = [
         f"{index}. **{name}**",
