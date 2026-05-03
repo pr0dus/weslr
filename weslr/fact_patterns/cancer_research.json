@@ -1,0 +1,126 @@
+{
+  "domain": "cancer_research",
+  "version": "1.0",
+  "patterns": [
+    {
+      "pattern_id": "ct.patients_assigned",
+      "description": "Extracts patient assignment to treatment arms",
+      "regex": "(?i)(?:(\\d+)\\s+patients?\\s+w(?:ere)?\\s+assigned\\s+to\\s+(?:the\\s+)?(\\w+\\s+arm)|(?:the\\s+)?(\\w+)\\s+arm\\s+received\\s+(\\d+)\\s+patients?)",
+      "predicate": "patients_assigned",
+      "confidence": 0.85,
+      "groups": {"arm": 2, "n": 1}
+    },
+    {
+      "pattern_id": "ct.survival_rate",
+      "description": "Extracts overall survival rate at a given timepoint",
+      "regex": "(?i)survival\\s+was\\s+(\\d+(?:\\.\\d+)?)\\s*%\\s+at\\s+(\\d+(?:\\.\\d+)?)\\s+(?:month(?:s?)|year(?:s?))",
+      "predicate": "survival_rate",
+      "confidence": 0.9,
+      "groups": {"survival_rate": 1, "timeframe": 2}
+    },
+    {
+      "pattern_id": "ct.p_value",
+      "description": "Extracts p-value and significance flag from trial results",
+      "regex": "(?i)p\\s*[-:v]?\\s*value\\s*(?:=|\\u2264|<)\\s*(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)",
+      "predicate": "p_value",
+      "confidence": 0.95,
+      "groups": {"p_value": 1, "significant": null}
+    },
+    {
+      "pattern_id": "ct.hazard_ratio",
+      "description": "Extracts hazard ratio with 95% CI bounds",
+      "regex": "(?i)hazard\\s+ratio\\s+(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)\\s*(?:\\(|\\[)\\s*95\\s*%\\s*CI\\s+(?:\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)\\s*(?:\\)|\\])",
+      "predicate": "hazard_ratio",
+      "confidence": 0.9,
+      "groups": {"hazard_ratio": 1, "ci_low": 2, "ci_high": 3}
+    },
+    {
+      "pattern_id": "ct.response_rate",
+      "description": "Extracts tumor response rate percentage",
+      "regex": "(?i)(?:objective\\s+)?response\\s+rate\\s+(?:was\\s+)?(\\d+(?:\\.\\d+)?)\\s*%",
+      "predicate": "response_rate",
+      "confidence": 0.88,
+      "groups": {"response_rate": 1}
+    },
+    {
+      "pattern_id": "ct.drug_dose",
+      "description": "Extracts drug name, dose (mg/kg), and frequency",
+      "regex": "(?i)([A-Z][A-Za-z0-9\\s-]+)\\s+(\\d+(?:\\.\\d+)?)\\s+mg\\/kg\\s*(?:(?:\\+|\\/|every|q)\\s*(\\d+)\\s*(?:week(?:s?)|day(?:s?)|month(?:s?)))?",
+      "predicate": "drug_dose",
+      "confidence": 0.82,
+      "groups": {"drug": 1, "dose": 2, "freq": 3}
+    },
+    {
+      "pattern_id": "ct.adverse_event",
+      "description": "Extracts adverse event grade, type, and patient count",
+      "regex": "(?i)grade\\s+(\\d+|\\w+)\\s+(?:event\\s+)?(?:(?:occurs?\\s+in|observed\\s+in|seen\\s+in)\\s+)?(\\d+)\\s+patients?(?:\\s+with\\s+([A-Za-z\\s-]+))?|(?i)grade\\s+(\\d+|\\w+)\\s+(pneumonitis|neutropenia|thrombocytopenia|anemia| fatigue|nausea|diarrhea|vomiting|stomatitis|dermatitis|neuropathy|rash|mucositis|elevated\\s+ALT|elevated\\s+AST|hypertension|hypothyroidism|fever| chills)",
+      "predicate": "adverse_event",
+      "confidence": 0.8,
+      "groups": {"grade": 1, "n": 2, "event": 3}
+    },
+    {
+      "pattern_id": "ct.biomarker",
+      "description": "Extracts biomarker name and expression threshold",
+      "regex": "(?i)(PD-L1|PD-1|HER2|EGFR|ALK|ROS1|BRAF|MET|RET|NTRK|TMB|MSI|MMR|dMMR|PML|RARA|CD20|CD30|CD33|CD52|KRAS|NRAS|BRCA1|BRCA2|ATM|ER|PGR|AR)\\s+(?:TPS|TMB|expression|level|score|burden|status)?\\s*(?:[\\u2265\\u2264\\u003e\\u003c=\\u2248])\\s*(\\d+(?:\\.\\d+)?)\\s*%|(?i)biomarker\\s+([A-Za-z0-9\\s-]+)\\s+(?:required|positive|negative|\\u2265\\u2264|\\u003e\\u003c|>=|<=)\\s*(\\d+(?:\\.\\d+)?)\\s*%",
+      "predicate": "biomarker",
+      "confidence": 0.85,
+      "groups": {"biomarker": 1, "threshold": 2}
+    },
+    {
+      "pattern_id": "ct.phase",
+      "description": "Extracts clinical trial phase",
+      "regex": "(?i)phase\\s+(I|II|III|IV|1|2|3|4)\\s+(?:trial|study)?",
+      "predicate": "phase",
+      "confidence": 0.97,
+      "groups": {"phase": 1}
+    },
+    {
+      "pattern_id": "ct.enrollment",
+      "description": "Extracts total enrollment and number of sites",
+      "regex": "(?i)(\\d+)\\s+patients?\\s+enrolled\\s+(?:across|at|in)\\s+(\\d+)\\s+site(?:s?)|(?i)(\\d+)\\s+patients?\\s+(?:were\\s+)?enrolled\\s+(?:across|at|in)\\s+(\\d+)\\s+site(?:s?)",
+      "predicate": "enrollment",
+      "confidence": 0.88,
+      "groups": {"enrollment": 1, "sites": 2}
+    },
+    {
+      "pattern_id": "ct.followup",
+      "description": "Extracts median follow-up duration in months",
+      "regex": "(?i)median\\s+follow-up\\s+(\\d+(?:\\.\\d+)?)\\s+(?:month(?:s?)|year(?:s?))",
+      "predicate": "followup_median",
+      "confidence": 0.92,
+      "groups": {"followup_median": 1}
+    },
+    {
+      "pattern_id": "ct.control_arm",
+      "description": "Extracts treatment received by control arm",
+      "regex": "(?i)control\\s+arm\\s+(?:received|was\\s+treated\\s+with|got)\\s+([A-Za-z0-9\\s+\\/\\-]+?)(?:\\.|,|\\s+(?:vs\\.|versus|compared))",
+      "predicate": "control_arm",
+      "confidence": 0.85,
+      "groups": {"control_arm": 1}
+    },
+    {
+      "pattern_id": "ct.primary_endpoint",
+      "description": "Extracts the primary endpoint of the trial",
+      "regex": "(?i)primary\\s+endpoint\\s+(?:was\\s+)?([A-Za-z0-9\\s\\-]+?)(?:\\.|,|$)",
+      "predicate": "primary_endpoint",
+      "confidence": 0.87,
+      "groups": {"endpoint": 1}
+    },
+    {
+      "pattern_id": "ct.manufacturer",
+      "description": "Extracts the manufacturer or supplier of the study drug",
+      "regex": "(?i)(?:study\\s+drug\\s+)?provided\\s+by\\s+([A-Z][A-Za-z0-9\\s\\&\\,\\.]+?)(?:\\.|,)|(?i)([A-Z][A-Za-z0-9\\s\\&\\,\\.]+?)\\s+provided\\s+(?:the\\s+)?study\\s+drug",
+      "predicate": "manufacturer",
+      "confidence": 0.83,
+      "groups": {"manufacturer": 1}
+    },
+    {
+      "pattern_id": "ct.trial_id",
+      "description": "Extracts ClinicalTrials.gov registry identifier",
+      "regex": "(?i)ClinicalTrials\\.gov\\s+NCT(\\d{8})|NCT(\\d{8})",
+      "predicate": "trial_id",
+      "confidence": 0.99,
+      "groups": {"trial_id": 1}
+    }
+  ]
+}
