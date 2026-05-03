@@ -1,0 +1,31 @@
+{
+  "domain": "base",
+  "version": "1.0",
+  "entity_types": {
+    "person": {
+      "required": ["name"],
+      "attributes": ["name"]
+    },
+    "organization": {
+      "required": ["name"],
+      "attributes": ["name"]
+    },
+    "concept": {
+      "required": ["name"],
+      "attributes": ["name"]
+    },
+    "event": {
+      "required": ["name"],
+      "attributes": ["name"]
+    },
+    "object": {
+      "required": ["name"],
+      "attributes": ["name"]
+    },
+    "location": {
+      "required": ["name"],
+      "attributes": ["name"]
+    }
+  },
+  "relationship_types": []
+}

@@ -1,0 +1,93 @@
+{
+  "domain": "cancer_research",
+  "version": "1.0",
+  "entity_types": {
+    "ClinicalTrial": {
+      "extends": "event",
+      "required": ["trial_id", "phase"],
+      "attributes": [
+        "trial_id",
+        "phase",
+        "enrollment",
+        "primary_endpoint",
+        "status",
+        "sponsor",
+        "followup",
+        "control_arm"
+      ],
+      "relationships": [
+        "has_drug",
+        "has_biomarker",
+        "has_site"
+      ]
+    },
+    "DrugCompound": {
+      "extends": "concept",
+      "required": ["name"],
+      "attributes": [
+        "name",
+        "generic_name",
+        "manufacturer",
+        "mechanism",
+        "route"
+      ],
+      "relationships": [
+        "treats",
+        "has_adverse_event",
+        "used_in"
+      ]
+    },
+    "Protein": {
+      "extends": "concept",
+      "required": ["name"],
+      "attributes": [
+        "name",
+        "gene_symbol",
+        "function",
+        "mutation"
+      ],
+      "relationships": [
+        "associated_with",
+        "predicts"
+      ]
+    },
+    "Biomarker": {
+      "extends": "concept",
+      "required": ["name"],
+      "attributes": [
+        "name",
+        "type",
+        "threshold",
+        "detection_method"
+      ],
+      "relationships": [
+        "associated_with",
+        "predicts"
+      ]
+    },
+    "Mutation": {
+      "extends": "concept",
+      "required": ["gene"],
+      "attributes": [
+        "gene",
+        "type",
+        "functional_impact"
+      ],
+      "relationships": [
+        "associated_with",
+        "affects"
+      ]
+    }
+  },
+  "relationship_types": [
+    "treats",
+    "associated_with",
+    "predicts",
+    "used_in",
+    "has_adverse_event",
+    "has_drug",
+    "has_biomarker",
+    "has_site",
+    "affects"
+  ]
+}

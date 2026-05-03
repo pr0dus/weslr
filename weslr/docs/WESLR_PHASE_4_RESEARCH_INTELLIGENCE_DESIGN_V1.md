@@ -114,6 +114,8 @@ These extend `fact_extractor.py` with domain-specific regex + heuristics:
 
 Patterns are defined in `weslr/schemas/fact_patterns/<domain>.json`. Adding a new domain = adding a new pattern file.
 
+**Implementation status:** Phase 4.2 refinement (2026-05-03) wired these patterns into the extraction pipeline. `fact_extractor.py` now loads patterns dynamically from `fact_patterns/<domain>.json`. The `extract_facts_with_positions()` function accepts a `domain` parameter (default: `cancer_research`) and iterates over loaded patterns.
+
 ---
 
 ## 3. Data Schema Changes
@@ -522,13 +524,15 @@ Update `state_grounded_dialogue` to handle:
 ### Phase 4.2 — External Literature Search (PubMed)
 **Estimated effort:** 2–3 days
 
-- [ ] `weslr/search_adapters/pubmed_adapter.py`
+- [x] `weslr/search_adapters/pubmed_adapter.py`
 - [ ] `GET /search` endpoint
 - [ ] `/search pubmed <query>` deterministic handler
 - [ ] Write results to `external_evidence_packets.jsonl`
 - [ ] Fact extraction from retrieved abstracts
 - [ ] Operator notification with result summary
 - [ ] Tests: API response parsing, packet schema validation
+
+> **Note:** Phase 4.2 partial — cancer research patterns wired (15 clinical trial patterns active)
 
 ### Phase 4.3 — Entity Schema Registry + Custom Types
 **Estimated effort:** 2 days

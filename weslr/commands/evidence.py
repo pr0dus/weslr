@@ -89,7 +89,7 @@ def list_pubmed_facts(limit: int = 30) -> str:
     Reads fact_assertions.jsonl and filters to source_type = pubmed_abstract.
     Handles both old format (no source_type) and new format gracefully.
     """
-    from commands.documents import build_source_citation
+    from weslr.commands.documents import build_source_citation
 
     path = Path(".weslr/fact_assertions.jsonl")
     if not path.exists():

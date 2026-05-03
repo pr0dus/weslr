@@ -89,6 +89,16 @@ def build_source_citation(source_reference: Optional[dict] = None, fallback_doc_
 
         return ", ".join(parts) if parts else fallback_doc_id or "unknown"
 
+    elif ref_type == "pubmed_abstract":
+        pmid = source_reference.get("pmid", "")
+        citation = source_reference.get("citation", "")
+        if pmid:
+            url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}"
+            if citation:
+                return f"{citation} — {url}"
+            return url
+        return citation or fallback_doc_id or "unknown"
+
     elif ref_type == "web":
         source = source_reference.get("source", source_reference.get("url", ""))
         page = source_reference.get("page")

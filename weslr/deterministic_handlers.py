@@ -31,6 +31,12 @@ from weslr.reminder_handler import handle_reminder_command
 from weslr.search_adapters.pubmed_adapter import search_pubmed
 from weslr.search_adapters.evidence_packet_store import append_evidence_packet, load_packets, get_packet
 from weslr.fact_extractor import extract_facts_with_positions, append_enriched_fact
+from weslr.commands.entities import (
+    entity_query,
+    list_entity_types_cmd,
+    list_entities_of_type,
+    list_relationships_for_entity,
+)
 
 
 # ---- Handler functions ----
@@ -1162,6 +1168,36 @@ HANDLER_REGISTRY = [
         "category": "reminder",
     },
     {
+        "id": "entity_query",
+        "path": "entity_query",
+        "triggers": ["/entity ", "entity ", "/entity[", "entity["],
+        "match_type": "prefix",
+        "priority": 75,
+        "handler_fn": "handle_entity",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "entity",
+    },
+    {
+        "id": "entity_list",
+        "path": "entity_list",
+        "triggers": ["/entities", "entities", "/entities type", "/entities relationship"],
+        "match_type": "prefix",
+        "priority": 75,
+        "handler_fn": "handle_entities",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "entity",
+    },
+    {
         "id": "pubmed_search",
         "path": "pubmed_search",
         "triggers": ["search pubmed ", "pubmed search "],
@@ -1511,6 +1547,62 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="pubmed_search",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+# ---- Entity Query Handlers ----
+
+def handle_entity(message: str, lowered: str) -> dict:
+    """Handle /entity <name> — show entity summary."""
+    # Extract entity name: "/entity <name>" or "entity <name>"
+    entity_name = lowered
+    for prefix in ("/entity ", "entity ", "/entity[", "entity["):
+        if lowered.startswith(prefix):
+            entity_name = lowered[len(prefix):].strip()
+            break
+
+    if not entity_name:
+        return build_deterministic_response(
+            message=message,
+            path="entity_query",
+            response_text="Usage: /entity <name>  (e.g., /entity NCT04551452)",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    response_text = entity_query(entity_name)
+    return build_deterministic_response(
+        message=message,
+        path="entity_query",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_entities(message: str, lowered: str) -> dict:
+    """Handle /entities or /entities type <type> or /entities relationship <rel>."""
+    # "entities type ClinicalTrial" or "entities type <type>"
+    if " type " in lowered or lowered.startswith("type "):
+        # Extract type name
+        parts = lowered.split(" type ", 1)
+        entity_type = parts[1].strip() if len(parts) > 1 else ""
+        response_text = list_entities_of_type(entity_type)
+    elif " relationship " in lowered or lowered.startswith("relationship "):
+        # Extract relationship type
+        parts = lowered.split(" relationship ", 1)
+        rel_type = parts[1].strip() if len(parts) > 1 else ""
+        response_text = list_relationships_for_entity(rel_type)
+    else:
+        # List all entity types
+        response_text = list_entity_types_cmd()
+
+    return build_deterministic_response(
+        message=message,
+        path="entity_list",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
