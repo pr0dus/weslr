@@ -1,52 +1,171 @@
 {
-  "domain": "biology",
-  "version": "1.0",
-  "building_blocks": {
-    "CellType": [
-      {"name": "neuron", "trust": 0.88},
-      {"name": "muscle", "trust": 0.85},
-      {"name": "stem_cell", "trust": 0.82},
-      {"name": "bacteria", "trust": 0.90},
-      {"name": "yeast", "trust": 0.88}
-    ],
-    "IonChannel": [
-      {"name": "Na_channel", "description": "Voltage-gated sodium channel", "trust": 0.85},
-      {"name": "K_channel", "description": "Voltage-gated potassium channel", "trust": 0.85},
-      {"name": "Ca_channel", "description": "Calcium channel", "trust": 0.83},
-      {"name": "Cl_channel", "description": "Chloride channel", "trust": 0.80},
-      {"name": "synthetic_channel", "description": "Artificially designed ion channel", "trust": 0.75}
-    ],
-    "MembraneProtein": [
-      {"name": "GPCR", "description": "G protein-coupled receptor", "trust": 0.88},
-      {"name": "transporter", "description": "Membrane transporter protein", "trust": 0.85},
-      {"name": "receptor_tyrosine_kinase", "description": "RTK receptor", "trust": 0.84}
-    ],
-    "Organelle": [
-      {"name": "mitochondrion", "description": "ATP production, apoptosis", "trust": 0.90},
-      {"name": "chloroplast", "description": "Photosynthesis", "trust": 0.88},
-      {"name": "nucleus", "description": "DNA storage, gene expression", "trust": 0.90},
-      {"name": "endoplasmic_reticulum", "description": "Protein folding, lipid synthesis", "trust": 0.85}
-    ],
-    "SignalingPathway": [
-      {"name": "MAPK", "description": "Mitogen-activated protein kinase", "trust": 0.85},
-      {"name": "PI3K_Akt", "description": "PI3K/Akt signaling pathway", "trust": 0.83},
-      {"name": "Wnt", "description": "Wnt signaling pathway", "trust": 0.82},
-      {"name": "NF_kB", "description": "Nuclear factor kappa-B", "trust": 0.80},
-      {"name": "calcium_signaling", "description": "Calcium-mediated signaling", "trust": 0.82}
-    ],
-    "BioNanoparticle": [
-      {"name": "exosome", "description": "Extracellular vesicle for drug delivery", "trust": 0.88},
-      {"name": "virus_capsid", "description": "Viral capsid as delivery vehicle", "trust": 0.82},
-      {"name": "ferritin", "description": "Iron-storage protein nanocage", "trust": 0.85},
-      {"name": "liposome", "description": "Phospholipid vesicle", "trust": 0.88}
-    ],
-    "LigandMolecule": [
-      {"name": "neurotransmitter", "description": "Synaptic signaling molecule", "trust": 0.85},
-      {"name": "hormone", "description": "Endocrine signaling molecule", "trust": 0.85},
-      {"name": "drug", "description": "Therapeutic small molecule", "trust": 0.80},
-      {"name": "antibody", "description": "Monoclonal antibody targeting", "trust": 0.88},
-      {"name": "aptamer", "description": "Oligonucleotide targeting molecule", "trust": 0.82},
-      {"name": "folate", "description": "Folic acid for folate receptor targeting", "trust": 0.85}
-    ]
-  }
+  "CellType": [
+    {
+      "name": "neuron",
+      "trust": 0.88
+    },
+    {
+      "name": "muscle",
+      "trust": 0.85
+    },
+    {
+      "name": "stem_cell",
+      "trust": 0.82
+    },
+    {
+      "name": "bacteria",
+      "trust": 0.9
+    },
+    {
+      "name": "yeast",
+      "trust": 0.88
+    }
+  ],
+  "IonChannel": [
+    {
+      "name": "Na_channel",
+      "description": "Voltage-gated sodium channel",
+      "trust": 0.85
+    },
+    {
+      "name": "K_channel",
+      "description": "Voltage-gated potassium channel",
+      "trust": 0.85
+    },
+    {
+      "name": "Ca_channel",
+      "description": "Calcium channel",
+      "trust": 0.83
+    },
+    {
+      "name": "Cl_channel",
+      "description": "Chloride channel",
+      "trust": 0.8
+    },
+    {
+      "name": "synthetic_channel",
+      "description": "Artificially designed ion channel",
+      "trust": 0.75
+    }
+  ],
+  "MembraneProtein": [
+    {
+      "name": "GPCR",
+      "description": "G protein-coupled receptor",
+      "trust": 0.88
+    },
+    {
+      "name": "transporter",
+      "description": "Membrane transporter protein",
+      "trust": 0.85
+    },
+    {
+      "name": "receptor_tyrosine_kinase",
+      "description": "RTK receptor",
+      "trust": 0.84
+    }
+  ],
+  "Organelle": [
+    {
+      "name": "mitochondrion",
+      "description": "ATP production, apoptosis",
+      "trust": 0.9
+    },
+    {
+      "name": "chloroplast",
+      "description": "Photosynthesis",
+      "trust": 0.88
+    },
+    {
+      "name": "nucleus",
+      "description": "DNA storage, gene expression",
+      "trust": 0.9
+    },
+    {
+      "name": "endoplasmic_reticulum",
+      "description": "Protein folding, lipid synthesis",
+      "trust": 0.85
+    }
+  ],
+  "SignalingPathway": [
+    {
+      "name": "MAPK",
+      "description": "Mitogen-activated protein kinase",
+      "trust": 0.85
+    },
+    {
+      "name": "PI3K_Akt",
+      "description": "PI3K/Akt signaling pathway",
+      "trust": 0.83
+    },
+    {
+      "name": "Wnt",
+      "description": "Wnt signaling pathway",
+      "trust": 0.82
+    },
+    {
+      "name": "NF_kB",
+      "description": "Nuclear factor kappa-B",
+      "trust": 0.8
+    },
+    {
+      "name": "calcium_signaling",
+      "description": "Calcium-mediated signaling",
+      "trust": 0.82
+    }
+  ],
+  "BioNanoparticle": [
+    {
+      "name": "exosome",
+      "description": "Extracellular vesicle for drug delivery",
+      "trust": 0.88
+    },
+    {
+      "name": "virus_capsid",
+      "description": "Viral capsid as delivery vehicle",
+      "trust": 0.82
+    },
+    {
+      "name": "ferritin",
+      "description": "Iron-storage protein nanocage",
+      "trust": 0.85
+    },
+    {
+      "name": "liposome",
+      "description": "Phospholipid vesicle",
+      "trust": 0.88
+    }
+  ],
+  "LigandMolecule": [
+    {
+      "name": "neurotransmitter",
+      "description": "Synaptic signaling molecule",
+      "trust": 0.85
+    },
+    {
+      "name": "hormone",
+      "description": "Endocrine signaling molecule",
+      "trust": 0.85
+    },
+    {
+      "name": "drug",
+      "description": "Therapeutic small molecule",
+      "trust": 0.8
+    },
+    {
+      "name": "antibody",
+      "description": "Monoclonal antibody targeting",
+      "trust": 0.88
+    },
+    {
+      "name": "aptamer",
+      "description": "Oligonucleotide targeting molecule",
+      "trust": 0.82
+    },
+    {
+      "name": "folate",
+      "description": "Folic acid for folate receptor targeting",
+      "trust": 0.85
+    }
+  ]
 }
