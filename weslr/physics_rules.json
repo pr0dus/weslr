@@ -1,0 +1,92 @@
+{
+  "version": "1.0",
+  "description": "Physical conservation laws and constraints for hypothesis validation. Operator-editable.",
+  "conservation_rules": [
+    {
+      "id": "charge_conservation",
+      "label": "Charge conservation",
+      "description": "Net charge must be zero for standalone compounds (or charge must be specified).",
+      "domains": ["chemistry", "biology", "materials_science"],
+      "severity": "hard",
+      "check": "charge_balanced"
+    },
+    {
+      "id": "mass_conservation",
+      "label": "Mass conservation",
+      "description": "Elements must have non-negative stoichiometry.",
+      "domains": ["chemistry", "materials_science"],
+      "severity": "hard",
+      "check": "positive_stoichiometry"
+    },
+    {
+      "id": "energy_minimum",
+      "label": "Energy minimum principle",
+      "description": "Stable compounds form at local energy minima. Reaction energy should be negative (exothermic) or near zero for stabilization.",
+      "domains": ["chemistry", "materials_science"],
+      "severity": "soft",
+      "check": "reaction_energy_feasible"
+    },
+    {
+      "id": "bandgap_positive",
+      "label": "Bandgap must be non-negative",
+      "description": "Photovoltaic absorber bandgap must be >= 0 eV.",
+      "domains": ["materials_science"],
+      "severity": "hard",
+      "check": "bandgap_non_negative"
+    },
+    {
+      "id": "biological_dose_window",
+      "label": "Biological dose window",
+      "description": "Drug/compound dose must be above minimum effective dose but below maximum tolerable dose.",
+      "domains": ["biology"],
+      "severity": "soft",
+      "check": "dose_feasible"
+    }
+  ],
+  "unit_checks": [
+    {
+      "id": "bandgap_unit",
+      "label": "Bandgap in eV",
+      "domain": "materials_science",
+      "field": "bandgap",
+      "unit": "eV",
+      "range": [0.0, 4.0]
+    },
+    {
+      "id": "efficiency_unit",
+      "label": "Efficiency in % or fraction",
+      "domain": "materials_science",
+      "field": "efficiency",
+      "unit": "fraction",
+      "range": [0.0, 1.0]
+    },
+    {
+      "id": "dose_unit",
+      "label": "Drug dose in mg/kg or μM",
+      "domain": "biology",
+      "field": "dose",
+      "unit": "mg/kg",
+      "range": [0.0, 1000.0]
+    }
+  ],
+  "forbidden_transformations": [
+    {
+      "id": "perpetual_motion",
+      "label": "Perpetual motion machines forbidden",
+      "pattern": ["efficiency > 1", "efficiency > 100%", "gain > 1 with no energy input"],
+      "domains": ["materials_science", "physics"]
+    },
+    {
+      "id": "negative_mass",
+      "label": "Negative mass forbidden",
+      "pattern": ["negative mass", "negative density"],
+      "domains": ["materials_science", "physics"]
+    }
+  ],
+  "metadata": {
+    "last_updated": "2026-05-03",
+    "operator_version": "v1",
+    "mutable": true,
+    "comment": "Add domain-specific rules here. severity='hard' means hypothesis is rejected; 'soft' means warning is issued."
+  }
+}
