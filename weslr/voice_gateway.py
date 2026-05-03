@@ -31,6 +31,9 @@ from pathlib import Path
 from typing import Optional
 
 import websockets
+from urllib.parse import parse_qs
+
+from weslr.user_timeline_memory import normalize_user_id
 
 logger = logging.getLogger("voice_gateway")
 
@@ -231,7 +234,7 @@ def weslr_chat(text: str, timeline_id: str = "tl_default") -> dict:
 def log_voice_event(
     transcript: str,
     response_text: str,
-    timeline_id: str = "tl_default",
+    timeline_id: str,  # no default — caller must provide explicit timeline
     turn_id: Optional[str] = None,
     interrupted: bool = False,
     stt_provider: str = "shim",
@@ -307,10 +310,31 @@ async def voice_connection(ws, path=None):
         3. Gateway sends {"type": "response", "text": "...", "should_speak": true}
         4. Browser speaks via Web Speech API
         5. Gateway logs voice.event to timeline
+
+    Timeline routing (V1):
+        - Connect with ?user_id=<normalized_user> to use per-user timeline
+          (e.g. ws://host:8778/ws/voice?user_id=arthur → tl_user_arthur)
+        - Without user_id: falls back to "tl_default" for backward compatibility
+        - Per-user timelines enable voice session continuity across sessions
     """
     connection_id = str(uuid.uuid4())[:8]
-    logger.info(f"Voice connection opened: {connection_id}")
+
+    # ── Timeline routing (V1) ────────────────────────────────────────────
     timeline_id = "tl_default"
+    if path:
+        try:
+            qs = parse_qs(path.split("?", 1)[1] if "?" in path else "")
+            raw_user_id = qs.get("user_id", [None])[0]
+            if raw_user_id:
+                normalized = normalize_user_id(raw_user_id)
+                timeline_id = f"tl_user_{normalized}"
+                logger.info(f"Voice timeline routed: {timeline_id}")
+            else:
+                logger.info("Voice connection: no user_id, using tl_default")
+        except Exception as e:
+            logger.warning(f"Failed to parse voice URL query params: {e}")
+
+    logger.info(f"Voice connection opened: {connection_id} | timeline={timeline_id}")
     turn_id = None
 
     try:
