@@ -1,0 +1,89 @@
+{
+  "rules": [
+    {
+      "name": "channel_substitution",
+      "type": "substitution",
+      "description": "Replace ion channel type in a membrane context",
+      "from_values": ["Na_channel", "K_channel", "Ca_channel", "Cl_channel"],
+      "to_values": ["Na_channel", "K_channel", "Ca_channel", "Cl_channel"],
+      "confidence": 0.70,
+      "provenance_template": "Replaced {from} with {to} ion channel"
+    },
+    {
+      "name": "pathway_crosstalk",
+      "type": "combination",
+      "description": "Combine two signaling pathways via shared components",
+      "combine_with": ["MAPK", "PI3K_Akt", "Wnt", "NF_kB", "calcium_signaling"],
+      "confidence": 0.60,
+      "provenance_template": "Created hybrid {component_a} × {component_b} pathway"
+    },
+    {
+      "name": "cell_targeting",
+      "type": "addition",
+      "description": "Append a targeting ligand to a bionanoparticle for cell-type specificity",
+      "add_values": ["antibody", "folate", "aptamer", "neurotransmitter"],
+      "confidence": 0.80,
+      "provenance_template": "Added {added} targeting to bionanoparticle"
+    },
+    {
+      "name": "organelle_engineering",
+      "type": "addition",
+      "description": "Insert an organelle into a target cell type",
+      "add_values": ["mitochondrion", "chloroplast", "nucleus", "endoplasmic_reticulum"],
+      "confidence": 0.60,
+      "provenance_template": "Engineered {added} into target cell"
+    },
+    {
+      "name": "protein_mutation",
+      "type": "substitution",
+      "description": "Change one amino acid in a membrane protein active site",
+      "from_values": ["GPCR", "transporter", "receptor_tyrosine_kinase"],
+      "to_values": ["GPCR_mutated", "transporter_mutated", "receptor_tyrosine_kinase_mutated"],
+      "confidence": 0.50,
+      "provenance_template": "Introduced mutation in {from}"
+    },
+    {
+      "name": "bioenergetic_hybrid",
+      "type": "combination",
+      "description": "Combine two ATP-producing pathways for enhanced bioenergetics",
+      "combine_with": ["mitochondrion", "chloroplast"],
+      "confidence": 0.40,
+      "provenance_template": "Created bioenergetic hybrid: {component_a} + {component_b}"
+    },
+    {
+      "name": "nanoparticle_coating",
+      "type": "addition",
+      "description": "Add a functional coating to a bionanoparticle",
+      "add_values": ["PEG", "antibody", "folate", "aptamer"],
+      "confidence": 0.70,
+      "provenance_template": "Added {added} coating to bionanoparticle"
+    },
+    {
+      "name": "ion_channel_redesign",
+      "type": "substitution",
+      "description": "Change selectivity filter of an ion channel",
+      "from_values": ["K_channel", "Na_channel", "Ca_channel"],
+      "to_values": ["Na_channel", "K_channel", "Ca_channel"],
+      "confidence": 0.50,
+      "provenance_template": "Redesigned selectivity filter: {from} → {to}"
+    },
+    {
+      "name": "ligand_swap",
+      "type": "substitution",
+      "description": "Replace targeting ligand with an alternative",
+      "from_values": ["antibody", "folate", "aptamer", "neurotransmitter"],
+      "to_values": ["antibody", "folate", "aptamer", "neurotransmitter"],
+      "confidence": 0.72,
+      "provenance_template": "Replaced targeting ligand {from} with {to}"
+    },
+    {
+      "name": "cell_type_switch",
+      "type": "substitution",
+      "description": "Switch target cell type for a therapy or delivery vehicle",
+      "from_values": ["neuron", "muscle", "stem_cell", "bacteria", "yeast"],
+      "to_values": ["neuron", "muscle", "stem_cell", "bacteria", "yeast"],
+      "confidence": 0.65,
+      "provenance_template": "Switched cell type from {from} to {to}"
+    }
+  ]
+}
