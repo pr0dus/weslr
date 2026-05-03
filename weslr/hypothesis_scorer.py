@@ -153,9 +153,8 @@ def check_valence_rules(formula: str) -> dict[str, Any]:
         if ratio < 0.3 or ratio > 5:
             issues.append(f"unusual cation/anion ratio ({ratio:.2f})")
 
-    # Check for H2O — very stable, common in hydrated compounds
-    if "H" in elements and "O" in elements:
-        issues.append("")  # no issue
+    # H2O is common and stable — suppress false positives
+    # (H-O bonds are well-known; handled by charge balance)
 
     return {
         "passes_valence": len(issues) == 0,
@@ -187,12 +186,16 @@ def chemical_feasibility(formula: str) -> dict[str, Any]:
     if not valence_result["passes_valence"]:
         score -= 0.2
 
+    charge_ok = charge_result.get("feasible", charge_result["net_charge"] == 0)
+    valence_ok = valence_result.get("passes_valence", True)
+    overall_feasible = score >= 0.6 and charge_ok and valence_ok
+
     note = f"Chemical: {charge_result['feasibility_note']}"
     if valence_result["issues"]:
         note += f"; valence: {valence_result['issues'][0]}"
 
     return {
-        "overall_feasible": score >= 0.6,
+        "overall_feasible": overall_feasible,
         "score": round(score, 3),
         "charge": charge_result,
         "valence": valence_result,

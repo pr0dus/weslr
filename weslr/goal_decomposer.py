@@ -194,10 +194,10 @@ def decompose(goal: str, domain: Optional[str] = None) -> dict:
         kw_set = set(raw_keywords)
         if kw_set & bio_keywords:
             detected = "biology"
-        elif kw_set & chem_keywords:
-            detected = "chemistry"
         elif kw_set & mat_keywords:
             detected = "materials_science"
+        elif kw_set & chem_keywords:
+            detected = "chemistry"
 
     return {
         "raw_keywords": raw_keywords,
