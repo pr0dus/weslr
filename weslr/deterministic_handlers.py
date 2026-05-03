@@ -1702,6 +1702,21 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "quantum",
     },
+    {
+        "id": "causal_propose",
+        "path": "causal_propose",
+        "triggers": ["/propose cause", "/refine cause", "/causal"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_causal_propose",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "causality",
+    },
 ]
 
 
@@ -3244,6 +3259,20 @@ def handle_quantum(message: str, lowered: str) -> dict:
     text = q_handle(message, lowered)
     return build_deterministic_response(
         message=message, path="quantum",
+        response_text=text,
+        confidence="high",
+    )
+
+
+# ---- Causal Handlers ----
+
+def handle_causal_propose(message: str, lowered: str) -> dict:
+    """Handle /propose cause, /refine cause, /causal commands."""
+    from weslr.commands.causality_commands import handle_causal_propose as c_handle
+
+    text = c_handle(message, lowered)
+    return build_deterministic_response(
+        message=message, path="causal_propose",
         response_text=text,
         confidence="high",
     )

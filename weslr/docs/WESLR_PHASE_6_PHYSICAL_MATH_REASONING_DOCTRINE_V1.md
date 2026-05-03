@@ -175,3 +175,60 @@ This is an *advisory proposal* — the operator reviews before any downstream us
 - ❌ No user-controllable measurement seed (seed is deterministic from state)
 - ❌ No logging of quantum measurement outcomes
 - ✅ Proposals are advisory only — operator approval required before downstream use
+
+---
+
+## 6.5 Causality detection
+
+### Purpose
+
+Enable Weslr to distinguish correlation from causation, detect candidate causal relationships from observational data or literature, annotate them with causal confidence scores, and suggest interventions — all as advisory hypothesis generation (no causal claims without statistical support).
+
+### What is modeled
+
+- **Correlation tests**: Pearson r (continuous), Spearman ρ (rank), chi-square (categorical 2×2)
+- **Temporal precedence heuristic**: event timelines → +1 (A→B), -1 (B→A), 0 (ambiguous/missing)
+- **Confounder detection**: simplified back-door criterion — partial correlation via residual method (continuous) or Mantel-Haenszel stratified chi-square (categorical); flags confounder if correlation drops > 0.3 after conditioning
+- **Causal confidence scoring**: weighted combination of correlation significance (0.30), temporal precedence (0.40), no confounding (0.30), literature support (0.20); low/medium/high thresholds at 0.4 and 0.7
+- **Intervention simulation**: do(A=v) via linear regression on data — read-only, advisory only
+- **Dataset registry**: in-memory named datasets with variable arrays; 3 built-in examples
+
+### Interfaces
+
+| Command | Description |
+|---|---|
+| `/propose cause <A> <B> [dataset_id]` | Full causal analysis with correlation, temporal, confounder, confidence, intervention |
+| `/refine cause confounder <X> for <A> <B>` | User adds known confounder; confidence recalculated |
+| `/causal graph` | Display current session's causal graph edges |
+| `/causal intervene <A>=<value>` | Simulate do(A=value) on most correlated variable |
+
+### Discovery engine integration
+
+When `/explore` finds strong correlations, it may flag "potential causal relationship" if:
+- Temporal precedence is consistent (temporal_score ≠ 0)
+- User has not flagged a known confounder
+
+The `is_causal_topic()` function checks for keywords: cause, effect, correlation, confounder, intervention, causal graph, dag, backdoor, etc.
+
+### Constraints (non-negotiable)
+
+- **No black-box causal libraries** — all matrix operations are explicit and auditable
+- **No causal claims without statistical support** — always include p-values, effect sizes, confidence
+- **Deterministic random seeds** — any resampling uses seeded random (seed parameter)
+- **Do not simulate interventions on real patients** — only on internal data subsets
+- **No learning from measurement outcomes** — doctrine P11 (public learning boundary)
+- **Multi-tenant isolation** — causal state stored per session key
+
+### Safety & reproducibility
+
+- All p-values computed via scipy.stats if available; pure-Python fallback uses conservative thresholds
+- No external API calls from causality module
+- Random seed = 42 (fixed) for all internal tests and simulations
+- Intervention simulation is linear regression approximation; causal assumptions apply
+
+### Boundaries (non-negotiable)
+
+- ❌ No causal discovery from time series without temporal data
+- ❌ No automatic confounder addition — operator or user must specify via `/refine cause`
+- ❌ No downstream causal inference without operator review
+- ✅ All outputs include p-values and explicit caveats
