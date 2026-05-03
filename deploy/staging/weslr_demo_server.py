@@ -395,6 +395,17 @@ class WeslrDemoHandler(BaseHTTPRequestHandler):
             original_response=original_response,
         )
 
+        # ── Inject pending queue messages ─────────────────────────────
+        try:
+            from weslr.pending_messages_queue import dequeue_all, format_queue_messages
+            pending = dequeue_all(session_id=session_id)
+            if pending:
+                queue_text = format_queue_messages(pending)
+                if queue_text:
+                    response["reply"] = queue_text + "\n\n" + response["reply"]
+        except Exception:
+            pass
+
         # ── Signal capture (fire-and-forget, zero user impact) ────────────────
         _capture_signal(message=message, session_id=session_id, response=response)
 
