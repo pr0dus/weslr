@@ -25,6 +25,7 @@ _VALID_TURN_KINDS = (
     "governance",
     "experiment",
     "action_candidate",
+    "relational_query",
     "unknown",
 )
 
@@ -42,6 +43,7 @@ _VALID_SELECTED_LAYERS = (
     "workplace",
     "capability_welcome",
     "evidence",
+    "fact_engine",
     "clarification",
     "fallback",
 )
@@ -236,6 +238,33 @@ def _is_governance_scope(message: str) -> bool:
     """Return True if message asks about governance, safety, or approval boundaries."""
     lower = message.lower()
     for pattern in _GOVERNANCE_PATTERNS:
+        if re.search(pattern, lower):
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Relational query detection
+# ---------------------------------------------------------------------------
+
+_RELATIONAL_PATTERNS = (
+    r"\bwhat did (.+?) say about",
+    r"\bwhat (.+?) said about",
+    r"\brelationship between (.+?) and (.+?)",
+    r"\bhow are (.+?) and (.+?) connected",
+    r"\bhow is (.+?) related to (.+?)",
+    r"\bwhat's the connection between (.+?) and (.+?)",
+    r"\bwhat does project (.+?) know",
+    r"\btell me about (.+?) and (.+?)",
+    r"\btimeline of (.+?) (?:regarding|related to|about)",
+    r"\btimeline for (.+?) (?:regarding|related to|about)",
+)
+
+
+def _is_relational_query(message: str) -> bool:
+    """Return True if message is a relational or temporal query about past discussions."""
+    lower = message.lower()
+    for pattern in _RELATIONAL_PATTERNS:
         if re.search(pattern, lower):
             return True
     return False
@@ -466,6 +495,27 @@ def analyze_turn(message: str, context: Optional[dict] = None) -> dict:
         }
 
     # ── 5. External topic detection ──────────────────────────────────────
+    # Relational queries are handled before external topic detection
+    # so "what did Arthur say about X" goes to fact_engine, not external search.
+    if _is_relational_query(message):
+        return {
+            "record_type": "hybrid_turn_analysis_v1",
+            "turn_kind": "relational_query",
+            "target_scope": "prior_context",
+            "external_topic": None,
+            "requires_evidence": False,
+            "requires_memory": True,
+            "requires_action": False,
+            "candidate_capabilities": _score_capabilities(message, context),
+            "selected_layer": "fact_engine",
+            "confidence": 0.88,
+            "ambiguity": "none",
+            "clarification_question": None,
+            "authority": "routing_analysis_only",
+            "automatic_action": False,
+        }
+
+    # ── 6. External topic detection ──────────────────────────────────────
     # Only fires when the topic is clearly about the external world and
     # contains no WESLR-internal terms.
     external_topic = _extract_external_topic(message)
