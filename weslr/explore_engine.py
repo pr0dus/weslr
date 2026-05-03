@@ -222,10 +222,15 @@ def generate_hypotheses(
 
     for rule in rules:
         rule_name = rule.get("name", "unnamed")
+        rule_domain = rule.get("domain", domain or "generic")
         desc = rule.get("description", "")
         components = rule.get("components", [])
 
         for entity_name, entity_data in entities.items():
+            # Domain affinity: skip if entity doesn't match the rule's target domain
+            if not _entity_matches_domain(entity_name, rule_domain):
+                continue
+
             for comp in components:
                 comp_lower = comp.lower()
                 # Check if comp appears in entity name or its relationships
@@ -271,6 +276,29 @@ def generate_hypotheses(
             unique.append(h)
 
     return unique[:max_hypotheses]
+
+
+def _entity_matches_domain(entity_name: str, rule_domain: str) -> bool:
+    """Return True if entity is relevant to the given domain."""
+    e = entity_name.lower()
+    domain_markers = {
+        "biology": [
+            "dasatinib", "quercetin", "fisetin", "navitoclax", "nmn", "nr",
+            "nad+", "nad", "rapamycin", "mtr", "crispr", "cas", "trpc",
+            "senolytic", "senescence", "nmN",
+        ],
+        "materials_science": [
+            "kesterite", "perovskite", "bandgap", "solar", "photovoltaic",
+            "semiconductor", " absorber", "tco", "buffer", "window layer",
+        ],
+        "chemistry": [
+            "catalyst", "polymer", "solvent", "reagent", "synthesis",
+            "nmr", "hplc", "yield", "selectivity",
+        ],
+    }
+    if rule_domain in domain_markers:
+        return any(m in e for m in domain_markers[rule_domain])
+    return True  # generic rules apply to all
 
 
 def _predict_effect(entity: str, component: str, domain: Optional[str]) -> str:
@@ -424,45 +452,65 @@ _DOMAIN_COMBINATION_RULES: dict[str, list[dict]] = {
     "biology": [
         {
             "name": "senolytic_nad_combination",
+            "domain": "biology",
             "description": "Combine senolytic {component} with NAD+ booster {entity} for synergistic anti-aging effect",
             "components": ["dasatinib", "quercetin", "fisetin", "navitoclax", "NMN", "NR"],
         },
         {
             "name": "trpc_calcium_blocker",
+            "domain": "biology",
             "description": "TRPC calcium channel blocker {component} may reduce pathological calcium overload in {entity}",
             "components": ["TRPC5 blocker", "SKF-96365", "Gd3+", "carvacrol"],
         },
         {
             "name": "mtdna_mtor_combo",
+            "domain": "biology",
             "description": "Inhibit mTOR with {component} while upregulating NAD+ in {entity} for synergistic autophagy",
             "components": ["rapamycin", "everolimus", "NMN", "resveratrol"],
         },
         {
             "name": "crispr_nanov",
+            "domain": "biology",
             "description": "Deliver CRISPR gene editor {component} via nanoparticle {entity} for targeted in vivo editing",
             "components": ["gold nanoparticle", "lipid nanoparticle", "polymer nanoparticle"],
         },
         {
             "name": "immune_checkpoint_aging",
+            "domain": "biology",
             "description": "Combine immune checkpoint modulation ({component}) with senolytic {entity} to boost immune surveillance",
             "components": ["anti-PD1", "anti-CTLA4", "fisetin", "dasatinib+quercetin"],
+        },
+        {
+            "name": "druggable_target_nanov",
+            "domain": "biology",
+            "description": "Target {component} with nanoparticle-delivered therapeutic {entity}",
+            "components": ["folate", "antibody", "aptamer", "peptide ligand"],
         },
     ],
     "materials_science": [
         {
             "name": "bandgap_optimization",
+            "domain": "materials_science",
             "description": "Adjust bandgap of {entity} by alloying with {component} to improve carrier separation",
             "components": ["S", "Se", "Te", "Ga", "In"],
         },
         {
             "name": "interface_engineering",
+            "domain": "materials_science",
             "description": "Modify interface between {entity} and transport layer using {component}",
             "components": ["TiO2", "Spiro-OMeTAD", "PTAA", "PCBM"],
         },
         {
             "name": "nanostructure_perovskite",
+            "domain": "materials_science",
             "description": "Add nanostructured {component} to {entity} to increase light absorption and charge collection",
             "components": ["nanorods", "nanowires", "quantum dots", "plasmons"],
+        },
+        {
+            "name": "buffer_layer_tuning",
+            "domain": "materials_science",
+            "description": "Modify buffer layer between {entity} and {component} to reduce interface recombination",
+            "components": ["CdS", "ZnS", "TiO2", "ZnO"],
         },
     ],
 }
