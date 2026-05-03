@@ -1,0 +1,47 @@
+{
+  "rules": [
+    {
+      "name": "increase_modulation_order",
+      "type": "substitution",
+      "description": "Increase modulation order for higher spectral efficiency",
+      "from_values": ["QPSK", "16-QAM"],
+      "to_values": ["16-QAM", "64-QAM"],
+      "confidence": 0.60,
+      "provenance_template": "Increased modulation order: {from} → {to} for higher spectral efficiency"
+    },
+    {
+      "name": "upgrade_to_advanced_coding",
+      "type": "substitution",
+      "description": "Replace legacy coding with advanced coding",
+      "from_values": ["Hamming", "Turbo"],
+      "to_values": ["LDPC", "Polar"],
+      "confidence": 0.75,
+      "provenance_template": "Upgraded coding: {from} → {to} for better error correction"
+    },
+    {
+      "name": "combine_modulation_coding",
+      "type": "combination",
+      "description": "Combine modulation with coding scheme",
+      "combine_with": ["LDPC", "Polar", "Turbo"],
+      "confidence": 0.70,
+      "provenance_template": "Paired {component_a} modulation with {component_b} coding"
+    },
+    {
+      "name": "replace_multiple_access",
+      "type": "substitution",
+      "description": "Replace legacy MA with advanced MA scheme",
+      "from_values": ["TDMA", "FDMA", "CDMA"],
+      "to_values": ["NOMA"],
+      "confidence": 0.50,
+      "provenance_template": "Replaced {from} with NOMA for non-orthogonal multiple access"
+    },
+    {
+      "name": "multi_standard_combination",
+      "type": "combination",
+      "description": "Combine three components into a full waveform",
+      "combine_with": ["NOMA", "LDPC", "64-QAM"],
+      "confidence": 0.55,
+      "provenance_template": "Combined advanced waveform: {component_a} + {component_b} + known coding/modulation"
+    }
+  ]
+}

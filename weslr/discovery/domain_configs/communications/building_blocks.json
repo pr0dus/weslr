@@ -1,0 +1,24 @@
+{
+  "modulation": [
+    {"name": "QPSK", "description": "Quaternary phase-shift keying", "order": 4, "trust": 0.92},
+    {"name": "16-QAM", "description": "16-ary quadrature amplitude modulation", "order": 16, "trust": 0.90},
+    {"name": "64-QAM", "description": "64-ary QAM", "order": 64, "trust": 0.88},
+    {"name": "256-QAM", "description": "256-ary QAM (high spectral efficiency)", "order": 256, "trust": 0.82},
+    {"name": "OFDM", "description": "Orthogonal frequency-division multiplexing", "order": 1, "trust": 0.90},
+    {"name": "FBMC", "description": "Filter bank multicarrier", "order": 1, "trust": 0.85},
+    {"name": "GFDM", "description": "Generalized frequency division multiplexing", "order": 1, "trust": 0.80}
+  ],
+  "coding": [
+    {"name": "Hamming", "description": "Hamming code (single-bit correction)", "rate": 0.75, "trust": 0.85},
+    {"name": "LDPC", "description": "Low-density parity-check code", "rate": 0.90, "trust": 0.92},
+    {"name": "Polar", "description": "Polar code (5G NR)", "rate": 0.90, "trust": 0.88},
+    {"name": "Turbo", "description": "Turbo code (3G/4G)", "rate": 0.85, "trust": 0.88},
+    {"name": "None", "description": "No error correction coding", "rate": 1.0, "trust": 0.70}
+  ],
+  "multiple_access": [
+    {"name": "TDMA", "description": "Time-division multiple access", "trust": 0.85},
+    {"name": "FDMA", "description": "Frequency-division multiple access", "trust": 0.82},
+    {"name": "CDMA", "description": "Code-division multiple access", "trust": 0.80},
+    {"name": "NOMA", "description": "Non-orthogonal multiple access (5G)", "trust": 0.78}
+  ]
+}
