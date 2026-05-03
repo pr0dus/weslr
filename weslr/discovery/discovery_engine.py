@@ -9,6 +9,14 @@ from typing import Any, Dict, List, Optional
 # Base path for domain configs
 DOMAIN_CONFIGS = Path(__file__).parent / "domain_configs"
 
+# Time-series keywords that trigger temporal pattern detection
+TEMPORAL_KEYWORDS = {
+    "trend", "forecast", "sales", "temperature", "time series",
+    "daily", "monthly", "seasonal", "seasonality", "stock", "price",
+    "revenue", "quarterly", "annual", "index", "growth", "decline",
+    "sequence", "temporal", "time-series", "timeseries",
+}
+
 def load_domain(domain_name: str) -> Dict[str, Any]:
     """Load building blocks and transformation rules for a domain."""
     domain_dir = DOMAIN_CONFIGS / domain_name
@@ -41,6 +49,60 @@ def get_available_domains() -> List[str]:
         return []
     return [d.name for d in DOMAIN_CONFIGS.iterdir() if d.is_dir() and (d / "building_blocks.json").exists()]
 
+
+def detect_temporal_patterns_for_dataset(dataset_name: str) -> dict:
+    """Run temporal analysis on a named dataset and return pattern annotations.
+
+    Uses the temporal_commands registry to locate the dataset series,
+    then runs temporal reasoning to detect trend, seasonality, and stationarity.
+
+    Returns an empty dict if the dataset is not registered or temporal
+    reasoning is unavailable.
+    """
+    try:
+        from weslr.commands.temporal_commands import _DATASETS
+        from weslr.modules.temporal_reasoning import detect_temporal_patterns
+    except ImportError:
+        return {}
+
+    if dataset_name not in _DATASETS:
+        return {}
+
+    series = _DATASETS[dataset_name]
+    patterns = detect_temporal_patterns(series)
+
+    return {
+        "trend_direction": patterns.trend_direction,
+        "trend_label": {1: "upward", -1: "downward", 0: "flat"}.get(
+            patterns.trend_direction, "unknown"
+        ),
+        "seasonality_present": patterns.seasonality_present,
+        "seasonality_period": patterns.seasonality_period,
+        "stationarity": patterns.stationarity_via_adf,
+    }
+
+
+def _contains_temporal_keyword(fact: Dict[str, Any]) -> bool:
+    """Return True if any field of the fact contains a temporal keyword."""
+    text = (
+        str(fact.get("subject", "")) + " " +
+        str(fact.get("predicate", "")) + " " +
+        str(fact.get("object", ""))
+    ).lower()
+    return any(kw in text for kw in TEMPORAL_KEYWORDS)
+
+
+def _dataset_name_from_fact(fact: Dict[str, Any]) -> Optional[str]:
+    """Extract a plausible dataset name from a fact, or None."""
+    # Try to find a field that looks like a dataset identifier
+    for field in ("subject", "object", "source"):
+        val = str(fact.get(field, ""))
+        # Heuristic: dataset names are often lowercase with underscores or dashes
+        if "_" in val or "-" in val:
+            return val
+    return None
+
+
 def generate_candidates(
     domain: str,
     existing_facts: Optional[List[Dict[str, Any]]] = None,
@@ -59,7 +121,9 @@ def generate_candidates(
 
     Returns:
         list of candidate dicts with: name, description, transformation, parent,
-        provenance, confidence, candidate_score
+        provenance, confidence, candidate_score.  When existing_facts contain
+        time-series keywords, temporal pattern annotations are attached to
+        candidates that reference a registered dataset.
     """
     if seed is not None:
         random.seed(seed)
@@ -79,6 +143,30 @@ def generate_candidates(
         parent_entities = _build_parents_from_facts(existing_facts, min_trust, blocks)
     else:
         parent_entities = _bootstrap_parents(blocks)
+
+    # Detect whether the incoming facts contain time-series data
+    has_temporal = existing_facts and any(_contains_temporal_keyword(f) for f in existing_facts)
+
+    # Collect temporal annotations from all registered datasets once
+    temporal_annotations: Dict[str, dict] = {}
+    if has_temporal:
+        try:
+            from weslr.commands.temporal_commands import _DATASETS
+            from weslr.modules.temporal_reasoning import detect_temporal_patterns
+
+            for ds_name in _DATASETS:
+                patterns = detect_temporal_patterns(_DATASETS[ds_name])
+                temporal_annotations[ds_name] = {
+                    "trend_direction": patterns.trend_direction,
+                    "trend_label": {1: "upward", -1: "downward", 0: "flat"}.get(
+                        patterns.trend_direction, "unknown"
+                    ),
+                    "seasonality_present": patterns.seasonality_present,
+                    "seasonality_period": patterns.seasonality_period,
+                    "stationarity": patterns.stationarity_via_adf,
+                }
+        except ImportError:
+            has_temporal = False
 
     # Apply each rule
     for rule in rules:
@@ -100,6 +188,23 @@ def generate_candidates(
                     "domain": domain,
                 }
                 candidate.update(result)
+
+                # Attach temporal annotations when facts contain time-series keywords
+                if has_temporal and temporal_annotations:
+                    # Try to match the candidate's parent or name to a known dataset
+                    parent_name = parent.get("name", "")
+                    for ds_name, annotation in temporal_annotations.items():
+                        if ds_name in parent_name or parent_name in ds_name:
+                            candidate["temporal_pattern"] = annotation
+                            break
+                    # Fallback: attach all annotations as metadata when any dataset matches
+                    if "temporal_pattern" not in candidate:
+                        # Check if any annotation key appears in the candidate name/description
+                        for ds_name, annotation in temporal_annotations.items():
+                            if ds_name in candidate.get("name", "") or ds_name in candidate.get("description", ""):
+                                candidate["temporal_pattern"] = annotation
+                                break
+
                 candidates.append(candidate)
 
     # Deduplicate by name
@@ -111,6 +216,7 @@ def generate_candidates(
             unique.append(c)
 
     return unique[:limit]
+
 
 def _build_parents_from_facts(facts: List[Dict], min_trust: float, blocks: Dict) -> List[Dict]:
     """Build parent entities from fact store facts."""
@@ -134,6 +240,7 @@ def _build_parents_from_facts(facts: List[Dict], min_trust: float, blocks: Dict)
             seen.add(p["name"])
     return [{"name": p["name"], "trust": p["trust"]} for p in parents if p["name"] not in seen]
 
+
 def _bootstrap_parents(blocks: Dict) -> List[Dict]:
     """Build parent entities from building blocks (when no fact store data)."""
     parents = []
@@ -146,6 +253,7 @@ def _bootstrap_parents(blocks: Dict) -> List[Dict]:
                     parents.append({"name": v, "trust": 0.7, "category": category})
     return parents
 
+
 def _apply_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dict]:
     """Apply a single rule to a parent entity. Returns candidate dict or None."""
     rule_type = rule.get("type", "substitution")
@@ -157,6 +265,7 @@ def _apply_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dict]:
     elif rule_type == "addition":
         return _apply_addition_rule(rule, parent, blocks)
     return None
+
 
 def _apply_substitution_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dict]:
     """Apply a substitution rule: replace X with Y."""
@@ -183,6 +292,7 @@ def _apply_substitution_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional
         "transformation_detail": {"from": from_val, "to": to_val, "parent": parent_name},
     }
 
+
 def _apply_combination_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dict]:
     """Apply a combination rule: combine two components."""
     description = rule.get("description", "Combination")
@@ -206,6 +316,7 @@ def _apply_combination_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[
         "transformation_detail": {"component_a": parent_name, "component_b": partner},
     }
 
+
 def _apply_addition_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dict]:
     """Apply an addition rule: add a component."""
     description = rule.get("description", "Addition")
@@ -226,9 +337,11 @@ def _apply_addition_rule(rule: Dict, parent: Dict, blocks: Dict) -> Optional[Dic
         "transformation_detail": {"parent": parent_name, "added": add_val},
     }
 
+
 def rank_candidates(candidates: List[Dict], metric: str = "candidate_score") -> List[Dict]:
     """Rank candidates by the specified metric (descending)."""
     return sorted(candidates, key=lambda c: c.get(metric, 0), reverse=True)
+
 
 def format_discovery_result(domain: str, candidates: List[Dict], limit: int = 10) -> str:
     """Format a discovery result for display."""
@@ -250,6 +363,16 @@ def format_discovery_result(domain: str, candidates: List[Dict], limit: int = 10
             lines.append(f"   Provenance: {prov}")
         score = c.get("candidate_score", c.get("confidence", 0))
         lines.append(f"   Score: {score:.3f}  (rule conf={c.get('confidence', 0):.2f}, parent trust={c.get('parent_trust', 0):.2f})")
+
+        # Include temporal pattern annotations if present
+        if "temporal_pattern" in c:
+            tp = c["temporal_pattern"]
+            lines.append(
+                f"   Temporal: trend={tp.get('trend_label','?')}  "
+                f"seasonality={'yes' if tp.get('seasonality_present') else 'no'}  "
+                f"period={tp.get('seasonality_period','?')}  "
+                f"stationary={'yes' if tp.get('stationarity') else 'no'}"
+            )
         lines.append("")
 
     lines.append(f"[{len(candidates)} total candidates for {domain}]")

@@ -1,5 +1,11 @@
 # Core dependencies (required)
+
 # sympy is optional - enables symbolic mathematics (/solve, /derivative, etc.)
 # Install with: pip install sympy
 # Without it, symbolic math commands return a helpful install hint.
 sympy>=1.10
+
+# statsmodels is required for time-series analysis (/timeseries, /forecast)
+# Enables ACF/PACF, cross-correlation, Granger causality, Holt-Winters/ETS,
+# and ADF stationarity testing.
+statsmodels>=0.14.0

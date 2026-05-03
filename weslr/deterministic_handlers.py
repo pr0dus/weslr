@@ -44,6 +44,8 @@ from weslr.communications_discovery import handle_propose_communication
 from weslr.combinatorial_materials import handle_propose_combination
 from weslr.combinatorial_chemistry import handle_propose_chemistry
 from weslr.chemistry_reaction_predictor import handle_predict_reaction as handle_reaction_predict
+from weslr.commands.temporal_commands import handle_temporal_command
+from weslr.commands.spatial_commands import handle_molecule_command
 
 import re
 
@@ -1717,6 +1719,36 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "causality",
     },
+    {
+        "id": "temporal",
+        "path": "temporal",
+        "triggers": ["/timeseries", "/forecast", "/alert on forecast"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_temporal",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "temporal",
+    },
+    {
+        "id": "molecular_geometry",
+        "path": "molecular_geometry",
+        "triggers": ["/molecule", "molecule ", "/propose shape"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_molecule",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "spatial",
+    },
 ]
 
 
@@ -3273,6 +3305,31 @@ def handle_causal_propose(message: str, lowered: str) -> dict:
     text = c_handle(message, lowered)
     return build_deterministic_response(
         message=message, path="causal_propose",
+        response_text=text,
+        confidence="high",
+    )
+
+
+# ---- Temporal Handlers ----
+
+def handle_temporal(message: str, lowered: str) -> dict:
+    """Handle /timeseries, /forecast, /alert commands."""
+    text = handle_temporal_command(message, lowered)
+    return build_deterministic_response(
+        message=message, path="temporal",
+        response_text=text,
+        confidence="high",
+    )
+
+
+# ---- Spatial Handlers ----
+
+
+def handle_molecule(message: str, lowered: str) -> dict:
+    """Handle /molecule and /propose shape commands."""
+    text = handle_molecule_command(message, lowered)
+    return build_deterministic_response(
+        message=message, path="molecular_geometry",
         response_text=text,
         confidence="high",
     )

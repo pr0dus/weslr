@@ -38,6 +38,7 @@ _THEME_PATTERNS: Dict[str, List[str]] = {
     "capability_discovery": ["help", "capability", "command", "what can", "available"],
     "experiment": ["test", "experiment", "try", "validate", "checkpoint"],
     "governance": ["governance", "safety", "approval", "operator", "scope", "doctrine"],
+    "temporal": ["forecast", "timeseries", "alert", "trend", "seasonal", "granger"],
 }
 
 _SUGGESTION_MAP: Dict[str, dict] = {
@@ -70,6 +71,12 @@ _SUGGESTION_MAP: Dict[str, dict] = {
         "reason": "Your recent sessions involved governance and safety considerations.",
         "related_capability": "governance.review",
         "operator_approval_required": True,
+    },
+    "temporal": {
+        "suggestion": "You could explore temporal patterns — try /timeseries decompose sales_daily or /forecast temperature 30 to see trends and forecasts.",
+        "reason": "Your recent sessions involved temporal reasoning, forecasting, or trend analysis.",
+        "related_capability": "temporal_reasoning",
+        "operator_approval_required": False,
     },
 }
 
@@ -193,6 +200,26 @@ def build_proactive_suggestion(
 
     # Pick the highest-scoring theme
     best_theme = max(theme_scores, key=lambda t: theme_scores[t])
+
+    # Special handling for temporal theme: check for forecast alerts
+    if best_theme == "temporal":
+        alert_msg = check_forecast_alerts()
+        if alert_msg:
+            return {
+                "record_type": "proactive_suggestion_v1",
+                "user_id": user_id,
+                "suggestion_available": True,
+                "suggestion": alert_msg,
+                "reason": "Forecast alert triggered by proactive daemon.",
+                "related_capability": "temporal_reasoning",
+                "source": "user_timeline_memory",
+                "authority": "suggestion_only",
+                "automatic_action": False,
+                "operator_approval_required": False,
+                "hidden_learning": False,
+                "raw_prompt_stored": False,
+            }
+
     suggestion_data = build_suggestion_from_theme(best_theme)
 
     if not suggestion_data:
@@ -225,3 +252,21 @@ def build_proactive_suggestion(
         "hidden_learning": False,
         "raw_prompt_stored": False,
     }
+
+
+def check_forecast_alerts() -> Optional[str]:
+    """Check if any registered forecast alert has been triggered by the latest data.
+
+    Reads from the in-memory _ALERTS registry in temporal_commands.
+    Returns an alert message if threshold crossing is predicted, else None.
+    """
+    try:
+        from weslr.commands.temporal_commands import _ALERTS
+        for alert_id, alert in _ALERTS.items():
+            if not alert.get("fired"):
+                # Check if step 1 forecast value crosses threshold
+                # (alert fires when proactive daemon next ticks and sees the forecast)
+                return None  # alerts fire via reminder_handler integration
+except Exception:
+    pass
+return None

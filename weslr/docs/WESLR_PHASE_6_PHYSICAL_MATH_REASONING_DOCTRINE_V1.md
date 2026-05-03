@@ -232,3 +232,132 @@ The `is_causal_topic()` function checks for keywords: cause, effect, correlation
 - ❌ No automatic confounder addition — operator or user must specify via `/refine cause`
 - ❌ No downstream causal inference without operator review
 - ✅ All outputs include p-values and explicit caveats
+
+---
+
+## 6.6 Time-series analysis
+
+### Purpose
+
+Enable Weslr to analyze temporal data — decompose trend/seasonality/residual components, identify autocorrelation structure, detect lead-lag relationships, perform forecasting, and test for stationarity — as advisory analysis that feeds into hypothesis generation.
+
+### What is modeled
+
+- **Time-series decomposition**: seasonal decomposition via moving average (additive, period detected from data)
+- **Autocorrelation analysis**: ACF (autocorrelation function) and PACF (partial autocorrelation function) — tabular output with lag and coefficient
+- **Cross-correlation**: lead-lag relationship between two series; reports correlation at each lag offset
+- **Granger causality**: tests whether past values of series X significantly improve prediction of series Y (max lag configurable, default 3)
+- **Forecasting**: Holt-Winters exponential smoothing (additive/multiplicative) and ETS (error/trend/seasonality) models — read-only forecast output with confidence intervals
+- **Stationarity testing**: Augmented Dickey-Fuller (ADF) test — reports test statistic, p-value, and conclusion (stationary/non-stationary at 5% level)
+
+### Constraints (non-negotiable)
+
+- **No external APIs** — statsmodels provides local statistical routines; no network calls
+- **Deterministic seeds** — all stochastic initialization uses fixed seeds (seed=42) for reproducibility
+- **Multi-tenant isolation** — time-series data and model state stored per session key
+- **Granger is not true causality** — Granger causality tests predictive precedence only; it does not establish true causal mechanisms; results always include explicit caveats and never claim "X causes Y"
+
+### Interfaces
+
+| Command | Description |
+|---|---|
+| `/timeseries decompose <series_id>` | Seasonal decomposition: trend + seasonal + residual, plots text table |
+| `/timeseries acf <series_id> [max_lags=20]` | ACF table for specified series |
+| `/timeseries pacf <series_id> [max_lags=20]` | PACF table for specified series |
+| `/timeseries crosscorr <series_a> <series_b> [max_lag=10]` | Cross-correlation at each lag offset |
+| `/timeseries granger <series_a> <series_b> [max_lag=3]` | Granger causality test: does A Granger-cause B? |
+| `/timeseries forecast <series_id> [horizon=5]` | Holt-Winters / ETS forecast, horizon steps ahead |
+| `/timeseries stationarity <series_id>` | ADF test for unit root / stationarity |
+
+### Discovery engine integration
+
+When `/explore` receives temporal or longitudinal data, or keywords such as:
+```
+time series, trend, seasonal, forecast, autocorrelation,
+cross-correlation, lag, leading indicator, trailing indicator,
+stationary, non-stationary, unit root, Dickey-Fuller
+```
+Weslr may automatically invoke time-series analysis on the relevant series and include decomposition, ACF/PACF, or stationarity results as part of the exploration output.
+
+### Safety & reproducibility
+
+- All statistical routines via statsmodels; pure-Python fallback not available (statsmodels required)
+- Random seed fixed at 42 for all stochastic model fits
+- No measurement outcomes stored or used for learning
+- No external API calls
+
+### Boundaries (non-negotiable)
+
+- ❌ No claims of true causality from Granger or cross-correlation — always label as "predictive precedence" or "lead-lag relationship"
+- ❌ No automatic forecasting without operator review of model assumptions
+- ❌ No multi-step rolling forecasts beyond configured horizon
+- ✅ All outputs include sample size, lag, p-values where applicable, and explicit caveats
+
+---
+
+## 6.7 Spatial reasoning / molecular geometry
+
+### Purpose
+
+Enable Weslr to reason about molecular geometry — bond lengths, angles, dihedrals, chirality centers, and VSEPR molecular shapes — from 3D atomic coordinates. All computations are purely geometric; no quantum chemistry, no energy minimization, no external APIs.
+
+### What is modeled
+
+- **MolecularStructure** dataclass: atoms (element symbols) + coordinates (numpy ndarray, shape (N,3), Å) + auto-detected bonds (covalent radius distance threshold)
+- **Distance**: Euclidean distance between any two atoms
+- **Angle**: ∠ijk bond angle in degrees (dot-product formula)
+- **Dihedral**: ∠ijkl torsion angle using AT&T four-point dihedral formula
+- **Chirality detection**: tetrahedral volume determinant — if an atom has 4 distinct neighbors and non-zero determinant of bond vectors, it is a chiral center
+- **VSEPR shape inference**: coordination number + observed bond angles → shape name (linear, bent, trigonal planar, tetrahedral, trigonal pyramidal, etc.)
+- **Demo molecules**: pre-defined idealized XYZ coordinates for water, methane, ammonia, ethanol, benzene, formaldehyde, acetylene
+- **Optional RDKit**: SMILES → 3D coordinates via RDKit if installed; otherwise graceful error directing user to XYZ files
+
+### Constraints (non-negotiable)
+
+- **Read-only geometry** — no coordinate modification, no optimization, no molecular dynamics
+- **No external calls** for coordinate generation — use only local XYZ files or demo data
+- **No energy calculations** — purely geometric operations
+- **Deterministic** — no random coordinate generation (demo coordinates are fixed)
+- **Multi-tenant isolation** — caller passes data; no cross-session coordinate storage
+
+### Interfaces
+
+| Command | Description |
+|---|---|
+| `/molecule load <file.xyz>` | Load XYZ molecular file into current session |
+| `/molecule demo <name>` | Load pre-defined molecule (water, methane, ammonia, ethanol, benzene, formaldehyde, acetylene) |
+| `/molecule geometry` | Full geometry summary: bond distances, angles, dihedrals, VSEPR shapes, chiral centers |
+| `/molecule measure distance <i> <j>` | Distance between atom i and j (1-based) |
+| `/molecule measure angle <i> <j> <k>` | Bond angle ∠ijk in degrees |
+| `/molecule measure dihedral <i> <j> <k> <l>` | Dihedral angle ∠ijkl in degrees |
+| `/molecule chirality <atom_idx>` | Check if atom is a chiral center |
+| `/molecule chirality` | List all chiral centers in loaded molecule |
+| `/propose shape <molecule>` | VSEPR shape hypothesis with functional notes |
+
+### Discovery engine integration
+
+When `/explore` receives keywords such as:
+```
+shape, geometry, bond angle, dihedral, tetrahedral, chirality,
+VSEPR, molecular shape, 3D structure, atom coordination,
+bent, linear, trigonal planar, pyramidal
+```
+Weslr may propose geometry-linked hypotheses and include geometric features (bond angles, VSEPR shape, chirality) in the hypothesis description.
+
+
+### Safety & reproducibility
+
+- All geometry computed from fixed demo coordinates or user-provided XYZ files
+- Bond detection uses fixed covalent radius table (C:0.77Å, H:0.32Å, O:0.73Å, N:0.75Å, …) with 1.2× threshold
+- No random number generation
+- No external API calls
+- Chirality detection uses sign of tetrahedral volume determinant; Cahn-Ingold-Prelog R/S labeling is future work
+
+### Boundaries (non-negotiable)
+
+- ❌ No quantum chemistry or DFT calculations
+- ❌ No molecular dynamics or energy minimization
+- ❌ No automatic SMILES→3D without RDKit (fallback requires explicit XYZ or demo)
+- ❌ No modification of loaded coordinates
+- ✅ All distances in Å, angles in degrees
+- ✅ Results always include geometry summary with atom labels
