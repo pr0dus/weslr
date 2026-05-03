@@ -1,0 +1,39 @@
+{
+  "biology": {
+    "aging": ["senescence", "cellular senescence", "cell aging", "organism aging"],
+    "slow down": ["anti-aging", "longevity", "geroprotective", "life extension"],
+    "cell": ["cellular", "cell-based", "in vitro", "in vivo"],
+    "cancer": ["tumor", "carcinoma", "neoplasm", "malignant", "oncology"],
+    "drug": ["therapeutic", "pharmacological", "compound", "agent"],
+    "targeted": ["selective", "specific", "precision"],
+    "glioblastoma": ["glioma", "brain tumor", "central nervous system cancer"],
+    "inflammation": ["inflammatory", "pro-inflammatory", "chronic inflammation"],
+    "mitochondria": ["mitochondrial", "mitochondrial function"],
+    "stem cell": ["stem-cell", "progenitor cell", "pluripotent"],
+    "gene": ["genetic", "genomic", "gene expression", "transcription"],
+    "protein": ["proteomic", "protein-based", "peptide"],
+    "nanoparticle": ["nanomaterial", "nanostructure", "nanocarrier"],
+    "senolytic": ["senolytics", "senescence clearance", "anti-senescence"],
+    "NAD+": ["nicotinamide adenine dinucleotide", "NAD", "nad boost"],
+    "mTOR": ["mammalian target of rapamycin", "mechanistic target of rapamycin"]
+  },
+  "chemistry": {
+    "efficient": ["high-yield", "catalytic efficiency", "selectivity"],
+    "material": ["compound", "molecule", "chemical species"],
+    "photovoltaic": ["solar cell", "PV", "photovoltaic material"],
+    "catalyst": ["catalytic", "enzyme", "photocatalyst"],
+    "stable": ["stability", "long-term stability", "degradation resistance"],
+    "cheap": ["low-cost", "economical", "earth-abundant"],
+    "non-toxic": ["biocompatible", "safe", "low toxicity", "eco-friendly"],
+    "membrane": ["polymer membrane", "selective membrane", "barrier"],
+    "fuel cell": ["hydrogen fuel cell", "electrode", "electrolyte"]
+  },
+  "materials_science": {
+    "efficient": ["high-efficiency", "optimized", "maximized output"],
+    "material": ["semiconductor", "material system"],
+    "photovoltaic": ["solar cell", "photovoltaic cell", "thin-film"],
+    "quantum": ["quantum dot", "quantum well", "quantum confinement"],
+    "superconductor": ["superconducting", "zero resistance"],
+    "solar cell": ["photovoltaic", "PV cell", "solar converter"]
+  }
+}

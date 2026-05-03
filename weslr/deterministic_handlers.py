@@ -1297,6 +1297,21 @@ HANDLER_REGISTRY = [
         "category": "facts",
     },
     {
+        "id": "explore",
+        "path": "explore",
+        "triggers": ["/explore "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_explore_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "explore",
+    },
+    {
         "id": "propose_combination",
         "path": "propose_combination",
         "triggers": ["/propose combination"],
@@ -2648,6 +2663,19 @@ def handle_discover_cmd(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="discover",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_explore_cmd(message: str, lowered: str) -> dict:
+    """Goal-driven hypothesis generation — /explore <goal>."""
+    from weslr.commands.explore import handle_explore
+    response_text = handle_explore(message=message, lowered=lowered)
+    return build_deterministic_response(
+        message=message,
+        path="explore",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
