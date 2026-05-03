@@ -1,0 +1,5 @@
+# Core dependencies (required)
+# sympy is optional - enables symbolic mathematics (/solve, /derivative, etc.)
+# Install with: pip install sympy
+# Without it, symbolic math commands return a helpful install hint.
+sympy>=1.10

@@ -1536,6 +1536,112 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "propose",
     },
+    # ── Symbolic Mathematics ────────────────────────────────────────────────────
+    {
+        "id": "math_solve",
+        "path": "math_solve",
+        "triggers": ["/solve", "solve ", "math solve", "equation solve"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_solve",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_derivative",
+        "path": "math_derivative",
+        "triggers": ["/derivative", "derivative ", "d/d", "differentiate"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_derivative",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_integral",
+        "path": "math_integral",
+        "triggers": ["/integral", "integral ", "integrate", "∫"],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_integral",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_simplify",
+        "path": "math_simplify",
+        "triggers": ["/simplify", "simplify ", "simplify("],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_simplify",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_evaluate",
+        "path": "math_evaluate",
+        "triggers": ["/evaluate", "evaluate "],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_evaluate",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_expand",
+        "path": "math_expand",
+        "triggers": ["/expand", "expand "],
+        "match_type": "prefix",
+        "priority": 50,
+        "handler_fn": "handle_expand",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
+    {
+        "id": "math_optimal",
+        "path": "math_optimal",
+        "triggers": ["optimal ", "find optimal", "solve for optimal", "/optimal"],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_optimal",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "symbolic_math",
+    },
 ]
 
 
@@ -2679,6 +2785,294 @@ def handle_explore_cmd(message: str, lowered: str) -> dict:
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
+    )
+
+
+# ---- Symbolic Mathematics Handlers ----
+
+def handle_solve(message: str, lowered: str) -> dict:
+    """Handle /solve <equation> [for <variable>]."""
+    from weslr.symbolic_math import solve_equation, format_solve_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_solve",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    # Strip the /solve prefix
+    body = lowered
+    for prefix in ("/solve ", "solve "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    if not body.strip():
+        return build_deterministic_response(
+            message=message, path="math_solve",
+            response_text="Usage: /solve <equation>  e.g., /solve 2*x + 3 = 7  or  /solve x**2 - 4 = 0 for x",
+            confidence="high",
+        )
+
+    # Extract optional variable: "... for x" or "... var x"
+    variable = None
+    eq_text = body
+    for sep in (" for ", " var ", " wrt "):
+        if sep in body:
+            parts = body.split(sep, 1)
+            eq_text = parts[0].strip()
+            variable = parts[1].strip().rstrip(".")
+            break
+
+    result = solve_equation(eq_text, variable)
+    text = format_solve_output(result)
+    return build_deterministic_response(
+        message=message, path="math_solve",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_derivative(message: str, lowered: str) -> dict:
+    """Handle /derivative <expr> [variable]."""
+    from weslr.symbolic_math import differentiate, format_derivative_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_derivative",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    body = lowered
+    for prefix in ("/derivative ", "derivative "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    if not body.strip():
+        return build_deterministic_response(
+            message=message, path="math_derivative",
+            response_text="Usage: /derivative <expr> [variable]  e.g., /derivative x**2 sin(x) x",
+            confidence="high",
+        )
+
+    parts = body.rstrip().split()
+    if len(parts) >= 2:
+        expr = " ".join(parts[:-1])
+        variable = parts[-1]
+    else:
+        expr = parts[0]
+        variable = "x"
+
+    result = differentiate(expr, variable)
+    text = format_derivative_output(result)
+    return build_deterministic_response(
+        message=message, path="math_derivative",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_integral(message: str, lowered: str) -> dict:
+    """Handle /integral <expr> [variable]."""
+    from weslr.symbolic_math import integrate, format_integral_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_integral",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    body = lowered
+    for prefix in ("/integral ", "integral ", "integrate "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    parts = body.rstrip().split()
+    if len(parts) >= 2:
+        expr = " ".join(parts[:-1])
+        variable = parts[-1]
+    else:
+        expr = parts[0]
+        variable = "x"
+
+    result = integrate(expr, variable)
+    text = format_integral_output(result)
+    return build_deterministic_response(
+        message=message, path="math_integral",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_simplify(message: str, lowered: str) -> dict:
+    """Handle /simplify <expr>."""
+    from weslr.symbolic_math import simplify, format_simplify_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_simplify",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    body = lowered
+    for prefix in ("/simplify ", "simplify ", "simplify("):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    result = simplify(body.strip())
+    text = format_simplify_output(result)
+    return build_deterministic_response(
+        message=message, path="math_simplify",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_evaluate(message: str, lowered: str) -> dict:
+    """Handle /evaluate <expr> {var:val,...}  or  /evaluate <expr> var=val."""
+    from weslr.symbolic_math import evaluate_expression, is_available
+    import re
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_evaluate",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    body = lowered
+    for prefix in ("/evaluate ", "evaluate "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    # Parse substitutions: look for {...} or key=val patterns
+    # Try {x: 2, y: 3} style
+    braces = re.search(r"\{(.+?)\}", body)
+    if braces:
+        expr = body[:braces.start()].strip()
+        subs_str = braces.group(1)
+        subs: dict[str, float] = {}
+        for pair in subs_str.split(","):
+            pair = pair.strip()
+            if ":" in pair:
+                k, v = pair.split(":", 1)
+                subs[k.strip()] = float(v.strip())
+            elif "=" in pair:
+                k, v = pair.split("=", 1)
+                subs[k.strip()] = float(v.strip())
+    else:
+        # Try key=value space-separated
+        parts = body.rstrip().split()
+        expr = parts[0]
+        subs = {}
+        for part in parts[1:]:
+            if "=" in part:
+                k, v = part.split("=", 1)
+                subs[k.strip()] = float(v.strip())
+
+    if not expr.strip():
+        return build_deterministic_response(
+            message=message, path="math_evaluate",
+            response_text="Usage: /evaluate x**2 + y {x: 2, y: 3}  or  /evaluate x+y x=2 y=3",
+            confidence="high",
+        )
+
+    result = evaluate_expression(expr, subs)
+    if result["ok"]:
+        text = f"{expr} = {result['value']}"
+    else:
+        text = f"Error: {result['note']}"
+    return build_deterministic_response(
+        message=message, path="math_evaluate",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_expand(message: str, lowered: str) -> dict:
+    """Handle /expand <expr>."""
+    from weslr.symbolic_math import expand_expr, format_expand_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_expand",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    body = lowered
+    for prefix in ("/expand ", "expand "):
+        if body.startswith(prefix):
+            body = body[len(prefix):]
+            break
+
+    result = expand_expr(body.strip())
+    text = format_expand_output(result)
+    return build_deterministic_response(
+        message=message, path="math_expand",
+        response_text=text,
+        confidence="high",
+    )
+
+
+def handle_optimal(message: str, lowered: str) -> dict:
+    """Handle 'optimal <equation> with respect to <variable>' or '/optimal <eq> <var>'."""
+    from weslr.symbolic_math import solve_for_optimal, format_optimal_output, is_available
+
+    if not is_available():
+        return build_deterministic_response(
+            message=message, path="math_optimal",
+            response_text="SymPy not installed – install with: pip install sympy",
+            confidence="high",
+        )
+
+    # Parse: "optimal -0.01*T**2 + 0.5*T + 10 with respect to T" or "optimal ... T"
+    sense = "max"
+    eq = lowered
+    var = "x"
+
+    # strip prefixes
+    for prefix in ("optimal ", "find optimal ", "solve for optimal ", "/optimal "):
+        if eq.startswith(prefix):
+            eq = eq[len(prefix):]
+            break
+
+    # Extract variable after "with respect to" or last token
+    if "with respect to" in eq:
+        parts = eq.split("with respect to", 1)
+        eq = parts[0].strip()
+        var = parts[1].strip().split()[0] if parts[1].strip() else "x"
+    elif "wrt" in eq:
+        parts = eq.split("wrt", 1)
+        eq = parts[0].strip()
+        var = parts[1].strip().split()[0] if parts[1].strip() else "x"
+    elif "for" in eq:
+        parts = eq.split("for", 1)
+        eq = parts[0].strip()
+        var = parts[1].strip().split()[0] if parts[1].strip() else "x"
+    else:
+        toks = eq.strip().split()
+        if len(toks) > 1:
+            var = toks[-1]
+            eq = " ".join(toks[:-1])
+
+    if "min" in lowered.lower():
+        sense = "min"
+
+    result = solve_for_optimal(eq, var, sense)
+    text = format_optimal_output(result)
+    return build_deterministic_response(
+        message=message, path="math_optimal",
+        response_text=text,
+        confidence="high",
     )
 
 

@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "description": "Operator-editable symbolic math rules for Weslr. Defines allowed functions, variable limits, and known equations of interest. All new rules require operator approval.",
+  "allowed_functions": [
+    "sin", "cos", "tan",
+    "exp", "log", "ln", "log10",
+    "sqrt", "cbrt",
+    "abs",
+    "sinh", "cosh", "tanh",
+    "asin", "acos", "atan",
+    "pi", "e", "E"
+  ],
+  "max_variables": 5,
+  "max_expression_length": 200,
+  "allowed_relations": ["=", "<", "<=", ">", ">="],
+  "equations_of_interest": [
+    {
+      "name": "Arrhenius equation",
+      "id": "arrhenius",
+      "form": "k = A * exp(-Ea / (R * T))",
+      "description": "Temperature dependence of reaction rate k. A = pre-exponential factor, Ea = activation energy (eV), R = Boltzmann constant, T = temperature (K).",
+      "variables": ["k", "A", "Ea", "R", "T"],
+      "domains": ["chemistry", "materials_science"]
+    },
+    {
+      "name": "Shockley-Queisser efficiency limit",
+      "id": "SQ_limit",
+      "form": "eta_SQ = 0.68 * (1 - T_cell / T_sun)",
+      "description": "Detailed-balance limit for single-junction photovoltaic cells. T_cell and T_sun in K (typically 300 K and 6000 K).",
+      "variables": ["eta_SQ", "T_cell", "T_sun"],
+      "domains": ["materials_science", "physics"]
+    },
+    {
+      "name": "Kesterite efficiency model",
+      "id": "kesterite_efficiency",
+      "form": "eta = eta_0 * (1 - (T - T_ref) / T_max)**alpha",
+      "description": "Empirical temperature correction for kesterite solar cell efficiency. eta_0 = reference efficiency, T_ref = reference temperature.",
+      "variables": ["eta", "eta_0", "T", "T_ref", "T_max", "alpha"],
+      "domains": ["materials_science"]
+    },
+    {
+      "name": "Drug concentration decay",
+      "id": "drug_decay",
+      "form": "C(t) = C0 * exp(-k * t)",
+      "description": "First-order elimination of drug concentration C over time t. k = elimination rate constant.",
+      "variables": ["C", "C0", "k", "t"],
+      "domains": ["biology", "chemistry"]
+    },
+    {
+      "name": "Michaelis-Menten kinetics",
+      "id": "MM_kinetics",
+      "form": "v = (Vmax * S) / (Km + S)",
+      "description": "Enzyme reaction velocity v as function of substrate concentration S. Vmax = maximum velocity, Km = Michaelis constant.",
+      "variables": ["v", "Vmax", "S", "Km"],
+      "domains": ["biology", "chemistry"]
+    },
+    {
+      "name": "Beer-Lambert law",
+      "id": "beer_lambert",
+      "form": "A = epsilon * c * l",
+      "description": "Absorbance A of a solution. epsilon = molar absorptivity, c = concentration, l = path length.",
+      "variables": ["A", "epsilon", "c", "l"],
+      "domains": ["chemistry", "biology"]
+    },
+    {
+      "name": "Nernst equation",
+      "id": "nernst",
+      "form": "E = E0 - (R*T/(n*F)) * ln(Q)",
+      "description": "Electrode potential E. E0 = standard potential, n = electrons transferred, F = Faraday constant.",
+      "variables": ["E", "E0", "R", "T", "n", "F", "Q"],
+      "domains": ["chemistry"]
+    }
+  ],
+  "metadata": {
+    "last_updated": "2026-05-03",
+    "operator_version": "v1",
+    "mutable": true,
+    "comment": "Add domain-specific equations here. These guide the discovery engine when proposing mathematical models."
+  }
+}
