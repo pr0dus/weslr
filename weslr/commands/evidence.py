@@ -120,7 +120,7 @@ def list_pubmed_facts(limit: int = 30) -> str:
         return "No PubMed-derived facts found."
 
     lines = [f"PubMed facts ({len(facts)}):"]
-    lines.append(f"{'fact_id':<20} {'predicate':<30} {'subject / object':<35} {'trust'>6}")
+    lines.append(f"{'fact_id':<20} {'predicate':<30} {'subject / object':<35} {'trust':>6}")
     lines.append("-" * 100)
 
     for fact in facts:

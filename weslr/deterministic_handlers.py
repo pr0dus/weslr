@@ -30,6 +30,7 @@ from weslr.proposal_traceability import load_trace
 from weslr.reminder_handler import handle_reminder_command
 from weslr.search_adapters.pubmed_adapter import search_pubmed
 from weslr.search_adapters.evidence_packet_store import append_evidence_packet, load_packets, get_packet
+from weslr.fact_extractor import extract_facts_with_positions, append_enriched_fact
 
 
 # ---- Handler functions ----
@@ -1374,8 +1375,6 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
     import re
     import uuid
     from datetime import datetime, timezone
-    from weslr.document_ingestor import extract_facts_with_positions
-    from weslr.fact_extractor import append_fact_assertion
 
     # Extract query: "search pubmed <query>" or "pubmed search <query>"
     m = re.match(r"(?:search\s+)?pubmed\s+(?:search\s+)?(.+)", lowered)
@@ -1454,13 +1453,17 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
         citation = f"{author_str} ({year}). {title}. {journal}." if title else ""
 
 
-        raw_facts = extract_facts_with_positions(abstract, pattern_confidence=0.8)
+        raw_facts = extract_facts_with_positions(
+            text=abstract,
+            page=1,
+            line_start=0,
+            domain="cancer_research",
+        )
         for fact in raw_facts:
-            start_char = fact.get("char_start", 0)
-            end_char = fact.get("char_end", 0)
-            # Approximate page=1, line range from char offsets
-            line_start = abstract[:start_char].count("\n") + 1
-            line_end = abstract[:end_char].count("\n") + 1
+            cs = fact.get("char_start", 0)
+            ce = fact.get("char_end", 0)
+            line_start = abstract[:cs].count("\n") + 1
+            line_end = abstract[:ce].count("\n") + 1
 
             enriched = {
                 "record_type": "fact_assertion_v1",
@@ -1477,21 +1480,18 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
                     "line_range": [line_start, line_end],
                 },
                 "source_type": "pubmed_abstract",
-                "trust_score": round(BASE_TRUST * fact["pattern_confidence"], 3),
+                "trust_score": round(BASE_TRUST * fact["confidence"], 3),
                 "domains": ["cancer_research"],
-                "extraction_pattern": fact.get("pattern_id", "generic"),
+                "extraction_pattern": fact.get("pattern_id", "unknown"),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "authority": "extracted_from_pubmed",
                 "automatic_action": False,
                 "hidden_learning": False,
                 "raw_prompt_stored": False,
+                "fact_data": fact.get("fact_data", {}),
             }
-            # Append directly to fact store
-            import json
-            fact_path = Path(".weslr/fact_assertions.jsonl")
-            fact_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(fact_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(enriched, ensure_ascii=False) + "\n")
+            # Append via fact_extractor helper
+            append_enriched_fact(enriched)
             fact_count += 1
 
     # Build response
