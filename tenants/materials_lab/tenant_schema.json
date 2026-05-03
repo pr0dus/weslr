@@ -1,0 +1,59 @@
+{
+  "domain": "materials_science",
+  "version": "1.0",
+  "description": "Entity schema for materials science research — crystals, synthesis protocols, physical properties",
+  "entity_types": {
+    "Material": {
+      "description": "A synthesized or characterized material compound",
+      "required_attributes": ["formula", "material_type"],
+      "attributes": ["formula", "material_type", "crystal_structure", "bandgap", "conductivity", "synthesis_method", "applications"]
+    },
+    "CrystalStructure": {
+      "description": "Crystallographic structure classification",
+      "required_attributes": ["space_group", "lattice_type"],
+      "attributes": ["space_group", "lattice_type", "lattice_constant_a", "lattice_constant_b", "lattice_constant_c", "symmetry"]
+    },
+    "SynthesisProtocol": {
+      "description": "Method used to synthesize a material",
+      "required_attributes": ["method", "temperature_c", "pressure_gpa"],
+      "attributes": ["method", "temperature_c", "pressure_gpa", "atmosphere", "duration_h", "starting_materials"]
+    },
+    "ExperimentalParameter": {
+      "description": "Measurement condition or experimental setup",
+      "required_attributes": ["parameter_name", "value", "unit"],
+      "attributes": ["parameter_name", "value", "unit", "measurement_type", "instrument"]
+    },
+    "Property": {
+      "description": "A measured physical or chemical property of a material",
+      "required_attributes": ["property_name", "value", "unit"],
+      "attributes": ["property_name", "value", "unit", "temperature_k", "condition", "technique"]
+    }
+  },
+  "relationship_types": {
+    "has_property": {
+      "description": "Material exhibits a measured property",
+      "subject_types": ["Material"],
+      "object_types": ["Property"]
+    },
+    "synthesized_by": {
+      "description": "Material produced via a synthesis protocol",
+      "subject_types": ["Material"],
+      "object_types": ["SynthesisProtocol"]
+    },
+    "measured_with": {
+      "description": "Property measured using an experimental technique",
+      "subject_types": ["Property"],
+      "object_types": ["ExperimentalParameter"]
+    },
+    "exhibits": {
+      "description": "Material shows a particular structural or functional behavior",
+      "subject_types": ["Material"],
+      "object_types": ["CrystalStructure"]
+    },
+    "has_composition": {
+      "description": "Material has a given chemical formula or composition",
+      "subject_types": ["Material"],
+      "object_types": ["Material"]
+    }
+  }
+}

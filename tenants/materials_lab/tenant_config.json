@@ -1,0 +1,13 @@
+{
+  "tenant_id": "materials_lab",
+  "domain": "materials_science",
+  "version": "1.0",
+  "store_document_text": true,
+  "monitor_literature": false,
+  "search_sources": [
+    "pubmed"
+  ],
+  "fact_confidence_threshold": 0.3,
+  "auto_ingest_enabled": false,
+  "max_facts_per_source": 500
+}

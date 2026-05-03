@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from weslr.tenant_context import resolve_path
+from weslr.fact_extractor import extract_facts_with_positions as _domain_extract_facts
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -484,7 +485,12 @@ def ingest_document(
             page_text = page["text"]
             page_num = page["page_num"]
 
-            raw_facts = extract_facts_with_positions(page_text, pattern_confidence=0.8)
+            raw_facts = _domain_extract_facts(
+                text=page_text,
+                page=page_num,
+                line_start=0,
+                domain=domain,
+            )
 
             for fact in raw_facts:
                 start_line, end_line = _line_range_for_offset(
@@ -503,10 +509,11 @@ def ingest_document(
                     },
                     "source_type": source_type,
                     "domain": domain,
-                    "trust_score": trust * fact["pattern_confidence"],
+                    "pattern_id": fact.get("pattern_id", ""),
+                    "pattern_confidence": fact.get("confidence", 0.8),
+                    "trust_score": round(trust * fact.get("confidence", 0.8), 3),
                     "char_start": fact["char_start"],
                     "char_end": fact["char_end"],
-                    "pattern_confidence": fact["pattern_confidence"],
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "authority": "extracted_from_document",
                     "automatic_action": False,

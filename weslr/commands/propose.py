@@ -38,6 +38,42 @@ _HIGH_CONFidence_EFF = {
     "pv_material_efficiency",       # confidence 0.87
 }
 
+# Non-PCE percentage indicators — skip these when extracting efficiency values
+_NON_PCE_KEYWORDS = {
+    "voc", "v_oc", "open-circuit voltage", "open circuit voltage",
+    "fill factor", "ff", "ff%", "fill-factor",
+    "voltage ratio", "vbc", "vbs", "spectral response",
+    "vocfs", "vocsq", "voc/sq",
+}
+
+
+def _is_likely_pce_value(fact: dict) -> bool:
+    """Return True if the fact's percentage is a real PCE value (not VOC ratio/fill factor)."""
+    pred = fact.get("predicate", "")
+    eff = _extract_efficiency(fact)
+    if eff is None:
+        return True
+
+    # High-confidence predicates — only reject physically impossible values (>40% for PCE)
+    if pred in _HIGH_CONFidence_EFF:
+        return eff <= 40
+
+    # efficiency_mentioned — more aggressive filtering
+    if pred == "efficiency_mentioned":
+        # Skip if > 20% (no PCE material exceeds 30%, most are below 25%)
+        # High values in this predicate are almost always VOC/fill-factor ratios
+        if eff > 20:
+            return False
+        # Also skip if value is accompanied by "voc", "fill factor", "ratio" keywords in text
+        obj = str(fact.get("object", "")).lower()
+        subj = str(fact.get("subject", "")).lower()
+        text = obj + " " + subj
+        for kw in _NON_PCE_KEYWORDS:
+            if kw.lower() in text:
+                return False
+
+    return True
+
 
 def _is_material_name(text: str) -> bool:
     t = text.lower().strip()
@@ -93,7 +129,7 @@ def _build_doc_arxiv_map(tenant_id: Optional[str] = None) -> Dict[str, str]:
     """
     from weslr.tenant_context import resolve_path
 
-    doc_store_path = resolve_path(str(Path(".weslr") / "documents.jsonl"))
+    doc_store_path = resolve_path(str(Path(".weslr") / "documents.jsonl"), tenant_id)
     doc_map: Dict[str, str] = {}
     try:
         with open(doc_store_path) as f:
@@ -201,6 +237,9 @@ def build_pv_material_proposals(
 
         eff = _extract_efficiency(f)
         if eff is None:
+            continue
+
+        if not _is_likely_pce_value(f):
             continue
 
         for mat in mats_on_page:
