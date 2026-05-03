@@ -1,6 +1,6 @@
 {
   "domain": "materials_science",
-  "version": "1.0",
+  "version": "1.1",
   "patterns": [
     {
       "pattern_id": "ms.bandgap",
@@ -50,6 +50,48 @@
       "confidence": 0.77,
       "predicate": "photoactivity",
       "groups": {"material": 1}
+    },
+    {
+      "pattern_id": "ms.pce",
+      "regex": "(?i)(?:power\\s+conversion\\s+efficiency|PCE|PCE\\s*%|efficiency)\\s+(?:of|for|in|achieved|reached)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.88,
+      "predicate": "power_conversion_efficiency",
+      "groups": {"efficiency_pct": 1}
+    },
+    {
+      "pattern_id": "ms.pv_material_class",
+      "regex": "(?i)\\b(kesterite|CZTS|CZTSSe|Cu2ZnSnS4|Cu2ZnSnSe4|organic\\s+photovoltaic|OPV|BiFeO3|Sb2Se3|quantum\\s+dot|ferroelectric)\\b.*?(?:solar\\s+cell|photovoltaic|material|device|thin\\s+film)",
+      "confidence": 0.85,
+      "predicate": "non_perovskite_pv_material_class",
+      "groups": {"material_class": 1}
+    },
+    {
+      "pattern_id": "ms.pv_material_with_efficiency",
+      "regex": "(?i)([A-Za-z0-9_\\-\\.\\(\\)/+]+(?:solar\\s+cell|material|device|film|module|OPV|CZTS|Se|perovskite|kesterite|BiFeO3|Sb2Se3))[\\s\\-]+(?:with|demonstrating|demonstrated|achieving|achieves|reaching|reached|showing)\\s+(?:a\\s+)?(?:power\\s+conversion\\s+)?(?:efficiency|PCE)\\s+(?:of|up\\s+to|:)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.87,
+      "predicate": "pv_material_efficiency",
+      "groups": {"material": 1, "efficiency_pct": 2}
+    },
+    {
+      "pattern_id": "ms.stability_result",
+      "regex": "(?i)([A-Za-z0-9_\\-\\. ]+)\\s+(?:showed|demonstrated|exhibited|achieved|maintained)\\s+([0-9]+\\.?[0-9]*)\\s*%\\s+(?:efficiency|PCE|stability|performance)\\s+(?:after|over|for)\\s+([0-9]+\\s+(?:hours?|days?|months?|years?))",
+      "confidence": 0.82,
+      "predicate": "long_term_stability",
+      "groups": {"material": 1, "stability_pct": 2, "duration": 3}
+    },
+    {
+      "pattern_id": "ms.record_efficiency",
+      "regex": "(?i)\\b(record|highest|maximum)\\s+(?:power\\s+conversion\\s+)?efficiency\\s+(?:of|for|at|:)\\s*([0-9]+\\.?[0-9]*)\\s*%\\s+(?:for|with|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
+      "confidence": 0.90,
+      "predicate": "record_efficiency",
+      "groups": {"efficiency_pct": 1, "material": 2}
+    },
+    {
+      "pattern_id": "ms.material_property_comparison",
+      "regex": "(?i)\\b(CZTS|CZTSSe|perovskite|kesterite|organic|OPV|BiFeO3|Sb2Se3|amorphous\\s+silicon|a\\-Si)\\b[^.]{0,100}(?:efficiency|PCE|bandgap|band\\s+gap|stability|performance)\\s+(?:of|=|:|reached|achieved)\\s*([0-9]+\\.?[0-9]*)\\s*%?",
+      "confidence": 0.79,
+      "predicate": "pv_material_property",
+      "groups": {"material": 1, "value": 2}
     }
   ]
 }
