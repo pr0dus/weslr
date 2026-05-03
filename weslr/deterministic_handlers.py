@@ -38,6 +38,8 @@ from weslr.commands.entities import (
     list_relationships_for_entity,
 )
 
+import re
+
 
 # ---- Handler functions ----
 
@@ -1212,6 +1214,81 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "pubmed",
     },
+    {
+        "id": "tenant_list",
+        "path": "tenant_list",
+        "triggers": ["/tenant list"],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_tenant_list",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "tenant",
+    },
+    {
+        "id": "tenant_switch",
+        "path": "tenant_switch",
+        "triggers": ["/tenant switch "],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_tenant_switch",
+        "read_only": False,
+        "writes": ["tenants/<id>/tenant_config.json"],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": ["sets thread-local current tenant"],
+        "write_guard": None,
+        "category": "tenant",
+    },
+    {
+        "id": "tenant_create",
+        "path": "tenant_create",
+        "triggers": ["/tenant create "],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_tenant_create",
+        "read_only": False,
+        "writes": ["tenants/<id>/tenant_config.json", "tenants/<id>/.weslr/"],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": ["creates tenant directory and config"],
+        "write_guard": None,
+        "category": "tenant",
+    },
+    {
+        "id": "tenant_info",
+        "path": "tenant_info",
+        "triggers": ["/tenant info "],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_tenant_info",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "tenant",
+    },
+    {
+        "id": "domains_list",
+        "path": "domains_list",
+        "triggers": ["/domains"],
+        "match_type": "prefix",
+        "priority": 45,
+        "handler_fn": "handle_domains_list",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "metadata",
+    },
 ]
 
 
@@ -1551,6 +1628,134 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
         confidence="high",
         suggested_mode="observe",
     )
+
+
+# ---- Tenant Command Handlers ----
+
+def handle_tenant_list(message: str, lowered: str) -> dict:
+    """Handle /tenant list — show all tenants and active status."""
+    from weslr.tenant_manager import list_tenants
+    tenants = list_tenants()
+    if not tenants:
+        response_text = "No tenants configured. Use /tenant create <id> --domain <domain> to create one."
+    else:
+        lines = ["Tenants:", ""]
+        for t in tenants:
+            active = " ◀ active" if t.get("is_active") else ""
+            domain = t.get("domain", "unknown")
+            tid = t.get("tenant_id", "?")
+            lines.append(f"  {tid}  (domain: {domain}){active}")
+        response_text = "\n".join(lines)
+    return build_deterministic_response(
+        message=message,
+        path="tenant_list",
+        response_text=response_text,
+    )
+
+
+def handle_tenant_create(message: str, lowered: str) -> dict:
+    """Handle /tenant create <id> --domain <domain>."""
+    from weslr.tenant_manager import init_tenant
+
+    # Parse /tenant create <id> --domain <domain>
+    m = re.match(r"/tenant create\s+([a-zA-Z0-9_]+)(.*)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message, path="tenant_create",
+            response_text="Usage: /tenant create <id> --domain <domain>\n  e.g., /tenant create oncology_team --domain cancer_research",
+        )
+
+    tenant_id = m.group(1)
+    domain_match = re.search(r"--domain\s+(\S+)", m.group(2))
+    domain = domain_match.group(1) if domain_match else "cancer_research"
+
+    try:
+        config = init_tenant(tenant_id, domain)
+        response_text = (
+            f"Tenant '{tenant_id}' created.\n"
+            f"  Domain: {domain}\n"
+            f"  Config written to tenants/{tenant_id}/tenant_config.json"
+        )
+    except ValueError as e:
+        response_text = f"Error: {e}"
+    except Exception as e:
+        response_text = f"Error creating tenant: {e}"
+
+    return build_deterministic_response(message=message, path="tenant_create", response_text=response_text)
+
+
+def handle_tenant_switch(message: str, lowered: str) -> dict:
+    """Handle /tenant switch <id>."""
+    from weslr.tenant_manager import switch_tenant
+
+    # Extract tenant ID after "/tenant switch "
+    parts = lowered.split(None, 2)
+    if len(parts) < 3:
+        return build_deterministic_response(
+            message=message, path="tenant_switch",
+            response_text="Usage: /tenant switch <id>",
+        )
+    tenant_id = parts[2].strip()
+
+    try:
+        config = switch_tenant(tenant_id)
+        response_text = (
+            f"Switched to tenant '{tenant_id}'\n"
+            f"  Domain: {config.get('domain', '?')}\n"
+            f"  All queries will now use tenants/{tenant_id}/"
+        )
+    except ValueError as e:
+        response_text = f"Error: {e}"
+    except Exception as e:
+        response_text = f"Error switching tenant: {e}"
+
+    return build_deterministic_response(message=message, path="tenant_switch", response_text=response_text)
+
+
+def handle_tenant_info(message: str, lowered: str) -> dict:
+    """Handle /tenant info <id>."""
+    from weslr.tenant_manager import get_tenant_info
+
+    parts = lowered.split(None, 2)
+    if len(parts) < 3:
+        return build_deterministic_response(
+            message=message, path="tenant_info",
+            response_text="Usage: /tenant info <id>",
+        )
+    tenant_id = parts[2].strip()
+
+    info = get_tenant_info(tenant_id)
+    if not info:
+        response_text = f"Tenant '{tenant_id}' not found."
+    else:
+        lines = [f"Tenant: {tenant_id}", ""]
+        for k, v in info.items():
+            if k != "tenant_id":
+                lines.append(f"  {k}: {v}")
+        response_text = "\n".join(lines)
+
+    return build_deterministic_response(message=message, path="tenant_info", response_text=response_text)
+
+
+def handle_domains_list(message: str, lowered: str) -> dict:
+    """Handle /domains — list available domain schemas."""
+    from pathlib import Path
+
+    schema_dir = Path(__file__).parent.parent / "schemas"
+    domain_files = sorted(schema_dir.glob("*.json"))
+    domains = [f.stem for f in domain_files if f.stem != "base"]
+
+    if not domains:
+        response_text = "No domain schemas found in weslr/schemas/"
+    else:
+        lines = ["Available domain schemas:", ""]
+        for d in domains:
+            lines.append(f"  - {d}")
+        lines.append("")
+        lines.append("Use --domain when searching: /search pubmed <query> --domain <name>")
+        response_text = "\n".join(lines)
+
+    return build_deterministic_response(message=message, path="domains_list", response_text=response_text)
 
 
 # ---- Entity Query Handlers ----

@@ -3,7 +3,7 @@ WESLR Document Ingestor — Phase 4.1
 
 Pure-python document ingestion layer.
 No external API calls. Uses pypdf for PDF text extraction.
-JSONL storage: .weslr/documents.jsonl and .weslr/fact_assertions.jsonl
+Multi-tenant: file paths resolved through tenant_context.resolve_path().
 """
 
 from __future__ import annotations
@@ -16,6 +16,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from weslr.tenant_context import resolve_path
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,7 +33,27 @@ TRUST_BASELINES: Dict[str, float] = {
 
 DATA_DIR = ".weslr"
 DOCUMENTS_FILE = "documents.jsonl"
-FACT_STORE_PATH = ".weslr/fact_assertions.jsonl"
+FACT_STORE_REL = ".weslr/fact_assertions.jsonl"
+
+
+def _resolve_doc_store(doc_store_path: Optional[Path | str]) -> Path:
+    """Resolve document store path: explicit override or tenant-context resolved."""
+    if doc_store_path is None:
+        return resolve_path(str(Path(DATA_DIR) / DOCUMENTS_FILE))
+    p = Path(doc_store_path)
+    if p.is_absolute():
+        return p
+    return resolve_path(str(p))
+
+
+def _resolve_fact_store(fact_store_path: Optional[Path | str]) -> Path:
+    """Resolve fact store path: explicit override or tenant-context resolved."""
+    if fact_store_path is None:
+        return resolve_path(FACT_STORE_REL)
+    p = Path(fact_store_path)
+    if p.is_absolute():
+        return p
+    return resolve_path(str(p))
 
 # ─── Utility: SHA-256 file hash ───────────────────────────────────────────────
 
@@ -389,15 +411,8 @@ def ingest_document(
         raise FileNotFoundError(f"Document not found: {p}")
 
     # Resolve stores
-    if doc_store_path is None:
-        doc_store_path = Path(DATA_DIR) / DOCUMENTS_FILE
-    else:
-        doc_store_path = Path(doc_store_path)
-
-    if fact_store_path is None:
-        fact_store_path = Path(FACT_STORE_PATH)
-    else:
-        fact_store_path = Path(fact_store_path)
+    doc_store_path = _resolve_doc_store(doc_store_path)
+    fact_store_path = _resolve_fact_store(fact_store_path)
 
     # Ensure directories exist
     doc_store_path.parent.mkdir(parents=True, exist_ok=True)
