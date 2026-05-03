@@ -303,5 +303,177 @@ class TestStructuralConstraints(unittest.TestCase):
         self.assertNotIn("i'll", answer_lower)
 
 
+class TestJarvisCapabilityQuestions(unittest.TestCase):
+    """Tests for the new Jarvis capability question types."""
+
+    def test_classify_voice_io_question(self):
+        for q in [
+            "What voice I/O capabilities are implemented?",
+            "what voice do you have",
+            "do you have speech to text",
+            "how do i talk to you",
+            "can you hear me",
+            "voice capability",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "voice_io",
+                f"Should classify as voice_io: {q}"
+            )
+            self.assertTrue(result["is_state_question"])
+            self.assertGreater(result["confidence"], 0.8)
+
+    def test_classify_persistent_memory_question(self):
+        for q in [
+            "What persistent memory exists across sessions?",
+            "what memory do you have",
+            "remember between sessions",
+            "long term memory",
+            "what do you remember",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "persistent_memory",
+                f"Should classify as persistent_memory: {q}"
+            )
+
+    def test_classify_proactive_suggestions_question(self):
+        for q in [
+            "What proactive suggestion delivery mechanisms are live?",
+            "what should i explore next",
+            "what can we work on",
+            "what ideas do you have",
+            "what experiments are pending",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "proactive_suggestions",
+                f"Should classify as proactive_suggestions: {q}"
+            )
+
+    def test_classify_action_stubs_question(self):
+        for q in [
+            "What action stubs (reminders, todo) are implemented?",
+            "remind me to",
+            "set a reminder",
+            "do you have a todo list",
+            "can you remind me",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "action_stubs",
+                f"Should classify as action_stubs: {q}"
+            )
+
+    def test_classify_temporal_relational_question(self):
+        for q in [
+            "What temporal+relational query capabilities exist?",
+            "what happened after",
+            "timeline of events",
+            "chronolog",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "temporal_relational",
+                f"Should classify as temporal_relational: {q}"
+            )
+
+    def test_classify_semantic_similarity_question(self):
+        for q in [
+            "What semantic similarity for node matching is active?",
+            "embeddings",
+            "semantic similarity",
+            "vector search",
+        ]:
+            result = sgd.classify_state_question(q)
+            self.assertEqual(
+                result["question_type"], "semantic_similarity",
+                f"Should classify as semantic_similarity: {q}"
+            )
+
+    @patch("os.path.exists")
+    def test_answer_voice_io_with_whisper(self, mock_exists):
+        # Whisper installed
+        mock_exists.return_value = True
+        result = sgd.answer_state_question("What voice I/O do you have?")
+        self.assertEqual(result["question_type"], "voice_io")
+        self.assertIn("whisper", result["answer"].lower())
+        self.assertIn("STT", result["answer"])
+        self.assertEqual(result["authority"], "read_only")
+        self.assertFalse(result["automatic_change"])
+
+    @patch("os.path.exists")
+    def test_answer_voice_io_shim_mode(self, mock_exists):
+        # Whisper NOT installed
+        mock_exists.return_value = False
+        result = sgd.answer_state_question("What voice I/O do you have?")
+        self.assertEqual(result["question_type"], "voice_io")
+        answer_lower = result["answer"].lower()
+        self.assertIn("shim", answer_lower)
+        self.assertIn("browser", answer_lower)
+
+    def test_answer_persistent_memory_has_memory_layers(self):
+        result = sgd.answer_state_question("What memory across sessions?")
+        self.assertEqual(result["question_type"], "persistent_memory")
+        answer = result["answer"]
+        self.assertIn("entity timeline", answer.lower())
+        self.assertIn("fact", answer.lower())
+        self.assertIn("project registry", answer.lower())
+        self.assertFalse(result["automatic_change"])
+
+    def test_answer_proactive_suggestions_notices_gaps(self):
+        result = sgd.answer_state_question("What proactive suggestion delivery?")
+        self.assertEqual(result["question_type"], "proactive_suggestions")
+        answer_lower = result["answer"].lower()
+        # Should mention the gap
+        self.assertTrue(
+            "no" in answer_lower or "not" in answer_lower or "draft" in answer_lower,
+            f"Answer should acknowledge gaps: {answer_lower[:100]}"
+        )
+
+    def test_answer_action_stubs_acknowledges_gaps(self):
+        result = sgd.answer_state_question("What action stubs exist?")
+        self.assertEqual(result["question_type"], "action_stubs")
+        answer_lower = result["answer"].lower()
+        # Should say not yet implemented
+        self.assertTrue(
+            "not" in answer_lower or "none" in answer_lower or "no" in answer_lower,
+            f"Answer should say not implemented: {answer_lower[:100]}"
+        )
+        self.assertIn("proposal", answer_lower)  # Should offer to create a proposal
+
+    def test_answer_temporal_relational_describes_basic_patterns(self):
+        result = sgd.answer_state_question("What temporal queries exist?")
+        self.assertEqual(result["question_type"], "temporal_relational")
+        answer_lower = result["answer"].lower()
+        self.assertTrue(
+            "pattern" in answer_lower or "basic" in answer_lower,
+            f"Answer should describe basic nature: {answer_lower[:100]}"
+        )
+
+    def test_answer_semantic_similarity_reports_not_implemented(self):
+        result = sgd.answer_state_question("semantic similarity?")
+        self.assertEqual(result["question_type"], "semantic_similarity")
+        answer_lower = result["answer"].lower()
+        self.assertTrue(
+            "not implemented" in answer_lower or "no" in answer_lower,
+            f"Answer should say not implemented: {answer_lower[:100]}"
+        )
+        self.assertIn("doctrine", answer_lower)  # Should reference doctrine P11
+
+    def test_all_jarvis_answers_read_only_authority(self):
+        for q in [
+            "What voice I/O do you have?",
+            "What memory do you have?",
+            "What proactive suggestions?",
+            "What action stubs?",
+            "What temporal queries?",
+            "Semantic similarity?",
+        ]:
+            result = sgd.answer_state_question(q)
+            self.assertEqual(result["authority"], "read_only", f"Authority wrong for: {q}")
+            self.assertFalse(result["automatic_change"], f"automatic_change should be False for: {q}")
+
+
 if __name__ == "__main__":
     unittest.main()

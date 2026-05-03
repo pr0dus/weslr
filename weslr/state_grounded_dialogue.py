@@ -9,6 +9,7 @@ Authority: read_only — no writes, no automatic changes.
 
 import os
 import re
+from pathlib import Path
 from typing import Optional
 
 # Allowed source paths (relative to workspace root)
@@ -83,6 +84,73 @@ _BLOCKER_PATTERNS = [
     r"what is waiting",
 ]
 
+# ── Jarvis capability question patterns ──────────────────────────────────────
+
+_VOICE_IO_PATTERNS = [
+    r"what voice",
+    r"voice i/o",
+    r"speech (to|from) text",
+    r"stt|tts",
+    r"whisper",
+    r"microphone|capture",
+    r"how do i talk to you",
+    r"can you hear me",
+    r"voice capability",
+    r"voice capability",
+]
+
+_PERSISTENT_MEMORY_PATTERNS = [
+    r"persistent memory",
+    r"across sessions",
+    r"memory exists",
+    r"what memory",
+    r"long.term memory",
+    r"memory between",
+    r"remember (between|across)",
+    r"what do you remember",
+]
+
+_PROACTIVE_SUGGESTION_PATTERNS = [
+    r"proactive suggestion",
+    r"suggestion delivery",
+    r"what should i (do|explore|try)",
+    r"what.*next$",
+    r"what can we (do|work on)",
+    r"what ideas",
+    r"experiments.*pending|pending.*experiments",
+    r"suggested next step",
+    r"what.*we.*working on",
+]
+
+_ACTION_STUB_PATTERNS = [
+    r"action stub",
+    r"remind",
+    r"todo",
+    r"task tracking",
+    r"reminder.*implement",
+    r"can you remind",
+    r"set a reminder",
+]
+
+_TEMPORAL_RELATIONAL_PATTERNS = [
+    r"temporal",
+    r"relational query",
+    r"what.*when.*happen",
+    r"what happened (after|before)",
+    r"timeline of",
+    r"chronolog",
+    r"since.*until",
+]
+
+_SEMANTIC_SIMILARITY_PATTERNS = [
+    r"semantic similarity",
+    r"node matching",
+    r"similarity search",
+    r"embeddings?",
+    r"vector search",
+    r"semantic.*match",
+]
+
 
 def classify_state_question(message: str) -> dict:
     """
@@ -131,6 +199,42 @@ def classify_state_question(message: str) -> dict:
         if re.search(pattern, lower):
             matched_type = "pending_reviews"
             highest_confidence = max(highest_confidence, 0.80)
+
+    # Jarvis capability questions — extend in priority order
+    for pattern in _VOICE_IO_PATTERNS:
+        if re.search(pattern, lower):
+            matched_type = "voice_io"
+            highest_confidence = max(highest_confidence, 0.88)
+
+    if not matched_type:
+        for pattern in _PERSISTENT_MEMORY_PATTERNS:
+            if re.search(pattern, lower):
+                matched_type = "persistent_memory"
+                highest_confidence = max(highest_confidence, 0.88)
+
+    if not matched_type:
+        for pattern in _PROACTIVE_SUGGESTION_PATTERNS:
+            if re.search(pattern, lower):
+                matched_type = "proactive_suggestions"
+                highest_confidence = max(highest_confidence, 0.80)
+
+    if not matched_type:
+        for pattern in _ACTION_STUB_PATTERNS:
+            if re.search(pattern, lower):
+                matched_type = "action_stubs"
+                highest_confidence = max(highest_confidence, 0.85)
+
+    if not matched_type:
+        for pattern in _TEMPORAL_RELATIONAL_PATTERNS:
+            if re.search(pattern, lower):
+                matched_type = "temporal_relational"
+                highest_confidence = max(highest_confidence, 0.82)
+
+    if not matched_type:
+        for pattern in _SEMANTIC_SIMILARITY_PATTERNS:
+            if re.search(pattern, lower):
+                matched_type = "semantic_similarity"
+                highest_confidence = max(highest_confidence, 0.85)
 
     return {
         "record_type": "state_question_classification_v1",
@@ -366,6 +470,160 @@ def answer_state_question(message: str) -> dict:
         else:
             limitations.append("AAI summary not loadable for review status")
             answer_parts.append("Review queue status is unavailable. Run AAI analysis to restore.")
+
+    elif question_type == "voice_io":
+        sources_used.append("voice_gateway.py")
+        whisper_path = "/data/data/com.termux/files/home/whisper.cpp/build/bin/whisper-cli"
+        whisper_installed = os.path.exists(whisper_path)
+        model_path = "/data/data/com.termux/files/home/whisper.cpp/models/ggml-base.bin"
+        model_installed = os.path.exists(model_path)
+        if whisper_installed and model_installed:
+            answer_parts.append(
+                "Voice I/O is partially implemented. "
+                "STT (speech-to-text): whisper.cpp is installed and active, "
+                "converting audio to text via the voice gateway WebSocket interface. "
+                "TTS (text-to-speech): handled client-side by the browser Web Speech API — "
+                "no server-side TTS engine is running. "
+                "A continuous voice session mode is available via the voice gateway."
+            )
+        else:
+            answer_parts.append(
+                "Voice I/O is in shim mode. "
+                "STT: browser-side transcript injection (no server-side STT). "
+                "TTS: browser Web Speech API only. "
+                "For real STT, install whisper.cpp and a model at the standard paths."
+            )
+        answer_parts.append(
+            "Would you like to create a proposal for a reminder handler or todo system?"
+        )
+
+    elif question_type == "persistent_memory":
+        sources_used.append("memory modules")
+        # Count entries in key JSONL stores
+        base = Path(_WORKSPACE)
+        counts = []
+        for name, path in [
+            ("entity timeline", base / ".weslr" / "timelines"),
+            ("fact assertions", base / ".weslr" / "fact_assertions.jsonl"),
+            ("project registry", base / ".weslr" / "project_registry.jsonl"),
+            ("experiment proposals", base / ".weslr" / "experiment_proposals.jsonl"),
+        ]:
+            if path.is_file():
+                try:
+                    with open(path) as f:
+                        lines = len(f.readlines())
+                    counts.append(f"{lines} {name} records")
+                except Exception:
+                    pass
+            elif path.is_dir():
+                try:
+                    event_files = list(path.rglob("events.jsonl"))
+                    total = 0
+                    for ef in event_files:
+                        try:
+                            with open(ef) as f:
+                                total += len(f.readlines())
+                        except Exception:
+                            pass
+                    if total > 0:
+                        counts.append(f"{total} {name} events")
+                except Exception:
+                    pass
+
+        answer_parts.append(
+            "WESLR maintains several persistent memory layers across sessions:"
+        )
+        answer_parts.append(
+            "1. User timeline memory — session summaries stored in memory/YYYY-MM-DD.md"
+        )
+        answer_parts.append(
+            "2. Entity timeline memory — per-entity event logs in .weslr/timelines/"
+        )
+        answer_parts.append(
+            "3. Fact assertions — structured facts extracted from sessions in .weslr/fact_assertions.jsonl"
+        )
+        answer_parts.append(
+            "4. Project registry — project-scoped facts and metadata in .weslr/project_registry.jsonl"
+        )
+        answer_parts.append(
+            "5. Long-term curated memory — MEMORY.md loaded at session start"
+        )
+        if counts:
+            answer_parts.append(f"Current counts: {', '.join(counts)}.")
+        answer_parts.append(
+            "Note: memory persistence across voice sessions is limited — "
+            "the voice gateway currently uses a default timeline."
+        )
+
+    elif question_type == "proactive_suggestions":
+        sources_used.append("proactive_suggestions.py")
+        answer_parts.append(
+            "Proactive suggestion delivery exists in draft form. "
+            "proactive_suggestions.py generates theme-based suggestions from recent session summaries "
+            "and surfaces them through the workplace bridge when a user asks /workplace or 'what experiments are pending?'. "
+            "However, there is no background daemon — suggestions are only produced on user request. "
+            "No automatic push delivery, no cron-triggered suggestions, no notification channel."
+        )
+        answer_parts.append(
+            "Not implemented yet: proactive_deamon.py, cron-triggered suggestion delivery, notification delivery."
+        )
+        answer_parts.append(
+            "Would you like to create a proposal for one of these? Say 'propose a reminder handler' or 'propose a todo system'."
+        )
+
+    elif question_type == "action_stubs":
+        sources_used.append("write_handlers.py")
+        answer_parts.append(
+            "Action stubs are not yet implemented as independent handlers. "
+            "The architecture supports them via write_handlers.py and the experiment_proposal_store.py "
+            "(which stores proposals with operator approval gates), but there is no /remind, /todo, "
+            "or /task command, and no reminder_handler.py or todo_handler.py."
+        )
+        answer_parts.append(
+            "Reminder scheduling would require a small handler (~100 lines) that wraps the OpenClaw cron tool "
+            "or writes to a .weslr/reminders.jsonl. A todo tracker would follow the same pattern."
+        )
+        answer_parts.append(
+            "Would you like to create a proposal for a reminder handler or todo system? "
+            "Say 'propose a reminder handler' and I will draft one."
+        )
+
+    elif question_type == "temporal_relational":
+        sources_used.append("fact_extractor.py")
+        answer_parts.append(
+            "Temporal and relational query capabilities are partially implemented. "
+            "The fact_extractor.py module has 10 deterministic temporal patterns "
+            "(since_X, until_Y, next_Z, after_X, before_Y, during_Z, between_X_and_Y, last_N, "
+            "first_X, most_recent) for extracting facts with temporal scope from session summaries."
+        )
+        answer_parts.append(
+            "Project-scoped facts support relational queries via the fact_query_bridge. "
+            "Entity timeline memory supports temporal queries per entity. "
+            "However, there is no timestamp ordering across facts, no timeline projection, "
+            "and no date arithmetic. This is basic pattern matching, not full temporal reasoning."
+        )
+        answer_parts.append(
+            "Would you like to propose a temporal reasoning extension?"
+        )
+
+    elif question_type == "semantic_similarity":
+        sources_used.append("doctrine P11, multi_graph_traversal.py")
+        answer_parts.append(
+            "Semantic similarity for node matching is not implemented. "
+            "Doctrine P11 (added in commit dd1117a) explicitly permits it as a low-risk "
+            "Layer 2 automation — semantic similarity for node disambiguation in fact queries. "
+            "However, the current fact_query_bridge and multi_graph_traversal modules "
+            "use deterministic keyword matching only. No vector embeddings, no ANN index, "
+            "no sentence_transformers or semantic search."
+        )
+        answer_parts.append(
+            "To implement: add a lightweight embedding model (e.g., sentence-transformers), "
+            "index fact subject/predicate/object triples, and use cosine similarity for matching. "
+            "This is a medium-effort addition."
+        )
+        answer_parts.append(
+            "Would you like to create a proposal for semantic similarity?"
+        )
 
     else:
         answer_parts.append(
