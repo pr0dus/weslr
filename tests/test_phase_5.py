@@ -700,6 +700,147 @@ class TestActionRunnerDummy:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 5. PV MATERIAL PROPOSE — rank non-perovskite PV materials by efficiency
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPvMaterialPropose:
+    def test_build_pv_material_proposals_ranks_by_efficiency(self, tmp_path):
+        from weslr.commands.propose import build_pv_material_proposals, _extract_efficiency
+
+        # Seed some facts manually
+        fact_store = tmp_path / ".weslr" / "fact_assertions.jsonl"
+        fact_store.parent.mkdir(parents=True, exist_ok=True)
+
+        import json
+        from datetime import datetime, timezone
+
+        test_facts = [
+            {
+                "subject": "Kesterite",
+                "predicate": "kesterite_family",
+                "object": "CZTSSe material",
+                "fact_data": {"formula": "CZTSSe"},
+                "confidence": 0.90,
+                "record_type": "fact_assertion_v1",
+                "source_type": "arxiv_abstract",
+                "source_reference": {"arxiv_id": "2404.00291", "title": "Kesterite paper"},
+                "authority": "extracted",
+                "year": 2024,
+                "publication_year": 2024,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            {
+                "subject": "Kesterite",
+                "predicate": "champion_efficiency",
+                "object": "efficiency of 13.5%",
+                "fact_data": {"efficiency_pct": 13.5},
+                "confidence": 0.92,
+                "record_type": "fact_assertion_v1",
+                "source_type": "arxiv_abstract",
+                "source_reference": {"arxiv_id": "2404.00291", "title": "Kesterite paper"},
+                "authority": "extracted",
+                "year": 2024,
+                "publication_year": 2024,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            {
+                "subject": "Organic Photovoltaic",
+                "predicate": "efficiency_mentioned",
+                "object": "efficiency of 18%",
+                "fact_data": {"efficiency_pct": 18.0},
+                "confidence": 0.80,
+                "record_type": "fact_assertion_v1",
+                "source_type": "arxiv_abstract",
+                "source_reference": {"arxiv_id": "1504.07729", "title": "Organic PV paper"},
+                "authority": "extracted",
+                "year": 2015,
+                "publication_year": 2015,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            {
+                "subject": "BiFeO3",
+                "predicate": "ferroelectric_response",
+                "object": "ferroelectric photovoltaic",
+                "fact_data": {},
+                "confidence": 0.75,
+                "record_type": "fact_assertion_v1",
+                "source_type": "arxiv_abstract",
+                "source_reference": {"arxiv_id": "2110.13597", "title": "BiFeO3 paper"},
+                "authority": "extracted",
+                "year": 2021,
+                "publication_year": 2021,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        ]
+
+        with open(fact_store, "w") as f:
+            for fact in test_facts:
+                f.write(json.dumps(fact) + "\n")
+
+        with patch("weslr.fact_extractor._resolve_fact_store_path", return_value=fact_store):
+            proposals = build_pv_material_proposals(tenant_id=None, limit=10)
+
+        assert len(proposals) >= 2
+        # Kesterite should be ranked high (has efficiency data)
+        mat_names = [p["material"].lower() for p in proposals]
+        kesterite_ranked = next((i for i, m in enumerate(mat_names) if "kesterite" in m), None)
+        assert kesterite_ranked is not None, f"Kesterite not in proposals: {mat_names}"
+
+    def test_extract_efficiency_from_fact_data(self):
+        from weslr.commands.propose import _extract_efficiency
+
+        test_cases = [
+            ({"efficiency_pct": 13.5}, 13.5),
+            ({"efficiency_pct": 18.0}, 18.0),
+            ({"value": 25.3}, 25.3),
+            ({}, None),  # no efficiency
+        ]
+
+        for fd, expected in test_cases:
+            fact = {"fact_data": fd, "subject": "test", "object": "test"}
+            result = _extract_efficiency(fact)
+            assert result == expected, f"fact_data={fd}: expected {expected}, got {result}"
+
+    def test_format_proposal_list_shows_top_materials(self):
+        from weslr.commands.propose import format_proposal_list
+
+        proposals = [
+            {
+                "material": "Kesterite",
+                "estimated_efficiency": 13.5,
+                "max_efficiency": 13.5,
+                "efficiencies_mentioned": [13.5],
+                "trust_score": 0.90,
+                "sources": ["2404.00291"],
+                "predicates": ["kesterite_family", "champion_efficiency"],
+                "fact_count": 2,
+            },
+            {
+                "material": "Organic Photovoltaic",
+                "estimated_efficiency": 18.0,
+                "max_efficiency": 18.0,
+                "efficiencies_mentioned": [18.0],
+                "trust_score": 0.80,
+                "sources": ["1504.07729"],
+                "predicates": ["efficiency_mentioned"],
+                "fact_count": 1,
+            },
+        ]
+
+        output = format_proposal_list(proposals, limit=5)
+        assert "Kesterite" in output
+        assert "Organic Photovoltaic" in output
+        assert "13.5%" in output
+        assert "18.0%" in output
+        assert "arXiv:2404.00291" in output
+
+    def test_format_proposal_list_empty_returns_no_proposals_message(self):
+        from weslr.commands.propose import format_proposal_list
+        output = format_proposal_list([])
+        assert "No photovoltaic material proposals" in output
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Import at top for patching convenience
 # ─────────────────────────────────────────────────────────────────────────────
 import weslr.action_proposals
