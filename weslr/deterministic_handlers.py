@@ -1215,6 +1215,156 @@ HANDLER_REGISTRY = [
         "category": "pubmed",
     },
     {
+        "id": "arxiv_search",
+        "path": "arxiv_search",
+        "triggers": ["search arxiv ", "arxiv ", "/search arxiv ", "/arxiv "],
+        "match_type": "prefix",
+        "priority": 90,
+        "handler_fn": "handle_arxiv_search",
+        "read_only": True,
+        "writes": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
+        "side_effects": ["writes external_evidence_packets.jsonl", "appends facts to fact_assertions.jsonl"],
+        "write_guard": None,
+        "category": "arxiv",
+    },
+    {
+        "id": "facts_after",
+        "path": "facts_after",
+        "triggers": ["facts about ", "/facts about ", "about "],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_facts_about_after",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "facts",
+    },
+    {
+        "id": "facts_before",
+        "path": "facts_before",
+        "triggers": ["facts about "],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_facts_about_before",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "facts",
+    },
+    {
+        "id": "facts_between",
+        "path": "facts_between",
+        "triggers": ["facts about "],
+        "match_type": "prefix",
+        "priority": 60,
+        "handler_fn": "handle_facts_between",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "facts",
+    },
+    {
+        "id": "entity_timeline",
+        "path": "entity_timeline",
+        "triggers": ["/timeline "],
+        "match_type": "prefix",
+        "priority": 85,
+        "handler_fn": "handle_timeline",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "entity",
+    },
+    {
+        "id": "action_propose",
+        "path": "action_propose",
+        "triggers": ["/propose "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_propose_action",
+        "read_only": True,
+        "writes": [".weslr/action_proposals.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/action_proposals.jsonl"],
+        "side_effects": ["appends to action_proposals.jsonl"],
+        "write_guard": None,
+        "category": "actions",
+    },
+    {
+        "id": "actions_list",
+        "path": "actions_list",
+        "triggers": ["/actions list"],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_actions_list",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "actions",
+    },
+    {
+        "id": "actions_approve",
+        "path": "actions_approve",
+        "triggers": ["/actions approve "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_actions_approve",
+        "read_only": False,
+        "writes": [".weslr/action_proposals.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/action_proposals.jsonl"],
+        "side_effects": ["appends status-change event to action_proposals.jsonl"],
+        "write_guard": None,
+        "category": "actions",
+    },
+    {
+        "id": "actions_reject",
+        "path": "actions_reject",
+        "triggers": ["/actions reject "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_actions_reject",
+        "read_only": False,
+        "writes": [".weslr/action_proposals.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/action_proposals.jsonl"],
+        "side_effects": ["appends status-change event to action_proposals.jsonl"],
+        "write_guard": None,
+        "category": "actions",
+    },
+    {
+        "id": "actions_run",
+        "path": "actions_run",
+        "triggers": ["/actions run"],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_actions_run",
+        "read_only": True,
+        "writes": [".weslr/action_runner_dry_run.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/action_runner_dry_run.jsonl"],
+        "side_effects": ["logs dry-run to action_runner_dry_run.jsonl"],
+        "write_guard": None,
+        "category": "actions",
+    },
+    {
         "id": "tenant_list",
         "path": "tenant_list",
         "triggers": ["/tenant list"],
@@ -1624,6 +1774,482 @@ def handle_pubmed_search(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="pubmed_search",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+# ---- arXiv Search Handler ----
+
+def handle_arxiv_search(message: str, lowered: str) -> dict:
+    """Handle /search arxiv <query> [--domain <domain>] — arXiv literature search."""
+    import re
+
+    # Extract query: "/search arxiv <query>" or "search arxiv <query>"
+    m = re.match(r"(?:search\s+)?arxiv\s+(?:search\s+)?(.+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="arxiv_search",
+            response_text="Usage: /search arxiv <query> (e.g., 'MAPbI3 perovskite stability')",
+            confidence="high",
+            suggested_mode="observe",
+        )
+    query = m.group(1).strip()
+
+    # Extract optional --domain
+    domain_match = re.search(r"--domain\s+(\S+)", m.group(0))
+    domain = domain_match.group(1) if domain_match else None
+
+    if not query:
+        return build_deterministic_response(
+            message=message,
+            path="arxiv_search",
+            response_text="Usage: /search arxiv <query> — please provide a search query.",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    try:
+        from weslr.search_adapters.arxiv_adapter import search_and_store, format_search_results
+        result = search_and_store(query, max_results=10, domain=domain)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="arxiv_search",
+            response_text=f"arXiv search failed: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    result_count = result.get("result_count", 0)
+    fact_count = result.get("fact_count", 0)
+    articles = result.get("articles", [])
+
+    if result_count == 0:
+        response_text = f"arXiv search for '{query}' returned no results."
+    else:
+        response_text = (
+            f"arXiv search for '{query}' returned {result_count} results. "
+            f"Evidence packet stored. {fact_count} facts extracted from abstracts.\n\n"
+        )
+        response_text += format_search_results(articles)
+
+    return build_deterministic_response(
+        message=message,
+        path="arxiv_search",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+# ---- Temporal Facts Handlers ----
+
+def handle_facts_about_after(message: str, lowered: str) -> dict:
+    """Handle /facts about <entity> after <year> — facts published after a given year."""
+    import re
+
+    # Pattern: /facts about <entity> after <year>
+    m = re.match(
+        r"(?:facts\s+about|about)\s+(\S[\w\s\-\.]*?)\s+after\s+(\d{4})",
+        lowered
+    )
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="facts_after",
+            response_text=(
+                "Usage: /facts about <entity> after <year>\n"
+                "  e.g., /facts about BRCA1 after 2020"
+            ),
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    entity = m.group(1).strip()
+    year = int(m.group(2))
+
+    try:
+        from weslr.fact_extractor import load_facts
+        facts = load_facts(subject=entity, after_year=year, limit=50)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="facts_after",
+            response_text=f"Error loading facts: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if not facts:
+        response_text = f"No facts found for '{entity}' published after {year}."
+    else:
+        lines = [f"Facts about '{entity}' published after {year}: {len(facts)} total", ""]
+        for f in facts[:20]:
+            pred = f.get("predicate", "?")
+            obj = f.get("object", "")[:60]
+            yr = f.get("year", f.get("publication_year", "?"))
+            lines.append(f"  [{pred}] {obj}  ({yr})")
+        if len(facts) > 20:
+            lines.append(f"  ... and {len(facts) - 20} more. Narrow your query or increase limit.")
+        response_text = "\n".join(lines)
+
+    return build_deterministic_response(
+        message=message,
+        path="facts_after",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_facts_about_before(message: str, lowered: str) -> dict:
+    """Handle /facts about <entity> before <year> — facts published before a given year."""
+    import re
+
+    m = re.match(
+        r"(?:facts\s+about|about)\s+(\S[\w\s\-\.]*?)\s+before\s+(\d{4})",
+        lowered
+    )
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="facts_before",
+            response_text=(
+                "Usage: /facts about <entity> before <year>\n"
+                "  e.g., /facts about NCT04551452 before 2015"
+            ),
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    entity = m.group(1).strip()
+    year = int(m.group(2))
+
+    try:
+        from weslr.fact_extractor import load_facts
+        facts = load_facts(subject=entity, before_year=year, limit=50)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="facts_before",
+            response_text=f"Error loading facts: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if not facts:
+        response_text = f"No facts found for '{entity}' published before {year}."
+    else:
+        lines = [f"Facts about '{entity}' published before {year}: {len(facts)} total", ""]
+        for f in facts[:20]:
+            pred = f.get("predicate", "?")
+            obj = f.get("object", "")[:60]
+            yr = f.get("year", f.get("publication_year", "?"))
+            lines.append(f"  [{pred}] {obj}  ({yr})")
+        if len(facts) > 20:
+            lines.append(f"  ... and {len(facts) - 20} more.")
+        response_text = "\n".join(lines)
+
+    return build_deterministic_response(
+        message=message,
+        path="facts_before",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_facts_between(message: str, lowered: str) -> dict:
+    """Handle /facts about <entity> between <year1> and <year2>."""
+    import re
+
+    m = re.match(
+        r"(?:facts\s+about|about)\s+(\S[\w\s\-\.]*?)\s+between\s+(\d{4})\s+and\s+(\d{4})",
+        lowered
+    )
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="facts_between",
+            response_text=(
+                "Usage: /facts about <entity> between <year1> and <year2>\n"
+                "  e.g., /facts about perovskite between 2018 and 2023"
+            ),
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    entity = m.group(1).strip()
+    year1 = int(m.group(2))
+    year2 = int(m.group(3))
+
+    if year1 >= year2:
+        return build_deterministic_response(
+            message=message,
+            path="facts_between",
+            response_text=f"Error: first year ({year1}) must be less than second year ({year2}).",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    try:
+        from weslr.fact_extractor import load_facts
+        facts = load_facts(subject=entity, after_year=year1, before_year=year2, limit=50)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="facts_between",
+            response_text=f"Error loading facts: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if not facts:
+        response_text = f"No facts found for '{entity}' between {year1}–{year2}."
+    else:
+        lines = [f"Facts about '{entity}' ({year1}–{year2}): {len(facts)} total", ""]
+        for f in facts[:20]:
+            pred = f.get("predicate", "?")
+            obj = f.get("object", "")[:60]
+            yr = f.get("year", f.get("publication_year", "?"))
+            lines.append(f"  [{pred}] {obj}  ({yr})")
+        if len(facts) > 20:
+            lines.append(f"  ... and {len(facts) - 20} more.")
+        response_text = "\n".join(lines)
+
+    return build_deterministic_response(
+        message=message,
+        path="facts_between",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_timeline(message: str, lowered: str) -> dict:
+    """Handle /timeline <entity> — chronological list of facts about entity."""
+    import re
+    from collections import defaultdict
+
+    # Pattern: /timeline <entity>
+    m = re.match(r"(?:timeline)\s+(\S.+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="entity_timeline",
+            response_text="Usage: /timeline <entity>  (e.g., /timeline MAPbI3)",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    entity = m.group(1).strip()
+
+    try:
+        from weslr.fact_extractor import load_facts
+        facts = load_facts(subject=entity, limit=200)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="entity_timeline",
+            response_text=f"Error loading facts: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if not facts:
+        # Also try object match
+        facts = load_facts(obj=entity, limit=200)
+
+    if not facts:
+        response_text = f"No facts found for '{entity}'. Try searching PubMed or arXiv first."
+        return build_deterministic_response(
+            message=message,
+            path="entity_timeline",
+            response_text=response_text,
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    # Group by year
+    by_year: Dict[int, List[Dict]] = defaultdict(list)
+    for f in facts:
+        yr = f.get("year", f.get("publication_year", 0))
+        try:
+            yr = int(yr)
+        except (TypeError, ValueError):
+            yr = 0
+        by_year[yr].append(f)
+
+    lines = [f"Timeline for '{entity}': {len(facts)} facts", ""]
+    for yr in sorted(by_year.keys(), reverse=True):
+        if yr == 0:
+            label = "unknown year"
+        else:
+            label = str(yr)
+        lines.append(f"━━ {label} ━━")
+        for f in by_year[yr][:10]:
+            pred = f.get("predicate", "?")
+            obj = f.get("object", "")[:60]
+            src = f.get("source_type", "?")
+            lines.append(f"  [{pred}] {obj}  (src: {src})")
+        if len(by_year[yr]) > 10:
+            lines.append(f"  ... and {len(by_year[yr]) - 10} more")
+        lines.append("")
+
+    response_text = "\n".join(lines).rstrip()
+    return build_deterministic_response(
+        message=message,
+        path="entity_timeline",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+# ---- Action Proposal Handlers ----
+
+def handle_propose_action(message: str, lowered: str) -> dict:
+    """Handle /propose <action_type> <description> — propose an external action."""
+    import re
+
+    # Pattern: /propose <action_type> <description>
+    m = re.match(r"/propose\s+(\S+)\s+(.+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="action_propose",
+            response_text=(
+                "Usage: /propose <action_type> <description>\n"
+                "  Available types: simulation, email, robot_move, printer_job, http_request\n"
+                "  Example: /propose simulation Run batch job for material MAPbI3\n\n"
+                "  All actions require operator approval before execution.\n"
+                "  Use /actions list to see pending actions."
+            ),
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    action_type = m.group(1).strip()
+    description = m.group(2).strip()
+
+    from weslr.action_proposals import propose_action
+    result = propose_action(action_type, {}, description)
+
+    if result.get("status") == "error":
+        response_text = f"Error: {result.get('message', 'Unknown error')}"
+    else:
+        response_text = result.get("message", "")
+
+    return build_deterministic_response(
+        message=message,
+        path="action_propose",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_actions_list(message: str, lowered: str) -> dict:
+    """Handle /actions list — list pending and approved action proposals."""
+    from weslr.action_proposals import list_pending_actions, list_approved_actions, format_action_summary
+
+    pending = list_pending_actions()
+    approved = list_approved_actions()
+
+    lines = []
+    if pending:
+        lines.append(f"Pending actions: {len(pending)}")
+        for a in pending:
+            lines.append(format_action_summary(a))
+            lines.append("")
+    else:
+        lines.append("No pending actions.")
+
+    if approved:
+        lines.append(f"Approved (not yet executed): {len(approved)}")
+        for a in approved:
+            lines.append(format_action_summary(a))
+            lines.append("")
+
+    response_text = "\n".join(lines) or "No action proposals found."
+    return build_deterministic_response(
+        message=message,
+        path="actions_list",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_actions_approve(message: str, lowered: str) -> dict:
+    """Handle /actions approve <action_id> — approve a pending action."""
+    import re
+
+    m = re.match(r"/actions approve\s+(\S+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="actions_approve",
+            response_text="Usage: /actions approve <action_id>",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    action_id = m.group(1).strip()
+    from weslr.action_proposals import approve_action
+    result = approve_action(action_id)
+    response_text = result.get("message", str(result))
+
+    return build_deterministic_response(
+        message=message,
+        path="actions_approve",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_actions_reject(message: str, lowered: str) -> dict:
+    """Handle /actions reject <action_id> — reject a pending action."""
+    import re
+
+    m = re.match(r"/actions reject\s+(\S+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="actions_reject",
+            response_text="Usage: /actions reject <action_id>",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    action_id = m.group(1).strip()
+    from weslr.action_proposals import reject_action
+    result = reject_action(action_id)
+    response_text = result.get("message", str(result))
+
+    return build_deterministic_response(
+        message=message,
+        path="actions_reject",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_actions_run(message: str, lowered: str) -> dict:
+    """Handle /actions run — execute all approved actions (dry-run or real)."""
+    from weslr.action_runner_dummy import run_approved_actions
+
+    result = run_approved_actions()
+    response_text = result.get("message", str(result))
+
+    return build_deterministic_response(
+        message=message,
+        path="actions_run",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",

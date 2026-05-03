@@ -312,10 +312,16 @@ def load_facts(
     limit: int = 100,
     tenant_id: Optional[str] = None,
     fact_store_path: Optional[str] = None,
+    after_year: Optional[int] = None,
+    before_year: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Load fact assertions with optional filters.
 
     Multi-tenant aware: paths resolved through tenant_context.
+
+    Args:
+        after_year: Only include facts with publication_year >= this value.
+        before_year: Only include facts with publication_year <= this value.
     """
     path = _resolve_fact_store_path(fact_store_path, tenant_id)
     if not path.exists():
@@ -343,6 +349,20 @@ def load_facts(
                     continue
                 if source_type and record.get("source_type") != source_type:
                     continue
+                if after_year is not None:
+                    pub_year = record.get("publication_year") or record.get("year", 0)
+                    try:
+                        if int(pub_year) < after_year:
+                            continue
+                    except (TypeError, ValueError):
+                        pass  # no year available, include it
+                if before_year is not None:
+                    pub_year = record.get("publication_year") or record.get("year", 9999)
+                    try:
+                        if int(pub_year) > before_year:
+                            continue
+                    except (TypeError, ValueError):
+                        pass  # no year available, include it
 
                 results.append(record)
                 if len(results) >= limit:
