@@ -1687,6 +1687,21 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "ode",
     },
+    {
+        "id": "quantum",
+        "path": "quantum",
+        "triggers": ["/quantum", "quantum "],
+        "match_type": "prefix",
+        "priority": 55,
+        "handler_fn": "handle_quantum",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "quantum",
+    },
 ]
 
 
@@ -3215,6 +3230,20 @@ def handle_ode_list(message: str, lowered: str) -> dict:
     text = "\n".join(lines)
     return build_deterministic_response(
         message=message, path="ode_list",
+        response_text=text,
+        confidence="high",
+    )
+
+
+# ---- Quantum Handlers ----
+
+def handle_quantum(message: str, lowered: str) -> dict:
+    """Handle /quantum state|apply|measure|reset commands."""
+    from weslr.commands.quantum_commands import handle_quantum as q_handle
+
+    text = q_handle(message, lowered)
+    return build_deterministic_response(
+        message=message, path="quantum",
         response_text=text,
         confidence="high",
     )

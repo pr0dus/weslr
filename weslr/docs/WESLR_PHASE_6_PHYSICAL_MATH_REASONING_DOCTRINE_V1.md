@@ -103,3 +103,75 @@ This step is **gated behind an operator decision** before being activated.
 - **P11** (probabilistic assistance): symbolic math via sympy is deterministic — no probability, so permitted.
 - **No-hidden-learning rule** remains: new rules added by operator only, not learned from data.
 - **Deterministic anchor** still holds: reasoning is deterministic or probabilistic-as-advisory only.
+---
+
+## 6.4 Quantum logic awareness
+
+### Purpose
+
+Enable Weslr to represent and manipulate simple quantum states — superposition, interference, and simple circuits — as part of hypothesis proposal and analysis. This is a *simulation* layer, not a connection to real quantum hardware.
+
+### What is modeled
+
+- **Quantum state vectors**: normalized complex amplitude vectors for 1–3 qubits
+- **Single-qubit gates**: H (Hadamard), X (Pauli-X / NOT), Z (Pauli-Z / phase flip)
+- **Two-qubit gates**: CNOT (controlled-NOT, qubit 0 = control, qubit 1 = target for 2-qubit states; generalized to arbitrary indices for N-qubit)
+- **Measurement**: probabilistic collapse with deterministic pseudorandom (seed derived from state vector hash — reproducible per input, no user-controllable seed in commands)
+- **State notation**: Dirac ket strings (`|0⟩`, `|1⟩`, |+⟩, |−⟩, `|00⟩`, `|01⟩`, …), superposition via `a|0⟩ + b|1⟩`
+
+### Constraints (non-negotiable)
+
+- **No real quantum hardware** — all operations are simulation only
+- **No external API calls** — all gate matrices are hardcoded, no network access
+- **Read-only** — no hardware control, no modification of external systems
+- **Deterministic measurement** — seed derived from the state vector itself (hash); same state always produces the same measurement outcome; no logging of outcomes for learning (doctrine P11 — public learning boundary)
+- **Multi-tenant isolation** — per-user quantum state stored under a session-derived key
+- **Maximum circuit depth**: 3 gates, maximum 3 qubits (Phase 6.4 scope)
+- **No sympy required** for Phase 6.4 — explicit complex-number matrices suffice
+
+### Interfaces
+
+| Command | Description |
+|---|---|
+| `/quantum state \|0>` | Parse Dirac notation, normalize, create QuantumState |
+| `/quantum state a\|0> + b\|1>` | Create superposition from numeric coefficients |
+| `/quantum apply H 0` | Apply Hadamard to qubit 0 |
+| `/quantum apply CNOT 0,1` | Apply CNOT: control=0, target=1 |
+| `/quantum measure [qubit=0]` | Measure qubit, show outcome + probability + collapsed state |
+| `/quantum reset` | Clear current quantum state |
+
+### Integration with discovery engine
+
+When `/explore` or `/propose` receives a query whose domain overlaps quantum keywords:
+
+```
+superposition, interference, quantum gate, qubit,
+photochemistry, molecular orbital, electron transfer,
+entanglement, decoherence
+```
+
+Weslr may propose a quantum circuit as part of the hypothesis. The proposal includes:
+
+- `quantum_circuit: true` flag in the hypothesis JSON
+- Circuit diagram (text, max depth 3)
+- Initial state (e.g. |00⟩)
+- Gate sequence (e.g. H(0) → CNOT(0,1))
+- Measurement basis
+- Outcome probabilities (from the quantum module simulation)
+
+This is an *advisory proposal* — the operator reviews before any downstream use.
+
+### Safety & reproducibility
+
+- All gate matrices are hardcoded `numpy.ndarray` of complex numbers (or pure-Python lists as fallback)
+- Measurement uses `random.Random(seed)` where `seed = sha256(state_bytes + str(qubit_index)) % 2**30`
+- No measurement outcomes are logged or used for learning
+- No external hardware or API calls
+
+### Boundaries (non-negotiable)
+
+- ❌ No connection to real quantum hardware (IBM Q, Rigetti, etc.)
+- ❌ No network calls from the quantum module
+- ❌ No user-controllable measurement seed (seed is deterministic from state)
+- ❌ No logging of quantum measurement outcomes
+- ✅ Proposals are advisory only — operator approval required before downstream use
