@@ -1,0 +1,49 @@
+{
+  "rules": [
+    {
+      "rule_id": "nitration.aromatic",
+      "description": "Nitration of aromatic rings",
+      "reactants_pattern": "benzene.*HNO[0-9]|toluene.*HNO[0-9]",
+      "products_pattern": "nitrobenzene|nitrotoluene",
+      "conditions": "H2SO4/HNO3 mixture, 50-100°C",
+      "example": "benzene + HNO3 -> nitrobenzene",
+      "confidence": 0.85
+    },
+    {
+      "rule_id": "oxidation.alcohol",
+      "description": "Oxidation of alcohols to carbonyls",
+      "reactants_pattern": "ethanol.*KMnO4|isopropanol.*KMnO4|methanol.*KMnO4",
+      "products_pattern": "acetaldehyde|acetone|formaldehyde",
+      "conditions": "KMnO4, H2SO4, reflux",
+      "example": "ethanol + KMnO4 -> acetaldehyde",
+      "confidence": 0.80
+    },
+    {
+      "rule_id": "esterification.fischer",
+      "description": "Fischer esterification of carboxylic acids",
+      "reactants_pattern": "acetic acid.*ethanol|benzoic acid.*methanol",
+      "products_pattern": "ethyl acetate|methyl benzoate",
+      "conditions": "acid catalyst, reflux",
+      "example": "acetic acid + ethanol -> ethyl acetate + H2O",
+      "confidence": 0.82
+    },
+    {
+      "rule_id": "suzuki.coupling",
+      "description": "Palladium-catalyzed Suzuki coupling",
+      "reactants_pattern": "aryl halide.*boronic acid.*Pd",
+      "products_pattern": "biaryl",
+      "conditions": "Pd(PPh3)4, base, solvent",
+      "example": "bromobenzene + phenylboronic acid -> biphenyl",
+      "confidence": 0.88
+    },
+    {
+      "rule_id": "hydrogenation.catalytic",
+      "description": "Catalytic hydrogenation of double bonds",
+      "reactants_pattern": "alkene.*H2.*Pt|alkene.*H2.*Pd|alkene.*H2.*Ni",
+      "products_pattern": "alkane",
+      "conditions": "H2 gas, metal catalyst (Pt/Pd/Ni), pressure",
+      "example": "ethylene + H2 -> ethane",
+      "confidence": 0.90
+    }
+  ]
+}
