@@ -28,6 +28,8 @@ from weslr.iss.diagnostic_records import load_iss_diagnostics
 from weslr.implementation_planning import load_implementation_plans
 from weslr.proposal_traceability import load_trace
 from weslr.reminder_handler import handle_reminder_command
+from weslr.search_adapters.pubmed_adapter import search_pubmed
+from weslr.search_adapters.evidence_packet_store import append_evidence_packet, load_packets, get_packet
 
 
 # ---- Handler functions ----
@@ -1158,6 +1160,21 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "reminder",
     },
+    {
+        "id": "pubmed_search",
+        "path": "pubmed_search",
+        "triggers": ["search pubmed ", "pubmed search "],
+        "match_type": "prefix",
+        "priority": 90,
+        "handler_fn": "handle_pubmed_search",
+        "read_only": True,
+        "writes": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
+        "side_effects": ["writes external_evidence_packets.jsonl", "appends facts to fact_assertions.jsonl"],
+        "write_guard": None,
+        "category": "pubmed",
+    },
 ]
 
 
@@ -1346,6 +1363,154 @@ def handle_simple_followup_query(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="simple_followup",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_pubmed_search(message: str, lowered: str) -> dict:
+    """PubMed literature search — writes evidence packet + extracts facts."""
+    import re
+    import uuid
+    from datetime import datetime, timezone
+    from weslr.document_ingestor import extract_facts_with_positions
+    from weslr.fact_extractor import append_fact_assertion
+
+    # Extract query: "search pubmed <query>" or "pubmed search <query>"
+    m = re.match(r"(?:search\s+)?pubmed\s+(?:search\s+)?(.+)", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="pubmed_search",
+            response_text="Usage: /search pubmed <query> (e.g., 'BRCA1 breast cancer survival')",
+            confidence="high",
+            suggested_mode="observe",
+        )
+    query = m.group(1).strip()
+    if not query:
+        return build_deterministic_response(
+            message=message,
+            path="pubmed_search",
+            response_text="Usage: /search pubmed <query> — please provide a search query.",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    # Run search
+    try:
+        pmids, articles = search_pubmed(query, max_results=10)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="pubmed_search",
+            response_text=f"PubMed search failed: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if not articles:
+        return build_deterministic_response(
+            message=message,
+            path="pubmed_search",
+            response_text=f"PubMed returned no results for '{query}'.",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    # Build and store evidence packet
+    packet_id = f"pm_{int(datetime.now(timezone.utc).timestamp())}_{uuid.uuid4().hex[:6]}"
+    packet = {
+        "record_type": "external_evidence_packet_v1",
+        "packet_id": packet_id,
+        "source": "pubmed",
+        "query": query,
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "result_count": len(articles),
+        "results": articles,
+        "authority": "external_evidence_unverified",
+        "automatic_change": False,
+        "hidden_learning": False,
+        "raw_prompt_stored": False,
+    }
+    append_evidence_packet(packet)
+
+
+    # Extract facts from each abstract (synchronous for V1)
+    fact_count = 0
+    BASE_TRUST = 0.70  # PubMed abstract base trust
+    for article in articles:
+        abstract = article.get("abstract", "") or ""
+        if not abstract:
+            continue
+        pmid = article.get("pmid", "")
+        title = article.get("title", "") or ""
+        journal = article.get("journal", "") or ""
+        year = article.get("year", "") or ""
+        authors = article.get("authors", []) or []
+        author_str = ", ".join(authors[:3])
+        if len(authors) > 3:
+            author_str += " et al."
+        citation = f"{author_str} ({year}). {title}. {journal}." if title else ""
+
+
+        raw_facts = extract_facts_with_positions(abstract, pattern_confidence=0.8)
+        for fact in raw_facts:
+            start_char = fact.get("char_start", 0)
+            end_char = fact.get("char_end", 0)
+            # Approximate page=1, line range from char offsets
+            line_start = abstract[:start_char].count("\n") + 1
+            line_end = abstract[:end_char].count("\n") + 1
+
+            enriched = {
+                "record_type": "fact_assertion_v1",
+                "subject": fact["subject"],
+                "predicate": fact["predicate"],
+                "object": fact["object"],
+                "source_event_ref": f"pubmed:{pmid}",
+                "source_doc_id": None,
+                "source_reference": {
+                    "type": "pubmed_abstract",
+                    "pmid": pmid,
+                    "citation": citation,
+                    "page": 1,
+                    "line_range": [line_start, line_end],
+                },
+                "source_type": "pubmed_abstract",
+                "trust_score": round(BASE_TRUST * fact["pattern_confidence"], 3),
+                "domains": ["cancer_research"],
+                "extraction_pattern": fact.get("pattern_id", "generic"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "authority": "extracted_from_pubmed",
+                "automatic_action": False,
+                "hidden_learning": False,
+                "raw_prompt_stored": False,
+            }
+            # Append directly to fact store
+            import json
+            fact_path = Path(".weslr/fact_assertions.jsonl")
+            fact_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(fact_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(enriched, ensure_ascii=False) + "\n")
+            fact_count += 1
+
+    # Build response
+    top = articles[0]
+    top_authors = ", ".join(top.get("authors", [])[:2])
+    if len(top.get("authors", [])) > 2:
+        top_authors += " et al."
+    response_text = (
+        f"PubMed search for '{query}' returned {len(articles)} results. "
+        f"Evidence packet {packet_id} stored. "
+        f"{fact_count} facts extracted from abstracts.\n\n"
+        f"Top result: {top.get('title', 'N/A')}\n"
+        f"  Authors: {top_authors} ({top.get('year', 'N/A')})\n"
+        f"  Journal: {top.get('journal', 'N/A')}\n"
+        f"  PMID: {top.get('pmid', 'N/A')} — {top.get('url', 'N/A')}\n"
+    )
+    return build_deterministic_response(
+        message=message,
+        path="pubmed_search",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
