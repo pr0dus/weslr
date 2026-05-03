@@ -200,6 +200,12 @@ def get_entity_facts(
     return matched
 
 
+def _get_entity_facts_uncached(entity_name: str, tenant_id: Optional[str] = None) -> list:
+    # Same logic as get_entity_summary uses to load facts for one entity, but without same_as recursion
+    from weslr.fact_extractor import load_facts
+    return load_facts(subject=entity_name, limit=100, tenant_id=tenant_id)
+
+
 def get_entity_summary(
     entity_name: str,
     domain: str = DEFAULT_DOMAIN,
@@ -217,6 +223,18 @@ def get_entity_summary(
     schema = get_entity_schema(primary, domain) if primary else {}
 
     facts = get_entity_facts(entity_name, domain, limit=500)
+
+    # Expand via same_as links
+    from weslr.commands.entity_link import get_linked_entities
+    linked = get_linked_entities(entity_name, tenant_id=None)
+    for linked_name in linked:
+        linked_facts = _get_entity_facts_uncached(linked_name, tenant_id=None)
+        for f in linked_facts:
+            if f not in facts:  # deduplicate
+                f = dict(f)
+                f["_linked_from"] = linked_name
+                facts.append(f)
+
     total = len(facts)
     sample = facts[:max_facts]
 

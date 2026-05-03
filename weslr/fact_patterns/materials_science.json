@@ -1,97 +1,177 @@
 {
   "domain": "materials_science",
-  "version": "1.1",
+  "version": "1.2",
   "patterns": [
     {
       "pattern_id": "ms.bandgap",
       "regex": "(?i)\\bbandgap\\s+(?:of\\s+)?([A-Za-z0-9_\\-\\.]+)\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:eV|ev)",
       "confidence": 0.85,
       "predicate": "bandgap",
-      "groups": {"material": 1, "value": 2, "unit": 3}
+      "groups": {
+        "material": 1,
+        "value": 2,
+        "unit": 3
+      }
     },
     {
       "pattern_id": "ms.lattice_constant",
-      "regex": "(?i)\\blattice\\s+constant(?:\\s+a)?\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:Å|A)",
+      "regex": "(?i)\\blattice\\s+constant(?:\\s+a)?\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:\u00c5|A)",
       "confidence": 0.88,
       "predicate": "lattice_constant",
-      "groups": {"value": 1, "unit": 2}
+      "groups": {
+        "value": 1,
+        "unit": 2
+      }
     },
     {
       "pattern_id": "ms.synthesis_temperature",
-      "regex": "(?i)(?:synthesized|prepared|fabricated)\\s+(?:at|under|with)\\s+([0-9]+)\\s*°?C",
+      "regex": "(?i)(?:synthesized|prepared|fabricated)\\s+(?:at|under|with)\\s+([0-9]+)\\s*\u00b0?C",
       "confidence": 0.82,
       "predicate": "synthesis_temperature",
-      "groups": {"temperature_c": 1}
+      "groups": {
+        "temperature_c": 1
+      }
     },
     {
       "pattern_id": "ms.conductivity",
-      "regex": "(?i)\\bconductivity\\s+(?:of\\s+)?([A-Za-z0-9_\\-\\.]+)\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:S/cm|S\\/cm|Ω[- ]?1\\s*m[- ]?1)",
-      "confidence": 0.80,
+      "regex": "(?i)\\bconductivity\\s+(?:of\\s+)?([A-Za-z0-9_\\-\\.]+)\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:S/cm|S\\/cm|\u03a9[- ]?1\\s*m[- ]?1)",
+      "confidence": 0.8,
       "predicate": "conductivity",
-      "groups": {"material": 1, "value": 2}
+      "groups": {
+        "material": 1,
+        "value": 2
+      }
     },
     {
       "pattern_id": "ms.crystal_structure",
       "regex": "(?i)(?:crystal\\s+structure\\s+(?:of|is)|hexagonal|cubic|zinc blende|wurtzite|perovskite|rocksalt)\\s+([A-Za-z0-9_\\-\\. ]+)",
       "confidence": 0.78,
       "predicate": "crystal_structure",
-      "groups": {"structure_type": 1}
+      "groups": {
+        "structure_type": 1
+      }
     },
     {
       "pattern_id": "ms.ferroelectric",
       "regex": "(?i)(?:ferroelectric|piezoelectric)\\s+(?:material|property|behavior|response)\\s+(?:of|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
       "confidence": 0.75,
       "predicate": "ferroelectric_response",
-      "groups": {"material": 1}
+      "groups": {
+        "material": 1
+      }
     },
     {
       "pattern_id": "ms.photoactivity",
       "regex": "(?i)(?:photocatalytic|solar\\s+cell|photovoltaic)\\s+(?:activity|efficiency|performance)\\s+(?:of|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
       "confidence": 0.77,
       "predicate": "photoactivity",
-      "groups": {"material": 1}
+      "groups": {
+        "material": 1
+      }
     },
     {
       "pattern_id": "ms.pce",
       "regex": "(?i)(?:power\\s+conversion\\s+efficiency|PCE|PCE\\s*%|efficiency)\\s+(?:of|for|in|achieved|reached)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
       "confidence": 0.88,
       "predicate": "power_conversion_efficiency",
-      "groups": {"efficiency_pct": 1}
+      "groups": {
+        "efficiency_pct": 1
+      }
     },
     {
       "pattern_id": "ms.pv_material_class",
-      "regex": "(?i)\\b(kesterite|CZTS|CZTSSe|Cu2ZnSnS4|Cu2ZnSnSe4|organic\\s+photovoltaic|OPV|BiFeO3|Sb2Se3|quantum\\s+dot|ferroelectric)\\b.*?(?:solar\\s+cell|photovoltaic|material|device|thin\\s+film)",
+      "regex": "(?i)(?:^|[^A-Za-z0-9])(kesterite|CZTSSe?|Cu2ZnSn(?:S|Se)4?|organic\\s+photovoltaic|OPV|BiFeO3|Sb2Se3|quantum\\s+dot|ferroelectric)(?=[^A-Za-z0-9]|$)",
       "confidence": 0.85,
       "predicate": "non_perovskite_pv_material_class",
-      "groups": {"material_class": 1}
+      "groups": {
+        "material_class": 2
+      }
     },
     {
       "pattern_id": "ms.pv_material_with_efficiency",
       "regex": "(?i)([A-Za-z0-9_\\-\\.\\(\\)/+]+(?:solar\\s+cell|material|device|film|module|OPV|CZTS|Se|perovskite|kesterite|BiFeO3|Sb2Se3))[\\s\\-]+(?:with|demonstrating|demonstrated|achieving|achieves|reaching|reached|showing)\\s+(?:a\\s+)?(?:power\\s+conversion\\s+)?(?:efficiency|PCE)\\s+(?:of|up\\s+to|:)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
       "confidence": 0.87,
       "predicate": "pv_material_efficiency",
-      "groups": {"material": 1, "efficiency_pct": 2}
+      "groups": {
+        "material": 1,
+        "efficiency_pct": 2
+      }
     },
     {
       "pattern_id": "ms.stability_result",
       "regex": "(?i)([A-Za-z0-9_\\-\\. ]+)\\s+(?:showed|demonstrated|exhibited|achieved|maintained)\\s+([0-9]+\\.?[0-9]*)\\s*%\\s+(?:efficiency|PCE|stability|performance)\\s+(?:after|over|for)\\s+([0-9]+\\s+(?:hours?|days?|months?|years?))",
       "confidence": 0.82,
       "predicate": "long_term_stability",
-      "groups": {"material": 1, "stability_pct": 2, "duration": 3}
+      "groups": {
+        "material": 1,
+        "stability_pct": 2,
+        "duration": 3
+      }
     },
     {
       "pattern_id": "ms.record_efficiency",
       "regex": "(?i)\\b(record|highest|maximum)\\s+(?:power\\s+conversion\\s+)?efficiency\\s+(?:of|for|at|:)\\s*([0-9]+\\.?[0-9]*)\\s*%\\s+(?:for|with|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
-      "confidence": 0.90,
+      "confidence": 0.9,
       "predicate": "record_efficiency",
-      "groups": {"efficiency_pct": 1, "material": 2}
+      "groups": {
+        "efficiency_pct": 1,
+        "material": 2
+      }
     },
     {
       "pattern_id": "ms.material_property_comparison",
       "regex": "(?i)\\b(CZTS|CZTSSe|perovskite|kesterite|organic|OPV|BiFeO3|Sb2Se3|amorphous\\s+silicon|a\\-Si)\\b[^.]{0,100}(?:efficiency|PCE|bandgap|band\\s+gap|stability|performance)\\s+(?:of|=|:|reached|achieved)\\s*([0-9]+\\.?[0-9]*)\\s*%?",
       "confidence": 0.79,
       "predicate": "pv_material_property",
-      "groups": {"material": 1, "value": 2}
+      "groups": {
+        "material": 1,
+        "value": 2
+      }
+    },
+    {
+      "pattern_id": "ms.kesterite_variant",
+      "regex": "(?i)\\b(CZTS(?:Se?)?)\\b",
+      "confidence": 0.92,
+      "predicate": "kesterite_family",
+      "groups": {
+        "formula": 1
+      }
+    },
+    {
+      "pattern_id": "ms.kesterite_compound",
+      "regex": "(?i)\\b(Cu2ZnSn(?:[Se]4?)?)\\b",
+      "confidence": 0.92,
+      "predicate": "kesterite_family",
+      "groups": {
+        "formula": 1
+      }
+    },
+    {
+      "pattern_id": "ms.efficiency_num",
+      "regex": "([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.7,
+      "predicate": "efficiency_mentioned",
+      "groups": {
+        "efficiency_pct": 1
+      }
+    },
+    {
+      "pattern_id": "ms.champion_efficiency",
+      "regex": "(?i)champion.*?efficiency\\s+(?:of)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.92,
+      "predicate": "champion_efficiency",
+      "groups": {
+        "efficiency_pct": 1
+      }
+    },
+    {
+      "pattern_id": "ms.certified_efficiency",
+      "regex": "(?i)certified\\s+.*?efficiency\\s+(?:of)?\\s*([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.95,
+      "predicate": "certified_efficiency",
+      "groups": {
+        "efficiency_pct": 1
+      }
     }
   ]
 }

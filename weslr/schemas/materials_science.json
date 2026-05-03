@@ -54,6 +54,11 @@
       "description": "Material has a given chemical formula or composition",
       "subject_types": ["Material"],
       "object_types": ["Material"]
+    },
+    "same_as": {
+      "description": "This entity refers to the same real-world material as another entity name (alias link)",
+      "subject_types": ["Material"],
+      "object_types": ["Material"]
     }
   }
 }

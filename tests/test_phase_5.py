@@ -841,6 +841,95 @@ class TestPvMaterialPropose:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 5. ENTITY LINKING — same_as relationships
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestEntityLinking:
+    def test_link_entities_creates_same_as_fact(self, tmp_path):
+        from weslr.commands.entity_link import link_entities, get_linked_entities
+        fact_store = tmp_path / ".weslr" / "fact_assertions.jsonl"
+        fact_store.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("weslr.fact_extractor._resolve_fact_store_path", return_value=fact_store):
+            result = link_entities("BiFeO3", "ferroelectric_material")
+
+        assert result["status"] == "linked"
+        assert result["source"] == "BiFeO3"
+        assert result["target"] == "ferroelectric_material"
+
+    def test_get_linked_entities_returns_aliases(self, tmp_path):
+        from weslr.commands.entity_link import link_entities, get_linked_entities
+        fact_store = tmp_path / ".weslr" / "fact_assertions.jsonl"
+        fact_store.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("weslr.fact_extractor._resolve_fact_store_path", return_value=fact_store):
+            link_entities("BiFeO3", "bismuth_ferrite")
+            linked = get_linked_entities("BiFeO3")
+
+        assert "bismuth_ferrite" in linked
+
+    def test_unlink_removes_relationship(self, tmp_path):
+        from weslr.commands.entity_link import link_entities, unlink_entities, get_linked_entities
+        fact_store = tmp_path / ".weslr" / "fact_assertions.jsonl"
+        fact_store.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("weslr.fact_extractor._resolve_fact_store_path", return_value=fact_store):
+            link_entities("BiFeO3", "ferroelectric_material")
+            unlink_entities("BiFeO3", "ferroelectric_material")
+            linked = get_linked_entities("BiFeO3")
+
+        assert len(linked) == 0
+
+    def test_cannot_relink_already_linked_entities(self, tmp_path):
+        from weslr.commands.entity_link import link_entities
+        fact_store = tmp_path / ".weslr" / "fact_assertions.jsonl"
+        fact_store.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("weslr.fact_extractor._resolve_fact_store_path", return_value=fact_store):
+            link_entities("BiFeO3", "ferroelectric_material")
+            result2 = link_entities("BiFeO3", "ferroelectric_material")
+
+        assert result2["status"] == "already_linked"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. KESTERITE EFFICIENCY EXTRACTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestKesteriteEfficiency:
+    def test_kesterite_efficiency_extraction(self):
+        """Kesterite paper abstract: ms.kesterite patterns extract material + efficiency."""
+        import sys
+        sys.path.insert(0, '.')
+        from weslr.fact_extractor import extract_facts_with_positions
+
+        abstract = (
+            "Sulfide Kesterite Cu2ZnSnS4 (CZTS), a nontoxic and low-cost photovoltaic material, "
+            "has always being facing severe charge recombination. "
+            "We have achieved a champion total-area efficiency of 13.5% (active-area efficiency: 14.1%). "
+            "We have also achieved a certified total-area cell efficiency of 13.16%."
+        )
+
+        facts = extract_facts_with_positions(abstract, domain='materials_science')
+
+        # Should have kesterite-family facts
+        kesterite_facts = [
+            f for f in facts if f.get('predicate') in ('kesterite_family', 'non_perovskite_pv_material_class')
+        ]
+        assert len(kesterite_facts) > 0, f"Expected kesterite facts, got: {[f.get('predicate') for f in facts]}"
+
+        # Should have champion or certified efficiency facts
+        eff_facts = [f for f in facts if 'efficiency' in f.get('predicate', '')]
+        assert len(eff_facts) > 0, f"Expected efficiency facts, got: {[f.get('predicate') for f in facts]}"
+
+        # Verify kesterite regex captures CZTS
+        k_facts = [
+            f for f in facts if f.get('fact_data', {}).get('formula') in ('CZTS', 'CZTSSe', 'Cu2ZnSnS4')
+        ]
+        assert len(k_facts) > 0, f"Expected CZTS/Cu2ZnSnS4 captured, got: {[f.get('fact_data') for f in facts]}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Import at top for patching convenience
 # ─────────────────────────────────────────────────────────────────────────────
 import weslr.action_proposals
