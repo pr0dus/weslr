@@ -572,20 +572,36 @@ def answer_state_question(message: str) -> dict:
         )
 
     elif question_type == "action_stubs":
-        sources_used.append("write_handlers.py")
-        answer_parts.append(
-            "Action stubs are not yet implemented as independent handlers. "
-            "The architecture supports them via write_handlers.py and the experiment_proposal_store.py "
-            "(which stores proposals with operator approval gates), but there is no /remind, /todo, "
-            "or /task command, and no reminder_handler.py or todo_handler.py."
+        sources_used.append("reminder_handler.py")
+        import os as _os
+        reminder_handler_exists = _os.path.exists(
+            _os.path.join(_WESLR_ROOT, "reminder_handler.py")
         )
+        if reminder_handler_exists:
+            answer_parts.append(
+                "Action stubs are partially implemented. "
+                "reminder_handler.py is live — it handles: "
+                "'remind me in N minutes to <msg>', 'remind me at HH:MM to <msg>', "
+                "'show my reminders', and 'cancel reminder <id>'. "
+                "Reminders are stored in .weslr/reminders.jsonl and fire into "
+                ".weslr/pending_messages.jsonl for /chat delivery. "
+                "The scheduler uses threading.Timer with a 60-second polling fallback. "
+                "A todo system has not yet been implemented."
+            )
+        else:
+            answer_parts.append(
+                "Action stubs are not yet implemented as independent handlers. "
+                "The architecture supports them via write_handlers.py and the experiment_proposal_store.py "
+                "(which stores proposals with operator approval gates), but there is no /remind, /todo, "
+                "or /task command, and no reminder_handler.py or todo_handler.py."
+            )
+            answer_parts.append(
+                "Reminder scheduling would require a small handler (~100 lines) that writes to "
+                ".weslr/reminders.jsonl and schedules via threading.Timer. A todo tracker would follow the same pattern."
+            )
         answer_parts.append(
-            "Reminder scheduling would require a small handler (~100 lines) that wraps the OpenClaw cron tool "
-            "or writes to a .weslr/reminders.jsonl. A todo tracker would follow the same pattern."
-        )
-        answer_parts.append(
-            "Would you like to create a proposal for a reminder handler or todo system? "
-            "Say 'propose a reminder handler' and I will draft one."
+            "Would you like to create a proposal for a todo system? "
+            "Say 'propose a todo system' and I will draft one."
         )
 
     elif question_type == "temporal_relational":

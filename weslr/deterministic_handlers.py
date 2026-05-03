@@ -27,6 +27,7 @@ from weslr.state_checkpoint import get_state_checkpoint
 from weslr.iss.diagnostic_records import load_iss_diagnostics
 from weslr.implementation_planning import load_implementation_plans
 from weslr.proposal_traceability import load_trace
+from weslr.reminder_handler import handle_reminder_command
 
 
 # ---- Handler functions ----
@@ -1137,6 +1138,25 @@ HANDLER_REGISTRY = [
         "side_effects": [],
         "write_guard": None,
         "category": "simplification",
+    },
+    {
+        "id": "reminder_command",
+        "path": "reminder_command",
+        "triggers": [
+            "remind me ",
+            "show my reminders",
+            "cancel reminder ",
+        ],
+        "match_type": "prefix",
+        "priority": 88,
+        "handler_fn": "handle_reminder_command",
+        "read_only": False,
+        "writes": [".weslr/reminders.jsonl", ".weslr/reminder_events.jsonl", ".weslr/pending_messages.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/reminders.jsonl", ".weslr/reminder_events.jsonl", ".weslr/pending_messages.jsonl"],
+        "side_effects": ["threading.Timer scheduled for reminder firing"],
+        "write_guard": None,
+        "category": "reminder",
     },
 ]
 
