@@ -39,6 +39,7 @@ from weslr.commands.entities import (
 )
 from weslr.commands.propose import handle_propose_pv_material
 from weslr.combinatorial_materials import handle_propose_combination
+from weslr.chemistry_reaction_predictor import handle_predict_reaction as handle_reaction_predict
 
 import re
 
@@ -1232,6 +1233,21 @@ HANDLER_REGISTRY = [
         "category": "arxiv",
     },
     {
+        "id": "pubchem_search",
+        "path": "pubchem_search",
+        "triggers": ["/search pubchem ", "/pubchem "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_search_pubchem",
+        "read_only": True,
+        "writes": [".weslr/fact_assertions.jsonl"],
+        "requires_confirmation": False,
+        "write_paths": [".weslr/fact_assertions.jsonl"],
+        "side_effects": ["appends compound facts to fact_assertions.jsonl"],
+        "write_guard": None,
+        "category": "pubchem",
+    },
+    {
         "id": "facts_after",
         "path": "facts_after",
         "triggers": ["facts about ", "/facts about ", "about "],
@@ -1305,6 +1321,21 @@ HANDLER_REGISTRY = [
         "side_effects": [],
         "write_guard": None,
         "category": "propose",
+    },
+    {
+        "id": "reaction_prediction",
+        "path": "reaction_prediction",
+        "triggers": ["/predict reaction ", "/reaction predict "],
+        "match_type": "prefix",
+        "priority": 95,
+        "handler_fn": "handle_reaction_predict_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "chemistry",
     },
     {
         "id": "action_propose",
@@ -1856,6 +1887,96 @@ def handle_arxiv_search(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="arxiv_search",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+# ---- PubChem Search Handler ----
+
+def handle_search_pubchem(message: str, lowered: str) -> dict:
+    """Handle /search pubchem <query> or /pubchem <query> — compound property search."""
+    import re
+    from datetime import datetime, timezone
+
+    m = re.match(r"^(?:/search\s+pubchem|/pubchem)\s+(.+)$", lowered)
+    if not m:
+        return build_deterministic_response(
+            message=message,
+            path="pubchem_search",
+            response_text=(
+                "Usage: /search pubchem <compound>  or  /pubchem <compound>\n"
+                "  e.g., /search pubchem aspirin\n"
+                "       /search pubchem CCO --smiles\n"
+                "       /pubchem C6H12O6 --formula"
+            ),
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    query = m.group(1).strip()
+    search_type = "name"
+    if query.endswith(" --smiles"):
+        query = query[:-8].strip()
+        search_type = "smiles"
+    elif query.endswith(" --formula"):
+        query = query[:-10].strip()
+        search_type = "formula"
+
+    if not query:
+        return build_deterministic_response(
+            message=message,
+            path="pubchem_search",
+            response_text="Please provide a compound name, SMILES, or formula.",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    # Run search
+    try:
+        from weslr.search_adapters.pubchem_adapter import search_pubchem, format_compound_info, store_compound_fact
+        result = search_pubchem(query, search_type=search_type)
+    except Exception as e:
+        return build_deterministic_response(
+            message=message,
+            path="pubchem_search",
+            response_text=f"PubChem search failed: {e}",
+            confidence="medium",
+            suggested_mode="observe",
+        )
+
+    if result.get("error"):
+        return build_deterministic_response(
+            message=message,
+            path="pubchem_search",
+            response_text=f"PubChem error: {result['error']}",
+            confidence="high",
+            suggested_mode="observe",
+        )
+
+    # Format display
+    display = format_compound_info(result)
+
+    # Store fact
+    try:
+        store_compound_fact(result)
+    except Exception:
+        pass  # non-fatal; still show results
+
+    # Build URL
+    cid = result.get("cid", "")
+    url = f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}" if cid else ""
+
+    response_text = (
+        f"PubChem search for '{query}' (type={search_type}):\n\n"
+        f"{display}\n\n"
+        f"Source: {url}"
+    )
+
+    return build_deterministic_response(
+        message=message,
+        path="pubchem_search",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
@@ -2451,6 +2572,20 @@ def handle_entities(message: str, lowered: str) -> dict:
     return build_deterministic_response(
         message=message,
         path="entity_list",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
+def handle_reaction_predict_cmd(message: str, lowered: str) -> dict:
+    """Reaction prediction — read-only."""
+    match = re.search(r"^(?:/predict\s+reaction|/reaction\s+predict)\s+(.+)$", lowered)
+    reactants = match.group(1).strip() if match else ""
+    response_text = handle_reaction_predict(reactants)
+    return build_deterministic_response(
+        message=message,
+        path="reaction_prediction",
         response_text=response_text,
         confidence="high",
         suggested_mode="observe",
