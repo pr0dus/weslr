@@ -151,6 +151,31 @@ _SEMANTIC_SIMILARITY_PATTERNS = [
     r"semantic.*match",
 ]
 
+# Discovery refinement and history patterns
+_REFINE_PATTERNS = [
+    r"how can i refine",
+    r"how to refine",
+    r"what refinements",
+    r"refine the last",
+    r"what modifications",
+    r"modification options",
+    r"can i change the",
+    r"refinement options",
+    r"what rules are available",
+    r"what can i modify",
+]
+
+_HISTORY_PATTERNS = [
+    r"show me the history",
+    r"show history",
+    r"discovery history",
+    r"provenance chain",
+    r"how was it made",
+    r"what steps",
+    r"candidate history",
+    r"what transformations",
+]
+
 
 def classify_state_question(message: str) -> dict:
     """
@@ -312,6 +337,83 @@ def load_state_sources() -> dict:
     }
 
 
+def answer_refinement_question(message: str) -> dict:
+    """Answer questions about refinement options and history for discovery candidates."""
+    from weslr.commands.discover import get_last_candidate, _BIOLOGY_REFINE_KEYWORDS
+
+    candidate, domain, provenance = get_last_candidate()
+    message_lower = message.lower()
+
+    # Check if asking about history
+    for pat in _HISTORY_PATTERNS:
+        if re.search(pat, message_lower):
+            if not provenance:
+                return {
+                    "answer": "No discovery history yet. Use /propose discover <domain> to generate a candidate first.",
+                    "source": "discovery_session",
+                    "confidence": 1.0,
+                }
+
+            # Format the provenance chain
+            chain_lines = ["Provenance chain for current candidate:", ""]
+            for i, step in enumerate(provenance):
+                if i == 0:
+                    chain_lines.append(f" 0. {step.get('name', 'unknown')} — origin")
+                else:
+                    chain_lines.append(f" {i}. {step.get('name', 'unknown')} — {step.get('transformation', 'unknown')}")
+
+            chain_lines.append("")
+            chain_lines.append(f"Domain: {domain or 'unknown'}")
+            chain_lines.append(f"Total steps: {len(provenance)}")
+
+            return {
+                "answer": "\n".join(chain_lines),
+                "source": "discovery_session",
+                "confidence": 0.95,
+            }
+
+    # Check if asking about modification/refinement options
+    for pat in _REFINE_PATTERNS:
+        if re.search(pat, message_lower):
+            if candidate is None:
+                return {
+                    "answer": "No candidate to refine yet. Use /propose discover <domain> first.",
+                    "source": "discovery_session",
+                    "confidence": 1.0,
+                }
+
+            # List available refinements
+            keywords = sorted(set(_BIOLOGY_REFINE_KEYWORDS.keys()))
+            example_candidate = candidate.get("name", "current candidate")
+
+            lines = [
+                f"Available refinements for '{example_candidate}' (biology domain):",
+                "",
+            ]
+
+            categories = {
+                "Ion channel": ["sodium", "potassium", "calcium", "chloride"],
+                "Targeting": ["cancer", "tumor", "neurons", "folate", "antibody"],
+                "Organelles": ["mitochondrion", "chloroplast"],
+                "Coating": ["peg", "antibody"],
+            }
+
+            for cat, terms in categories.items():
+                lines.append(f"  {cat}: {', '.join(terms)}")
+
+            lines.append("")
+            lines.append(f"Example: /refine 'make it target neurons'")
+            lines.append(f"Or: /refine 'add folate'")
+
+            return {
+                "answer": "\n".join(lines),
+                "source": "discovery_session",
+                "confidence": 0.90,
+            }
+
+    return None  # Not a refinement question
+
+
 def answer_state_question(message: str) -> dict:
     """
     Answer a state-grounded question from internal sources.
@@ -329,6 +431,19 @@ def answer_state_question(message: str) -> dict:
     """
     classification = classify_state_question(message)
     question_type = classification["question_type"]
+
+    # Check refinement questions first
+    refine_answer = answer_refinement_question(message)
+    if refine_answer:
+        return {
+            "record_type": "state_grounded_answer_v1",
+            "question_type": "refinement",
+            "answer": refine_answer["answer"],
+            "sources_used": [refine_answer["source"]],
+            "limitations": [],
+            "automatic_change": False,
+            "authority": "read_only",
+        }
 
     if not classification["is_state_question"]:
         return {
