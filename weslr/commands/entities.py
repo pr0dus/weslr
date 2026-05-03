@@ -19,6 +19,7 @@ from weslr.entity_schema_registry import (
     load_schema,
 )
 from weslr.fact_extractor import load_facts
+from weslr.semantic_matcher import match_entity
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Entity Type Detection — Heuristics
@@ -240,9 +241,19 @@ def group_facts_by_predicate(facts: List[Dict[str, Any]]) -> Dict[str, List[Dict
     return grouped
 
 
-def format_entity_response(entity_name: str, summary: Dict[str, Any]) -> str:
+def format_entity_response(entity_name: str, summary: Dict[str, Any], fuzzy_match: Optional[Tuple[str, float]] = None) -> str:
     """Format an entity summary as a readable multi-line string."""
     lines = []
+
+    # Semantic similarity note
+    if fuzzy_match:
+        matched_name, score = fuzzy_match
+        if score >= 0.95:
+            lines.append(f"🔁 Auto-corrected '{entity_name}' → '{matched_name}' (similarity {score:.2f})")
+        else:
+            lines.append(f"🔍 Did you mean '{matched_name}'? (similarity {score:.2f})")
+        lines.append("")
+
     lines.append(f"Entity   : {entity_name}")
 
     detected = summary.get("detected_types", [])
@@ -291,11 +302,33 @@ def format_entity_response(entity_name: str, summary: Dict[str, Any]) -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def entity_query(entity_name: str) -> str:
-    """Handle /entity <name> — show entity summary."""
+    """Handle /entity <name> — show entity summary.
+
+    Falls back to semantic similarity matching when exact name lookup fails.
+    """
     if not entity_name or not entity_name.strip():
         return "Usage: /entity <name>  (e.g., /entity NCT04551452)"
     name = entity_name.strip()
+
+    # First try exact match via get_entity_summary
     summary = get_entity_summary(name)
+
+    # If no facts found and semantic matcher available, try fuzzy match
+    if summary.get('total_facts', 0) == 0:
+        match = match_entity(name)
+        if match:
+            matched_name, score, auto_correct = match
+            if auto_correct:
+                # Auto-correct and return matching entity's summary
+                summary = get_entity_summary(matched_name)
+                return format_entity_response(name, summary, fuzzy_match=(matched_name, score))
+            else:
+                # Return suggestion
+                return format_entity_response(
+                    name, summary,
+                    fuzzy_match=(matched_name, score)
+                )
+
     return format_entity_response(name, summary)
 
 
