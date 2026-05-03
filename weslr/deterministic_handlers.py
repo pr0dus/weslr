@@ -39,6 +39,7 @@ from weslr.commands.entities import (
 )
 from weslr.commands.propose import handle_propose_pv_material
 from weslr.combinatorial_materials import handle_propose_combination
+from weslr.combinatorial_chemistry import handle_propose_chemistry
 from weslr.chemistry_reaction_predictor import handle_predict_reaction as handle_reaction_predict
 
 import re
@@ -1308,12 +1309,12 @@ HANDLER_REGISTRY = [
         "category": "propose",
     },
     {
-        "id": "propose_pv_material",
-        "path": "propose_pv_material",
-        "triggers": ["/propose pv_material"],
-        "match_type": "prefix",
+        "id": "propose_chemistry",
+        "path": "propose_chemistry",
+        "triggers": ["/propose chemistry", "/chemistry propose"],
+        "match_type": "regex",
         "priority": 95,
-        "handler_fn": "handle_propose_pv_material",
+        "handler_fn": "handle_propose_chemistry_cmd",
         "read_only": True,
         "writes": [],
         "requires_confirmation": False,
@@ -2592,6 +2593,19 @@ def handle_reaction_predict_cmd(message: str, lowered: str) -> dict:
     )
 
 
+def handle_propose_chemistry_cmd(message: str, lowered: str) -> dict:
+    """Chemistry proposal — read-only. Handles /propose chemistry and /chemistry propose."""
+    match = re.search(r"^(?:/propose\s+chemistry|/chemistry\s+propose)(?:\s+.*)?$", lowered)
+    response_text = handle_propose_chemistry(message=message, tenant_id=None, limit=10)
+    return build_deterministic_response(
+        message=message,
+        path="propose_chemistry",
+        response_text=response_text,
+        confidence="high",
+        suggested_mode="observe",
+    )
+
+
 # ---- Dispatch ----
 
 def dispatch_deterministic_handler(message: str, lowered: str) -> Optional[dict]:
@@ -2601,10 +2615,19 @@ def dispatch_deterministic_handler(message: str, lowered: str) -> Optional[dict]
     """
     sorted_handlers = sorted(HANDLER_REGISTRY, key=lambda h: h["priority"], reverse=True)
     for entry in sorted_handlers:
-        for trigger in entry["triggers"]:
-            if lowered.startswith(trigger):
-                handler_fn_name = entry["handler_fn"]
-                handler_fn = globals().get(handler_fn_name)
-                if handler_fn is not None:
-                    return handler_fn(message, lowered)
+        match_type = entry.get("match_type", "prefix")
+        if match_type == "regex":
+            for trigger in entry["triggers"]:
+                if re.search(trigger, lowered):
+                    handler_fn_name = entry["handler_fn"]
+                    handler_fn = globals().get(handler_fn_name)
+                    if handler_fn is not None:
+                        return handler_fn(message, lowered)
+        else:
+            for trigger in entry["triggers"]:
+                if lowered.startswith(trigger):
+                    handler_fn_name = entry["handler_fn"]
+                    handler_fn = globals().get(handler_fn_name)
+                    if handler_fn is not None:
+                        return handler_fn(message, lowered)
     return None
