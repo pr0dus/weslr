@@ -361,3 +361,45 @@ Weslr may propose geometry-linked hypotheses and include geometric features (bon
 - ❌ No modification of loaded coordinates
 - ✅ All distances in Å, angles in degrees
 - ✅ Results always include geometry summary with atom labels
+---
+
+## 6.8 Experiment simulation stub
+
+### Purpose
+Allow users to define a virtual experiment (parameters, outcome model, noise level) and run a simulation to predict outcomes, perform parameter sweeps, or estimate sample size for a real trial. All outputs are explicitly mock; this is a hypothesis-generation aid, not a clinical trial simulator.
+
+### Capabilities
+- **Model templates**: linear, Emax (Hill), exponential decay — defined as parameterised mathematical expressions
+- **Custom models**: user-supplied expression parsed via `sympy.sympify` (safe subset: `+, -, *, /, **, exp, log, sin, cos, sqrt, E, x, dose`); no `eval`, no `__import__`, no file/network access
+- **Predictions**: deterministic (seed=42) or noisy (Gaussian noise with configurable SD)
+- **Parameter sweeps**: vary one parameter over a range; return outcome table per value
+- **Power analysis**: two-sample t-test and chi-square sample-size formulas using Cohen's d effect size; pure-Python fallback via bisection-search inverse error function when scipy is unavailable
+- **Mock trial design**: skeleton generator (randomized, double-blind, placebo-controlled) returning arms, endpoints, timeline, and sample size with dropout adjustment
+
+### Interfaces
+| Command | Description |
+|---|---|
+| `/simulate model <type> [key=value...]` | Set active model (linear/emax/exponential/custom) with parameters |
+| `/simulate predict <x_values>` | Predict outcomes for comma-separated x values |
+| `/simulate sweep <param> from <a> to <b> [steps=N]` | Parameter sweep table |
+| `/simulate power <effect_size> [alpha=N] [power=M]` | Sample-size analysis |
+| `/experiment design [arms=...] [duration=N] [endpoint=...]` | Mock trial skeleton |
+
+### Constraints
+- **No real trial execution** — all outputs are labeled `[SIMULATION MODE – Not real data – for hypothesis generation only]`
+- **Deterministic** — `np.random.seed(seed)` inside every simulation method; default seed=42
+- **No external API calls** — no network, no external statistical services
+- **No persistent storage** — models exist in-memory per session
+- **scipy optional** — power analysis uses pure-Python `_norm_ppf` via bisection inverse-error-function when scipy is unavailable
+- **sympy optional** — custom model parsing requires sympy; graceful error if not installed
+
+### Integration points
+- **discovery_engine.py** — may suggest simulation on drug-response queries; new candidate type `simulation_study`
+- **causality.py** — intervention simulations via regression-based causal model (stub)
+- **temporal_reasoning.py** — forecast scenarios from projected time-series
+
+### Safety markers
+Every simulation output includes a footer:
+```
+[SIMULATION MODE – Not real data – for hypothesis generation only]
+```
