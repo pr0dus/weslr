@@ -173,7 +173,7 @@ def _explore_dry_run(goal: str, domain: Optional[str], top_n: int) -> dict:
     raw_hyps = generate_hypotheses(
         entities, goal, domain=detected, max_hypotheses=top_n * 3
     )
-    scored = rank_hypotheses(raw_hyps)
+    scored = rank_hypotheses(raw_hyps)[:top_n]
 
     return {
         "hypotheses": scored,
