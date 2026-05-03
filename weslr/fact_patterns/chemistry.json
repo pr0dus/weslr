@@ -1,0 +1,225 @@
+{
+  "domain": "chemistry",
+  "version": "1.0",
+  "description": "Regex patterns for extracting chemistry facts: reactions, yields, conditions, molecular properties, and spectral data.",
+  "patterns": [
+    {
+      "pattern_id": "chem.reaction_arrow",
+      "regex": "([A-Za-z0-9_\\-\\(\\)\\[\\]{}]+)\\s*\\+?\\s*([A-Za-z0-9_\\-\\(\\)\\[\\]{}]+)\\s*(?:--?>)+\\s*([A-Za-z0-9_\\-\\(\\)\\[\\]{}]+)",
+      "confidence": 0.9,
+      "predicate": "reaction_arrow",
+      "groups": {
+        "reactants": 1,
+        "products": 2
+      },
+      "test_examples": [
+        "A + B --> C",
+        "NaOH + HCl -> NaCl + H2O",
+        "2 H2 + O2 => 2 H2O"
+      ]
+    },
+    {
+      "pattern_id": "chem.yield",
+      "regex": "(?i)\\byield\\s+(?:of\\s+)?([0-9]+\\.?[0-9]*)\\s*%",
+      "confidence": 0.8,
+      "predicate": "yield_percent",
+      "groups": {
+        "yield_percent": 1
+      },
+      "test_examples": [
+        "yield 85%",
+        "isolated in 78% yield",
+        "Yield of 92%"
+      ]
+    },
+    {
+      "pattern_id": "chem.temperature",
+      "regex": "(?i)(?:reflux(?:ed)?|at|heated to|reaction at)\\s+([0-9]+\\.?[0-9]*)\\s*°?C",
+      "confidence": 0.8,
+      "predicate": "temperature_celsius",
+      "groups": {
+        "temperature_celsius": 1
+      },
+      "test_examples": [
+        "reflux at 80°C",
+        "heated to 150 C",
+        "reaction at 200°C"
+      ]
+    },
+    {
+      "pattern_id": "chem.time",
+      "regex": "(?i)(?:stirred?|heated?|reflux(?:ed)?|maintained?|aged)\\s+(?:for\\s+)?([0-9]+\\.?[0-9]*)\\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)",
+      "confidence": 0.8,
+      "predicate": "reaction_time",
+      "groups": {
+        "time_value": 1,
+        "time_unit": 2
+      },
+      "test_examples": [
+        "stirred for 2 hours",
+        "refluxed 30 minutes",
+        "heated for 12 hr"
+      ]
+    },
+    {
+      "pattern_id": "chem.solvent",
+      "regex": "(?i)(?:in|using|with|dissolved in| diluted with)\\s+(dichloromethane|chloroform|acetone|methanol|ethanol|acetonitrile|toluene|dimethylformamide|DMF|DMSO|ethyl acetate|hexane|THF|diethyl ether|water)\\b",
+      "confidence": 0.85,
+      "predicate": "solvent",
+      "groups": {
+        "solvent": 1
+      },
+      "test_examples": [
+        "in dichloromethane",
+        "using methanol as solvent",
+        "diluted with ethyl acetate"
+      ]
+    },
+    {
+      "pattern_id": "chem.catalyst",
+      "regex": "(?i)(?:using|with|catalyzed by|employing)\\s+([0-9]+\\.?[0-9]*)\\s*(mol%|mole percent\\s+)?([A-Za-z0-9_\\-\\(\\)\\[\\]{}]+(?:PPh3|Pd|Ir|Rh|Ru|Ni|Cu|Fe|Co|Zn)[A-Za-z0-9_\\-\\(\\)\\[\\]{}]*)",
+      "confidence": 0.85,
+      "predicate": "catalyst",
+      "groups": {
+        "loading_value": 1,
+        "loading_unit": 2,
+        "catalyst": 3
+      },
+      "test_examples": [
+        "using 5 mol% Pd(PPh3)4",
+        "with 10 mol% PdCl2",
+        "catalyzed by 2 mol% Ru(bpy)3"
+      ]
+    },
+    {
+      "pattern_id": "chem.melting_point",
+      "regex": "(?i)(?:mp|m\\.p\\.|melting point)\\s*(?:of|:|=)?\\s*([0-9]+\\.?[0-9]*)\\s*[-–]\\s*([0-9]+\\.?[0-9]*)\\s*°?C",
+      "confidence": 0.8,
+      "predicate": "melting_point",
+      "groups": {
+        "melting_point_low": 1,
+        "melting_point_high": 2
+      },
+      "test_examples": [
+        "mp 156-158°C",
+        "melting point 120-125 C",
+        "m.p. 200-202°C"
+      ]
+    },
+    {
+      "pattern_id": "chem.boiling_point",
+      "regex": "(?i)(?:bp|b\\.p\\.|boiling point)\\s*(?:of|:|=)?\\s*([0-9]+\\.?[0-9]*)\\s*°?C",
+      "confidence": 0.8,
+      "predicate": "boiling_point",
+      "groups": {
+        "boiling_point": 1
+      },
+      "test_examples": [
+        "bp 78°C",
+        "boiling point 100 C",
+        "b.p. 82°C"
+      ]
+    },
+    {
+      "pattern_id": "chem.molecular_weight",
+      "regex": "(?i)(?:Mw|M\\.W\\.|MW|molecular weight)\\s*(?:of|:|=)?\\s*([0-9]+\\.?[0-9]*)\\s*(?:g\\/mol|g\\/mole)?",
+      "confidence": 0.75,
+      "predicate": "molecular_weight",
+      "groups": {
+        "molecular_weight": 1
+      },
+      "test_examples": [
+        "Mw 342.4 g/mol",
+        "MW 180.2",
+        "molecular weight 254.6 g/mol"
+      ]
+    },
+    {
+      "pattern_id": "chem.smiles",
+      "regex": "(?i)\\bSMILES:\\s*([A-Za-z0-9@+\\-()=#\\/\\[\\]{}%,.:;^_~$<>{}\\\\]+)",
+      "confidence": 0.92,
+      "predicate": "smiles_string",
+      "groups": {
+        "smiles": 1
+      },
+      "test_examples": [
+        "SMILES: CCO",
+        "SMILES: CC(=O)O",
+        "Canonical SMILES: c1ccccc1"
+      ]
+    },
+    {
+      "pattern_id": "chem.logp",
+      "regex": "(?i)\\blogP\\s*(?:of|:|=)?\\s*([+-]?[0-9]+\\.?[0-9]*)",
+      "confidence": 0.8,
+      "predicate": "logp",
+      "groups": {
+        "logp": 1
+      },
+      "test_examples": [
+        "logP 2.3",
+        "logP of -1.5",
+        "calculated logP 3.7"
+      ]
+    },
+    {
+      "pattern_id": "chem.functional_group",
+      "regex": "(?i)(?:contains?|consists? of|featuring|with\\s+a?)\\s+(carboxylic\\s+acid|alcohol|aldehyde|ketone|amine|amide|ester|ether|phenol|alkene|alkyne|nitrile|sulfonic\\s+acid|halide)\\s+(?:group|functionality|moiety)?",
+      "confidence": 0.82,
+      "predicate": "functional_group",
+      "groups": {
+        "functional_group": 1
+      },
+      "test_examples": [
+        "contains a carboxylic acid group",
+        "features an alcohol functionality",
+        "consists of an ester moiety"
+      ]
+    },
+    {
+      "pattern_id": "chem.atom_count",
+      "regex": "(?i)([0-9]+)\\s+(carbon|oxygen|nitrogen|hydrogen|sulfur|phosphorus|fluorine|chlorine|bromine|iodine)\\s+(?:atoms?|atoms)",
+      "confidence": 0.75,
+      "predicate": "atom_count",
+      "groups": {
+        "count": 1,
+        "element": 2
+      },
+      "test_examples": [
+        "5 carbon atoms",
+        "3 oxygen atoms",
+        "2 nitrogen atoms"
+      ]
+    },
+    {
+      "pattern_id": "chem.reaction_condition",
+      "regex": "(?i)(?:under|in|at|with)\\s+(?:an?\\s+)?(N2|nitrogen|argon|air|oxygen|hydrogen|vacuum|ambient|dry\\s+ice|ice\\s+batch)\\s+(?:atmosphere|conditions?)?",
+      "confidence": 0.8,
+      "predicate": "reaction_condition",
+      "groups": {
+        "condition": 1
+      },
+      "test_examples": [
+        "under N2 atmosphere",
+        "in argon glovebox",
+        "under vacuum conditions"
+      ]
+    },
+    {
+      "pattern_id": "chem.spectra_peak",
+      "regex": "(?i)(IR|NMR|UV[\\-\\s]?Vis|Raman|ESI)\\s+(?:peak|signal|band|absorption)\\s+(?:at|at\\s+)?\\s*([0-9]+\\.?[0-9]*)\\s*(cm[-1]?|nm|ppm|MHz)",
+      "confidence": 0.82,
+      "predicate": "spectra_peak",
+      "groups": {
+        "technique": 1,
+        "wavenumber_value": 2,
+        "wavenumber_unit": 3
+      },
+      "test_examples": [
+        "IR peak at 1720 cm-1",
+        "NMR signal at 7.2 ppm",
+        "UV-Vis absorption at 450 nm"
+      ]
+    }
+  ]
+}
