@@ -1,0 +1,64 @@
+{
+  "domain": "chemistry",
+  "version": "1.0",
+  "description": "Entity schema for chemistry — molecules, reactions, functional groups, catalysts, and solvents",
+  "entity_types": {
+    "Molecule": {
+      "description": "A chemical compound defined by its composition and structure",
+      "required_attributes": ["name", "formula"],
+      "attributes": ["name", "formula", "molecular_weight", "smiles", "inchi", "charge", "spin_multiplicity", "phase", "cas_number"]
+    },
+    "Reaction": {
+      "description": "A chemical transformation between reactants and products",
+      "required_attributes": ["reaction_id", "equation"],
+      "attributes": ["reaction_id", "equation", "reactants", "products", "catalyst", "conditions", "temperature_k", "pressure_pa", "yield_percent", "mechanism", "reaction_type"]
+    },
+    "FunctionalGroup": {
+      "description": "A specific group of atoms within a molecule responsible for characteristic chemical behavior",
+      "required_attributes": ["name", "structure"],
+      "attributes": ["name", "structure", "smarts_pattern", "functional_class", "chemical_reactivity", "常见反应"]
+    },
+    "Catalyst": {
+      "description": "A substance that increases the rate of a chemical reaction without being consumed",
+      "required_attributes": ["name", "type"],
+      "attributes": ["name", "type", "composition", "surface_area_m2_g", "porosity", "active_site", "phase", "specificity", "turnover_frequency"]
+    },
+    "Solvent": {
+      "description": "A liquid medium that dissolves reactants and enables chemical reactions",
+      "required_attributes": ["name", "formula"],
+      "attributes": ["name", "formula", "polarity_index", "dielectric_constant", "boiling_point_k", "melting_point_k", "density_g_cm3", "viscosity_cp", "dipole_moment", "protic", "hazard_class"]
+    }
+  },
+  "relationship_types": {
+    "participates_in": {
+      "description": "A molecule acts as a reactant or product in a reaction",
+      "subject_types": ["Molecule"],
+      "object_types": ["Reaction"]
+    },
+    "catalyzes": {
+      "description": "A catalyst accelerates a specific reaction",
+      "subject_types": ["Catalyst"],
+      "object_types": ["Reaction"]
+    },
+    "contains": {
+      "description": "A molecule contains a specific functional group",
+      "subject_types": ["Molecule"],
+      "object_types": ["FunctionalGroup"]
+    },
+    "dissolved_in": {
+      "description": "A molecule is dissolved in a solvent",
+      "subject_types": ["Molecule"],
+      "object_types": ["Solvent"]
+    },
+    "produced_by": {
+      "description": "A molecule is produced by a reaction",
+      "subject_types": ["Molecule"],
+      "object_types": ["Reaction"]
+    },
+    "requires": {
+      "description": "A reaction requires a specific solvent for the medium",
+      "subject_types": ["Reaction"],
+      "object_types": ["Solvent"]
+    }
+  }
+}
