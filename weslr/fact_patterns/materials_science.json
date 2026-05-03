@@ -1,0 +1,55 @@
+{
+  "domain": "materials_science",
+  "version": "1.0",
+  "patterns": [
+    {
+      "pattern_id": "ms.bandgap",
+      "regex": "(?i)\\bbandgap\\s+(?:of\\s+)?([A-Za-z0-9_\\-\\.]+)\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:eV|ev)",
+      "confidence": 0.85,
+      "predicate": "bandgap",
+      "groups": {"material": 1, "value": 2, "unit": 3}
+    },
+    {
+      "pattern_id": "ms.lattice_constant",
+      "regex": "(?i)\\blattice\\s+constant(?:\\s+a)?\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:Å|A)",
+      "confidence": 0.88,
+      "predicate": "lattice_constant",
+      "groups": {"value": 1, "unit": 2}
+    },
+    {
+      "pattern_id": "ms.synthesis_temperature",
+      "regex": "(?i)(?:synthesized|prepared|fabricated)\\s+(?:at|under|with)\\s+([0-9]+)\\s*°?C",
+      "confidence": 0.82,
+      "predicate": "synthesis_temperature",
+      "groups": {"temperature_c": 1}
+    },
+    {
+      "pattern_id": "ms.conductivity",
+      "regex": "(?i)\\bconductivity\\s+(?:of\\s+)?([A-Za-z0-9_\\-\\.]+)\\s*(?:=|is|:)\\s*([0-9]+\\.?[0-9]*)\\s*(?:S/cm|S\\/cm|Ω[- ]?1\\s*m[- ]?1)",
+      "confidence": 0.80,
+      "predicate": "conductivity",
+      "groups": {"material": 1, "value": 2}
+    },
+    {
+      "pattern_id": "ms.crystal_structure",
+      "regex": "(?i)(?:crystal\\s+structure\\s+(?:of|is)|hexagonal|cubic|zinc blende|wurtzite|perovskite|rocksalt)\\s+([A-Za-z0-9_\\-\\. ]+)",
+      "confidence": 0.78,
+      "predicate": "crystal_structure",
+      "groups": {"structure_type": 1}
+    },
+    {
+      "pattern_id": "ms.ferroelectric",
+      "regex": "(?i)(?:ferroelectric|piezoelectric)\\s+(?:material|property|behavior|response)\\s+(?:of|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
+      "confidence": 0.75,
+      "predicate": "ferroelectric_response",
+      "groups": {"material": 1}
+    },
+    {
+      "pattern_id": "ms.photoactivity",
+      "regex": "(?i)(?:photocatalytic|solar\\s+cell|photovoltaic)\\s+(?:activity|efficiency|performance)\\s+(?:of|in)\\s+([A-Za-z0-9_\\-\\. ]+)",
+      "confidence": 0.77,
+      "predicate": "photoactivity",
+      "groups": {"material": 1}
+    }
+  ]
+}

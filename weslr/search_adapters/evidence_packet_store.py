@@ -1,4 +1,8 @@
-"""External evidence packet storage — append-only JSONL."""
+"""
+External evidence packet storage — append-only JSONL.
+Multi-tenant aware via tenant_context.
+"""
+
 from __future__ import annotations
 
 import json
@@ -7,58 +11,68 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from weslr.tenant_context import resolve_path
 
-DATA_DIR = ".weslr"
-PACKET_FILE = "external_evidence_packets.jsonl"
-PACKET_STORE_PATH = Path(DATA_DIR) / PACKET_FILE
+DEFAULT_PACKET_STORE_REL = ".weslr/external_evidence_packets.jsonl"
 
 
-def _packet_path(doc_store_path: Optional[Path | str] = None) -> Path:
-    if doc_store_path is None:
-        return PACKET_STORE_PATH
-    return Path(doc_store_path)
+def _resolve_packet_path(
+    doc_store_path: Optional[str] = None,
+    tenant_id: Optional[str] = None,
+) -> Path:
+    """Resolve the evidence packet store path for the current tenant."""
+    if doc_store_path:
+        return resolve_path(doc_store_path, tenant_id)
+    return resolve_path(DEFAULT_PACKET_STORE_REL, tenant_id)
 
 
 def append_evidence_packet(
     packet: Dict[str, Any],
-    doc_store_path: Optional[Path | str] = None,
+    tenant_id: Optional[str] = None,
+    doc_store_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Append an evidence packet to external_evidence_packets.jsonl.
-    
+
+    Multi-tenant aware: path resolved through tenant_context.
+
     Args:
         packet: dict with record_type, packet_id, source, query, retrieved_at,
-                result_count, results, authority, automatic_change, hidden_learning, raw_prompt_stored
-        doc_store_path: optional override path
-    
+                study_count, studies, authority
+        tenant_id: Optional tenant ID
+        doc_store_path: optional path override
+
     Returns:
-        dict with status: "appended", path
+        dict with status: "appended", path, packet_id
     """
-    import copy
-    path = _packet_path(doc_store_path)
+    path = _resolve_packet_path(doc_store_path, tenant_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    
-    out = copy.deepcopy(packet)
+
+    out = dict(packet)
     if "packet_id" not in out:
         ts = int(datetime.now(timezone.utc).timestamp())
         out["packet_id"] = f"ev_{ts}_{uuid.uuid4().hex[:8]}"
-    
+
     line = json.dumps(out, ensure_ascii=False)
     with open(path, "a", encoding="utf-8") as f:
         f.write(line + "\n")
-    
+
     return {"status": "appended", "path": str(path), "packet_id": out["packet_id"]}
 
 
 def load_packets(
     source: Optional[str] = None,
     limit: int = 50,
-    doc_store_path: Optional[Path | str] = None,
+    tenant_id: Optional[str] = None,
+    doc_store_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Load evidence packets with optional source filter."""
-    path = _packet_path(doc_store_path)
+    """Load evidence packets with optional source filter.
+
+    Multi-tenant aware.
+    """
+    path = _resolve_packet_path(doc_store_path, tenant_id)
     if not path.exists():
         return []
-    
+
     results: List[Dict[str, Any]] = []
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -77,18 +91,23 @@ def load_packets(
                     break
     except OSError:
         pass
-    
+
     return results
 
 
 def get_packet(
     packet_id: str,
-    doc_store_path: Optional[Path | str] = None,
+    tenant_id: Optional[str] = None,
+    doc_store_path: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Find a packet by packet_id."""
-    path = _packet_path(doc_store_path)
+    """Find a packet by packet_id.
+
+    Multi-tenant aware.
+    """
+    path = _resolve_packet_path(doc_store_path, tenant_id)
     if not path.exists():
         return None
+
     try:
         with open(path, "r", encoding="utf-8") as f:
             for line in f:

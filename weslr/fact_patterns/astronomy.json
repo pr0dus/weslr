@@ -1,0 +1,55 @@
+{
+  "domain": "astronomy",
+  "version": "1.0",
+  "patterns": [
+    {
+      "pattern_id": "astro.orbital_period",
+      "regex": "(?i)\\borbital\\s+period\\s+(?:P\\s*=)?\\s*([0-9]+\\.?[0-9]*)\\s*(?:days|d|yr|years)",
+      "confidence": 0.88,
+      "predicate": "orbital_period",
+      "groups": {"value": 1, "unit": 2}
+    },
+    {
+      "pattern_id": "astro.radius",
+      "regex": "(?i)\\bradius\\s+(?:of\\s+)?(?:the\\s+)?(?:planet|exoplanet)?\\s*(?:R\\s*=)?\\s*([0-9]+\\.?[0-9]*)\\s*(?:R_Earth|Rearth|R⊕|Earth\\s+radii)",
+      "confidence": 0.87,
+      "predicate": "radius",
+      "groups": {"value": 1, "unit": 2}
+    },
+    {
+      "pattern_id": "astro.effective_temperature",
+      "regex": "(?i)(?:effective\\s+)?temperature\\s+(?:T_?eff\\s*=\\s*)?([0-9]+)\\s*(?:K|Kelvin)",
+      "confidence": 0.85,
+      "predicate": "effective_temperature",
+      "groups": {"value": 1, "unit": 2}
+    },
+    {
+      "pattern_id": "astro.mass",
+      "regex": "(?i)\\bmass\\s+(?:of\\s+)?(?:the\\s+)?(?:planet|exoplanet)?\\s*(?:M\\s*=)?\\s*([0-9]+\\.?[0-9]*)\\s*(?:M_Earth|Mearth|M⊕|Earth\\s+masses)",
+      "confidence": 0.86,
+      "predicate": "mass",
+      "groups": {"value": 1, "unit": 2}
+    },
+    {
+      "pattern_id": "astro.star_name",
+      "regex": "(?i)(?:host\\s+star|stellar)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)\\s+(?:is|at|=|:)",
+      "confidence": 0.80,
+      "predicate": "host_star",
+      "groups": {"star_name": 1}
+    },
+    {
+      "pattern_id": "astro.discovery_method",
+      "regex": "(?i)(?:discovered|detected)\\s+by\\s+(transit|radial\\s+velocity|direct\\s+imaging|microlensing|astrometry)",
+      "confidence": 0.82,
+      "predicate": "discovery_method",
+      "groups": {"method": 1}
+    },
+    {
+      "pattern_id": "astro.exoplanet_name",
+      "regex": "(?i)(?:exoplanet|planet)\\s+([A-Z][a-z]+-[0-9]+[a-z]?)\\s+(?:orbits|around|is\\s+in\\s+)",
+      "confidence": 0.83,
+      "predicate": "exoplanet_name",
+      "groups": {"planet_name": 1}
+    }
+  ]
+}

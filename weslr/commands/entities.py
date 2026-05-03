@@ -33,6 +33,23 @@ _PROTEIN_RE = re.compile(r"^[A-Z]{2,10}[0-9]?$")
 # Biomarker: hyphenated with digit/letters (PD-L1, HER2, KRAS-G12C)
 _BIOMARKER_HYPHEN_RE = re.compile(r"^[A-Z]{2,10}[-][A-Z0-9]+$")
 
+# Materials science
+_MATERIAL_FORMULA_RE = re.compile(r"^(?:Cs|FA|MA|GA|PEA|BA|GA)[A-Z][a-z]?[0-9]?"  # perovskite cations
+                                r"|(?:Si|Ge|Sn|Pb)[A-Z][a-z]?[0-9]*"              # chalcogenides
+                                r"|(?:Ti|Zr|Hf|Nb|Ta)[A-Z][a-z]?[0-9]*"          # oxides
+                                r"|(?:Cu|In|Ga|Fe|Ni|Co)[A-Z][a-z]?[0-9]*", re.IGNORECASE)
+_PEROVSKITE_RE = re.compile(r"(?:perovskite|halide|钙钛矿)", re.IGNORECASE)
+# Astronomy
+_EXOPLANET_RE = re.compile(
+    r"^(?:TOI|WASP|Kepler|KIC|KOI|HAT|P|HAT-P|TrES|W|LDSS---|GJ|HIP|HD|BD)\s*[-]?[0-9]+"
+    r"|\b(?:[A-Z][a-z]+-[0-9]+[a-z]?)\b",
+    re.IGNORECASE
+)
+_STAR_DESIGNATION_RE = re.compile(r"^(?:HD|HIP|GJ|SA|BD|CD)[0-9]+" 
+                                  r"|(?:alpha|beta|gamma|delta|epsilon|zeta|eta|theta)\s+[A-Z][a-z]+"
+                                  r"|(?:Vega|Sirius|Procyon|Altair|Betelgeuse|Rigel|Antennae)", 
+                                  re.IGNORECASE)
+
 
 def detect_entity_type(entity_name: str, domain: str = DEFAULT_DOMAIN) -> Optional[str]:
     """Infer the entity type from an entity name string using regex heuristics.
@@ -73,9 +90,19 @@ def detect_entity_type(entity_name: str, domain: str = DEFAULT_DOMAIN) -> Option
     if _BIOMARKER_HYPHEN_RE.match(name):
         return "Biomarker"
 
-    # Mutation mentions
+    # Mutation mentions — check BEFORE astronomy patterns to avoid p53/p73 collision
     if "mutation" in name.lower():
         return "Mutation"
+
+    # Materials science patterns
+    if _MATERIAL_FORMULA_RE.match(name) or _PEROVSKITE_RE.search(name):
+        return "Material"
+
+    # Astronomy patterns
+    if _EXOPLANET_RE.match(name) and not _PROTEIN_RE.match(name):
+        return "Exoplanet"
+    if _STAR_DESIGNATION_RE.match(name):
+        return "Star"
 
     return None
 
@@ -98,8 +125,20 @@ def get_inferred_types_for_name(
         types.append("Protein")
     if _BIOMARKER_HYPHEN_RE.match(name):
         types.append("Biomarker")
+
+    # Mutation — check before astronomy to avoid p53/p73 collision
     if "mutation" in name.lower():
         types.append("Mutation")
+
+    # Materials science
+    if _MATERIAL_FORMULA_RE.match(name) or _PEROVSKITE_RE.search(name):
+        types.append("Material")
+
+    # Astronomy
+    if _EXOPLANET_RE.match(name) and not _PROTEIN_RE.match(name):
+        types.append("Exoplanet")
+    if _STAR_DESIGNATION_RE.match(name):
+        types.append("Star")
 
     return types
 

@@ -1,0 +1,59 @@
+{
+  "domain": "astronomy",
+  "version": "1.0",
+  "description": "Entity schema for astronomy and exoplanet research — celestial bodies, orbital parameters, observations",
+  "entity_types": {
+    "Exoplanet": {
+      "description": "A planet orbiting a star outside our solar system",
+      "required_attributes": ["planet_name", "host_star"],
+      "attributes": ["planet_name", "host_star", "orbital_period_days", "radius_earth_radii", "mass_earth_masses", "equilibrium_temperature_k", "discovery_method", "discovery_year", "habitable_zone"]
+    },
+    "Star": {
+      "description": "A stellar object (star or brown dwarf)",
+      "required_attributes": ["star_name", "spectral_type"],
+      "attributes": ["star_name", "spectral_type", "right_ascension", "declination", "distance_pc", "effective_temperature_k", "mass_solar_masses", "radius_solar_radii", "luminosity_solar"]
+    },
+    "OrbitalParameter": {
+      "description": "Orbital characteristics of a celestial body",
+      "required_attributes": ["parameter_name", "value", "unit"],
+      "attributes": ["parameter_name", "value", "unit", "semi_major_axis_au", "eccentricity", "inclination_deg", "orbital_period_days"]
+    },
+    "Observation": {
+      "description": "A specific astronomical observation or measurement campaign",
+      "required_attributes": ["observation_id", "instrument", "target"],
+      "attributes": ["observation_id", "instrument", "target", "observation_date", "exposure_time_s", "filter_band", "telescope"]
+    },
+    "Telescope": {
+      "description": "An observational instrument or facility",
+      "required_attributes": ["telescope_name", "location"],
+      "attributes": ["telescope_name", "location", "aperture_m", "type", "wavelength_range", "instrument"]
+    }
+  },
+  "relationship_types": {
+    "orbits": {
+      "description": "Exoplanet orbits around a star",
+      "subject_types": ["Exoplanet"],
+      "object_types": ["Star"]
+    },
+    "detected_by": {
+      "description": "Exoplanet or body detected via a specific method or telescope",
+      "subject_types": ["Exoplanet"],
+      "object_types": ["Telescope"]
+    },
+    "has_parameter": {
+      "description": "Exoplanet or star has a measured orbital or physical parameter",
+      "subject_types": ["Exoplanet", "Star"],
+      "object_types": ["OrbitalParameter"]
+    },
+    "located_in": {
+      "description": "Object or observation located in a specific region or constellation",
+      "subject_types": ["Exoplanet", "Star"],
+      "object_types": ["Star"]
+    },
+    "observed_with": {
+      "description": "Observation made using a specific telescope or instrument",
+      "subject_types": ["Observation"],
+      "object_types": ["Telescope"]
+    }
+  }
+}
