@@ -183,11 +183,10 @@ for msg, _ in TEST_CASES:
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-print(f"\n{'='*60}")
-print(f"Results: {PASS} passed, {FAIL} failed")
-if FAIL:
-    print("STAGING_CHAT_CONTRACT_V1_FAILED")
-    sys.exit(1)
-else:
-    print("STAGING_CHAT_CONTRACT_V1_OK")
-    sys.exit(0)
+if __name__ == "__main__":
+    if FAIL:
+        print("STAGING_CHAT_CONTRACT_V1_FAILED")
+        sys.exit(1)
+    else:
+        print("STAGING_CHAT_CONTRACT_V1_OK")
+        sys.exit(0)

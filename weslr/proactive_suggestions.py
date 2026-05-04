@@ -267,6 +267,7 @@ def check_forecast_alerts() -> Optional[str]:
                 # Check if step 1 forecast value crosses threshold
                 # (alert fires when proactive daemon next ticks and sees the forecast)
                 return None  # alerts fire via reminder_handler integration
-except Exception:
-    pass
-return None
+        return None
+    except Exception:
+        pass
+    return None
