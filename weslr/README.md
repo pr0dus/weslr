@@ -168,9 +168,25 @@ python -m pytest tests/ -v
 | `/frontier refine <id> --constraint "text"` | Re-score proposal with additional constraints |
 | `/frontier list` | List all stored proposals with IDs and difficulty |
 | `/frontier show <id>` | Display full proposal with scores, experiment summary, and provenance |
+| `/frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]` | Live discovery: generates candidates and performs real PubMed/arXiv novelty checks; prompts for confirmation; exports proposals to JSON |
 
 **Difficulty tiers:** ★ Low-hanging fruit → ★★★★ Paradigm shift. All proposals labeled [FRONTIER PROPOSAL – UNVALIDATED]. High-risk proposals (risk > 0.7) flagged for operator review.
 **Acknowledgment:** Live PubMed/arXiv search requires user acknowledgment on first call per session.
+
+**Live discovery mode** (`/frontier discover --real`): Performs real, rate-limited PubMed/arXiv API calls to verify novelty of generated candidates. Requires interactive confirmation (or `WESLR_AUTO_CONFIRM_FRONTIER=1` env var). Output includes per-candidate progress indicators and exports proposals to `frontier_proposals_{domain}_{timestamp}.json`. Expected runtime: ~10–30 seconds depending on `--max`.
+
+Example:
+```
+/frontier discover --real --domain materials --max 3 --export
+⚠️  This will query live PubMed and arXiv APIs to check novelty. Continue? (y/n): y
+🔄  Checking novelty for candidate 1/9 (FeNiCoCrMn sulfidation)...
+   📡  PubMed: 1 paper | arXiv: 0 papers → novelty 0.50 (below threshold 0.95) → discarded.
+🔄  Checking novelty for candidate 2/9 (LaTiO2N:Fe)...
+   📡  PubMed: 0 papers | arXiv: 0 papers → novel!  ✅
+✅ Proposal #1: LaTiO2N:Fe...
+...
+📁  Exported 2 proposals to frontier_proposals_materials_20260504_143022.json
+```
 
 ---
 

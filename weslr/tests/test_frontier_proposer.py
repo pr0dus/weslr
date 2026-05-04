@@ -607,6 +607,96 @@ class TestDeterminism(unittest.TestCase):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Live discovery mode (with mocked adapters)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestFrontierDiscoverReal(unittest.TestCase):
+    """Test /frontier discover --real code path with controlled mocks.
+
+    Uses patches on pubmed_adapter and arxiv_adapter so no real network
+    calls are made.  Verifies the live_search=True branch is covered and
+    that the WESLR_AUTO_CONFIRM_FRONTIER env-var bypasses the prompt.
+    """
+
+    def setUp(self):
+        self.tenant = "test_frontier_discover"
+        get_frontier_state(self.tenant)["proposals"].clear()
+
+    def tearDown(self):
+        get_frontier_state(self.tenant)["proposals"].clear()
+
+    @patch("weslr.search_adapters.pubmed_adapter.search_pubmed")
+    @patch("weslr.search_adapters.arxiv_adapter.search_arxiv")
+    def test_frontier_discover_real_with_mock_patch(self, mock_arxiv, mock_pubmed):
+        """Exercise the live_search=True branch via handle_frontier_discover."""
+        # Mock PubMed → 0 results (novel), arXiv → 0 results
+        mock_pubmed.return_value = ([], [])
+        mock_arxiv.return_value = []
+
+        from weslr.commands.frontier_commands import handle_frontier_discover
+        from unittest.mock import patch as patch2
+
+        # Mock candidate generation to avoid fact-store dependency
+        fake_candidates = [
+            {"name": "Test material A", "description": "Test material A desc", "domain": "materials", "source_module": "test"},
+            {"name": "Test material B", "description": "Test material B desc", "domain": "materials", "source_module": "test"},
+        ]
+        with patch2("weslr.modules.frontier_proposer.generate_candidates_for_domain", return_value=fake_candidates):
+            with patch2("weslr.commands.frontier_commands._read_user_input", return_value="y"):
+                result = handle_frontier_discover(
+                    "/frontier discover --real --domain materials --max 2",
+                    tenant_id=self.tenant,
+                    _auto_confirm=False,
+                )
+
+        # Should contain accepted proposals (0 hits → novelty 0.99 ≥ 0.95)
+        self.assertIn("FRONTIER DISCOVERY", result)
+        self.assertNotIn("Aborted", result)
+        # At least one candidate should have been processed
+        self.assertTrue(
+            "PubMed:" in result or "novel!" in result or "accepted" in result.lower(),
+            f"Expected live-check output, got: {result[:300]}",
+        )
+
+    @patch("weslr.search_adapters.pubmed_adapter.search_pubmed")
+    @patch("weslr.search_adapters.arxiv_adapter.search_arxiv")
+    def test_frontier_discover_aborts_on_no(self, mock_arxiv, mock_pubmed):
+        """If user says 'n' the command aborts without calling APIs."""
+        mock_pubmed.return_value = ([], [])
+        mock_arxiv.return_value = []
+
+        from weslr.commands.frontier_commands import handle_frontier_discover
+        from unittest.mock import patch as patch2
+
+        with patch2("weslr.commands.frontier_commands._read_user_input", return_value="n"):
+            result = handle_frontier_discover(
+                "/frontier discover --real",
+                tenant_id=self.tenant,
+                _auto_confirm=False,
+            )
+
+        self.assertIn("Aborted", result)
+        # APIs should NOT have been called (abort before generation)
+        mock_pubmed.assert_not_called()
+        mock_arxiv.assert_not_called()
+
+    def test_frontier_discover_auto_confirm_env_var(self):
+        """WESLR_AUTO_CONFIRM_FRONTIER=1 bypasses the interactive prompt."""
+        from weslr.commands.frontier_commands import _prompt_user_confirm
+        import os
+        original = os.environ.get("WESLR_AUTO_CONFIRM_FRONTIER")
+        try:
+            os.environ["WESLR_AUTO_CONFIRM_FRONTIER"] = "1"
+            result = _prompt_user_confirm("test")
+            self.assertTrue(result)
+        finally:
+            if original is None:
+                os.environ.pop("WESLR_AUTO_CONFIRM_FRONTIER", None)
+            else:
+                os.environ["WESLR_AUTO_CONFIRM_FRONTIER"] = original
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # No external calls
 # ─────────────────────────────────────────────────────────────────────────────
 

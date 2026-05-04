@@ -14,11 +14,16 @@ No automatic experiment execution. Operator review required.
 
 from __future__ import annotations
 
+import json
+import os
 import re
+import sys
 import time
 import uuid
 from dataclasses import dataclass, field
+import dataclasses
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -55,6 +60,72 @@ _PUBMED_RATE_LIMIT = 0.34   # seconds between requests (3 req/s)
 _ARXIV_RATE_LIMIT = 1.0     # seconds between requests (1 req/s)
 
 _FRONTIR_STATE: Dict[str, Dict[str, Any]] = {}  # tenant_id -> {proposals}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Novelty-cache (session-scoped, keyed by candidate description hash)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_NOVELTY_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def _clear_novelty_cache() -> None:
+    """Clear the novelty cache before a new generation run."""
+    _NOVELTY_CACHE.clear()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Export
+# ─────────────────────────────────────────────────────────────────────────────
+
+def export_proposals(
+    proposals: List[FrontierProposal],
+    filepath: str,
+    domain: str = "unknown",
+) -> str:
+    """Write proposals to a JSON file with timestamp and API metadata.
+
+    Creates parent directories if needed.  Returns the resolved path.
+    """
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    stem = Path(filepath).stem
+    parent = str(Path(filepath).parent)
+    if parent and not Path(parent).exists():
+        Path(parent).mkdir(parents=True, exist_ok=True)
+
+    export_data = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "domain": domain,
+        "total_proposals": len(proposals),
+        "proposals": [
+            {
+                **dataclasses.asdict(p),
+                "_api_summary": {
+                    "query_used": p.literature_check.get("query_used", ""),
+                    "pmid_count": len([x for x in p.literature_check.get("top_papers", []) if x.get("source") == "pubmed"]),
+                    "arxiv_count": len([x for x in p.literature_check.get("top_papers", []) if x.get("source") == "arxiv"]),
+                    "total_hits": p.literature_check.get("count", 0),
+                },
+            }
+            for p in proposals
+        ],
+    }
+
+    with open(filepath, "w", encoding="utf-8") as fh:
+        json.dump(export_data, fh, indent=2, default=_json_serializer)
+
+    return filepath
+
+
+def _json_serializer(obj: Any) -> Any:
+    """Fallback serializer for non-JSON-native types."""
+    if hasattr(obj, "__dataclass_fields__"):
+        return dataclasses.asdict(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, (set, frozenset)):
+        return sorted(list(obj), default=str)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -313,6 +384,98 @@ def extract_keywords(text: str) -> List[str]:
 # Literature novelty check
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Novelty-cache (session-scoped, keyed by candidate description hash)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_NOVERTY_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def _cached_novelty(desc: str, domain: str, _mock: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Return cached novelty result for a description, or compute + cache it."""
+    key = f"{domain}:{desc}"
+    if key in _NOVERTY_CACHE:
+        return _NOVERTY_CACHE[key]
+    result = check_novelty(desc, domain, _mock_results=_mock)
+    _NOVERTY_CACHE[key] = result
+    return result
+
+
+def _clear_novelty_cache() -> None:
+    """Clear the novelty cache before a new generation run."""
+    _NOVERTY_CACHE.clear()
+
+
+def _build_novelty_result_for_candidate(candidate_desc: str, domain: str, live_search: bool, _mock: Optional[Dict[str, Any]]) -> tuple[Dict[str, Any], float]:
+    """Compute novelty result and rate-limit-sleep for a single candidate.
+
+    Returns (lit_result, novelty_score).
+    """
+    if live_search:
+        # Sleep between live calls (rate limiting already done inside adapters)
+        lit = _cached_novelty(candidate_desc, domain, _mock)
+        time.sleep(0.1)  # small inter-candidate buffer
+    else:
+        lit = {"exists": False, "count": 0, "top_papers": [], "query_used": ""}
+    novelty = score_novelty(lit.get("count", 0))
+    return lit, novelty
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Export
+# ─────────────────────────────────────────────────────────────────────────────
+
+def export_proposals(
+    proposals: List[FrontierProposal],
+    filepath: str,
+    domain: str = "unknown",
+) -> str:
+    """Write proposals to a JSON file with timestamp and API metadata.
+
+    Creates parent directories if needed.  Returns the resolved path.
+    """
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    stem = Path(filepath).stem
+    dir_path = str(Path(filepath).parent)
+    if dir_path and not Path(dir_path).exists():
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+    export_data = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "domain": domain,
+        "total_proposals": len(proposals),
+        "proposals": [
+            {
+                **dataclasses.asdict(p),
+                # Include a summary of API responses used
+                "_api_summary": {
+                    "query_used": p.literature_check.get("query_used", ""),
+                    "pmid_count": len([x for x in p.literature_check.get("top_papers", []) if x.get("source") == "pubmed"]),
+                    "arxiv_count": len([x for x in p.literature_check.get("top_papers", []) if x.get("source") == "arxiv"]),
+                    "total_hits": p.literature_check.get("count", 0),
+                },
+            }
+            for p in proposals
+        ],
+    }
+
+    with open(filepath, "w", encoding="utf-8") as fh:
+        json.dump(export_data, fh, indent=2, default=_json_serializer)
+
+    return filepath
+
+
+def _json_serializer(obj: Any) -> Any:
+    """Fallback serializer for non-JSON-native types."""
+    if hasattr(obj, "__dataclass_fields__"):
+        return dataclasses.asdict(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, (set, frozenset)):
+        return sorted(list(obj), default=str)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
 def check_novelty(
     idea_text: str,
     domain: str = "materials",
@@ -398,10 +561,10 @@ def _generate_materials_candidates(max_candidates: int) -> List[Dict[str, Any]]:
     """Generate material candidates via combinatorial_materials."""
     try:
         from weslr.combinatorial_materials import build_material_candidates
-        raw = build_material_candidates(limit=max_candidates * 2)
+        raw = build_material_candidates()  # no limit param
         candidates = []
         for item in raw:
-            desc = item.get("description", "") or ""
+            desc = item.get("description", "") or item.get("name", "") or ""
             title = item.get("name", "") or desc[:60]
             candidates.append({
                 "name": title,
@@ -409,7 +572,7 @@ def _generate_materials_candidates(max_candidates: int) -> List[Dict[str, Any]]:
                 "domain": "materials",
                 "source_module": "combinatorial_materials",
             })
-        return candidates
+        return candidates[:max_candidates]
     except Exception:
         return []
 
@@ -418,10 +581,10 @@ def _generate_chemistry_candidates(max_candidates: int) -> List[Dict[str, Any]]:
     """Generate chemistry candidates via combinatorial_chemistry."""
     try:
         from weslr.combinatorial_chemistry import build_chemistry_candidates
-        raw = build_chemistry_candidates(limit=max_candidates * 2)
+        raw = build_chemistry_candidates()  # no limit param
         candidates = []
         for item in raw:
-            desc = item.get("description", "") or ""
+            desc = item.get("description", "") or item.get("name", "") or ""
             title = item.get("name", "") or desc[:60]
             candidates.append({
                 "name": title,
@@ -429,7 +592,7 @@ def _generate_chemistry_candidates(max_candidates: int) -> List[Dict[str, Any]]:
                 "domain": "chemistry",
                 "source_module": "combinatorial_chemistry",
             })
-        return candidates
+        return candidates[:max_candidates]
     except Exception:
         return []
 
@@ -586,6 +749,7 @@ def generate_novel_hypotheses(
     difficulty_filter: Optional[str] = None,
     _user_acknowledged: bool = False,
     _mock_novelty: Optional[Dict[str, Any]] = None,
+    live_search: bool = False,
 ) -> List[FrontierProposal]:
     """Generate and score novel scientific hypotheses.
 
@@ -598,6 +762,10 @@ def generate_novel_hypotheses(
         _user_acknowledged: If False, skips live literature check and
                            sets novelty_score to 0.5 (unknown).
         _mock_novelty: Test hook — mock return from check_novelty().
+        live_search: If True, performs real PubMed/arXiv calls for novelty
+                     checking (requires _user_acknowledged=True and user
+                     confirmation at the command layer). Results are
+                     cached within this call to avoid duplicate queries.
 
     Returns:
         List[FrontierProposal] sorted by (impact, -feasibility)
@@ -610,10 +778,28 @@ def generate_novel_hypotheses(
         else None
     )
 
-    for cand in candidates:
+    # Clear novelty cache for this generation run
+    _NOVELTY_CACHE.clear()
+
+    for idx, cand in enumerate(candidates):
+        desc = cand.get("description", "")
+        name = cand.get("name", "Unnamed")
+
         # ── Novelty check ───────────────────────────────────────────────────
-        if _user_acknowledged:
-            lit = check_novelty(cand.get("description", ""), domain, _mock_novelty)
+        if live_search and _user_acknowledged:
+            # Use real adapters with session-level caching
+            cache_key = f"{domain}:{desc}"
+            if cache_key not in _NOVELTY_CACHE:
+                # Rate-limit: PubMed (0.34s) + arXiv (1.0s) already done inside adapters
+                lit = check_novelty(desc, domain, _mock_results=None)
+                _NOVELTY_CACHE[cache_key] = lit
+                # Small inter-candidate buffer to be polite
+                time.sleep(0.1)
+            else:
+                lit = _NOVELTY_CACHE[cache_key]
+            novelty = score_novelty(lit.get("count", 0))
+        elif _user_acknowledged:
+            lit = check_novelty(desc, domain, _mock_results=_mock_novelty)
             novelty = score_novelty(lit.get("count", 0))
         else:
             lit = {"exists": False, "count": 0, "top_papers": [], "query_used": ""}
