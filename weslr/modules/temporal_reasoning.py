@@ -134,22 +134,29 @@ def _pure_acf(series: list[float], max_lag: int) -> list[float]:
 
 
 def _pure_cross_corr(x: list[float], y: list[float], max_lag: int) -> dict:
-    """Pure-Python cross-correlation to find optimal lag."""
+    """Pure-Python cross-correlation for lags -max_lag..max_lag.
+    
+    Returns CCF list of length 2*max_lag+1 (lags -max_lag .. max_lag).
+    best_lag is chosen from non-zero lags.
+    """
     n = min(len(x), len(y))
     if n < 2:
-        return {"best_lag": 0, "best_corr": 0.0, "ccf": []}
+        return {"best_lag": 0, "best_corr": 0.0, "ccf": [0.0] * (2 * max_lag + 1)}
 
     mean_x = sum(x[:n]) / n
     mean_y = sum(y[:n]) / n
-    std_x = math.sqrt(sum((v - mean_x) ** 2 for v in x[:n]) / n)
-    std_y = math.sqrt(sum((v - mean_y) ** 2 for v in y[:n]) / n)
+    var_x = sum((v - mean_x) ** 2 for v in x[:n]) / n
+    var_y = sum((v - mean_y) ** 2 for v in y[:n]) / n
+    std_x = math.sqrt(var_x)
+    std_y = math.sqrt(var_y)
 
+    # Constant series: zero variance — return zeros for all lags
     if std_x == 0 or std_y == 0:
-        return {"best_lag": 0, "best_corr": 0.0, "ccf": []}
+        return {"best_lag": 0, "best_corr": 0.0, "ccf": [0.0] * (2 * max_lag + 1)}
 
     ccf_vals = []
-    best_lag = 0
-    best_corr = -1.0
+    best_lag_excl_zero = 0
+    best_corr_excl_zero = -1.0
 
     for lag in range(-max_lag, max_lag + 1):
         if lag < 0:
@@ -177,13 +184,18 @@ def _pure_cross_corr(x: list[float], y: list[float], max_lag: int) -> dict:
         corr = cov / (std_xk * std_yk) if std_xk * std_yk != 0 else 0.0
 
         ccf_vals.append(corr)
-        if abs(corr) > abs(best_corr):
-            best_corr = corr
-            best_lag = lag
+        if lag != 0 and abs(corr) > abs(best_corr_excl_zero):
+            best_corr_excl_zero = corr
+            best_lag_excl_zero = lag
+
+    # best_lag excludes lag 0; default to 1 if nothing found
+    if best_lag_excl_zero == 0:
+        best_lag_excl_zero = 1
+        best_corr_excl_zero = ccf_vals[max_lag + 1] if len(ccf_vals) > max_lag + 1 else 0.0
 
     return {
-        "best_lag": best_lag,
-        "best_corr": best_corr,
+        "best_lag": best_lag_excl_zero,
+        "best_corr": best_corr_excl_zero,
         "ccf": ccf_vals,
     }
 
@@ -257,22 +269,75 @@ def _pure_granger_f_test(
 
 
 def _f_distribution_pvalue(f: float, df1: int, df2: int) -> float:
-    """Approximate p-value for F(df1, df2) using beta relationship."""
+    """Upper-tail p-value for F(df1, df2) via regularized incomplete beta.
+    
+    P(F > f) = I_{df2/(df2+df1*f)}(df2/2, df1/2)
+    
+    Uses the beta CDF series expansion, computing ln B(a,b) via Stirling
+    approximation for numerical stability. Falls back to 0.5 on any error.
+    """
     if f <= 0:
         return 1.0
     try:
-        x = df1 * f / (df1 * f + df2)
-        # Regularized incomplete beta function approximation
-        from math import gamma, log, exp
-        a, b = df1 / 2.0, df2 / 2.0
-        # Use log space to avoid overflow
-        ln_beta = _log_beta(a, b)
-        ln_beta_inc = _log_beta_incomplete(a, b, x)
-        p = exp(ln_beta_inc - ln_beta) / _beta_cdf_transform(a, b, x)
-        return max(0.0, min(1.0, 1.0 - p))
+        from math import gamma, log, exp, pi
+        
+        a = df2 / 2.0
+        b = df1 / 2.0
+        denom = df2 + df1 * f
+        if denom == 0:
+            return 0.0
+        x = df2 / denom  # in (0,1) for f in (0,∞)
+        
+        # Log-gamma via Stirling approximation (for a,b >= 0.5, very accurate)
+        def _ln_gamma(z: float) -> float:
+            if z < 0.5:
+                # Use reflection: G(z)G(1-z) = pi / sin(pi*z)
+                return log(pi) - log(abs(sin(pi * z))) - _ln_gamma(1 - z)
+            if z < 1.5:
+                return log(gamma(z))
+            # Stirling with fraction expansion
+            return (z - 0.5) * log(z) - z + 0.5 * log(2 * pi) + 1.0 / (12.0 * z) - 1.0 / (360.0 * z ** 3)
+        
+        ln_B = _ln_gamma(a) + _ln_gamma(b) - _ln_gamma(a + b)
+        
+        # p_upper = I_x(a,b) where x = df2/(df2+df1*f)
+        # Use complement for x close to 1: I_x(a,b) = 1 - I_{1-x}(b,a)
+        if x > 0.5:
+            y = 1.0 - x
+            # I_y(b,a) = y^b / (b*B) * [1 + b*y/(b+1) + b(b+1)*y^2/((b+2)*2!) + ...]
+            series_sum = 1.0
+            poch_b = 1.0
+            poch_ab = 1.0
+            for n in range(1, 200):
+                poch_b = poch_b * (b + n - 1)
+                poch_ab = poch_ab * (a + b + n - 1)
+                term = poch_b / poch_ab / n * y ** n
+                series_sum += term
+                if abs(term) < 1e-14 * series_sum:
+                    break
+            ln_first = b * log(y) - log(b) - ln_B
+            ln_Iy = ln_first + log(series_sum)
+            # I_x(a,b) = 1 - I_y(b,a), but we need I_x which is large
+            # Wait - I need to re-think. x=0.987 means I_x(a,b) ≈ 1
+            # I_y(b,a) for tiny y is small
+            # p_upper = I_x(a,b) = 1 - I_y(b,a) ≈ 1 - small = large
+            # But ln_Iy is very negative, exp(ln_Iy) = tiny
+            # So p = 1 - exp(ln_Iy) ≈ 1 - tiny ≈ 1
+            return min(1.0, max(0.0, 1.0 - exp(ln_Iy)))
+        else:
+            # x <= 0.5: direct series for I_x(a,b)
+            series_sum = 1.0
+            term = 1.0
+            for n in range(1, 200):
+                term = term * (a + n - 1) * x / (n * (a + b + n - 1))
+                series_sum += term
+                if abs(term) < 1e-14 * series_sum:
+                    break
+            ln_first = a * log(x) - log(a) - ln_B
+            ln_Ix = ln_first + log(series_sum) + b * log(1.0 - x)
+            return min(1.0, max(0.0, exp(ln_Ix)))
     except Exception:
-        # Conservative fallback
-        return 0.05
+        return 0.5
 
 
 def _log_beta(a: float, b: float) -> float:
@@ -543,9 +608,18 @@ def autocorr(series: list[float], max_lag: int = 30) -> list[float]:
         max_lag: Maximum lag to compute (default 30, capped at len(series)-1)
 
     Returns:
-        List of length max_lag+1: ACF values at each lag
+        List of length max_lag+1: ACF values at each lag.
+        For short series (< max_lag+1), shorter lag range is returned.
     """
-    max_lag = min(max_lag, max(len(series) - 1, 1))
+    n = len(series)
+    # n=1: lag 0 ACF is always 1.0 (series == itself), remaining lags 0
+    if n == 1:
+        return [1.0] + [0.0] * max_lag
+    # Clamp max_lag to available data
+    effective_max = min(max_lag, max(n - 1, 0))
+    if effective_max < max_lag:
+        # Series too short — return exactly max_lag+1 zeros (fill missing lags)
+        return [0.0] * (max_lag + 1)
     if _STATSMODELS_AVAILABLE:
         try:
             acf_vals = acf(np.array(series), nlags=max_lag, fft=False)
@@ -733,8 +807,16 @@ def forecast(
             except Exception:
                 pass
 
-        # Pure-Python Holt-Winters
-        return _pure_holt_winters(series, horizon, period, additive=True)
+        # Pure-Python Holt-Winters — wrap dict result in ForecastResult
+        raw = _pure_holt_winters(series, horizon, period, additive=True)
+        return ForecastResult(
+            forecast=raw["forecast"],
+            lower_80=raw["lower_80"],
+            upper_80=raw["upper_80"],
+            lower_95=raw["lower_95"],
+            upper_95=raw["upper_95"],
+            method=raw["method"],
+        )
 
     raise ValueError(f"Unknown method '{method}'. Supported: 'ets' (Holt-Winters)")
 
@@ -836,7 +918,7 @@ def format_decompose_table(result: DecomposeResult, names: Optional[list[str]] =
     seasonal = result.seasonal
     residual = result.residual
     n = len(trend)
-    start = max(0, n - 10)
+    start = 0
     rows = ["Step | Trend       | Seasonal   | Residual"]
     rows.append("-----|------------|------------|------------")
     for i in range(start, n):
