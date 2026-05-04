@@ -156,6 +156,24 @@ python -m pytest tests/ -v
 
 ---
 
+### Phase 11: Frontier Science Proposer
+
+| Command | Description |
+|---------|-------------|
+| `/frontier propose <domain>` | Generate novel hypotheses with multi-axis scoring and difficulty tiers |
+| `/frontier propose <domain> --max N` | Limit to N proposals |
+| `/frontier propose <domain> --novelty-threshold X` | Minimum novelty score (0–1) |
+| `/frontier propose <domain> --difficulty {easy,moderate,hard,paradigm}` | Filter by difficulty level |
+| `/frontier novelty "idea text"` | Check idea novelty via live PubMed/arXiv search |
+| `/frontier refine <id> --constraint "text"` | Re-score proposal with additional constraints |
+| `/frontier list` | List all stored proposals with IDs and difficulty |
+| `/frontier show <id>` | Display full proposal with scores, experiment summary, and provenance |
+
+**Difficulty tiers:** ★ Low-hanging fruit → ★★★★ Paradigm shift. All proposals labeled [FRONTIER PROPOSAL – UNVALIDATED]. High-risk proposals (risk > 0.7) flagged for operator review.
+**Acknowledgment:** Live PubMed/arXiv search requires user acknowledgment on first call per session.
+
+---
+
 
 ## Architecture
 

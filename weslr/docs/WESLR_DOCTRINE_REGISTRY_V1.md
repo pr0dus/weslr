@@ -441,6 +441,7 @@ User-defined governed research/workflow missions that can keep working over time
 _Last updated: 2026-05-04_
 _Phase 9 status: accepted_doctrine_
 _Phase 10 status: accepted_doctrine_
+_Phase 11 status: accepted_doctrine_
 _Observation pipeline status: checkpoint_
 _Attention Loop status: checkpoint_
 _Research Work Loop status: checkpoint_
