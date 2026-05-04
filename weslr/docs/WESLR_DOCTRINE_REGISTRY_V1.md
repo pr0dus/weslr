@@ -317,7 +317,130 @@ The following are **not** doctrine and should **not** be canonized:
 
 ---
 
+---
+
+## Attention Loop — Checkpoint
+
+**Status:** `checkpoint`
+
+**Checkpoint file:** `weslr/docs/WESLR_ATTENTION_AND_RESEARCH_WORK_LOOP_CHECKPOINT_V1.md`
+
+**Related discovery:** `weslr/docs/WESLR_SELF_REVIEW_DISCOVERY_V1.md`
+
+### Purpose
+
+WESLR self-review loop for architecture gaps, validation gaps, stale checkpoints, missing lifecycle links, doctrine/implementation drift, and operator attention routing.
+
+### Current Implementation Status
+
+- ✅ Checkpoint/design exists
+- ✅ Proactive daemon exists (`weslr/proactive_daemon.py`)
+- ❌ Self-review source adapters not implemented yet
+- ❌ No automatic execution
+- ❌ No auto-code / auto-commit / auto-push
+- ❌ No accepted doctrine promotion yet
+
+### Safety Rule
+
+> WESLR may observe, detect, prioritize, and suggest.
+> WESLR may **not** silently mutate, execute, self-code, approve, commit, push, or change doctrine/contracts.
+
+### Tracked Implementation Files
+
+| File | Role |
+|---|---|
+| `weslr/proactive_daemon.py` | Periodic suggestion loop, deduplication, interval control |
+| `weslr/docs/WESLR_SELF_REVIEW_DISCOVERY_V1.md` | Self-review capability gap analysis |
+| `weslr/docs/WESLR_ATTENTION_AND_RESEARCH_WORK_LOOP_CHECKPOINT_V1.md` | Dual-loop architecture design |
+
+### Flexible Details (non-canon)
+
+- Source adapter model
+- Scoring model for gap detection
+- Suggestion store design
+- Cadence / tick interval
+- Delivery surface (workplace integration)
+- Detector list (which gaps are detectable)
+
+### Open Questions
+
+- Source adapter model (single unified adapter vs per-source adapters)
+- Proposal review lifecycle (pending → reviewed → accepted/rejected)
+- Attention suggestion store path
+- Operator-visible review surface
+- Eventual scheduling policy (manual tick vs cron)
+
+---
+
+## Research Work Loop — Checkpoint
+
+**Status:** `checkpoint`
+
+**Checkpoint file:** `weslr/docs/WESLR_ATTENTION_AND_RESEARCH_WORK_LOOP_CHECKPOINT_V1.md`
+
+**Implementation plan:** `weslr/docs/WESLR_ATTENTION_AND_RESEARCH_WORK_LOOP_V1_IMPLEMENTATION_PLAN.md`
+
+### Purpose
+
+User-defined governed research/workflow missions that can keep working over time by reading approved local sources, detecting evidence gaps, suggesting hypotheses/next actions, and writing reviewable suggestions.
+
+### Current Implementation (V1)
+
+| File | Role |
+|---|---|
+| `weslr/schemas/mission.py` | Mission dataclass + JSON schema, `make_mission()`, `generate_mission_id()` |
+| `weslr/mission_store.py` | Per-tenant mission repository, JSONL store |
+| `weslr/adapters/local_evidence_adapter.py` | Safe local file reading, path allowlist, extension filter |
+| `weslr/loop/safety_filter.py` | Blocks 14 forbidden content patterns |
+| `weslr/loop/suggestion_ranker.py` | Weighted scoring (confidence + relevance + evidence) |
+| `weslr/loop/research_work_loop.py` | `run_once_mission_review()` — manual review path |
+| `weslr/commands/mission_commands.py` | CLI: `/mission help/create/list/details/activate/pause/close/review` |
+| `weslr/tests/test_mission_store.py` | 17 tests |
+| `weslr/tests/test_research_work_loop_v1.py` | 39 tests |
+| `weslr/tests/test_mission_commands_v1.py` | 25 tests |
+
+### V1 Status
+
+- ✅ Manual `run_once` only — no auto-start
+- ✅ Local evidence only — no external calls
+- ✅ No scheduled daemon
+- ✅ `automatic_execution` forced `False` on all missions
+- ✅ Safety filter blocks 14 forbidden categories
+- ✅ Tenant isolation enforced via `MissionStore`
+- ✅ Suggestions written to `.weslr/pending_messages.jsonl` for operator review
+- ❌ Workplace surface not integrated yet
+- ❌ V2 cadence scheduling not implemented
+- ❌ External literature adapter not implemented
+
+### Safety Rule
+
+> WESLR may observe, reason, compare, hypothesize, and suggest.
+> WESLR may **not** automatically execute, synthesize, deploy, modify, approve, or perform unsafe external actions.
+
+### Flexible Details (non-canon)
+
+- Mission store schema (current: `.weslr/missions.jsonl`, per-tenant JSONL)
+- Command syntax (`/mission create --title ... --goal ...`)
+- Scoring/ranking model (current: 0.5 conf + 0.3 relevance + 0.2 evidence)
+- Evidence adapter list (current: `LocalEvidenceAdapter` only)
+- Workplace integration path
+- Cadence/scheduling policy (V2)
+- User/operator visibility model (`operator_visible`, `public_user_visible`)
+
+### Open Questions
+
+- Workplace surface integration (how suggestions surface to operator)
+- First real mission / operator demo
+- Mission suggestion review lifecycle (pending → operator review → accept/reject)
+- V2 scheduling cadence (`cadence_minutes` per mission)
+- External literature source governance (blocked by default)
+- Sensitive-domain classification refinements
+
+---
+
 _Last updated: 2026-05-04_
 _Phase 9 status: accepted_doctrine_
 _Phase 10 status: accepted_doctrine_
 _Observation pipeline status: checkpoint_
+_Attention Loop status: checkpoint_
+_Research Work Loop status: checkpoint_
