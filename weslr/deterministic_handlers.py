@@ -1215,7 +1215,7 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 90,
         "handler_fn": "handle_pubmed_search",
-        "read_only": True,
+        "read_only": False,
         "writes": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
         "requires_confirmation": False,
         "write_paths": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
@@ -1230,7 +1230,7 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 90,
         "handler_fn": "handle_arxiv_search",
-        "read_only": True,
+        "read_only": False,
         "writes": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
         "requires_confirmation": False,
         "write_paths": [".weslr/external_evidence_packets.jsonl", ".weslr/fact_assertions.jsonl"],
@@ -1245,7 +1245,7 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 95,
         "handler_fn": "handle_search_pubchem",
-        "read_only": True,
+        "read_only": False,
         "writes": [".weslr/fact_assertions.jsonl"],
         "requires_confirmation": False,
         "write_paths": [".weslr/fact_assertions.jsonl"],
@@ -1365,7 +1365,7 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 95,
         "handler_fn": "handle_propose_action",
-        "read_only": True,
+        "read_only": False,
         "writes": [".weslr/action_proposals.jsonl"],
         "requires_confirmation": False,
         "write_paths": [".weslr/action_proposals.jsonl"],
@@ -1425,7 +1425,7 @@ HANDLER_REGISTRY = [
         "match_type": "prefix",
         "priority": 95,
         "handler_fn": "handle_actions_run",
-        "read_only": True,
+        "read_only": False,
         "writes": [".weslr/action_runner_dry_run.jsonl"],
         "requires_confirmation": False,
         "write_paths": [".weslr/action_runner_dry_run.jsonl"],
@@ -1749,7 +1749,70 @@ HANDLER_REGISTRY = [
         "write_guard": None,
         "category": "spatial",
     },
+    {
+        "id": "abduce",
+        "path": "abduce",
+        "triggers": ["/abduce"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_abduce_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "advanced",
+    },
+    {
+        "id": "meta_analysis",
+        "path": "meta_analysis",
+        "triggers": ["/meta"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_meta_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "advanced",
+    },
+    {
+        "id": "transfer_analogy",
+        "path": "transfer_analogy",
+        "triggers": ["/transfer"],
+        "match_type": "prefix",
+        "priority": 56,
+        "handler_fn": "handle_transfer_cmd",
+        "read_only": True,
+        "writes": [],
+        "requires_confirmation": False,
+        "write_paths": [],
+        "side_effects": [],
+        "write_guard": None,
+        "category": "advanced",
+    },
 ]
+
+
+def handle_abduce_cmd(message: str, lowered: str) -> dict:
+    from weslr.commands.advanced_commands import handle_abduce as _h
+    text = _h(message, lowered)
+    return build_deterministic_response(message=message, path="abduce", response_text=text, confidence="high", suggested_mode="answer")
+
+
+def handle_meta_cmd(message: str, lowered: str) -> dict:
+    from weslr.commands.advanced_commands import handle_meta as _h
+    text = _h(message, lowered)
+    return build_deterministic_response(message=message, path="meta_analysis", response_text=text, confidence="high", suggested_mode="answer")
+
+
+def handle_transfer_cmd(message: str, lowered: str) -> dict:
+    from weslr.commands.advanced_commands import handle_transfer as _h
+    text = _h(message, lowered)
+    return build_deterministic_response(message=message, path="transfer_analogy", response_text=text, confidence="high", suggested_mode="answer")
 
 
 def handle_iss_intake_query(message: str, lowered: str) -> dict:

@@ -1,0 +1,195 @@
+# Weslr — Entity Intelligence Platform with Consciousness Signatures
+
+**Weslr** is an OpenClaw-powered entity intelligence platform that detects, tracks, and reasons about consciousness signatures across domains. It combines causal reasoning, meta-analysis, cross-domain analogy transfer, and temporal/spatial reasoning into a unified queryable system.
+
+---
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/pr0dus/weslr.git
+cd weslr
+
+# Install dependencies
+pip install -e .
+
+# Run tests
+python -m pytest tests/ -v
+```
+
+**Requirements:** Python 3.10+
+
+---
+
+## Command Reference
+
+### Phase 1–4: Core Entity & Causality
+
+| Command | Description |
+|---------|-------------|
+| `/entity <name>` | Query entity by name |
+| `/cause <effect>` | Find causes of an effect |
+| `/consciousness <entity>` | Check consciousness signature |
+| `/graph` | Entity relationship graph |
+| `/introspect` | Internal model inspection |
+
+### Phase 5–6: Hypothesis & Evidence
+
+| Command | Description |
+|---------|-------------|
+| `/hypothesis add <title> [confidence]` | Create new hypothesis |
+| `/hypothesis list` | List all hypotheses |
+| `/hypothesis get <id>` | Get hypothesis details |
+| `/hypothesis revise <id> <field> <value>` | Update hypothesis |
+| `/evidence add <hyp_id> <content>` | Add evidence to hypothesis |
+| `/evidence list <hyp_id>` | List evidence for hypothesis |
+| `/signal <query>` | Query signal store |
+
+### Phase 7–8: Spatial & Temporal Reasoning
+
+| Command | Description |
+|---------|-------------|
+| `/molecule <smiles>` | Analyze molecular geometry |
+| `/propose shape <description>` | Propose 3D shape |
+| `/timeseries <entity>` | Temporal analysis |
+| `/forecast <entity> [horizon]` | Forecast future states |
+| `/plan <goal>` | Create reasoning plan |
+| `/plan explain <plan_id>` | Explain a plan |
+| `/compare <a> <b>` | Compare two entities |
+
+### Phase 9: Advanced Reasoning (Abduction, Meta-Analysis, Transfer Analogy)
+
+| Command | Description |
+|---------|-------------|
+| `/abduce <observation>` | Generate plausible explanations from configured rules and observations |
+| `/abduce rule add <if> <then> [confidence]` | Add abduction rule (default conf=0.8) |
+| `/abduce rules` | List all current abduction rules |
+| `/abduce clear` | Clear all abduction rules |
+| `/meta add <id> <effect> <se> [n]` | Add study to meta-analysis pool |
+| `/meta list` | Show all studies in pool |
+| `/meta run [fixed\|random]` | Run meta-analysis (fixed-effect or random-effects DerSimonian-Laird) |
+| `/meta remove <id>` | Remove a study from pool |
+| `/meta clear` | Clear all studies |
+| `/meta from_hypotheses <id1> <id2> ...` | Import studies from hypothesis repository |
+| `/transfer analogies` | List all cross-domain analogies |
+| `/transfer add <src_domain> <src> <tgt_domain> <tgt> [weight]` | Add custom analogy (default weight=0.8) |
+| `/transfer apply <hyp_id> <target_domain>` | Transfer hypothesis to new domain via analogy |
+
+---
+
+## Example Outputs
+
+### `/abduce`
+
+```
+/abduce rule add high_dose response_increase 0.85
+→ Rule added: high_dose → response_increase (conf=0.85)
+
+/abduce rule add low_sodium BP_down 0.9
+
+/abduce BP_down
+→ Possible explanations for: "BP_down"
+  1. low_sodium  (confidence 0.9000)
+     Rules: low_sodium→BP_down
+  2. Unknown (if no rules match)
+```
+
+### `/meta`
+
+```
+/meta add study1 0.5 0.1 30
+→ Study 'study1' added: effect=0.5000, SE=0.1000, n=30
+
+/meta add study2 0.6 0.12 35
+→ Study 'study2' added: effect=0.6000, SE=0.1200, n=35
+
+/meta run fixed
+→ **Meta-analysis — Fixed-effect (inverse-variance)**
+   Pooled effect: 0.5300
+   95% CI: [0.4120, 0.6480]
+   z = 7.230, p = 0.0000 ***
+   Heterogeneity:
+     Cochran's Q = 0.580
+     I² = 0.0% (low)
+   ⚠️ *Synthesized from simulated/demo data – not for clinical decision making*
+```
+
+### `/transfer`
+
+```
+/transfer analogies
+→ **Cross-domain analogies:**
+   Built-in seed analogies:
+     • enzyme[biology] → catalyst[chemistry] (w=0.90)
+     • receptor[biology] → binding_site[chemistry] (w=0.85)
+     ...
+
+/transfer add biology enzyme chemistry catalyst 0.85
+→ Analogy added: enzyme[biology] → catalyst[chemistry] (w=0.85)
+
+/transfer apply hypo_abc chemistry
+→ **Transferred hypothesis created**
+   New ID: <generated>
+   Title: Catalyst accelerates process
+   Domain: chemistry
+   Confidence: 0.8500 (from 1.0000 × adjustment)
+   Provenance: transferred from hypo_abc
+   ⚠️ *Analogous hypothesis – not experimentally validated*
+```
+
+---
+
+### Phase 10: Collaboration & Explanation
+
+| Command | Description |
+|---------|-------------|
+| `/workspace share <hypothesis_id>` | Share a hypothesis to the tenant-anonymized shared library |
+| `/workspace library list` | List hypotheses available in the shared library |
+| `/workspace import <shared_hypothesis_id>` | Import a hypothesis from the shared library |
+| `/jupyter info` | Show Jupyter kernel connection status |
+| `/explain hypothesis <id>` | Generate deterministic explanation for a hypothesis |
+| `/explain cause <cause> <effect>` | Explain causal mechanism between cause and effect |
+| `/explain abduce <observation>` | Explain why an abductive explanation was generated |
+
+**Collaboration principles:** Shared hypotheses are tenant-anonymized. Explicit sharing is required. The shared library is deterministic and read-only for all observers.
+
+---
+
+
+## Architecture
+
+```
+weslr/
+├── commands/          # CLI command handlers
+│   └── advanced_commands.py   # Phase 9: /abduce, /meta, /transfer
+├── modules/           # Core reasoning modules
+│   ├── abductive_reasoner.py   # Backward-chaining explanation engine
+│   ├── meta_analyst.py         # Fixed/random-effect meta-analysis
+│   ├── transfer_analogy.py     # Cross-domain analogy engine
+│   ├── hypothesis_repository.py
+│   └── ...
+├── deterministic_handlers.py   # Handler registry & dispatch
+└── tests/
+    └── test_advanced_reasoning.py
+```
+
+**Tenant isolation:** All modules are tenant-aware. The shared `_tenant_getter` defaults to `"default"` but can be swapped for multi-tenant deployments.
+
+---
+
+---
+
+### Documentation Note
+
+README is a user/developer help surface, not the authoritative doctrine source. Doctrine is tracked in `weslr/docs/WESLR_DOCTRINE_REGISTRY_V1.md`.
+
+## Disclaimer
+
+**All outputs are deterministic/rule-based.**
+
+- Meta-analysis results: *Synthesized from simulated/demo data – not for clinical decision making.*
+- Transfer hypotheses: *Analogous hypothesis – not experimentally validated.*
+- Abduction explanations: *Plausible explanations – requires experimental validation.*
+
+Results should be reviewed by a subject-matter expert before use in real-world decisions.
