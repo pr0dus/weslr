@@ -28,6 +28,131 @@ from weslr.modules.matter_primitives import (
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STOICHIOMETRY_MAP — exact formula → structure-type matching
+# Keys: normalized cation-count tuple (sorted descending) + anion_count, all ints ÷ GCD
+# Values: canonical structure name
+# Unclassified formulas return "unclassified" with uncertainty="high"
+# ─────────────────────────────────────────────────────────────────────────────
+# Normalized tuples: (sorted_cation_counts..., anion_count)
+# Perovskite ABX3:     1 cation type A + 1 B + 3 X  → cations=(1,1), X=3 → (1,1,3)
+# RP n=1 A2BX4:        2 A + 1 B + 4 X                → cations=(2,1), X=4 → (2,1,4)
+# RP n=2 A3B2X7:       3 A + 2 B + 7 X                → cations=(3,2), X=7 → (3,2,7)
+# RP n=3 A4B3X10:      4 A + 3 B + 10 X               → cations=(4,3), X=10 → (4,3,10)
+# Spinel AB2X4:        1 A + 2 B + 4 X                → cations=(2,1), X=4 → (1,2,4) sorted desc
+# Rutile AX2:          1 A + 2 X                      → cations=(1,),   X=2 → (1,2)
+# Rock-salt AX:        1 A + 1 X                      → cations=(1,),   X=1 → (1,1)
+# Olivine A2XO4:       2 A + 4 X                      → cations=(2,),   X=4 → (2,4)
+# Wolframite ABXO4:    1 A + 1 B + 4 X                → cations=(1,1), X=4 → (1,1,4)
+# LDH M2+M3(OH)2Xr/n:  2 cations + 1 X               → cations=(1,1), X=6 → (1,1,6) — approximate
+
+STOICHIOMETRY_MAP: Dict[Tuple[int, ...], str] = {
+    # Key format: tuple of (sorted_cation_counts_desc, anion_count)
+    (1,   1,   3):  "perovskite",               # ABX3
+    (2,   1,   4):  "ruddlesden_popper_n1",       # A2BX4 (RP n=1)
+    (3,   2,   7):  "ruddlesden_popper_n2",       # A3B2X7 (RP n=2)
+    (4,   3,  10):  "ruddlesden_popper_n3",       # A4B3X10 (RP n=3)
+    (2,   1,   4):  "spinel",                     # AB2X4 (same tuple as RP n=1 — distinguished below)
+    (1,         2):  "rutile",                    # AX2
+    (1,         1):  "rocksalt",                  # AX
+    (2,         4):  "olivine",                   # A2X4
+    (1,   1,   4):  "wolframite",                 # ABX4
+    (1,   1,   6):  "layered_double_hydroxide",   # approximate LDH
+}
+
+
+def _gcd_of(numbers: List[int]) -> int:
+    """Greatest common divisor of a list of positive integers."""
+    result = numbers[0]
+    for n in numbers[1:]:
+        result = math.gcd(result, n)
+    return result
+
+
+def _classify_structure(formula: str) -> Tuple[str, str]:
+    """
+    Classify a formula's stoichiometry into a known structure type.
+
+    Returns (structure_name, uncertainty) where:
+      - structure_name is a canonical key from STOICHIOMETRY_MAP or "unclassified"
+      - uncertainty is "low" for exact matches, "high" otherwise
+
+    Multi-cation formulas: compute normalized cation tuple by dividing all
+    counts by their GCD, then match against STOICHIOMETRY_MAP keys.
+    """
+    import re
+    from weslr.modules.matter_primitives import PERIODIC_TABLE
+
+    # Parse formula
+    pattern = r"([A-Z][a-z]?)(\d*)"
+    matches = re.findall(pattern, formula)
+    if not matches:
+        return "unclassified", "high"
+
+    # Count atoms per element
+    element_counts: Dict[str, int] = {}
+    for sym, cnt_str in matches:
+        if sym not in PERIODIC_TABLE:
+            continue
+        element_counts[sym] = element_counts.get(sym, 0) + (int(cnt_str) if cnt_str else 1)
+
+    if not element_counts:
+        return "unclassified", "high"
+
+    # Identify anions (common anion list) vs cations
+    anions = {e for e in element_counts if e in COMMON_ANIONS}
+    # If no recognized anions, treat lightest element as anion-ish placeholder
+    if not anions:
+        # Fall back: treat most electronegative as anion
+        anion_candidate = max(element_counts, key=lambda e: PERIODIC_TABLE[e].electronegativity)
+        anions = {anion_candidate}
+
+    cation_counts: List[int] = [element_counts[e] for e in element_counts if e not in anions]
+    anion_count: int = sum(element_counts[e] for e in anions)
+
+    if not cation_counts or anion_count == 0:
+        return "unclassified", "high"
+
+    # Normalize: divide by GCD of all counts (cations + anion)
+    all_counts = cation_counts + [anion_count]
+    g = _gcd_of(all_counts)
+    norm_cation_counts = sorted([c // g for c in cation_counts], reverse=True)
+    norm_anion_count = anion_count // g
+
+    key = tuple(norm_cation_counts + [norm_anion_count])
+
+    structure_name = STOICHIOMETRY_MAP.get(key, "unclassified")
+
+    # Distinguish spinel vs RP n=1 vs olivine: all yield key (2, 1, 4) when normalized.
+    # Key (2, 1, 4) arises when there are two cation types with counts (2, 1) and 4 anions.
+    # Differentiation by cation identity:
+    #   RP n=1:  2 large A-site cations (Ca, Sr, Ba, La …) + 1 B-site transition metal
+    #   Spinel:  1 small A-site (Mg, Zn, Fe …) + 2 B-site transition metals
+    #   Olivine: 2 A-site + 1 tetrahedral Si^(4+) (or other tetravalent p-block cation)
+    # Use electronegativity: if the unique high-EN cation (Si, Ge, P) appears once → olivine.
+    # Otherwise fall back to size-based heuristic for RP vs spinel.
+    if key == (2, 1, 4) and len(cation_counts) >= 2:
+        LARGE_A_SITE = {"Ca", "Sr", "Ba", "Pb", "K", "Na", "Li", "Cs",
+                        "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd"}
+        TETRA_VALENT = {"Si", "Ge", "P", "B"}  # small tetravalent p-block cations in tetrahedral sites
+        element_list = [e for e, c in element_counts.items() if e not in anions]
+        el_counts_sorted = sorted([element_counts[e] for e in element_list if e not in anions], reverse=True)
+        el_sorted = sorted(element_list, key=lambda e: element_counts[e], reverse=True)
+
+        # Check 1: if any tetravalent p-block cation appears exactly once → olivine
+        if any(element_counts.get(e, 0) == 1 and e in TETRA_VALENT for e in element_list):
+            structure_name = "olivine"
+        # Check 2: 2 large A-site + 1 transition metal → RP n=1
+        elif el_counts_sorted[0] == 2 and el_sorted[0] in LARGE_A_SITE:
+            structure_name = "ruddlesden_popper_n1"
+        # Otherwise → spinel (most common AB2X4 structure)
+        else:
+            structure_name = "spinel"
+
+    uncertainty = "low" if structure_name != "unclassified" else "high"
+    return structure_name, uncertainty
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Prototype structure definitions
 # Each prototype: name, stoichiometry dict, anion (X), cation sites [(label, ox_sum, count)]
 # ─────────────────────────────────────────────────────────────────────────────
@@ -459,21 +584,24 @@ class MatterGenerator:
         if not atoms:
             return None
 
-        geo_map = {
-            "perovskite":             "ABX3_cubic",
-            "spinel":                 "AB2X4_cubic",
-            "rutile":                 "AX2_tetragonal",
-            "rocksalt":               "AX_cubic",
-            "cscl_type":              "AX_cubic_bcc",
-            "layered_dichalcogenide": "layered_2d",
-            "olivine":                "orthorhombic_olivine",
-            "layered_oxide":          "layered_perovskite",
-            "fluoride":               "AX_cubic",
-            "wurtzite":               "hexagonal_wurtzite",
-            "zincblende":             "zincblende_cubic",
-            "diamond":                "diamond_cubic",
-        }
-        geometry_type = geo_map.get(proto_name, f"unknown_{proto_name}")
+        # Use exact stoichiometry classification — no loose prototype-name fallback
+        structure_type, uncertainty = _classify_structure(formula)
+        if structure_type == "unclassified":
+            geometry_type = "unclassified"
+        else:
+            geo_map = {
+                "perovskite":               "ABX3_cubic",
+                "spinel":                   "AB2X4_cubic",
+                "rutile":                   "AX2_tetragonal",
+                "rocksalt":                 "AX_cubic",
+                "olivine":                  "orthorhombic_olivine",
+                "wolframite":               "monoclinic_wolframite",
+                "layered_double_hydroxide": "layered_double_hydroxide",
+                "ruddlesden_popper_n1":     "layered_perovskite",
+                "ruddlesden_popper_n2":     "layered_perovskite",
+                "ruddlesden_popper_n3":     "layered_perovskite",
+            }
+            geometry_type = geo_map.get(structure_type, f"unknown_{structure_type}")
 
         return Structure(atoms=atoms, bonds=[], geometry_type=geometry_type, lattice_vectors=None)
 
@@ -552,11 +680,17 @@ class MatterGenerator:
             if not self._abundance_filter(structure.atoms, min_ab):
                 continue
 
-            # Charge balance check
-            charge = structure.total_charge()
-            is_radical = abs(charge) > 0 and abs(charge) != 1
-            if is_radical and mode == "plausible":
-                # In plausible mode, skip radicals
+            # Chemical validity: must be charge-balanceable using available oxidation states
+            if not self._has_valid_oxidation(structure):
+                continue
+
+            # Formation energy filter — discard candidates above max_energy threshold
+            accepted_energy, _ = self._estimate_formation_energy(structure)
+            if not accepted_energy:
+                continue
+
+            # Stoichiometry validation — prototype must have correct atom-count ratios
+            if not self._validate_stoichiometry(structure, proto):
                 continue
 
             self._formula_cache.add(formula)
@@ -577,9 +711,96 @@ class MatterGenerator:
             seen_gap_formulas.add(gc_formula)
             if gc_formula in self._formula_cache or gc_formula in existing_formulas:
                 continue
+            # Chemical validity: must be charge-balanceable using available oxidation states
+            if not self._has_valid_oxidation(gc):
+                continue
             candidates.append((self._strangeness_score(gc, mode) + 0.1, gc))  # boost for gap-filling
 
         return [s for _, s in candidates[:max_candidates]]
+
+    def _validate_stoichiometry(self, structure: Structure, proto: _Prototype) -> bool:
+        """
+        Validate that structure matches the prototype's stoichiometry ratios.
+
+        After substitution, structure contains real elements (Ca, Ti, O …) while
+        proto.sites uses generic labels (A, B, X).  We check total non-anion
+        atom count and anion count each match the prototype site counts ±1.
+        """
+        from collections import Counter
+        element_counts = Counter(a.symbol for a in structure.atoms)
+
+        proto_total = sum(proto.sites.values())
+        struct_total = len(structure.atoms)
+
+
+        # Allow ±1 tolerance on total atom count (different cell sizes)
+        if abs(struct_total - proto_total) > 1:
+            return False
+
+        # Non-anion elements (cations) must match total non-anion site count in proto
+        ANIONS = {"O", "S", "N", "F", "Cl", "Se", "Te"}
+        non_x_proto = sum(v for k, v in proto.sites.items() if k != "X")
+        non_x_struct = sum(cnt for el, cnt in element_counts.items() if el not in ANIONS)
+        if abs(non_x_struct - non_x_proto) > 1:
+            return False
+
+        # Anion count must match proto X count
+        x_count = element_counts.get("O", element_counts.get("S", 0))
+        expected_x = proto.sites.get("X", 0)
+        if abs(x_count - expected_x) > 1:
+            return False
+
+        return True
+
+    def _has_valid_oxidation(self, structure: Structure) -> bool:
+        """
+        Check whether a structure can be charge-balanced using available oxidation
+        states from its elements.  Uses itertools.product to try all combinations
+        of oxidation states (one per unique element) and returns True if any
+        combination sums to exactly 0.
+        """
+        from collections import Counter
+        from itertools import product
+
+        element_counts = Counter(a.symbol for a in structure.atoms)
+        unique_elements = list(element_counts.keys())
+        all_ox_states = [PERIODIC_TABLE[e].oxidation_states for e in unique_elements]
+
+        counts = [element_counts[e] for e in unique_elements]
+
+        for ox_combo in product(*all_ox_states):
+            total = sum(ox * cnt for ox, cnt in zip(ox_combo, counts))
+            if total == 0:
+                return True
+        return False
+
+    def _estimate_formation_energy(self, candidate: Structure, max_energy: float = 5.0) -> Tuple[bool, float]:
+        """
+        Estimate formation energy from Pauling electronegativity mismatches.
+
+        For each unique element pair in the structure, compute |EN_i - EN_j|
+        and sum across all pairs. Normalize by atom count to get eV/atom.
+
+        Returns (accepted, energy): accepted=True if energy <= max_energy.
+        """
+        atoms = candidate.atoms
+        if len(atoms) < 2:
+            return (True, 0.0)
+
+        elements = list({a.symbol for a in atoms})
+        en_vals = {}
+        for e in elements:
+            atom = PERIODIC_TABLE.get(e)
+            en_vals[e] = atom.electronegativity if atom else 2.0
+
+        # Sum EN differences across all unique pairs
+        total_diff = 0.0
+        for i in range(len(elements)):
+            for j in range(i + 1, len(elements)):
+                total_diff += abs(en_vals[elements[i]] - en_vals[elements[j]])
+
+        energy = round(total_diff / len(atoms), 3)
+        return (energy <= max_energy, energy)
 
     def estimate_properties(self, candidate: Structure) -> Dict[str, Any]:
         """
@@ -601,11 +822,8 @@ class MatterGenerator:
         gap_raw = 1.5 + 1.4 * (avg_en - 1.5)
         bandgap = round(max(0.0, min(10.0, gap_raw)), 2)
 
-        # Formation energy heuristic (relative, normalized)
-        charge = candidate.total_charge()
-        charge_penalty = abs(charge) * 0.1
-        # Stability: lower formation energy is better
-        formation_energy = round(-1.5 + charge_penalty + 0.3 * (1 - avg_en), 3)
+        # Formation energy from electronegativity pairwise mismatches (eV/atom)
+        accepted, formation_energy = self._estimate_formation_energy(candidate)
 
         # Conductivity: inverse of bandgap, with metallicity bonus
         if bandgap < 0.5:
@@ -615,12 +833,17 @@ class MatterGenerator:
         else:
             conductivity = round(max(0.0, min(1.0, 1.0 - bandgap / 6.0)), 3)
 
-        # Stability: based on Goldschmidt tolerance (if perovskite) + charge balance
-        charge_balance = 1.0 - min(1.0, abs(charge) / 6.0)
-        stability = round(max(0.0, min(1.0, charge_balance * 0.8 + 0.2)), 3)
+        # Stability: sigmoid on formation energy — lower energy = more stable (0–1)
+        stability = round(1.0 / (1.0 + formation_energy), 3)
 
         toxicity = bool(elements & self.TOXIC_ELEMENTS)
-        radical = abs(charge) == 1
+        radical = candidate.total_charge() != 0
+
+        # Structural uncertainty: unclassified candidates get stability penalty + high uncertainty
+        uncertainty = "low"
+        if candidate.geometry_type == "unclassified":
+            stability = round(stability * 0.9, 3)
+            uncertainty = "high"
 
         return {
             "bandgap_eV": bandgap,
@@ -631,6 +854,7 @@ class MatterGenerator:
             "radical": radical,
             "composition": candidate.composition_string(),
             "geometry_type": candidate.geometry_type,
+            "uncertainty": uncertainty,
         }
 
     def generate_device_from_material(
@@ -687,12 +911,29 @@ class MatterGenerator:
             raise ValueError(f"Unknown device mode: {mode}. Valid: {list(templates.keys())}")
 
         layers = templates[mode]
-        return {
+
+        # Check structural uncertainty of the absorber material
+        structure_type, uncertainty = _classify_structure(light_absorber)
+        disclaimer = None
+        if structure_type == "unclassified":
+            disclaimer = (
+                f"⚠️  Device proposal is speculative — {light_absorber} has an unclassified "
+                f"structure with uncertain geometry (high uncertainty). Synthesis route and "
+                f"device architecture are based on generic assumptions and require explicit "
+                f"structural validation before experimental attempts."
+            )
+
+        result = {
             "mode": mode,
             "light_absorber": light_absorber,
             "layers": layers,
             "description": self._device_description(light_absorber, mode),
+            "structure_classification": structure_type,
+            "structural_uncertainty": uncertainty,
         }
+        if disclaimer:
+            result["disclaimer"] = disclaimer
+        return result
 
     # ── Internal helpers ───────────────────────────────────────────────────────
 
