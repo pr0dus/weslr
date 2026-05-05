@@ -445,3 +445,56 @@ _Phase 11 status: accepted_doctrine_
 _Observation pipeline status: checkpoint_
 _Attention Loop status: checkpoint_
 _Research Work Loop status: checkpoint_
+---
+
+## Phase 8.5 — Unified Matter Structure Classification
+
+**Status:** `accepted_doctrine`
+
+**Doctrine file:** `weslr/docs/WESLR_PHASE_8.5_UNIFIED_MATTER_GENERATOR_DOCTRINE.md`
+
+**Version:** 1.0 | **Date:** 2026-05-05
+
+### Permanent Doctrine Principles
+
+1. Structure type assignment is conservative and exact — only assign a named structure type when the normalized stoichiometry tuple exactly matches a predefined pattern in `STOICHIOMETRY_MAP`.
+2. All formulas that do not match a known pattern are labeled `unclassified` with `uncertainty: high`. No approximate or "likely" classifications.
+3. The `(2, 1, 4)` key ambiguity (spinel vs RP n=1 vs olivine) is resolved by explicit heuristic rules documented in the doctrine file.
+4. Unclassified structures receive a 10% stability penalty and a device-generation disclaimer.
+5. `geometry_type` values emitted by the matter generator are defined and immutable; no new geometry types may be added without corresponding doctrine.
+
+### Future-Agent Obligations
+
+- Do **not** use `layered_perovskite` or other loose fallback names for non-matching compositions.
+- Do **not** suppress the `unclassified` label for compositions that do not match an exact stoichiometry pattern.
+- Any new structure type added to `STOICHIOMETRY_MAP` requires a corresponding test in `weslr/tests/weslr/test_unified_matter_generator.py` and a doctrine update.
+
+---
+
+## Frontier Exhaustive Novelty + Thermodynamics Screening
+
+**Status:** `accepted_doctrine`
+
+**Doctrine file:** `weslr/docs/WESLR_FRONTIER_EXHAUSTIVE_NOVELTY_THERMODYNAMICS_CANON_V1.md`
+
+**Version:** 1.0 | **Date:** 2026-05-05
+
+### Permanent Doctrine Principles
+
+1. This layer performs **candidate pre-screening**, not discovery. Zero hits across structural databases means "not found in enabled databases" — not "novel compound confirmed."
+2. Materials Project stability ratings are **computational DFT predictions**, not experimental measurements. They must be labeled as such in all outputs.
+3. The rule-based heuristic fallback (`estimate_stability_heuristic()`) is not DFT. It must not be presented with the same confidence as MP data.
+4. Formula-based stoichiometry matching (`_classify_structure()`) is **not crystallographic proof**. It maps normalized stoichiometry to canonical structure family names only.
+5. All public outputs must use **candidate language**: "candidate for validation," "computationally predicted stable," "not found in structural databases."
+6. PubMed and arXiv are insufficient for inorganic materials novelty assessment — they are one signal among many.
+
+### Future-Agent Obligations
+
+- Do **not** claim a candidate is "novel" or "not existing" based solely on zero database hits.
+- Do **not** present MP energy-above-hull values as experimental stability proof.
+- Do **not** omit the `[SIMULATION MODE]` or `[UNVALIDATED]` markers from frontier proposal outputs.
+- Do **not** add overclaiming language ("discovered," "confirmed," "stable beyond doubt") to any public-facing output from this layer.
+
+_Last updated: 2026-05-05_
+_Phase 8.5 status: accepted_doctrine_
+_Frontier Exhaustive Novelty + Thermodynamics status: accepted_doctrine_

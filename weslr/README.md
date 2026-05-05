@@ -242,3 +242,5 @@ Results should be reviewed by a subject-matter expert before use in real-world d
 | `MATERIALS_PROJECT_API_KEY` | *(unset)* | API key for Materials Project. MP source is disabled if unset. |
 | `WESLR_EXHAUSTIVE_TIMEOUT` | `10` | Timeout in seconds per API call during exhaustive structural checks. |
 | `WESLR_AUTO_CONFIRM_FRONTIER` | `0` | Set to `1` to auto-confirm live PubMed/arXiv and exhaustive DB queries. |
+
+**Doctrine:** All frontier science outputs are candidate pre-screening signals, not discovery claims. See `weslr/docs/WESLR_FRONTIER_EXHAUSTIVE_NOVELTY_THERMODYNAMICS_CANON_V1.md` for limitations on structural novelty, Materials Project stability ratings, and heuristic thermodynamics. Structure classification by stoichiometry is not crystallographic proof. Outputs must use "candidate for validation" language.
