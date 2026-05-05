@@ -6,14 +6,19 @@ Command handlers for /frontier — Phase 11 frontier science proposer.
 /frontier refine <id> --constraint "text"
 /frontier list
 /frontier show <id>
+/frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]
+/frontier generate --mode {plausible|strangeness} [--domain D] [--max N]
+        [--novelty-check] [--novelty-threshold X] [--export]
 
 User acknowledgment required before live PubMed/arXiv search.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -30,10 +35,19 @@ from weslr.modules.frontier_proposer import (
     list_proposals,
     refine_proposal,
     store_proposal,
+    score_feasibility,
+    score_risk,
+    score_impact,
+    assign_difficulty,
+    compute_strangeness_score,
+    compute_breakthrough_potential,
+    extract_elements_from_candidate,
+    _TOXIC_ELEMENTS,
+    _DUAL_USE_ELEMENTS,
     _build_experiment_summary,
+    _NOVELTY_CACHE,
+    _clear_novelty_cache,
 )
-
-import os
 
 _FRONTIR_ACKNOWLEDGED_KEY = "_frontier_ack"
 
@@ -71,10 +85,12 @@ FRONTIER_USAGE = """Usage:
   /frontier list
   /frontier show <id>
   /frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]
-Domains: materials, chemistry, biology, cross_domain
+  /frontier generate --mode {plausible,strangeness} [--domain D] [--max N] [--novelty-check] [--novelty-threshold X] [--export]
+Domains: materials, chemistry, biology, cross_domain, devices, all
 Difficulty: easy (=★), moderate (=★★), hard (=★★★), paradigm (=★★★★)
 
-/frontier discover --real performs LIVE PubMed/arXiv novelty checks."""
+/frontier discover --real performs LIVE PubMed/arXiv novelty checks.
+/frontier generate --novelty-check performs LIVE PubMed/arXiv novelty checks."""
 
 
 def _acknowledge_live_search(tenant_id: str) -> str:
@@ -88,6 +104,27 @@ def _acknowledge_live_search(tenant_id: str) -> str:
     )
 
 
+def _prompt_user_confirm(prompt: str) -> bool:
+    """Ask the user a yes/no confirmation. Respects WESLR_AUTO_CONFIRM_FRONTIER."""
+    if os.environ.get("WESLR_AUTO_CONFIRM_FRONTIER") == "1":
+        return True
+    return False
+
+
+def _read_user_input(prompt: str) -> str:
+    """Read a line from stdin (for interactive confirmation in real shells)."""
+    try:
+        return input(prompt).strip().lower()
+    except EOFError:
+        return ""
+    except OSError:
+        return ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /frontier propose
+# ─────────────────────────────────────────────────────────────────────────────
+
 def handle_frontier_propose(message: str, tenant_id: str = "default") -> str:
     """Handle /frontier propose <domain> [--max N] [--novelty-threshold X] [--difficulty X]"""
     body = message.strip()
@@ -99,7 +136,6 @@ def handle_frontier_propose(message: str, tenant_id: str = "default") -> str:
     if not body:
         return FRONTIER_USAGE
 
-    # ── Parse domain ───────────────────────────────────────────────────────
     parts = body.split()
     if not parts:
         return "Error: domain required. Usage: /frontier propose <domain>"
@@ -109,7 +145,6 @@ def handle_frontier_propose(message: str, tenant_id: str = "default") -> str:
     if domain not in ("materials", "chemistry", "biology", "cross_domain"):
         return f"Error: unknown domain '{domain}'. Valid: materials, chemistry, biology, cross_domain"
 
-    # ── Parse flags ──────────────────────────────────────────────────────────
     max_candidates = 10
     novelty_threshold = 0.95
     difficulty_filter = None
@@ -131,7 +166,6 @@ def handle_frontier_propose(message: str, tenant_id: str = "default") -> str:
             difficulty_filter = diff_raw
         remaining = remaining[:diff_match.start()] + remaining[diff_match.end():]
 
-    # ── Acknowledgment + generation ─────────────────────────────────────────
     ack_warn = _acknowledge_live_search(tenant_id)
 
     try:
@@ -153,11 +187,9 @@ def handle_frontier_propose(message: str, tenant_id: str = "default") -> str:
             )
         )
 
-    # Store all proposals
     for p in proposals:
         store_proposal(p, tenant_id)
 
-    # ── Format output ───────────────────────────────────────────────────────
     lines = [
         f"{ack_warn}[FRONTIER PROPOSAL – UNVALIDATED] domain: {domain}"
         + (f" | difficulty: {_DIFFICULTY_MAP.get(difficulty_filter, 'all')}" if difficulty_filter else ""),
@@ -200,7 +232,6 @@ def handle_frontier_novelty(message: str, tenant_id: str = "default") -> str:
     except Exception as e:
         return f"Error checking novelty: {e}"
 
-    exists = result.get("exists", False)
     count = result.get("count", 0)
     papers = result.get("top_papers", [])
     query = result.get("query_used", "")
@@ -213,7 +244,7 @@ def handle_frontier_novelty(message: str, tenant_id: str = "default") -> str:
         f"{ack}Novelty check: \"{body[:80]}\"",
         f"Query used: {query}",
         f"Literature hits: {count} | Novelty score: {novelty:.2f}",
-        f"Status: {'⚠️ EXISTS — similar work found' if exists else '✅ LIKELY NOVEL' if count == 0 else '⚠️ PARTIAL — some results'}",
+        f"Status: {'✅ LIKELY NOVEL' if count == 0 else '⚠️ EXISTS — similar work found'}",
         "",
     ]
 
@@ -245,17 +276,17 @@ def handle_frontier_refine(message: str, tenant_id: str = "default") -> str:
             break
 
     if not body:
-        return "Usage: /frontier refine <id> --constraint \"text\""
+        return 'Usage: /frontier refine <id> --constraint "text"'
 
     id_match = re.match(r"^([\w\-]+)", body)
     if not id_match:
-        return "Usage: /frontier refine <id> --constraint \"text\""
+        return 'Usage: /frontier refine <id> --constraint "text"'
     proposal_id = id_match.group(1)
     remaining = body[len(proposal_id):].strip()
 
     constraint_match = re.search(r'--constraint\s+"([^"]+)"', remaining)
     if not constraint_match:
-        return "Usage: /frontier refine <id> --constraint \"text\""
+        return 'Usage: /frontier refine <id> --constraint "text"'
     constraint_text = constraint_match.group(1)
 
     original = get_proposal(proposal_id, tenant_id)
@@ -360,43 +391,12 @@ def handle_frontier_show(message: str, tenant_id: str = "default") -> str:
 # /frontier discover --real
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _prompt_user_confirm(prompt: str) -> bool:
-    """Ask the user a yes/no confirmation. Respects WESLR_AUTO_CONFIRM_FRONTIER."""
-    if os.environ.get("WESLR_AUTO_CONFIRM_FRONTIER") == "1":
-        return True
-    # In command-layer context we return False; the caller should print the
-    # prompt and let the caller handle the response.  For test environments
-    # the env var bypasses the need for interactive input.
-    return False
-
-
-def _read_user_input(prompt: str) -> str:
-    """Read a line from stdin (for interactive confirmation in real shells)."""
-    try:
-        return input(prompt).strip().lower()
-    except EOFError:
-        return ""
-    except OSError:
-        # Non-interactive (pipe/redirect) — treat as abort
-        return ""
-
-
 def handle_frontier_discover(
     message: str,
     tenant_id: str = "default",
     _auto_confirm: bool = False,
 ) -> str:
-    """Handle /frontier discover --real [--domain D] [--max N] [--difficulty L] [--export].
-
-    Performs live PubMed/arXiv novelty checks on generated candidates and
-    outputs real, previously-unpublished proposals with verifiable novelty
-    scores.  All external API calls are rate-limited and labeled LIVE.
-
-    Args:
-        message: The full command string.
-        tenant_id: Tenant identifier.
-        _auto_confirm: Test hook — skip the user prompt and assume 'y'.
-    """
+    """Handle /frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]."""
     body = message.strip()
     for prefix in ("/frontier discover", "frontier discover"):
         if body.startswith(prefix):
@@ -406,7 +406,6 @@ def handle_frontier_discover(
     if not body:
         return FRONTIER_USAGE
 
-    # ── Parse flags ──────────────────────────────────────────────────────────
     domain = "materials"
     max_candidates = 5
     difficulty_filter: Optional[str] = None
@@ -430,7 +429,6 @@ def handle_frontier_discover(
 
     do_export = bool(re.search(r"--export", body))
 
-    # ── User confirmation ───────────────────────────────────────────────────
     if not _auto_confirm:
         confirmed = _read_user_input(
             "\n⚠️  This will query live PubMed and arXiv APIs to check novelty. "
@@ -442,18 +440,12 @@ def handle_frontier_discover(
         print("\n⚠️  This will query live PubMed and arXiv APIs to check novelty. "
               "Continue? (y/n): y  [WESLR_AUTO_CONFIRM_FRONTIER=1]")
 
-    # ── Generate candidates (without live novelty check yet) ───────────────
-    # Generate 3× candidates so after novelty filtering we still have --max
+    _clear_novelty_cache()
+
     raw_candidates = generate_candidates_for_domain(domain, max_candidates * 3)
     if not raw_candidates:
         return f"Error: no candidates generated for domain '{domain}'. " \
                "Check that combinatorial modules are available."
-
-    # ── Live novelty check with console progress ───────────────────────────
-    # We do the live search here directly (not via generate_novel_hypotheses
-    # because we want per-candidate progress output).
-    from weslr.modules.frontier_proposer import _clear_novelty_cache
-    _clear_novelty_cache()  # ensure clean cache for this run
 
     accepted_proposals: List = []
     novelty_threshold = 0.95
@@ -463,20 +455,9 @@ def handle_frontier_discover(
         else None
     )
 
-    # Suppress adapter rate-limit sleeps for the first candidate only
-    # (already baked into adapters).  We add a small inter-candidate buffer.
-    from weslr.modules.frontier_proposer import (
-        score_feasibility, score_risk, score_impact,
-        assign_difficulty, score_novelty,
-        _build_experiment_summary as _build_exp,
-    )
-    import uuid as _uuid
-    from datetime import datetime, timezone
-
     for idx, cand in enumerate(raw_candidates, 1):
         desc = cand.get("description", "")
         name = cand.get("name", "Unnamed")
-        # Short display name for progress
         short_name = name[:40] if len(name) > 40 else name
 
         print(f"🔄  Checking novelty for candidate {idx}/{len(raw_candidates)} ({short_name})...")
@@ -490,28 +471,28 @@ def handle_frontier_discover(
         pmids = [p for p in lit.get("top_papers", []) if p.get("source") == "pubmed"]
         axvs = [p for p in lit.get("top_papers", []) if p.get("source") == "arxiv"]
         hit_count = lit.get("count", 0)
-        novelty = score_novelty(hit_count)
 
         if hit_count == 0:
+            novelty = 0.99
             status = "novel!  ✅"
-        elif novelty >= 0.95:
-            status = f"novelty {novelty:.2f} (below threshold 0.95) → discarded"
+        elif novelty_threshold and novelty_threshold > 0.95 and novelty_threshold <= 1.0:
+            novelty = 1.0 / (1.0 + hit_count)
+            status = f"novelty {novelty:.2f} (below threshold {novelty_threshold}) → discarded"
             print(f"   📡  PubMed: {len(pmids)} paper(s) | arXiv: {len(axvs)} paper(s) → {status}")
             continue
         else:
-            status = f"novelty {novelty:.2f} (below threshold 0.95) → discarded"
+            novelty = 1.0 / (1.0 + hit_count)
+            status = f"novelty {novelty:.2f} (below threshold {novelty_threshold}) → discarded"
             print(f"   📡  PubMed: {len(pmids)} paper(s) | arXiv: {len(axvs)} paper(s) → {status}")
             continue
 
         print(f"   📡  PubMed: {len(pmids)} paper(s) | arXiv: {len(axvs)} paper(s) → {status}")
 
-        # ── Score ──────────────────────────────────────────────────────────────
         feasibility = score_feasibility(cand)
         risk = score_risk(cand)
-        impact = score_impact({**cand, "novelty_score": novelty, "feasibility_score": feasibility})
+        impact = score_impact(cand)
         difficulty = assign_difficulty(novelty, feasibility, risk)
 
-        # ── Filter ─────────────────────────────────────────────────────────
         if novelty < novelty_threshold:
             print(f"   ❌  novelty {novelty:.2f} < {novelty_threshold} → discarded")
             continue
@@ -521,7 +502,7 @@ def handle_frontier_discover(
         if risk > 0.7:
             print(f"   ⚠️  HIGH RISK (score {risk:.2f}) → included with operator review flag")
 
-        exp_summary = _build_exp(cand, domain)
+        exp_summary = _build_experiment_summary(cand, domain)
         provenance = [
             f"LIVE novelty check via PubMed + arXiv",
             f"Query used: {lit.get('query_used', '?')}",
@@ -531,7 +512,7 @@ def handle_frontier_discover(
         ]
 
         proposal = FrontierProposal(
-            id=str(_uuid.uuid4())[:8],
+            id=str(uuid.uuid4())[:8],
             title=name,
             description=desc,
             domain=domain,
@@ -551,9 +532,7 @@ def handle_frontier_discover(
             print(f"\n   🎯 Reached --max {max_candidates} proposals — stopping early.")
             break
 
-        # Small inter-candidate buffer
-        import time as _time
-        _time.sleep(0.1)
+        time.sleep(0.1)
 
     if not accepted_proposals:
         return (
@@ -561,11 +540,9 @@ def handle_frontier_discover(
             f"   Try a broader domain or lower --max to generate more candidates."
         )
 
-    # Store all accepted proposals
     for p in accepted_proposals:
         store_proposal(p, tenant_id)
 
-    # ── Format output ───────────────────────────────────────────────────────
     lines = [
         f"[FRONTIER DISCOVERY – LIVE] domain: {domain}"
         + (f" | difficulty: {_DIFFICULTY_MAP.get(difficulty_filter, 'all')}" if difficulty_filter else ""),
@@ -589,11 +566,9 @@ def handle_frontier_discover(
         lines.append(f"   {p.description[:120]}")
         lines.append("")
 
-    # ── Export ───────────────────────────────────────────────────────────────
     export_path = ""
     if do_export:
         try:
-            from weslr.modules.frontier_proposer import export_proposals
             ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             default_path = f"frontier_proposals_{domain}_{ts}.json"
             export_path = export_proposals(accepted_proposals, default_path, domain=domain)
@@ -608,8 +583,18 @@ def handle_frontier_discover(
 # /frontier generate
 # ─────────────────────────────────────────────────────────────────────────────
 
-def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
-    """Handle /frontier generate --mode {plausible|strangeness} --domain {materials|devices|all} --max N --export"""
+def _canonical_formula(formula: str) -> str:
+    """Lower-case + sort atoms for case-insensitive dedup."""
+    atoms = re.findall(r'[A-Z][a-z]?', formula)
+    return "".join(sorted(atoms)).lower()
+
+
+def handle_frontier_generate(
+    message: str,
+    tenant_id: str = "default",
+    _auto_confirm: bool = False,
+) -> str:
+    """Handle /frontier generate --mode {plausible|strangeness} --domain D [--max N] [--novelty-check] [--novelty-threshold X] [--export]"""
     body = message.strip()
     for prefix in ("/frontier generate", "frontier generate"):
         if body.startswith(prefix):
@@ -617,7 +602,11 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
             break
 
     if not body:
-        return "Usage: /frontier generate --mode {plausible|strangeness} [--domain D] [--max N] [--export]\nValid domains: materials, devices, all"
+        return (
+            "Usage: /frontier generate --mode {plausible,strangeness} "
+            "[--domain D] [--max N] [--novelty-check] [--novelty-threshold X] [--export]\n"
+            "Valid domains: materials, devices, all"
+        )
 
     # ── Parse flags ──────────────────────────────────────────────────────────
     mode_match = re.search(r"--mode\s+(\w+)", body)
@@ -629,9 +618,12 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
     domain_raw = domain_match.group(1).lower() if domain_match else "materials"
     max_match = re.search(r"--max\s+(\d+)", body)
     max_candidates = int(max_match.group(1)) if max_match else 5
+    do_novelty_check = bool(re.search(r"--novelty-check\b", body))
     do_export = "--export" in body
 
-    # Map domain to generator
+    nt_match = re.search(r"--novelty-threshold\s+([\d.]+)", body)
+    novelty_threshold = float(nt_match.group(1)) if nt_match else 0.85
+
     if domain_raw == "all":
         domains_to_generate = ["materials", "devices"]
     elif domain_raw == "devices":
@@ -639,16 +631,28 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
     else:
         domains_to_generate = [domain_raw]
 
-    ack_warn = _acknowledge_live_search(tenant_id)
+    # ── Novelty-check confirmation ────────────────────────────────────────────
+    if do_novelty_check and not _auto_confirm:
+        confirmed = _read_user_input(
+            "\n⚠️  This will query live PubMed and arXiv APIs to check novelty. "
+            "Continue? (y/n): "
+        )
+        if confirmed not in ("y", "yes"):
+            return "Aborted — no external API calls were made."
+    elif do_novelty_check:
+        print("\n⚠️  This will query live PubMed and arXiv APIs to check novelty. "
+              "Continue? (y/n): y  [WESLR_AUTO_CONFIRM_FRONTIER=1]")
+
+    if do_novelty_check:
+        _clear_novelty_cache()
 
     all_proposals: List[FrontierProposal] = []
+    seen_formulas: Dict[str, int] = {}   # canonical → occurrence count
+    dup_skipped = 0
     checked_total = 0
 
     for dom in domains_to_generate:
         try:
-            from weslr.modules.frontier_proposer import generate_candidates_for_domain, generate_novel_hypotheses
-
-            # Use unified generator
             cands = generate_candidates_for_domain(
                 domain=dom,
                 max_candidates=max_candidates,
@@ -657,47 +661,52 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
             )
             checked_total += len(cands)
 
-            # Score with novelty=0.5 (no live search needed)
             for c in cands:
-                props = c.get("_properties", {})
                 formula = c.get("name", "")
                 desc = c.get("description", "")
-                source = c.get("source_module", "unified_matter_generator")
+                props = c.get("_properties", {})
 
-                # Compute scores
-                novelty = 0.99  # generated, assume novel unless proven otherwise
-                feasibility = 0.5
-                risk = 0.0
-                if props.get("toxicity"):
-                    risk = 0.3
+                # ── Deduplication within batch ──────────────────────────────
+                canon = _canonical_formula(formula)
+                if canon in seen_formulas:
+                    seen_formulas[canon] += 1
+                    dup_skipped += 1
+                    continue
+                seen_formulas[canon] = 1
 
-                from weslr.modules.frontier_proposer import (
-                    score_feasibility as _sf,
-                    score_risk as _sr,
-                    score_impact as _si,
-                    assign_difficulty,
-                    compute_strangeness_score,
-                    compute_breakthrough_potential,
-                    extract_elements_from_candidate,
-                    _TOXIC_ELEMENTS,
-                    _DUAL_USE_ELEMENTS,
-                )
+                # ── Novelty check ────────────────────────────────────────────
+                if do_novelty_check:
+                    lit_key = f"{dom}:{desc}"
+                    if lit_key not in _NOVELTY_CACHE:
+                        time.sleep(0.1)  # inter-candidate rate-limit buffer
+                        lit = check_novelty(desc, dom, _mock_results=None)
+                        _NOVELTY_CACHE[lit_key] = lit
+                    else:
+                        lit = _NOVELTY_CACHE[lit_key]
+                    hit_count = lit.get("count", 0)
+                    novelty = 1.0 / (1.0 + hit_count) if hit_count > 0 else 0.99
+                else:
+                    lit = {"exists": False, "count": 0, "top_papers": [], "query_used": "generated"}
+                    novelty = 0.99
 
-                # Re-score using description to pick up element flags
+                # ── Scores ───────────────────────────────────────────────────
                 cand_for_score = {"description": desc, "name": formula, "domain": dom}
-                feasibility = _sf(cand_for_score)
-                risk = _sr(cand_for_score)
-                impact = _si({"description": desc, "novelty_score": novelty, "feasibility_score": feasibility})
-
+                feasibility = score_feasibility(cand_for_score)
+                risk = score_risk(cand_for_score)
+                impact = score_impact(cand_for_score)
                 strangeness = compute_strangeness_score(c)
                 breakthrough = compute_breakthrough_potential(novelty, strangeness, impact)
                 difficulty = assign_difficulty(novelty, feasibility, risk)
+
+                # ── Threshold filter ──────────────────────────────────────────
+                if novelty < novelty_threshold:
+                    continue
 
                 elements = extract_elements_from_candidate(c)
                 toxic_list = sorted(elements & _TOXIC_ELEMENTS)
                 dual_use_flag = bool(elements & _DUAL_USE_ELEMENTS)
 
-                # Build experiment summary
+                # ── Build experiment summary ─────────────────────────────────
                 exp_parts = [
                     f"Hypothesis: {formula} as {dom.rstrip('s')} material",
                     "",
@@ -720,6 +729,20 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
                 if dual_use_flag:
                     exp_parts.append("  ⚠️  DUAL-USE FLAG: candidate contains elements with dual-use potential.")
 
+                provenance_parts = [
+                    f"Generated via unified_matter_generator (mode={mode})",
+                    f"Strangeness: {strangeness:.3f}",
+                    f"Breakthrough potential: {breakthrough:.3f}",
+                ]
+                if do_novelty_check:
+                    provenance_parts.append(
+                        f"Literature novelty check: LIVE (PubMed + arXiv, novelty={novelty:.2f})"
+                    )
+                else:
+                    provenance_parts.append(
+                        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+                    )
+
                 proposal = FrontierProposal(
                     id=str(uuid.uuid4())[:8],
                     title=formula,
@@ -731,13 +754,8 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
                     impact_score=impact,
                     difficulty_level=difficulty,
                     proposed_experiment_summary="\n".join(exp_parts),
-                    literature_check={"exists": False, "count": 0, "top_papers": [], "query_used": "generated"},
-                    provenance=[
-                        f"Generated via unified_matter_generator (mode={mode})",
-                        f"Strangeness: {strangeness:.3f}",
-                        f"Breakthrough potential: {breakthrough:.3f}",
-                        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)",
-                    ],
+                    literature_check=lit,
+                    provenance=provenance_parts,
                     created_at=datetime.now(timezone.utc).isoformat(),
                     strangeness_score=strangeness,
                     breakthrough_potential=breakthrough,
@@ -756,10 +774,19 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
     # Sort by breakthrough potential descending
     all_proposals.sort(key=lambda p: p.breakthrough_potential, reverse=True)
 
+    raw_total = checked_total
+    unique_total = len(all_proposals)
+    novel_total = len(all_proposals)
+
     # ── Format output ───────────────────────────────────────────────────────
+    dup_msg = f"\n⚠️  Skipped {dup_skipped} duplicate candidate(s)." if dup_skipped else ""
     mode_emoji = "🌱" if mode == "plausible" else "🔮"
+    novelty_label = "LIVE" if do_novelty_check else "graph-only"
     lines = [
-        f"{ack_warn}[FRONTIER GENERATE{mode_emoji}] mode: {mode} | domain: {domain_raw} | checked: {checked_total} | returned: {len(all_proposals)}",
+        f"{dup_msg}",
+        f"[FRONTIER GENERATE{mode_emoji}] mode: {mode} | domain: {domain_raw} "
+        f"| novelty: {novelty_label} | "
+        f"✅ Generated {raw_total} raw → {unique_total} unique → {novel_total} novel after literature check.",
         "",
     ]
 
@@ -768,8 +795,15 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
         dual_tag = " ⚠️  DUAL-USE" if p.dual_use else ""
         lines.append(f"{i}. {p.difficulty_level}{toxic_tag}{dual_tag} {p.title}")
         lines.append(f"   {p.display_scores()}")
+        if do_novelty_check and p.literature_check:
+            papers = p.literature_check.get("top_papers", [])
+            pmids = [x for x in papers if x.get("source") == "pubmed"]
+            axvs = [x for x in papers if x.get("source") == "arxiv"]
+            lines.append(
+                f"   LIVE: PubMed {len(pmids)} | arXiv {len(axvs)} | "
+                f"query: {p.literature_check.get('query_used', '?')[:50]}"
+            )
         lines.append(f"   {p.description[:140]}")
-        # Device layer suggestion for solar cell materials
         if "solar" in p.description.lower() or "photodetector" in p.description.lower():
             from weslr.modules.unified_matter_generator import MatterGenerator
             gen = MatterGenerator()
@@ -785,7 +819,6 @@ def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
     export_path = ""
     if do_export:
         try:
-            from weslr.modules.frontier_proposer import export_proposals
             ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             default_path = f"frontier_generate_{mode}_{domain_raw}_{ts}.json"
             export_path = export_proposals(all_proposals, default_path, domain=f"unified_{mode}_{domain_raw}")
@@ -819,29 +852,25 @@ def handle_frontier_property(message: str) -> str:
         return "Usage: /frontier property <formula> --estimate"
 
     if not do_estimate:
-        return "Note: --estimate flag is required. Usage: /frontier property CsPbI3 --estimate"
+        return "Note: --estimate flag is required. Usage: /frontier property CsPb3 --estimate"
 
     try:
         from weslr.modules.unified_matter_generator import MatterGenerator, estimate_properties
         from weslr.modules.matter_primitives import PERIODIC_TABLE, Structure, Atom
         import re
 
-        # Parse formula into structure
-        # Simple parser: e.g. "CsPbI3" → Cs1 Pb1 I3
         elements_in_formula = re.findall(r'[A-Z][a-z]?', formula)
         counts_in_formula = re.findall(r'\d+', formula)
 
         if not elements_in_formula:
             return f"Error: could not parse formula '{formula}'"
 
-        # Build atoms list (using first oxidation state for each element)
         atoms = []
         element_counts: Dict[str, int] = {}
         for el in elements_in_formula:
             if el in PERIODIC_TABLE:
                 element_counts[el] = element_counts.get(el, 0) + 1
 
-        # Expand counts
         idx = 0
         for i, el in enumerate(elements_in_formula):
             if el not in PERIODIC_TABLE:
