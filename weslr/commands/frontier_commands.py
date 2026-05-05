@@ -8,7 +8,8 @@ Command handlers for /frontier — Phase 11 frontier science proposer.
 /frontier show <id>
 /frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]
 /frontier generate --mode {plausible|strangeness} [--domain D] [--max N]
-        [--novelty-check] [--novelty-threshold X] [--export]
+        [--novelty-check] [--novelty-threshold X] [--exhaustive] [--export]
+/frontier novelty-exhaustive <formula>
 
 User acknowledgment required before live PubMed/arXiv search.
 """
@@ -23,6 +24,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
+from weslr.modules.exhaustive_novelty_checker import check_all_sources, clear_session_cache as _clear_exhaustive_cache
 from weslr.modules.frontier_proposer import (
     FrontierProposal,
     _DIFFICULTY_MAP,
@@ -313,6 +315,101 @@ def handle_frontier_refine(message: str, tenant_id: str = "default") -> str:
 # /frontier list
 # ─────────────────────────────────────────────────────────────────────────────
 
+def handle_frontier_novelty_exhaustive(message: str, tenant_id: str = "default") -> str:
+    """Handle /frontier novelty-exhaustive <formula>"""
+    body = message.strip()
+    for prefix in ("/frontier novelty-exhaustive", "frontier novelty-exhaustive"):
+        if body.startswith(prefix):
+            body = body[len(prefix):].strip()
+            break
+
+    if not body:
+        return "Usage: /frontier novelty-exhaustive <formula>\nExample: /frontier novelty-exhaustive CaSc2TiO6"
+
+    formula = body.strip()
+
+    # ── Basic formula validation ────────────────────────────────────────────
+    # Accept standard notation: CaSc2TiO6, CaTiO3, Fe2O3, etc.
+    if not re.match(r"^[A-Z][a-z]?(?:\d*[A-Z][a-z]?\d*)*$", formula):
+        return f"Invalid formula format: '{formula}'\nExpected: CaSc2TiO6, BaTiO3, Fe2O3, etc."
+
+    # ── Check ───────────────────────────────────────────────────────────────
+    _clear_exhaustive_cache()
+
+    try:
+        result = check_all_sources(formula, config={})
+    except Exception as e:
+        return f"Error during exhaustive check: {e}"
+
+    total_hits = result.get("total_hits", 0)
+    is_novel = result.get("is_novel", True)
+    sources = result.get("sources", {})
+
+    # ── Format output ────────────────────────────────────────────────────────
+    novelty_status = "✅ LIKELY NOVEL — not in any queried database" if is_novel else "⚠️  FOUND in database(s)"
+
+    lines = [
+        f"[EXHAUSTIVE NOVELTY CHECK] formula: {formula}",
+        f"Variants checked: {len(result.get('variants', []))}",
+        f"Status: {novelty_status}",
+        f"Total structural hits: {total_hits}",
+        "",
+        "Source              │ Entries │ Enabled │ Error",
+        "───                 │ ───     │ ───    │ ───",
+    ]
+
+    source_order = ["COD", "OQMD", "AFLOW", "NOMAD", "Materials Project"]
+    for src in source_order:
+        s = sources.get(src, {})
+        count = s.get("count", 0)
+        enabled = s.get("enabled", True)
+        error = s.get("error", "") or ""
+        enabled_str = "✅" if enabled else "❌"
+        error_str = f" │ {error[:40]}" if error else ""
+        lines.append(f"{src:18} │ {count:7} │ {enabled_str}    │{error_str}")
+
+    lines.append("")
+    if not is_novel:
+        lines.append("⚠️  This composition is NOT novel — found in one or more databases.")
+        lines.append("   Structural data exists; consider reviewing existing literature.")
+    else:
+        lines.append("✅ NOT found in COD, OQMD, AFLOW, NOMAD, or Materials Project.")
+        lines.append("   No matching inorganic crystal structure on record.")
+
+    # ── Thermodynamics section ───────────────────────────────────────────────
+    thermo = result.get("thermodynamics", {})
+    src_label = "Materials Project" if thermo.get("source") == "Materials Project" else "Heuristic (no MP API key)"
+    rating = thermo.get("stability_rating", "unknown")
+    rating_emoji = {
+        "stable": "✅",
+        "metastable": "⚠️",
+        "unstable": "❌",
+        "moderately plausible": "⚡",
+        "speculative": "❓",
+        "unlikely": "⬇️",
+        "unknown": "–",
+    }.get(rating, "–")
+
+    lines.append("")
+    lines.append(f"Thermodynamics ({src_label}):")
+    eah = thermo.get("energy_above_hull")
+    form_e = thermo.get("formation_energy_per_atom")
+    decomp = thermo.get("decomposition_products", [])
+    score = thermo.get("stability_score")
+
+    if eah is not None:
+        lines.append(f"  Energy above hull:    {eah:.3f} eV/atom")
+    if form_e is not None:
+        lines.append(f"  Formation energy:     {form_e:.3f} eV/atom")
+    if decomp:
+        lines.append(f"  Decomposition to:     {', '.join(decomp)}")
+    if score is not None:
+        lines.append(f"  Heuristic score:      {score:.2f}/1.00")
+    lines.append(f"  Stability rating:     {rating_emoji} {rating}")
+
+    return "\n".join(lines)
+
+
 def handle_frontier_list(tenant_id: str = "default") -> str:
     """Handle /frontier list — list all stored proposals."""
     proposals = list_proposals(tenant_id)
@@ -594,7 +691,7 @@ def handle_frontier_generate(
     tenant_id: str = "default",
     _auto_confirm: bool = False,
 ) -> str:
-    """Handle /frontier generate --mode {plausible|strangeness} --domain D [--max N] [--novelty-check] [--novelty-threshold X] [--export]"""
+    """Handle /frontier generate --mode {plausible|strangeness} --domain D [--max N] [--novelty-check] [--exhaustive] [--novelty-threshold X] [--export]"""
     body = message.strip()
     for prefix in ("/frontier generate", "frontier generate"):
         if body.startswith(prefix):
@@ -619,10 +716,17 @@ def handle_frontier_generate(
     max_match = re.search(r"--max\s+(\d+)", body)
     max_candidates = int(max_match.group(1)) if max_match else 5
     do_novelty_check = bool(re.search(r"--novelty-check\b", body))
+    do_exhaustive_check = "--exhaustive" in body
     do_export = "--export" in body
 
     nt_match = re.search(r"--novelty-threshold\s+([\d.]+)", body)
     novelty_threshold = float(nt_match.group(1)) if nt_match else 0.85
+
+    min_stability_match = re.search(r"--min-stability\s+(\w+)", body)
+    min_stability = min_stability_match.group(1).lower() if min_stability_match else "any"
+    valid_stability = {"stable", "metastable", "any"}
+    if min_stability not in valid_stability:
+        return f"--min-stability must be one of: {', '.join(valid_stability)}"
 
     if domain_raw == "all":
         domains_to_generate = ["materials", "devices"]
@@ -630,6 +734,17 @@ def handle_frontier_generate(
         domains_to_generate = ["devices"]
     else:
         domains_to_generate = [domain_raw]
+
+    if do_exhaustive_check:
+        _clear_exhaustive_cache()
+
+    all_proposals: List[FrontierProposal] = []
+    seen_formulas: Dict[str, int] = {}   # canonical → occurrence count
+    dup_skipped = 0
+    checked_total = 0
+    exhaustive_discarded = 0
+    exhaustive_checked = 0
+    formula_thermo_tag: Dict[str, str] = {}   # formula → stability one-liner
 
     # ── Novelty-check confirmation ────────────────────────────────────────────
     if do_novelty_check and not _auto_confirm:
@@ -645,11 +760,6 @@ def handle_frontier_generate(
 
     if do_novelty_check:
         _clear_novelty_cache()
-
-    all_proposals: List[FrontierProposal] = []
-    seen_formulas: Dict[str, int] = {}   # canonical → occurrence count
-    dup_skipped = 0
-    checked_total = 0
 
     for dom in domains_to_generate:
         try:
@@ -688,6 +798,38 @@ def handle_frontier_generate(
                 else:
                     lit = {"exists": False, "count": 0, "top_papers": [], "query_used": "generated"}
                     novelty = 0.99
+
+                # ── Exhaustive structural novelty check ─────────────────────
+                ex_result: Optional[Dict[str, Any]] = None
+                if do_exhaustive_check and formula:
+                    exhaustive_checked += 1
+                    try:
+                        ex_result = check_all_sources(formula, config={})
+                        ex_total = ex_result.get("total_hits", 0)
+                        if ex_total > 0:
+                            exhaustive_discarded += 1
+                            continue  # skip candidate — already known structurally
+                    except Exception:
+                        pass  # don't block candidate on exhaustive check failure
+
+                # ── Stability filter ─────────────────────────────────────────
+                if min_stability != "any" and ex_result:
+                    thermo = ex_result.get("thermodynamics", {})
+                    rating = thermo.get("stability_rating", "")
+                    # Map stability levels to comparable tiers
+                    tier_map = {
+                        "stable": 3,
+                        "metastable": 2,
+                        "moderately plausible": 2,
+                        "speculative": 1,
+                        "unstable": 1,
+                        "unlikely": 0,
+                        "unknown": 0,
+                    }
+                    min_tier = tier_map.get(min_stability, 0)
+                    cand_tier = tier_map.get(rating, 0)
+                    if cand_tier < min_tier:
+                        continue  # does not meet minimum stability
 
                 # ── Scores ───────────────────────────────────────────────────
                 cand_for_score = {"description": desc, "name": formula, "domain": dom}
@@ -743,6 +885,29 @@ def handle_frontier_generate(
                         "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
                     )
 
+                # ── Thermodynamic stability in provenance ─────────────────────
+                thermo_src_tag = ""
+                if ex_result:
+                    thermo = ex_result.get("thermodynamics", {})
+                    rating = thermo.get("stability_rating", "unknown")
+                    src = thermo.get("source", "?")
+                    eah = thermo.get("energy_above_hull")
+                    score = thermo.get("stability_score")
+                    if eah is not None:
+                        provenance_parts.append(
+                            f"Thermodynamic stability: {rating} "
+                            f"(EAH={eah:.3f} eV/atom, src={src})"
+                        )
+                    elif score is not None:
+                        provenance_parts.append(
+                            f"Thermodynamic stability: {rating} "
+                            f"(heuristic score={score:.2f}, src={src})"
+                        )
+                    else:
+                        provenance_parts.append(
+                            f"Thermodynamic stability: {rating} (src={src})"
+                        )
+
                 proposal = FrontierProposal(
                     id=str(uuid.uuid4())[:8],
                     title=formula,
@@ -764,6 +929,22 @@ def handle_frontier_generate(
                 )
                 all_proposals.append(proposal)
 
+                # Tag thermodynamic stability for output line
+                if ex_result:
+                    thermo = ex_result.get("thermodynamics", {})
+                    rating = thermo.get("stability_rating", "unknown")
+                    eah = thermo.get("energy_above_hull")
+                    score = thermo.get("stability_score")
+                    emoji = {"stable": "✅", "metastable": "⚠️", "unstable": "❌",
+                            "moderately plausible": "⚡", "speculative": "❓",
+                            "unlikely": "⬇️", "unknown": "–"}.get(rating, "?")
+                    if eah is not None:
+                        formula_thermo_tag[formula] = f"{emoji} {rating} (EAH={eah:.3f})",
+                    elif score is not None:
+                        formula_thermo_tag[formula] = f"{emoji} {rating} (score={score:.2f})",
+                    else:
+                        formula_thermo_tag[formula] = f"{emoji} {rating}",
+
         except Exception as e:
             return f"Error generating {dom} candidates: {e}"
 
@@ -780,10 +961,11 @@ def handle_frontier_generate(
 
     # ── Format output ───────────────────────────────────────────────────────
     dup_msg = f"\n⚠️  Skipped {dup_skipped} duplicate candidate(s)." if dup_skipped else ""
+    exhaustive_msg = f"\n🔍 Exhaustive check: {exhaustive_checked} candidates checked, {exhaustive_discarded} discarded (found in structural DB)." if do_exhaustive_check else ""
     mode_emoji = "🌱" if mode == "plausible" else "🔮"
     novelty_label = "LIVE" if do_novelty_check else "graph-only"
     lines = [
-        f"{dup_msg}",
+        f"{dup_msg}{exhaustive_msg}",
         f"[FRONTIER GENERATE{mode_emoji}] mode: {mode} | domain: {domain_raw} "
         f"| novelty: {novelty_label} | "
         f"✅ Generated {raw_total} raw → {unique_total} unique → {novel_total} novel after literature check.",
@@ -804,6 +986,9 @@ def handle_frontier_generate(
                 f"query: {p.literature_check.get('query_used', '?')[:50]}"
             )
         lines.append(f"   {p.description[:140]}")
+        # ── Thermodynamic stability tag ─────────────────────────────────
+        if do_exhaustive_check and p.title in formula_thermo_tag:
+            lines.append(f"   🔬 {formula_thermo_tag[p.title]}")
         if "solar" in p.description.lower() or "photodetector" in p.description.lower():
             from weslr.modules.unified_matter_generator import MatterGenerator
             gen = MatterGenerator()
@@ -914,9 +1099,11 @@ def handle_frontier_property(message: str) -> str:
 # Main dispatcher
 # ─────────────────────────────────────────────────────────────────────────────
 
-def handle_frontier(message: str, tenant_id: str = "default") -> str:
+def handle_frontier(message: str, tenant_id: str = "default", _auto_confirm: bool = False) -> str:
     """Route /frontier subcommands."""
     lowered = message.lower().strip()
+    # Auto-confirm from env var
+    auto_confirm = _auto_confirm or bool(os.environ.get("WESLR_AUTO_CONFIRM_FRONTIER"))
     if lowered.startswith("/frontier propose") or lowered.startswith("frontier propose"):
         return handle_frontier_propose(message, tenant_id)
     elif lowered.startswith("/frontier novelty") or lowered.startswith("frontier novelty"):
@@ -930,7 +1117,9 @@ def handle_frontier(message: str, tenant_id: str = "default") -> str:
     elif lowered.startswith("/frontier discover") or lowered.startswith("frontier discover"):
         return handle_frontier_discover(message, tenant_id)
     elif lowered.startswith("/frontier generate") or lowered.startswith("frontier generate"):
-        return handle_frontier_generate(message, tenant_id)
+        return handle_frontier_generate(message, tenant_id, _auto_confirm=auto_confirm)
+    elif lowered.startswith("/frontier novelty-exhaustive") or lowered.startswith("frontier novelty-exhaustive"):
+        return handle_frontier_novelty_exhaustive(message, tenant_id)
     elif lowered.startswith("/frontier property") or lowered.startswith("frontier property"):
         return handle_frontier_property(message)
     else:

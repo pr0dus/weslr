@@ -168,8 +168,8 @@ python -m pytest tests/ -v
 | `/frontier refine <id> --constraint "text"` | Re-score proposal with additional constraints |
 | `/frontier list` | List all stored proposals with IDs and difficulty |
 | `/frontier show <id>` | Display full proposal with scores, experiment summary, and provenance |
-| `/frontier generate --mode {plausible\|strangeness} [--domain D] [--max N] [--export]` | Generate candidates via unified matter generator; outputs material properties, toxicity/dual-use flags, and device layers |
-| `/frontier property <formula> --estimate` | Estimate bandgap, conductivity, stability for any formula from the periodic table |
+| `/frontier generate --mode {plausible\|strangeness} [--domain D] [--max N] [--novelty-check] [--exhaustive] [--novelty-threshold X] [--min-stability {stable\|metastable\|any}] [--export]` | Generate candidates via unified matter generator; `--novelty-check` enables PubMed/arXiv; `--exhaustive` adds COD/OQMD/AFLOW/NOMAD/MP structural DB check (discards found candidates); `--min-stability` filters candidates by thermodynamic stability (requires `--exhaustive`); thermodynamic summary printed for each passing candidate |
+| `/frontier novelty-exhaustive <formula>` | Exhaustive multi-source structural novelty check: queries COD, OQMD, AFLOW, NOMAD, and Materials Project (if API key set); returns hit counts per source and thermodynamic stability (energy above hull, formation energy, decomposition products, stability rating); use to verify a specific formula before synthesis |
 | `/frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]` | Live discovery: generates candidates and performs real PubMed/arXiv novelty checks; prompts for confirmation; exports proposals to JSON |
 | `/frontier daemon status` | Show frontier daemon running state, last run time, and configuration |
 | `/frontier daemon start` | Start the background frontier daemon (generates candidates periodically) |
@@ -232,3 +232,13 @@ README is a user/developer help surface, not the authoritative doctrine source. 
 - Abduction explanations: *Plausible explanations – requires experimental validation.*
 
 Results should be reviewed by a subject-matter expert before use in real-world decisions.
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `MATERIALS_PROJECT_API_KEY` | *(unset)* | API key for Materials Project. MP source is disabled if unset. |
+| `WESLR_EXHAUSTIVE_TIMEOUT` | `10` | Timeout in seconds per API call during exhaustive structural checks. |
+| `WESLR_AUTO_CONFIRM_FRONTIER` | `0` | Set to `1` to auto-confirm live PubMed/arXiv and exhaustive DB queries. |
