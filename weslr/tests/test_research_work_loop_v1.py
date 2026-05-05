@@ -459,3 +459,115 @@ class TestMissionSchema:
         id1 = generate_mission_id("tenant-1", "Test Mission", "2026-05-04-19")
         id2 = generate_mission_id("tenant-2", "Test Mission", "2026-05-04-19")
         assert id1 != id2
+
+class TestSuggestionQuality:
+    """Tests for improved suggestion text quality."""
+
+    def setup_method(self):
+        """Set up temp store and workspace (same pattern as TestRunOnceMissionReview)."""
+        self.temp_file = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+        self.store_path = self.temp_file.name
+        self.temp_file.close()
+        self.workspace_root = "/data/data/com.termux/files/home/.openclaw/workspace"
+
+    def teardown_method(self):
+        if os.path.exists(self.store_path):
+            os.unlink(self.store_path)
+
+    def test_suggestion_includes_mission_title(self):
+        """Test that suggestion text includes the mission title."""
+        store = MissionStore(store_path=self.store_path)
+        mission = make_mission("tenant-1", "user-1", "Soft Micro-Robotics Materials", "Goal")
+        mission.status = "active"
+        mission.current_questions = ["What material properties enable reversible actuation?"]
+        mission.evidence_links = []
+        store.save(mission)
+
+        run_once_mission_review("tenant-1", store_path=self.store_path)
+
+        pending_path = ".weslr/pending_messages.jsonl"
+        if os.path.exists(pending_path):
+            with open(pending_path, "r") as f:
+                lines = f.readlines()
+            for line in reversed(lines):
+                record = json.loads(line.strip())
+                if record.get("type") == "mission_suggestion" and record.get("mission_id") == mission.mission_id:
+                    suggestion_text = record.get("suggestion", "")
+                    assert "Soft Micro-Robotics Materials" in suggestion_text
+                    break
+
+    def test_suggestion_includes_question(self):
+        """Test that suggestion text includes the open question."""
+        store = MissionStore(store_path=self.store_path)
+        mission = make_mission("tenant-1", "user-1", "Bandgap Study", "Goal")
+        mission.status = "active"
+        mission.current_questions = ["What is the bandgap of kesterite solar cells?"]
+        mission.evidence_links = []
+        store.save(mission)
+
+
+        run_once_mission_review("tenant-1", store_path=self.store_path)
+
+
+        pending_path = ".weslr/pending_messages.jsonl"
+        if os.path.exists(pending_path):
+            with open(pending_path, "r") as f:
+                lines = f.readlines()
+            for line in reversed(lines):
+                record = json.loads(line.strip())
+                if record.get("type") == "mission_suggestion" and record.get("mission_id") == mission.mission_id:
+                    suggestion_text = record.get("suggestion", "")
+                    assert "bandgap" in suggestion_text.lower()
+                    break
+
+    def test_suggestion_includes_domain_tags(self):
+        """Test that suggestion includes domain tags when present."""
+        store = MissionStore(store_path=self.store_path)
+        mission = make_mission("tenant-1", "user-1", "Domain Tag Test", "Goal")
+        mission.status = "active"
+        mission.current_questions = ["What is the efficiency?"]
+        mission.domain_tags = ["materials", "soft-robotics", "biocompatibility"]
+        mission.evidence_links = []
+        store.save(mission)
+
+
+        run_once_mission_review("tenant-1", store_path=self.store_path)
+
+        pending_path = ".weslr/pending_messages.jsonl"
+        if os.path.exists(pending_path):
+            with open(pending_path, "r") as f:
+                lines = f.readlines()
+            for line in reversed(lines):
+                record = json.loads(line.strip())
+                if record.get("type") == "mission_suggestion" and record.get("mission_id") == mission.mission_id:
+                    suggestion_text = record.get("suggestion", "")
+                    # Domain tags should appear in suggestion
+                    assert "materials" in suggestion_text or "soft-robotics" in suggestion_text
+                    break
+
+    def test_suggestion_has_correct_metadata(self):
+        """Test that suggestion has correct provenance, confidence, safety."""
+        store = MissionStore(store_path=self.store_path)
+        mission = make_mission("tenant-1", "user-1", "Metadata Test", "Goal")
+        mission.status = "active"
+        mission.current_questions = ["What is X?"]
+        mission.evidence_links = []
+        store.save(mission)
+
+        run_once_mission_review("tenant-1", store_path=self.store_path)
+
+        pending_path = ".weslr/pending_messages.jsonl"
+        if os.path.exists(pending_path):
+            with open(pending_path, "r") as f:
+                lines = f.readlines()
+            for line in reversed(lines):
+                record = json.loads(line.strip())
+                if record.get("type") == "mission_suggestion" and record.get("mission_id") == mission.mission_id:
+                    assert record.get("automatic_execution") is False
+                    assert record.get("operator_visible") is True
+                    assert record.get("public_user_visible") is False
+                    assert record.get("safety") == "passed"
+                    assert record.get("confidence") == 0.7
+                    assert "provenance" in record
+                    assert "local_evidence_adapter" in record.get("source", "")
+                    break

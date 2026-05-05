@@ -60,6 +60,14 @@ async def handle_mission_command(message: str, lowered: str) -> str:
         return _handle_mission_pause(lowered)
     if lowered.startswith("mission close ") or lowered.startswith("/mission close "):
         return _handle_mission_close(lowered)
+    if lowered.startswith("mission add-question ") or lowered.startswith("/mission add-question "):
+        return _handle_mission_add_question(message, lowered)
+    if lowered.startswith("mission add-domain ") or lowered.startswith("/mission add-domain "):
+        return _handle_mission_add_domain(message, lowered)
+    if lowered.startswith("mission add-evidence ") or lowered.startswith("/mission add-evidence "):
+        return _handle_mission_add_evidence(message, lowered)
+    if lowered.startswith("mission add-hypothesis ") or lowered.startswith("/mission add-hypothesis "):
+        return _handle_mission_add_hypothesis(message, lowered)
     if lowered in ("/mission-review", "mission-review", "mission review", "/mission review"):
         return _handle_mission_review()
     return _unknown("mission")
@@ -78,32 +86,48 @@ def _handle_mission_help() -> str:
         "WESLR Mission Commands (Research Work Loop V1)",
         "",
         "  /mission help                        — show this help",
-        "  /mission create --title '...' --goal '...'  — create draft mission",
-        "  /mission create --title '...' --goal '...' --active  — create active mission",
+        "  /mission create --title '...' --goal '...' — create draft mission",
+        "  /mission create --title '...' --goal '...' --active — create active mission",
+        "  /mission create --title '...' --goal '...' --active --question '...' --domain 'materials,biocompatibility' --evidence 'path1' --hypothesis 'id' — create with fields",
         "  /mission list                        — list all missions",
         "  /mission details <mission_id>       — show mission details",
         "  /mission activate <mission_id>       — set mission status to active",
         "  /mission pause <mission_id>          — set mission status to paused",
         "  /mission close <mission_id>          — set mission status to closed",
+        "  /mission add-question <id> 'question'   — add an open question",
+        "  /mission add-domain <id> 'tag'         — add a domain tag",
+        "  /mission add-evidence <id> 'path'      — add an evidence link",
+        "  /mission add-hypothesis <id> 'hyp'     — add a hypothesis/id",
         "  /mission-review                       — run one-shot review of active missions",
         "",
         "Safety: no automatic execution. All suggestions require operator review.",
-        "automatic_execution is always false. Suggestions written to .weslr/pending_messages.jsonl.",
+        "automatic_execution is always false. Suggestions → .weslr/pending_messages.jsonl",
     ]
     return "\n".join(lines)
 
 
 def _handle_mission_create(message: str, lowered: str) -> str:
-    """Handle /mission create --title '...' --goal '...' [--active]"""
-    # Parse --title and --goal flags from message
+    """Handle /mission create --title '...' --goal '...' [--active] [--question '...'] [--domain '...'] [--evidence '...'] [--hypothesis '...']"""
     title = _extract_flag(message, "--title") or _extract_flag(message, "-t")
     goal = _extract_flag(message, "--goal") or _extract_flag(message, "-g")
     is_active = "--active" in message.lower() or "-a" in message.lower()
+    question_str = _extract_flag(message, "--question") or _extract_flag(message, "-q")
+    domain_str = _extract_flag(message, "--domain") or _extract_flag(message, "-d")
+    evidence_str = _extract_flag(message, "--evidence") or _extract_flag(message, "-e")
+    hypothesis_str = _extract_flag(message, "--hypothesis") or _extract_flag(message, "-h")
 
     if not title:
-        return "Usage: /mission create --title 'Mission Title' --goal 'Research goal'\nOptional: --active to create as active."
+        return ("Usage: /mission create --title 'Mission Title' --goal 'Research goal'\n"
+                "Optional: --active, --question '...', --domain 'materials,robotics', --evidence 'path1,path2', --hypothesis '...'\n"
+                "Example: /mission create --title 'My Mission' --goal 'Research X' --active --question 'What is X?' --domain materials,biocompatibility")
     if not goal:
-        return "Usage: /mission create --title 'Mission Title' --goal 'Research goal'\nOptional: --active to create as active."
+        return "Usage: /mission create --title 'Mission Title' --goal 'Research goal'"
+
+    # Parse comma/semicolon-separated lists
+    questions = _parse_list(question_str) if question_str else []
+    domains = _parse_list(domain_str) if domain_str else []
+    evidence_links = _parse_list(evidence_str) if evidence_str else []
+    hypotheses = _parse_list(hypothesis_str) if hypothesis_str else []
 
     mission = make_mission(
         tenant_id=DEFAULT_TENANT,
@@ -111,6 +135,11 @@ def _handle_mission_create(message: str, lowered: str) -> str:
         title=title.strip('"').strip("'"),
         research_goal=goal.strip('"').strip("'"),
     )
+
+    mission.current_questions = questions
+    mission.domain_tags = domains
+    mission.evidence_links = evidence_links
+    mission.hypotheses = hypotheses
 
     if is_active:
         mission.status = "active"
@@ -123,13 +152,23 @@ def _handle_mission_create(message: str, lowered: str) -> str:
 
     status_note = f"Status: {mission.status}"
     auto_exec_note = "automatic_execution: false (always)"
+    fields_note = ""
+    if questions:
+        fields_note += f"Questions: {len(questions)}\n"
+    if domains:
+        fields_note += f"Domains: {', '.join(domains)}\n"
+    if evidence_links:
+        fields_note += f"Evidence links: {len(evidence_links)}\n"
+    if hypotheses:
+        fields_note += f"Hypotheses: {len(hypotheses)}\n"
 
     return (
         f"Mission created: {mission.mission_id}\n"
         f"Title: {mission.title}\n"
         f"Goal: {mission.research_goal}\n"
         f"{status_note}\n"
-        f"{auto_exec_note}\n\n"
+        f"{auto_exec_note}\n"
+        + (fields_note + "\n" if fields_note else "\n") +
         f"Use /mission activate {mission.mission_id} to activate.\n"
         f"Use /mission details {mission.mission_id} to view details."
     )
@@ -317,31 +356,144 @@ def _has_subcommand(lowered: str) -> bool:
 def _extract_flag(message: str, flag: str) -> Optional[str]:
     """
     Extract a quoted or bare value after a flag.
+    Stops at next -- flag, end of string, or trailing whitespace.
 
     Examples:
         --title "My Title"  -> "My Title"
         --title 'My Title'  -> "My Title"
         --title MyTitle     -> "MyTitle"
+        --domain a,b,c --active  -> "a,b,c"
     """
-    # Simple regex: flag followed by quoted or bare word
-    pattern = rf"{re.escape(flag)}\s+([\"']?)([^\"'\n]+)\1"
+    # Quoted value: stops at matching quote
+    pattern = rf'{re.escape(flag)}\s+(["\'])([^"\']+)\1'
     m = re.search(pattern, message)
     if m:
         return m.group(2).strip()
-    # Bare word (no quotes)
-    pattern2 = rf"{re.escape(flag)}\s+(\S+)"
+    # Bare word: stop at ' --' (next flag) or end of string
+    pattern2 = rf'{re.escape(flag)}\s+(\S+?)(?=\s+--|\s*$)'
     m2 = re.search(pattern2, message)
     if m2:
         return m2.group(1).strip()
     return None
 
 
-def _unknown(subcommand: str) -> str:
-    """Return an unknown command message."""
-    return (
-        f"Unknown /{subcommand} command.\n"
-        f"Use /{subcommand} help to see available commands."
-    )
+def _handle_mission_add_question(message: str, lowered: str) -> str:
+    """Handle /mission add-question <mission_id> 'question text'"""
+    # Extract mission_id and question text
+    m = re.search(r"\ add-question\s+(\S+)\s+(.+)", lowered)
+    if not m:
+        m = re.search(r"\ add-question\s+(\S+)", lowered)
+    if not m:
+        return "Usage: /mission add-question <mission_id> 'question text'"
+
+    mission_id = m.group(1).strip()
+    question_text = m.group(2).strip().strip('"').strip("'") if m.lastindex and m.lastindex >= 2 else ""
+
+    if not question_text:
+        return "Usage: /mission add-question <mission_id> 'question text'"
+
+    store = _store()
+    mission = store.get(mission_id, DEFAULT_TENANT)
+    if not mission:
+        return f"Mission '{mission_id}' not found."
+
+    updated_questions = list(mission.current_questions) + [question_text]
+    success = store.update_mission(mission_id, DEFAULT_TENANT, {"current_questions": updated_questions})
+    if success:
+        return f"Added question to mission {mission_id[:8]}...: '{question_text}'\nTotal questions: {len(updated_questions)}"
+    return f"Failed to add question."
+
+
+def _handle_mission_add_domain(message: str, lowered: str) -> str:
+    """Handle /mission add-domain <mission_id> 'domain_tag'"""
+    m = re.search(r"\ add-domain\s+(\S+)\s+(.+)", lowered)
+    if not m:
+        m = re.search(r"\ add-domain\s+(\S+)", lowered)
+    if not m:
+        return "Usage: /mission add-domain <mission_id> 'domain_tag'"
+
+    mission_id = m.group(1).strip()
+    domain_tag = m.group(2).strip().strip('"').strip("'") if m.lastindex and m.lastindex >= 2 else ""
+
+    if not domain_tag:
+        return "Usage: /mission add-domain <mission_id> 'domain_tag'"
+
+    # Support comma/semicolon separated for multiple
+    tags = _parse_list(domain_tag)
+
+    store = _store()
+    mission = store.get(mission_id, DEFAULT_TENANT)
+    if not mission:
+        return f"Mission '{mission_id}' not found."
+
+    updated_domains = list(mission.domain_tags) + tags
+    success = store.update_mission(mission_id, DEFAULT_TENANT, {"domain_tags": updated_domains})
+    if success:
+        return f"Added domain tag(s) to mission {mission_id[:8]}...: {', '.join(tags)}\nTotal domains: {len(updated_domains)}"
+    return f"Failed to add domain tag."
+
+
+def _handle_mission_add_evidence(message: str, lowered: str) -> str:
+    """Handle /mission add-evidence <mission_id> 'path'"""
+    m = re.search(r"\ add-evidence\s+(\S+)\s+(.+)", lowered)
+    if not m:
+        m = re.search(r"\ add-evidence\s+(\S+)", lowered)
+    if not m:
+        return "Usage: /mission add-evidence <mission_id> 'path'"
+
+    mission_id = m.group(1).strip()
+    evidence_path = m.group(2).strip().strip('"').strip("'") if m.lastindex and m.lastindex >= 2 else ""
+
+    if not evidence_path:
+        return "Usage: /mission add-evidence <mission_id> 'path'"
+
+    store = _store()
+    mission = store.get(mission_id, DEFAULT_TENANT)
+    if not mission:
+        return f"Mission '{mission_id}' not found."
+
+    paths = _parse_list(evidence_path)
+    updated_links = list(mission.evidence_links) + paths
+    success = store.update_mission(mission_id, DEFAULT_TENANT, {"evidence_links": updated_links})
+    if success:
+        return f"Added evidence link(s) to mission {mission_id[:8]}...: {', '.join(paths)}\nTotal evidence links: {len(updated_links)}"
+    return f"Failed to add evidence link."
+
+
+def _handle_mission_add_hypothesis(message: str, lowered: str) -> str:
+    """Handle /mission add-hypothesis <mission_id> 'hypothesis or id'"""
+    m = re.search(r"\ add-hypothesis\s+(\S+)\s+(.+)", lowered)
+    if not m:
+        m = re.search(r"\ add-hypothesis\s+(\S+)", lowered)
+    if not m:
+        return "Usage: /mission add-hypothesis <mission_id> 'hypothesis text or ID'"
+
+    mission_id = m.group(1).strip()
+    hypothesis_text = m.group(2).strip().strip('"').strip("'") if m.lastindex and m.lastindex >= 2 else ""
+
+    if not hypothesis_text:
+        return "Usage: /mission add-hypothesis <mission_id> 'hypothesis text or ID'"
+
+    store = _store()
+    mission = store.get(mission_id, DEFAULT_TENANT)
+    if not mission:
+        return f"Mission '{mission_id}' not found."
+
+    hypotheses = _parse_list(hypothesis_text)
+    updated_hypotheses = list(mission.hypotheses) + hypotheses
+    success = store.update_mission(mission_id, DEFAULT_TENANT, {"hypotheses": updated_hypotheses})
+    if success:
+        return f"Added hypothesis/ID(s) to mission {mission_id[:8]}...: {len(hypotheses)} item(s) added"
+    return f"Failed to add hypothesis."
+
+
+def _parse_list(value: Optional[str]) -> list[str]:
+    """Parse comma or semicolon-separated list into cleaned strings."""
+    if not value:
+        return []
+    # Split on comma or semicolon
+    parts = re.split(r"[,;]", value)
+    return [p.strip() for p in parts if p.strip()]
 
 
 # ── Test reset function ───────────────────────────────────────────────────────
@@ -350,3 +502,10 @@ def _reset_store() -> None:
     """Reset the module-level store. Used in tests."""
     global _STORE
     _STORE = None
+
+def _unknown(subcommand: str) -> str:
+    """Return an unknown command message."""
+    return (
+        f"Unknown /{subcommand} command.\n"
+        f"Use /{subcommand} help to see available commands."
+    )

@@ -106,23 +106,26 @@ def _generate_suggestion(
     question = open_question["question"]
     evidence_links = open_question.get("evidence_links", [])
 
-    # V1: Generate suggestion text based on what's missing
-    # This is a rule-based suggestion, not generative AI
+    # V1: Generate suggestion text based on mission context
+    # Rule-based — not generative AI
+    mission_title = mission.title
     domain_tags = mission.domain_tags
     domain_str = ", ".join(domain_tags) if domain_tags else "general"
 
-    # Rule-based suggestion templates
+    # Build context-aware suggestion
+    domain_part = f" [Relevant domains: {domain_str}]" if domain_tags else ""
+
     if evidence_links:
         suggestion_text = (
-            f"Explore evidence gap for question: '{question}'. "
-            f"Domain: {domain_str}. "
-            f"Consider adding a material property comparison or experiment plan."
+            f"For mission '{mission_title}', address open question: '{question}'{domain_part}. "
+            f"Suggested next step: create a comparison or evidence note for this mission. "
+            f"Evidence already linked: {len(evidence_links)} file(s)."
         )
     else:
         suggestion_text = (
-            f"Add evidence for open question: '{question}'. "
-            f"Domain: {domain_str}. "
-            f"Suggest adding local evidence files or hypothesis comparison table."
+            f"For mission '{mission_title}', add evidence for open question: '{question}'{domain_part}. "
+            f"Suggested next step: add a local evidence note, create a comparison table, "
+            f"or link existing files to this mission via /mission add-evidence."
         )
 
     return {

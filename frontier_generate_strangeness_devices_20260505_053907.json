@@ -1,0 +1,182 @@
+{
+  "exported_at": "2026-05-05T05:39:07.688865+00:00",
+  "domain": "unified_strangeness_devices",
+  "total_proposals": 5,
+  "proposals": [
+    {
+      "id": "f25b4c5c",
+      "title": "CaO3Ti",
+      "description": "Generated strangeness candidate: CaO3Ti (ABX3_cubic). Bandgap: 2.19 eV. Conductivity: 0.64. Stability: 1.00.",
+      "domain": "devices",
+      "novelty_score": 0.99,
+      "feasibility_score": 1.0,
+      "risk_score": 0.0,
+      "impact_score": 0.1515,
+      "difficulty_level": "\u2605 Low-hanging fruit",
+      "proposed_experiment_summary": "Hypothesis: CaO3Ti as device material\n\nProtocol (materials synthesis):\n  1. Obtain precursors (purity \u2265 99.9%).\n  2. Apply solid-state or solution synthesis route.\n  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.\n  4. Test performance: J-V curve under AM1.5G, EQE.\n  5. Stability test: damp-heat (85\u00b0C/85% RH, 1000 h).\n  6. Report: efficiency (PCE), fill factor, open-circuit voltage.\n\n[Generated Material Properties]\n  Bandgap: 2.19 eV\n  Conductivity: 0.64\n  Stability: 1.00\n  Toxicity: No\n  Charge radical: No",
+      "literature_check": {
+        "exists": false,
+        "count": 0,
+        "top_papers": [],
+        "query_used": "generated"
+      },
+      "provenance": [
+        "Generated via unified_matter_generator (mode=strangeness)",
+        "Strangeness: 0.000",
+        "Breakthrough potential: 0.441",
+        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+      ],
+      "created_at": "2026-05-05T05:39:07.687802+00:00",
+      "strangeness_score": 0.0,
+      "breakthrough_potential": 0.44145,
+      "toxic_elements": [],
+      "dual_use": false,
+      "_api_summary": {
+        "query_used": "generated",
+        "pmid_count": 0,
+        "arxiv_count": 0,
+        "total_hits": 0
+      }
+    },
+    {
+      "id": "53f886e6",
+      "title": "CaO",
+      "description": "Generated strangeness candidate: CaO (AX_cubic). Bandgap: 2.51 eV. Conductivity: 0.58. Stability: 1.00.",
+      "domain": "devices",
+      "novelty_score": 0.99,
+      "feasibility_score": 1.0,
+      "risk_score": 0.0,
+      "impact_score": 0.1515,
+      "difficulty_level": "\u2605 Low-hanging fruit",
+      "proposed_experiment_summary": "Hypothesis: CaO as device material\n\nProtocol (materials synthesis):\n  1. Obtain precursors (purity \u2265 99.9%).\n  2. Apply solid-state or solution synthesis route.\n  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.\n  4. Test performance: J-V curve under AM1.5G, EQE.\n  5. Stability test: damp-heat (85\u00b0C/85% RH, 1000 h).\n  6. Report: efficiency (PCE), fill factor, open-circuit voltage.\n\n[Generated Material Properties]\n  Bandgap: 2.51 eV\n  Conductivity: 0.58\n  Stability: 1.00\n  Toxicity: No\n  Charge radical: No",
+      "literature_check": {
+        "exists": false,
+        "count": 0,
+        "top_papers": [],
+        "query_used": "generated"
+      },
+      "provenance": [
+        "Generated via unified_matter_generator (mode=strangeness)",
+        "Strangeness: 0.000",
+        "Breakthrough potential: 0.441",
+        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+      ],
+      "created_at": "2026-05-05T05:39:07.688029+00:00",
+      "strangeness_score": 0.0,
+      "breakthrough_potential": 0.44145,
+      "toxic_elements": [],
+      "dual_use": false,
+      "_api_summary": {
+        "query_used": "generated",
+        "pmid_count": 0,
+        "arxiv_count": 0,
+        "total_hits": 0
+      }
+    },
+    {
+      "id": "9cfdabd3",
+      "title": "O2Ti",
+      "description": "Generated strangeness candidate: O2Ti (AX2_tetragonal). Bandgap: 2.89 eV. Conductivity: 0.52. Stability: 1.00.",
+      "domain": "devices",
+      "novelty_score": 0.99,
+      "feasibility_score": 1.0,
+      "risk_score": 0.0,
+      "impact_score": 0.1515,
+      "difficulty_level": "\u2605 Low-hanging fruit",
+      "proposed_experiment_summary": "Hypothesis: O2Ti as device material\n\nProtocol (materials synthesis):\n  1. Obtain precursors (purity \u2265 99.9%).\n  2. Apply solid-state or solution synthesis route.\n  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.\n  4. Test performance: J-V curve under AM1.5G, EQE.\n  5. Stability test: damp-heat (85\u00b0C/85% RH, 1000 h).\n  6. Report: efficiency (PCE), fill factor, open-circuit voltage.\n\n[Generated Material Properties]\n  Bandgap: 2.89 eV\n  Conductivity: 0.52\n  Stability: 1.00\n  Toxicity: No\n  Charge radical: No",
+      "literature_check": {
+        "exists": false,
+        "count": 0,
+        "top_papers": [],
+        "query_used": "generated"
+      },
+      "provenance": [
+        "Generated via unified_matter_generator (mode=strangeness)",
+        "Strangeness: 0.000",
+        "Breakthrough potential: 0.441",
+        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+      ],
+      "created_at": "2026-05-05T05:39:07.688247+00:00",
+      "strangeness_score": 0.0,
+      "breakthrough_potential": 0.44145,
+      "toxic_elements": [],
+      "dual_use": false,
+      "_api_summary": {
+        "query_used": "generated",
+        "pmid_count": 0,
+        "arxiv_count": 0,
+        "total_hits": 0
+      }
+    },
+    {
+      "id": "49d601a2",
+      "title": "FNa",
+      "description": "Generated strangeness candidate: FNa (AX_cubic_bcc). Bandgap: 2.84 eV. Conductivity: 0.53. Stability: 1.00.",
+      "domain": "devices",
+      "novelty_score": 0.99,
+      "feasibility_score": 1.0,
+      "risk_score": 0.0,
+      "impact_score": 0.1515,
+      "difficulty_level": "\u2605 Low-hanging fruit",
+      "proposed_experiment_summary": "Hypothesis: FNa as device material\n\nProtocol (materials synthesis):\n  1. Obtain precursors (purity \u2265 99.9%).\n  2. Apply solid-state or solution synthesis route.\n  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.\n  4. Test performance: J-V curve under AM1.5G, EQE.\n  5. Stability test: damp-heat (85\u00b0C/85% RH, 1000 h).\n  6. Report: efficiency (PCE), fill factor, open-circuit voltage.\n\n[Generated Material Properties]\n  Bandgap: 2.84 eV\n  Conductivity: 0.53\n  Stability: 1.00\n  Toxicity: No\n  Charge radical: No",
+      "literature_check": {
+        "exists": false,
+        "count": 0,
+        "top_papers": [],
+        "query_used": "generated"
+      },
+      "provenance": [
+        "Generated via unified_matter_generator (mode=strangeness)",
+        "Strangeness: 0.000",
+        "Breakthrough potential: 0.441",
+        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+      ],
+      "created_at": "2026-05-05T05:39:07.688433+00:00",
+      "strangeness_score": 0.0,
+      "breakthrough_potential": 0.44145,
+      "toxic_elements": [],
+      "dual_use": false,
+      "_api_summary": {
+        "query_used": "generated",
+        "pmid_count": 0,
+        "arxiv_count": 0,
+        "total_hits": 0
+      }
+    },
+    {
+      "id": "4e073b2c",
+      "title": "CaNa2O4",
+      "description": "Generated strangeness candidate: CaNa2O4 (AB2X4_cubic). Bandgap: 1.91 eV. Conductivity: 0.68. Stability: 0.47.",
+      "domain": "devices",
+      "novelty_score": 0.99,
+      "feasibility_score": 1.0,
+      "risk_score": 0.0,
+      "impact_score": 0.1515,
+      "difficulty_level": "\u2605 Low-hanging fruit",
+      "proposed_experiment_summary": "Hypothesis: CaNa2O4 as device material\n\nProtocol (materials synthesis):\n  1. Obtain precursors (purity \u2265 99.9%).\n  2. Apply solid-state or solution synthesis route.\n  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.\n  4. Test performance: J-V curve under AM1.5G, EQE.\n  5. Stability test: damp-heat (85\u00b0C/85% RH, 1000 h).\n  6. Report: efficiency (PCE), fill factor, open-circuit voltage.\n\n[Generated Material Properties]\n  Bandgap: 1.91 eV\n  Conductivity: 0.68\n  Stability: 0.47\n  Toxicity: No\n  Charge radical: No",
+      "literature_check": {
+        "exists": false,
+        "count": 0,
+        "top_papers": [],
+        "query_used": "generated"
+      },
+      "provenance": [
+        "Generated via unified_matter_generator (mode=strangeness)",
+        "Strangeness: 0.000",
+        "Breakthrough potential: 0.441",
+        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)"
+      ],
+      "created_at": "2026-05-05T05:39:07.688626+00:00",
+      "strangeness_score": 0.0,
+      "breakthrough_potential": 0.44145,
+      "toxic_elements": [],
+      "dual_use": false,
+      "_api_summary": {
+        "query_used": "generated",
+        "pmid_count": 0,
+        "arxiv_count": 0,
+        "total_hits": 0
+      }
+    }
+  ]
+}

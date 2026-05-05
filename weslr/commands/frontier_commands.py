@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional
+import uuid
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
 from weslr.modules.frontier_proposer import (
     FrontierProposal,
@@ -603,6 +605,283 @@ def handle_frontier_discover(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# /frontier generate
+# ─────────────────────────────────────────────────────────────────────────────
+
+def handle_frontier_generate(message: str, tenant_id: str = "default") -> str:
+    """Handle /frontier generate --mode {plausible|strangeness} --domain {materials|devices|all} --max N --export"""
+    body = message.strip()
+    for prefix in ("/frontier generate", "frontier generate"):
+        if body.startswith(prefix):
+            body = body[len(prefix):].strip()
+            break
+
+    if not body:
+        return "Usage: /frontier generate --mode {plausible|strangeness} [--domain D] [--max N] [--export]\nValid domains: materials, devices, all"
+
+    # ── Parse flags ──────────────────────────────────────────────────────────
+    mode_match = re.search(r"--mode\s+(\w+)", body)
+    mode = mode_match.group(1).lower() if mode_match else "plausible"
+    if mode not in ("plausible", "strangeness"):
+        return f"Error: mode must be 'plausible' or 'strangeness', got '{mode}'"
+
+    domain_match = re.search(r"--domain\s+(\w+)", body)
+    domain_raw = domain_match.group(1).lower() if domain_match else "materials"
+    max_match = re.search(r"--max\s+(\d+)", body)
+    max_candidates = int(max_match.group(1)) if max_match else 5
+    do_export = "--export" in body
+
+    # Map domain to generator
+    if domain_raw == "all":
+        domains_to_generate = ["materials", "devices"]
+    elif domain_raw == "devices":
+        domains_to_generate = ["devices"]
+    else:
+        domains_to_generate = [domain_raw]
+
+    ack_warn = _acknowledge_live_search(tenant_id)
+
+    all_proposals: List[FrontierProposal] = []
+    checked_total = 0
+
+    for dom in domains_to_generate:
+        try:
+            from weslr.modules.frontier_proposer import generate_candidates_for_domain, generate_novel_hypotheses
+
+            # Use unified generator
+            cands = generate_candidates_for_domain(
+                domain=dom,
+                max_candidates=max_candidates,
+                generator="unified",
+                unified_mode=mode,
+            )
+            checked_total += len(cands)
+
+            # Score with novelty=0.5 (no live search needed)
+            for c in cands:
+                props = c.get("_properties", {})
+                formula = c.get("name", "")
+                desc = c.get("description", "")
+                source = c.get("source_module", "unified_matter_generator")
+
+                # Compute scores
+                novelty = 0.99  # generated, assume novel unless proven otherwise
+                feasibility = 0.5
+                risk = 0.0
+                if props.get("toxicity"):
+                    risk = 0.3
+
+                from weslr.modules.frontier_proposer import (
+                    score_feasibility as _sf,
+                    score_risk as _sr,
+                    score_impact as _si,
+                    assign_difficulty,
+                    compute_strangeness_score,
+                    compute_breakthrough_potential,
+                    extract_elements_from_candidate,
+                    _TOXIC_ELEMENTS,
+                    _DUAL_USE_ELEMENTS,
+                )
+
+                # Re-score using description to pick up element flags
+                cand_for_score = {"description": desc, "name": formula, "domain": dom}
+                feasibility = _sf(cand_for_score)
+                risk = _sr(cand_for_score)
+                impact = _si({"description": desc, "novelty_score": novelty, "feasibility_score": feasibility})
+
+                strangeness = compute_strangeness_score(c)
+                breakthrough = compute_breakthrough_potential(novelty, strangeness, impact)
+                difficulty = assign_difficulty(novelty, feasibility, risk)
+
+                elements = extract_elements_from_candidate(c)
+                toxic_list = sorted(elements & _TOXIC_ELEMENTS)
+                dual_use_flag = bool(elements & _DUAL_USE_ELEMENTS)
+
+                # Build experiment summary
+                exp_parts = [
+                    f"Hypothesis: {formula} as {dom.rstrip('s')} material",
+                    "",
+                    "Protocol (materials synthesis):",
+                    "  1. Obtain precursors (purity ≥ 99.9%).",
+                    "  2. Apply solid-state or solution synthesis route.",
+                    "  3. Characterize: XRD, SEM/EDS, UV-Vis DRS, IPCE if applicable.",
+                    "  4. Test performance: J-V curve under AM1.5G, EQE.",
+                    "  5. Stability test: damp-heat (85°C/85% RH, 1000 h).",
+                    "  6. Report: efficiency (PCE), fill factor, open-circuit voltage.",
+                    f"\n[Generated Material Properties]",
+                    f"  Bandgap: {props.get('bandgap_eV', 'N/A'):.2f} eV",
+                    f"  Conductivity: {props.get('conductivity', 'N/A'):.2f}",
+                    f"  Stability: {props.get('stability', 'N/A'):.2f}",
+                    f"  Toxicity: {'YES ⚠️' if props.get('toxicity') else 'No'}",
+                    f"  Charge radical: {'YES' if props.get('radical') else 'No'}",
+                ]
+                if toxic_list:
+                    exp_parts.append(f"  ⚠️  TOXIC ELEMENTS: {', '.join(toxic_list)}")
+                if dual_use_flag:
+                    exp_parts.append("  ⚠️  DUAL-USE FLAG: candidate contains elements with dual-use potential.")
+
+                proposal = FrontierProposal(
+                    id=str(uuid.uuid4())[:8],
+                    title=formula,
+                    description=desc,
+                    domain=dom,
+                    novelty_score=novelty,
+                    feasibility_score=feasibility,
+                    risk_score=risk,
+                    impact_score=impact,
+                    difficulty_level=difficulty,
+                    proposed_experiment_summary="\n".join(exp_parts),
+                    literature_check={"exists": False, "count": 0, "top_papers": [], "query_used": "generated"},
+                    provenance=[
+                        f"Generated via unified_matter_generator (mode={mode})",
+                        f"Strangeness: {strangeness:.3f}",
+                        f"Breakthrough potential: {breakthrough:.3f}",
+                        "Literature novelty check: NOT PERFORMED (operator may run /frontier discover --real)",
+                    ],
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                    strangeness_score=strangeness,
+                    breakthrough_potential=breakthrough,
+                    toxic_elements=toxic_list,
+                    dual_use=dual_use_flag,
+                )
+                all_proposals.append(proposal)
+
+        except Exception as e:
+            return f"Error generating {dom} candidates: {e}"
+
+    # Store all proposals
+    for p in all_proposals:
+        store_proposal(p, tenant_id)
+
+    # Sort by breakthrough potential descending
+    all_proposals.sort(key=lambda p: p.breakthrough_potential, reverse=True)
+
+    # ── Format output ───────────────────────────────────────────────────────
+    mode_emoji = "🌱" if mode == "plausible" else "🔮"
+    lines = [
+        f"{ack_warn}[FRONTIER GENERATE{mode_emoji}] mode: {mode} | domain: {domain_raw} | checked: {checked_total} | returned: {len(all_proposals)}",
+        "",
+    ]
+
+    for i, p in enumerate(all_proposals, 1):
+        toxic_tag = " ⚠️  TOXIC" if p.toxic_elements else ""
+        dual_tag = " ⚠️  DUAL-USE" if p.dual_use else ""
+        lines.append(f"{i}. {p.difficulty_level}{toxic_tag}{dual_tag} {p.title}")
+        lines.append(f"   {p.display_scores()}")
+        lines.append(f"   {p.description[:140]}")
+        # Device layer suggestion for solar cell materials
+        if "solar" in p.description.lower() or "photodetector" in p.description.lower():
+            from weslr.modules.unified_matter_generator import MatterGenerator
+            gen = MatterGenerator()
+            try:
+                dev = gen.generate_device_from_material(p.title, "solar_cell")
+                layer_str = " / ".join([f"{k}={','.join(v)}" for k, v in dev["layers"].items()])
+                lines.append(f"   📱 Device: {layer_str}")
+            except Exception:
+                pass
+        lines.append("")
+
+    # ── Export ────────────────────────────────────────────────────────────────
+    export_path = ""
+    if do_export:
+        try:
+            from weslr.modules.frontier_proposer import export_proposals
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            default_path = f"frontier_generate_{mode}_{domain_raw}_{ts}.json"
+            export_path = export_proposals(all_proposals, default_path, domain=f"unified_{mode}_{domain_raw}")
+            lines.append(f"📁  Exported {len(all_proposals)} proposals to {export_path}")
+        except Exception as exc:
+            lines.append(f"⚠️  Export failed: {exc}")
+
+    return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /frontier property
+# ─────────────────────────────────────────────────────────────────────────────
+
+def handle_frontier_property(message: str) -> str:
+    """Handle /frontier property <formula> --estimate"""
+    body = message.strip()
+    for prefix in ("/frontier property", "frontier property"):
+        if body.startswith(prefix):
+            body = body[len(prefix):].strip()
+            break
+
+    if not body:
+        return "Usage: /frontier property <formula> --estimate\nExample: /frontier property CsPbI3 --estimate"
+
+    do_estimate = "--estimate" in body
+    body = body.replace("--estimate", "").strip()
+    formula = body.split()[0] if body else ""
+
+    if not formula:
+        return "Usage: /frontier property <formula> --estimate"
+
+    if not do_estimate:
+        return "Note: --estimate flag is required. Usage: /frontier property CsPbI3 --estimate"
+
+    try:
+        from weslr.modules.unified_matter_generator import MatterGenerator, estimate_properties
+        from weslr.modules.matter_primitives import PERIODIC_TABLE, Structure, Atom
+        import re
+
+        # Parse formula into structure
+        # Simple parser: e.g. "CsPbI3" → Cs1 Pb1 I3
+        elements_in_formula = re.findall(r'[A-Z][a-z]?', formula)
+        counts_in_formula = re.findall(r'\d+', formula)
+
+        if not elements_in_formula:
+            return f"Error: could not parse formula '{formula}'"
+
+        # Build atoms list (using first oxidation state for each element)
+        atoms = []
+        element_counts: Dict[str, int] = {}
+        for el in elements_in_formula:
+            if el in PERIODIC_TABLE:
+                element_counts[el] = element_counts.get(el, 0) + 1
+
+        # Expand counts
+        idx = 0
+        for i, el in enumerate(elements_in_formula):
+            if el not in PERIODIC_TABLE:
+                return f"Error: unknown element '{el}' in formula '{formula}'"
+            count = int(counts_in_formula[i]) if i < len(counts_in_formula) else 1
+            atom = PERIODIC_TABLE[el]
+            for _ in range(count):
+                atoms.append(atom)
+
+        from weslr.modules.matter_primitives import Bond
+        structure = Structure(
+            atoms=atoms,
+            bonds=[],
+            geometry_type="0d_molecule",
+            lattice_vectors=None,
+        )
+
+        props = estimate_properties(structure)
+        gen = MatterGenerator()
+
+        lines = [
+            f"[PROPERTY ESTIMATE] formula: {formula}",
+            f"  Bandgap:        {props['bandgap_eV']:.2f} eV",
+            f"  Conductivity:   {props['conductivity']:.3f} (0=insulator, 1=metal)",
+            f"  Stability:      {props['stability']:.3f} (0=unstable, 1=stable)",
+            f"  Formation En.:  {props['formation_energy_eV']:.3f} eV/atom (relative)",
+            f"  Toxic elements: {'YES ⚠️ ' + ', '.join(props.get('toxicity', False) and ['YES'] or ['None']) if props.get('toxicity') else 'None'}",
+            f"  Charge radical: {'YES (±1 imbalance)' if props.get('radical') else 'No'}",
+            f"  Geometry type: {props.get('geometry_type', 'unknown')}",
+            "",
+            "Crude heuristic estimates — not from DFT. Operator review required.",
+        ]
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        return f"Error estimating properties for '{formula}': {e}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main dispatcher
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -621,5 +900,9 @@ def handle_frontier(message: str, tenant_id: str = "default") -> str:
         return handle_frontier_show(message, tenant_id)
     elif lowered.startswith("/frontier discover") or lowered.startswith("frontier discover"):
         return handle_frontier_discover(message, tenant_id)
+    elif lowered.startswith("/frontier generate") or lowered.startswith("frontier generate"):
+        return handle_frontier_generate(message, tenant_id)
+    elif lowered.startswith("/frontier property") or lowered.startswith("frontier property"):
+        return handle_frontier_property(message)
     else:
         return FRONTIER_USAGE

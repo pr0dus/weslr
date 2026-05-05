@@ -281,3 +281,57 @@ class TestMissionSchema:
                 next_run_at="",
                 mission_note="",
             )
+
+class TestUpdateMission:
+    """Tests for MissionStore.update_mission field updates."""
+
+    def test_update_mission_add_questions(self, temp_store):
+        """Test updating current_questions via update_mission."""
+        mission = make_mission("tenant-1", "user-1", "Field Update Test", "Goal")
+        mission.status = "active"
+        temp_store.save(mission)
+
+        result = temp_store.update_mission(mission.mission_id, "tenant-1", {"current_questions": ["What is the bandgap?"]})
+        assert result is True
+        updated = temp_store.get(mission.mission_id, "tenant-1")
+        assert updated.current_questions == ["What is the bandgap?"]
+
+    def test_update_mission_append_questions(self, temp_store):
+        """Test that update replaces the list, not appends."""
+        mission = make_mission("tenant-1", "user-1", "Append Test", "Goal")
+        mission.status = "active"
+        mission.current_questions = ["Q1?"]
+        temp_store.save(mission)
+
+
+        temp_store.update_mission(mission.mission_id, "tenant-1", {"current_questions": ["Q1?", "Q2?"]})
+        updated = temp_store.get(mission.mission_id, "tenant-1")
+        assert updated.current_questions == ["Q1?", "Q2?"]
+
+    def test_update_mission_domain_tags(self, temp_store):
+        """Test updating domain_tags."""
+        mission = make_mission("tenant-1", "user-1", "Domain Test", "Goal")
+        mission.status = "active"
+        temp_store.save(mission)
+
+        result = temp_store.update_mission(mission.mission_id, "tenant-1", {"domain_tags": ["materials", "physics"]})
+        assert result is True
+        updated = temp_store.get(mission.mission_id, "tenant-1")
+        assert updated.domain_tags == ["materials", "physics"]
+
+    def test_update_mission_not_found(self, temp_store):
+        """Test update on non-existent mission returns False."""
+        result = temp_store.update_mission("non-existent-id", "tenant-1", {"current_questions": ["Test?"]})
+        assert result is False
+
+    def test_update_mission_wrong_tenant(self, temp_store):
+        """Test update is isolated to tenant."""
+        mission = make_mission("tenant-1", "user-1", "Tenant Update Test", "Goal")
+        temp_store.save(mission)
+
+
+        result = temp_store.update_mission(mission.mission_id, "tenant-2", {"current_questions": ["Hack?"]})
+        assert result is False
+        # Verify original tenant is unaffected
+        original = temp_store.get(mission.mission_id, "tenant-1")
+        assert original.current_questions == []

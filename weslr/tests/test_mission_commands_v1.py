@@ -268,3 +268,107 @@ class TestEdgeCases:
     def test_unknown_subcommand_shows_help_hint(self, clean_store):
         result = cmd("/mission xyz unknown", "mission xyz unknown")
         assert "Unknown" in result or "help" in result
+
+
+# ── Add-field commands ────────────────────────────────────────────────────────
+
+class TestMissionAddField:
+    """Tests for /mission add-question, add-domain, add-evidence, add-hypothesis."""
+
+    def test_add_question(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Q Test" --goal "Goal"',
+            'mission create --title "Q Test" --goal "Goal"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-question {mission_id} "What is the bandgap of kesterite?"',
+            f'mission add-question {mission_id} "What is the bandgap of kesterite?"',
+        )
+        assert "Added question" in result
+        assert "bandgap" in result.lower()
+        assert "Total questions: 1" in result
+
+    def test_add_multiple_questions(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Multi Q Test" --goal "Goal" --question "First question?"',
+            'mission create --title "Multi Q Test" --goal "Goal" --question "First question?"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-question {mission_id} "Second question?"',
+            f'mission add-question {mission_id} "Second question?"',
+        )
+        assert "Total questions: 2" in result
+
+    def test_add_domain(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Domain Test" --goal "Goal"',
+            'mission create --title "Domain Test" --goal "Goal"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-domain {mission_id} "materials"',
+            f'mission add-domain {mission_id} "materials"',
+        )
+        assert "Added domain" in result
+        assert "materials" in result
+        assert "Total domains: 1" in result
+
+    def test_add_multiple_domains(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Multi D Test" --goal "Goal" --domain "physics"',
+            'mission create --title "Multi D Test" --goal "Goal" --domain "physics"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-domain {mission_id} "materials,biocompatibility"',
+            f'mission add-domain {mission_id} "materials,biocompatibility"',
+        )
+        assert "Total domains: 3" in result
+
+    def test_add_evidence(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Ev Test" --goal "Goal"',
+            'mission create --title "Ev Test" --goal "Goal"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-evidence {mission_id} "weslr/docs/test.md"',
+            f'mission add-evidence {mission_id} "weslr/docs/test.md"',
+        )
+        assert "Added evidence" in result
+        assert "Total evidence links: 1" in result
+
+    def test_add_hypothesis(self, clean_store):
+        create_result = cmd(
+            '/mission create --title "Hyp Test" --goal "Goal"',
+            'mission create --title "Hyp Test" --goal "Goal"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(
+            f'/mission add-hypothesis {mission_id} "Hydrogel actuation hypothesis"',
+            f'mission add-hypothesis {mission_id} "Hydrogel actuation hypothesis"',
+        )
+        assert "Added hypothesis" in result
+        assert "Total hypotheses: 1" in result or "1 item" in result
+
+    def test_add_field_unknown_mission(self, clean_store):
+        result = cmd(
+            '/mission add-question unknown-id "Test question?"',
+            'mission add-question unknown-id "Test question?"',
+        )
+        assert "not found" in result
+
+    def test_details_shows_fields(self, clean_store):
+        """Test that /mission details shows current_questions, domain_tags, etc."""
+        create_result = cmd(
+            '/mission create --title "Fields Test" --goal "Goal" --question "What is X?" --domain "materials,physics" --evidence "doc.md" --hypothesis "X is Y"',
+            'mission create --title "Fields Test" --goal "Goal" --question "What is X?" --domain "materials,physics" --evidence "doc.md" --hypothesis "X is Y"',
+        )
+        mission_id = extract_id(create_result)
+        result = cmd(f"/mission details {mission_id}", f"mission details {mission_id}")
+        assert "Fields Test" in result
+        assert "What is X?" in result
+        assert "materials" in result
+        assert "physics" in result

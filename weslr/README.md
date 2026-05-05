@@ -168,7 +168,12 @@ python -m pytest tests/ -v
 | `/frontier refine <id> --constraint "text"` | Re-score proposal with additional constraints |
 | `/frontier list` | List all stored proposals with IDs and difficulty |
 | `/frontier show <id>` | Display full proposal with scores, experiment summary, and provenance |
+| `/frontier generate --mode {plausible\|strangeness} [--domain D] [--max N] [--export]` | Generate candidates via unified matter generator; outputs material properties, toxicity/dual-use flags, and device layers |
+| `/frontier property <formula> --estimate` | Estimate bandgap, conductivity, stability for any formula from the periodic table |
 | `/frontier discover --real [--domain D] [--max N] [--difficulty L] [--export]` | Live discovery: generates candidates and performs real PubMed/arXiv novelty checks; prompts for confirmation; exports proposals to JSON |
+| `/frontier daemon status` | Show frontier daemon running state, last run time, and configuration |
+| `/frontier daemon start` | Start the background frontier daemon (generates candidates periodically) |
+| `/frontier daemon stop` | Stop the background frontier daemon |
 
 **Difficulty tiers:** ★ Low-hanging fruit → ★★★★ Paradigm shift. All proposals labeled [FRONTIER PROPOSAL – UNVALIDATED]. High-risk proposals (risk > 0.7) flagged for operator review.
 **Acknowledgment:** Live PubMed/arXiv search requires user acknowledgment on first call per session.

@@ -1,0 +1,26 @@
+{
+  "metadata": {"version": "1.0", "description": "Materials knowledge graph for WESLR frontier discovery"},
+  "nodes": {
+    "CaTiO3": {"prototype": "perovskite", "bandgap_ev": 3.2, "conductivity": "insulator", "a_site": "Ca", "b_site": "Ti", "x_anion": "O", "substitutions": {"A": ["Sr", "Ba"], "B": ["Zr", "Hf"], "X": ["S", "Se"]}},
+    "SrTiO3": {"prototype": "perovskite", "bandgap_ev": 3.25, "conductivity": "insulator", "a_site": "Sr", "b_site": "Ti", "x_anion": "O", "substitutions": {"A": ["Ca", "Ba"], "B": ["Zr"], "X": ["S"]}},
+    "BaTiO3": {"prototype": "perovskite", "bandgap_ev": 3.0, "conductivity": "insulator", "a_site": "Ba", "b_site": "Ti", "x_anion": "O", "substitutions": {"A": ["Sr", "Ca"], "B": ["Zr", "Sn"], "X": ["S", "Se"]}},
+    "TiO2": {"prototype": "rutile", "bandgap_ev": 3.0, "conductivity": "insulator", "a_site": "Ti", "b_site": null, "x_anion": "O", "substitutions": {"A": ["Sn", "Ge"], "X": ["S", "Se"]}},
+    "SnO2": {"prototype": "rutile", "bandgap_ev": 3.6, "conductivity": "semiconductor", "a_site": "Sn", "b_site": null, "x_anion": "O", "substitutions": {"A": ["Ti", "Ge"], "X": ["S"]}},
+    "Fe3O4": {"prototype": "spinel", "bandgap_ev": 0.1, "conductivity": "conductor", "a_site": "Fe", "b_site": "Fe", "x_anion": "O", "substitutions": {"A": ["Mg", "Zn"], "B": ["Co", "Mn", "Cr"], "X": ["S"]}},
+    "ZnFe2O4": {"prototype": "spinel", "bandgap_ev": 1.9, "conductivity": "semiconductor", "a_site": "Zn", "b_site": "Fe", "x_anion": "O", "substitutions": {"A": ["Mg", "Cu"], "B": ["Co", "Cr", "Al"], "X": ["S", "Se"]}},
+    "NiFe2O4": {"prototype": "spinel", "bandgap_ev": 2.3, "conductivity": "semiconductor", "a_site": "Ni", "b_site": "Fe", "x_anion": "O", "substitutions": {"A": ["Co", "Mg", "Zn"], "B": ["Co", "Cr", "Mn"], "X": ["S"]}},
+    "MgAl2O4": {"prototype": "spinel", "bandgap_ev": 7.0, "conductivity": "insulator", "a_site": "Mg", "b_site": "Al", "x_anion": "O", "substitutions": {"A": ["Zn", "Fe"], "B": ["Ga", "Cr", "Fe"], "X": ["S"]}},
+    "NaWF4": {"prototype": "fluoride", "bandgap_ev": 5.0, "conductivity": "insulator", "a_site": "Na", "b_site": "W", "x_anion": "F", "substitutions": {"A": ["K", "Rb"], "B": ["Mo", "Ti"], "X": ["Cl", "Br"]}},
+    "CsPbI3": {"prototype": "perovskite", "bandgap_ev": 1.7, "conductivity": "semiconductor", "a_site": "Cs", "b_site": "Pb", "x_anion": "I", "substitutions": {"A": ["FA", "MA"], "B": ["Sn", "Bi"], "X": ["Br", "Cl"]}},
+    "MAPbI3": {"prototype": "perovskite", "bandgap_ev": 1.55, "conductivity": "semiconductor", "a_site": "MA", "b_site": "Pb", "x_anion": "I", "substitutions": {"A": ["FA", "Cs"], "B": ["Sn"], "X": ["Br", "Cl"]}},
+    "GaN": {"prototype": "wurtzite", "bandgap_ev": 3.4, "conductivity": "semiconductor", "a_site": "Ga", "b_site": null, "x_anion": "N", "substitutions": {"A": ["In", "Al"], "X": ["P", "As"]}},
+    "InP": {"prototype": "zincblende", "bandgap_ev": 1.35, "conductivity": "semiconductor", "a_site": "In", "b_site": null, "x_anion": "P", "substitutions": {"A": ["Ga", "Al"], "X": ["As", "N"]}},
+    "GaAs": {"prototype": "zincblende", "bandgap_ev": 1.42, "conductivity": "semiconductor", "a_site": "Ga", "b_site": null, "x_anion": "As", "substitutions": {"A": ["In", "Al"], "X": ["P", "N"]}},
+    "Si": {"prototype": "diamond", "bandgap_ev": 1.12, "conductivity": "semiconductor", "a_site": "Si", "b_site": null, "x_anion": null, "substitutions": {"A": ["Ge", "C"], "X": []}},
+    "Ge": {"prototype": "diamond", "bandgap_ev": 0.67, "conductivity": "semiconductor", "a_site": "Ge", "b_site": null, "x_anion": null, "substitutions": {"A": ["Si", "Sn"], "X": []}},
+    "MoS2": {"prototype": "layered_dichalcogenide", "bandgap_ev": 1.8, "conductivity": "semiconductor", "a_site": "Mo", "b_site": null, "x_anion": "S", "substitutions": {"A": ["W", "Nb"], "X": ["Se", "Te"]}},
+    "WS2": {"prototype": "layered_dichalcogenide", "bandgap_ev": 1.9, "conductivity": "semiconductor", "a_site": "W", "b_site": null, "x_anion": "S", "substitutions": {"A": ["Mo", "Nb"], "X": ["Se", "Te"]}},
+    "LiCoO2": {"prototype": "layered_oxide", "bandgap_ev": 2.7, "conductivity": "mixed", "a_site": "Li", "b_site": "Co", "x_anion": "O", "substitutions": {"A": ["Na", "K"], "B": ["Ni", "Mn", "Fe"], "X": ["S", "F"]}},
+    "LiFePO4": {"prototype": "olivine", "bandgap_ev": 3.5, "conductivity": "mixed", "a_site": "Li", "b_site": "Fe", "x_anion": "O", "substitutions": {"A": ["Na", "Mg"], "B": ["Mn", "Co", "Ni"], "X": ["S", "As"]}}
+  }
+}

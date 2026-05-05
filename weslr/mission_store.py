@@ -147,7 +147,25 @@ class MissionStore:
         Raises:
             ValueError: If new_status is not valid
         """
-        if new_status not in VALID_STATUSES:
+        return self.update_mission(mission_id, tenant_id, {"status": new_status})
+
+    def update_mission(self, mission_id: str, tenant_id: str, changes: dict) -> bool:
+        """
+        Update arbitrary fields on a mission.
+
+        Args:
+            mission_id: Mission identifier
+            tenant_id: Tenant identifier (for isolation)
+            changes: Dict of field -> new value to apply
+
+        Returns:
+            True if updated, False if mission not found
+
+        Raises:
+            ValueError: If status field is set to an invalid value
+        """
+        # Validate status if being changed
+        if "status" in changes and changes["status"] not in VALID_STATUSES:
             raise ValueError(f"status must be one of {VALID_STATUSES}")
 
         records = self._read_all()
@@ -155,7 +173,8 @@ class MissionStore:
         new_records = []
         for record in records:
             if record.get("mission_id") == mission_id and record.get("tenant_id") == tenant_id:
-                record["status"] = new_status
+                for field, value in changes.items():
+                    record[field] = value
                 record["last_reviewed_at"] = datetime.now(timezone.utc).isoformat()
                 updated = True
             new_records.append(record)

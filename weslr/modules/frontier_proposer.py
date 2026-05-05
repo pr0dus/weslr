@@ -13,6 +13,7 @@ No automatic experiment execution. Operator review required.
 """
 
 from __future__ import annotations
+from weslr.modules.matter_primitives import PERIODIC_TABLE
 
 import json
 import os
@@ -39,6 +40,7 @@ _RESTRICTED_ELEMENTS = _RARE_EARTH_ELEMENTS | _PRECIOUS_METALS
 
 _TOXIC_ELEMENTS = {"Be", "Cd", "Hg", "As", "Tl", "Pb"}
 _HIGHLY_TOXIC = {"Cd", "Hg", "As", "Pb"}
+_DUAL_USE_ELEMENTS = {"U", "Th", "Pu", "As", "Ga", "In", "Ge", "Se", "Mo", "W"}
 _TOXIC_NAME_TO_SYMBOL = {
     "beryllium": "Be", "cadmium": "Cd", "mercury": "Hg",
     "arsenic": "As", "thallium": "Tl", "lead": "Pb",
@@ -147,17 +149,32 @@ class FrontierProposal:
     literature_check: Dict[str, Any]
     provenance: List[str]
     created_at: str
+    # Extended fields for unified generator
+    strangeness_score: float = 0.0
+    breakthrough_potential: float = 0.0
+    toxic_elements: List[str] = field(default_factory=list)
+    dual_use: bool = False
+    # Persistent store fields
+    status: str = "new"
+    retry_count: int = 0
+    last_novelty_check: Optional[str] = None
+    mission_id: Optional[str] = None
 
     def is_high_risk(self) -> bool:
         return self.risk_score > 0.7
 
     def display_scores(self) -> str:
-        return (
+        base = (
             f"Novelty: {self.novelty_score:.2f} | "
             f"Feasibility: {self.feasibility_score:.2f} | "
             f"Risk: {self.risk_score:.2f} | "
             f"Impact: {self.impact_score:.2f}"
         )
+        if self.strangeness_score > 0:
+            base += f" | Strangeness: {self.strangeness_score:.2f}"
+        if self.breakthrough_potential > 0:
+            base += f" | Breakthrough: {self.breakthrough_potential:.2f}"
+        return base
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -348,6 +365,85 @@ def assign_difficulty(
         return "★★★ Hard / high risk"
     else:
         return "★★★★ Paradigm shift"
+
+
+def compute_strangeness_score(candidate: Dict[str, Any]) -> float:
+    """Compute strangeness score for a unified matter generator candidate.
+
+    Returns 0.0–1.0 where 1.0 = maximally unconventional.
+    Based on stoichiometry deviation, rare elements, mixed prototypes,
+    charge imbalance (radical), and domain-specific flags.
+    """
+    source = candidate.get("source_module", "")
+    if source != "unified_matter_generator":
+        return 0.0  # only applies to unified generator candidates
+
+    desc = candidate.get("description", "")
+    score = 0.0
+
+    # Radical charge imbalance (±1) → +0.2
+    props = candidate.get("_properties", {})
+    if props.get("radical", False):
+        score += 0.2
+
+    # Unconventional stoichiometry: look for non-standard ratios in formula
+    formula = candidate.get("name", "")
+    import re
+    # Count total atoms in formula
+    numbers = re.findall(r'\d+', formula)
+    total_atoms = sum(int(n) for n in numbers) if numbers else 0
+    # Higher atom counts suggest complex/unusual stoichiometry
+    if total_atoms > 6:
+        score += 0.15
+    if total_atoms > 10:
+        score += 0.1
+
+    # Rare earth / noble metal presence → +0.2
+    elements = set(re.findall(r'[A-Z][a-z]?', formula))
+    rare = elements & _RARE_EARTH_ELEMENTS
+    precious = elements & _PRECIOUS_METALS
+    if rare:
+        score += 0.2
+    if precious:
+        score += 0.15
+
+    # Mixed prototype (heterostructure keyword) → +0.3
+    if "heterostructure" in desc.lower() or "layered" in desc.lower():
+        score += 0.3
+
+    # Device mode (vs pure material) adds novelty → +0.15
+    if "device" in desc.lower() or "solar cell" in desc.lower() or "memristor" in desc.lower():
+        score += 0.15
+
+    # Extreme toxicity flag → +0.1
+    if "EXTREME TOXICITY" in desc or props.get("toxicity", False):
+        score += 0.1
+
+    return min(1.0, max(0.0, score))
+
+
+def compute_breakthrough_potential(
+    novelty: float,
+    strangeness: float,
+    impact: float,
+) -> float:
+    """Compute breakthrough potential as weighted composite.
+
+    breakthrough_potential = (novelty * 0.4) + (strangeness * 0.3) + (impact * 0.3)
+    """
+    return min(1.0, novelty * 0.4 + strangeness * 0.3 + impact * 0.3)
+
+
+def extract_elements_from_candidate(candidate: Dict[str, Any]) -> Set[str]:
+    """Extract element symbols from a candidate's name only.
+
+    Only parses the formula field to avoid false positives from
+    English words in descriptions (e.g., "Generated" → Ge, "Bandgap" → Ba).
+    """
+    import re
+    formula = candidate.get("name", "")
+    raw = re.findall(r'[A-Z][a-z]?', formula)
+    return {sym for sym in raw if sym in PERIODIC_TABLE}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -662,11 +758,66 @@ def _generate_cross_domain_candidates(max_candidates: int) -> List[Dict[str, Any
     return cross
 
 
+def _generate_unified_candidates(
+    mode: str,
+    max_candidates: int,
+    constraints: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """Generate material candidates via unified matter generator.
+
+    Maps Structure objects to the candidate dict format expected by
+    generate_novel_hypotheses().
+    """
+    try:
+        from weslr.modules.unified_matter_generator import MatterGenerator, estimate_properties
+        gen = MatterGenerator(seed=42)
+        structures = gen.generate_candidates(
+            mode=mode,
+            max_candidates=max_candidates,
+            constraints=constraints or {},
+        )
+        candidates = []
+        for s in structures:
+            props = estimate_properties(s)
+            formula = s.composition_string()
+            candidates.append({
+                "name": formula,
+                "description": f"Generated {mode} candidate: {formula} ({s.geometry_type}). "
+                                f"Bandgap: {props['bandgap_eV']:.2f} eV. "
+                                f"Conductivity: {props['conductivity']:.2f}. "
+                                f"Stability: {props['stability']:.2f}."
+                                + (f" ⚠️  TOXIC ELEMENTS present." if props["toxicity"] else ""),
+                "domain": "materials",
+                "source_module": "unified_matter_generator",
+                "_structure": s,
+                "_properties": props,
+                "_strangeness": mode == "strangeness",
+            })
+        return candidates
+    except Exception:
+        return []
+
+
 def generate_candidates_for_domain(
     domain: str,
     max_candidates: int = 10,
+    generator: str = "default",
+    unified_mode: str = "plausible",
+    unified_constraints: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Generate raw candidate proposals for a domain."""
+    """Generate raw candidate proposals for a domain.
+
+    Args:
+        domain: "materials", "chemistry", "biology", "cross_domain", or "devices"
+        max_candidates: maximum number of candidates
+        generator: "default" or "unified"
+        unified_mode: "plausible" or "strangeness" (used when generator="unified")
+        unified_constraints: dict of constraints for unified generator
+    """
+    if generator == "unified":
+        # Map "devices" and "all" to materials domain for unified generator
+        return _generate_unified_candidates(unified_mode, max_candidates, unified_constraints)
+
     if domain == "materials":
         return _generate_materials_candidates(max_candidates)
     elif domain == "chemistry":
@@ -675,6 +826,9 @@ def generate_candidates_for_domain(
         return _generate_biology_candidates(max_candidates)
     elif domain == "cross_domain":
         return _generate_cross_domain_candidates(max_candidates)
+    elif domain == "devices":
+        # Devices use unified generator in strangeness mode by default
+        return _generate_unified_candidates(unified_mode, max_candidates, unified_constraints)
     else:
         return []
 
@@ -810,6 +964,22 @@ def generate_novel_hypotheses(
         risk = score_risk(cand)
         impact = score_impact({**cand, "novelty_score": novelty, "feasibility_score": feasibility})
 
+        # ── Strangeness + Breakthrough (unified generator only) ─────────────
+        source_module = cand.get("source_module", "")
+        if source_module == "unified_matter_generator":
+            strangeness = compute_strangeness_score(cand)
+            breakthrough = compute_breakthrough_potential(novelty, strangeness, impact)
+            # Extract toxic elements present
+            elements = extract_elements_from_candidate(cand)
+            toxic_list = sorted(elements & _TOXIC_ELEMENTS)
+            # Dual-use check: any restricted dual-use elements?
+            dual_use_flag = bool(elements & _DUAL_USE_ELEMENTS)
+        else:
+            strangeness = 0.0
+            breakthrough = impact  # fallback: use impact as proxy
+            toxic_list = []
+            dual_use_flag = False
+
         # ── Difficulty ─────────────────────────────────────────────────────
         difficulty = assign_difficulty(novelty, feasibility, risk)
 
@@ -821,15 +991,33 @@ def generate_novel_hypotheses(
 
         # ── Experiment summary ────────────────────────────────────────────
         exp_summary = _build_experiment_summary(cand, domain)
+        if source_module == "unified_matter_generator":
+            props = cand.get("_properties", {})
+            if props:
+                exp_summary += (
+                    f"\n\n[Generated Material Properties]\n"
+                    f"  Bandgap: {props.get('bandgap_eV', 'N/A'):.2f} eV\n"
+                    f"  Conductivity: {props.get('conductivity', 'N/A'):.2f}\n"
+                    f"  Stability: {props.get('stability', 'N/A'):.2f}\n"
+                    f"  Toxicity: {'YES ⚠️' if props.get('toxicity') else 'No'}\n"
+                    f"  Charge radical: {'YES' if props.get('radical') else 'No'}"
+                )
+            if toxic_list:
+                exp_summary += f"\n  ⚠️  TOXIC ELEMENTS in candidate: {', '.join(toxic_list)}"
+            if dual_use_flag:
+                exp_summary += "\n  ⚠️  DUAL-USE FLAG: candidate contains elements with dual-use potential."
 
         # ── Provenance ─────────────────────────────────────────────────────
         provenance = [
-            f"Candidate generated via {cand.get('source_module', 'unknown')}",
+            f"Candidate generated via {source_module or 'unknown'}",
             f"Domain: {domain}",
             f"Feasibility score: {feasibility:.3f}",
             f"Risk score: {risk:.3f}",
             f"Impact score: {impact:.3f}",
         ]
+        if strangeness > 0:
+            provenance.append(f"Strangeness score: {strangeness:.3f}")
+            provenance.append(f"Breakthrough potential: {breakthrough:.3f}")
         if not _user_acknowledged:
             provenance.append("Literature novelty check: SKIPPED (no user ack)")
 
@@ -847,6 +1035,11 @@ def generate_novel_hypotheses(
             literature_check=lit,
             provenance=provenance,
             created_at=datetime.now(timezone.utc).isoformat(),
+            # Extended fields for unified generator
+            strangeness_score=strangeness,
+            breakthrough_potential=breakthrough,
+            toxic_elements=toxic_list,
+            dual_use=dual_use_flag,
         )
         proposals.append(proposal)
 
