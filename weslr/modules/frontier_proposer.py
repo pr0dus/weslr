@@ -456,8 +456,68 @@ def extract_keywords(text: str) -> List[str]:
     Extracts: capitalized multi-word terms, chemical formulas,
     and longest words. Returns deduped list.
     """
-    # Chemical formulas: Al2O3, Cu2ZnSnSe4, etc.
-    formulas = re.findall(r"\b[A-Z][a-z]?\d*[A-Z]?(?:\d+)*\b", text)
+    # Chemical formula extraction via position-tracking scan
+    # Tokenize into [A-Z][a-z]?\d* segments with positions, then merge adjacent tokens
+    tokens_with_pos = []
+    i = 0
+    while i < len(text):
+        m = re.match(r'[A-Z][a-z]?\d*', text[i:])
+        if m:
+            tokens_with_pos.append((m.group(), i, i + len(m.group())))
+            i += len(m.group())
+        else:
+            i += 1
+
+    # Merge O+digit pairs (e.g. O + 3 -> O3) for proper anion grouping
+    merged_tokens = []
+    j = 0
+    while j < len(tokens_with_pos):
+        tok, start, end = tokens_with_pos[j]
+        if tok == 'O' and j + 1 < len(tokens_with_pos):
+            next_tok, _, next_end = tokens_with_pos[j + 1]
+            if re.match(r'\d', next_tok):
+                merged_tokens.append((tok + next_tok, start, next_end))
+                j += 2
+                continue
+        merged_tokens.append((tok, start, end))
+        j += 1
+
+    # Merge adjacent tokens (no gap) into full chemical formulas
+    result = []
+    current = []
+    last_end = -1
+    for tok, start, end in merged_tokens:
+        if last_end >= 0 and start > last_end:
+            if current:
+                result.append(''.join(current))
+            current = []
+        current.append(tok)
+        last_end = end
+    if current:
+        result.append(''.join(current))
+
+    def is_formula(s):
+        # Must have a digit (real formula) or be a multi-letter element symbol.
+        # Reject pure structural keywords (perovskite, spinel, rutile, etc.)
+        GENERIC_STRUCTURAL = {
+            'perovskite', 'spinel', 'rutile', 'olivine', 'rocksalt', 'zincblende',
+            'wurtzite', 'layered', '2d', '2d_material', ' monolayer', '薄片',
+            'graphene', 'mof', 'mofs', 'mxene', 'maxene',
+            'abx3', 'ab2x4', 'ax2', 'abx4', 'abx3_cubic', 'ab2x4_cubic',
+            'layered_perovskite', 'abx3', 'abx4',
+        }
+        if s.lower() in GENERIC_STRUCTURAL:
+            return False
+        if len(s) < 3:
+            return False
+        if re.search(r'\d', s):
+            return True
+        if len(s) >= 4 and re.search(r'[a-z]', s) and not s[0].isdigit():
+            return True
+        return False
+
+    formulas = [m for m in result if is_formula(m)]
+
 
     # Capitalized multi-word terms (2-4 words)
     cap_terms = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\b", text)
@@ -595,9 +655,25 @@ def check_novelty(
         return _mock_results
 
     keywords = extract_keywords(idea_text)
-    if not keywords:
-        keywords = [idea_text[:80]]
-    query = " ".join(keywords[:5])
+    # For chemical novelty: ONLY use formula tokens (chemical compositions).
+    # Generic words like 'perovskite', 'spinel', 'strangeness', 'candidate'
+    # return unrelated papers and corrupt the novelty signal.
+    NOISE_WORDS = {
+        'strangeness', 'candidate', 'generated', 'proposed', 'following',
+        'novel', 'new', 'material', 'hypothesis', 'potential', 'possible',
+        'theoretical', 'predicted', 'suggested', 'estimated', 'calculated',
+        'bandgap', 'conductivity', 'stability', 'perovskite', 'layered_perovskite',
+        'abx3', 'abx3_cubic', 'ab2x4', 'ab2x4_cubic', 'abx4', 'spinel',
+        'rutile', 'olivine', 'rocksalt', 'zincblende', 'wurtzite',
+        'layered', '2d', '2d_material', 'graphene', 'mof', 'mofs',
+        'mxene', 'maxene',
+    }
+    formula_keywords = [k for k in keywords
+                       if k.lower() not in NOISE_WORDS
+                       and re.search(r'\d', k)]   # must contain a digit = real formula
+    if not formula_keywords:
+        formula_keywords = [k for k in keywords if k.lower() not in NOISE_WORDS]
+    query = " ".join(formula_keywords[:3])
 
     papers: List[Dict[str, str]] = []
     total_count = 0
@@ -770,7 +846,12 @@ def _generate_unified_candidates(
     """
     try:
         from weslr.modules.unified_matter_generator import MatterGenerator, estimate_properties
-        gen = MatterGenerator(seed=42)
+        # Prefer expanded graph; fall back to original if not present
+        import os
+        expanded = os.path.join(os.path.dirname(__file__), "..", "data", "material_graph_expanded.json")
+        base_graph = os.path.join(os.path.dirname(__file__), "..", "data", "material_graph.json")
+        graph_path = expanded if os.path.exists(expanded) else (base_graph if os.path.exists(base_graph) else None)
+        gen = MatterGenerator(seed=42, graph_path=graph_path)
         structures = gen.generate_candidates(
             mode=mode,
             max_candidates=max_candidates,
