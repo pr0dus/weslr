@@ -179,6 +179,11 @@ from .ambient_loop import (
     LoopResult,
 )
 
+from .local_bridge import (
+    send_to_weslr,
+    stt_bridge,
+)
+
 __all__ = [
     # Elastic memory
     "ElasticMemory",
@@ -255,4 +260,7 @@ __all__ = [
     "AmbientPresenceLoop",
     "MeaningfulChange",
     "LoopResult",
+    # Local bridge (Phase 4)
+    "send_to_weslr",
+    "stt_bridge",
 ]
