@@ -472,11 +472,27 @@ WESLR-native memory consolidation loop that collects safe traces, clusters repea
 - automatic_execution=false
 - promotion_performed=false
 
+### V2 Status (green-zone auto-promotion)
+
+- **consolidation_auto_enabled**: master kill-switch (default: false)
+- **green_zone_auto_promotion_enabled**: green-zone toggle (default: false)
+- **zone classification**: green (auto if toggle ON) / yellow (review) / red (approval)
+- **allowed_green_destinations**: continuity_summary, attention_memory, digest_archive_marker, procedural_note only
+- **provenance required**: must have source provenance if require_provenance=True
+- **audit logging**: every promotion decision logged to consolidation_audit.jsonl if require_audit_log=True
+- **yellow zone**: weight_proposal, cognitive_anchor, belief, strategy, etc. — review only, never auto-promotes
+- **red zone**: doctrine, identity, governance, entity_memory, mission_store, code, research_truth, etc. — approval only, never auto-promotes
+- **V1 invariant preserved**: no auto-promotion unless both consolidation_auto_enabled AND green_zone_auto_promotion_enabled are True
+- **separate from weight refinement**: consolidation_config.json is separate from auto_refinement_config.py
+
 ### Implementation Files
 
 - `weslr/consolidation_loop.py`
+- `weslr/consolidation_config.py`
+- `weslr/consolidation_promotion.py`
 - `weslr/commands/consolidation_commands.py`
 - `weslr/tests/test_consolidation_loop.py`
+- `weslr/tests/test_consolidation_promotion.py`
 
 ### Safety Rule
 
