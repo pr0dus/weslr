@@ -253,6 +253,59 @@ def cmd_simulate(args: argparse.Namespace) -> None:
             print(f"  {r}")
 
 
+def cmd_auto_status(_args: argparse.Namespace) -> None:
+    """Show auto-apply readiness and green-lane status."""
+    from weslr.cognitive_weights import (
+        GLOBAL_AUTO_APPLY_ENABLED,
+        CognitiveWeightRegistry,
+        check_weight_update_guardrails,
+    )
+    registry = CognitiveWeightRegistry.load_defaults()
+
+    green = [k for k, w in registry.weights.items() if w.zone == "green"]
+    yellow = [k for k, w in registry.weights.items() if w.zone == "yellow"]
+    red = [k for k, w in registry.weights.items() if w.zone == "red"]
+
+    print(f"\n{BOLD}Auto-apply readiness{RESET}")
+    print(f"  Global auto-apply:  {colour('DISABLED', RED)} (GLOBAL_AUTO_APPLY_ENABLED=False)")
+    print(f"  {BOLD}Green zone:{RESET} {len(green)} weight(s) defined (future auto-apply lane)")
+    for k in green:
+        w = registry.get_weight(k)
+        delta_str = f"max_auto_delta={w.max_auto_delta}"
+        print(f"    {GREEN}{k}{RESET}  {delta_str}")
+        print(f"      auto_apply_allowed={w.auto_apply_allowed}  "
+              f"min_obs={w.min_observations}  cooldown={w.cooldown_hours}h")
+        print(f"      sim={w.requires_simulation_pass}  reg={w.requires_regression_pass}  "
+              f"rollback={w.rollback_required}")
+    if not green:
+        print(f"    {DIM}No green weights defined yet.{RESET}")
+
+    print(f"\n  {BOLD}Yellow zone:{RESET} {len(yellow)} weight(s) — manual approval required")
+    print(f"  {BOLD}Red zone:{RESET} {len(red)} weight(s) — auto-apply blocked in this phase")
+
+    # Demonstrate guardrail blocking a green proposal
+    print(f"\n  {BOLD}Guardrail proof (green, all flags passing):{RESET}")
+    if green:
+        gk = green[0]
+        # Simulate a valid-looking proposal with all evidence passing
+        r = check_weight_update_guardrails(
+            registry, gk, mode="auto",
+            simulation_pass=True, regression_pass=True, observation_count=10)
+        blocked = not r.allowed
+        print(f"    {gk} in auto mode (all evidence passing): "
+              f"allowed={r.allowed}  {colour('BLOCKED' if blocked else 'PASS', RED if blocked else GREEN)}")
+        if blocked:
+            for reason in r.reasons:
+                print(f"      {RED}!{RESET} {reason}")
+
+    print(f"\n  {BOLD}To enable auto-apply (future):{RESET}")
+    print(f"    1. Set GLOBAL_AUTO_APPLY_ENABLED=True in cognitive_weights.py")
+    print(f"    2. Confirm green weights are properly tested")
+    print(f"    3. Ensure all guardrail conditions can be met")
+    print(f"    4. Monitor auto-apply audit log after enabling")
+    print(f"\n  Current: auto-apply is structurally possible but globally disabled.{RESET}")
+
+
 def cmd_approve(args: argparse.Namespace) -> None:
     """Approve a proposal by ID."""
     pid = getattr(args, "proposal", None) or getattr(args, "id", None)
@@ -390,6 +443,8 @@ def main() -> None:
 
     sub.add_parser("reset-all", help="Reset all weights to defaults")
 
+    auto_status_parser = sub.add_parser("auto-status", help="Show auto-apply readiness")
+
     args = parser.parse_args()
 
     COMMAND_MAP = {
@@ -404,6 +459,7 @@ def main() -> None:
         "apply": cmd_apply,
         "reset": cmd_reset,
         "reset-all": cmd_reset_all,
+        "auto-status": cmd_auto_status,
     }
 
     cmd = COMMAND_MAP.get(args.command)

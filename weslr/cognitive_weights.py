@@ -293,6 +293,62 @@ class CognitiveWeightRegistry:
                 zone="yellow",
                 guardrail_reason="Affects relational tone calibration; wrong value could shift tone inappropriately",
             ),
+
+            # ── Green lane: low-risk expression/tone weights ──────────────
+            # Future auto-apply allowed with all guardrails + global flag.
+            # max_auto_delta is very small (0.03) to prevent tone drift.
+            # Not used by any safety-critical module in this release.
+            "tone.response_concision_bias": CognitiveWeight(
+                key="tone.response_concision_bias",
+                value=1.0, default_value=1.0,
+                min_value=0.5, max_value=2.0,
+                description="Bias multiplier for response length/concision (higher = more concise)",
+                module="meaning_response",
+                zone="green",
+                guardrail_reason="Low-risk tone calibration; tiny bias adjustments only",
+                auto_apply_allowed=True,
+                max_auto_delta=0.03,
+                max_manual_delta=0.1,
+                min_observations=5,
+                cooldown_hours=48,
+                requires_simulation_pass=True,
+                requires_regression_pass=True,
+                rollback_required=True,
+            ),
+            "tone.warmth_adjustment": CognitiveWeight(
+                key="tone.warmth_adjustment",
+                value=0.0, default_value=0.0,
+                min_value=-0.5, max_value=0.5,
+                description="Additive warmth offset for relational tone (- = cooler, + = warmer)",
+                module="meaning_response",
+                zone="green",
+                guardrail_reason="Low-risk relational tone adjustment; bounded offset only",
+                auto_apply_allowed=True,
+                max_auto_delta=0.03,
+                max_manual_delta=0.15,
+                min_observations=5,
+                cooldown_hours=48,
+                requires_simulation_pass=True,
+                requires_regression_pass=True,
+                rollback_required=True,
+            ),
+            "expression.detail_level_bias": CognitiveWeight(
+                key="expression.detail_level_bias",
+                value=1.0, default_value=1.0,
+                min_value=0.5, max_value=2.0,
+                description="Bias for level of detail in explanations (higher = more detail)",
+                module="meaning_response",
+                zone="green",
+                guardrail_reason="Low-risk expression calibration; simple bias multiplier",
+                auto_apply_allowed=True,
+                max_auto_delta=0.03,
+                max_manual_delta=0.1,
+                min_observations=5,
+                cooldown_hours=48,
+                requires_simulation_pass=True,
+                requires_regression_pass=True,
+                rollback_required=True,
+            ),
         }
 
     # ── Init ────────────────────────────────────────────────────────────────

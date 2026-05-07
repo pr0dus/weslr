@@ -322,6 +322,170 @@ shutil.rmtree(td)
 print(f"\nGroup H result: {'ALL PASS' if all_pass_h else 'SOME FAIL'}")
 
 
+# ── Group I: Green-zone auto-refinement preparation ────────────────────────────
+
+print("\n" + "=" * 60)
+print("GROUP I — GREEN-ZONE AUTO-REFINEMENT PREPARATION")
+print("=" * 60)
+
+all_pass_i = True
+registry = CR2.load_defaults()
+
+# I1: At least one green low-risk weight exists
+green_weights = {k: w for k, w in registry.weights.items() if w.zone == "green"}
+_i1_ok = len(green_weights) >= 1
+print(f"  {'PASS' if _i1_ok else 'FAIL'}  I1  Green weights exist ({len(green_weights)})")
+if not _i1_ok: all_pass_i = False
+
+# I2: No red weight has auto_apply_allowed=True
+_i2_ok = all(not w.auto_apply_allowed for w in registry.weights.values() if w.zone == "red")
+red_weights = {k: w for k, w in registry.weights.items() if w.zone == "red"}
+print(f"  {'PASS' if _i2_ok else 'FAIL'}  I2  Red weights have auto_apply_allowed=False ({len(red_weights)} red)")
+if not _i2_ok: all_pass_i = False
+
+# I3: No yellow weight has auto_apply_allowed=True
+_i3_ok = all(not w.auto_apply_allowed for w in registry.weights.values() if w.zone == "yellow")
+yellow_weights = {k: w for k, w in registry.weights.items() if w.zone == "yellow"}
+print(f"  {'PASS' if _i3_ok else 'FAIL'}  I3  Yellow weights have auto_apply_allowed=False ({len(yellow_weights)} yellow)")
+if not _i3_ok: all_pass_i = False
+
+# I4: Green weight has tiny max_auto_delta (≤0.05)
+_i4_ok = True
+for k, w in green_weights.items():
+    if w.max_auto_delta > 0.05:
+        print(f"  FAIL  I4  {k} max_auto_delta={w.max_auto_delta} > 0.05")
+        _i4_ok = False
+print(f"  {'PASS' if _i4_ok else 'FAIL'}  I4  Green weights have max_auto_delta ≤ 0.05")
+if not _i4_ok: all_pass_i = False
+
+# I5: Green weight requires min_observations, cooldown, simulation, regression, rollback
+_i5_ok = True
+for k, w in green_weights.items():
+    if not (w.min_observations >= 5 and w.cooldown_hours >= 24
+            and w.requires_simulation_pass and w.requires_regression_pass
+            and w.rollback_required):
+        print(f"  FAIL  I5  {k} missing guardrail requirement")
+        _i5_ok = False
+print(f"  {'PASS' if _i5_ok else 'FAIL'}  I5  Green weights have all guardrail requirements")
+if not _i5_ok: all_pass_i = False
+
+# I6: Auto-apply blocked while GLOBAL_AUTO_APPLY_ENABLED=False even for green
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    r = check_weight_update_guardrails(registry, gk, mode="auto",
+        simulation_pass=True, regression_pass=True, observation_count=10)
+    _i6_ok = not r.allowed
+    print(f"  {'PASS' if _i6_ok else 'FAIL'}  I6  Green auto-apply blocked while GLOBAL_AUTO_APPLY_ENABLED=False")
+    if not _i6_ok: all_pass_i = False
+
+# I7: With GLOBAL_AUTO_APPLY_ENABLED=True (mock), valid green proposal passes
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    w = green_weights[gk]
+    class _GreenProposal:
+        weight_key = gk
+        delta = w.max_auto_delta * 0.8  # small valid delta
+        old_value = w.value
+        proposed_value = w.value + w.max_auto_delta * 0.8
+        reason = "green lane test"
+    from weslr.weight_proposal import WeightUpdateProposal as WUP3
+    # Create a real proposal to get valid delta
+    temp_prop = WUP3.create(gk, w.value, w.value + w.max_auto_delta * 0.5, "test", [], "x", "y")
+    # Override global flag temporarily via import mechanism
+    import importlib, weslr.cognitive_weights as cg
+    original_flag = cg.GLOBAL_AUTO_APPLY_ENABLED
+    cg.GLOBAL_AUTO_APPLY_ENABLED = True
+    try:
+        r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+            simulation_pass=True, regression_pass=True, observation_count=10)
+        _i7_ok = r.allowed
+        print(f"  {'PASS' if _i7_ok else 'FAIL'}  I7  Valid green passes guardrail when global enabled (allowed={r.allowed})")
+    finally:
+        cg.GLOBAL_AUTO_APPLY_ENABLED = original_flag
+    if not _i7_ok: all_pass_i = False
+
+# I8: Large delta on green is blocked (even with global enabled)
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    w = green_weights[gk]
+    temp_prop = WUP3.create(gk, w.value, w.value + w.max_auto_delta * 10, "big delta", [], "x", "y")
+    import weslr.cognitive_weights as cg2
+    original = cg2.GLOBAL_AUTO_APPLY_ENABLED
+    cg2.GLOBAL_AUTO_APPLY_ENABLED = True
+    try:
+        r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+            simulation_pass=True, regression_pass=True, observation_count=10)
+        _i8_ok = not r.allowed
+        print(f"  {'PASS' if _i8_ok else 'FAIL'}  I8  Large delta on green blocked (allowed={r.allowed})")
+    finally:
+        cg2.GLOBAL_AUTO_APPLY_ENABLED = original
+    if not _i8_ok: all_pass_i = False
+
+# I9: Insufficient observations blocks green auto-apply
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    w = green_weights[gk]
+    temp_prop = WUP3.create(gk, w.value, w.value + w.max_auto_delta * 0.3, "insufficient obs", [], "x", "y")
+    import weslr.cognitive_weights as cg3
+    original = cg3.GLOBAL_AUTO_APPLY_ENABLED
+    cg3.GLOBAL_AUTO_APPLY_ENABLED = True
+    try:
+        r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+            simulation_pass=True, regression_pass=True, observation_count=2)
+        _i9_ok = not r.allowed
+        print(f"  {'PASS' if _i9_ok else 'FAIL'}  I9  Insufficient observations blocks green (allowed={r.allowed})")
+    finally:
+        cg3.GLOBAL_AUTO_APPLY_ENABLED = original
+    if not _i9_ok: all_pass_i = False
+
+# I10: Failed simulation blocks green auto-apply
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    w = green_weights[gk]
+    temp_prop = WUP3.create(gk, w.value, w.value + w.max_auto_delta * 0.3, "sim fail", [], "x", "y")
+    import weslr.cognitive_weights as cg4
+    original = cg4.GLOBAL_AUTO_APPLY_ENABLED
+    cg4.GLOBAL_AUTO_APPLY_ENABLED = True
+    try:
+        r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+            simulation_pass=False, regression_pass=True, observation_count=10)
+        _i10_ok = not r.allowed
+        print(f"  {'PASS' if _i10_ok else 'FAIL'}  I10  Failed simulation blocks green (allowed={r.allowed})")
+    finally:
+        cg4.GLOBAL_AUTO_APPLY_ENABLED = original
+    if not _i10_ok: all_pass_i = False
+
+# I11: Failed regression blocks green auto-apply
+if green_weights:
+    gk = list(green_weights.keys())[0]
+    w = green_weights[gk]
+    temp_prop = WUP3.create(gk, w.value, w.value + w.max_auto_delta * 0.3, "reg fail", [], "x", "y")
+    import weslr.cognitive_weights as cg5
+    original = cg5.GLOBAL_AUTO_APPLY_ENABLED
+    cg5.GLOBAL_AUTO_APPLY_ENABLED = True
+    try:
+        r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+            simulation_pass=True, regression_pass=False, observation_count=10)
+        _i11_ok = not r.allowed
+        print(f"  {'PASS' if _i11_ok else 'FAIL'}  I11  Failed regression blocks green (allowed={r.allowed})")
+    finally:
+        cg5.GLOBAL_AUTO_APPLY_ENABLED = original
+    if not _i11_ok: all_pass_i = False
+
+# I12: Red/yellow proposals are never auto-applicable (zone check)
+for k, w in {**dict((k, w) for k, w in registry.weights.items() if w.zone == "red"),
+             **dict((k, w) for k, w in registry.weights.items() if w.zone == "yellow")}.items():
+    temp_prop = WUP3.create(k, w.value, w.value + 0.01, "zone test", [], "x", "y")
+    r = check_weight_update_guardrails(registry, temp_prop, mode="auto",
+        simulation_pass=True, regression_pass=True, observation_count=10)
+    if r.allowed:
+        print(f"  FAIL  I12  {k} ({w.zone}) should not allow auto-apply")
+        all_pass_i = False
+print(f"  {'PASS' if all_pass_i else 'FAIL'}  I12  All red/yellow weights blocked for auto-apply")
+
+print(f"\nGroup I result: {'ALL PASS' if all_pass_i else 'SOME FAIL'}")
+
+
 # ── Regression: existing tests still pass ──────────────────────────────────────
 
 print("\n" + "=" * 60)
@@ -364,5 +528,5 @@ print(f"  Group H (guardrails):         {'PASS' if all_pass_h else 'FAIL'}")
 print(f"  Regression meaning-vector:   {'PASS' if g8 else 'FAIL'}")
 print(f"  Regression local bridge:       {'PASS' if g9 else 'FAIL'}")
 print(f"  Regression voice pipeline:     {'PASS' if g10 else 'FAIL'}")
-total = sum([all_pass_g, all_pass_h, g8, g9, g10])
-print(f"\n  OVERALL: {total}/5 suites passed")
+total = sum([all_pass_g, all_pass_h, all_pass_i, g8, g9, g10])
+print(f"\n  OVERALL: {total}/6 suites passed")
