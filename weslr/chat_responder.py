@@ -520,6 +520,7 @@ class ChatResponder:
             from weslr.meaning_state_context import gather_meaning_state
             from weslr.meaning_response import form_meaning_response
             from weslr.relationship_observation_capture import capture_relationship_observations
+            from weslr.memory_capture import safe_capture_memories_from_turn
 
             test_metadata = identity_meta or {}
             mv = analyze_meaning(message)
@@ -536,12 +537,33 @@ class ChatResponder:
                         "fallback_used": False,
                         "source": "meaning_vector_response_obligation",
                     }
+                    meaning_state = {
+                        "memory_scope_used": ctx.memory_scope_used,
+                        "entity_relationships_used": ctx.entity_relationships_used,
+                    }
+                    primary_projects = getattr(ctx, 'primary_projects', []) or []
+                    profile = {"primary_projects": primary_projects}
                     capture_relationship_observations(
                         message,
                         reply_meta["path"],
                         identity_meta,
                         channel_id="",
+                        meaning_state=meaning_state,
+                        profile=profile,
                     )
+                    mem_result = safe_capture_memories_from_turn(
+                        message,
+                        result.content,
+                        response_metadata=reply_meta,
+                        identity_meta=identity_meta,
+                        base_path=None,
+                        meaning_state=meaning_state,
+                        profile=profile,
+                    )
+                    if mem_result.captured:
+                        reply_meta["memory_capture_count"] = len(mem_result.records_created)
+                    if mem_result.skipped_reason:
+                        reply_meta["memory_capture_skipped_reason"] = mem_result.skipped_reason
                     return result.content, reply_meta
         except Exception:
             pass  # fall through to model-backed path
