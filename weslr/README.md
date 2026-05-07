@@ -277,6 +277,56 @@ raw text
 
 ---
 
+## Cognitive Weight Refinement System
+
+**Canonical as of:** commit `2ed6b9d` (2026-05-07)
+
+Governed framework for modifying WESLR's cognitive weights without drift or uncontrolled self-improvement.
+
+**Architecture:**
+
+```
+Observation (safe_to_learn=True)
+  → WeightProposal.create()  [status=proposed]
+  → run_simulation()          [against 18 eval phrases]
+  → operator reviews → approve / reject
+  → WeightProposal.approve()  [status=approved]
+  → weight_commands apply → GuardrailResult.check()
+  → registry.set_pending() → save → old_value stored for rollback
+```
+
+**Files:**
+- `cognitive_weights.py` — 22-weight registry with zone fields
+- `weight_proposal.py` — proposal lifecycle
+- `weight_simulation.py` — simulation against eval phrases
+- `weight_observation.py` — observation capture
+- `commands/weight_commands.py` — CLI
+
+**Guardrail zones:**
+
+| Zone | Description | Auto-apply | Manual-apply |
+|---|---|---|---|
+| `green` | Future low-risk lane | Blocked (global off) | Delta-limited |
+| `yellow` | Meaning/obligation/ranking/memory weights | Blocked | Approval + delta limit |
+| `red` | Identity verification weights | Blocked | Blocked in this phase |
+
+**Global auto-apply:** `DISABLED` — requires explicit opt-in per weight.
+
+**CLI:**
+```
+weight_commands.py status          # zone counts, global flag
+weight_commands.py list --group <x> # zone, delta limits, locked
+weight_commands.py propose --key <k> --value <v> --reason <r>
+weight_commands.py proposals        # guardrail analysis per proposal
+weight_commands.py approve <id>
+weight_commands.py apply <id>       # requires approved + guardrail pass
+weight_commands.py reset --key <k>
+```
+
+**Tests:** G1–G7 (refinement), H1–H12 (guardrails) in `test_cognitive_weight_refinement.py`
+
+---
+
 ### What needs to be added (Next Steps)
 
 | Priority | Item | File(s) |
