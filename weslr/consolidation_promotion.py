@@ -427,19 +427,19 @@ def get_auto_status(cfg: ConsolidationConfig | None = None) -> dict:
     }
 
 
-def enable_auto(cfg: ConsolidationConfig | None = None) -> ConsolidationConfig:
+def enable_auto(cfg=None, path=None):
     """Enable auto-promotion and save config."""
     if cfg is None:
-        cfg = load_config()
+        cfg = load_config(path)
     cfg.enable()
-    save_config(cfg)
+    save_config(cfg, path)
     return cfg
 
 
-def disable_auto(cfg: ConsolidationConfig | None = None) -> ConsolidationConfig:
+def disable_auto(cfg=None, path=None):
     """Disable auto-promotion and save config."""
     if cfg is None:
-        cfg = load_config()
+        cfg = load_config(path)
     cfg.disable()
-    save_config(cfg)
+    save_config(cfg, path)
     return cfg
