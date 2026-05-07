@@ -445,7 +445,65 @@ _Phase 11 status: accepted_doctrine_
 _Observation pipeline status: checkpoint_
 _Attention Loop status: checkpoint_
 _Research Work Loop status: checkpoint_
+
 ---
+
+## Consolidation Loop — Checkpoint
+
+**Status:** checkpoint
+
+**Checkpoint file:** `weslr/docs/WESLR_CONSOLIDATION_LOOP_CHECKPOINT_V1.md`
+
+### Purpose
+
+WESLR-native memory consolidation loop that collects safe traces, clusters repeated themes, scores them, classifies proposed destinations, and writes operator-visible digest candidates.
+
+### V1 Status
+
+- manual only
+- digest-only
+- reads safe metadata traces
+- writes only `.weslr/consolidation_digest.jsonl`
+- no promotion
+- no deletion
+- no doctrine edits
+- no entity memory writes
+- no mission store mutation
+- automatic_execution=false
+- promotion_performed=false
+
+### Implementation Files
+
+- `weslr/consolidation_loop.py`
+- `weslr/commands/consolidation_commands.py`
+- `weslr/tests/test_consolidation_loop.py`
+
+### Safety Rule
+
+> WESLR may consolidate signals into reviewable candidates.
+> WESLR may not silently promote high-impact truth, doctrine, identity, governance, code, or research claims.
+
+### Flexible Details (non-canon)
+
+- scoring weights
+- clustering keys
+- trace sources
+- digest schema
+- command syntax
+- future promotion targets
+- archive policy
+
+### Open Questions
+
+- operator approval flow for promotion
+- destination-specific promotion rules
+- contradiction handling
+- outcome-backed memory strengthening
+- procedural workflow memory
+- memory budget and archival
+- daemon scheduling policy
+
+
 
 ## Phase 8.5 — Unified Matter Structure Classification
 
