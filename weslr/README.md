@@ -244,3 +244,48 @@ Results should be reviewed by a subject-matter expert before use in real-world d
 | `WESLR_AUTO_CONFIRM_FRONTIER` | `0` | Set to `1` to auto-confirm live PubMed/arXiv and exhaustive DB queries. |
 
 **Doctrine:** All frontier science outputs are candidate pre-screening signals, not discovery claims. See `weslr/docs/WESLR_FRONTIER_EXHAUSTIVE_NOVELTY_THERMODYNAMICS_CANON_V1.md` for limitations on structural novelty, Materials Project stability ratings, and heuristic thermodynamics. Structure classification by stoichiometry is not crystallographic proof. Outputs must use "candidate for validation" language.
+
+---
+
+## Meaning-Vector Response Obligation Layer
+
+**Canonical as of:** commit `18172135` (2026-05-07)
+
+WESLR's main-door chat path now has a non-LLM Plan A for identity, memory, first-contact, and self-model questions.
+
+**Architecture:**
+
+```
+raw text
+  → analyze_meaning()          [linguistic_meaning.py]
+    → MeaningVector (speech_act_scores, relational_scores, state_query_scores…)
+  → determine_response_obligation()  [response_obligation.py]
+    → ResponseObligation (obligation_type, required_state, disclosure_level…)
+  → gather_meaning_state()     [meaning_state_context.py]
+    → MeaningStateContext (sender_identity, memory_summary, self_model_summary…)
+  → form_meaning_response()    [meaning_response.py]
+    → MeaningResponseResult (content, candidate_type, confidence…)
+```
+
+**Candidate types:** `NEW_CONTACT_ORIENTATION`, `VERIFIED_CONTACT_ORIENTATION`, `IDENTITY_VERIFICATION`, `MEMORY_STATE_REPORT`, `SELF_MODEL_DESCRIPTION`, `CAPABILITY_ORIENTATION`, `CLARIFYING_QUESTION`, `BOUNDED_UNCERTAINTY`
+
+**Integration points:**
+- `chat_responder.respond_chat()` — chat-mode main door (local_bridge path)
+- `dialogue.py Part 4` — communicator layer (communicator payload path)
+
+**LLM is last resort.** Falls through to `_model_chat_response()` only when meaning-vector confidence thresholds are not met.
+
+---
+
+### What needs to be added (Next Steps)
+
+| Priority | Item | File(s) |
+|---|---|---|
+| 1 | **Memory response quality** — replace raw memory file dump with structured session summary (date, topics, outcome) | `meaning_state_context.py`, `meaning_response.py` |
+| 2 | **Self-model response quality** — replace `IDENTITY.md` raw dump with composed 2–3 sentence self-description | `meaning_state_context.py`, `meaning_response.py` |
+| 3 | **Verified identity flow** — pass actual `test_identity_context` through `chat_responder.respond_chat()` so verified-identity responses fire in local_bridge path | `chat_responder.py` |
+| 4 | **NEW_CONTACT_ORIENTATION** — remove "I'll note it" (no write path yet) or implement lightweight write handler | `meaning_response.py` |
+| 5 | **Phrase family expansion** — grow `SPEECH_ACT_KEYWORDS` / `RELATIONAL_KEYWORDS` from observed messages rather than hand-authoring | `linguistic_meaning.py` |
+| 6 | **Channel-level identity binding** — bind `sender_confidence` to device/channel metadata so identity persists across sessions | `ingress_adapter.py`, `chat_responder.py` |
+
+**Documentation:** `docs/routing_diagnosis.md` covers root cause and resolution for the meaning-vector integration.
