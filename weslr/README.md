@@ -245,6 +245,113 @@ Results should be reviewed by a subject-matter expert before use in real-world d
 
 **Doctrine:** All frontier science outputs are candidate pre-screening signals, not discovery claims. See `weslr/docs/WESLR_FRONTIER_EXHAUSTIVE_NOVELTY_THERMODYNAMICS_CANON_V1.md` for limitations on structural novelty, Materials Project stability ratings, and heuristic thermodynamics. Structure classification by stoichiometry is not crystallographic proof. Outputs must use "candidate for validation" language.
 
+## Channel Identity Binding
+
+**Canonical as of:** commit `1a6eccd` (2026-05-07)
+
+Bounded channel-to-profile binding that separates *what the user told WESLR* (profile) from *which channel/session is trusted* (binding) from *what evidence verifies the binding* (verification).
+
+**Three-layer model:**
+
+| Layer | File | What it is |
+|---|---|---|
+| Profile | `user_profile.json` | What the operator explicitly told WESLR about themselves. `identity_status`: `profile_only` or `onboarded_unverified`. Does NOT imply verified session. |
+| Channel Binding | `channel_identity.json` | Explicit operator command linking a specific local channel/session to a profile `user_id`. Created only via `bind-local`. |
+| Verification | runtime evidence | Live check: does current session/channel match the binding? Results: `channel_verified`, `onboarded_unverified`, or `unverified`. |
+
+
+**Evidence strength hierarchy:**
+
+| Evidence type | Strength | Can verify alone? | Result |
+|---|---|---|---|
+| `explicit_operator_binding` | STRONG | Yes | `channel_verified`, confidence 0.85 |
+| `local_device_identity` | STRONG | Yes | `channel_verified`, confidence 0.85 |
+| `session_id_match` | MEDIUM | No | caps at 0.55 |
+| `local_ip_match` | WEAK | No | caps at 0.35, stays `onboarded_unverified` |
+| `text_self_claim` | WEAK | No | never verifies alone |
+
+
+**Core rules:**
+- Profile existence never implies verified session.
+- Text self-claims (`"I am Arthur"`) are never sufficient for identity verification.
+- IP address alone cannot verify identity.
+- `channel_verified` requires STRONG evidence: explicit operator binding or local device identity.
+- All writes are explicit — no silent auto-binding.
+- Backup before overwrite on every save.
+
+
+**CLI commands (`channel_identity_commands.py`):**
+
+```bash
+# Status
+python3 -m weslr.commands.channel_identity_commands status
+
+# Bind current local channel to a profile (requires existing profile)
+python3 -m weslr.commands.channel_identity_commands bind-local \
+  --profile-path ~/.weslr/user_profile.json
+
+# Show binding details
+python3 -m weslr.commands.channel_identity_commands show
+
+# Verify current session evidence against binding
+python3 -m weslr.commands.channel_identity_commands verify
+
+# Backup current binding
+python3 -m weslr.commands.channel_identity_commands backup
+
+# Remove binding (backups first)
+python3 -m weslr.commands.channel_identity_commands unbind
+```
+
+All commands support `--path` and `--profile-path` overrides for testing with temp paths.
+
+**Meaning-state integration (`meaning_state_context.py`):**
+
+When `channel_verified` (or `device_verified`/`test_verified`) is present in ingress metadata:
+- `known_user_status` → `channel_verified`
+- `sender_identity` → profile `user_id`
+- `sender_confidence` → binding confidence (≥0.80)
+- `identity_evidence` → binding evidence list
+- `onboarding_profile_summary` → profile summary
+
+When profile exists but no verified channel: `known_user_status` stays `onboarded_unverified`.
+
+
+**Schema (`channel_identity.json`):**
+```json
+{
+  "binding_version": 1,
+  "binding_id": "...",
+  "channel_type": "local_cli",
+  "channel_id": "local_cli:<session_id>",
+  "bound_user_id": "<profile.user_id>",
+  "bound_profile_name": "Arthur",
+  "identity_status": "channel_verified",
+  "confidence": 0.85,
+  "created_at": "...",
+  "updated_at": "...",
+  "created_by": "explicit_operator_binding",
+  "evidence": [
+    {"type": "explicit_operator_binding", "strength": "strong", "detail": "..."},
+    {"type": "local_ip_match", "strength": "weak", "detail": "...", "ip_address": "..."}
+  ],
+  "limitations": [
+    "IP address alone is not sufficient for identity verification",
+    "This binding verifies the local channel, not a biometric person"
+  ],
+  "trusted": true
+}
+```
+
+**Limitations:**
+- Verifies channel/session/device — not a biometric person.
+- STT/voiceprint identity is future work.
+- Per-user memory (learned from conversation) is future work.
+- Relationship depth learning is future work.
+- Binding is local to this device/session — not federated identity.
+
+**Tests:** `test_channel_identity_binding.py` — 16 tests covering schema safety, evidence strengths, CLI, and regressions.
+
 ---
 
 ## Meaning-Vector Response Obligation Layer
@@ -329,13 +436,16 @@ weight_commands.py reset --key <k>
 
 ### What needs to be added (Next Steps)
 
-| Priority | Item | File(s) |
-|---|---|---|
-| 1 | **Memory response quality** — replace raw memory file dump with structured session summary (date, topics, outcome) | `meaning_state_context.py`, `meaning_response.py` |
-| 2 | **Self-model response quality** — replace `IDENTITY.md` raw dump with composed 2–3 sentence self-description | `meaning_state_context.py`, `meaning_response.py` |
-| 3 | **Verified identity flow** — pass actual `test_identity_context` through `chat_responder.respond_chat()` so verified-identity responses fire in local_bridge path | `chat_responder.py` |
-| 4 | **NEW_CONTACT_ORIENTATION** — remove "I'll note it" (no write path yet) or implement lightweight write handler | `meaning_response.py` |
-| 5 | **Phrase family expansion** — grow `SPEECH_ACT_KEYWORDS` / `RELATIONAL_KEYWORDS` from observed messages rather than hand-authoring | `linguistic_meaning.py` |
-| 6 | **Channel-level identity binding** — bind `sender_confidence` to device/channel metadata so identity persists across sessions | `ingress_adapter.py`, `chat_responder.py` |
+| Priority | Item | File(s) | Status |
+|---|---|---|---|
+| 1 | **Memory response quality** — replace raw memory file dump with structured session summary (date, topics, outcome) | `meaning_state_context.py`, `meaning_response.py` | Future |
+| 2 | **Self-model response quality** — replace `IDENTITY.md` raw dump with composed 2–3 sentence self-description | `meaning_state_context.py`, `meaning_response.py` | Future |
+| 3 | **Verified identity flow** — pass actual `test_identity_context` through `chat_responder.respond_chat()` so verified-identity responses fire in local_bridge path | `chat_responder.py` | Future |
+| 4 | **NEW_CONTACT_ORIENTATION** — remove "I'll note it" (no write path yet) or implement lightweight write handler | `meaning_response.py` | Future |
+| 5 | **Phrase family expansion** — grow `SPEECH_ACT_KEYWORDS` / `RELATIONAL_KEYWORDS` from observed messages rather than hand-authoring | `linguistic_meaning.py` | Future |
+
+
+**Completed:**
+- ✅ **Channel-level identity binding** (commit `1a6eccd`) — explicit `bind-local` / `show` / `verify` / `unbind` / `backup` commands; separates profile, channel binding, and verification; IP/LAN evidence treated as weak only; integrated into meaning-state identity handling | `channel_identity.py`, `commands/channel_identity_commands.py`, `meaning_state_context.py` |
 
 **Documentation:** `docs/routing_diagnosis.md` covers root cause and resolution for the meaning-vector integration.
