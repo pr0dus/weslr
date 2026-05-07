@@ -16,22 +16,28 @@ class MeaningStateContext:
     sender_confidence: float
     identity_evidence: list[dict]
     onboarding_profile_summary: Optional[str]
-    relationship_depth: float
-    memory_available: bool
-    memory_summary: Optional[str]
-    memory_sources_checked: list[str]
-    self_model_summary: Optional[str]
-    capability_summary: Optional[str]
-    continuity_summary: Optional[str]
-    timeline_summary: Optional[str]
-    sources_used: list[str]
-    sources_failed: list[dict]
-    state_confidence: float
+    # Relationship depth fields (defaults first to avoid non-default-after-default)
+    relationship_depth: float = 0.0
+    relationship_stage: Optional[str] = None
+    relationship_confidence: float = 0.0
+    relationship_evidence: list[str] = field(default_factory=list)
+    relationship_limitations: list[str] = field(default_factory=list)
     # Entity-scoped memory fields
     memory_scope_used: Optional[str] = None
     entity_memory_available: Optional[str] = None
     entity_relationships_used: list[str] = field(default_factory=list)
     memory_access_limitations: list[str] = field(default_factory=list)
+    # Core memory fields
+    memory_available: bool = False
+    memory_summary: Optional[str] = None
+    memory_sources_checked: list[str] = field(default_factory=list)
+    self_model_summary: Optional[str] = None
+    capability_summary: Optional[str] = None
+    continuity_summary: Optional[str] = None
+    timeline_summary: Optional[str] = None
+    sources_used: list[str] = field(default_factory=list)
+    sources_failed: list[dict] = field(default_factory=list)
+    state_confidence: float = 0.0
 
 
 def gather_meaning_state(
@@ -114,7 +120,41 @@ def gather_meaning_state(
         sender_confidence = min(sender_confidence, 0.4)
 
     # ── Relationship depth ───────────────────────────────────────────────────
-    relationship_depth = float(meta.get("relationship_depth", cs.get("relationship_depth", 0.0)))
+    _rel_depth: float = 0.0
+    _rel_stage: Optional[str] = None
+    _rel_confidence: float = 0.0
+    _rel_evidence: list[str] = []
+    _rel_limitations: list[str] = []
+
+    if "relationship" in required or "memory_state" in required or "identity_state" in required:
+        try:
+            from weslr.relationship_depth import (
+                get_relationship_depth_for_identity,
+                RelationshipStage,
+                IDENTITY_DEPTH_CAPS,
+            )
+
+            profile_user_id = (up.user_id if up else None) or ""
+            rel_state = get_relationship_depth_for_identity(
+                identity_status=known_user_status,
+                subject_entity_type="person",
+                subject_entity_id=profile_user_id,
+                base_path=None,
+            )
+            # Apply identity cap again to be safe
+            cap = IDENTITY_DEPTH_CAPS.get(known_user_status, 0.05)
+            _rel_depth = min(rel_state.relationship_depth, cap)
+            _rel_stage = rel_state.relationship_stage
+            _rel_confidence = rel_state.confidence
+            _rel_evidence = rel_state.evidence[:10]
+            _rel_limitations = rel_state.limitations + [
+                f"capped at {_rel_depth:.3f} for identity_status={known_user_status}",
+            ]
+        except Exception:
+            # Fallback to simple meta value
+            _rel_depth = float(meta.get("relationship_depth", cs.get("relationship_depth", 0.0)))
+            _rel_stage = None
+            _rel_confidence = 0.0
 
     # ── Memory/continuity ───────────────────────────────────────────────────
     memory_available = False
@@ -300,7 +340,6 @@ def gather_meaning_state(
         sender_confidence=sender_confidence,
         identity_evidence=identity_evidence,
         onboarding_profile_summary=onboarding_profile_summary,
-        relationship_depth=relationship_depth,
         memory_available=memory_available,
         memory_summary=memory_summary,
         memory_sources_checked=memory_sources_checked,
@@ -315,4 +354,9 @@ def gather_meaning_state(
         entity_memory_available=entity_memory_available,
         entity_relationships_used=entity_relationships_used,
         memory_access_limitations=memory_access_limitations,
+        relationship_depth=_rel_depth,
+        relationship_stage=_rel_stage,
+        relationship_confidence=_rel_confidence,
+        relationship_evidence=_rel_evidence,
+        relationship_limitations=_rel_limitations,
     )
