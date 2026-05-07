@@ -396,12 +396,19 @@ Bounded relationship depth learned from verified interaction history. Relationsh
 
 ```
 Verified interaction
-  → RelationshipObservation (signal, weight, verified, fingerprint)
-    → relationship_observations.jsonl (append-only)
-      → compute_relationship_state()
-        → RelationshipState (depth, stage, confidence, evidence)
-          → MeaningStateContext.relationship_depth
-            → get_relationship_tone() → expression parameters
+  → resolve_observation_targets()   ← multi-target resolver
+  │     Examines: identity_state, response_metadata,
+  │               meaning_state, profile memberships
+  │     Returns: list of ObservationTarget
+  │
+  └── for each target:
+        build_relationship_observation_for_target()
+          → RelationshipObservation (signal, weight, verified, fingerprint)
+            → relationship_observations.jsonl (append-only)
+              → compute_relationship_state() [per target pair]
+                → RelationshipState (depth, stage, confidence, evidence)
+                  → MeaningStateContext.relationship_depth
+                    → get_relationship_tone() → expression parameters
 ```
 
 **Signal weights:**
@@ -439,7 +446,20 @@ Verified interaction
 | `onboarded_unverified` / `profile_only` | 0.20 |
 | `channel_verified` / `device_verified` / `test_verified` | 1.00 |
 
-**Entity scoping:** `person:alice` ↔ `system:weslr` is independent from `person:alice` ↔ `project:weslr` and `person:alice` ↔ `company:acme`. A CEO role at `company:acme` does not grant personal relationship depth.
+**Entity scoping (multi-target):** Relationship observations are recorded for all resolved targets, not just `person:alice` ↔ `system:weslr`. Supported targets:
+
+| Target pair | When recorded | Verified role required? |
+|---|---|---|
+| `person` ↔ `system:weslr` | Always for verified users | No |
+| `person` ↔ `project:<id>` | `project_id` in response metadata, `memory_scope_used` project scope, or single `primary_projects` + work hint | No |
+| `person` ↔ `company:<id>` | Verified company membership + entity hint in message | Yes |
+| `person` ↔ `family:<id>` | Verified family membership + entity hint | Yes |
+| `person` ↔ `institution:<id>` | Verified institution membership + entity hint | Yes |
+| `person` ↔ `team:<id>` | Verified team membership + entity hint | Yes |
+| `person` ↔ `department:<id>` | Verified dept membership + entity hint | Yes |
+| `entity` ↔ `project:<id>` | Entity context + project evidence | No |
+
+Each target pair is tracked independently — `person:alice` ↔ `system:weslr` depth is independent from `person:alice` ↔ `project:weslr`. A CEO role at `company:acme` does not grant personal relationship depth.
 
 **Correction learning:** When `correction_received` is detected followed by positive feedback on the same channel, `correction_resolved` is recorded automatically. The positive signal is consumed in this resolution path — not double-counted.
 
@@ -462,7 +482,7 @@ python3 -m weslr.commands.relationship_commands summarize \
 
 All commands support `--base-path /tmp/...` for testing.
 
-**Tests:** `test_relationship_depth.py` — 24 tests; `test_relationship_observation_capture.py` — 26 tests.
+**Tests:** `test_relationship_depth.py` — 24 tests; `test_relationship_observation_capture.py` — 40 tests.
 
 ---
 

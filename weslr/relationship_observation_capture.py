@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import asdict
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 from typing import Optional
 
 from weslr.relationship_depth import (
@@ -28,6 +29,26 @@ from weslr.relationship_depth import (
 )
 
 
+# ── ObservationTarget ────────────────────────────────────────────────────────
+
+@dataclass
+class ObservationTarget:
+    """Resolved target for a relationship observation."""
+    target_entity_type: str = "system"
+    target_entity_id: str = "weslr"
+    target_scope: str = "system"
+    reason: str = ""
+    confidence: float = 0.5
+    evidence: list[str] = field(default_factory=list)
+    verified_role_required: bool = False
+    verified_role_present: bool = False
+    limitations: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+
 # ── Safe message fingerprint ────────────────────────────────────────────────
 
 def safe_message_fingerprint(message: str, max_len: int = 120) -> str:
@@ -39,6 +60,219 @@ def safe_message_fingerprint(message: str, max_len: int = 120) -> str:
         return "empty"
     normalized = " ".join(message.lower().split())[:max_len]
     return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+
+
+
+# ── Scope hint patterns for project/entity target resolution ─────────────────
+
+_PROJECT_SCOPE_PATTERNS = [
+    re.compile(r"\bproject\b", re.IGNORECASE),
+    re.compile(r"\bcommit(?:ted|ting)?\b", re.IGNORECASE),
+    re.compile(r"\bbranch\b", re.IGNORECASE),
+    re.compile(r"\bpull\s*request\b", re.IGNORECASE),
+    re.compile(r"\bcode\b", re.IGNORECASE),
+    re.compile(r"\bgit\b", re.IGNORECASE),
+    re.compile(r"\brepo(?:sitory)?\b", re.IGNORECASE),
+    re.compile(r"\bweslr\b", re.IGNORECASE),
+    re.compile(r"\bcontinue\s*(?:the|work)\b", re.IGNORECASE),
+    re.compile(r"\bwhat\s*did\s*(?:we|i)\s*(?:work|do)\b", re.IGNORECASE),
+]
+
+_ENTITY_SCOPE_PATTERNS = [
+    re.compile(r"\bcompany\b", re.IGNORECASE),
+    re.compile(r"\bfamily\b", re.IGNORECASE),
+    re.compile(r"\bhousehold\b", re.IGNORECASE),
+    re.compile(r"\binstitution\b", re.IGNORECASE),
+    re.compile(r"\bteam\b", re.IGNORECASE),
+    re.compile(r"\bdepartment\b", re.IGNORECASE),
+    re.compile(r"\borganization\b", re.IGNORECASE),
+]
+
+
+def _message_has_project_hint(message: str) -> bool:
+    return any(p.search(message) for p in _PROJECT_SCOPE_PATTERNS)
+
+
+def _message_has_entity_hint(message: str) -> bool:
+    return any(p.search(message) for p in _ENTITY_SCOPE_PATTERNS)
+
+
+# ── Target resolution ────────────────────────────────────────────────────────
+
+def resolve_observation_targets(
+    message: str,
+    response_metadata: Optional[dict],
+    identity_state: dict,
+    meaning_state: Optional[dict] = None,
+    profile: Optional[dict] = None,
+) -> list[ObservationTarget]:
+    """
+    Resolve all applicable observation targets for a message.
+
+    Returns a list of ObservationTarget objects. Always includes
+    system:weslr as a target for verified personal interactions.
+
+    Project targets are included when:
+    - response_metadata explicitly includes a project_id
+    - meaning_state.memory_scope_used is a project scope
+    - profile.primary_projects has exactly one active project AND
+      message contains project/work hints
+
+    Group entity targets (company/family/institution/team/department)
+    require verified membership AND message scope hint.
+    """
+    targets: list[ObservationTarget] = []
+    msg = message or ""
+    is_verified = identity_state.get("is_verified", False)
+
+    # Default: person ↔ system:weslr (verified users only)
+    if is_verified:
+        targets.append(ObservationTarget(
+            target_entity_type="system",
+            target_entity_id="weslr",
+            target_scope="system",
+            reason="verified_user_default",
+            confidence=1.0,
+            evidence=[],
+            verified_role_required=False,
+            verified_role_present=True,
+            limitations=[],
+        ))
+
+    # Project targets
+    project_targets = _resolve_project_targets(
+        msg, response_metadata, meaning_state, profile, is_verified
+    )
+    targets.extend(project_targets)
+
+    # Group entity targets
+    if is_verified:
+        entity_targets = _resolve_group_entity_targets(
+            msg, response_metadata, meaning_state, profile
+        )
+        targets.extend(entity_targets)
+
+    return targets
+
+
+def _resolve_project_targets(
+    message: str,
+    response_metadata: Optional[dict],
+    meaning_state: Optional[dict],
+    profile: Optional[dict],
+    is_verified: bool,
+) -> list[ObservationTarget]:
+    """Resolve project-scoped observation targets."""
+    targets: list[ObservationTarget] = []
+    if not is_verified:
+        return targets
+
+    project_ids: list[tuple[str, str]] = []
+    msg = message or ""
+
+    # Source 1: explicit project_id in response_metadata
+    if response_metadata:
+        meta_project = response_metadata.get("project_id")
+        if meta_project:
+            project_ids.append((meta_project, "response_metadata"))
+
+    # Source 2: memory_scope_used in meaning_state references a project
+    if meaning_state:
+        scope = (meaning_state.get("memory_scope_used") or "")
+        if scope.startswith("project_") or scope.startswith("project/"):
+            pid = scope.split("_", 1)[-1] if "_" in scope else scope.split("/", 1)[-1]
+            if pid:
+                project_ids.append((pid, "meaning_state_scope"))
+
+    # Source 3: single primary_project + project work hint in message
+    if profile:
+        pprojs = profile.get("primary_projects") or []
+        if len(pprojs) == 1 and _message_has_project_hint(msg):
+            project_ids.append((pprojs[0], "profile_single_project_hint"))
+
+    seen = set()
+    for project_id, source in project_ids:
+        if not project_id or project_id in seen:
+            continue
+        seen.add(project_id)
+        source_confidence = {
+            "response_metadata": 1.0,
+            "meaning_state_scope": 0.9,
+            "profile_single_project_hint": 0.6,
+        }.get(source, 0.5)
+        targets.append(ObservationTarget(
+            target_entity_type="project",
+            target_entity_id=project_id,
+            target_scope="project",
+            reason=f"project_target_{source}",
+            confidence=source_confidence,
+            evidence=[source],
+            verified_role_required=False,
+            verified_role_present=True,
+            limitations=[],
+        ))
+
+    return targets
+
+
+def _resolve_group_entity_targets(
+    message: str,
+    response_metadata: Optional[dict],
+    meaning_state: Optional[dict],
+    profile: Optional[dict],
+) -> list[ObservationTarget]:
+    """
+    Resolve group-entity targets (company/family/institution/team/department).
+
+    Only included when:
+    - profile has verified/authorized memberships for the entity type
+    - message contains an entity scope hint
+    """
+    targets: list[ObservationTarget] = []
+    msg = message or ""
+
+    if not profile or not _message_has_entity_hint(msg):
+        return targets
+
+    memberships: list[dict] = profile.get("memberships") or []
+    for membership in memberships:
+        if not isinstance(membership, dict):
+            continue
+
+        entity_type = membership.get("entity_type", "")
+        entity_id = membership.get("entity_id", "")
+        role = membership.get("role", "")
+        verified = membership.get("verified", False)
+        authorized = membership.get("authorized", False)
+
+        scope_map = {
+            "company": "company",
+            "family": "family",
+            "household": "household",
+            "institution": "institution",
+            "team": "team",
+            "department": "department",
+        }
+        target_scope = scope_map.get(entity_type)
+        if not target_scope:
+            continue
+
+        if not (verified or authorized):
+            continue
+
+        targets.append(ObservationTarget(
+            target_entity_type=entity_type,
+            target_entity_id=entity_id,
+            target_scope=target_scope,
+            reason="verified_membership_with_entity_hint",
+            confidence=0.8,
+            evidence=[f"verified_membership:{role}"],
+            verified_role_required=True,
+            verified_role_present=True,
+            limitations=[],
+        ))
+
+    return targets
 
 
 # ── Signal classifiers ───────────────────────────────────────────────────────
@@ -197,7 +431,7 @@ def build_relationship_observation(
         subject_id = sender_identity
     elif identity_status in ("profile_only", "onboarded_unverified"):
         subject_type = "person"
-        subject_id = identity_meta.get("sender_identity", identity_meta.get("user_id", "unknown")) if identity_meta else "unknown"
+        subject_id = sender_identity or "unknown"
         # Only record system-scoped observations for unverified
         if signal not in ("user_requested_quiet",):
             return None
@@ -216,6 +450,71 @@ def build_relationship_observation(
         metadata={
             "response_path": response_path,
             "identity_status_at_capture": identity_status,
+        },
+    )
+    return obs
+
+
+
+def build_relationship_observation_for_target(
+    signal: str,
+    sender_identity: Optional[str],
+    identity_status: str,
+    is_verified: bool,
+    target: ObservationTarget,
+    channel_id: str = "",
+    response_path: str = "",
+) -> Optional[RelationshipObservation]:
+    """
+    Build a RelationshipObservation for a specific resolved ObservationTarget.
+
+    Group-entity targets (company/family/institution/team/department) require
+    verified or authorized membership. Unknown/profile-only users cannot create
+    entity-scoped observations.
+    """
+    # Group entity targets require verified membership
+    if target.target_scope in ("company", "family", "household", "institution", "team", "department"):
+        if not target.verified_role_present:
+            return None
+        if identity_status in ("unknown", "profile_only", "onboarded_unverified"):
+            return None
+
+    # Unknown users: only quiet signal allowed
+    if identity_status == "unknown" and signal not in ("user_requested_quiet",):
+        return None
+
+    # Profile-only / onboarded_unverified: no verified personal observations except quiet
+    if identity_status in ("profile_only", "onboarded_unverified"):
+        if signal in ("verified_session_interaction", "shared_work_completed"):
+            return None
+
+    # Subject entity
+    if is_verified and sender_identity:
+        subject_type = "person"
+        subject_id = sender_identity
+    elif identity_status in ("profile_only", "onboarded_unverified"):
+        subject_type = "person"
+        subject_id = sender_identity or "unknown"
+        if signal not in ("user_requested_quiet",):
+            return None
+    else:
+        return None
+
+    obs = create_relationship_observation(
+        subject_entity_type=subject_type,
+        subject_entity_id=subject_id,
+        interaction_signal=signal,
+        target_entity_type=target.target_entity_type,
+        target_entity_id=target.target_entity_id,
+        channel_id=channel_id,
+        verified=is_verified,
+        source="live_interaction",
+        metadata={
+            "response_path": response_path,
+            "identity_status_at_capture": identity_status,
+            "target_scope": target.target_scope,
+            "target_reason": target.reason,
+            "target_confidence": target.confidence,
         },
     )
     return obs
@@ -296,24 +595,52 @@ def capture_relationship_observations(
     identity_meta: Optional[dict],
     channel_id: str = "",
     base_path: Optional[str] = None,
+    meaning_state: Optional[dict] = None,
+    profile: Optional[dict] = None,
 ) -> list[str]:
     """
     Main entry point. Called after a chat response is produced.
     Returns list of recorded observation IDs.
-    Does not store raw message text.
-    Does not raise.
+
+    Supports multi-target observation: records person↔system,
+    person↔project, and verified person↔company/family/institution/team/department
+    observations in parallel.
+
+    Does not store raw message text. Does not raise.
     """
     recorded_ids: list[str] = []
 
     try:
-        # Determine identity state
+        # Build identity state for target resolution
         identity_status, is_verified = get_relationship_identity_status(identity_meta)
         sender_identity = (identity_meta or {}).get("sender_identity") or (identity_meta or {}).get("user_id")
 
-        # Check for pending correction → positive feedback resolution
+        identity_state = {
+            "identity_status": identity_status,
+            "is_verified": is_verified,
+            "user_id": sender_identity or "",
+        }
+
+        # Build minimal response metadata (currently only response_path is available)
+        response_metadata: dict = {"response_path": response_path}
+
+        # Resolve all applicable observation targets
+        targets = resolve_observation_targets(
+            message=message,
+            response_metadata=response_metadata,
+            identity_state=identity_state,
+            meaning_state=meaning_state,
+            profile=profile,
+        )
+
+        if not targets:
+            return recorded_ids
+
+        # Check for pending correction → positive feedback resolution (system target only)
         if is_verified and sender_identity:
             signals_to_check = classify_interaction_signal(message)
             if "user_positive_feedback" in signals_to_check:
+                # correction_resolved always targets system:weslr
                 resolved_obs = record_correction_resolved(
                     channel_id=channel_id,
                     sender_identity=sender_identity,
@@ -323,45 +650,49 @@ def capture_relationship_observations(
                 )
                 if resolved_obs:
                     recorded_ids.append(resolved_obs.observation_id)
-                    # Positive feedback was consumed for correction resolution
-                    # Remove it from further processing to avoid double-counting
+                    # Positive feedback consumed for correction resolution
                     signals_to_check = [s for s in signals_to_check if s != "user_positive_feedback"]
 
-            # Classify other signals
+            # Record signal observations for each resolved target
             for signal in signals_to_check:
-                obs = build_relationship_observation(
-                    signal=signal,
-                    sender_identity=sender_identity,
-                    identity_status=identity_status,
-                    is_verified=is_verified,
-                    target_entity_type="system",
-                    target_entity_id="weslr",
-                    channel_id=channel_id,
-                    response_path=response_path,
-                )
-                if obs:
-                    success = safe_record_observation(obs, base_path=base_path)
-                    if success:
-                        recorded_ids.append(obs.observation_id)
-                        if signal == "correction_received":
-                            track_pending_correction(channel_id, obs.observation_id)
+                for target in targets:
+                    obs = build_relationship_observation_for_target(
+                        signal=signal,
+                        sender_identity=sender_identity,
+                        identity_status=identity_status,
+                        is_verified=is_verified,
+                        target=target,
+                        channel_id=channel_id,
+                        response_path=response_path,
+                    )
+                    if obs:
+                        success = safe_record_observation(obs, base_path=base_path)
+                        if success:
+                            recorded_ids.append(obs.observation_id)
+                            if signal == "correction_received":
+                                track_pending_correction(channel_id, obs.observation_id)
 
-        # Record simple verified session interaction (once per response path hit)
+        # Record verified_session_interaction for each target (once per response hit)
         if is_verified and sender_identity and response_path:
-            simple_obs = create_relationship_observation(
-                subject_entity_type="person",
-                subject_entity_id=sender_identity,
-                interaction_signal="verified_session_interaction",
-                target_entity_type="system",
-                target_entity_id="weslr",
-                channel_id=channel_id,
-                verified=True,
-                source="live_interaction",
-                metadata={"response_path": response_path},
-            )
-            success = safe_record_observation(simple_obs, base_path=base_path)
-            if success:
-                recorded_ids.append(simple_obs.observation_id)
+            for target in targets:
+                session_obs = create_relationship_observation(
+                    subject_entity_type="person",
+                    subject_entity_id=sender_identity,
+                    interaction_signal="verified_session_interaction",
+                    target_entity_type=target.target_entity_type,
+                    target_entity_id=target.target_entity_id,
+                    channel_id=channel_id,
+                    verified=True,
+                    source="live_interaction",
+                    metadata={
+                        "response_path": response_path,
+                        "target_scope": target.target_scope,
+                        "target_reason": target.reason,
+                    },
+                )
+                success = safe_record_observation(session_obs, base_path=base_path)
+                if success:
+                    recorded_ids.append(session_obs.observation_id)
 
     except Exception:
         pass  # Never break response flow
