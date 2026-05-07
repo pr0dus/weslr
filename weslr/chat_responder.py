@@ -514,10 +514,12 @@ class ChatResponder:
         # Intercept chat-mode messages and try meaning-driven response first.
         # Falls through to model_chat_response only if meaning path doesn't fire.
         try:
-            from weslr.linguistic_meaning import analyze_meaning
-            from weslr.response_obligation import determine_response_obligation
+            from weslr.meaning_vector_response_obligation import (
+                analyze_meaning, determine_response_obligation,
+            )
             from weslr.meaning_state_context import gather_meaning_state
             from weslr.meaning_response import form_meaning_response
+            from weslr.relationship_observation_capture import capture_relationship_observations
 
             test_metadata = identity_meta or {}
             mv = analyze_meaning(message)
@@ -534,6 +536,12 @@ class ChatResponder:
                         "fallback_used": False,
                         "source": "meaning_vector_response_obligation",
                     }
+                    capture_relationship_observations(
+                        message,
+                        reply_meta["path"],
+                        identity_meta,
+                        channel_id="",
+                    )
                     return result.content, reply_meta
         except Exception:
             pass  # fall through to model-backed path
