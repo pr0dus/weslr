@@ -27,6 +27,11 @@ class MeaningStateContext:
     sources_used: list[str]
     sources_failed: list[dict]
     state_confidence: float
+    # Entity-scoped memory fields
+    memory_scope_used: Optional[str] = None
+    entity_memory_available: Optional[str] = None
+    entity_relationships_used: list[str] = field(default_factory=list)
+    memory_access_limitations: list[str] = field(default_factory=list)
 
 
 def gather_meaning_state(
@@ -69,8 +74,8 @@ def gather_meaning_state(
     onboarding_profile: Optional[dict] = None
     onboarding_profile_summary: Optional[str] = None
     _profile_source: Optional[str] = None
+    up = None
     if "session_profile" in required or "identity_state" in required:
-        # Check for user_profile.json as explicit profile anchor
         try:
             from weslr.user_profile import load_user_profile, summarize_user_profile
             up = load_user_profile()
@@ -81,7 +86,6 @@ def gather_meaning_state(
                 sources_used.append("user_profile")
         except Exception:
             pass
-        # Fall through to test metadata / identity_state overlay
         if not onboarding_profile:
             onboarding_profile = meta.get("onboarding_profile") or identity_state.get("onboarding_profile") or cs.get("onboarding_profile")
             if onboarding_profile:
@@ -90,32 +94,21 @@ def gather_meaning_state(
                     onboarding_profile_summary = f"role={onboarding_profile.get('role', 'unknown')}, project={onboarding_profile.get('project', 'unknown')}"
 
     # ── Upgrade known_user_status if profile exists but no verified channel ──
-    # Profile presence alone does NOT imply verified session.
-    # Only upgrade from "unknown" → "onboarded_unverified" when profile exists
-    # and no channel/device verification evidence is present.
     if known_user_status == "unknown" and _profile_source == "user_profile":
         known_user_status = "onboarded_unverified"
 
-    # ── Channel binding integration ─────────────────────────────────────────
-    # Check channel_binding.json for verified channel evidence.
-    # This is read from metadata (ingress) or from local binding file.
-    # Never trust text self-claims alone.
+    # ── Channel binding integration ──────────────────────────────────────────
     _channel_binding_status = meta.get("known_user_status") or identity_state.get("_test_known_user_status")
     _channel_confidence = float(meta.get("sender_confidence", 0.0))
-    _channel_evidence = meta.get("identity_evidence") or []
 
-    # If ingress metadata says verified-tier status, use it
     verified_statuses = {"channel_verified", "device_verified", "test_verified"}
     if _channel_binding_status in verified_statuses:
-        # Upgrade known_user_status to the verified tier
         known_user_status = _channel_binding_status
         if _channel_confidence > sender_confidence:
             sender_confidence = _channel_confidence
         if not sender_identity and meta.get("sender_identity"):
             sender_identity = meta["sender_identity"]
-        # identity_evidence already captured above from meta
     elif _channel_binding_status == "claimed" and _profile_source == "user_profile":
-        # Text self-claim but profile exists — downgrade to unverified
         if known_user_status in ("claimed", "unknown"):
             known_user_status = "onboarded_unverified"
         sender_confidence = min(sender_confidence, 0.4)
@@ -127,23 +120,89 @@ def gather_meaning_state(
     memory_available = False
     memory_summary: Optional[str] = None
     memory_sources_checked: list[str] = []
+    memory_scope_used: Optional[str] = None
+    entity_memory_available: Optional[str] = None
+    entity_relationships_used: list[str] = []
+    memory_access_limitations: list[str] = []
     continuity_summary: Optional[str] = None
 
     if "memory_state" in required or "continuity" in required:
-        if anchors and len(anchors) > 0:
+        _fallback_ok = True
+
+        if up is not None or onboarding_profile is not None:
+            try:
+                from weslr.entity_memory import (
+                    resolve_memory_scopes,
+                    load_scoped_memories,
+                    resolve_person_memberships,
+                    person_memory_id,
+                    format_memory_response,
+                )
+
+                profile_user_id = (up.user_id if up else None) or (onboarding_profile.get("user_id") if onboarding_profile else None) or ""
+                primary_projects = (up.primary_projects if up else []) or (onboarding_profile.get("primary_projects", []) if onboarding_profile else [])
+
+                rels = resolve_person_memberships(profile_user_id)
+                entity_relationships_used = [
+                    f"{r.entity_type}/{r.entity_id} ({r.role})" for r in rels
+                ]
+                verified_from_rels = [r for r in rels if r.verified]
+
+                scopes = resolve_memory_scopes(
+                    identity_status=known_user_status,
+                    user_id=profile_user_id,
+                    primary_projects=primary_projects,
+                    memberships=verified_from_rels,
+                )
+                scope_names = list(scopes.keys())
+                memory_sources_checked.extend(scope_names)
+
+                scoped_results = load_scoped_memories(scopes)
+                scope_summaries: list[str] = []
+
+                for scope_name, scope_data in scoped_results.items():
+                    if scope_data["records_count"] > 0:
+                        summary = scope_data["summary"]
+                        scope_label = scope_data.get("scope_label", scope_name)
+                        memory_available = True
+                        _fallback_ok = False
+
+                        if scope_name == "personal":
+                            entity_memory_available = f"personal memory for {profile_user_id}"
+                            memory_scope_used = "personal"
+                            person_name = (up.preferred_name or up.display_name) if up else None
+                            scope_summaries.append(
+                                format_memory_response(summary, scope_label, person_name=person_name)
+                            )
+                        else:
+                            entity_memory_available = f"{scope_label} memory available"
+                            scope_summaries.append(format_memory_response(summary, scope_label))
+
+                if scope_summaries:
+                    memory_summary = " ".join(scope_summaries)
+                    memory_sources_checked.extend(scope_names)
+
+            except Exception as e:
+                sources_failed.append({"source": "entity_memory", "reason": str(e)})
+                _fallback_ok = True
+
+        if memory_available:
+            pass
+        elif anchors and len(anchors) > 0:
             memory_available = True
             memory_summary = f"{len(anchors)} continuity anchors found"
             continuity_summary = memory_summary
             memory_sources_checked.append("continuity_anchors")
             sources_used.append("continuity_anchors")
-        else:
+            _fallback_ok = False
+        elif _fallback_ok:
             memory_sources_checked.append("continuity_anchors")
             sources_failed.append({"source": "continuity_anchors", "reason": "no anchors found"})
 
-        # Also check memory files — produce structured summary, not raw file dump
-        if not memory_available:
+        if not memory_available and _fallback_ok:
             try:
-                import os, re
+                import os
+                import re
                 mem_path = "/data/data/com.termux/files/home/.openclaw/workspace/memory"
                 if os.path.isdir(mem_path):
                     files = sorted([f for f in os.listdir(mem_path) if f.endswith(".md")])
@@ -151,10 +210,8 @@ def gather_meaning_state(
                         latest = files[-1]
                         with open(os.path.join(mem_path, latest)) as f:
                             raw = f.read()
-                        # Extract meaningful content: date from filename, topic from headings
                         date_match = re.search(r"(202[0-9]-[0-9]{2}-[0-9]{2})", latest)
                         date_str = date_match.group(1) if date_match else None
-                        # Pull first substantive heading or line
                         lines = [l.strip().lstrip("#-* ") for l in raw.split("\n") if l.strip()]
                         topic_lines = [
                             l for l in lines
@@ -168,7 +225,6 @@ def gather_meaning_state(
                                 and "source" not in l.lower()
                                 and l not in ("Memory", "Notes", "Summary", "Date", "Time", "ID", "Key")
                                 and not l.endswith("**")
-                                # Skip conversational/metadata lines
                                 and not re.match(r'^assistant:', l)
                                 and not re.match(r'^user:', l)
                                 and not re.match(r'^NO_REPLY', l)
@@ -176,15 +232,13 @@ def gather_meaning_state(
                                 and not re.match(r'^\[?(Mon|Tue|Wed|Thu|Fri|Sat|Sun)', l)
                             )
                         ]
-                        # Filter out JSON/key-value artifact lines
                         topic_lines = [
                             l for l in topic_lines
-                            if not (re.match(r'^\{', l) or re.match(r'^\}', l))
+                            if not (re.match(r'^\{', l) or re.match(r'^\\}', l))
                             and not (':' in l and re.match(r'^[^:]+:', l) and l.strip()[-1] in (',', '}') and not l.startswith('http'))
-                            and not re.match(r'^\d+\.\s', l)
+                            and not re.match(r'^\d+\\.\\s', l)
                         ]
                         topic_str = " / ".join(topic_lines[:3]) if topic_lines else None
-                        # Build structured summary
                         parts = []
                         if date_str:
                             parts.append(f"date: {date_str}")
@@ -203,7 +257,6 @@ def gather_meaning_state(
     # ── Self-model summary ───────────────────────────────────────────────────
     self_model_summary: Optional[str] = None
     if "self_model" in required:
-        # Read from IDENTITY.md / SOUL.md if present
         try:
             for fname in ["IDENTITY.md", "SOUL.md"]:
                 path = f"/data/data/com.termux/files/home/.openclaw/workspace/{fname}"
@@ -219,7 +272,6 @@ def gather_meaning_state(
     # ── Capability summary ──────────────────────────────────────────────────
     capability_summary: Optional[str] = None
     if "capability_model" in required:
-        # Use identity tier as capability descriptor
         if l0_identity:
             tier_desc = l0_identity.get("identity_state", {}).get("declared_name", "WESLR")
             capability_summary = f"WESLR entity intelligence system — {tier_desc}"
@@ -259,4 +311,8 @@ def gather_meaning_state(
         sources_used=sources_used,
         sources_failed=sources_failed,
         state_confidence=state_confidence,
+        memory_scope_used=memory_scope_used,
+        entity_memory_available=entity_memory_available,
+        entity_relationships_used=entity_relationships_used,
+        memory_access_limitations=memory_access_limitations,
     )

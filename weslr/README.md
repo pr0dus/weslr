@@ -447,5 +447,6 @@ weight_commands.py reset --key <k>
 
 **Completed:**
 - ✅ **Channel-level identity binding** (commit `1a6eccd`) — explicit `bind-local` / `show` / `verify` / `unbind` / `backup` commands; separates profile, channel binding, and verification; IP/LAN evidence treated as weak only; integrated into meaning-state identity handling | `channel_identity.py`, `commands/channel_identity_commands.py`, `meaning_state_context.py` |
+- ✅ **Entity-scoped memory namespaces** (commit `748cda4`) — entity-scoped memory for person, family, household, company, institution, team, department, project; relationship/role model; bounded access control; scoped memory integration into meaning-state; CLI for add/list/namespaces/summarize/relate/relationships/scopes | `entity_memory.py`, `user_profile.py`, `meaning_state_context.py`, `commands/entity_memory_commands.py`, `test_entity_memory.py` |
 
 **Documentation:** `docs/routing_diagnosis.md` covers root cause and resolution for the meaning-vector integration.
