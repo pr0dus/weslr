@@ -384,6 +384,88 @@ raw text
 
 ---
 
+## Relationship Depth System
+
+**Canonical as of:** commit `b4c026a` (2026-05-07)
+
+Bounded relationship depth learned from verified interaction history. Relationship depth is NOT identity verification. Relationship depth is NOT memory access permission. Relationship depth is NOT emotional attachment.
+
+**Relationship depth may influence:** warmth, verbosity, greeting style, proactive frequency, and explanatory detail. It must never bypass identity verification, privacy, or access control.
+
+**Architecture:**
+
+```
+Verified interaction
+  → RelationshipObservation (signal, weight, verified, fingerprint)
+    → relationship_observations.jsonl (append-only)
+      → compute_relationship_state()
+        → RelationshipState (depth, stage, confidence, evidence)
+          → MeaningStateContext.relationship_depth
+            → get_relationship_tone() → expression parameters
+```
+
+**Signal weights:**
+
+| Signal | Weight | Verified? |
+|---|---|---|
+| `shared_work_completed` | +0.05 | Yes |
+| `memory_confirmed` | +0.04 | Yes |
+| `successful_followup` | +0.03 | Yes |
+| `verified_session_interaction` | +0.02 | Yes |
+| `correction_resolved` | +0.02 | Yes |
+| `user_positive_feedback` | +0.03 | Auto |
+| `user_negative_feedback` | -0.03 | Auto |
+| `user_rejected_memory_claim` | -0.10 | Auto |
+| `false_memory_claim` | -0.10 | Auto |
+| `user_requested_quiet` | 0.0 | Auto (restraint only) |
+
+**Relationship stages:**
+
+| Stage | Depth range | Confidence required |
+|---|---|---|
+| `unknown` | 0.00–0.05 | Any |
+| `first_contact` | 0.05–0.15 | ≥0.2 |
+| `early` | 0.15–0.30 | ≥0.2 |
+| `developing` | 0.30–0.55 | ≥0.2 |
+| `established` | 0.55–0.80 | ≥0.2 |
+| `deep` | 0.80–1.00 | ≥0.2 |
+
+**Identity caps:**
+
+| Identity status | Max depth |
+|---|---|---|
+| `unknown` | 0.05 |
+| `claimed` | 0.10 |
+| `onboarded_unverified` / `profile_only` | 0.20 |
+| `channel_verified` / `device_verified` / `test_verified` | 1.00 |
+
+**Entity scoping:** `person:alice` ↔ `system:weslr` is independent from `person:alice` ↔ `project:weslr` and `person:alice` ↔ `company:acme`. A CEO role at `company:acme` does not grant personal relationship depth.
+
+**Correction learning:** When `correction_received` is detected followed by positive feedback on the same channel, `correction_resolved` is recorded automatically. The positive signal is consumed in this resolution path — not double-counted.
+
+**CLI (`relationship_commands.py`):**
+
+```bash
+python3 -m weslr.commands.relationship_commands record \
+  --subject-type person --subject-id alice \
+  --signal shared_work_completed --verified
+
+python3 -m weslr.commands.relationship_commands status \
+  --subject-type person --subject-id alice
+
+python3 -m weslr.commands.relationship_commands observations \
+  --subject-type person --subject-id alice
+
+python3 -m weslr.commands.relationship_commands summarize \
+  --subject-type person --subject-id alice
+```
+
+All commands support `--base-path /tmp/...` for testing.
+
+**Tests:** `test_relationship_depth.py` — 24 tests; `test_relationship_observation_capture.py` — 26 tests.
+
+---
+
 ## Cognitive Weight Refinement System
 
 **Canonical as of:** commit `2ed6b9d` (2026-05-07)
@@ -443,10 +525,14 @@ weight_commands.py reset --key <k>
 | 3 | **Verified identity flow** — pass actual `test_identity_context` through `chat_responder.respond_chat()` so verified-identity responses fire in local_bridge path | `chat_responder.py` | Future |
 | 4 | **NEW_CONTACT_ORIENTATION** — remove "I'll note it" (no write path yet) or implement lightweight write handler | `meaning_response.py` | Future |
 | 5 | **Phrase family expansion** — grow `SPEECH_ACT_KEYWORDS` / `RELATIONAL_KEYWORDS` from observed messages rather than hand-authoring | `linguistic_meaning.py` | Future |
+| 6 | **Project/entity-scoped live observation** — extend `capture_relationship_observations()` to detect project context and record project-scoped observations alongside person↔system | `relationship_observation_capture.py` | Future |
+| 7 | **Non-meaning-vector observation capture** — wire `capture_relationship_observations()` into `_model_chat_response()` path for model-backed responses | `chat_responder.py` | Future |
 
 
 **Completed:**
 - ✅ **Channel-level identity binding** (commit `1a6eccd`) — explicit `bind-local` / `show` / `verify` / `unbind` / `backup` commands; separates profile, channel binding, and verification; IP/LAN evidence treated as weak only; integrated into meaning-state identity handling | `channel_identity.py`, `commands/channel_identity_commands.py`, `meaning_state_context.py` |
-- ✅ **Entity-scoped memory namespaces** (commit `748cda4`) — entity-scoped memory for person, family, household, company, institution, team, department, project; relationship/role model; bounded access control; scoped memory integration into meaning-state; CLI for add/list/namespaces/summarize/relate/relationships/scopes | `entity_memory.py`, `user_profile.py`, `meaning_state_context.py`, `commands/entity_memory_commands.py`, `test_entity_memory.py` |
+- ✅ **Entity-scoped memory namespaces** (commit `20cf71a`) — entity-scoped memory for person, family, household, company, institution, team, department, project; relationship/role model; bounded access control; scoped memory integration into meaning-state; CLI for add/list/namespaces/summarize/relate/relationships/scopes | `entity_memory.py`, `user_profile.py`, `meaning_state_context.py`, `commands/entity_memory_commands.py`, `test_entity_memory.py` |
+- ✅ **Entity-scoped relationship depth** (commit `3ede495`) — conservative relationship depth (0.0–1.0) from verified interaction history; entity-scoped relationship states for person, project, company, family, institution, team; identity caps per status tier; tone/expression mapping for all 6 stages; CLI for record/status/observations/summarize | `relationship_depth.py`, `meaning_state_context.py`, `commands/relationship_commands.py`, `test_relationship_depth.py` |
+- ✅ **Live relationship observation capture** (commit `b4c026a`) — safe signal classification from message text; `correction_received` → `correction_resolved` state machine; identity-gated personal observations; `safe_message_fingerprint()` (no raw text stored); capture integrated in `respond_chat()` meaning-vector path without breaking response flow | `relationship_observation_capture.py`, `chat_responder.py`, `test_relationship_observation_capture.py` |
 
 **Documentation:** `docs/routing_diagnosis.md` covers root cause and resolution for the meaning-vector integration.
