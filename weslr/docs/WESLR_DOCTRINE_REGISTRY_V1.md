@@ -399,6 +399,41 @@ User-defined governed research/workflow missions that can keep working over time
 | `weslr/tests/test_research_work_loop_v1.py` | 39 tests |
 | `weslr/tests/test_mission_commands_v1.py` | 25 tests |
 
+### Accepted Doctrine Principles
+
+- WESLR may consolidate safe traces into reviewable candidates.
+- Consolidation is distinct from OpenClaw Dreaming.
+- Consolidation may cluster, score, classify, and explain repeated signals.
+- V1 digest writes candidate records only.
+- Green-zone auto-promotion is allowed only when the master toggle is enabled.
+- Green-zone auto-promotion must be append-only or reversible.
+- Green-zone auto-promotion requires provenance and audit logging.
+- Yellow-zone candidates require review.
+- Red-zone candidates require explicit approval and never auto-promote.
+- No automatic doctrine, identity/access, governance, code, public behavior, external action, or scientific truth promotion.
+- Consolidation must remain scoped, auditable, and governed.
+
+### Flexible Implementation Details (non-canon)
+
+- exact config field names
+- exact scoring weights
+- exact cluster keys
+- exact green/yellow/red classifier
+- allowed green destinations
+- CLI command syntax
+- audit log schema
+- digest schema
+- future daemon scheduling
+
+### Implementation Files
+
+- `weslr/consolidation_loop.py` — V1 digest: collect → cluster → score → classify → gate → write
+- `weslr/consolidation_config.py` — ConsolidationConfig class, load/save, default OFF
+- `weslr/consolidation_promotion.py` — classify_zone(), decide_promotion(), auto_promote(), audit_log()
+- `weslr/commands/consolidation_commands.py` — CLI: run / status / auto / promote
+- `weslr/tests/test_consolidation_loop.py` — 15 tests
+- `weslr/tests/test_consolidation_promotion.py` — 58 tests
+
 ### V1 Status
 
 - ✅ Manual `run_once` only — no auto-start
@@ -448,9 +483,9 @@ _Research Work Loop status: checkpoint_
 
 ---
 
-## Consolidation Loop — Checkpoint
+## Consolidation Loop — Accepted Doctrine
 
-**Status:** checkpoint
+**Status:** accepted_doctrine
 
 **Checkpoint file:** `weslr/docs/WESLR_CONSOLIDATION_LOOP_CHECKPOINT_V1.md`
 
