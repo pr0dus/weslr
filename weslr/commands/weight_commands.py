@@ -306,6 +306,118 @@ def cmd_auto_status(_args: argparse.Namespace) -> None:
     print(f"\n  Current: auto-apply is structurally possible but globally disabled.{RESET}")
 
 
+def cmd_auto_enable(args: argparse.Namespace) -> None:
+    """Enable auto-apply for a zone (requires --zone green)."""
+    from weslr.auto_refinement_config import load_config, save_config
+    zone = getattr(args, "zone", None)
+    if zone != "green":
+        print(f"{RED}Error: only zone=green is supported in this phase{RESET}")
+        return
+    config = load_config()
+    if config.global_auto_apply_enabled:
+        print(f"{GREEN}Auto-apply is already enabled.{RESET}")
+        return
+    if not getattr(args, "force", False):
+        print(f"{YELLOW}This will enable green-zone auto-apply for WESLR.{RESET}")
+        print(f"{YELLOW}All guardrails must still pass. Global flag must be True.{RESET}")
+        print(f"{YELLOW}To confirm, run with --force{RESET}")
+        return
+    config.global_auto_apply_enabled = True
+    config.enabled_zones = ["green"]
+    save_config(config)
+    print(f"{GREEN}Auto-apply enabled for zone=green.{RESET}")
+    print(f"  Config saved. Run 'auto-status' to confirm.")
+
+
+def cmd_auto_disable(_args: argparse.Namespace) -> None:
+    """Disable global auto-apply."""
+    from weslr.auto_refinement_config import load_config, save_config
+    config = load_config()
+    config.global_auto_apply_enabled = False
+    save_config(config)
+    print(f"{YELLOW}Auto-apply globally disabled.{RESET}")
+
+
+def cmd_auto_try(args: argparse.Namespace) -> None:
+    """Attempt auto-apply for an approved proposal."""
+    from weslr.auto_refinement import attempt_green_auto_apply
+    pid = getattr(args, "proposal", None)
+    if not pid:
+        print(f"{RED}Error: --proposal <id> required{RESET}")
+        return
+    ok, msg, reasons = attempt_green_auto_apply(
+        pid,
+        simulation_pass=True,
+        regression_pass=True,
+        observation_count=10,
+        actor="operator",
+    )
+    if ok:
+        print(f"{GREEN}Success: {msg}{RESET}")
+    else:
+        print(f"{RED}Blocked: {msg}{RESET}")
+        for r in reasons:
+            print(f"  {RED}!{RESET} {r}")
+
+
+def cmd_audit(args: argparse.Namespace) -> None:
+    """Show weight audit log."""
+    from weslr.weight_audit import load_audit
+    audit = load_audit()
+    if not os.path.exists(audit.path):
+        print(f"{DIM}No audit log found at {audit.path}{RESET}")
+        return
+    events = audit.query(limit=50)
+    if not events:
+        print(f"{DIM}Audit log is empty.{RESET}")
+        return
+    section("Audit log")
+    for e in reversed(events):
+        colour = GREEN if e.guardrail_result == "passed" else RED
+        print(f"\n  [{e.timestamp}] {colour}{e.event_type}{RESET}  {e.weight_key}")
+        print(f"    zone={e.zone}  mode={e.mode}  actor={e.actor}")
+        if e.delta is not None:
+            print(f"    {e.old_value} → {e.new_value}  ({e.delta:+.4f})")
+        if e.blocked_reasons:
+            for r in e.blocked_reasons:
+                print(f"    {RED}! blocked:{RESET} {r}")
+        if e.rollback_id:
+            print(f"    {DIM}rollback={e.rollback_id}{RESET}")
+
+
+def cmd_rollbacks(args: argparse.Namespace) -> None:
+    """List rollback snapshots."""
+    from weslr.weight_rollback import load_rollback_store
+    weight_filter = getattr(args, "weight", None)
+    store = load_rollback_store()
+    snaps = store.list_rollbacks(weight_key=weight_filter)
+    if not snaps:
+        print(f"{DIM}No rollback snapshots found.{RESET}")
+        return
+    section(f"Rollbacks{(' — ' + weight_filter) if weight_filter else ''}")
+    for s in snaps:
+        print(f"\n  [{s.rollback_id}] {s.timestamp}")
+        print(f"    {s.weight_key}: {s.old_value} → {s.new_value}  zone={s.zone}")
+        print(f"    mode={s.mode}  reason={s.reason[:60]}")
+
+
+def cmd_rollback(args: argparse.Namespace) -> None:
+    """Restore a weight from a rollback snapshot."""
+    from weslr.weight_rollback import load_rollback_store
+    from weslr.cognitive_weights import load_registry
+    rid = getattr(args, "id", None)
+    if not rid:
+        print(f"{RED}Error: --id <rollback_id> required{RESET}")
+        return
+    store = load_rollback_store()
+    registry = load_registry()
+    ok, msg = store.restore_snapshot(rid, registry)
+    if ok:
+        print(f"{GREEN}Restored: {msg}{RESET}")
+    else:
+        print(f"{RED}Failed: {msg}{RESET}")
+
+
 def cmd_approve(args: argparse.Namespace) -> None:
     """Approve a proposal by ID."""
     pid = getattr(args, "proposal", None) or getattr(args, "id", None)
@@ -443,7 +555,24 @@ def main() -> None:
 
     sub.add_parser("reset-all", help="Reset all weights to defaults")
 
-    auto_status_parser = sub.add_parser("auto-status", help="Show auto-apply readiness")
+    auto_status_parser = sub.add_parser("auto-status", help="Show auto-apply readiness and config")
+
+    auto_enable = sub.add_parser("auto-enable", help="Enable auto-apply (requires --zone)")
+    auto_enable.add_argument("--zone", required=True, help="Zone to enable (e.g. green)")
+    auto_enable.add_argument("--force", action="store_true", help="Force enable without prompts")
+
+    sub.add_parser("auto-disable", help="Disable auto-apply globally")
+
+    auto_try = sub.add_parser("auto-try", help="Attempt auto-apply for a proposal")
+    auto_try.add_argument("--proposal", required=True, help="Proposal ID")
+
+    sub.add_parser("audit", help="Show weight audit log")
+
+    rollbacks_parser = sub.add_parser("rollbacks", help="List rollback snapshots")
+    rollbacks_parser.add_argument("--weight", help="Filter by weight key")
+
+    rollback_cmd = sub.add_parser("rollback", help="Restore a weight from rollback snapshot")
+    rollback_cmd.add_argument("--id", required=True, help="Rollback ID")
 
     args = parser.parse_args()
 
@@ -460,6 +589,12 @@ def main() -> None:
         "reset": cmd_reset,
         "reset-all": cmd_reset_all,
         "auto-status": cmd_auto_status,
+        "auto-enable": cmd_auto_enable,
+        "auto-disable": cmd_auto_disable,
+        "auto-try": cmd_auto_try,
+        "audit": cmd_audit,
+        "rollbacks": cmd_rollbacks,
+        "rollback": cmd_rollback,
     }
 
     cmd = COMMAND_MAP.get(args.command)

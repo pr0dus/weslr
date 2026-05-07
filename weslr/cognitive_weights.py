@@ -514,6 +514,7 @@ def check_weight_update_guardrails(
     simulation_pass: bool = False,
     regression_pass: bool = False,
     observation_count: int = 0,
+    global_auto_apply_enabled: Optional[bool] = None,
 ) -> GuardrailResult:
     """
     Check whether a weight update passes all guardrails for a given mode.
@@ -572,9 +573,14 @@ def check_weight_update_guardrails(
     zone = w.zone
     allowed = True
 
-    # ── Global auto-apply gate ──────────────────────────────────────────
+    # Use config-provided override if available, else fall back to module constant
+    _global_enabled = (
+        global_auto_apply_enabled
+        if global_auto_apply_enabled is not None
+        else GLOBAL_AUTO_APPLY_ENABLED
+    )
     if mode == "auto":
-        if not GLOBAL_AUTO_APPLY_ENABLED:
+        if not _global_enabled:
             reasons.append("Global auto-apply is disabled")
             allowed = False
         if zone != "green":

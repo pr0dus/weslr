@@ -254,7 +254,7 @@ Key distinction: `proposal_trace.jsonl` = internal governance; `public_signals.j
 | Voice I/O (STT/TTS) | 🚧 Partial | `voice_gateway.py` | Phase 1A shim; browser TTS |
 | Persistent cross-session memory | ❌ Not implemented | None | Doctrine allows; code doesn't build yet |
 | Timeline-based entity memory | 🚧 Partial | `timeline_resolution.py` | Threads/artifacts exist; entity timelines unwired |
-| Proactive suggestions | 🚧 Partial | `capability_suggestion.py` | On-request only; no daemon |
+| Proactive suggestions | 🚧 Partial | `capability_suggestion.py`, `proactive_daemon.py` | Daemon exists (disabled by default); auto-refinement not yet wired in |
 | Action execution | ❌ Not implemented | `write_handlers.py` | Forbidden by doctrine |
 | Ambient listening / wake word | ❌ Not implemented | None | Requires always-on audio |
 | Within-session coreference | ❌ Not implemented | None | OpenClaw handles context; WESLR has no coreference |

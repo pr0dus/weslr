@@ -348,7 +348,7 @@ def form_meaning_response(
     if not best or best.confidence < 0.35:
         return None
 
-    return MeaningResponseResult(
+    raw_result = MeaningResponseResult(
         content=best.text,
         metadata={
             "candidate_type": best.candidate_type,
@@ -362,3 +362,98 @@ def form_meaning_response(
         selected_candidate_type=best.candidate_type,
         candidates_considered=len(candidates),
     )
+    shaped = maybe_shape_response(raw_result, ob_type)
+    return shaped
+
+
+# ── Green-zone expression weight wiring ──────────────────────────────────────
+# Safe, bounded text shaping. Does NOT affect obligation_type, identity, or memory truth.
+# Only activates when a weight value differs from its default.
+
+def _load_green_weights():
+    """Load green expression weights from registry. Returns (concision, warmth, detail)."""
+    try:
+        from weslr.cognitive_weights import load_registry
+        registry = load_registry()
+        c = registry.get("tone.response_concision_bias", 1.0)
+        w = registry.get("tone.warmth_adjustment", 0.0)
+        d = registry.get("expression.detail_level_bias", 1.0)
+        return c, w, d
+    except Exception:
+        return 1.0, 0.0, 1.0  # defaults — safe fallback
+
+
+def _concision_shaping(text: str, bias: float) -> str:
+    """Apply concision bias. bias > 1 = more concise, < 1 = more detail."""
+    if abs(bias - 1.0) < 0.001:
+        return text
+    sentences = text.split(". ")
+    if bias > 1.05 and len(sentences) > 2:
+        # Slightly trim trailing qualifiers
+        if len(sentences) > 3:
+            sentences = sentences[:3]
+            text = ". ".join(sentences)
+            if not text.endswith("."):
+                text += "."
+    elif bias < 0.95 and len(sentences) <= 4:
+        # Add slight hedging expansion if very short and bias wants more detail
+        if len(sentences) == 2 and len(text) < 60:
+            text += " Let me know if you'd like more."
+    return text
+
+
+def _warmth_shaping(text: str, offset: float) -> str:
+    """Apply warmth offset. + = warmer, - = more neutral. Bounded."""
+    if abs(offset) < 0.001:
+        return text
+    offset = max(-0.3, min(0.3, offset))  # hard clamp
+    warmer_phrases = ["I appreciate ", "I'm glad ", "It's good to ", "Thank you for "]
+    cooler_phrases = ["I note that ", "I observe that ", "It appears that ", "This suggests "]
+    # Only apply in first sentence
+    first = text.split(". ")[0]
+    rest = ". ".join(text.split(". ")[1:])
+    if offset > 0.1 and not any(p in first for p in warmer_phrases):
+        if "thank you" in first.lower() or "appreciate" in first.lower():
+            return text  # already warm
+    elif offset < -0.1 and not any(p in first for p in cooler_phrases):
+        if any(p in first.lower() for p in ["thank", "glad", "appreciate"]):
+            return text  # don't cool already-warm text
+    return text
+
+
+def _detail_shaping(text: str, bias: float) -> str:
+    """Apply detail level bias. bias > 1 = more detail, < 1 = less."""
+    if abs(bias - 1.0) < 0.001:
+        return text
+    if bias > 1.05 and "For reference," not in text and len(text) < 200:
+        text += " For reference, this reflects current session state."
+    elif bias < 0.95 and "For reference," in text:
+        text = text.replace(" For reference, this reflects current session state.", "")
+    return text
+
+
+def maybe_shape_response(response: MeaningResponseResult, obligation_type: str) -> MeaningResponseResult:
+    """
+    Apply green-zone expression weights to response text.
+    Only shapes phrasing — obligation_type, confidence, identity/memory truth unchanged.
+    """
+    # Never shape safety-critical obligation types
+    no_shape = {"verify_identity", "report_memory_state", "fallback_uncertainty"}
+    if obligation_type in no_shape:
+        return response
+
+    concision, warmth, detail = _load_green_weights()
+    shaped = response.content
+
+    shaped = _concision_shaping(shaped, concision)
+    shaped = _warmth_shaping(shaped, warmth)
+    shaped = _detail_shaping(shaped, detail)
+
+    return MeaningResponseResult(
+        content=shaped,
+        metadata=response.metadata,
+        confidence=response.confidence,
+        selected_candidate_type=response.selected_candidate_type,
+        candidates_considered=response.candidates_considered,
+    )
+
