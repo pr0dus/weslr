@@ -258,6 +258,58 @@ except Exception as e:
     compile_pass = False
 
 
+# ── Group E: Response quality assertions ───────────────────────────────────
+
+print("\n" + "=" * 60)
+print("GROUP E — RESPONSE QUALITY ASSERTIONS")
+print("=" * 60)
+
+MEMORY_FORBIDDEN = ["Memory file:", "memory/", "Memory file:", "Memory:"]
+SELF_MODEL_FORBIDDEN = ["IDENTITY.md", "# IDENTITY.md", "SOUL.md:", "# SOUL.md"]
+NEW_CONTACT_FORBIDDEN = ["i'll note it", "i'll remember", "i'll record", "i'll save"]
+OCC_AS_WESLR = ["i am occ", "occ is", "as occ", "occ —"]
+
+quality_cases = [
+    ("what do you remember?", NONE_FIXTURE, "MEMORY_STATE_REPORT", MEMORY_FORBIDDEN, "memory dump"),
+    ("who are you?", NONE_FIXTURE, "SELF_MODEL_DESCRIPTION", SELF_MODEL_FORBIDDEN + OCC_AS_WESLR, "raw IDENTITY.md dump or OCC naming"),
+    ("I am new here", NONE_FIXTURE, "NEW_CONTACT_ORIENTATION", NEW_CONTACT_FORBIDDEN, "unsupported write claim"),
+    ("what kind of system are you?", NONE_FIXTURE, "SELF_MODEL_DESCRIPTION", SELF_MODEL_FORBIDDEN + OCC_AS_WESLR, "raw file or OCC naming"),
+]
+
+all_pass_e = True
+for text, fixture, expected_candidate, forbidden_list, description in quality_cases:
+    mv = analyze_meaning(text)
+    ob = determine_response_obligation(mv, test_metadata=fixture)
+    state = gather_meaning_state(ob, test_metadata=fixture, l2_session=None)
+    result = form_meaning_response(mv, ob, state)
+    content = result.content if result else ""
+
+    # Candidate type check
+    candidate_ok = result and result.selected_candidate_type == expected_candidate
+
+    # Forbidden phrase check
+    forbidden_found = any(fp.lower() in content.lower() for fp in forbidden_list)
+
+    # LLM check
+    llm_ok = result and result.metadata.get("llm_used") is False
+
+    status = "PASS" if (candidate_ok and not forbidden_found and llm_ok) else "FAIL"
+    if status == "FAIL":
+        all_pass_e = False
+
+    print(f"  {status}  {description}")
+    if result:
+        print(f"        candidate={result.selected_candidate_type}  (expected={expected_candidate})")
+        print(f"        llm_used={result.metadata.get('llm_used')}")
+        print(f"        content={content[:90]}...")
+        if forbidden_found:
+            for fp in forbidden_list:
+                if fp.lower() in content.lower():
+                    print(f"        WARNING: found forbidden phrase: {fp!r}")
+
+print(f"\nGroup E result: {'ALL PASS' if all_pass_e else 'SOME FAIL'}")
+
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 
 print("\n" + "=" * 60)
@@ -265,6 +317,7 @@ print("SUMMARY")
 print("=" * 60)
 print(f"  Group A (meaning classification): {'PASS' if all([g1,g2,g3,g4]) else 'FAIL'}")
 print(f"  Group B (obligation determination): {'PASS' if all_pass_b else 'FAIL'}")
-print(f"  Compile check:                    {'PASS' if compile_pass else 'FAIL'}")
-total = sum([all([g1,g2,g3,g4]), all_pass_b, compile_pass])
-print(f"\n  OVERALL: {total}/3 groups passed")
+print(f"  Group E (response quality):         {'PASS' if all_pass_e else 'FAIL'}")
+print(f"  Compile check:                      {'PASS' if compile_pass else 'FAIL'}")
+total = sum([all([g1,g2,g3,g4]), all_pass_b, all_pass_e, compile_pass])
+print(f"\n  OVERALL: {total}/4 groups passed")

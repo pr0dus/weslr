@@ -94,18 +94,60 @@ def gather_meaning_state(
             memory_sources_checked.append("continuity_anchors")
             sources_failed.append({"source": "continuity_anchors", "reason": "no anchors found"})
 
-        # Also check memory files
+        # Also check memory files — produce structured summary, not raw file dump
         if not memory_available:
             try:
-                import os
+                import os, re
                 mem_path = "/data/data/com.termux/files/home/.openclaw/workspace/memory"
                 if os.path.isdir(mem_path):
                     files = sorted([f for f in os.listdir(mem_path) if f.endswith(".md")])
                     if files:
                         latest = files[-1]
                         with open(os.path.join(mem_path, latest)) as f:
-                            content = f.read()[:500]
-                        memory_summary = f"Memory file: {latest} — {content[:200]}..."
+                            raw = f.read()
+                        # Extract meaningful content: date from filename, topic from headings
+                        date_match = re.search(r"(202[0-9]-[0-9]{2}-[0-9]{2})", latest)
+                        date_str = date_match.group(1) if date_match else None
+                        # Pull first substantive heading or line
+                        lines = [l.strip().lstrip("#-* ") for l in raw.split("\n") if l.strip()]
+                        topic_lines = [
+                            l for l in lines
+                            if (
+                                l and len(l) > 30
+                                and not l.startswith("##")
+                                and "**" not in l
+                                and not l.startswith("-")
+                                and not l.startswith("```")
+                                and "session" not in l.lower()
+                                and "source" not in l.lower()
+                                and l not in ("Memory", "Notes", "Summary", "Date", "Time", "ID", "Key")
+                                and not l.endswith("**")
+                                # Skip conversational/metadata lines
+                                and not re.match(r'^assistant:', l)
+                                and not re.match(r'^user:', l)
+                                and not re.match(r'^NO_REPLY', l)
+                                and not re.match(r'^\{', l)
+                                and not re.match(r'^\[?(Mon|Tue|Wed|Thu|Fri|Sat|Sun)', l)
+                            )
+                        ]
+                        # Filter out JSON/key-value artifact lines
+                        topic_lines = [
+                            l for l in topic_lines
+                            if not (re.match(r'^\{', l) or re.match(r'^\}', l))
+                            and not (':' in l and re.match(r'^[^:]+:', l) and l.strip()[-1] in (',', '}') and not l.startswith('http'))
+                            and not re.match(r'^\d+\.\s', l)
+                        ]
+                        topic_str = " / ".join(topic_lines[:3]) if topic_lines else None
+                        # Build structured summary
+                        parts = []
+                        if date_str:
+                            parts.append(f"date: {date_str}")
+                        if topic_str:
+                            parts.append(f"topics: {topic_str}")
+                        if parts:
+                            memory_summary = "; ".join(parts)
+                        else:
+                            memory_summary = f"stored information from {latest}"
                         memory_available = True
                         memory_sources_checked.append(f"memory/{latest}")
                         sources_used.append(f"memory/{latest}")

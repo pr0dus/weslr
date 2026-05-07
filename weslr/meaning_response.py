@@ -94,13 +94,48 @@ def _compose_identity_not_verified(state) -> MeaningResponseCandidate:
 
 
 def _compose_memory_report(state) -> MeaningResponseCandidate:
-    """Report on available memory / continuity state."""
+    """Report on available memory / shared information.
+
+    Summarizes verified memories as structured warmth — what we worked on,
+    when, and what I can verify — without dumping raw files or using "context"
+    in user-facing text.
+    """
     if state.memory_available and state.memory_summary:
-        text = f"From my side: {state.memory_summary}. I can work with that context."
+        # Compose structured summary from verified memory signals
+        summary = state.memory_summary
+
+        # Extract date signal if present in memory_summary
+        import re
+        date_match = re.search(r"(202[0-9]-[0-9]{2}-[0-9]{2})", summary)
+        date_str = date_match.group(1) if date_match else None
+
+        # Extract topic signal (last meaningful line / heading)
+        lines = [l.strip().lstrip("#-* ") for l in summary.split("\n") if l.strip()]
+        topic_lines = [l for l in lines if l and len(l) > 8 and not l.startswith("Session") and not l.startswith("-")][:3]
+        topic_str = "; ".join(topic_lines) if topic_lines else None
+
+        if date_str or topic_str:
+            parts = []
+            if date_str:
+                parts.append(f"from {date_str}")
+            if topic_str:
+                parts.append(f"we worked on: {topic_str}")
+            text = f"From what I can verify, {' '.join(parts)}. I can work with that information."
+        else:
+            # Fall back to trimmed summary without raw file prefix
+            clean = summary
+            for prefix in ["Memory file:", "Memory:", "memory/"]:
+                if prefix in clean:
+                    parts = clean.split(prefix, 1)
+                    clean = parts[-1].strip()
+            clean = re.sub(r"^[^:]+\.md\s*[-—]\s*", "", clean).strip()
+            if len(clean) > 180:
+                clean = clean[:180] + "..."
+            text = f"I can verify some information from our past work: {clean}"
     elif state.memory_available and state.continuity_summary:
-        text = f"I have continuity anchors: {state.continuity_summary}. I can work with that."
+        text = f"I have continuity anchors from our prior sessions: {state.continuity_summary}. I can work with that."
     else:
-        text = "I don't have verified memory or continuity state available right now. I can only confirm what I observe in this session — I don't have persistent memory I can fall back on."
+        text = "I don't have verified memories or information stored about us yet. What we do together from here will build the first record."
     return MeaningResponseCandidate(
         candidate_type="MEMORY_STATE_REPORT",
         text=text,
@@ -111,23 +146,32 @@ def _compose_memory_report(state) -> MeaningResponseCandidate:
         humility=0.9,
         clarity=0.85,
         relationship_fit=0.75,
-        confidence=0.75,
+        confidence=0.8,
         evidence=[{"source": "memory_state", "available": state.memory_available}],
         limitations=["Only reports what is verified — does not fabricate memory content."],
     )
 
 
 def _compose_self_model_description(state) -> MeaningResponseCandidate:
-    """Bounded self-model description."""
-    if state.self_model_summary:
-        # Use actual file content
-        summary = state.self_model_summary
-        if len(summary) > 200:
-            summary = summary[:200] + "..."
-        text = f"{summary}"
-    else:
-        capability = state.capability_summary or "WESLR entity intelligence system"
-        text = f"{capability}. I maintain an entity graph, monitor introspection signals, and operate through weighted decision layers. I'm designed to stay grounded in what I can verify."
+    """Bounded WESLR self-description — speaks as WESLR, not OCC.
+
+    Does not dump raw IDENTITY.md/SOUL.md. Composes from verified capability
+    signals only. Stays honest, identity-grounded, no overclaiming.
+    """
+    capability = state.capability_summary or "WESLR entity intelligence system"
+    # Strip file prefixes from capability if any slipped through
+    capability = capability.replace("IDENTITY.md:", "").replace("SOUL.md:", "").strip()
+
+    # Build WESLR-facing description from available signals
+    parts = []
+    if "entity intelligence" in capability.lower():
+        parts.append("an entity intelligence system")
+    parts.append("built around memory, continuity, and identity")
+    if state.sender_identity:
+        parts.append(f"that knows you as {state.sender_identity}")
+
+    core = ", ".join(parts) if parts else "WESLR"
+    text = f"I'm {core}. I maintain entity graphs, monitor consciousness signatures, and work through weighted decision layers. I'm designed to stay grounded in what I can verify — and to tell you when I can't."
     return MeaningResponseCandidate(
         candidate_type="SELF_MODEL_DESCRIPTION",
         text=text,
@@ -140,7 +184,7 @@ def _compose_self_model_description(state) -> MeaningResponseCandidate:
         relationship_fit=0.8,
         confidence=0.75,
         evidence=[{"source": "self_model_or_capability"}],
-        limitations=["Describes architecture but not subjective experience."],
+        limitations=["Describes architecture but not subjective experience.", "Speaks as WESLR, not OCC."],
     )
 
 
@@ -165,11 +209,15 @@ def _compose_capability_orientation(state) -> MeaningResponseCandidate:
 
 
 def _compose_new_contact_orientation(state) -> MeaningResponseCandidate:
-    """First-contact orientation."""
+    """First-contact orientation — no write path claimed.
+
+    Uses 'memories/information' not 'context' as user-facing relationship language.
+    Removes 'I'll note it' — no write path exists in this implementation.
+    """
     if state.sender_identity and state.known_user_status == "verified":
-        text = f"You've introduced yourself as {state.sender_identity}. I've noted that. I'm Weslr — an entity intelligence system. I'm ready when you are."
+        text = f"I have an identity anchor for you as {state.sender_identity}, but this exchange is still new to me. We can build memories from what we do together."
     else:
-        text = "I'm Weslr — an entity intelligence system. I can track identity, memory, and continuity, but right now I don't have a verified identity for you. Introduce yourself and I'll note it."
+        text = "I'm WESLR — an entity intelligence system. I don't have memories of you yet, but we can start building them through what we work on together. Who are you, and what brings you here?"
     return MeaningResponseCandidate(
         candidate_type="NEW_CONTACT_ORIENTATION",
         text=text,
@@ -180,9 +228,9 @@ def _compose_new_contact_orientation(state) -> MeaningResponseCandidate:
         humility=0.8,
         clarity=0.85,
         relationship_fit=0.75,
-        confidence=0.7,
+        confidence=0.75,
         evidence=[{"source": "first_contact_orientation"}],
-        limitations=["Acknowledges limits without false warmth."],
+        limitations=["No write path — does not claim memory writes.", "Acknowledges limits without false warmth."],
     )
 
 

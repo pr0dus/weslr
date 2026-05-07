@@ -2275,10 +2275,31 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 msg += f" {rr.get('role', 'role')}: {rr.get('response', '')}"
             message = msg
 
-        # ── Part 4: Signal-driven uncertainty response ─────────────────────────
-        if reply_shape == "signal_uncertainty":
+        # ── Part 4: Meaning-vector response obligation ───────────────────────
+        # Intercept uncertainty-path messages and try meaning-driven response first.
+        # Only fires when: message was heading toward uncertainty AND meaning signal is high.
+        _meaning_response_used = False
+        if reply_shape in ("signal_uncertainty", "signal_uncertainty_strong"):
+            from weslr.linguistic_meaning import analyze_meaning
+            from weslr.response_obligation import determine_response_obligation
+            from weslr.meaning_state_context import gather_meaning_state
+            from weslr.meaning_response import form_meaning_response
+            mv = analyze_meaning(last_message)
+            ob = determine_response_obligation(mv, communicator_self, _test_metadata, l2_session)
+            if ob.confidence >= 0.45 and ob.obligation_type != "fallback_uncertainty":
+                ctx = gather_meaning_state(ob, communicator_self, _test_metadata, l2_session, l0_identity)
+                result = form_meaning_response(mv, ob, ctx)
+                if result and result.confidence >= 0.40:
+                    message = result.content
+                    _apply_signal(_response_signals, result.selected_candidate_type.lower(),
+                                  evaluation_class="system_fact", internal_capability=True, confidence="medium")
+                    source = f"meaning-vector:{ob.obligation_type}:{result.selected_candidate_type.lower()}"
+                    _meaning_response_used = True
+
+        # ── Part 4 (fallback): Signal-driven uncertainty response ───────────
+        if message is None and reply_shape == "signal_uncertainty":
             message = _get_language_module().uncertainty_response()
-        elif reply_shape == "signal_uncertainty_strong":
+        elif message is None and reply_shape == "signal_uncertainty_strong":
             message = _get_language_module().uncertainty_strong_response()
         elif reply_shape == "repair_then_answer" and turn_type != "repair":
             message = f"I'll answer directly. {message}"
