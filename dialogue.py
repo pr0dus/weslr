@@ -1441,10 +1441,45 @@ def _get_targeted_anchors(message: str | None = None, topics: list | None = None
     return anchors
 
 
-def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None, l2_session: dict | None = None) -> dict:
+def build_communicator_message_payload(narrative: dict, relationships: dict, active_thread, latest_human: dict | None, research_context: dict | None = None, l0_identity: dict | None = None, l1_operating: dict | None = None, l2_session: dict | None = None, test_identity_context: dict | None = None) -> dict:
+    """Build WESLR's canonical communicator message payload.
+
+    Args:
+        test_identity_context: **TEST-ONLY** — injects verified identity evidence for
+            testing WESLR's response when it knows who the user is. When provided,
+            the following fields are overlaid onto communicator_self's identity system:
+                - sender_identity: verified user name string
+                - known_user_status: "verified" when identity is confirmed
+                - sender_confidence: 0.0-1.0 confidence in identity claim
+                - relationship_depth: 0.0-1.0 estimated relationship depth
+                - known_user_evidence: list of evidence dicts (source, strength, note)
+                - onboarding_profile: dict with role, project, preference keys
+            Do NOT use in production. No-op when None. Reversible (no writes).
+    """
     from sim import load_communicator_self
 
     communicator_self = load_communicator_self()
+
+    # ── TEST-ONLY IDENTITY FIXTURE ─────────────────────────────────────────────
+    # Injects verified identity evidence so downstream code sees a known user.
+    # Safe: no-op in production, no persistent writes, no LLM calls.
+    # Reversible: only affects this single payload build, not stored anywhere.
+    if test_identity_context:
+        # Overlay onto identity_state (used by _generate_enriched_identity, etc.)
+        identity_state = communicator_self.get("identity_state", {})
+        identity_state["_test_sender_identity"] = test_identity_context.get("sender_identity")
+        identity_state["_test_known_user_status"] = test_identity_context.get("known_user_status")
+        identity_state["_test_sender_confidence"] = test_identity_context.get("sender_confidence", 0.0)
+        identity_state["_test_relationship_depth"] = test_identity_context.get("relationship_depth", 0.0)
+        identity_state["_test_onboarding_profile"] = test_identity_context.get("onboarding_profile", {})
+        communicator_self["identity_state"] = identity_state
+        # Overlay onto relationships for any code that reads known_humans / human_profiles
+        rel = communicator_self.get("relationships", {})
+        known_user_evidence = test_identity_context.get("known_user_evidence", [])
+        rel["_test_known_user_evidence"] = known_user_evidence
+        rel["_test_sender_identity"] = test_identity_context.get("sender_identity")
+        rel["_test_known_user_status"] = test_identity_context.get("known_user_status")
+        communicator_self["relationships"] = rel
 
     # Inject L0 tier if provided (reversible: no-op when l0_identity is None).
     # This makes L0 facts available to all downstream narrative_state consumers
@@ -1482,6 +1517,19 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
         "llm_used": False, "internal_capability": False, "confidence": "low",
     }
     _truth_guard = {"truth_class": "unknown", "verified": False}
+    _test_metadata = {
+        "response_path": "unknown",
+        "greeting_branch_used": False,
+        "llm_used": False,
+        "known_user_status": None,
+        "sender_identity": None,
+        "sender_confidence": None,
+    }
+    if test_identity_context:
+        _test_metadata["known_user_status"] = test_identity_context.get("known_user_status")
+        _test_metadata["sender_identity"] = test_identity_context.get("sender_identity")
+        _test_metadata["sender_confidence"] = test_identity_context.get("sender_confidence")
+        _test_metadata["response_path"] = "test_identity_context_injected"
     message = None
 
     # ── Advisory relevance layer (read-only, no authority) ────────────────────
@@ -1644,7 +1692,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                 return {"message": safe_msg, "audience": "operator", "source": "artifact_reference",
                         "targeted_anchors": [], "_response_signals": _response_signals,
                         "_truth_guard": {"truth_class": "safe_fallback", "verified": False},
-                        "_quality_class": "safe_fallback", "_relevant_interests": _relevant_interests}
+                        "_quality_class": "safe_fallback", "_relevant_interests": _relevant_interests,
+                        "_test_metadata": _test_metadata}
             # Resolved: continue to proposal_intent check with enriched research_context
 
         if is_proposal_intent:
@@ -1659,10 +1708,14 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                        "targeted_anchors": [], "_response_signals": _response_signals,
                        "_truth_guard": _truth_guard, "_quality_class": "grounded_reasoning",
                        "_relevant_interests": _relevant_interests,
-                       "_contamination_metadata": research_context.get("_contamination_metadata"),
-                       "_lineage_inspection": research_context.get("_lineage_inspection")}
+                       "_contamination_metadata": (research_context or {}).get("_contamination_metadata"),
+                       "_lineage_inspection": research_context.get("_lineage_inspection"),
+                       "_test_metadata": _test_metadata}
 
         elif turn_type == "greeting":
+            _test_metadata["greeting_branch_used"] = True
+            _test_metadata["response_path"] = "greeting"
+            _apply_signal(_response_signals, "greeting", internal_capability=True, confidence="high", evaluation_class="system_fact")
             message = _get_language_module().greeting_response()
         elif any(token in lower_message for token in artifact_tokens) or lower_message.startswith(startswith_tokens):
             _apply_signal(_response_signals, "synthesis", evaluation_class="model_reasoning", llm_used=True, confidence="medium")
@@ -2334,10 +2387,11 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
                "_quality_class": _quality, "_cross_modal_context": _build_cross_modal_context(research_context),
                "_relevant_interests": _relevant_interests,
-               "_contamination_metadata": research_context.get("_contamination_metadata"),
+               "_contamination_metadata": (research_context or {}).get("_contamination_metadata"),
                "_lineage_inspection": _lineage_insp,
                "_context_selection_v1": _ctx_sel_v1,
-               "_boundary_hints": _bh}
+               "_boundary_hints": _bh,
+               "_test_metadata": _test_metadata}
     elif active_thread:
         topic, thread = active_thread
         audience = str(thread.get("human_label") or "you") or "you"
@@ -2424,9 +2478,10 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
                "_response_signals": _response_signals, "_truth_guard": _truth_guard,
                "_quality_class": _quality,
                "_relevant_interests": _relevant_interests,
-               "_contamination_metadata": research_context.get("_contamination_metadata"),
+               "_contamination_metadata": (research_context or {}).get("_contamination_metadata"),
                "_context_selection_v1": _ctx_sel_v1,
-               "_boundary_hints": _bh}
+               "_boundary_hints": _bh,
+               "_test_metadata": _test_metadata}
 
     # Fallback when no human interaction and no active thread
     message = _get_language_module().simple_response()
@@ -2459,7 +2514,8 @@ def build_communicator_message_payload(narrative: dict, relationships: dict, act
               "_quality_class": _quality,
               "_relevant_interests": _relevant_interests,
               "_context_selection_v1": _ctx_sel_v1_fb,
-              "_boundary_hints": _bh_fb}
+              "_boundary_hints": _bh_fb,
+              "_test_metadata": _test_metadata}
 
     # Route through outbox for unified communication
     try:

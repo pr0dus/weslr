@@ -138,19 +138,18 @@ class EspeakTTS(TTSEngineBase):
 
     def is_available(self) -> bool:
         try:
-            result = subprocess.run(
-                ["espeak-ng", "--version"],
-                capture_output=True,
-                timeout=5,
-            )
-            return result.returncode == 0
+            # On Termux the binary is "espeak", on other Linux it's "espeak-ng"
+            for binary in ["espeak", "espeak-ng"]:
+                result = subprocess.run([binary, "--version"], capture_output=True, timeout=5)
+                if result.returncode == 0:
+                    return True
+            return False
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
     def install(self, target_dir: Optional[Path] = None) -> bool:
-        # On Termux: pkg install espeak-ng
+        # On Termux: pkg install espeak (package name is "espeak", not "espeak-ng")
         # On Debian/Ubuntu: apt install espeak-ng
-        # On Android: needs rooted or termux package
         return self.is_available()
 
     def speak(self, text: str, voice_id: Optional[str] = None) -> TTSResult:
@@ -159,7 +158,9 @@ class EspeakTTS(TTSEngineBase):
                 wav_path = f.name
 
             voice = voice_id or "en"
-            cmd = ["espeak-ng", "-w", wav_path, "-v", voice, text]
+            # On Termux the binary is "espeak", on other Linux it's "espeak-ng"
+            espeak_cmd = "espeak" if subprocess.run(["which", "espeak"], capture_output=True, timeout=5).returncode == 0 else "espeak-ng"
+            cmd = [espeak_cmd, "-w", wav_path, "-v", voice, text]
             result = subprocess.run(cmd, capture_output=True, timeout=30)
 
             if result.returncode == 0 and Path(wav_path).exists():
@@ -181,7 +182,7 @@ class EspeakTTS(TTSEngineBase):
                     engine=self.name,
                     text=text,
                     success=False,
-                    error=f"espeak-ng failed: {result.stderr.decode()}",
+                    error=f"espeak failed: {result.stderr.decode()}",
                 )
         except Exception as e:
             return TTSResult(
@@ -204,7 +205,7 @@ class EspeakTTS(TTSEngineBase):
     def get_config_hints(self) -> Dict[str, Any]:
         hints = super().get_config_hints()
         hints.update({
-            "install_hint": "Run: pkg install espeak-ng (Termux) or apt install espeak-ng (Debian/Ubuntu)",
+            "install_hint": "Run: pkg install espeak (Termux) or apt install espeak-ng (Debian/Ubuntu)",
             "description": "Lightweight, always works, basic quality. Good for testing.",
         })
         return hints
@@ -570,7 +571,7 @@ class TTSEngine:
             engine_cls = cls._engines.get(name)
             if engine_cls:
                 engine = engine_cls()
-                if engine.is_available:
+                if engine.is_available():
                     return cls(engine)
 
         # Fallback to dummy
@@ -598,17 +599,11 @@ class TTSEngine:
 
     @classmethod
     def playback_available(cls) -> bool:
-        """Check if any audio playback backend is available (mpv, termux-media-player, ffplay)."""
+        """Check if any audio playback backend is available."""
+        import os
         for cmd in ["mpv", "termux-media-player", "ffplay"]:
-            try:
-                result = subprocess.run(
-                    ["which", cmd],
-                    capture_output=True, text=True, timeout=5
-                )
-                if result.returncode == 0:
-                    return True
-            except Exception:
-                pass
+            if any(os.access(os.path.join(p, cmd), os.X_OK) for p in os.environ.get("PATH", "").split(os.pathsep)):
+                return True
         return False
 
     @classmethod

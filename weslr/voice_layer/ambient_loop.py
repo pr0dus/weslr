@@ -42,7 +42,7 @@ from typing import Any, Dict, List, Optional
 # Local imports — do NOT pull in heavy Weslr modules
 from .presence_monitor import PresenceMonitor, AvailabilityState, TimeContext
 from .observation_engine import ObservationEngine, ObservationType, Urgency
-from .thought_formation import ThoughtFormationEngine, ReasoningMode, Thought
+from .thought_formation import ThoughtFormationEngine, ReasoningMode, Thought, generate_arrival_thought
 from .surface_decision import SurfaceDecisionEngine, SurfaceDecision
 from .personality_modulator import PersonalityModulator, DeliveryModulation
 from .voice_output import VoiceOutputLayer
@@ -316,6 +316,27 @@ class AmbientPresenceLoop:
 
         # Generate candidate thoughts
         candidates = self._thoughts.process_observations(unprocessed, reasoning_ctx)
+
+        # Generate greeting thought for first arrival of day (weighted, not forced)
+        if (change.change_type in ("first_arrival_today", "return_after_absence", "system_startup")
+                and config.adaptive_greeting_enabled):
+            greeting_context = {
+                "time_context": change.context_snapshot.get("time_context", "afternoon"),
+                "availability": change.context_snapshot.get("availability", "available"),
+                "arrival_anomaly": change.is_anomaly,
+                "anomaly_description": change.anomaly_description,
+                "arrival_count_today": change.arrival_count_today,
+                "relationship_depth": change.context_snapshot.get("relationship_depth", 0.5),
+                "recent_interactions": 0,  # placeholder
+                "last_greeting_style": "standard",
+            }
+            # Use module-level generate_arrival_thought from thought_formation
+            greeting_thought = generate_arrival_thought(
+                self.tenant_id,
+                greeting_context,
+                significance=0.55,  # weighted — pipeline can defer or dismiss
+            )
+            candidates.append(greeting_thought)
 
         # Evaluate each candidate through surface decision
         approved = []
