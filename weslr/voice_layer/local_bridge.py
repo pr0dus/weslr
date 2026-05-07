@@ -58,16 +58,24 @@ def send_to_weslr(
     domain: str = "general",
     persona: str = "local operator",
     voice_response: bool = False,
+    identity_meta: Optional[dict] = None,
 ) -> str:
     """
     Send a message through the canonical main door.
     Returns the response content as a string.
+
+    identity_meta: optional dict with keys:
+        sender_identity, known_user_status, sender_confidence,
+        identity_evidence, profile_status, channel_type,
+        channel_id, session_id, device_id
     """
     raw = {
         "message": message,
         "domain": domain,
         "persona": persona,
     }
+    if identity_meta:
+        raw.update(identity_meta)
 
     response = route_request(raw)
     content = _render_response(response)
@@ -111,7 +119,8 @@ def _try_playback(audio_data: bytes) -> None:
 
 # ── Interactive REPL ─────────────────────────────────────────────────────────
 
-def repl(voice_response: bool = False, domain: str = "general", persona: str = "local operator"):
+def repl(voice_response: bool = False, domain: str = "general", persona: str = "local operator",
+             identity_meta: Optional[dict] = None):
     """Interactive REPL for local Weslr interaction."""
     print("Weslr Local Bridge")
     print("  Type your message and press Enter.")
@@ -144,7 +153,8 @@ def repl(voice_response: bool = False, domain: str = "general", persona: str = "
 
         print(f"weslr: ", end="", flush=True)
         try:
-            reply = send_to_weslr(user_input, domain=domain, persona=persona, voice_response=voice)
+            reply = send_to_weslr(user_input, domain=domain, persona=persona,
+                                  voice_response=voice, identity_meta=identity_meta)
             print(reply)
         except Exception as e:
             print(f"error: {e}")
@@ -152,7 +162,7 @@ def repl(voice_response: bool = False, domain: str = "general", persona: str = "
 
 # ── STT pipeline bridge ──────────────────────────────────────────────────────
 
-def stt_bridge():
+def stt_bridge(identity_meta: Optional[dict] = None):
     """
     Read STT transcripts from stdin, one per line, and send to main door.
     Designed to pipe from an STT tool: mic → transcript → this → main door.
@@ -166,7 +176,7 @@ def stt_bridge():
             continue
         print(f"[local_bridge] → {transcript[:80]}", file=sys.stderr)
         try:
-            reply = send_to_weslr(transcript)
+            reply = send_to_weslr(transcript, identity_meta=identity_meta)
             print(f"[local_bridge] weslr: {reply[:200]}")
         except Exception as e:
             print(f"[local_bridge] error: {e}", file=sys.stderr)
@@ -186,16 +196,56 @@ def main():
                         help="Domain (default: general)")
     parser.add_argument("--persona", default=os.environ.get("WESLR_PERSONA", "local operator"),
                         help="Persona (default: local operator)")
+    parser.add_argument("--test-identity", metavar="NAME",
+                        help="Test identity name (TEST_VERIFIED — test fixtures only)")
+    parser.add_argument("--channel-type", default="local_cli",
+                        help="Channel type (default: local_cli)")
 
     args = parser.parse_args()
 
+    # Build identity evidence if test identity requested
+    identity_meta = None
+    if args.test_identity:
+        from weslr.channel_identity import (
+            ChannelIdentityEvidence, IdentityStatus,
+            load_profile, load_channel_binding,
+        )
+        profile = load_profile()
+        binding = load_channel_binding()
+        evidence = ChannelIdentityEvidence(
+            profile_name=args.test_identity,
+            profile_status="test_verified",
+            identity_status=IdentityStatus.TEST_VERIFIED,
+            channel_type=args.channel_type,
+            confidence=1.0,
+            evidence=[{"source": "test_fixture", "name": args.test_identity}],
+            limitations=["Test-only identity — not valid in production."],
+        )
+        identity_meta = evidence.as_metadata()
+    elif args.channel_type and args.channel_type != "local_cli":
+        from weslr.channel_identity import (
+            ChannelIdentityEvidence, load_profile, load_channel_binding,
+        )
+        profile = load_profile()
+        binding = load_channel_binding()
+        evidence = ChannelIdentityEvidence(
+            identity_status=IdentityStatus.UNKNOWN,
+            channel_type=args.channel_type,
+            confidence=0.0,
+            evidence=[],
+            limitations=["No identity signal."],
+        )
+        identity_meta = evidence.as_metadata()
+
     if args.text:
-        reply = send_to_weslr(args.text, domain=args.domain, persona=args.persona, voice_response=args.voice)
+        reply = send_to_weslr(args.text, domain=args.domain, persona=args.persona,
+                                 voice_response=args.voice, identity_meta=identity_meta)
         print(reply)
     elif args.chat:
-        repl(voice_response=args.voice, domain=args.domain, persona=args.persona)
+        repl(voice_response=args.voice, domain=args.domain, persona=args.persona,
+             identity_meta=identity_meta)
     elif args.stt:
-        stt_bridge()
+        stt_bridge(identity_meta=identity_meta)
     else:
         parser.print_help()
 

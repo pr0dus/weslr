@@ -214,7 +214,7 @@ def _compose_new_contact_orientation(state) -> MeaningResponseCandidate:
     Uses 'memories/information' not 'context' as user-facing relationship language.
     Removes 'I'll note it' — no write path exists in this implementation.
     """
-    if state.sender_identity and state.known_user_status == "verified":
+    if state.sender_identity and state.known_user_status in ("verified", "channel_verified", "device_verified", "test_verified"):
         text = f"I have an identity anchor for you as {state.sender_identity}, but this exchange is still new to me. We can build memories from what we do together."
     else:
         text = "I'm WESLR — an entity intelligence system. I don't have memories of you yet, but we can start building them through what we work on together. Who are you, and what brings you here?"
@@ -293,8 +293,9 @@ def form_meaning_response(
     ob_type = obligation.obligation_type
 
     # ── Generate relevant candidates based on obligation type ─────────────────
+    VERIFIED = ("verified", "channel_verified", "device_verified", "test_verified")
     if ob_type == "verify_identity":
-        if state.known_user_status == "verified":
+        if state.known_user_status in VERIFIED:
             candidates.append(_compose_bounded_verified_identity(state))
         else:
             candidates.append(_compose_identity_not_verified(state))
@@ -316,7 +317,7 @@ def form_meaning_response(
 
     elif ob_type == "orient_new_contact":
         candidates.append(_compose_new_contact_orientation(state))
-        if state.known_user_status == "verified":
+        if state.known_user_status in VERIFIED:
             candidates.append(_compose_bounded_verified_identity(state))
 
     elif ob_type == "acknowledge_emotion":

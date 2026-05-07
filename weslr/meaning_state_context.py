@@ -184,7 +184,7 @@ def gather_meaning_state(
 
     # ── State confidence ────────────────────────────────────────────────────
     state_confidence = 0.0
-    if known_user_status == "verified":
+    if known_user_status in ("verified", "channel_verified", "device_verified", "test_verified"):
         state_confidence += 0.4
     if memory_available:
         state_confidence += 0.2

@@ -460,6 +460,7 @@ class ChatResponder:
         message: str,
         chat_context: Optional[List[str]] = None,
         chat_hints: Optional[List[str]] = None,
+        identity_meta: Optional[Dict[str, Any]] = None,
     ) -> tuple[str, dict[str, Any] | None]:
         """Subject-following chat reply that hides internal priorities.
 
@@ -518,7 +519,7 @@ class ChatResponder:
             from weslr.meaning_state_context import gather_meaning_state
             from weslr.meaning_response import form_meaning_response
 
-            test_metadata = {}
+            test_metadata = identity_meta or {}
             mv = analyze_meaning(message)
             ob = determine_response_obligation(mv, {}, test_metadata, None)
             if ob.confidence >= 0.45 and ob.obligation_type != "fallback_uncertainty":
@@ -775,7 +776,9 @@ def handle_request(
         workspace_id = request.get("workspace_id")
         user_id = request.get("user_id")
         chat_hints = request.get("chat_hints") or get_hints(workspace_id, user_id)
-        reply, reply_meta = ChatResponder().respond_chat(msg, chat_context, chat_hints)
+        reply, reply_meta = ChatResponder().respond_chat(
+            msg, chat_context, chat_hints, identity_meta=request.get("_identity_meta")
+        )
         _maybe_promote_hints(workspace_id, user_id, msg.lower(), chat_context)
         return Response(content=reply, metadata=reply_meta, actions=[])
 

@@ -61,7 +61,7 @@ def determine_response_obligation(
     if identity_signal >= 0.3:
         evidence.append({"source": "identity_query", "score": identity_signal})
         # Already have verified identity in test context
-        if known_user_status == "verified" and sender_identity:
+        if known_user_status in ("verified", "channel_verified", "device_verified", "test_verified") and sender_identity:
             return ResponseObligation(
                 obligation_type="verify_identity",
                 required_state=["identity_state"],

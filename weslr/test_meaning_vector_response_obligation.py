@@ -310,6 +310,82 @@ for text, fixture, expected_candidate, forbidden_list, description in quality_ca
 print(f"\nGroup E result: {'ALL PASS' if all_pass_e else 'SOME FAIL'}")
 
 
+# ── Group F: Channel identity binding flow ─────────────────────────────────
+
+print("\n" + "=" * 60)
+print("GROUP F — CHANNEL IDENTITY BINDING FLOW")
+print("=" * 60)
+
+from weslr.channel_identity import (
+    ChannelIdentityEvidence, IdentityStatus,
+    build_channel_identity_evidence, load_profile, load_channel_binding,
+)
+
+channel_cases = [
+    (
+        "unknown user — no identity signal",
+        {"sender_identity": None, "known_user_status": "unknown", "sender_confidence": 0.0},
+        "verify_identity",
+        "IDENTITY_VERIFICATION",
+        "unknown",
+    ),
+    (
+        "claimed identity only — no verification",
+        {"sender_identity": "Arthur", "known_user_status": "claimed", "sender_confidence": 0.35},
+        "verify_identity",
+        "IDENTITY_VERIFICATION",
+        "claimed",
+    ),
+    (
+        "onboarded profile but unverified channel",
+        {"sender_identity": "Arthur", "known_user_status": "onboarded", "sender_confidence": 0.6},
+        "verify_identity",
+        "IDENTITY_VERIFICATION",
+        "onboarded",
+    ),
+    (
+        "channel-verified session",
+        {"sender_identity": "Arthur", "known_user_status": "channel_verified", "sender_confidence": 0.85},
+        "verify_identity",
+        "VERIFIED_CONTACT_ORIENTATION",
+        "channel_verified",
+    ),
+    (
+        "test_verified fixture",
+        {"sender_identity": "Arthur", "known_user_status": "test_verified", "sender_confidence": 1.0},
+        "verify_identity",
+        "VERIFIED_CONTACT_ORIENTATION",
+        "test_verified",
+    ),
+]
+
+all_pass_f = True
+for description, identity_meta, expected_obligation, expected_candidate, expected_status in channel_cases:
+    mv = analyze_meaning("do you know me?")
+    ob = determine_response_obligation(mv, test_metadata=identity_meta)
+    state = gather_meaning_state(ob, test_metadata=identity_meta, l2_session=None)
+    result = form_meaning_response(mv, ob, state)
+
+    ob_ok = ob.obligation_type == expected_obligation
+    candidate_ok = result and result.selected_candidate_type == expected_candidate
+    status_ok = state.known_user_status == expected_status
+    identity_ok = state.sender_identity == identity_meta.get("sender_identity")
+    llm_ok = result and result.metadata.get("llm_used") is False
+
+    status = "PASS" if (ob_ok and candidate_ok and status_ok and identity_ok and llm_ok) else "FAIL"
+    if status == "FAIL":
+        all_pass_f = False
+
+    print(f"  {status}  {description}")
+    print(f"        obligation: {ob.obligation_type}  (expected={expected_obligation})")
+    print(f"        candidate: {result.selected_candidate_type if result else 'NONE'}  (expected={expected_candidate})")
+    print(f"        known_user_status: {state.known_user_status}  (expected={expected_status})")
+    print(f"        sender_identity: {state.sender_identity}")
+    print(f"        llm_used: {result.metadata.get('llm_used') if result else 'N/A'}")
+
+print(f"\nGroup F result: {'ALL PASS' if all_pass_f else 'SOME FAIL'}")
+
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 
 print("\n" + "=" * 60)
@@ -318,6 +394,7 @@ print("=" * 60)
 print(f"  Group A (meaning classification): {'PASS' if all([g1,g2,g3,g4]) else 'FAIL'}")
 print(f"  Group B (obligation determination): {'PASS' if all_pass_b else 'FAIL'}")
 print(f"  Group E (response quality):         {'PASS' if all_pass_e else 'FAIL'}")
+print(f"  Group F (channel identity binding):  {'PASS' if all_pass_f else 'FAIL'}")
 print(f"  Compile check:                      {'PASS' if compile_pass else 'FAIL'}")
-total = sum([all([g1,g2,g3,g4]), all_pass_b, all_pass_e, compile_pass])
-print(f"\n  OVERALL: {total}/4 groups passed")
+total = sum([all([g1,g2,g3,g4]), all_pass_b, all_pass_e, all_pass_f, compile_pass])
+print(f"\n  OVERALL: {total}/5 groups passed")
