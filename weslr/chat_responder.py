@@ -97,54 +97,54 @@ def get_explanation_session(persona: str = "general", domain: str = "general"):
 
 def format_reasoning_surface(item: Dict[str, Any]) -> List[str]:
     """Extract reasoning signals from provenance for operator transparency.
-    
+
     Surfaces memory_context, concept_context, outcome_context, forecast_context
     in a calm, trust-oriented way.
-    
+
     NOTE: calibration_context is INTERNAL refinement only. It adjusts forecast
     confidence internally but is NOT surfaced to operators. Calibration is a
     meta-refinement layer, not operator-facing explainability.
-    
+
     Args:
         item: Decision item with provenance
-    
+
     Returns:
         List of reasoning snippets to display
     """
     reasoning = []
     provenance = item.get("provenance", {})
-    
+
     # Memory context: similar past decisions
     memory = provenance.get("memory_context", {})
     if memory.get("has_memory_context"):
         signal = memory.get("signal")
         if signal:
             reasoning.append(f"📌 {signal}")
-    
+
     # Concept context: related concepts
     concepts = provenance.get("concept_context", {})
     if concepts.get("has_concept_context"):
         signal = concepts.get("signal")
         if signal:
             reasoning.append(f"🔗 {signal}")
-    
+
     # Outcome context: historical outcome feedback
     outcome = provenance.get("outcome_context", {})
     if outcome.get("has_outcome_context"):
         signal = outcome.get("signal")
         if signal:
             reasoning.append(f"📊 {signal}")
-    
+
     # Forecast context: predicted impact
     forecast = provenance.get("forecast_context", {})
     if forecast.get("has_forecast_context"):
         signal = forecast.get("signal")
         if signal:
             reasoning.append(f"🔮 {signal}")
-    
+
     # NOTE: calibration_context is INTERNAL only - refines forecast confidence
     # but is NOT surfaced to operators. It's meta-refinement, not explainability.
-    
+
     return reasoning
 
 
@@ -159,7 +159,7 @@ def format_what_matters_now(items: List[Dict[str, Any]], mode: str = "detailed")
         title = item.get("title", "Untitled")
         confidence = item.get("confidence", 0)
         reason = item.get("reason", "").strip()
-        reason_text = f" — {reason}" if reason else ""
+        reason_text = f" - {reason}" if reason else ""
         lines.append(f"• {title}{reason_text} (confidence ~{confidence:.2f})")
 
         if mode != "short":
@@ -185,7 +185,7 @@ def format_blocked_items(items: List[Dict[str, Any]]) -> str:
         unblock = item.get("unblock") or item.get("recommended_action") or item.get("next_step")
         detail = f"• {title}"
         if reason:
-            detail += f" — {reason}"
+            detail += f" - {reason}"
         if source:
             detail += f" (source: {source})"
         lines.append(detail)
@@ -209,7 +209,7 @@ def format_next_actions(items: List[Dict[str, Any]], mode: str = "detailed") -> 
             gating = item.get("gated_by") or item.get("requires_approval_id")
             detail = f"{i}. {title}"
             if assumption:
-                detail += f" — {assumption}"
+                detail += f" - {assumption}"
             if gating:
                 detail += f" (gated by {gating})"
             lines.append(detail)
@@ -239,7 +239,7 @@ def format_approval_queue(items: List[Dict[str, Any]]) -> str:
         next_step = item.get("next_step_after_approval") or item.get("recommended_action") or item.get("next_step")
         detail = f"• {title}"
         if reason:
-            detail += f" — {reason}"
+            detail += f" - {reason}"
         if risk:
             detail += f" (risk: {risk})"
         lines.append(detail)
@@ -254,23 +254,23 @@ def format_escalations(escalations: List[Dict[str, Any]]) -> str:
     """Format pending escalations conversationally."""
     if not escalations:
         return "No pending escalations."
-    
+
     lines = [f"**{len(escalations)} escalation(s) pending:**"]
     for esc in escalations:
         reason = esc.get("reason", "Unknown")
         urgency = esc.get("urgency", "normal")
         context = esc.get("context_id", "")
         esc_id = esc.get("escalation_id", "")[:8]
-        
+
         urgency_emoji = {
             "critical": "🔴",
             "high": "🟠",
             "normal": "🟡",
             "low": "🟢",
         }.get(urgency.lower(), "⚪")
-        
+
         lines.append(f"{urgency_emoji} **{reason}** [{context or f'#{esc_id}'}]")
-    
+
     return "\n".join(lines)
 
 
@@ -279,9 +279,9 @@ def format_greeting() -> str:
     return """Hi! I help you track priorities and blockers.
 
 Try asking:
-**status** — See what matters right now
-**blocked** — See what's stuck
-**escalations** — See pending escalations
+**status** - See what matters right now
+**blocked** - See what's stuck
+**escalations** - See pending escalations
 
 What would you like to know?"""
 
@@ -291,14 +291,14 @@ def format_help() -> str:
     return """**Available commands:**
 
 **Status & Overview:**
-• `status` or `what's happening` — Current decision summary
-• `escalations` — Pending escalations
-• `approvals` — Items awaiting approval
-• `blocked` — Current blocked items
+• `status` or `what's happening` - Current decision summary
+• `escalations` - Pending escalations
+• `approvals` - Items awaiting approval
+• `blocked` - Current blocked items
 
 **Actions:**
-• `approve <id>` — Approve an escalation (future)
-• `clear` — Clear escalation state
+• `approve <id>` - Approve an escalation (future)
+• `clear` - Clear escalation state
 
 **Files:**
 • Upload files using the 📎 button
@@ -316,7 +316,7 @@ def _format_confidence_note(item: Dict[str, Any], fallback: float) -> str:
 
 def _format_reason(item: Dict[str, Any]) -> str:
     reason = item.get("reason", "")
-    return f" — {reason}" if reason else ""
+    return f" - {reason}" if reason else ""
 
 
 def format_evidence_uncertainty(decision: Dict[str, Any]) -> List[str]:
@@ -443,14 +443,14 @@ def format_status_summary(decision: Dict[str, Any], mode: str = "detailed") -> s
 
 class ChatResponder:
     """WESLR-owned conversational response formatter.
-    
+
     This class takes decision output and formats it into natural
     conversational responses for the operator.
-    
+
     This is NOT dependent on any host runtime (OpenClaw, Claude, etc.).
     This IS the canonical WESLR conversational surface.
     """
-    
+
     def __init__(self):
         """Initialize the chat responder."""
         self.greeting_shown = False
@@ -471,7 +471,7 @@ class ChatResponder:
         hint_text = " ".join(chat_hints or []).lower() if chat_hints else ""
 
         if not msg_lower:
-            return "What’s on your mind?", None
+            return "What's on your mind?", None
 
         synth = _synthesize_active_context(message, chat_context, chat_hints)
         lunch_hint = synth["mentions_lunch"]
@@ -481,37 +481,65 @@ class ChatResponder:
 
         if "lunch" in msg_lower:
             if workout_hint:
-                return "Light lunch ideas before a workout: grain bowl (rice/quinoa) with veg + lean protein, or a sandwich + fruit/yogurt. Leave 60–90min before exercising.", None
+                return "Light lunch ideas before a workout: grain bowl (rice/quinoa) with veg + lean protein, or a sandwich + fruit/yogurt. Leave 60-90min before exercising.", None
             return "Quick lunch ideas: grain bowl (rice/quinoa) with veg + protein, or a sandwich + fruit/yogurt. Keep it light if you have work after.", None
 
         if "workout" in msg_lower or "gym" in msg_lower or "run" in msg_lower or "exercise" in msg_lower:
             if lunch_hint:
-                return "If you ate recently, give yourself ~60–90min, then do a steady 30–45min session plus a short warm-up/cool-down.", None
+                return "If you ate recently, give yourself ~60-90min, then do a steady 30-45min session plus a short warm-up/cool-down.", None
             if plan_hint:
-                return "Slot the workout after your main focus block; 30–45min is fine. Add a 5–10min warm-up and cool-down.", None
-            return "Plan a 30–45min session with a warm-up and cool-down; schedule it around your main tasks so it sticks.", None
+                return "Slot the workout after your main focus block; 30-45min is fine. Add a 5-10min warm-up and cool-down.", None
+            return "Plan a 30-45min session with a warm-up and cool-down; schedule it around your main tasks so it sticks.", None
 
         if "plan" in msg_lower:
             if email_hint:
-                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) 15–20min to clear the important email, 4) short break, 5) wrap-up.", None
+                return "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) 15-20min to clear the important email, 4) short break, 5) wrap-up.", None
             if workout_hint:
-                return "Plan: 1) top 1–2 tasks, 2) 60–90min focus, 3) workout 30–45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up.", None
-            return "Try a simple plan: top 1–2 tasks, 60–90min focus block, short break, 15–20min for admin/messages, then a wrap-up.", None
+                return "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) workout 30-45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up.", None
+            return "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up.", None
 
         if "email" in msg_lower:
             if plan_hint:
-                return "Draft the email goal + key points; send it in your admin slot so it doesn’t break focus. I can help tighten the draft.", None
-            return "Draft the email goal and key points; I’ll help tighten it up.", None
+                return "Draft the email goal + key points; send it in your admin slot so it doesn't break focus. I can help tighten the draft.", None
+            return "Draft the email goal and key points; I'll help tighten it up.", None
 
         if "wife" in msg_lower or "partner" in msg_lower:
-            return "Keep it clear and kind. Share the key point, what you’re doing about it, and anything you need from them.", None
+            return "Keep it clear and kind. Share the key point, what you're doing about it, and anything you need from them.", None
 
         if "code" in msg_lower or "bug" in msg_lower:
-            return "Describe the code issue and error; I’ll help outline a fix or steps to debug.", None
+            return "Describe the code issue and error; I'll help outline a fix or steps to debug.", None
+
+        # ── Meaning-vector response obligation ───────────────────────────────
+        # Intercept chat-mode messages and try meaning-driven response first.
+        # Falls through to model_chat_response only if meaning path doesn't fire.
+        try:
+            from weslr.linguistic_meaning import analyze_meaning
+            from weslr.response_obligation import determine_response_obligation
+            from weslr.meaning_state_context import gather_meaning_state
+            from weslr.meaning_response import form_meaning_response
+
+            test_metadata = {}
+            mv = analyze_meaning(message)
+            ob = determine_response_obligation(mv, {}, test_metadata, None)
+            if ob.confidence >= 0.45 and ob.obligation_type != "fallback_uncertainty":
+                ctx = gather_meaning_state(ob, {}, test_metadata, None, None)
+                result = form_meaning_response(mv, ob, ctx)
+                if result and result.confidence >= 0.40:
+                    reply_meta = {
+                        "path": f"meaning-vector:{ob.obligation_type}:{result.selected_candidate_type.lower()}",
+                        "obligation_type": ob.obligation_type,
+                        "candidate_type": result.selected_candidate_type,
+                        "llm_used": False,
+                        "fallback_used": False,
+                        "source": "meaning_vector_response_obligation",
+                    }
+                    return result.content, reply_meta
+        except Exception:
+            pass  # fall through to model-backed path
 
         # Prefer model-backed response; if unavailable, surface error
         return self._model_chat_response(message or "")
-    
+
     def _model_chat_response(self, message: str) -> tuple[str, dict[str, Any] | None]:
         def _looks_meta(text: str) -> bool:
             t = (text or "").lower()
@@ -615,7 +643,7 @@ class ChatResponder:
                     message,
                     {
                         "wake_reason": "chat_request",
-                        "requested_style": "Rescue answer: give 2 concrete, actionable steps for the user; no meta/internal wording; no slogans; stay on the user’s request only.",
+                        "requested_style": "Rescue answer: give 2 concrete, actionable steps for the user; no meta/internal wording; no slogans; stay on the user's request only.",
                     },
                 )
                 metadata["rescue_used"] = True
@@ -625,7 +653,7 @@ class ChatResponder:
 
             # If still vague, provide a deterministic concise helper
             if _too_vague(summary):
-                summary = "Quick steps: 1) state your goal in one sentence, 2) list the top 3 actions to move it forward." 
+                summary = "Quick steps: 1) state your goal in one sentence, 2) list the top 3 actions to move it forward."
 
             # Return user-visible summary only; metadata is kept internal/operator-facing
             return finalize(summary)
@@ -646,48 +674,48 @@ class ChatResponder:
 
     def respond(self, message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
         """Generate a conversational response to a user message.
-        
+
         Args:
             message: User's message text
             decision: Current DecisionOutput as dict
             escalations: Current pending escalations
-        
+
         Returns:
             Conversational response text (markdown formatted)
         """
         msg_lower = message.lower().strip()
-        
+
         # Handle specific commands
         if msg_lower in ["status", "what's happening", "what's happening?", "status?"]:
             return format_status_summary(decision)
-        
+
         if msg_lower in ["escalations", "escalation"]:
             return format_escalations(escalations)
-        
+
         if msg_lower in ["approvals", "approval", "approve"]:
             return format_approval_queue(decision.get("approval_queue", []))
-        
+
         if msg_lower in ["blocked", "blockers", "blocking"]:
             return format_blocked_items(decision.get("blocked_items", []))
-        
+
         if msg_lower in ["help", "?", "commands"]:
             return format_help()
-        
+
         if msg_lower in ["clear", "reset"]:
             return "_Use the 'Clear Escalations' button in the header menu to reset state._"
-        
+
         # Natural language queries
         if "what matters" in msg_lower or "priority" in msg_lower or "urgent" in msg_lower:
             return format_what_matters_now(decision.get("what_matters_now", []))
-        
+
         if "next" in msg_lower and "action" in msg_lower:
             return format_next_actions(decision.get("next_actions", []))
-        
+
         # Default: show brief status and offer help
         what_matters = decision.get("what_matters_now", [])
         blocked = decision.get("blocked_items", [])
         approvals = decision.get("approval_queue", [])
-        
+
         if what_matters:
             top_item = what_matters[0]
             return f"""Right now, your top priority is:
@@ -697,17 +725,17 @@ class ChatResponder:
 _{top_item.get('reason', '')}_
 
 Ask `status` for full overview, or `escalations` for pending escalations."""
-        
+
         if blocked:
             return f"You have {len(blocked)} blocked items. Ask `blocked` for details."
-        
+
         if approvals:
             return f"You have {len(approvals)} items awaiting approval. Ask `approvals` for details."
-        
+
         return """All systems nominal. No urgent items.
 
 What would you like to check? Try `status` or `help`."""
-    
+
     def get_greeting(self) -> str:
         """Get the initial greeting message."""
         self.greeting_shown = True
@@ -716,12 +744,12 @@ What would you like to check? Try `status` or `help`."""
 
 def respond_to_message(message: str, decision: Dict[str, Any], escalations: List[Dict[str, Any]]) -> str:
     """Convenience function for generating responses.
-    
+
     Args:
         message: User's message
         decision: Current decision output
         escalations: Current pending escalations
-    
+
     Returns:
         Conversational response
     """
@@ -736,7 +764,7 @@ def handle_request(
     previous_decision: Optional[Dict[str, Any]] = None,
 ) -> Response:
     """Minimal live request handler: compute decision then render via adaptive explanation.
-    
+
     Keeps truth/governance intact; exposes blockers/approvals/next actions to operator.
     Supports optional previous_decision for continuity delta rendering.
     """
