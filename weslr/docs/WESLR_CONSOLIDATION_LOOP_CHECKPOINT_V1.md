@@ -444,27 +444,72 @@ Next: V1 read-only consolidation digest → consolidation_digest.jsonl
 
 ---
 
-## SECTION 9 — Open Questions
 
-1. **Manual or daemon-triggered?** Should consolidation run manually on demand, or via proactive daemon on a schedule? Recommendation: manual trigger for V1 (operator invokes `weslr consolidation run`), daemon-triggered for V2.
+## Promotion Zones and Auto-Promotion Toggle
 
-2. **Store name?** `.weslr/consolidation_digest.jsonl` or `.weslr/consolidation_candidates.jsonl`? Recommendation: `consolidation_digest.jsonl` for V1 — the digest is operator-visible, not yet a promotion queue.
+> **Principle:** Consolidation zones are separate from cognitive weight refinement zones.
+> Do not use `auto_refinement_config.py` for consolidation unless a future shared governance config is explicitly designed.
 
-3. **Which traces are safe for V1?** Recommendation: `pending_messages` (frontier gaps only, no raw text), `mission_store` metadata (theme + status, no raw content), evidence packet metadata (type + theme + source). Explicitly exclude raw message content, identity claims, doctrine assertions.
+### Zone Mapping
 
-4. **What can be auto-saved if doctrine allows?** Recommendation: V1 has zero auto-save. All candidates are digest-only. Auto-save (if any) deferred to V2 after governance review.
+| risk_level | zone | promotion rule |
+|------------|------|----------------|
+| low | **green** | May auto-promote only if toggle is enabled and all green-zone conditions are met |
+| medium | **yellow** | Operator review required; creates review candidate only |
+| high / doctrine / identity / governance / research truth | **red** | Explicit approval required; never auto-promotes |
 
-5. **How to handle contradictions?** V1: flag clusters with high contradiction level in score, note "contradiction detected" in gate_note. No resolution. V2: create contradiction record, require operator resolution before promotion.
+### Zone Definitions
 
-6. **How to link candidates to source provenance?** Each candidate record carries a `provenance` array of source refs (message IDs, evidence packet IDs, mission IDs). Provenance chain built at cluster time, not retroactively.
+**Green zone — auto-promotion eligible (if toggle is ON):**
+- `green_zone_auto_promotion_enabled = true` in config
+- `green` in `enabled_zones`
+- destination is in `allowed_green_destinations`
+- provenance is present and non-empty
+- record is append-only or reversible
+- no identity, access control, doctrine, governance, code, external action, research truth, or public behavior changes
+- audit log entry written
+- default: OFF (no auto-promotion unless explicitly enabled)
 
-7. **How to prevent memory bloat?** consolidation_digest.jsonl is append-only but bounded. Implement max_entries (default 1000) with oldest-first archival. Archival is move to `.weslr/consolidation_digest.archive.jsonl`, not deletion.
+**Yellow zone — review only:**
+- operator review required before any promotion
+- creates review candidate in promotion queue
+- never auto-promotes without operator action
 
-8. **How to avoid promoting low-quality research claims?** V1 writes nothing to existing stores. Research claim promotion requires evidence strength scoring + contradiction check + operator review in V2+.
+**Red zone — approval only:**
+- explicit written approval required
+- never auto-promotes under any configuration
+- includes doctrine changes, identity assertions, governance signals, research truth claims
 
-9. **How to connect consolidation to mission memory and doctrine candidates?** Layer 4 candidate records with `proposed_destination: mission_store` or `proposed_destination: doctrine_candidate` appear in the digest. Operator reviews and promotes via separate governance step. Not automatic.
+### Proposed Config: `.weslr/consolidation_config.json`
 
-10. **Should consolidation digest be human-readable only or also machine-readable?** Both. `consolidation_digest.jsonl` is machine-readable (JSONL). The human-readable digest (Section 4 Phase 7) is printed to operator attention surface as plain text summary.
+```json
+{
+  "green_zone_auto_promotion_enabled": false,
+  "enabled_zones": ["green"],
+  "require_provenance": true,
+  "require_audit_log": true,
+  "allowed_green_destinations": [
+    "continuity_summary",
+    "attention_memory",
+    "digest_archive_marker",
+    "procedural_note"
+  ]
+}
+```
+
+- `green_zone_auto_promotion_enabled`: master kill-switch for consolidation auto-promotion (default: false)
+- `enabled_zones`: which zones may auto-apply (default: `["green"]`)
+- `require_provenance`: reject candidates without source provenance (default: true)
+- `require_audit_log`: write audit event for every promotion (default: true)
+- `allowed_green_destinations`: only these destinations may auto-promote in green zone (no entity_memory, no mission_store, no doctrine)
+
+### Clarifications
+
+- **V1**: promotion is disabled (`promotion_performed=False` for all candidates). No zone logic runs.
+- **V2**: may implement green-zone auto-promotion if `green_zone_auto_promotion_enabled = true` and all green-zone conditions are met.
+- **Yellow/red**: remain review-only/approval-only in V2+.
+- **Separate from weight refinement**: cognitive weight refinement uses `auto_refinement_config.py`; consolidation uses `.weslr/consolidation_config.json`. These are separate configs unless a future shared governance surface is explicitly designed.
+- **Config location**: `.weslr/consolidation_config.json` (operator-editable, not committed to repo)
 
 ---
 
@@ -472,16 +517,19 @@ Next: V1 read-only consolidation digest → consolidation_digest.jsonl
 
 | Item | Status |
 |------|--------|
-| **File created** | `weslr/docs/WESLR_CONSOLIDATION_LOOP_CHECKPOINT_V1.md` |
-| **Existing pieces summarized** | 10 files classified (source/partial/decay/timeline/entity/attention), `memory/.dreams/` identified as OpenClaw-only |
-| **V1 recommendation** | Read-only consolidation digest → `.weslr/consolidation_digest.jsonl`, cluster + score + classify only, zero promotion |
-| **Registry impact** | Checkpoint entry added — not accepted doctrine, pending V1 implementation + operator review |
-| **Open questions** | 10 open questions documented with recommendations |
+| **Checkpoint file** | `weslr/docs/WESLR_CONSOLIDATION_LOOP_CHECKPOINT_V1.md` |
+| **Existing pieces summarized** | 15 files classified (source/decay/timeline/entity/attention), `memory/.dreams/` identified as OpenClaw-only |
+| **V1 implemented** | Read-only consolidation digest → `.weslr/consolidation_digest.jsonl`, cluster + score + classify only, zero promotion |
+| **Promotion zones** | Defined in this checkpoint: green (auto if toggle ON), yellow (review), red (approval) — same pattern as cognitive weight zones |
+| **Config** | `.weslr/consolidation_config.json` (separate from `auto_refinement_config.py`) |
+| **Registry impact** | Checkpoint entry in WESLR_DOCTRINE_REGISTRY_V1.md |
+| **Open questions** | 10 documented in Section 9 |
 | **Runtime code changed** | None — design doc only |
 | **git status** | Clean — only untracked session artifacts, no staged changes |
 
 **Next steps (not yet authorized):**
-1. Implement `weslr/consolidation_loop.py` — collect + cluster + score + classify + write digest
-2. Implement `weslr/commands/consolidation_commands.py` — CLI: `consolidation run [--hours N] [--json]`
-3. Write `weslr/test_consolidation_loop.py` — full test coverage, temp-dir only
-4. Operator review + registry promotion from checkpoint → accepted doctrine
+1. Implement `weslr/consolidation_promotion.py` — zone classification, green-zone auto-promotion if toggle is ON, yellow/red review queue
+2. Add `consolidation promote <cluster_id> [--approve]` command
+3. Implement `consolidation_config.json` loading and `is_auto_enabled_for()` check
+4. Write `weslr/tests/test_consolidation_promotion.py` — full test coverage, temp-dir only
+5. Operator review + registry update from checkpoint → accepted doctrine
