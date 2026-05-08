@@ -92,26 +92,32 @@ Relevant areas include:
 
 ## Install and test status
 
-This repository is under active development. At the time of this README update, root-level Python packaging is not yet finalized: no canonical `pyproject.toml` or `setup.py` is declared here as the authoritative install path.
+This repository now has a root `pyproject.toml` packaging baseline for editable installs and smoke validation.
 
-Do not assume this command is currently valid from a fresh clone:
-
-```bash
-pip install -e .
-```
-
-Preferred current validation approach:
+Current baseline install:
 
 ```bash
-python -m pytest weslr/tests -v
+pip install -e .[test]
 ```
 
-Some tests and modules may require a specific local environment, optional dependencies, API keys, or local state. A future repo hardening step should add:
+Current minimal validation:
 
-- canonical `pyproject.toml`
-- dependency groups / test extras
-- GitHub Actions CI
-- clear distinction between unit tests, integration tests, local runtime tests, and deployment tests
+```bash
+python -m compileall -q weslr
+python - <<'PY'
+import weslr
+print("WESLR import smoke OK")
+PY
+```
+
+The first GitHub CI workflow is intentionally conservative. It verifies installability, compilation, and package import. Full test execution is deferred until dependency requirements, local state requirements, and integration/runtime assumptions are audited.
+
+Some tests and modules may require a specific local environment, optional dependencies, API keys, or local state. Future repo hardening should add:
+
+- audited runtime dependencies
+- dependency groups / test extras beyond the current minimal pytest extra
+- separate unit, integration, local runtime, Scatti/materials, and deployment test lanes
+- explicit GitHub Actions workflows for each lane
 
 ## Repository maturity warning
 
