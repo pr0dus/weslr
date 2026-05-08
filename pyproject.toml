@@ -30,11 +30,40 @@ classifiers = [
   "Private :: Do Not Upload"
 ]
 
+# Core WESLR runtime is intentionally standard-library-first for now.
+# Feature-specific dependencies are grouped below as optional extras.
 dependencies = []
 
 [project.optional-dependencies]
 test = [
   "pytest>=8"
+]
+
+search = [
+  "requests>=2.31"
+]
+
+files = [
+  "PyYAML>=6.0"
+]
+
+voice = [
+  "gTTS>=2.5"
+]
+
+voice-gpu = [
+  "TTS>=0.22"
+]
+
+science = [
+  "requests>=2.31"
+]
+
+all = [
+  "pytest>=8",
+  "requests>=2.31",
+  "PyYAML>=6.0",
+  "gTTS>=2.5"
 ]
 
 [tool.setuptools]
