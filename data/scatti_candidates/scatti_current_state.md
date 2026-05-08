@@ -1,7 +1,7 @@
 # SCATTI Current State — CaSc2TiO6 Pre-DFT
 
 **Date:** 2026-05-08  
-**Phase:** 1H (SearxNG evidence added)  
+**Phase:** 1J (Parent-motif construction attempt)  
 **Status:** Unvalidated computational candidate  
 
 ## Formula
@@ -16,11 +16,19 @@
 | 1B (initial) | 13 | 0 | 0 | 13 | 4 |
 | 1D (improved validation) | 13 | 0 | 2 | 7 | 4 |
 | 1E (manual builders) | 17 | 0 | 2 | 11 | 4 |
+| 1J (parent-motif) | 2 | 0 | 0 | 2 | 0 |
+
+**Phase 1J Results:**
+- SCATTI-PARENT-001: rejected (fatal Sc-O and O-O contacts)
+- SCATTI-PARENT-002: rejected (fatal density and Ti-O/O-O contacts)
 
 **Note:** Phase 1E introduced new manual builders. All exact-formula candidates either:
 - Have fatal distance violations (too-short bonds)
 - Fail coordination checks (Ti/Sc < 4 O neighbors)
 - Both
+
+**Phase 1J Notes:**
+Manual parent-motif coordinate construction did not produce a relaxation-ready CaSc2TiO6 structure. This is not evidence that CaSc2TiO6 is impossible; it means hand-built coordinates are insufficient and the next path should be ML/CSP or real external structure sourcing.
 
 ## Source Search Status
 
@@ -30,6 +38,7 @@
 | Related structures | **INCONCLUSIVE** | See detailed source status below |
 | External database | **INCONCLUSIVE** | No confirmed external hits |
 | SearxNG web search | **Evidence table created** | See `scatti_searxng_evidence_table.md` |
+| Manual parent-motif construction | **FAILED** | See Phase 1J results above |
 
 **Detailed Source Status:**
 - **Materials Project:** ✅ Accessible, but **API key missing** (cannot query)
@@ -53,7 +62,7 @@
 - **pre_relaxation_starting_geometry:** 2 candidates
   - SCATTI-LAYERED-001 (layered_oxide, density=0.84 g/cm³, min_distance=1.70 Å)
   - SCATTI-RANDOM-02 (random_ordered, density=2.73 g/cm³, min_distance=1.33 Å)
-- **downgraded:** 11 candidates (various distance/coordination violations)
+- **downgraded:** 13 candidates (various distance/coordination violations)
 - **reference_phase:** 4 (not CaSc2TiO6 candidates)
 
 ## Files Created
@@ -63,13 +72,15 @@
 | scatti_screening_summary.json | 27 KB | All candidate details |
 | scatti_structure_candidates.csv | 18 KB | Candidate table |
 | scatti_dft_queue.md | 233 B | Empty (no DFT-ready) |
-| scatti_claim_safe_report.md | 880 B | Validation summary |
+| scatti_claim_safe_report.md | 920 B | Validation summary |
 | scatti_external_prototype_search.* | 13 KB | Prototype search results |
 | scatti_structure_source_search.* | 5.1 KB | Updated source search results |
 | scatti_manual_verification_checklist.md | 2.9 KB | Manual verification guide |
 | scatti_current_state.md | This file | Current status summary |
 | **scatti_searxng_evidence_table.md** | **5.0 KB** | **SearxNG evidence table** |
 | **scatti_searxng_evidence_table.json** | **3.7 KB** | **SearxNG evidence JSON** |
+| **scatti_searxng_evidence_table.md.bak.20260508_1045** | **5.0 KB** | **Backup of evidence table** |
+| **scatti_searxng_evidence_table.json.bak.20260508_1045** | **3.7 KB** | **Backup of evidence JSON** |
 
 ## Git Status
 
@@ -86,7 +97,9 @@ All SCATTI artifacts committed at commit `3a36be6`.
 **Option B:** Perform manual literature search (Google Scholar, Semantic Scholar, SpringerMaterials)  
 **Option C:** Use SearxNG findings (Ca2ScTiO6, Sc2TiO5, CaSc2O4, Sc-doped CaTiO3) as parent inspiration  
 **Option D:** Retry OQMD later (HTTP 502 may be transient)  
-**Option E:** Use crystal structure prediction (CSP) or ML pre-relaxation only after database search completes
+**Option E:** Use crystal structure prediction (CSP) or ML pre-relaxation only after database search completes  
+
+**Option F:** Assess ML/CSP tool availability and installability (CHGNet, MatGL, ASE relaxers) before committing to long calculations
 
 ## Scientific Status
 
@@ -94,6 +107,8 @@ All SCATTI artifacts committed at commit `3a36be6`.
 - **0 production DFT-ready structures** (all candidates fail validation)
 - **2 pre-relaxation starting geometries** (require ML/force-field cleanup)
 - **External source search inconclusive** (multiple sources accessible but no confirmed hits)
+- **Manual parent-motif construction failed** (hand-built coordinates insufficient)
 - **SearxNG web search available** (created evidence table with related parent structures)
 - **No Quantum ESPRESSO installed**
 - **No DFT run performed**
+

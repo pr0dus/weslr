@@ -575,6 +575,122 @@ def parent_motif_adapted_Ca2ScTiO6(target_formula: str = "CaSc2TiO6"):
     }
 
 
+def build_sc_doped_catios_parent_candidate_scaled(target_formula: str = "CaSc2TiO6"):
+    """
+    Build SCATTI-PARENT-002 as scaled/cleaned variant of SCATTI-PARENT-001.
+    
+    Same parent clues, but with increased cell volume to fix O-O short contact.
+    Target density: 2.0-6.0 g/cm³
+    """
+    a = 7.0  # Larger cell to improve all distances
+    c = 16.0
+    lattice = Lattice.from_parameters(a, a, c, 90, 90, 90)
+    
+    species = [Species("Ca"), Species("Sc"), Species("Sc"), Species("Ti")]
+    species.extend([Species("O") for _ in range(6)])
+    
+    coords = [
+        [0.0, 0.0, 0.0],      # Ca (in layer)
+        [0.25, 0.25, 0.6],    # Sc1 (in framework)
+        [0.75, 0.75, 0.6],    # Sc2 (in framework)
+        [0.5, 0.5, 0.35],     # Ti (in framework)
+        [0.15, 0.15, 0.5],    # O1
+        [0.85, 0.85, 0.5],    # O2
+        [0.15, 0.85, 0.7],    # O3
+        [0.85, 0.15, 0.7],    # O4
+        [0.35, 0.35, 0.4],    # O5
+        [0.65, 0.65, 0.4],    # O6
+    ]
+    
+    structure = Structure(lattice, species, coords)
+    formula = structure.composition.reduced_formula
+    
+    if formula != target_formula:
+        return None
+    
+    return {
+        "id": "SCATTI-PARENT-002",
+        "name": "Sc-doped CaTiO3 Parent Motif (Scaled)",
+        "formula": formula,
+        "candidate_type": "scatti_candidate",
+        "structure_family": "sc_doped_catios_parent_motif_scaled",
+        "prototype_source": "theoretical_construct_from_related_parent_clues",
+        "experimental_structure": False,
+        "requires_relaxation": True,
+        "parent_of": "SCATTI-PARENT-001",
+        "cleanup_reason": "remove Sc-O short contact and improve density",
+        "dft_ready": False,
+        "reason": "geometry check pending...",
+        "pymatgen": structure,
+        "metadata": {
+            "description": "Sc-doped CaTiO3-derived ordered perovskite (scaled variant)",
+            "parent_clues_used": ["Sc-doped CaTiO3", "Ca2ScTiO6", "Sc2TiO5", "CaSc2O4"],
+            "parent_evidence_limit": "related parent clues only, not exact CaSc2TiO6 evidence"
+        }
+    }
+
+
+def build_sc_doped_catios_parent_candidate(target_formula: str = "CaSc2TiO6"):
+    """
+    Build one exact CaSc2TiO6 theoretical starting geometry from Sc-doped CaTiO3 parent motif.
+    
+    Parent clues used:
+    - Sc-doped CaTiO3: Sc/Ti ordering in perovskite
+    - Ca2ScTiO6: Double perovskite ordering inspiration
+    - Sc2TiO5: Sc/Ti/O framework reference
+    - CaSc2O4: Ca/Sc-O coordination reference
+    
+    Design: Layered structure with clear separation:
+    - Ca layer at z=0
+    - Sc/Ti-O framework at z=0.5
+    - Avoid O-O overlaps by spacing
+    """
+    a = 5.5
+    c = 12.0
+    lattice = Lattice.from_parameters(a, a, c, 90, 90, 90)
+    
+    species = [Species("Ca"), Species("Sc"), Species("Sc"), Species("Ti")]
+    species.extend([Species("O") for _ in range(6)])
+    
+    coords = [
+        [0.0, 0.0, 0.0],      # Ca (in layer, far from O)
+        [0.25, 0.25, 0.5],    # Sc1 (in framework)
+        [0.75, 0.75, 0.5],    # Sc2 (in framework)
+        [0.5, 0.5, 0.25],     # Ti (in framework)
+        [0.1, 0.1, 0.3],      # O1
+        [0.9, 0.9, 0.3],      # O2
+        [0.1, 0.9, 0.7],      # O3
+        [0.9, 0.1, 0.7],      # O4
+        [0.3, 0.3, 0.4],      # O5
+        [0.7, 0.7, 0.4],      # O6
+    ]
+    
+    structure = Structure(lattice, species, coords)
+    formula = structure.composition.reduced_formula
+    
+    if formula != target_formula:
+        return None
+    
+    return {
+        "id": "SCATTI-PARENT-001",
+        "name": "Sc-doped CaTiO3 Parent Motif",
+        "formula": formula,
+        "candidate_type": "scatti_candidate",
+        "structure_family": "sc_doped_catios_parent_motif",
+        "prototype_source": "theoretical_construct_from_related_parent_clues",
+        "experimental_structure": False,
+        "requires_relaxation": True,
+        "dft_ready": False,
+        "reason": "geometry check pending...",
+        "pymatgen": structure,
+        "metadata": {
+            "description": "Sc-doped CaTiO3-derived ordered perovskite",
+            "parent_clues_used": ["Sc-doped CaTiO3", "Ca2ScTiO6", "Sc2TiO5", "CaSc2O4"],
+            "parent_evidence_limit": "related parent clues only, not exact CaSc2TiO6 evidence"
+        }
+    }
+
+
 def expanded_cell_random_sane_candidates(target_formula: str = "CaSc2TiO6", n_candidates: int = 5):
     """Generate deterministic random candidates in larger cells."""
     seed(42)
@@ -731,6 +847,14 @@ def create_material_library(target_formula: str = "CaSc2TiO6"):
         if lib:
             library.append(lib)
     
+    # Phase 1J: Focus builder from parent clues
+    lib = build_sc_doped_catios_parent_candidate(target_formula)
+    if lib:
+        library.append(lib)
+    lib = build_sc_doped_catios_parent_candidate_scaled(target_formula)
+    if lib:
+        library.append(lib)
+    
     # Phase 1D builders (kept for comparison)
     for builder in [volume_scaled_layered_octrahedral_candidate, cation_ordered_oxide_framework_candidate,
                     parent_motif_adapted_candidate_CaTiO3, parent_motif_adapted_Ca2ScTiO6]:
@@ -776,11 +900,14 @@ def validate_builder_output(name, candidate):
 
 
 def export_structure_files(results_dir, screening: dict, target_formula: str = "CaSc2TiO6"):
-    """Export CIF/POSCAR files for exact-formula candidates."""
+    """Export CIF/POSCAR files for exact-formula candidates with valid pymatgen structures."""
     structures_dir = results_dir / "structures"
     structures_dir.mkdir(parents=True, exist_ok=True)
     
-    for r in screening.get("results", []):
+    # Use "results" array from screening (run_screening creates this)
+    results = screening.get("results", [])
+    
+    for r in results:
         if r.get("candidate_type") != "scatti_candidate":
             continue
         
@@ -819,6 +946,12 @@ def run_screening(library: list, target_formula: str = "CaSc2TiO6") -> dict:
         warnings = []
         dft_ready = False
         reason = "checking..."
+        
+        # Always keep pymatgen if available for export
+        if pymat is None:
+            pymat_for_export = None
+        else:
+            pymat_for_export = pymat
         
         if candidate_type == "reference_phase":
             dft_ready = False
@@ -884,7 +1017,8 @@ def run_screening(library: list, target_formula: str = "CaSc2TiO6") -> dict:
             "reason": reason, "ase_valid": ase_valid, "pymatgen_valid": pymatgen_valid,
             "atom_count": atom_count, "density": density, "min_distance": min_dist,
             "source": source, "validation_warnings": warnings,
-            "next_action": "dft" if dft_ready else "revise"
+            "next_action": "dft" if dft_ready else "revise",
+            "pymatgen": pymat_for_export  # Always include pymatgen for export
         }
         results.append(candidate)
         summary["total_candidates"] += 1
@@ -898,8 +1032,15 @@ def write_outputs(results_dir, screening: dict, target_formula: str = "CaSc2TiO6
     results = screening["results"]
     summary["audit_at"] = datetime.now(timezone.utc).isoformat()
     
-    candidates = []
+    # Filter out pymatgen from results for CSV export
+    csv_results = []
     for r in results:
+        r_copy = dict(r)
+        r_copy.pop("pymatgen", None)
+        csv_results.append(r_copy)
+    
+    candidates = []
+    for r in csv_results:
         density_note = None
         if r.get("candidate_type") == "reference_phase":
             if r.get("density") is not None and r.get("density", 0) < 2.0:
@@ -930,7 +1071,7 @@ def write_outputs(results_dir, screening: dict, target_formula: str = "CaSc2TiO6
             "source", "validation_warnings", "next_action"
         ])
         writer.writeheader()
-        writer.writerows(results)
+        writer.writerows(csv_results)
     
     with open(results_dir / "scatti_dft_queue.md", "w") as f:
         f.write("# SCATTI DFT Queue\n\n")
