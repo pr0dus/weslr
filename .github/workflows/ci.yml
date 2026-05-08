@@ -1,0 +1,62 @@
+name: WESLR minimal CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  python-smoke:
+    name: Python smoke checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with test extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[test]
+
+      - name: Compile WESLR package
+        run: |
+          python -m compileall -q weslr
+
+      - name: Import core package
+        run: |
+          python - <<'PY'
+          import importlib
+          importlib.import_module("weslr")
+          print("WESLR import smoke OK")
+          PY
+
+      - name: Run safe core tests if present
+        run: |
+          set -e
+          TESTS=""
+          for test_file in \
+            weslr/test_channel_identity_binding.py \
+            weslr/test_entity_memory.py \
+            weslr/test_relationship_depth.py \
+            weslr/test_relationship_observation_capture.py \
+            weslr/test_memory_capture.py \
+            weslr/tests/test_consolidation_loop.py \
+            weslr/tests/test_consolidation_promotion.py
+          do
+            if [ -f "$test_file" ]; then
+              TESTS="$TESTS $test_file"
+            fi
+          done
+
+          if [ -n "$TESTS" ]; then
+            python -m pytest $TESTS
+          else
+            echo "No selected safe core tests found; smoke checks completed."
+          fi
