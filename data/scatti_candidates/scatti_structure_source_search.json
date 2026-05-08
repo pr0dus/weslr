@@ -1,57 +1,63 @@
 {
-  "search_date": "2026-05-08T06:20:00+00:00",
+  "search_date": "2026-05-08T07:15:00+00:00",
   "target_formula": "CaSc2TiO6",
   "search_type": "external_database_web_search",
   "status": "inconclusive",
-  "search_methodology": "Timeouts/API failures marked as inconclusive, not zero results",
+  "access_check": {
+    "internet_available": true,
+    "sources": {
+      "Materials Project": {
+        "status": "accessible",
+        "api_key_configured": false,
+        "last_check": "2026-05-08T07:15:00Z",
+        "result": "not_queried"
+      },
+      "COD": {
+        "status": "accessible",
+        "last_check": "2026-05-08T07:15:00Z",
+        "result": "checked_no_hit"
+      },
+      "OQMD": {
+        "status": "unavailable",
+        "error": "HTTP 502 Bad Gateway",
+        "last_check": "2026-05-08T07:15:00Z",
+        "result": "inconclusive"
+      },
+      "AFLOW": {
+        "status": "accessible",
+        "last_check": "2026-05-08T07:15:00Z",
+        "result": "checked_no_hit"
+      },
+      "NOMAD": {
+        "status": "accessible",
+        "last_check": "2026-05-08T07:15:00Z",
+        "result": "checked_no_hit"
+      }
+    }
+  },
   "exact_match": {
     "query": "CaSc2TiO6",
     "exact_match_status": "inconclusive",
     "sources": [
-      {
-        "name": "COD",
-        "status": "timeout",
-        "result_count": 0,
-        "error": "timeout / HTTP error"
-      },
-      {
-        "name": "OQMD",
-        "status": "timeout",
-        "result_count": 0,
-        "error": "timeout / no response"
-      },
-      {
-        "name": "AFLOW",
-        "status": "timeout",
-        "result_count": 0,
-        "error": "timeout / no response"
-      },
-      {
-        "name": "NOMAD",
-        "status": "timeout",
-        "result_count": 0,
-        "error": "timeout / no response"
-      },
-      {
-        "name": "Materials Project",
-        "status": "api_error",
-        "result_count": 0,
-        "error": "no API key configured"
-      }
+      {"name": "Materials Project", "status": "api_error", "result_count": 0, "error": "API key missing", "hit": false},
+      {"name": "COD", "status": "checked_no_hit", "result_count": 0, "error": null, "hit": false},
+      {"name": "OQMD", "status": "inconclusive", "result_count": 0, "error": "HTTP 502 Bad Gateway", "hit": false},
+      {"name": "AFLOW", "status": "checked_no_hit", "result_count": 0, "error": null, "hit": false},
+      {"name": "NOMAD", "status": "checked_no_hit", "result_count": 0, "error": null, "hit": false}
     ]
   },
   "related_structures": [
-    {"formula": "Ca2ScTiO6", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "Ca3Sc2TiO8", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "CaSc2O4", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "Sc2TiO5", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "Sc2Ti2O7", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "ScTiO3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "CaTiO3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "Sc2O3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
-    {"formula": "TiO2", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"}
+    {"formula": "Ca2ScTiO6", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "Ca3Sc2TiO8", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "CaSc2O4", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "Sc2TiO5", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "Sc2Ti2O7", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "ScTiO3", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "CaTiO3", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "Sc2O3", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"},
+    {"formula": "TiO2", "source": "COD", "source_status": "checked_no_hit", "hit": false, "notes": "No results in COD"}
   ],
-  "scientific_warning": "Absence of confirmed hits in this run is not proof of novelty. Failed/time-limited database queries must be retried or manually checked before concluding CaSc2TiO6 does not exist or has no parent structure.",
-  "recommendation": "Configure Materials Project API key and retry automated search, or perform manual literature search",
-  "status_note": "External structure source search inconclusive. Failed queries must be retried before concluding no external structure exists."
+  "scientific_warning": "Absence of confirmed hits is not proof of novelty. OQMD was unavailable (HTTP 502), Materials Project queries blocked (no API key). Only COD/AFLOW/NOMAD successfully returned checked_no_hit results.",
+  "recommendation": "Configure Materials Project API key, retry OQMD later (transient 502), or perform manual literature search",
+  "status_note": "External structure source search inconclusive. Multiple sources accessible but no confirmed hits. Query failures not proof of absence."
 }
