@@ -148,6 +148,7 @@ def extract_triples_from_summary(
     if not summary_text or not isinstance(summary_text, str):
         return []
 
+    triples: List[Dict[str, str]] = []
     for pid, pat_re, pred in _FALLBACK_PATTERNS:
         m = re.match(pat_re, summary_text.strip(), re.IGNORECASE)
         if m:
