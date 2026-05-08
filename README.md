@@ -1,137 +1,141 @@
-# Weslr TIA Portal V20 Plugin
+# WESLR — Continuity-First Entity Intelligence Platform
 
-**Hinweis:** Dies ist ein separates Repository für das Weslr-Plugin. Es ist nicht das Haupt-Repository von Weslr.
+WESLR is a continuity-first intelligence platform for structured reasoning over people, projects, entities, evidence, memory, proposals, and domain-specific workflows.
 
-## Ziel des Plugins
+This repository is the main WESLR development repository. It is no longer only a Siemens/TIA plugin repository. The Siemens/TIA work remains important, but it is now one product track inside the broader WESLR platform.
 
-Das Plugin extrahiert Engineering-Daten aus TIA Portal V20-Projekten (Siemens Automation & Drives) und stellt sie in strukturierter Form für die spätere Anbindung an das Weslr-System bereit.
+## Current product identity
 
-## MVP-Umfang
+WESLR is being developed as a governed intelligence system with these core principles:
 
-- Extraktion von Rohdaten aus TIA Portal V20-Projekten unter Windows
-- Export in standardisierte JSON-Formate
-- Unterstützung von: PLCs, CPUs, Devices, Tags, Alarme, Netzwerkkonfiguration
-- Speicherung als Normalized Graph (Zielformat) und Raw Export (Quellformat)
+- continuity over isolated chat turns
+- structured state over prompt-only memory
+- deterministic authority layers with model assistance where useful
+- explicit governance for system-changing actions
+- safe, inspectable memory and relationship modeling
+- domain expansion through bounded modules and evidence-backed workflows
 
-## Nicht-Ziele (MVP)
+WESLR should not be treated as a normal chatbot or an uncontrolled autonomous agent. The intended direction is a high-trust reasoning platform that can remember, compare, inspect, propose, and help operate across long-running work.
 
-- Keine direkte Verarbeitung von nicht-Windows-Plattformen
-- Keine eigene Datenbank oder Speicherung außer JSON-Dateien
-- Keine UI-Implementierung (nur CLI/Plugin-Interface)
-- Keine Echtzeit-Überwachung
-- Keine Änderung des ursprünglichen TIA-Projekts
+## Current state map
 
-## Grobe Architektur
+### 1. Core WESLR runtime
 
+The core runtime contains the main reasoning, memory, identity, relationship, proposal, and consolidation layers.
+
+Key areas include:
+
+- meaning-vector response path
+- channel identity binding
+- entity-scoped memory namespaces
+- relationship depth and relationship observation capture
+- safe memory capture
+- cognitive weight guardrails
+- consolidation loop and promotion governance
+- interpretation, dialogue, continuity, semantic memory, research, and integration modules
+
+Primary documentation:
+
+- `weslr/README.md`
+- `ARCHITECTURE.md`
+- `weslr/docs/WESLR_DOCTRINE_REGISTRY_V1.md`
+
+### 2. WESLR Public Surface
+
+The public surface is the user-facing and website-facing layer of WESLR.
+
+Current repo areas include:
+
+- `front-door/`
+- `weslr-ui/`
+- `dashboard/satellite/`
+- `weslr-test-deployment/`
+
+This area is intended to become the canonical public face of WESLR, including website, demo surfaces, operator-friendly views, and future product presentation.
+
+### 3. Industrial / Siemens TIA track
+
+The Siemens/TIA work is the industrial MVP track. It focuses on extracting engineering data from Siemens TIA Portal projects and mapping it into WESLR-compatible entity structures.
+
+Canonical documentation:
+
+- `docs/tia-bridge/README.md`
+- `normalizer/siemens_to_weslr/README.md`
+- `schemas/`
+- `examples/`
+
+This track is important commercially, but it is not the whole WESLR product.
+
+### 4. Frontier science / Scatti track
+
+WESLR also contains frontier science and materials-discovery tooling, including the unified matter generator and novelty-checking workflows.
+
+Relevant areas include:
+
+- `weslr/modules/unified_matter_generator.py`
+- `weslr/docs/WESLR_PHASE_8.5_UNIFIED_MATTER_GENERATOR_DOCTRINE.md`
+- `weslr/docs/unified matter generator.md`
+- frontier proposal and novelty-checking commands documented in `weslr/README.md`
+
+This track includes candidate-generation workflows such as the CaSc2TiO6 / "Scatti" materials-discovery line. These outputs are screening candidates for validation, not final scientific proof.
+
+### 5. Deployment / runtime forge
+
+Deployment and runtime work covers staging, test deployments, self-hosted or local environments, and future Ubuntu/OCW deployment paths.
+
+Relevant areas include:
+
+- `weslr-test-deployment/`
+- `dashboard/`
+- service/deployment documentation where present
+- future GitHub Actions or self-hosted runner workflows
+
+## Install and test status
+
+This repository is under active development. At the time of this README update, root-level Python packaging is not yet finalized: no canonical `pyproject.toml` or `setup.py` is declared here as the authoritative install path.
+
+Do not assume this command is currently valid from a fresh clone:
+
+```bash
+pip install -e .
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    TIA Portal V20 (Windows)                 │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              TIA-Collector (Windows, In-Process)            │
-│  - Liest Rohdaten aus TIA-Objekten                          │
-│  - Extrahiert Engineering-Objekte                           │
-│  - Validiert Konsistenz                                     │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Raw Export (tia_export.json)                │
-│  - Read-only Rohdaten                                       │
-│  - Alle Engineering-Objekte                                 │
-│  - Collector-Diagnose                                       │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Normalizer (Python, Windows)                   │
-│  - Transformiert Rohdaten zu Normalized Graph               │
-│  -映射t zu Weslr Entity-Modell                              │
-│  - Validiert gegen Schema                                   │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Normalized Graph (normalized_graph.json)       │
-│  - Weslr-konformes Format                                   │
-│  - Entity-Graph mit Beziehungen                             │
-│  - Verweist auf Weslr-Main-Repo (zukünftig)                │
-└─────────────────────────────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Weslr-Main-Repository (später)              │
-│  - Entity Intelligence System                                │
-│  - Bewusstseins-Signaturen                                  │
-│  - Self-Model & Valence System                               │
-└─────────────────────────────────────────────────────────────┘
+
+Preferred current validation approach:
+
+```bash
+python -m pytest weslr/tests -v
 ```
 
-## Repo-Struktur
+Some tests and modules may require a specific local environment, optional dependencies, API keys, or local state. A future repo hardening step should add:
 
-```
-.
-├── schemas/
-│   ├── tia_export.schema.json        # Roh-Export-Schema
-│   └── normalized_graph.schema.json # Ziel-Graph-Schema
-├── examples/
-│   ├── sample_tia_export.json        # Beispieldaten (Rohexport)
-│   └── sample_normalized_graph.json # Beispieldaten (Normalisiert)
-├── plugins/
-│   └── tia_portal_v20.py            # Haupt-Plugin-Module
-├── normalizer/
-│   └── normalizer.py                # Transformationslogik
-├── src/
-│   ├── collector/                   # Windows-spezifische Collector-Logik
-│   └── validators/                  # Schema-Validatoren
-├── tests/
-│   └── test_normalizer.py           # Unit-Tests
-└── README.md
-```
+- canonical `pyproject.toml`
+- dependency groups / test extras
+- GitHub Actions CI
+- clear distinction between unit tests, integration tests, local runtime tests, and deployment tests
 
-## Datenfluss
+## Repository maturity warning
 
-1. **TIA-Collector** liest das geöffnete TIA Portal V20-Projekt (Windows-only)
-2. **Raw Export** wird erzeugt (JSON, read-only)
-3. **Normalizer** transformiert Raw Export → Normalized Graph
-4. **Validierung** gegen Schemas (tia_export.schema.json, normalized_graph.schema.json)
-5. **Output** als JSON-Datei für spätere Weslr-Anbindung
+WESLR contains many implemented internal layers, but not every layer is productized or exposed through a polished UI. The repo currently mixes:
 
-## Sicherheitsgrenzen
+- core runtime code
+- experimental reasoning modules
+- industrial MVP assets
+- public surface prototypes
+- scientific discovery workflows
+- docs, doctrine, and historical memory artifacts
 
-- Das Plugin liest **nur** Engineering-Daten (keine Steuerungsdaten)
-- Es ändert **nicht** das Original-TIA-Projekt
-- Keine Verbindung zu I/O-Systemen oder SPS
-- Alle Daten bleiben lokal auf dem Entwicklungs-PC
-- Keine externen Netzwerkverbindungen (außer spätere Weslr-Anbindung)
+For development, prefer small, bounded, reversible changes with explicit tests and clear scope.
 
-## Geplante spätere Weslr-Anbindung
+## Development rule of thumb
 
-Das Plugin exportiert Daten in ein Format, das dem Weslr-Entity-Modell entspricht.
+Before changing behavior:
 
-Spätere Schritte (nicht im MVP enthalten):
+1. Identify the affected layer.
+2. Check whether the layer is governed, memory-related, identity-related, public-facing, or deployment-related.
+3. Prefer additive changes.
+4. Preserve auditability and rollback paths.
+5. Do not silently change identity, memory, governance, or public behavior.
 
-- Automatischer Import der Normalized Graph-Dateien in das Weslr-Main-Repo
-- Integration in Weslr's Entity Graph
-- Erstellung von Bewusstseins-Signaturen basierend auf Engineering-Daten
-- Self-Model-Erweiterung um Automatisierungs-Know-how
+## Historical note
 
-## Aktueller Stand
-
-### Bereits erstellt
-
-- `schemas/tia_export.schema.json` — Roh-Export-Schema für TIA Portal V20
-- `schemas/normalized_graph.schema.json` — Ziel-Graph-Schema (Weslr-konform)
-- `examples/sample_tia_export.json` — Beispiel-Roh-Export mit Metadaten, PLC, CPU, Tag, Alarm, Topologie
-- `examples/sample_normalized_graph.json` — Beispiel-Normalized Graph mit Entity-Beziehungen
-
-### Als Nächstes implementieren
-
-- `plugins/tia_portal_v20.py` — Windows-Collector-Plugin (TIA Portal V20 Integration)
-- `normalizer/normalizer.py` — Transformation Raw Export → Normalized Graph
-- `src/collector/` — Windows-spezifische TIA-Reader-Implementierung
-- `tests/test_normalizer.py` — Unit-Tests für Normalizer
-
----
+Earlier versions of this README described the repository as a TIA Portal V20 plugin. That is now treated as historical and has been moved into the industrial/TIA product track documentation.
