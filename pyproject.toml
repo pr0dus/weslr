@@ -59,6 +59,11 @@ science = [
   "requests>=2.31"
 ]
 
+release = [
+  "requests>=2.31",
+  "numpy>=1.26"
+]
+
 all = [
   "pytest>=8",
   "requests>=2.31",
