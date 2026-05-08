@@ -1,0 +1,12 @@
+{
+  "experiment": "scatti_mp_parent_experiment",
+  "date": "2026-05-08T14:58:35.761450+00:00",
+  "target_formula": "CaSc2TiO6",
+  "parents_loaded": [
+    "mp-753802_Sc2Ti2O7",
+    "mp-780402_Sc2Ti2O7",
+    "mp-4056_CaSc2O4",
+    "mp-753401_Sc2TiO5"
+  ],
+  "results": []
+}
