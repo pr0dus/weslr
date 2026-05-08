@@ -1,0 +1,174 @@
+{
+  "search_date": "2026-05-08T07:25:00+00:00",
+  "target_formula": "CaSc2TiO6",
+  "search_type": "local_heuristic_prototype_search",
+  "capabilities": {
+    "materials_project_api": false,
+    "local_cif_files": 0,
+    "local_poscar_files": 0,
+    "pymatgen_structure_matcher": true,
+    "pymatgen_built_in_prototypes": true,
+    "icsd_queried": false,
+    "cod_queried": false,
+    "oqmd_queried": false,
+    "aflow_queried": false,
+    "nomad_queried": false,
+    "literature_search_performed": false
+  },
+  "exact_match": {
+    "found": false,
+    "note": "No exact CaSc2TiO6 structure was found in local resources.",
+    "where_searched": "pymatgen StructureMatcher, built-in prototype library",
+    "reason": "CaSc2TiO6 is not a standard prototype in pymatgen's built-in library. Requires custom construction as ordered perovskite."
+  },
+  "source_limitation": "No Materials Project, ICSD, COD, OQMD, AFLOW, NOMAD, or literature database was queried in this phase. All findings based on local pymatgen prototype generation and heuristic comparison.",
+  "related_prototypes": [
+    {
+      "formula": "CaTiO3",
+      "source": "Perovskite",
+      "relation": "exact_ca_ti_o_system",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Standard perovskite; useful for Ca/O/Ti coordination only. No Sc present.",
+      "lattice_cubic_approx": 3.85,
+      "spacegroup": 221
+    },
+    {
+      "formula": "ScTiO3",
+      "source": "Perovskite",
+      "relation": "sc_ti_oxide_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Sc/Ti ordering already present; useful for B-site ordering ideas. No Ca present.",
+      "lattice_cubic_approx": 3.80,
+      "spacegroup": 221
+    },
+    {
+      "formula": "CaSc2O4",
+      "source": "Layered Oxide",
+      "relation": "ca_sc_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Ca-Sc-O framework; useful for Sc-O and Ca-O coordination insights. No Ti present.",
+      "lattice_approx": "tetragonal/monoclinic",
+      "spacegroup": null
+    },
+    {
+      "formula": "Sc2O3",
+      "source": "Bixbyite",
+      "relation": "sc_oxide_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Reference phase; Sc-O bonding reference only. No Ca or Ti present.",
+      "lattice_cubic_approx": 10.0,
+      "spacegroup": 204
+    },
+    {
+      "formula": "TiO2",
+      "source": "Rutile",
+      "relation": "ti_oxide_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Reference phase; Ti-O bonding reference only. No Ca or Sc present.",
+      "lattice_approx": "tetragonal",
+      "spacegroup": 136
+    },
+    {
+      "formula": "Ca2ScTiO6",
+      "source": "Double Perovskite",
+      "relation": "related_double_perovskite_stoichiometry",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Related Ca-Sc-Ti-O oxide framework; useful for ordering ideas, but Ca:Sc ratio differs (2:1 vs target 1:2). Exact stoichiometry mismatch.",
+      "lattice_cubic_approx": 3.85,
+      "spacegroup": 221
+    },
+    {
+      "formula": "Ca3Sc2TiO8",
+      "source": "Layer Perovskite",
+      "relation": "related_layered_perovskite",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Layered perovskite variant; useful for layered motif ideas. Stoichiometry differs from target.",
+      "lattice_approx": "tetragonal",
+      "spacegroup": null
+    },
+    {
+      "formula": "Sc2TiO5",
+      "source": "Langbeinite",
+      "relation": "sc_ti_oxide_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Better Sc-Ti-O framework candidate than generic Sc2O3. No Ca present.",
+      "lattice_approx": null,
+      "spacegroup": null
+    },
+    {
+      "formula": "Sc2Ti2O7",
+      "source": "Pyrochlore",
+      "relation": "sc_ti_oxide_framework",
+      "exact_match": false,
+      "useful_as_parent": true,
+      "reason": "Better Sc-Ti-O framework candidate than generic oxides. No Ca present.",
+      "lattice_approx": null,
+      "spacegroup": null
+    },
+    {
+      "formula": "Al2O3",
+      "source": "Corundum",
+      "relation": "o_framework_reference",
+      "exact_match": false,
+      "useful_as_parent": false,
+      "reason": "Oxygen sublattice reference only; not structurally compatible with perovskite framework.",
+      "lattice_approx": "trigonal",
+      "spacegroup": 167
+    }
+  ],
+  "recommended_parents": [
+    {
+      "formula": "CaTiO3",
+      "prototype": "perovskite",
+      "confidence": "high",
+      "rationale": "Primary Ca/Ti/O coordination reference. Use for Ca/O framework logic only. No Sc present for direct template.",
+      "parent_of": "ordered_perovskite"
+    },
+    {
+      "formula": "Ca2ScTiO6",
+      "prototype": "double_perovskite",
+      "confidence": "medium",
+      "rationale": "Ca/Sc ordering inspiration (Ca on A-sites). Ca:Sc ratio differs (2:1 vs 1:2). Not exact formula match.",
+      "parent_of": "ordered_perovskite"
+    },
+    {
+      "formula": "Ca3Sc2TiO8",
+      "prototype": "layer_perovskite",
+      "confidence": "medium",
+      "rationale": "Layered motif inspiration. Stoichiometry differs (Ca:Sc:Ti = 3:2:1 vs 1:2:1).",
+      "parent_of": "ordered_perovskite"
+    },
+    {
+      "formula": "CaSc2O4",
+      "prototype": "layered_oxide",
+      "confidence": "medium",
+      "rationale": "Ca-Sc-O coordination reference. No Ti present. Useful for Sc-O bonding insights.",
+      "parent_of": "ordered_perovskite"
+    },
+    {
+      "formula": "Sc2TiO5",
+      "prototype": "langbeinite",
+      "confidence": "low",
+      "rationale": "Sc-Ti-O framework inspiration. No Ca present. Better than Sc2O3/TiO2 alone.",
+      "parent_of": "ordered_perovskite"
+    }
+  ],
+  "warning": "Parent prototype usefulness does not imply CaSc2TiO6 is stable or structurally compatible. All prototypes serve as inspiration for theoretical construct generation only.",
+  "phase_1d_audit": {
+    "candidates_generated": 13,
+    "dft_ready_production": 0,
+    "pre_relaxation_only": 2,
+    "downgraded": 7,
+    "audit_decision": "No candidate passes all strict validation criteria. Theoretical candidates require ML/force-field or manual geometry cleanup before DFT."
+  },
+  "next_step": "Option B: Manually search external databases/literature or use crystal-structure prediction/optimization tool for better parent prototypes.",
+  "status": "Audit complete. No candidate suitable for production DFT without pre-relaxation."
+}

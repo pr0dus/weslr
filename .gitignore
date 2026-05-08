@@ -103,3 +103,11 @@ entity_graph.json
 
 # Open question registry (runtime state)
 open_question_registry.json
+
+# SCATTI runtime artifacts (keep local only)
+.venv-scatti/
+scatti_*.pyc
+scatti_time_state.json
+
+# Backup files (all directories)
+*.bak.*

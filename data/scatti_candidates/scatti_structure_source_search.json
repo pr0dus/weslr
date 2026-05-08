@@ -1,0 +1,57 @@
+{
+  "search_date": "2026-05-08T06:20:00+00:00",
+  "target_formula": "CaSc2TiO6",
+  "search_type": "external_database_web_search",
+  "status": "inconclusive",
+  "search_methodology": "Timeouts/API failures marked as inconclusive, not zero results",
+  "exact_match": {
+    "query": "CaSc2TiO6",
+    "exact_match_status": "inconclusive",
+    "sources": [
+      {
+        "name": "COD",
+        "status": "timeout",
+        "result_count": 0,
+        "error": "timeout / HTTP error"
+      },
+      {
+        "name": "OQMD",
+        "status": "timeout",
+        "result_count": 0,
+        "error": "timeout / no response"
+      },
+      {
+        "name": "AFLOW",
+        "status": "timeout",
+        "result_count": 0,
+        "error": "timeout / no response"
+      },
+      {
+        "name": "NOMAD",
+        "status": "timeout",
+        "result_count": 0,
+        "error": "timeout / no response"
+      },
+      {
+        "name": "Materials Project",
+        "status": "api_error",
+        "result_count": 0,
+        "error": "no API key configured"
+      }
+    ]
+  },
+  "related_structures": [
+    {"formula": "Ca2ScTiO6", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "Ca3Sc2TiO8", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "CaSc2O4", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "Sc2TiO5", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "Sc2Ti2O7", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "ScTiO3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "CaTiO3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "Sc2O3", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"},
+    {"formula": "TiO2", "source": "N/A", "source_status": "inconclusive", "reason": "timeout"}
+  ],
+  "scientific_warning": "Absence of confirmed hits in this run is not proof of novelty. Failed/time-limited database queries must be retried or manually checked before concluding CaSc2TiO6 does not exist or has no parent structure.",
+  "recommendation": "Configure Materials Project API key and retry automated search, or perform manual literature search",
+  "status_note": "External structure source search inconclusive. Failed queries must be retried before concluding no external structure exists."
+}
