@@ -1,0 +1,102 @@
+{
+  "search_date": "2026-05-08T13:22:00Z",
+  "target_formula": "CaSc2TiO6",
+  "search_limits": {
+    "time_minutes": 5,
+    "results_per_query": 5
+  },
+  "sources_checked": {
+    "Materials_Protect_web": {
+      "status": "checked_no_hit",
+      "requires_api_key": true
+    },
+    "Materials_Protect_SearxNG": {
+      "status": "checked_hit",
+      "notes": "Found CaTiO3 entries, no CaSc2TiO6"
+    },
+    "COD": {
+      "status": "accessible",
+      "SearxNG_results": {
+        "CaSc2TiO6": "no_hit",
+        "Ca2ScTiO6": "no_hit"
+      }
+    },
+    "AFLOW": {
+      "status": "checked_no_hit",
+      "notes": "Previous checks showed no exact matches"
+    },
+    "NOMAD": {
+      "status": "checked_no_hit",
+      "notes": "Previous checks showed no exact matches"
+    },
+    "OQMD": {
+      "status": "timeout",
+      "notes": "HTTP 502 Bad Gateway"
+    },
+    "SearxNG_local": {
+      "status": "accessible",
+      "url": "http://127.0.0.1:8888"
+    }
+  },
+  "exact_formulas_searched": [
+    "CaSc2TiO6",
+    "Ca Sc2 Ti O6",
+    "CaO6Sc2Ti",
+    "CaSc₂TiO₆",
+    "calcium scandium titanium oxide",
+    "calcium scandium titanate"
+  ],
+  "exact_CaSc2TiO6_found": false,
+  "exact_CaSc2TiO6_status": "unresolved",
+  "exact_CaSc2TiO6_CIF_found": false,
+  "Ca2ScTiO6_status": "related_parent_pointer_found_previously",
+  "related_parents_found": [
+    {
+      "formula": "Sc2TiO5",
+      "source": "SearxNG",
+      "evidence_type": "research_paper",
+      "cif_available": false,
+      "usefulness": "high",
+      "notes": "Pseudobrookite-type structure, potential parent"
+    },
+    {
+      "formula": "CaSc2O4",
+      "source": "SearxNG",
+      "evidence_type": "research_paper",
+      "cif_available": false,
+      "usefulness": "high",
+      "notes": "Calcium ferrite structure (Pnma), useful reference"
+    },
+    {
+      "formula": "Sc2Ti2O7",
+      "source": "SearxNG",
+      "evidence_type": "research_paper",
+      "cif_available": false,
+      "usefulness": "medium",
+      "notes": "Similar oxide framework, limited relevance"
+    },
+    {
+      "formula": "CaTiO3_Sc-doped",
+      "source": "SearxNG",
+      "evidence_type": "research_paper",
+      "cif_available": false,
+      "usefulness": "high",
+      "notes": "Sc-doped CaTiO3 published, potential template"
+    },
+    {
+      "formula": "Ca2ScTiO6",
+      "source": "previously_found",
+      "evidence_type": "related_parent",
+      "cif_available": false,
+      "usefulness": "high",
+      "notes": "Previously identified via SearxNG/OQMD (Phase 1P), no CIF found in Phase 1P"
+    }
+  ],
+  "cifs_downloaded": [],
+  "cifs_downloaded_path": "data/scatti_candidates/external_cifs/",
+  "recommended_next_step": {
+    "priority": "A",
+    "description": "Use parent structure templates (CaSc2O4 + Sc2TiO5) to build new exact CaSc2TiO6 candidate with better geometry"
+  },
+  "claim_boundary": "No exact CaSc2TiO6 evidence found in bounded search; status remains unresolved. No hit in this bounded search is not proof of absence or novelty. Materials Project API key required for programmatic CIF downloads. CIF availability for related materials does not make them exact scatti structures."
+}
