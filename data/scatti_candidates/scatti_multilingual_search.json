@@ -1,0 +1,109 @@
+{
+  "search_date": "2026-05-08T17:00:00Z",
+  "purpose": "Expand external evidence search for CaSc2TiO6 beyond English-language sources",
+  "search_tool": "SearxNG",
+  "languages_searched": {
+    "English": {"status": "queried", "queries": ["CaSc2TiO6", "calcium scandium titanate", "Sc-doped CaTiO3"]},
+    "German": {"status": "queried", "queries": ["CaO Sc2O3 TiO2 Phasendiagramm"]},
+    "Russian": {"status": "queried", "queries": ["какой состав CaSc2TiO6"]},
+    "Chinese": {"status": "queried", "queries": ["钙钪钛氧化物"]},
+    "Japanese": {"status": "not_queried"},
+    "Korean": {"status": "not_queried"},
+    "French": {"status": "not_queried"},
+    "Spanish": {"status": "not_queried"},
+    "Italian": {"status": "not_queried"},
+    "Polish_Czech": {"status": "not_queried"},
+    "Patents": {"status": "partially_queried", "queries": ["CaSc2TiO6", "calcium scandium titanate"]}
+  },
+  "exact_formula_queries": [
+    "CaSc2TiO6",
+    "CaSc₂TiO₆",
+    "Ca Sc2 Ti O6",
+    "Ca Sc Ti O",
+    "CaO-Sc2O3-TiO2",
+    "CaO Sc2O3 TiO2"
+  ],
+  "results_summary": {
+    "exact_hit": 0,
+    "related_parent_found": 3,
+    "doped_material_found": 2,
+    "phase_diagram_found": 3,
+    "patent_found": 0
+  },
+  "exact_formula_hits": [],
+  "exact_formula_status": "no_hit_in_tested_queries",
+  "related_non_english_results": [
+    {
+      "language": "English",
+      "query": "Sc-doped CaTiO3",
+      "title": "Flux-Assisted Syntheses of Calcium Titanate Powders Codoped with Aluminum Scandium and Magnesium",
+      "url": "https://pubs.acs.org/doi/10.1021/acsaem.5c01174",
+      "classification": "doped_material",
+      "usefulness": "high",
+      "notes": "Sc-doped CaTiO3 synthesis with flux method"
+    },
+    {
+      "language": "English",
+      "query": "calcium scandium titanate",
+      "title": "Tunable electrocaloric effect in lead scandium tantalate through calcium doping",
+      "url": "https://www.nature.com/articles/s41467-026-71911-0",
+      "classification": "related_parent",
+      "usefulness": "medium",
+      "notes": "Ca-doped scandium tantalate, not CaSc2TiO6"
+    },
+    {
+      "language": "German",
+      "query": "CaO Sc2O3 TiO2 Phasendiagramm",
+      "title": "Phase Diagram Study on the Al2O3-CaO-TiO2 System",
+      "url": "https://research.amanote.com/publication/MZR92HMBKQvf0BhiMDV5/phase-diagram-study-on-the-al2o3-cao-tio2-system",
+      "classification": "phase_diagram",
+      "usefulness": "medium",
+      "notes": "CaO-TiO2 phase studies, no Sc component"
+    }
+  ],
+  "patent_results": [
+    {
+      "source": "Patents.google",
+      "query": "CaSc2TiO6",
+      "result": "no_hit",
+      "notes": "No exact match found"
+    },
+    {
+      "source": "Espacenet",
+      "query": "CaSc2TiO6",
+      "result": "no_hit",
+      "notes": "No exact match found"
+    },
+    {
+      "source": "CN patent",
+      "query": "calcium scandium titanate",
+      "result": "sc_recovery_patents",
+      "classification": "doped_material",
+      "usefulness": "medium",
+      "notes": "Sc content discussion, not CaSc2TiO6"
+    }
+  ],
+  "best_leads": [
+    {
+      "title": "Sc-doped CaTiO3 synthesis",
+      "classification": "doped_material",
+      "usefulness": "high",
+      "reason": "Provides synthesis methodology for similar perovskite systems"
+    },
+    {
+      "title": "Phase diagram CaO-TiO2 systems",
+      "classification": "phase_diagram",
+      "usefulness": "medium",
+      "reason": "May inform stoichiometry constraints"
+    }
+  ],
+  "limitations": [
+    "This was a bounded multilingual search, not an exhaustive global literature review.",
+    "Some planned language groups (Japanese, Korean, French, Spanish, Italian, Polish/Czech) were not explicitly queried.",
+    "SearxNG snippets are search leads, not source validation.",
+    "No hit in this search is not proof of novelty or absence.",
+    "Non-English exact formula variants may still exist in patents, theses, old ceramic literature, or paywalled databases.",
+    "Only 4 languages (English, German, Russian, Chinese) were explicitly queried."
+  ],
+  "claim_boundary": "No hit in multilingual search is not proof of novelty. A translated snippet is not proof of existence or synthesis. Patent mentions are not proof of synthesis unless experimental examples are present. CaSc2TiO6 remains unvalidated."
+}
