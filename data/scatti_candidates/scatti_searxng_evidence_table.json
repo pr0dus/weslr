@@ -12,7 +12,7 @@
     {"query": "calcium scandium titanate", "results": [{"title": "Flux-Assisted Syntheses of Calcium Titanate", "url": "https://pubs.acs.org/doi/10.1021/acsaem.5c01174", "source": "acs.org", "type": "doped_material", "usefulness": "high", "notes": "Sc-doped CaTiO3"}]}
   ],
   "related_queries": [
-    {"query": "Ca2ScTiO6", "results": [{"title": "OQMD Perovskite", "url": "https://oqmd.org/materials/keyword/Perovskite-K2LiAlF6", "source": "oqmd.org", "type": "exact_candidate", "usefulness": "high", "notes": "Ca2ScTiO6 listed in OQMD"}]},
+    {"query": "Ca2ScTiO6", "results": [{"title": "OQMD Perovskite", "url": "https://oqmd.org/materials/keyword/Perovskite-K2LiAlF6", "source": "oqmd.org", "type": "related_parent", "usefulness": "high", "notes": "Ca2ScTiO6 listed in OQMD"}]},
     {"query": "Ca2ScTiO6 double perovskite", "results": [{"title": "Double perovskite Ca2ZrTiO6", "url": "https://www.sciencedirect.com/science/article/pii/S0022459621007064", "source": "sciencedirect.com", "type": "related_parent", "usefulness": "medium", "notes": "Double perovskite concept"}]},
     {"query": "CaSc2O4", "results": [{"title": "CaSc2O4 luminescence", "url": "https://pubs.rsc.org/en/content/articlelanding/2021/tc/d1tc00239b", "source": "rsc.org", "type": "related_parent", "usefulness": "high", "notes": "Exact formula CaSc2O4"}]},
     {"query": "Sc2TiO5", "results": [{"title": "Sc2TiO5 pseudobrookite", "url": "https://www.researchgate.net/publication/244613883", "source": "researchgate.net", "type": "related_parent", "usefulness": "high", "notes": "Exact formula Sc2TiO5"}]},

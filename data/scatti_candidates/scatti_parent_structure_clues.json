@@ -1,0 +1,52 @@
+{
+  "date": "2026-05-08T07:45:00+00:00",
+  "target_formula": "CaSc2TiO6",
+  "source": "SearxNG web search (commit 2401b9a)",
+  "disclaimer": "Parent motifs are construction clues only. SearxNG evidence is search evidence only, not definitive proof. CaSc2TiO6 remains unvalidated.",
+  "clues": {
+    "Ca2ScTiO6": {
+      "clue": "Double perovskite structure listed in OQMD",
+      "usefulness": "high",
+      "limitation": "Stoichiometry 2:1:1 vs target 1:2:1; requires Sc/Ti swap or supercell",
+      "why_matters": "Demonstrates double perovskite framework for Ca-Sc-Ti-O system",
+      "classification": "related_parent",
+      "recommended_use": "Use for ordering inspiration, reduce to 1:1 ratio"
+    },
+    "Sc2TiO5": {
+      "clue": "Pseudobrookite-type structure, Sc/Ti partially disordered",
+      "usefulness": "high",
+      "limitation": "Different stoichiometry, TiO5 vs TiO6 coordination",
+      "why_matters": "Sc-Ti-O framework reference for constructing CaSc2TiO6",
+      "recommended_use": "Sc-Ti-O framework reference"
+    },
+    "CaSc2O4": {
+      "clue": "Exact formula, layered oxide, luminescent phosphor",
+      "usefulness": "high",
+      "limitation": "No Ti, different oxide family",
+      "why_matters": "Ca/Sc-O coordination insights for CaSc2TiO6",
+      "recommended_use": "Ca/Sc-O coordination reference"
+    },
+    "Sc-doped CaTiO3": {
+      "clue": "Sc substitution in CaTiO3 enables ionic conduction",
+      "usefulness": "high",
+      "limitation": "Doped material, not exact formula",
+      "why_matters": "Sc/Ti ordering insights for perovskite framework",
+      "recommended_use": "Build CaSc2TiO6 as Sc/Ti-ordered perovskite"
+    }
+  },
+  "ranking": [
+    {"rank": 1, "parent": "Sc-doped CaTiO3", "score": 10, "reason": "Sc/Ti ordering in perovskite, direct CaSc2TiO6 relevance", "main_limitation": "Doped material, not exact formula", "recommended_use": "Build CaSc2TiO6 as Sc/Ti-ordered perovskite"},
+    {"rank": 2, "parent": "Ca2ScTiO6", "score": 7, "reason": "Double perovskite, OQMD confirmed (related_parent, not exact_candidate)", "main_limitation": "Stoichiometry 2:1:1 vs 1:2:1", "recommended_use": "Use for ordering inspiration, not exact match"},
+    {"rank": 3, "parent": "Sc2TiO5", "score": 7, "reason": "Exact Sc:Ti:O ratio, pseudobrookite framework", "main_limitation": "Different stoichiometry", "recommended_use": "Sc-Ti-O framework reference"},
+    {"rank": 4, "parent": "CaSc2O4", "score": 6, "reason": "Exact formula, Sc-O coordination", "main_limitation": "No Ti, different oxide family", "recommended_use": "Ca/Sc-O coordination reference"}
+  ],
+  "recommended_strategy": {
+    "name": "Sc-doped CaTiO3-derived ordered perovskite",
+    "why_best": "Sc-doped CaTiO3 is most directly relevant with Sc/Ti ordering in perovskite",
+    "formula_obstacle": "Sc-doped CaTiO3 has formula Ca(Ti1-xScx)O3; target requires Ca:Sc:Ti=1:2:1 with ordered B-sites",
+    "how_to_avoid_fake": "Start with experimental CaTiO3 (mp-5827), replace Ti with Sc2/Ti ordered arrangement, verify all distances",
+    "validation_checks": ["Exact formula Ca:Sc:Ti:O=1:2:1:6", "No duplicate coordinates", "Ti-O>1.7Å, Sc-O>1.8Å, Ca-O>2.0Å", "Ti/Sc each have 4-6 O neighbors", "Density in range 2.0-8.0 g/cm³"]
+  },
+  "claim_boundary": "No exact CaSc2TiO6 evidence was found in SearxNG results. Exact-query results were noisy/irrelevant unless manually verified otherwise. Parent motifs are construction clues only. SearxNG evidence is search evidence only, not definitive proof.",
+  "next_step": "Phase 1J — construct one parent-derived exact CaSc2TiO6 candidate from top-ranked Sc-doped CaTiO3 motif"
+}

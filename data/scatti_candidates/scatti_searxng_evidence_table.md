@@ -25,7 +25,7 @@ CaSc2TiO6 remains an unvalidated computational candidate.
 
 | Query | Title | URL | Source | Snippet | Type | Usefulness | Notes |
 |-------|-------|-----|--------|---------|------|------------|-------|
-| Ca2ScTiO6 | OQMD Perovskite | https://oqmd.org/materials/keyword/Perovskite-K2LiAlF6 | oqmd.org | Ca2ScTiO6 listed among perovskite-related compounds | **exact_candidate** | **high** | OQMD lists Ca2ScTiO6, useful parent prototype |
+| Ca2ScTiO6 | OQMD Perovskite | https://oqmd.org/materials/keyword/Perovskite-K2LiAlF6 | oqmd.org | Ca2ScTiO6 listed among perovskite-related compounds | **related_parent** | **high** | OQMD lists Ca2ScTiO6, useful parent prototype |
 | Ca2ScTiO6 double perovskite | Double perovskite Ca2ZrTiO6 | https://www.sciencedirect.com/science/article/pii/S0022459621007064 | sciencedirect.com | Double perovskite Ca2ZrTiO6 | related_parent | medium | Demonstrates double perovskite concept |
 | Ca2ScTiO6 double perovskite | Ca2CoTeO6 | https://www.researchgate.net/publication/240496852 | researchgate.net | Two new double perovskites Ca2CoTeO6 | related_parent | medium | Example of double perovskite synthesis |
 | CaSc2O4 | CaSc2O4 luminescence | https://pubs.rsc.org/en/content/articlelanding/2021/tc/d1tc00239b | rsc.org | Dual luminescent emissions of CaSc2O4 | related_parent | **high** | Exact formula, useful for Sc-O coordination reference |
