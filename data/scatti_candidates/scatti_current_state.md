@@ -1,7 +1,7 @@
 # SCATTI Current State — CaSc2TiO6 Pre-DFT
 
 **Date:** 2026-05-08  
-**Phase:** 1J (Parent-motif construction attempt)  
+**Phase:** 1N (CHGNet relaxation trial — reclassified as `ml_relaxed_but_not_qe_ready`)  
 **Status:** Unvalidated computational candidate  
 
 ## Formula
@@ -39,6 +39,7 @@ Manual parent-motif coordinate construction did not produce a relaxation-ready C
 | External database | **INCONCLUSIVE** | No confirmed external hits |
 | SearxNG web search | **Evidence table created** | See `scatti_searxng_evidence_table.md` |
 | Manual parent-motif construction | **FAILED** | See Phase 1J results above |
+| CHGNet ML relaxation | **PARTIAL** | `ml_relaxed_but_not_qe_ready` (Phase 1N, forces did not converge) |
 
 **Detailed Source Status:**
 - **Materials Project:** ✅ Accessible, but **API key missing** (cannot query)
@@ -58,7 +59,26 @@ Manual parent-motif coordinate construction did not produce a relaxation-ready C
 
 ## DFT Readiness Summary
 
-- **production_dft_ready:** 0 candidates
+| Status | Count | Details |
+|--------|-------|---------|
+| **production_dft_ready** | 0 | None |
+| **pre_relaxation_starting_geometry** | 2 | SCATTI-LAYERED-001, SCATTI-RANDOM-02 |
+| **ml_relaxed_but_not_qe_ready** | 1 | SCATTI-LAYERED-001 (CHGNet Phase 1N) |
+| **downgraded** | 13 | Various distance/coordination violations |
+| **reference_phase** | 4 | Not CaSc2TiO6 candidates |
+
+### CHGNet Relaxation Results (Phase 1N)
+| Candidate | Input | Output | max_force | Classification |
+|-----------|-------|--------|-----------|----------------|
+| SCATTI-LAYERED-001 | 540.0 Å³ | 411.1 Å³ | 0.596 eV/Å | `ml_relaxed_but_not_qe_ready` |
+
+**Not QE-ready because:**
+- Forces did NOT converge to fmax<0.2 eV/Å (max=0.596 eV/Å after 50 steps)
+- Short O-O contact 1.483 Å (< 1.80 Å threshold)
+- Sc-O coordination only 2 each (expected ~4 for Sc³⁺)
+- Ca-O coordination only 2 (expected ~6-8 for Ca²⁺)
+- Volume collapsed by 23.9% (force field bias or over-relaxation)
+
 - **pre_relaxation_starting_geometry:** 2 candidates
   - SCATTI-LAYERED-001 (layered_oxide, density=0.84 g/cm³, min_distance=1.70 Å)
   - SCATTI-RANDOM-02 (random_ordered, density=2.73 g/cm³, min_distance=1.33 Å)
