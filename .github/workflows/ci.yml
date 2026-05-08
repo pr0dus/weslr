@@ -1,0 +1,44 @@
+name: WESLR minimal CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  python-smoke:
+    name: Python smoke checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with test extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[test]
+
+      - name: Compile WESLR package
+        run: |
+          python -m compileall -q weslr
+
+      - name: Import core package
+        run: |
+          python - <<'PY'
+          import importlib
+          importlib.import_module("weslr")
+          print("WESLR import smoke OK")
+          PY
+
+      - name: List available tests non-blocking
+        run: |
+          python -m pytest --version
+          find weslr tests -maxdepth 2 \( -name 'test_*.py' -o -name '*_test.py' \) 2>/dev/null | sort | head -100 || true
+          echo "Full test execution is deferred until dependency/state requirements are audited."
