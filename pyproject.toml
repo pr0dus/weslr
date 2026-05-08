@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weslr"
+version = "0.8.0"
+description = "Continuity-first entity intelligence platform with governed memory, identity, reasoning, and domain workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary / private development" }
+authors = [
+  { name = "WESLR Project" }
+]
+keywords = [
+  "continuity",
+  "entity-intelligence",
+  "reasoning",
+  "memory",
+  "governance",
+  "materials-discovery",
+  "industrial-automation"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Private :: Do Not Upload"
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["weslr*"]
+exclude = [
+  "tests*",
+  "memory*",
+  "docs*",
+  "dashboard*",
+  "front-door*",
+  "weslr-ui*",
+  "weslr-test-deployment*"
+]
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py"]
+testpaths = [
+  "weslr",
+  "tests"
+]
+addopts = "-q"
