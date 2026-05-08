@@ -1,0 +1,35 @@
+{
+  "search_date": "2026-05-08T07:35:00+00:00",
+  "search_tool": "SearxNG",
+  "search_url": "http://127.0.0.1:8888",
+  "disclaimer": "SearxNG evidence is search evidence only. It does not prove novelty, stability, or existence.",
+  "exact_queries": [
+    {"query": "CaSc2TiO6", "results": [{"title": "CASSCF", "url": "https://www.faccts.de/docs/orca/6.0/manual/contents/detailed/casscf.html", "source": "faccts.de", "type": "irrelevant", "usefulness": "low", "notes": "DFT method reference"}]},
+    {"query": "Ca Sc2 Ti O6", "results": [{"title": "Vacancy-Induced Anionic Electrons", "url": "https://pubs.acs.org/doi/10.1021/jacs.4c07362", "source": "acs.org", "type": "irrelevant", "usefulness": "low", "notes": "Not CaSc2TiO6"}]},
+    {"query": "CaO6Sc2Ti", "results": []},
+    {"query": "CaSc₂TiO₆", "results": []},
+    {"query": "calcium scandium titanium oxide", "results": [{"title": "Flux-Assisted Syntheses of Calcium Titanate", "url": "https://pubs.acs.org/doi/10.1021/acsaem.5c01174", "source": "acs.org", "type": "doped_material", "usefulness": "high", "notes": "Sc-doped CaTiO3"}]},
+    {"query": "calcium scandium titanate", "results": [{"title": "Flux-Assisted Syntheses of Calcium Titanate", "url": "https://pubs.acs.org/doi/10.1021/acsaem.5c01174", "source": "acs.org", "type": "doped_material", "usefulness": "high", "notes": "Sc-doped CaTiO3"}]}
+  ],
+  "related_queries": [
+    {"query": "Ca2ScTiO6", "results": [{"title": "OQMD Perovskite", "url": "https://oqmd.org/materials/keyword/Perovskite-K2LiAlF6", "source": "oqmd.org", "type": "exact_candidate", "usefulness": "high", "notes": "Ca2ScTiO6 listed in OQMD"}]},
+    {"query": "Ca2ScTiO6 double perovskite", "results": [{"title": "Double perovskite Ca2ZrTiO6", "url": "https://www.sciencedirect.com/science/article/pii/S0022459621007064", "source": "sciencedirect.com", "type": "related_parent", "usefulness": "medium", "notes": "Double perovskite concept"}]},
+    {"query": "CaSc2O4", "results": [{"title": "CaSc2O4 luminescence", "url": "https://pubs.rsc.org/en/content/articlelanding/2021/tc/d1tc00239b", "source": "rsc.org", "type": "related_parent", "usefulness": "high", "notes": "Exact formula CaSc2O4"}]},
+    {"query": "Sc2TiO5", "results": [{"title": "Sc2TiO5 pseudobrookite", "url": "https://www.researchgate.net/publication/244613883", "source": "researchgate.net", "type": "related_parent", "usefulness": "high", "notes": "Exact formula Sc2TiO5"}]},
+    {"query": "CaTiO3 Sc doped", "results": [{"title": "Sc-doped CaTiO3", "url": "https://www.sciencedirect.com/science/article/pii/S0167273824001188", "source": "sciencedirect.com", "type": "doped_material", "usefulness": "high", "notes": "Sc-doped CaTiO3"}]}
+  ],
+  "classification": {
+    "exact_match_candidate": 1,
+    "related_parent_structure": 6,
+    "doped_material": 2,
+    "reference_phase": 2,
+    "irrelevant": 4
+  },
+  "best_parent_structures": [
+    {"formula": "Ca2ScTiO6", "source": "OQMD", "type": "double_perovskite", "usefulness": "high", "notes": "Ca:Sc:Ti = 2:1:1, ordering inspiration"},
+    {"formula": "Sc2TiO5", "source": "ResearchGate", "type": "pseudobrookite", "usefulness": "high", "notes": "Exact Sc:Ti:O = 2:1:5"},
+    {"formula": "CaSc2O4", "source": "RSC", "type": "layered_oxide", "usefulness": "high", "notes": "Exact formula, useful coordination reference"},
+    {"formula": "Sc-doped CaTiO3", "source": "Sciencedirect", "type": "doped_perovskite", "usefulness": "high", "notes": "Direct CaSc2TiO6 relevance"}
+  ],
+  "conclusion": "No exact CaSc2TiO6 evidence found in SearxNG results. Several related parent structures identified. SearxNG evidence is search evidence only, not definitive proof."
+}
