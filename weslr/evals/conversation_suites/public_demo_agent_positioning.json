@@ -1,8 +1,14 @@
 {
   "id": "public_demo_agent_positioning",
   "name": "Public demo agent/API positioning lower-bound suite",
+  "suite_scope": "public_demo",
+  "suite_kind": "public_positioning",
   "minimum_score": 0.85,
   "minimum_turn_score": 0.75,
+  "must_not_claim": [
+    "unsafe_public_overclaims",
+    "demo_scope_overclaims"
+  ],
   "must_not_include": [
     "public Agent API is available",
     "I can control Claude",
@@ -16,11 +22,15 @@
     },
     {
       "user": "Why would an agent need WESLR?",
-      "must_include": ["governed memory", "evidence", "approval"]
+      "must_align_with": ["public_demo_identity"]
     },
     {
       "user": "Can I deploy WESLR privately?",
       "must_include": ["private", "data location", "integrations"]
+    },
+    {
+      "user": "How would WESLR help a company or engineering team?",
+      "must_align_with": ["public_demo_company_value"]
     }
   ]
 }

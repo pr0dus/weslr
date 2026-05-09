@@ -7,6 +7,10 @@ Purpose:
 - save suite results for regression comparison
 - provide a future gate for cognitive auto-refinement
 
+Scope note:
+- current bundled public-demo suites validate public positioning only
+- they do not validate whole-WESLR cognition or full memory/governance behavior
+
 This module does not call external providers, mutate memory, execute tools, or
 change WESLR behavior. It scores supplied responses against saved suite rules.
 """
@@ -18,6 +22,12 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 import json
 import time
+
+from weslr.positioning_contract import (
+    forbidden_terms_for,
+    required_terms_for,
+    scope_metadata,
+)
 
 
 Responder = Callable[[str, list[dict[str, str]]], str]
@@ -42,6 +52,10 @@ class TurnScore:
 class SuiteResult:
     suite_id: str
     suite_name: str
+    suite_scope: str
+    suite_kind: str
+    validates: list[str]
+    does_not_validate: list[str]
     minimum_score: float
     score: float
     passed: bool
@@ -71,12 +85,54 @@ def _as_list(value: Any) -> list[str]:
     return [str(value)]
 
 
+def _unique(items: Iterable[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        normalized = str(item).strip()
+        if not normalized:
+            continue
+        key = normalized.lower()
+        if key not in seen:
+            out.append(normalized)
+            seen.add(key)
+    return out
+
+
+def _expand_required(value: Any) -> list[str]:
+    expanded: list[str] = []
+    for item in _as_list(value):
+        expanded.extend(required_terms_for(item))
+    return _unique(expanded)
+
+
+def _expand_forbidden(value: Any) -> list[str]:
+    expanded: list[str] = []
+    for item in _as_list(value):
+        expanded.extend(forbidden_terms_for(item))
+    return _unique(expanded)
+
+
 def score_turn(response: str, turn: dict[str, Any], suite_defaults: dict[str, Any] | None = None, turn_index: int = 0) -> TurnScore:
-    """Score one response deterministically against required/forbidden snippets."""
+    """Score one response deterministically against required/forbidden snippets.
+
+    Suites may use literal `must_include`/`must_not_include` checks and shared
+    contract groups via `must_align_with`/`must_not_claim`.
+    """
 
     defaults = suite_defaults or {}
-    required = _as_list(defaults.get("must_include")) + _as_list(turn.get("must_include"))
-    forbidden = _as_list(defaults.get("must_not_include")) + _as_list(turn.get("must_not_include"))
+    required = _unique(
+        _as_list(defaults.get("must_include"))
+        + _as_list(turn.get("must_include"))
+        + _expand_required(defaults.get("must_align_with"))
+        + _expand_required(turn.get("must_align_with"))
+    )
+    forbidden = _unique(
+        _as_list(defaults.get("must_not_include"))
+        + _as_list(turn.get("must_not_include"))
+        + _expand_forbidden(defaults.get("must_not_claim"))
+        + _expand_forbidden(turn.get("must_not_claim"))
+    )
     response_l = _lower(response)
 
     missing_required = [item for item in required if _lower(item) not in response_l]
@@ -121,10 +177,17 @@ def evaluate_suite(suite: dict[str, Any], responder: Responder) -> SuiteResult:
 
     suite_id = str(suite.get("id") or suite.get("suite") or "unknown_suite")
     suite_name = str(suite.get("name") or suite_id)
+    suite_scope = str(suite.get("suite_scope") or "unspecified")
+    scope_info = scope_metadata(suite_scope)
+    suite_kind = str(suite.get("suite_kind") or scope_info.get("suite_kind") or "unspecified")
+    validates = _as_list(suite.get("validates") or scope_info.get("validates"))
+    does_not_validate = _as_list(suite.get("does_not_validate") or scope_info.get("does_not_validate"))
     minimum_score = float(suite.get("minimum_score", 0.85))
     defaults = {
         "must_include": suite.get("must_include", []),
         "must_not_include": suite.get("must_not_include", []),
+        "must_align_with": suite.get("must_align_with", []),
+        "must_not_claim": suite.get("must_not_claim", []),
         "minimum_turn_score": suite.get("minimum_turn_score", 1.0),
     }
 
@@ -145,6 +208,10 @@ def evaluate_suite(suite: dict[str, Any], responder: Responder) -> SuiteResult:
     return SuiteResult(
         suite_id=suite_id,
         suite_name=suite_name,
+        suite_scope=suite_scope,
+        suite_kind=suite_kind,
+        validates=validates,
+        does_not_validate=does_not_validate,
         minimum_score=minimum_score,
         score=overall,
         passed=passed,

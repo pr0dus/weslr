@@ -66,6 +66,10 @@ def result_summary(result: SuiteResult, baseline_dir: str | Path | None = None) 
     return {
         "suite_id": result.suite_id,
         "suite_name": result.suite_name,
+        "suite_scope": result.suite_scope,
+        "suite_kind": result.suite_kind,
+        "validates": result.validates,
+        "does_not_validate": result.does_not_validate,
         "score": round(result.score, 6),
         "minimum_score": result.minimum_score,
         "passed": result.passed,
@@ -81,11 +85,21 @@ def format_text_report(summary: dict, saved_path: str | None = None) -> str:
     lines = [
         f"Suite: {summary['suite_id']}",
         f"Name: {summary['suite_name']}",
+        f"Scope: {summary.get('suite_scope', 'unspecified')}",
+        f"Kind: {summary.get('suite_kind', 'unspecified')}",
         f"Score: {summary['score']:.3f} / 1.000",
         f"Minimum: {summary['minimum_score']:.3f}",
         f"Result: {status}",
         f"Baseline: {baseline_status}",
     ]
+    if summary.get("validates"):
+        lines.append("Validates:")
+        for item in summary["validates"]:
+            lines.append(f"  - {item}")
+    if summary.get("does_not_validate"):
+        lines.append("Does not validate:")
+        for item in summary["does_not_validate"]:
+            lines.append(f"  - {item}")
     if saved_path:
         lines.append(f"Saved: {saved_path}")
     if summary["baseline_reasons"]:

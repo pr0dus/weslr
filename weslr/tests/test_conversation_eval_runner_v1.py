@@ -31,10 +31,29 @@ def test_result_summary_reports_weak_turns():
     assert summary["weak_turns"][0]["missing_required"] == ["expected"]
 
 
-def test_format_text_report_includes_score_and_weak_turn():
+def test_result_summary_includes_scope_metadata():
+    result = evaluate_suite(
+        {
+            "id": "scoped_suite",
+            "name": "Scoped suite",
+            "suite_scope": "public_demo",
+            "minimum_score": 1.0,
+            "turns": [{"user": "hello", "must_include": ["hello"]}],
+        },
+        lambda _message, _history: "hello",
+    )
+    summary = result_summary(result)
+    assert summary["suite_scope"] == "public_demo"
+    assert summary["suite_kind"] == "public_positioning"
+    assert "public first impression" in summary["validates"]
+    assert "whole WESLR cognition" in summary["does_not_validate"]
+
+
+def test_format_text_report_includes_score_scope_and_weak_turn():
     suite = {
         "id": "weak_suite",
         "name": "Weak suite",
+        "suite_scope": "public_demo",
         "minimum_score": 0.8,
         "turns": [
             {"user": "hello", "must_include": ["expected"]},
@@ -44,6 +63,9 @@ def test_format_text_report_includes_score_and_weak_turn():
     summary = result_summary(result)
     text = format_text_report(summary, saved_path="out.json")
     assert "Suite: weak_suite" in text
+    assert "Scope: public_demo" in text
+    assert "Does not validate:" in text
+    assert "whole WESLR cognition" in text
     assert "Score:" in text
     assert "Weak turns:" in text
     assert "missing=expected" in text
@@ -58,6 +80,8 @@ def test_run_suites_saves_results(tmp_path):
     assert len(reports) == 1
     report = reports[0]
     assert report["suite_id"] == "public_demo_identity"
+    assert report["suite_scope"] == "public_demo"
+    assert "whole WESLR cognition" in report["does_not_validate"]
     assert report["passed"] is True
     saved = Path(report["saved_path"])
     assert saved.exists()
