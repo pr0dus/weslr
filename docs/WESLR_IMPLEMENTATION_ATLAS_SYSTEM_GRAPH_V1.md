@@ -127,6 +127,7 @@ Allowed work lanes
   ├─ memory / entity scope lane
   ├─ cognitive weight / auto-refinement lane
   ├─ observation / insufficiency / proposal lane
+  ├─ proactive suggestion daemon lane
   ├─ consolidation / green-zone promotion lane
   ├─ research mission loop lane
   ├─ materials / Scatti research lane
@@ -569,6 +570,69 @@ Anti-duplication rule:
 Do not add a new auto-refinement loop before checking auto_refinement.py, cognitive_weights.py, consolidation_promotion.py, and proactive_daemon.py.
 ```
 
+## Proactive suggestion daemon
+
+Status: implemented suggestion delivery daemon, not a refinement/apply loop
+
+File:
+
+```text
+weslr/proactive_daemon.py
+```
+
+Existing graph:
+
+```text
+start_proactive_daemon()
+  ↓
+_daemon_loop()
+  ↓
+build_proactive_suggestion(user_id)
+  ↓
+deduplicate against recent proactive queue messages
+  ↓
+pending_messages_queue.enqueue(queue_type="proactive")
+  ↓
+.weslr/pending_messages.jsonl
+```
+
+Current daemon properties:
+
+```text
+disabled by default via WESLR_PROACTIVE_DAEMON_ENABLED=false
+interval default = 60 minutes
+writes only proactive pending messages
+seeds dedup cache from recent queue entries
+size-capped in-memory dedup cache
+queue write failure does not crash daemon
+```
+
+Explicit non-goals in current implementation:
+
+```text
+no hidden learning
+no raw prompt storage
+no action execution
+no Ollama calls
+no cognitive auto-refinement call
+no consolidation promotion call
+no self-code
+no doctrine/contract mutation
+```
+
+Important boundary:
+
+```text
+proactive_daemon.py is currently a suggestion delivery loop only.
+It is not the intelligence refinement loop.
+```
+
+Future integration rule:
+
+```text
+If future work connects proactive_daemon.py to cognitive auto-refinement, it must reuse auto_refinement.py::attempt_green_auto_apply(), preserve all config gates, preserve global_auto_apply_enabled=false by default, keep audit/cooldown/rollback, and add tests before enabling.
+```
+
 ## Consolidation / green-zone system
 
 Status: accepted doctrine + implemented code + tests exist
@@ -875,6 +939,7 @@ PR #28 — enforce backend public demo policy
 PR #29 — add public demo chat contract
 PR #31 — add implementation atlas system graph v1
 PR #32 — link implementation atlas from README
+PR #33 — map cognitive auto-refinement in implementation atlas
 ```
 
 Closed intentionally:
@@ -908,7 +973,7 @@ High-value options:
 ```text
 1. Expand this atlas with generated module inventory by directory.
 2. Map public demo live deployment path to chat.weslr.de.
-3. Inspect proactive_daemon.py and decide whether it should ever call attempt_green_auto_apply().
+3. Decide if proactive daemon should only surface refinement opportunities, not apply them.
 4. Define review lifecycle for observation/proposal records.
 5. Wire research work loop suggestions into workplace/public-private UI surface.
 6. Build Scatti materials source/tool/script map from existing modules.
