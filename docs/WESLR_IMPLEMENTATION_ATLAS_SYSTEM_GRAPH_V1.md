@@ -125,6 +125,7 @@ Allowed work lanes
   ├─ public demo explanation/chat lane
   ├─ continuity / context lane
   ├─ memory / entity scope lane
+  ├─ cognitive weight / auto-refinement lane
   ├─ observation / insufficiency / proposal lane
   ├─ consolidation / green-zone promotion lane
   ├─ research mission loop lane
@@ -453,6 +454,121 @@ They do not by themselves implement accounts, billing, private deployment, agent
 
 Do not treat these as runtime-complete.
 
+## Cognitive weight / auto-refinement system
+
+Status: implemented guardrail system + tests exist, not a daemon/background loop
+
+This already exists. Do not recreate it.
+
+Primary files:
+
+```text
+weslr/cognitive_weights.py
+weslr/auto_refinement.py
+weslr/auto_refinement_config.py
+weslr/weight_audit.py
+weslr/weight_cooldown.py
+weslr/weight_rollback.py
+weslr/weight_proposal.py
+weslr/commands/weight_commands.py
+weslr/test_cognitive_weight_refinement.py
+```
+
+Existing graph:
+
+```text
+weight proposal
+  ↓
+auto_refinement.py::attempt_green_auto_apply()
+  ↓
+auto_refinement_config.py::load_config()
+  ↓
+weight_proposal.py::load_proposals()
+  ↓
+cognitive_weights.py::load_registry()
+  ↓
+cognitive_weights.py::check_weight_update_guardrails()
+  ↓
+weight_cooldown.py::WeightCooldownTracker
+  ↓
+weight_rollback.py::RollbackStore.create_snapshot()
+  ↓
+CognitiveWeightRegistry.set_pending()
+  ↓
+weight_audit.py::WeightAuditLog.write_event()
+```
+
+Core entry point:
+
+```text
+attempt_green_auto_apply(proposal_id, simulation_pass, regression_pass, observation_count, actor)
+```
+
+Current safety properties:
+
+```text
+No background loop in auto_refinement.py.
+Callable / CLI-testable only.
+All changes audited.
+Rollback snapshot created before apply.
+Cooldown tracked per weight.
+Global auto-apply disabled by default.
+Green-zone only for auto mode.
+Simulation and regression pass are required by default.
+Minimum observation count is enforced by weight guardrails.
+```
+
+Config gates:
+
+```text
+global_auto_apply_enabled = false by default
+enabled_zones = [green]
+max_auto_applications_per_day = 1
+require_audit_log = true
+require_rollback_snapshot = true
+require_simulation_pass = true
+require_regression_pass = true
+```
+
+Green weights currently include low-risk expression/tone examples:
+
+```text
+tone.response_concision_bias
+tone.warmth_adjustment
+expression.detail_level_bias
+```
+
+Yellow/red examples:
+
+```text
+meaning.* = mostly yellow
+obligation.* = yellow
+ranking.* = yellow
+identity.* = red
+memory.* = yellow
+```
+
+Important distinction:
+
+```text
+Consolidation green-zone promotion and cognitive weight auto-refinement are separate systems.
+Consolidation uses consolidation_config.json and consolidation_promotion.py.
+Weight refinement uses auto_refinement_config.py, cognitive_weights.py, and weight_* stores.
+```
+
+Known gap:
+
+```text
+The cognitive auto-refinement system exists, but it is not wired into a background daemon.
+If future work connects it to a daemon, it must reuse attempt_green_auto_apply() and preserve global_auto_apply_enabled=false unless explicitly configured.
+```
+
+Anti-duplication rule:
+
+```text
+Do not add a new auto-refinement loop before checking auto_refinement.py, cognitive_weights.py, consolidation_promotion.py, and proactive_daemon.py.
+```
+
 ## Consolidation / green-zone system
 
 Status: accepted doctrine + implemented code + tests exist
@@ -757,6 +873,8 @@ PR #26 — add weslr-ui build CI
 PR #27 — add weslr-ui public demo contract check
 PR #28 — enforce backend public demo policy
 PR #29 — add public demo chat contract
+PR #31 — add implementation atlas system graph v1
+PR #32 — link implementation atlas from README
 ```
 
 Closed intentionally:
@@ -790,7 +908,7 @@ High-value options:
 ```text
 1. Expand this atlas with generated module inventory by directory.
 2. Map public demo live deployment path to chat.weslr.de.
-3. Inspect existing cognitive weight / refinement files specifically.
+3. Inspect proactive_daemon.py and decide whether it should ever call attempt_green_auto_apply().
 4. Define review lifecycle for observation/proposal records.
 5. Wire research work loop suggestions into workplace/public-private UI surface.
 6. Build Scatti materials source/tool/script map from existing modules.
