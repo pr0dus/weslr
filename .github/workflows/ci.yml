@@ -70,3 +70,26 @@ jobs:
             weslr/tests/test_fact_extractor_v1.py \
             weslr/tests/test_public_demo_policy.py \
             weslr/tests/test_public_demo_chat.py
+
+  cognitive-refinement-audit:
+    name: Cognitive refinement audit lane
+    runs-on: ubuntu-latest
+    needs: python-smoke
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with test extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[test]
+
+      - name: Run cognitive refinement script audit
+        run: |
+          python weslr/test_cognitive_weight_refinement.py
