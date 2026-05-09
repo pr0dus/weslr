@@ -10,6 +10,7 @@ from weslr.evals.conversation_eval import (
     save_result,
     score_turn,
 )
+from weslr.positioning_contract import required_terms_for, scope_metadata
 
 
 SUITE_DIR = Path(__file__).resolve().parents[1] / "evals" / "conversation_suites"
@@ -43,6 +44,33 @@ def test_score_turn_detects_required_and_forbidden_snippets():
     assert "deploy changes" in failed.forbidden_present
 
 
+def test_score_turn_expands_shared_positioning_contract_groups():
+    turn = {
+        "user": "Why are you not just another chatbot?",
+        "must_align_with": ["public_demo_identity"],
+        "must_not_claim": ["unsafe_public_overclaims"],
+        "minimum_score": 1.0,
+    }
+    scored = score_turn(
+        "WESLR uses continuity, governed memory, evidence, proposal tracking, and approval-aware workflows.",
+        turn,
+        turn_index=0,
+    )
+    assert scored.passed is True
+    assert scored.missing_required == []
+    assert scored.forbidden_present == []
+
+    failed = score_turn(
+        "WESLR has perfect memory and can act without approval.",
+        turn,
+        turn_index=0,
+    )
+    assert failed.passed is False
+    assert "continuity" in failed.missing_required
+    assert "perfect memory" in failed.forbidden_present
+    assert "can act without approval" in failed.forbidden_present
+
+
 def test_public_demo_identity_suite_passes_with_default_responder():
     result = evaluate_suite_file(
         SUITE_DIR / "public_demo_identity.json",
@@ -50,7 +78,9 @@ def test_public_demo_identity_suite_passes_with_default_responder():
     )
     assert result.passed is True
     assert result.score >= result.minimum_score
-    assert len(result.turn_scores) == 4
+    assert result.suite_scope == "public_demo"
+    assert "whole WESLR cognition" in result.does_not_validate
+    assert len(result.turn_scores) == 12
 
 
 def test_public_demo_agent_positioning_suite_passes_with_default_responder():
@@ -60,7 +90,21 @@ def test_public_demo_agent_positioning_suite_passes_with_default_responder():
     )
     assert result.passed is True
     assert result.score >= result.minimum_score
-    assert len(result.turn_scores) == 3
+    assert result.suite_scope == "public_demo"
+    assert "industrial/TIA workflows" in result.does_not_validate
+    assert len(result.turn_scores) == 4
+
+
+def test_shared_positioning_contract_exposes_scope_and_required_terms():
+    scope = scope_metadata("public_demo")
+    assert scope["suite_kind"] == "public_positioning"
+    assert "whole WESLR cognition" in scope["does_not_validate"]
+    terms = required_terms_for("public_demo_identity")
+    assert "continuity" in terms
+    assert "governed memory" in terms
+    assert "evidence" in terms
+    assert "proposal" in terms
+    assert "approval" in terms
 
 
 def test_save_result_and_compare_to_baseline(tmp_path):
