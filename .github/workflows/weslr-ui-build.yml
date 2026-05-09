@@ -30,6 +30,10 @@ jobs:
         working-directory: weslr-ui
         run: npm install
 
+      - name: Public demo contract check
+        working-directory: weslr-ui
+        run: npm run check:public-demo
+
       - name: Build
         working-directory: weslr-ui
         run: npm run build
