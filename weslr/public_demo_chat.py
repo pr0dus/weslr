@@ -51,13 +51,28 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
             "weslr_not_chatbot",
         )
 
+    if any(term in text for term in ["improve itself", "self-improve", "self improve", "improve automatically", "automatically improve"]):
+        return _reply(
+            "WESLR is designed so small cognitive refinements can be evaluated against tests, but governed memory, authority changes, deployment, file handling, and important system-changing actions require approval. This public demo is read-only and does not upload files or apply changes.",
+            "self_improvement_boundary",
+        )
+
+    if any(term in text for term in ["summarize", "summary", "boundaries you explained", "privacy and deployment boundaries"]):
+        return _reply(
+            "In this public demo, WESLR is read-only: it does not upload files, write memory, expose operator controls, execute actions, or deploy changes. For real use, private or self-hosted deployment gives organizations control over data location, runtime, access, updates, and integrations, while governed memory stays scoped and approval-aware.",
+            "privacy_deployment_summary",
+        )
+
     if any(term in text for term in ["governed memory", "memory", "remember"]):
         return _reply(
             "Governed memory means WESLR should not silently remember everything. Memory is scoped by person, project, team, company, or institution, and important memory or system-changing actions require clear rules and review.",
             "governed_memory",
         )
 
-    if any(term in text for term in ["hosted", "private", "self-hosted", "self hosted", "deployment", "deploy"]):
+    if any(term in text for term in [
+        "hosted", "private", "self-hosted", "self hosted", "deployment", "deploy",
+        "company", "data location", "data go", "where does the data", "where does my data",
+    ]):
         return _reply(
             "Hosted WESLR is the fastest way to start. Private or self-hosted WESLR is for organizations that need control over data location, runtime, access, updates, and integrations.",
             "deployment_options",
