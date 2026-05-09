@@ -246,7 +246,7 @@ function ChatSurface({
         </section>
       ) : (
         <section style={styles.fileDisabledBar}>
-          File upload is disabled in this read-only public demo. Private workspaces and institutional deployments can enable controlled file handling later.
+          This public demo is limited. File upload is disabled in this read-only public demo. Private workspaces and institutional deployments can enable controlled file handling later.
         </section>
       )}
 
