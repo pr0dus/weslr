@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from weslr.evals.conversation_eval import evaluate_suite
@@ -64,15 +65,33 @@ def test_run_suites_saves_results(tmp_path):
 
 
 def test_run_suites_detects_baseline_regression(tmp_path):
+    suite_path = tmp_path / "local_regression_suite.json"
+    suite_path.write_text(
+        json.dumps(
+            {
+                "id": "local_regression_suite",
+                "name": "Local regression suite",
+                "minimum_score": 0.9,
+                "turns": [
+                    {
+                        "user": "hello",
+                        "must_include": ["intentionally-absent-token"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
     baseline_dir = tmp_path / "baselines"
     baseline_dir.mkdir()
-    (baseline_dir / "public_demo_identity.result.json").write_text(
+    (baseline_dir / "local_regression_suite.result.json").write_text(
         '{"score": 1.0, "passed": true}',
         encoding="utf-8",
     )
 
     reports = run_suites(
-        [SUITES / "public_demo_identity.json"],
+        [suite_path],
         output_dir=tmp_path / "results",
         baseline_dir=baseline_dir,
     )
