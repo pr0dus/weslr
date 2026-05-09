@@ -1,16 +1,27 @@
 # WESLR Implementation Atlas / System Graph V1
 
 Date: 2026-05-09
-Status: implementation map / anti-duplication guard
-Scope: current repo reality, README claims, implemented modules, partial modules, docs-only doctrine, loops, gates, CI, and next-work discipline
+Status: definitive implementation navigation file / routing and flow reference / anti-duplication guard
+Scope: current repo reality, README claims, implemented modules, partial modules, docs-only doctrine, loops, gates, CI, routing, and next-work discipline
 
 ## Purpose
 
-This atlas is a source-of-truth map for future WESLR work.
+This atlas is the definitive navigation file for WESLR implementation reality.
 
-It does not replace `README.md`, `weslr/README.md`, or `weslr/docs/WESLR_DOCTRINE_REGISTRY_V1.md`. It connects them.
+It answers:
 
-Its purpose is to prevent duplicate architecture, repeated reinvention, and unsafe assumptions such as adding a new doctrine or loop before checking what already exists.
+```text
+What exists?
+Where does it live?
+How does it route?
+What calls what?
+Which parts are implemented, partially wired, docs-only, or unknown?
+What must be checked before changing anything?
+```
+
+It does not replace `README.md`, `weslr/README.md`, or `weslr/docs/WESLR_DOCTRINE_REGISTRY_V1.md`. It connects them into one routing and flow map.
+
+Its purpose is to prevent duplicate architecture, repeated reinvention, and unsafe assumptions such as adding a new doctrine, loop, daemon, API surface, or UI path before checking what already exists.
 
 ## Required pre-change check
 
@@ -31,6 +42,28 @@ extend, wire, document, test, repair, or deprecate the existing path first.
 ```
 
 Do not create a parallel system unless the existing path cannot safely support the requirement.
+
+## Routing reference rule
+
+For future development, this atlas is the first routing reference.
+
+When adding or changing behavior, update this file when any of the following changes:
+
+```text
+entry point
+API route
+UI surface
+policy gate
+loop/daemon
+memory path
+promotion path
+deployment path
+CI/test gate
+doctrine-to-code mapping
+implemented vs partial status
+```
+
+If this atlas and implementation disagree, treat that as a repo inconsistency to repair.
 
 ## README reality anchor
 
@@ -99,6 +132,42 @@ Allowed work lanes
   ├─ industrial / Siemens TIA lane
   ├─ agent/API future lane
   └─ deployment/update lane
+```
+
+## Public demo routing graph
+
+```text
+Browser
+  ↓
+weslr-ui/src/App.tsx
+  ↓
+weslr-ui/src/api.ts
+  ↓
+POST /api/chat
+  ↓
+weslr-test-deployment/api_server.py
+  ↓
+if WESLR_PRODUCT_MODE unset or public_demo_readonly:
+    weslr/public_demo_chat.py::public_demo_chat()
+else:
+    weslr_backend_contract.py::chat()
+```
+
+Public demo blocked route graph:
+
+```text
+Browser or caller
+  ↓
+/api/contract/upload-file
+/api/contract/file-route
+/api/contract/operator/summary
+/api/contract/operator/visibility
+  ↓
+weslr-test-deployment/api_server.py
+  ↓
+weslr/public_demo_policy.py
+  ↓
+public_demo_block_response() or operator_visibility_response()
 ```
 
 ## 1. Core WESLR runtime
