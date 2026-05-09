@@ -2,13 +2,13 @@
   "suite_id": "public_demo_identity",
   "suite_name": "Public demo WESLR identity lower-bound suite",
   "minimum_score": 0.85,
-  "score": 0.958333,
+  "score": 1.0,
   "passed": true,
-  "baseline_version": 1,
-  "source_commit": "0b2ffea5b948aa70586deef9d7585257548ef47b",
+  "baseline_version": 2,
+  "source_commit": "b1d67d7f1edb8f56e1581fc63dffd94ca53e1f7d",
   "notes": [
-    "Baseline generated from deterministic public_demo_chat responder after Conversation Eval Report Runner V1.",
-    "Known weak turn: 'Are you just another chatbot?' currently misses required snippet 'continuity' but passes turn threshold."
+    "Baseline updated after adding explicit 'not just another chatbot' public-demo route.",
+    "The previously weak turn now includes continuity and governed memory without expanding demo authority."
   ],
   "turn_scores": [
     {
@@ -22,9 +22,9 @@
     {
       "turn_index": 1,
       "user": "Are you just another chatbot?",
-      "score": 0.833333,
+      "score": 1.0,
       "passed": true,
-      "missing_required": ["continuity"],
+      "missing_required": [],
       "forbidden_present": []
     },
     {
