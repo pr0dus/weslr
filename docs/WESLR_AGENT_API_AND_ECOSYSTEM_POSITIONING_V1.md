@@ -91,6 +91,55 @@ user or agent input
 
 WESLR is therefore not only a model interface. It is the system that can hold continuity, policy, memory boundaries, evidence, and governed workflow around models and agents.
 
+## Context and token efficiency
+
+A major practical advantage of connecting agents to WESLR is more efficient context use.
+
+Many model agents spend large amounts of context window and tokens repeatedly reconstructing:
+
+- project background
+- prior decisions
+- file state
+- user preferences
+- unresolved tasks
+- evidence history
+- safety/governance constraints
+- what has already been tried
+
+WESLR should reduce that repeated context burden by providing compact, structured, governed context packets instead of requiring every connected agent to rediscover or re-read everything on every session.
+
+Preferred public wording:
+
+```text
+WESLR can help connected agents use context more efficiently by supplying structured project memory, evidence, and governance state instead of repeatedly rebuilding context from scratch.
+```
+
+Technical wording:
+
+```text
+WESLR can act as a compact context provider for compatible agents: retrieving only the relevant tenant, workspace, memory, evidence, and approval state needed for a task.
+```
+
+Important limitation:
+
+```text
+WESLR may reduce unnecessary context and token use in many workflows, but token savings depend on the connected agent, model, task, integration design, and how much context is actually needed.
+```
+
+Do not overclaim:
+
+```text
+WESLR always uses fewer tokens.
+WESLR guarantees lower model costs.
+WESLR makes every agent cheaper automatically.
+```
+
+Use:
+
+```text
+WESLR is designed to reduce repeated context rebuilding and improve context efficiency for compatible agents.
+```
+
 ## Relationship to Claude, ChatGPT, Hermes, OpenClaw, and other agents
 
 Public positioning should be careful:
@@ -98,17 +147,18 @@ Public positioning should be careful:
 - Claude, ChatGPT, Hermes, OpenClaw, coding agents, research agents, and internal automation systems may be powerful reasoning or action systems.
 - WESLR should not claim to replace all of them.
 - WESLR can provide the surrounding continuity/governance layer those systems often lack.
+- WESLR can also help connected agents avoid repeatedly consuming large context windows to rediscover already-known project state.
 
 Preferred wording:
 
 ```text
-WESLR can work alongside compatible AI agents and tools by providing governed memory, project context, evidence, and approval-aware workflows.
+WESLR can work alongside compatible AI agents and tools by providing governed memory, project context, evidence, approval-aware workflows, and compact task-specific context.
 ```
 
 Acceptable examples for technical/institutional pages:
 
 ```text
-Model assistants such as Claude or ChatGPT can generate responses. Agent systems such as OpenClaw or Hermes can operate tools. WESLR is designed to preserve context, memory, evidence, and governance around that work.
+Model assistants such as Claude or ChatGPT can generate responses. Agent systems such as OpenClaw or Hermes can operate tools. WESLR is designed to preserve context, memory, evidence, governance, and compact task state around that work.
 ```
 
 Avoid overclaiming:
@@ -118,6 +168,7 @@ WESLR is better than Claude.
 WESLR replaces all agents.
 WESLR can control any agent automatically.
 WESLR makes any agent safe.
+WESLR guarantees lower token cost for every agent.
 ```
 
 ## Website section proposal
@@ -131,13 +182,13 @@ Use WESLR directly — or connect it to your agents.
 Public copy:
 
 ```text
-WESLR can be used as a standalone reasoning workspace, privately deployed inside an organization, or connected to compatible AI agents and automation tools. Instead of replacing every assistant, WESLR provides the continuity, memory, evidence, and governance layer those systems usually lack.
+WESLR can be used as a standalone reasoning workspace, privately deployed inside an organization, or connected to compatible AI agents and automation tools. Instead of replacing every assistant, WESLR provides the continuity, memory, evidence, governance, and compact context layer those systems usually lack.
 ```
 
 Shorter copy:
 
 ```text
-Bring continuity and governance to your agents.
+Bring continuity, governance, and compact context to your agents.
 ```
 
 CTA options:
@@ -165,6 +216,7 @@ WESLR Continuity API
 Possible future API surfaces:
 
 - tenant/workspace context lookup
+- compact task context packet
 - governed memory read
 - governed memory write proposal
 - evidence record creation
@@ -236,6 +288,7 @@ Reason:
 - organization can define agent permissions
 - data remains within chosen environment
 - integrations can be reviewed and governed
+- context efficiency can reduce repeated model work across long-running institutional projects
 
 ### Self-hosted admin/operator
 
@@ -245,10 +298,10 @@ May configure agent integrations later, subject to deployment policy.
 
 | System type | Primary role | What WESLR adds |
 |---|---|---|
-| Chat assistant | answers questions | long-term continuity, scoped memory, evidence, governance |
-| Coding agent | edits/runs code | project memory, approval gates, release discipline, traceability |
-| Research agent | gathers/summarizes evidence | provenance, memory consolidation, confidence boundaries |
-| Automation agent | performs actions | operator approval, audit trail, policy enforcement |
+| Chat assistant | answers questions | long-term continuity, scoped memory, evidence, governance, compact context |
+| Coding agent | edits/runs code | project memory, approval gates, release discipline, traceability, reduced context rebuilding |
+| Research agent | gathers/summarizes evidence | provenance, memory consolidation, confidence boundaries, evidence packets |
+| Automation agent | performs actions | operator approval, audit trail, policy enforcement, scoped task state |
 | Enterprise agent platform | orchestrates workflows | tenant-aware continuity and governance model |
 
 ## Public copy examples
@@ -259,10 +312,16 @@ May configure agent integrations later, subject to deployment policy.
 WESLR is not just another assistant. It is the continuity and governance layer that can help people and compatible agents work across long-running projects.
 ```
 
+### Context efficiency
+
+```text
+WESLR helps compatible agents avoid rebuilding the same context repeatedly by providing structured memory, evidence, and task state when needed.
+```
+
 ### Institutional
 
 ```text
-For organizations, WESLR can be deployed privately and connected to approved internal agents or tools so they operate with scoped memory, evidence, permissions, and audit trails.
+For organizations, WESLR can be deployed privately and connected to approved internal agents or tools so they operate with scoped memory, evidence, permissions, compact context, and audit trails.
 ```
 
 ### Developer/API
@@ -283,6 +342,7 @@ Connect any agent instantly
 Unlimited integrations
 Full autonomous orchestration
 Safe control of any model or agent
+Guaranteed token savings
 ```
 
 Use:
@@ -359,9 +419,10 @@ I am evaluating private deployment
 1. Public copy must avoid unexplained internal acronyms.
 2. WESLR can be positioned as usable directly, privately deployed, or connected to other agents/tools.
 3. Claude, Hermes, OpenClaw, and similar systems should be treated as examples of model/agent systems WESLR can complement, not replace.
-4. WESLR's distinction is continuity, governed memory, evidence, proposals, roles, and approval-aware workflows.
+4. WESLR's distinction is continuity, governed memory, evidence, proposals, roles, approval-aware workflows, and compact context delivery.
 5. Agent/API integrations are primarily an institutional/private deployment feature until implemented and productized.
 6. No public API availability should be claimed before implementation.
+7. WESLR may improve context/token efficiency by reducing repeated context rebuilding, but should not guarantee universal token savings.
 ```
 
 ## V1 verdict
