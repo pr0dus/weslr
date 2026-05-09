@@ -13,12 +13,15 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, '/data/data/com.termux/files/home/.openclaw/workspace')
 
+from weslr.public_demo_chat import public_demo_chat  # noqa: E402
 from weslr.public_demo_policy import (  # noqa: E402
     is_feature_allowed,
+    is_public_demo_mode,
     operator_visibility_response,
     public_demo_block_response,
 )
 from weslr_backend_contract import (  # noqa: E402
+    chat,
     check_operator_visibility,
     get_continuity_status,
     get_conversation_list,
@@ -60,7 +63,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length).decode() if length else ""
-        if self.path == "/api/contract/file-route":
+        if self.path == "/api/chat":
+            data = json.loads(body) if body else {}
+            message = data.get("message", "")
+            if is_public_demo_mode():
+                self.send_json(public_demo_chat(message))
+                return
+            self.send_json(chat(message))
+        elif self.path == "/api/contract/file-route":
             if not is_feature_allowed("file_route"):
                 self.send_json(public_demo_block_response("file_route"), status=403)
                 return

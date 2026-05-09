@@ -68,4 +68,5 @@ jobs:
             weslr/request_intelligence/tests/test_classifier.py \
             weslr/tests/test_safety_contract.py \
             weslr/tests/test_fact_extractor_v1.py \
-            weslr/tests/test_public_demo_policy.py
+            weslr/tests/test_public_demo_policy.py \
+            weslr/tests/test_public_demo_chat.py
