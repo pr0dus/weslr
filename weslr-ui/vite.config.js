@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  root: path.join(__dirname, 'weslr-ui'),
+  root: __dirname,
   server: {
     port: 3000,
     proxy: {
