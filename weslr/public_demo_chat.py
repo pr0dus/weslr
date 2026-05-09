@@ -76,6 +76,6 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
         )
 
     return _reply(
-        "This public demo only supports selected read-only WESLR routes. I can explain WESLR, governed memory, hosted versus private deployment, agent/API positioning, pricing, or what the public demo can do.",
+        "This public demo only supports selected read-only WESLR routes and does not upload files, write memory, expose operator controls, execute actions, or deploy anything. I can explain WESLR, governed memory, hosted versus private deployment, agent/API positioning, pricing, or what the public demo can do.",
         "public_fallback",
     )
