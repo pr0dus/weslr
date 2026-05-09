@@ -57,7 +57,10 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
             "governed_memory",
         )
 
-    if any(term in text for term in ["hosted", "private", "self-hosted", "self hosted", "deployment", "deploy"]):
+    if any(term in text for term in [
+        "hosted", "private", "self-hosted", "self hosted", "deployment", "deploy",
+        "company", "data location", "data go", "where does the data", "where does my data",
+    ]):
         return _reply(
             "Hosted WESLR is the fastest way to start. Private or self-hosted WESLR is for organizations that need control over data location, runtime, access, updates, and integrations.",
             "deployment_options",
