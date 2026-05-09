@@ -1,14 +1,14 @@
 /** API client for Weslr App Shell v1
- * 
- * Connects to weslr_backend_contract.py endpoints.
- * No auth, no production API yet — additive and reversible.
+ *
+ * Public demo defaults are intentionally conservative:
+ * - no operator visibility
+ * - no file upload
+ * - no memory/write actions
  */
 
-const API_BASE = '';
+import config from './config';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Continuity Status
-// ─────────────────────────────────────────────────────────────────────────────
+const API_BASE = '';
 
 export interface ContinuityStatus {
   active: boolean;
@@ -23,26 +23,12 @@ export interface ContinuityStatus {
 }
 
 export async function fetchContinuityStatus(): Promise<ContinuityStatus> {
-  // Using fetch from weslr_backend_contract.py endpoints
-  // For now, simulate with direct function call since we're in dev mode
-  // In production, this would be: return fetch(`${API_BASE}/api/contract/continuity`).then(r => r.json())
-  
-  try {
-    // This is a placeholder — real implementation would call the backend contract
-    // For local dev, we'll import and call the Python function via a simple HTTP proxy
-    return {
-      active: true,
-      last_updated: new Date().toISOString(),
-      snapshots: [],
-    };
-  } catch (e) {
-    return { active: false, error: String(e), snapshots: [] };
-  }
+  return {
+    active: true,
+    last_updated: new Date().toISOString(),
+    snapshots: [],
+  };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Operator Visibility Gate
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface OperatorVisibility {
   visible: boolean;
@@ -51,19 +37,20 @@ export interface OperatorVisibility {
 }
 
 export async function fetchOperatorVisibility(): Promise<OperatorVisibility> {
-  // return fetch(`${API_BASE}/api/contract/operator/visibility`).then(r => r.json())
-  
-  // For now, return dev mode defaults
+  if (!config.features.operatorPanel) {
+    return {
+      visible: false,
+      reason: 'Public demo mode — operator panel disabled',
+      can_review: false,
+    };
+  }
+
   return {
-    visible: true,
-    reason: 'Development mode — panel always visible',
-    can_review: true,
+    visible: config.operator.visibility.defaultValue,
+    reason: 'Operator panel enabled by configured product mode',
+    can_review: config.features.proposalReview,
   };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Operator Summary
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface WeslrCandidate {
   id: string;
@@ -95,11 +82,6 @@ export interface OperatorSummary {
 }
 
 export async function fetchOperatorSummary(): Promise<OperatorSummary> {
-  // return fetch(`${API_BASE}/api/contract/operator/summary`).then(r => r.json())
-  
-  // For now, return empty list — real data comes from review_queue.json via backend
-  // Weslr candidates will be filtered from review_queue.json by source.type === 'external_request'
-  
   return {
     active_proposals: [],
     pending_reviews: 0,
@@ -107,10 +89,6 @@ export async function fetchOperatorSummary(): Promise<OperatorSummary> {
     weslr_candidates: [],
   };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Conversation List
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface Conversation {
   id: string;
@@ -124,15 +102,9 @@ export interface Conversation {
 }
 
 export async function fetchConversations(limit: number = 20): Promise<Conversation[]> {
-  // return fetch(`${API_BASE}/api/contract/conversations?limit=${limit}`).then(r => r.json())
-  
-  // For now, return empty list — real data comes from entity graph via backend
+  void limit;
   return [];
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// File Route (Manual trigger — not auto-fetched)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface FileRouteResult {
   file_type: string;
@@ -157,22 +129,14 @@ export interface FileRouteResult {
 
 export async function routeFile(
   filepath: string,
-  user_query: string = '',
-  task_context: Record<string, any> = { type: 'file_analysis', focus: 'content' },
 ): Promise<FileRouteResult> {
-  // return fetch(`${API_BASE}/api/contract/file-route`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ filepath, user_query, task_context }),
-  // }).then(r => r.json())
-  
   return {
     file_type: '',
     category: 'error',
     content: '',
     content_type: '',
     relevance: 'none',
-    relevance_reason: 'File routing not yet implemented',
+    relevance_reason: 'File routing is not available in this mode',
     labels: [],
     metadata: {
       source_file: filepath,
@@ -180,13 +144,9 @@ export async function routeFile(
       category: 'error',
     },
     safety: { injection_risk: 'low', content_type: 'error' },
-    error: 'File routing not yet implemented',
+    error: 'File routing is not available in this mode',
   };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FILE UPLOAD (connects to backend commit 2247097)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface UploadResult {
   success: boolean;
@@ -200,44 +160,38 @@ export async function uploadFile(
   filename: string,
   base64Content: string,
 ): Promise<UploadResult> {
-  // return fetch(`${API_BASE}/api/contract/upload-file`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ filename, base64Content }),
-  // }).then(r => r.json())
-  
-  // For now, simulate with direct function call since we're in dev mode
-  // In production, this would call the backend contract endpoint:
-  // python weslr_backend_contract.py upload-file <filename> <base64_content>
-  
-  // Simulate upload success with structured data result
-  const ext = Path(filename).extname().toLowerCase();
-  const category = ['.json', '.yaml', '.yml', '.csv'].includes(ext) ? 'structured' : 'text';
-  
-  return {
-    success: true,
-    filename: filename,
-    result: {
-      file_type: ext,
-      category: category,
-      content: `[STRUCTURED DATA - upload complete]\n\nSource: ${filename}\nCategory: ${category}`,
-      content_type: category,
-      relevance: 'medium',
-      relevance_reason: 'File uploaded successfully via backend commit 2247097',
-      labels: ['user_file_upload', 'file_content', 'structured_data'],
-      metadata: {
-        source_file: filename,
-        parsed_successfully: true,
-        category: category,
+  void base64Content;
+
+  if (!config.features.fileUpload) {
+    return {
+      success: false,
+      filename,
+      error: 'File upload is disabled in the read-only public demo.',
+      result: {
+        file_type: '',
+        category: 'error',
+        content: '',
+        content_type: 'error',
+        relevance: 'none',
+        relevance_reason: 'File upload disabled by product mode',
+        labels: [],
+        metadata: {
+          source_file: filename,
+          parsed_successfully: false,
+          category: 'error',
+        },
+        safety: { injection_risk: 'low', content_type: 'error' },
+        error: 'File upload is disabled in the read-only public demo.',
       },
-      safety: { injection_risk: 'low', content_type: category },
-    },
+    };
+  }
+
+  return {
+    success: false,
+    filename,
+    error: 'File upload backend is not configured yet.',
   };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CHAT (LLM-BACKED)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
   id: string;
@@ -262,17 +216,11 @@ export async function sendChatMessage(message: string): Promise<ChatResult> {
       body: JSON.stringify({ message }),
     });
     return await response.json();
-  } catch (e) {
-    return { success: false, error: String(e) };
+  } catch (_e) {
+    return {
+      success: false,
+      error:
+        'This public demo only supports selected read-only WESLR routes. I can explain WESLR, describe hosted or private deployment, or show safe status information.',
+    };
   }
-}
-
-// Simple extension helper
-function Path(filename: string) {
-  return {
-    extname: () => {
-      const lastDot = filename.lastIndexOf('.');
-      return lastDot >= 0 ? filename.substring(lastDot) : '';
-    }
-  };
 }
