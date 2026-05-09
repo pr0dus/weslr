@@ -1,0 +1,38 @@
+{
+  "suite_id": "public_demo_agent_positioning",
+  "suite_name": "Public demo agent/API positioning lower-bound suite",
+  "minimum_score": 0.85,
+  "score": 1.0,
+  "passed": true,
+  "baseline_version": 1,
+  "source_commit": "0b2ffea5b948aa70586deef9d7585257548ef47b",
+  "notes": [
+    "Baseline generated from deterministic public_demo_chat responder after Conversation Eval Report Runner V1."
+  ],
+  "turn_scores": [
+    {
+      "turn_index": 0,
+      "user": "Can Claude or OpenClaw use WESLR through an API?",
+      "score": 1.0,
+      "passed": true,
+      "missing_required": [],
+      "forbidden_present": []
+    },
+    {
+      "turn_index": 1,
+      "user": "Why would an agent need WESLR?",
+      "score": 1.0,
+      "passed": true,
+      "missing_required": [],
+      "forbidden_present": []
+    },
+    {
+      "turn_index": 2,
+      "user": "Can I deploy WESLR privately?",
+      "score": 1.0,
+      "passed": true,
+      "missing_required": [],
+      "forbidden_present": []
+    }
+  ]
+}
