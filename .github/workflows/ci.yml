@@ -69,7 +69,8 @@ jobs:
             weslr/tests/test_safety_contract.py \
             weslr/tests/test_fact_extractor_v1.py \
             weslr/tests/test_public_demo_policy.py \
-            weslr/tests/test_public_demo_chat.py
+            weslr/tests/test_public_demo_chat.py \
+            weslr/tests/test_conversation_eval_v1.py
 
   cognitive-refinement-audit:
     name: Cognitive refinement audit lane
