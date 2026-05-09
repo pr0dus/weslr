@@ -7,6 +7,7 @@ from weslr.evals.conversation_eval import (
     deterministic_public_demo_responder,
     evaluate_suite,
     evaluate_suite_file,
+    iter_suite_files,
     save_result,
     score_turn,
 )
@@ -61,6 +62,20 @@ def test_public_demo_agent_positioning_suite_passes_with_default_responder():
     assert result.passed is True
     assert result.score >= result.minimum_score
     assert len(result.turn_scores) == 3
+
+
+def test_public_demo_privacy_longform_suite_is_discovered_and_passes():
+    suite_files = list(iter_suite_files(SUITE_DIR))
+    suite_names = {p.name for p in suite_files}
+    assert "public_demo_privacy_longform.json" in suite_names
+
+    result = evaluate_suite_file(
+        SUITE_DIR / "longform" / "public_demo_privacy_longform.json",
+        deterministic_public_demo_responder,
+    )
+    assert result.passed is True
+    assert result.score >= result.minimum_score
+    assert len(result.turn_scores) == 8
 
 
 def test_save_result_and_compare_to_baseline(tmp_path):
