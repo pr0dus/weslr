@@ -45,6 +45,12 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
             "weslr_identity",
         )
 
+    if any(term in text for term in ["just another chatbot", "another chatbot", "normal chatbot", "only a chatbot", "just a chatbot"]):
+        return _reply(
+            "WESLR is not just another chatbot. It is built around continuity, governed memory, evidence, proposal tracking, and approval-aware workflows, so long-running work can stay coherent without silently expanding what WESLR is allowed to do.",
+            "weslr_not_chatbot",
+        )
+
     if any(term in text for term in ["governed memory", "memory", "remember"]):
         return _reply(
             "Governed memory means WESLR should not silently remember everything. Memory is scoped by person, project, team, company, or institution, and important memory or system-changing actions require clear rules and review.",
