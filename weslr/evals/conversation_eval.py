@@ -197,7 +197,9 @@ def deterministic_public_demo_responder(message: str, _history: list[dict[str, s
 
 
 def iter_suite_files(root: str | Path) -> Iterable[Path]:
+    """Return all suite JSON files under root, including nested suite groups."""
+
     path = Path(root)
     if not path.exists():
         return []
-    return sorted(path.glob("*.json"))
+    return sorted(path.rglob("*.json"))
