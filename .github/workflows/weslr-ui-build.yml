@@ -1,0 +1,35 @@
+name: WESLR UI Build
+
+on:
+  pull_request:
+    paths:
+      - 'weslr-ui/**'
+      - '.github/workflows/weslr-ui-build.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'weslr-ui/**'
+      - '.github/workflows/weslr-ui-build.yml'
+
+jobs:
+  weslr-ui-build:
+    name: Build weslr-ui
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: weslr-ui
+        run: npm install
+
+      - name: Build
+        working-directory: weslr-ui
+        run: npm run build
