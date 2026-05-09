@@ -1,6 +1,8 @@
 {
   "id": "public_demo_privacy_longform",
   "name": "Public demo privacy and deployment longform suite",
+  "scope": "public_demo",
+  "suite_type": "longform",
   "minimum_score": 0.88,
   "minimum_turn_score": 0.70,
   "must_not_include": [
