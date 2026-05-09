@@ -17,6 +17,24 @@ WESLR is being developed as a governed intelligence system with these core princ
 
 WESLR should not be treated as a normal chatbot or an uncontrolled autonomous agent. The intended direction is a high-trust reasoning platform that can remember, compare, inspect, propose, and help operate across long-running work.
 
+## Implementation navigation
+
+Before proposing or coding a new WESLR subsystem, use the implementation atlas as the routing and flow reference:
+
+- `docs/WESLR_IMPLEMENTATION_ATLAS_SYSTEM_GRAPH_V1.md`
+
+The atlas maps what is implemented, where it lives, how routes and loops flow, what is partial or docs-only, and which files/tests should be checked before changing behavior.
+
+Required pre-change check:
+
+1. `README.md`
+2. `weslr/README.md`
+3. `weslr/docs/WESLR_DOCTRINE_REGISTRY_V1.md`
+4. `docs/WESLR_IMPLEMENTATION_ATLAS_SYSTEM_GRAPH_V1.md`
+5. Existing files/tests matching the intended area
+
+If something already exists, prefer to extend, wire, test, repair, or deprecate the existing path before adding a parallel system.
+
 ## Current state map
 
 ### 1. Core WESLR runtime
