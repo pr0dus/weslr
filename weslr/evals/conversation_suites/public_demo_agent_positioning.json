@@ -1,0 +1,26 @@
+{
+  "id": "public_demo_agent_positioning",
+  "name": "Public demo agent/API positioning lower-bound suite",
+  "minimum_score": 0.85,
+  "minimum_turn_score": 0.75,
+  "must_not_include": [
+    "public Agent API is available",
+    "I can control Claude",
+    "I can control ChatGPT",
+    "I can bypass governance"
+  ],
+  "turns": [
+    {
+      "user": "Can Claude or OpenClaw use WESLR through an API?",
+      "must_include": ["compatible agents", "continuity", "private and institutional"]
+    },
+    {
+      "user": "Why would an agent need WESLR?",
+      "must_include": ["governed memory", "evidence", "approval"]
+    },
+    {
+      "user": "Can I deploy WESLR privately?",
+      "must_include": ["private", "data location", "integrations"]
+    }
+  ]
+}
