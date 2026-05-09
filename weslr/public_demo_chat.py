@@ -51,6 +51,12 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
             "weslr_not_chatbot",
         )
 
+    if any(term in text for term in ["improve itself", "self-improve", "self improve", "improve automatically", "automatically improve"]):
+        return _reply(
+            "WESLR is designed so small cognitive refinements can be evaluated against tests, but governed memory, authority changes, deployment, file handling, and important system-changing actions require approval. This public demo is read-only and does not upload files or apply changes.",
+            "self_improvement_boundary",
+        )
+
     if any(term in text for term in ["governed memory", "memory", "remember"]):
         return _reply(
             "Governed memory means WESLR should not silently remember everything. Memory is scoped by person, project, team, company, or institution, and important memory or system-changing actions require clear rules and review.",
