@@ -140,6 +140,103 @@ Use:
 WESLR is designed to reduce repeated context rebuilding and improve context efficiency for compatible agents.
 ```
 
+## Context efficiency validation plan
+
+This theory must be tested before WESLR makes strong public or sales claims about token savings.
+
+Hypothesis:
+
+```text
+For long-running tasks, connected agents using WESLR compact context packets will require fewer repeated prompt/context tokens than agents that repeatedly reconstruct project state from raw conversation, files, or prior logs.
+```
+
+Null hypothesis:
+
+```text
+WESLR does not reduce total context/token use, or any reduction is too small or inconsistent to claim.
+```
+
+### What to measure
+
+For each benchmark task, measure both baseline and WESLR-assisted runs:
+
+- input tokens
+- output tokens
+- total tokens
+- number of turns
+- wall-clock time
+- task success
+- number of repeated context explanations
+- number of forgotten constraints
+- number of corrections needed
+- quality of final result
+
+### Baseline condition
+
+The agent receives context in the normal way:
+
+- raw conversation history
+- copied summaries
+- file snippets
+- manual operator explanations
+- repeated prompts across sessions
+
+### WESLR-assisted condition
+
+The agent receives a compact WESLR context packet containing only relevant:
+
+- project state
+- memory summary
+- active constraints
+- unresolved tasks
+- prior decisions
+- relevant evidence
+- governance rules
+- current task objective
+
+### Benchmark task families
+
+Use several realistic long-running workflows:
+
+1. coding continuation after context reset
+2. research/literature synthesis continuation
+3. product/UX planning continuation
+4. deployment/debugging continuation
+5. industrial/TIA project continuation
+6. Scatti/materials validation continuation
+
+### Minimum acceptance criteria
+
+Do not claim token savings publicly unless tests show:
+
+- lower total input/context tokens in WESLR-assisted runs
+- equal or better task success
+- fewer repeated explanations or corrections
+- no hidden loss of important context
+- results repeat across multiple task families
+
+### Reporting rule
+
+Allowed after validation:
+
+```text
+In our benchmark tasks, WESLR-assisted context reduced repeated context rebuilding while preserving task quality.
+```
+
+Only if measured:
+
+```text
+In tested workflows, WESLR-assisted agents used X% fewer input/context tokens on average.
+```
+
+Not allowed without broad proof:
+
+```text
+WESLR always reduces token costs.
+WESLR guarantees lower bills.
+WESLR makes all agents more efficient.
+```
+
 ## Relationship to Claude, ChatGPT, Hermes, OpenClaw, and other agents
 
 Public positioning should be careful:
@@ -288,7 +385,7 @@ Reason:
 - organization can define agent permissions
 - data remains within chosen environment
 - integrations can be reviewed and governed
-- context efficiency can reduce repeated model work across long-running institutional projects
+- context efficiency can reduce repeated model work across long-running institutional projects when validated
 
 ### Self-hosted admin/operator
 
@@ -423,6 +520,7 @@ I am evaluating private deployment
 5. Agent/API integrations are primarily an institutional/private deployment feature until implemented and productized.
 6. No public API availability should be claimed before implementation.
 7. WESLR may improve context/token efficiency by reducing repeated context rebuilding, but should not guarantee universal token savings.
+8. Context/token efficiency must be benchmarked before strong public or sales claims are made.
 ```
 
 ## V1 verdict
