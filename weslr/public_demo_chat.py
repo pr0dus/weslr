@@ -57,6 +57,12 @@ def public_demo_chat(message: str) -> Dict[str, Any]:
             "self_improvement_boundary",
         )
 
+    if any(term in text for term in ["summarize", "summary", "boundaries you explained", "privacy and deployment boundaries"]):
+        return _reply(
+            "In this public demo, WESLR is read-only: it does not upload files, write memory, expose operator controls, execute actions, or deploy changes. For real use, private or self-hosted deployment gives organizations control over data location, runtime, access, updates, and integrations, while governed memory stays scoped and approval-aware.",
+            "privacy_deployment_summary",
+        )
+
     if any(term in text for term in ["governed memory", "memory", "remember"]):
         return _reply(
             "Governed memory means WESLR should not silently remember everything. Memory is scoped by person, project, team, company, or institution, and important memory or system-changing actions require clear rules and review.",
