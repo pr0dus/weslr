@@ -15,9 +15,17 @@
       "tell me about yourself",
       "what is your name"
     ],
-    "slash_commands": ["/system"],
-    "modules": ["weslr.identity_core"],
-    "examples": ["What is WESLR?", "Who are you?", "Tell me about yourself"],
+    "slash_commands": [
+      "/system"
+    ],
+    "modules": [
+      "weslr.identity_core"
+    ],
+    "examples": [
+      "What is WESLR?",
+      "Who are you?",
+      "Tell me about yourself"
+    ],
     "unavailable_message": "Identity information is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -39,9 +47,18 @@
       "show me capabilities",
       "help me"
     ],
-    "slash_commands": ["/help", "/capabilities"],
-    "modules": ["weslr.capability_registry"],
-    "examples": ["What can you do?", "Show me what you can help with", "What should I try?"],
+    "slash_commands": [
+      "/help",
+      "/capabilities"
+    ],
+    "modules": [
+      "weslr.capability_registry"
+    ],
+    "examples": [
+      "What can you do?",
+      "Show me what you can help with",
+      "What should I try?"
+    ],
     "unavailable_message": "Capability listing is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -66,9 +83,19 @@
       "can you research",
       "tell me about"
     ],
-    "slash_commands": ["/evidence", "/search"],
-    "modules": ["weslr.evidence_pipeline", "weslr.evidence_chat_bridge"],
-    "examples": ["What is entropy?", "Explain entropy very deeply.", "Search for best practices on API design"],
+    "slash_commands": [
+      "/evidence",
+      "/search"
+    ],
+    "modules": [
+      "weslr.evidence_pipeline",
+      "weslr.evidence_chat_bridge"
+    ],
+    "examples": [
+      "What is entropy?",
+      "Explain entropy very deeply.",
+      "Search for best practices on API design"
+    ],
     "unavailable_message": "Evidence search is not available right now. Try rephrasing your question.",
     "operator_required": false,
     "staging_only": true
@@ -89,9 +116,17 @@
       "cite your sources",
       "source for that"
     ],
-    "slash_commands": ["/sources"],
-    "modules": ["weslr.evidence_chat_bridge", "weslr.evidence_policy"],
-    "examples": ["What are the sources?", "Show sources for that answer"],
+    "slash_commands": [
+      "/sources"
+    ],
+    "modules": [
+      "weslr.evidence_chat_bridge",
+      "weslr.evidence_policy"
+    ],
+    "examples": [
+      "What are the sources?",
+      "Show sources for that answer"
+    ],
     "unavailable_message": "Source attribution is not available right now.",
     "operator_required": false,
     "staging_only": true
@@ -114,9 +149,18 @@
       "how are you",
       "current state"
     ],
-    "slash_commands": ["/state"],
-    "modules": ["weslr.state", "weslr.artificial_analysis_index"],
-    "examples": ["What is implemented?", "What is your current state?", "What needs attention?"],
+    "slash_commands": [
+      "/state"
+    ],
+    "modules": [
+      "weslr.state",
+      "weslr.artificial_analysis_index"
+    ],
+    "examples": [
+      "What is implemented?",
+      "What is your current state?",
+      "What needs attention?"
+    ],
     "unavailable_message": "System state is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -139,9 +183,19 @@
       "operator items",
       "attention summary"
     ],
-    "slash_commands": ["/attention", "/reviews"],
-    "modules": ["weslr.review_interface", "weslr.artificial_analysis_index"],
-    "examples": ["What needs attention?", "Show pending reviews", "Review queue"],
+    "slash_commands": [
+      "/attention",
+      "/reviews"
+    ],
+    "modules": [
+      "weslr.review_interface",
+      "weslr.artificial_analysis_index"
+    ],
+    "examples": [
+      "What needs attention?",
+      "Show pending reviews",
+      "Review queue"
+    ],
     "unavailable_message": "Operator attention summary is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -163,9 +217,18 @@
       "safety boundaries",
       "what needs human approval"
     ],
-    "slash_commands": ["/governance"],
-    "modules": ["weslr.governance_surface", "weslr.safety_contract"],
-    "examples": ["What is unsafe to automate?", "What requires operator approval?", "Governance boundaries"],
+    "slash_commands": [
+      "/governance"
+    ],
+    "modules": [
+      "weslr.governance_surface",
+      "weslr.safety_contract"
+    ],
+    "examples": [
+      "What is unsafe to automate?",
+      "What requires operator approval?",
+      "Governance boundaries"
+    ],
     "unavailable_message": "Governance boundary information is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -186,9 +249,18 @@
       "composite summary",
       "signal analysis"
     ],
-    "slash_commands": ["/analysis"],
-    "modules": ["weslr.composite_analysis_stack", "weslr.artificial_analysis_index"],
-    "examples": ["What does composite analysis say?", "Analyze current signals", "Source confidence summary"],
+    "slash_commands": [
+      "/analysis"
+    ],
+    "modules": [
+      "weslr.composite_analysis_stack",
+      "weslr.artificial_analysis_index"
+    ],
+    "examples": [
+      "What does composite analysis say?",
+      "Analyze current signals",
+      "Source confidence summary"
+    ],
     "unavailable_message": "Composite analysis is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -210,9 +282,18 @@
       "try an experiment",
       "propose an experiment"
     ],
-    "slash_commands": ["/experiment", "/test"],
-    "modules": ["weslr.cognitive_dialogue"],
-    "examples": ["What can we test?", "Run an experiment on evidence search", "Plan an experiment"],
+    "slash_commands": [
+      "/experiment",
+      "/test"
+    ],
+    "modules": [
+      "weslr.cognitive_dialogue"
+    ],
+    "examples": [
+      "What can we test?",
+      "Run an experiment on evidence search",
+      "Plan an experiment"
+    ],
     "unavailable_message": "Experiment planning is not available right now.",
     "operator_required": true,
     "staging_only": false
@@ -234,9 +315,18 @@
       "project plan",
       "break this down"
     ],
-    "slash_commands": ["/plan", "/next"],
-    "modules": ["weslr.planning"],
-    "examples": ["Help me plan this project", "Organize this task", "Next steps for my project"],
+    "slash_commands": [
+      "/plan",
+      "/next"
+    ],
+    "modules": [
+      "weslr.planning"
+    ],
+    "examples": [
+      "Help me plan this project",
+      "Organize this task",
+      "Next steps for my project"
+    ],
     "unavailable_message": "Project planning is not available right now.",
     "operator_required": false,
     "staging_only": false
@@ -257,9 +347,18 @@
       "design an experiment",
       "run an experiment"
     ],
-    "slash_commands": ["/experiment", "/propose"],
-    "modules": ["weslr.experiment_proposal_generator", "weslr.experiment_proposal_store"],
-    "examples": ["Propose an experiment from our recent WESLR continuity work.", "Design an experiment to test the capability router."],
+    "slash_commands": [
+      "/experiment",
+      "/propose"
+    ],
+    "modules": [
+      "weslr.experiment_proposal_generator",
+      "weslr.experiment_proposal_store"
+    ],
+    "examples": [
+      "Propose an experiment from our recent WESLR continuity work.",
+      "Design an experiment to test the capability router."
+    ],
     "unavailable_message": "Experiment proposal generation is not available right now.",
     "operator_required": true,
     "staging_only": true
@@ -280,9 +379,17 @@
       "list experiments",
       "what experiments are pending"
     ],
-    "slash_commands": ["/experiments", "/experiment-review"],
-    "modules": ["weslr.experiment_proposal_store"],
-    "examples": ["Show pending experiment proposals.", "What experiments are pending?"],
+    "slash_commands": [
+      "/experiments",
+      "/experiment-review"
+    ],
+    "modules": [
+      "weslr.experiment_proposal_store"
+    ],
+    "examples": [
+      "Show pending experiment proposals.",
+      "What experiments are pending?"
+    ],
     "unavailable_message": "Experiment review is not available right now.",
     "operator_required": true,
     "staging_only": true
@@ -306,8 +413,15 @@
       "pending experiments",
       "what should we continue"
     ],
-    "slash_commands": ["/workplace", "/ideas", "/experiments"],
-    "modules": ["weslr.workplace_review_surface", "weslr.workplace_chat_bridge"],
+    "slash_commands": [
+      "/workplace",
+      "/ideas",
+      "/experiments"
+    ],
+    "modules": [
+      "weslr.workplace_review_surface",
+      "weslr.workplace_chat_bridge"
+    ],
     "examples": [
       "Show my workplace.",
       "What are we working on?",
@@ -316,5 +430,97 @@
     "unavailable_message": "Workplace overview is not available right now.",
     "operator_required": false,
     "staging_only": true
+  },
+  {
+    "capability_id": "human_context_reasoning",
+    "category": "skills/human-context",
+    "label": "Human Context Reasoning",
+    "description": "Bounded, non-clinical human-context reasoning for overwhelm, decision avoidance, difficult conversations, bias patterns, and stuckness.",
+    "status": "read_only",
+    "risk_level": "medium",
+    "authority": "taxonomy_only",
+    "automatic_change": false,
+    "natural_triggers": [],
+    "slash_commands": [],
+    "modules": [],
+    "examples": [
+      "Why do people avoid decisions when overwhelmed?",
+      "How can someone calm down before a difficult conversation?",
+      "What is confirmation bias?"
+    ],
+    "unavailable_message": "This is a taxonomy-only skill entry; no direct runtime behavior is implemented.",
+    "operator_required": false,
+    "staging_only": false,
+    "implementation_status": "taxonomy_only",
+    "read_only": true,
+    "non_executing": true,
+    "runtime_behavior_changed": false,
+    "cognitive_legibility_boundary": "required",
+    "substrate_targets": [
+      "meaning_response_obligation",
+      "entity_memory_scoped_context"
+    ],
+    "eval_categories": [
+      "psychology",
+      "ambiguity_uncertainty"
+    ],
+    "evidence_requirements": [
+      "visible prompt evidence",
+      "permitted memory scope only",
+      "no unsupported private-state inference"
+    ],
+    "boundaries": [
+      "no clinical diagnosis",
+      "no therapy replacement",
+      "no hidden personality inference",
+      "no emotional manipulation",
+      "no claims of knowing user state without evidence",
+      "no fake certainty"
+    ]
+  },
+  {
+    "capability_id": "creative_conversation",
+    "category": "skills/creative-conversation",
+    "label": "Creative Conversation",
+    "description": "Bounded ideation, reflective questions, analogy generation, project imagination, and research question generation.",
+    "status": "read_only",
+    "risk_level": "medium",
+    "authority": "taxonomy_only",
+    "automatic_change": false,
+    "natural_triggers": [],
+    "slash_commands": [],
+    "modules": [],
+    "examples": [
+      "Tell me a thoughtful question to ask a researcher.",
+      "Give me three different ways to think about this problem.",
+      "Invent an analogy for learning."
+    ],
+    "unavailable_message": "This is a taxonomy-only skill entry; no direct runtime behavior is implemented.",
+    "operator_required": false,
+    "staging_only": false,
+    "implementation_status": "taxonomy_only",
+    "read_only": true,
+    "non_executing": true,
+    "runtime_behavior_changed": false,
+    "cognitive_legibility_boundary": "required",
+    "substrate_targets": [
+      "capability_taxonomy",
+      "meaning_response_obligation"
+    ],
+    "eval_categories": [
+      "creativity_conversation",
+      "analogy_metaphor"
+    ],
+    "evidence_requirements": [
+      "factual claims still need evidence",
+      "imaginative output must be clearly framed as ideation"
+    ],
+    "boundaries": [
+      "no unsupported factual claims",
+      "no emotional manipulation",
+      "no hallucinated evidence",
+      "no unsafe persuasion",
+      "no private/unteachable internal language"
+    ]
   }
 ]
