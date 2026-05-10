@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import sys
 from pathlib import Path
 
@@ -15,6 +16,13 @@ from pathlib import Path
 WORKSPACE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(WORKSPACE_DIR))
 
+
+def _handle_standalone_status(args) -> int:
+    from weslr.standalone_runtime_status import get_standalone_runtime_status
+
+    status = get_standalone_runtime_status(WORKSPACE_DIR)
+    print(json.dumps(status, indent=2))
+    return 0 if not status.get("standalone_blockers") else 1
 
 
 def main():
@@ -30,6 +38,17 @@ def main():
 
     # Create subparsers and register commands
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    standalone_status_parser = subparsers.add_parser(
+        "standalone-status",
+        help="Show read-only standalone runtime status as JSON",
+    )
+    standalone_status_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print JSON output (default behavior)",
+    )
+    standalone_status_parser.set_defaults(func=_handle_standalone_status)
 
     # Load all command modules to register their subcommands
     commands_dir = WORKSPACE_DIR / "commands"
@@ -60,7 +79,10 @@ def main():
     # Execute command
     cmd_func = getattr(args, "func", None)
     if cmd_func:
-        cmd_func(args)
+        result = cmd_func(args)
+        if isinstance(result, int):
+            sys.exit(result)
+        return
     else:
         print(f"Command '{args.command}' not implemented")
         sys.exit(1)
