@@ -9,9 +9,21 @@ when WESLR_PRODUCT_MODE is public_demo_readonly or unset.
 import base64
 import json
 import sys
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-sys.path.insert(0, '/data/data/com.termux/files/home/.openclaw/workspace')
+
+def _find_repo_root(start: Path) -> Path:
+    """Resolve the WESLR repo root from a nested runtime file path."""
+    current = start.resolve()
+    for candidate in (current, *current.parents):
+        if (candidate / "main.py").is_file() and (candidate / "weslr").is_dir():
+            return candidate
+    raise RuntimeError(f"Could not locate WESLR repo root from: {start}")
+
+
+REPO_ROOT = _find_repo_root(Path(__file__).resolve().parent)
+sys.path.insert(0, str(REPO_ROOT))
 
 from weslr.public_demo_chat import public_demo_chat  # noqa: E402
 from weslr.public_demo_policy import (  # noqa: E402
