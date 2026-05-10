@@ -22,6 +22,7 @@ from weslr.evals.official_mcq_adapter import (  # noqa: E402
 
 
 SUITE_PATH = ROOT / "weslr" / "evals" / "conversation_suites" / "official_mcq_tiny_sample_v0.json"
+GENERALIZATION_SUITE_PATH = ROOT / "weslr" / "evals" / "conversation_suites" / "official_mcq_generalization_sample_v1.json"
 
 
 class OfficialMcqAdapterV0Tests(unittest.TestCase):
@@ -30,10 +31,16 @@ class OfficialMcqAdapterV0Tests(unittest.TestCase):
         self.assertEqual(suite["suite_id"], "official_mcq_tiny_sample_v0")
         self.assertEqual(len(suite["items"]), 10)
 
+    def test_generalization_sample_also_loads(self):
+        suite = load_suite(GENERALIZATION_SUITE_PATH)
+        self.assertEqual(suite["suite_id"], "official_mcq_generalization_sample_v1")
+        self.assertEqual(len(suite["items"]), 20)
+
     def test_suite_is_sample_only_and_not_official(self):
         suite = load_suite(SUITE_PATH)
         self.assertTrue(suite["sample_only"])
         self.assertFalse(suite["official_score"])
+        self.assertFalse(suite["internal_eval"])
 
     def test_runs_adapter_on_tiny_suite(self):
         summary = run_suite(SUITE_PATH)
@@ -110,6 +117,102 @@ class OfficialMcqAdapterV0Tests(unittest.TestCase):
         self.assertIn("A.", prompt)
         self.assertIn("Select the best answer label", prompt)
 
+    def test_temporary_public_subset_style_suite_with_provenance_loads(self):
+        public_subset = {
+            "suite_id": "public_subset_eval",
+            "sample_only": False,
+            "internal_eval": True,
+            "official_score": False,
+            "dataset_name": "ExampleDataset",
+            "dataset_version": "2026.1",
+            "dataset_source": "already-local public subset",
+            "subset_name": "mini-dev",
+            "subset_size": 1,
+            "source_split": "dev",
+            "license_note": "public subset manually placed locally",
+            "conversion_schema_version": "public_subset_schema_v1",
+            "prompt_format_version": "official_mcq_prompt_v1",
+            "adapter_version": "official_mcq_adapter_v0",
+            "items": [
+                {
+                    "id": "item_1",
+                    "benchmark_family": "mmlu_gpqa_style",
+                    "domain": "science",
+                    "question": "Which option best describes entropy?",
+                    "choices": [
+                        {"label": "A", "text": "Spread out energy or arrangements in a system."},
+                        {"label": "B", "text": "A guarantee that order always increases."}
+                    ],
+                    "answer_label": "A",
+                    "required_skill": "science_explanation",
+                    "explanation_required": True
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+            json.dump(public_subset, tmp)
+            tmp_path = tmp.name
+        try:
+            suite = load_suite(tmp_path)
+            self.assertFalse(suite["sample_only"])
+            self.assertTrue(suite["internal_eval"])
+            self.assertEqual(suite["metadata"]["dataset_name"], "ExampleDataset")
+        finally:
+            os.unlink(tmp_path)
+
+    def test_run_summary_includes_provenance_metadata(self):
+        summary = run_suite(SUITE_PATH)
+        self.assertIn("adapter_version", summary.metadata)
+        self.assertIn("date_run", summary.run_provenance)
+        self.assertIn("official_score", summary.run_provenance)
+        self.assertFalse(summary.run_provenance["official_score"])
+
+    def test_official_score_true_is_rejected(self):
+        bad_suite = {
+            "suite_id": "bad_suite",
+            "sample_only": True,
+            "official_score": True,
+            "items": [],
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+            json.dump(bad_suite, tmp)
+            tmp_path = tmp.name
+        try:
+            with self.assertRaises(ValueError):
+                load_suite(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_sample_only_false_without_internal_eval_or_provenance_is_rejected(self):
+        bad_suite = {
+            "suite_id": "bad_suite",
+            "sample_only": False,
+            "official_score": False,
+            "items": [
+                {
+                    "id": "item_1",
+                    "benchmark_family": "mmlu_gpqa_style",
+                    "domain": "science",
+                    "question": "Which option best describes entropy?",
+                    "choices": [
+                        {"label": "A", "text": "Spread out energy or arrangements in a system."},
+                        {"label": "B", "text": "A guarantee that order always increases."}
+                    ],
+                    "answer_label": "A",
+                    "required_skill": "science_explanation",
+                    "explanation_required": True
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+            json.dump(bad_suite, tmp)
+            tmp_path = tmp.name
+        try:
+            with self.assertRaises(ValueError):
+                load_suite(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
     def test_cli_json_output_shape(self):
         result = subprocess.run(
             [
@@ -130,6 +233,9 @@ class OfficialMcqAdapterV0Tests(unittest.TestCase):
             "suite_id",
             "sample_only",
             "official_score",
+            "internal_eval",
+            "metadata",
+            "run_provenance",
             "total",
             "accuracy",
             "answered_count",

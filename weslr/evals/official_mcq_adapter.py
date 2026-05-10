@@ -10,18 +10,22 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 from interpretation import interpret_human_turn
+from weslr.evals.public_subset_schema_v1 import build_run_provenance, validate_suite_metadata
 
 
 VALID_BENCHMARK_FAMILY = "mmlu_gpqa_style"
 LABEL_RE = re.compile(r"\b(?:answer|choice|selected answer|selected)\s*[:\-]?\s*\(?([A-Z])\)?\b", re.IGNORECASE)
 PAREN_LABEL_RE = re.compile(r"\(([A-Z])\)")
 SINGLE_LABEL_LINE_RE = re.compile(r"^\s*([A-Z])\s*$")
+ADAPTER_VERSION = "official_mcq_adapter_v0"
+PROMPT_FORMAT_VERSION = "official_mcq_prompt_v1"
 
 
 @dataclass
@@ -69,6 +73,9 @@ class MCQRunSummary:
     suite_id: str
     sample_only: bool
     official_score: bool
+    internal_eval: bool
+    metadata: dict[str, Any]
+    run_provenance: dict[str, Any]
     total: int
     accuracy: float
     answered_count: int
@@ -140,22 +147,22 @@ def _validate_item(raw: Any) -> MCQItem:
 def load_suite(path: str | Path) -> dict[str, Any]:
     suite = _load_json(path)
     _require(isinstance(suite, dict), "Suite must be a JSON object.")
-    suite_id = str(suite.get("suite_id") or suite.get("id") or "").strip()
-    _require(bool(suite_id), "Suite must have suite_id or id.")
-
-    sample_only = bool(suite.get("sample_only", False))
-    official_score = bool(suite.get("official_score", False))
-    _require(sample_only is True, "Suite must be marked sample_only=true.")
-    _require(official_score is False, "Suite must be marked official_score=false.")
+    metadata = validate_suite_metadata(suite)
 
     items = suite.get("items")
     _require(isinstance(items, list) and items, "Suite must contain a non-empty items list.")
     validated = [_validate_item(item) for item in items]
 
+    metadata.setdefault("adapter_version", ADAPTER_VERSION)
+    metadata.setdefault("prompt_format_version", PROMPT_FORMAT_VERSION)
+    metadata["suite_size"] = len(validated)
+
     return {
-        "suite_id": suite_id,
-        "sample_only": sample_only,
-        "official_score": official_score,
+        "suite_id": metadata["suite_id"],
+        "sample_only": metadata["sample_only"],
+        "official_score": metadata["official_score"],
+        "internal_eval": metadata.get("internal_eval", False),
+        "metadata": metadata,
         "items": validated,
     }
 
@@ -230,6 +237,20 @@ def _uncertainty_label(confidence: float | None, selected_label: str | None) -> 
     return "high"
 
 
+def _get_repo_commit() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        commit = result.stdout.strip()
+        return commit or None
+    except Exception:
+        return None
+
+
 def run_item(item: MCQItem, sample_only: bool, official_score: bool) -> MCQResult:
     result = interpret_human_turn(build_prompt(item))
     response_text = str(result.get("response_text") or "") if isinstance(result, dict) else str(result)
@@ -274,10 +295,24 @@ def run_suite(suite_path: str | Path) -> MCQRunSummary:
         if result.failure_mode:
             failure_counter[result.failure_mode] += 1
 
+    metadata = dict(suite.get("metadata", {}))
+    metadata.setdefault("suite_id", suite["suite_id"])
+    metadata.setdefault("official_score", suite["official_score"])
+    metadata.setdefault("sample_only", suite["sample_only"])
+    metadata.setdefault("internal_eval", suite.get("internal_eval", False))
+    metadata.setdefault("adapter_version", ADAPTER_VERSION)
+    metadata.setdefault("prompt_format_version", PROMPT_FORMAT_VERSION)
+
+    repo_commit = _get_repo_commit()
+    run_provenance = build_run_provenance(metadata, repo_commit=repo_commit)
+
     return MCQRunSummary(
         suite_id=suite["suite_id"],
         sample_only=suite["sample_only"],
         official_score=suite["official_score"],
+        internal_eval=suite.get("internal_eval", False),
+        metadata=metadata,
+        run_provenance=run_provenance,
         total=total,
         accuracy=round(correct_count / total, 3) if total else 0.0,
         answered_count=answered_count,
@@ -303,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"suite_id: {summary.suite_id}")
         print(f"sample_only: {summary.sample_only}")
         print(f"official_score: {summary.official_score}")
+        print(f"internal_eval: {summary.internal_eval}")
         print(f"total: {summary.total}")
         print(f"accuracy: {summary.accuracy}")
         print(f"answered_count: {summary.answered_count}")
