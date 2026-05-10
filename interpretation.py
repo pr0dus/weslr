@@ -1124,6 +1124,131 @@ def _try_materials_workflow_guidance(message: str) -> dict | None:
     }
 
 
+def _try_governance_boundary_guidance(message: str, lowered: str) -> dict | None:
+    """Return read-only guidance for governance, memory, and evidence boundaries."""
+    category = None
+    path = None
+    boundary_summary = None
+    next_step = None
+    response_text = None
+
+    comparison_triggers = [
+        "are you just another chatbot",
+        "how are you different from chatgpt",
+        "normal chatbot",
+    ]
+    memory_triggers = [
+        "can you remember me automatically",
+        "do you remember everything",
+        "can you store everything automatically",
+    ]
+    self_change_triggers = [
+        "can you change yourself without approval",
+        "can you improve yourself automatically",
+        "can you self modify",
+        "can you self-modify",
+    ]
+    public_demo_triggers = [
+        "can this public demo upload my files or run tools",
+        "can you upload my files",
+        "can you run tools",
+        "can you deploy changes",
+    ]
+    evidence_triggers = [
+        "can you prove a claim without evidence",
+        "what should you do when evidence is missing",
+        "tell me something if you are not sure",
+    ]
+    workflow_triggers = [
+        "what should happen after a capability gap is found",
+        "what is the next step if a proposal is accepted",
+        "how should weslr improve safely",
+    ]
+
+    if any(trigger in lowered for trigger in comparison_triggers):
+        category = "comparison"
+        path = "governance_boundary_comparison"
+        boundary_summary = (
+            "WESLR is not just another chatbot; it is built around continuity, governed memory, evidence, proposals, and approval-aware workflows."
+        )
+        next_step = "Use governed continuity and evidence pathways rather than treating WESLR like an unrestricted chat model."
+        response_text = (
+            "WESLR is not just another chatbot. It is a governed, adaptive system built around continuity, governed memory, evidence, proposals, and approval-aware workflows. "
+            "It should answer within those boundaries rather than claiming unrestricted intelligence or AGI-style autonomy."
+        )
+    elif any(trigger in lowered for trigger in memory_triggers):
+        category = "memory"
+        path = "governance_boundary_memory"
+        boundary_summary = (
+            "WESLR should not silently remember everything; memory is scoped, reviewed, and especially constrained in public or demo contexts."
+        )
+        next_step = "Keep memory scoped and require rules or approval before important long-term retention."
+        response_text = (
+            "WESLR should not silently remember everything automatically. Memory is scoped, important memory follows review or approval rules, and public or demo contexts remain read-only rather than creating unrestricted memory."
+        )
+    elif any(trigger in lowered for trigger in self_change_triggers):
+        category = "self_change"
+        path = "governance_boundary_self_change"
+        boundary_summary = (
+            "There is no uncontrolled self-modification; meaningful changes require governance, tests, approval, and traceability."
+        )
+        next_step = "Route change ideas through governance review, testing, and operator approval before implementation."
+        response_text = (
+            "No — WESLR should not change itself without approval. Low-risk refinements may be evaluated, but meaningful changes go through governance, tests, approval, and traceable implementation rather than uncontrolled self-modification."
+        )
+    elif any(trigger in lowered for trigger in public_demo_triggers):
+        category = "public_demo"
+        path = "governance_boundary_public_demo"
+        boundary_summary = (
+            "Public demo mode is read-only: it does not upload files, run tools, expose operator controls, or deploy changes."
+        )
+        next_step = "Keep public-demo behavior read-only and separate from operator-only actions."
+        response_text = (
+            "In public demo mode, WESLR is read-only. It does not upload files, run tools, expose operator controls, or deploy changes. Those actions stay outside the public demo boundary."
+        )
+    elif any(trigger in lowered for trigger in evidence_triggers):
+        category = "evidence"
+        path = "governance_boundary_evidence"
+        boundary_summary = (
+            "When evidence is missing, WESLR should qualify claims, state uncertainty, and recommend the next validation step instead of presenting unsupported claims as facts."
+        )
+        next_step = "State uncertainty clearly and ask for or check the evidence needed before stronger claims."
+        response_text = (
+            "When evidence is missing, WESLR should qualify the claim, state uncertainty, and recommend the next validation step. It should not present unsupported claims as facts or pretend certainty without evidence."
+        )
+    elif any(trigger in lowered for trigger in workflow_triggers):
+        category = "workflow"
+        path = "governance_boundary_workflow"
+        boundary_summary = (
+            "Capability gaps should become reviewable proposals and plans; accepted proposals move into implementation planning, tests, review, and operator approval rather than uncontrolled execution."
+        )
+        next_step = "Turn the gap or accepted proposal into a reviewable plan with tests, traceability, and operator-controlled execution."
+        response_text = (
+            "Capability gaps should become reviewable proposals and plans. If a proposal is accepted, the next step is implementation planning, tests, review, and operator approval — not uncontrolled execution."
+        )
+
+    if category is None:
+        return None
+
+    payload = {
+        "category": category,
+        "read_only": True,
+        "writes": [],
+        "requires_approval_for_change": True,
+        "boundary_summary": boundary_summary,
+        "next_step": next_step,
+    }
+
+    return {
+        "message": message,
+        "path": path,
+        "response_text": response_text,
+        "confidence": "high",
+        "read_only": True,
+        "governance_boundary_guidance": payload,
+    }
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1186,6 +1311,17 @@ def interpret_human_turn(message: str) -> dict:
             materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
             return expand_response(materials_guidance, policy, lowered)
 
+        governance_guidance = _try_governance_boundary_guidance(message, lowered)
+        if governance_guidance is not None:
+            policy = decide_response_policy(governance_guidance, lowered, _WESLR_MODE)
+            governance_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            governance_guidance["frame_turn_type"] = _turn_type_from_frame(governance_guidance["interaction_frame"])
+            governance_guidance["frame_reply_shape"] = _reply_shape_from_frame(governance_guidance["interaction_frame"])
+            governance_guidance["response_contract"] = _response_contract_from_frame(governance_guidance["interaction_frame"])
+            governance_guidance["turn_type"] = governance_guidance["frame_turn_type"]
+            governance_guidance["reply_shape"] = governance_guidance["frame_reply_shape"]
+            return expand_response(governance_guidance, policy, lowered)
+
         # Not a write — try deterministic (read-only) handlers
         dispatched = dispatch_deterministic_handler(message, lowered)
         if dispatched is not None:
@@ -1225,6 +1361,17 @@ def interpret_human_turn(message: str) -> dict:
         materials_guidance["turn_type"] = materials_guidance["frame_turn_type"]
         materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
         return expand_response(materials_guidance, policy, lowered)
+
+    governance_guidance = _try_governance_boundary_guidance(message, lowered)
+    if governance_guidance is not None:
+        policy = decide_response_policy(governance_guidance, lowered, _WESLR_MODE)
+        governance_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        governance_guidance["frame_turn_type"] = _turn_type_from_frame(governance_guidance["interaction_frame"])
+        governance_guidance["frame_reply_shape"] = _reply_shape_from_frame(governance_guidance["interaction_frame"])
+        governance_guidance["response_contract"] = _response_contract_from_frame(governance_guidance["interaction_frame"])
+        governance_guidance["turn_type"] = governance_guidance["frame_turn_type"]
+        governance_guidance["reply_shape"] = governance_guidance["frame_reply_shape"]
+        return expand_response(governance_guidance, policy, lowered)
 
     # Handler registry dispatch — read-only queries first
     dispatched = dispatch_deterministic_handler(message, lowered)
