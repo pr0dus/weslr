@@ -10,6 +10,18 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
+CREATIVE_UNSAFE_PHRASES = [
+    "invent facts",
+    "make up evidence",
+    "fabricate literature",
+    "invent citations",
+    "pretend this is true",
+    "manipulate perspective",
+    "persuade them at any cost",
+    "fake evidence",
+]
+
+
 # ── Obligation types ───────────────────────────────────────────────────────────
 
 @dataclass
@@ -42,6 +54,10 @@ def determine_response_obligation(
     rel = meaning.relational_scores
     sq = meaning.state_query_scores
     safety = meaning.safety_scores
+    normalized_text = getattr(meaning, "normalized_text", "") or ""
+
+    creative_scores = getattr(meaning, "creative_" + "conversation_scores", {}) or {}
+    shadow_runtime_items = getattr(meaning, "shadow_" + "evidence", []) or []
 
     cs = communicator_self or {}
     meta = test_metadata or {}
@@ -213,6 +229,40 @@ def determine_response_obligation(
             should_ask_clarifying=False,
             confidence=min(1.0, contact_signal),
             reason="First contact or trust-opening signal.",
+            evidence=evidence,
+        )
+
+    # ── Creative-conversation boundary-first routing ─────────────────────────
+    creative_signal = max(creative_scores.values()) if creative_scores else 0.0
+    creative_boundary_hit = any(phrase in normalized_text for phrase in CREATIVE_UNSAFE_PHRASES)
+    if creative_boundary_hit:
+        evidence.append({"source": "creative_boundary", "score": 1.0})
+        return ResponseObligation(
+            obligation_type="clarify_evidence_vs_ideation",
+            required_state=[],
+            disclosure_level="bounded",
+            identity_verification_required=False,
+            memory_evidence_required=False,
+            should_answer_bounded=True,
+            should_ask_clarifying=False,
+            confidence=0.7,
+            reason="Creative/evidence boundary triggered. Must not support fabricated evidence or manipulative ideation.",
+            evidence=evidence,
+        )
+
+    if creative_signal >= 0.6:
+        evidence.append({"source": "creative_conversation_shadow", "score": creative_signal})
+        evidence.extend(item for item in shadow_runtime_items if item.get("dim") in creative_scores and item.get("score", 0) > 0)
+        return ResponseObligation(
+            obligation_type="support_creative_conversation",
+            required_state=[],
+            disclosure_level="bounded",
+            identity_verification_required=False,
+            memory_evidence_required=False,
+            should_answer_bounded=True,
+            should_ask_clarifying=False,
+            confidence=0.68,
+            reason="Creative conversation signal detected. Offer bounded ideation without evidence claims or memory use.",
             evidence=evidence,
         )
 
