@@ -1124,6 +1124,92 @@ def _try_materials_workflow_guidance(message: str) -> dict | None:
     }
 
 
+def _try_standalone_runtime_status_guidance(message: str, lowered: str) -> dict | None:
+    """Return live read-only standalone runtime status for status/dependency questions."""
+    direct_triggers = [
+        "are you standalone",
+        "are you standalone ready",
+        "do you require openclaw",
+        "do you depend on openclaw",
+        "what is your runtime status",
+        "what subsystems are available",
+        "do you have standalone blockers",
+        "standalone runtime status",
+    ]
+    contextual_pairs = [
+        (("runtime", "status"),),
+        (("standalone", "status"),),
+        (("openclaw", "required"),),
+        (("openclaw", "dependency"),),
+        (("subsystems", "available"),),
+        (("standalone", "blockers"),),
+    ]
+
+    triggered = any(trigger in lowered for trigger in direct_triggers)
+    if not triggered:
+        for pair_group in contextual_pairs:
+            if any(all(term in lowered for term in pair) for pair in pair_group):
+                triggered = True
+                break
+
+    if not triggered:
+        return None
+
+    from weslr.standalone_runtime_status import get_standalone_runtime_status
+
+    status = get_standalone_runtime_status()
+    subsystems = status.get("subsystems", {})
+    available = [name for name, meta in subsystems.items() if meta.get("available")]
+    unavailable = [name for name, meta in subsystems.items() if not meta.get("available")]
+    blockers = status.get("standalone_blockers", [])
+    runtime_mode = status.get("runtime_mode", "unknown")
+    runtime_mode_label = runtime_mode.replace("_", " ")
+    openclaw_required = bool(status.get("openclaw_runtime_required", True))
+
+    available_text = ", ".join(available) if available else "none detected"
+    unavailable_text = ", ".join(unavailable) if unavailable else "none"
+    subsystem_summary = {
+        "available": available,
+        "unavailable": unavailable,
+        "available_count": len(available),
+        "unavailable_count": len(unavailable),
+    }
+
+    if blockers:
+        blocker_text = ", ".join(blockers)
+        response_text = (
+            f"WESLR currently reports runtime mode {runtime_mode_label}. OpenClaw is not required as a runtime dependency, "
+            f"but there are standalone blockers: {blocker_text}. Available subsystems: {available_text}. "
+            f"Unavailable subsystems: {unavailable_text}. This distinguishes the construction environment from the runtime dependency surface."
+        )
+    else:
+        response_text = (
+            f"WESLR currently reports runtime mode {runtime_mode_label}. OpenClaw is not required as a runtime dependency, "
+            f"and WESLR is a standalone candidate; OpenClaw is only the construction environment here. "
+            f"Available subsystems: {available_text}. Unavailable subsystems: {unavailable_text}. "
+            f"This does not claim full production readiness."
+        )
+
+    payload = {
+        "runtime_mode": runtime_mode,
+        "openclaw_runtime_required": openclaw_required,
+        "standalone_blockers": blockers,
+        "subsystems": subsystems,
+        "subsystem_summary": subsystem_summary,
+        "read_only": True,
+    }
+
+    return {
+        "message": message,
+        "path": "standalone_runtime_status",
+        "response_text": response_text,
+        "confidence": "high",
+        "read_only": True,
+        "standalone_runtime_status": payload,
+    }
+
+
+
 def _try_governance_boundary_guidance(message: str, lowered: str) -> dict | None:
     """Return read-only guidance for governance, memory, and evidence boundaries."""
     category = None
@@ -1311,6 +1397,17 @@ def interpret_human_turn(message: str) -> dict:
             materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
             return expand_response(materials_guidance, policy, lowered)
 
+        standalone_status_guidance = _try_standalone_runtime_status_guidance(message, lowered)
+        if standalone_status_guidance is not None:
+            policy = decide_response_policy(standalone_status_guidance, lowered, _WESLR_MODE)
+            standalone_status_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            standalone_status_guidance["frame_turn_type"] = _turn_type_from_frame(standalone_status_guidance["interaction_frame"])
+            standalone_status_guidance["frame_reply_shape"] = _reply_shape_from_frame(standalone_status_guidance["interaction_frame"])
+            standalone_status_guidance["response_contract"] = _response_contract_from_frame(standalone_status_guidance["interaction_frame"])
+            standalone_status_guidance["turn_type"] = standalone_status_guidance["frame_turn_type"]
+            standalone_status_guidance["reply_shape"] = standalone_status_guidance["frame_reply_shape"]
+            return expand_response(standalone_status_guidance, policy, lowered)
+
         governance_guidance = _try_governance_boundary_guidance(message, lowered)
         if governance_guidance is not None:
             policy = decide_response_policy(governance_guidance, lowered, _WESLR_MODE)
@@ -1361,6 +1458,17 @@ def interpret_human_turn(message: str) -> dict:
         materials_guidance["turn_type"] = materials_guidance["frame_turn_type"]
         materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
         return expand_response(materials_guidance, policy, lowered)
+
+    standalone_status_guidance = _try_standalone_runtime_status_guidance(message, lowered)
+    if standalone_status_guidance is not None:
+        policy = decide_response_policy(standalone_status_guidance, lowered, _WESLR_MODE)
+        standalone_status_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        standalone_status_guidance["frame_turn_type"] = _turn_type_from_frame(standalone_status_guidance["interaction_frame"])
+        standalone_status_guidance["frame_reply_shape"] = _reply_shape_from_frame(standalone_status_guidance["interaction_frame"])
+        standalone_status_guidance["response_contract"] = _response_contract_from_frame(standalone_status_guidance["interaction_frame"])
+        standalone_status_guidance["turn_type"] = standalone_status_guidance["frame_turn_type"]
+        standalone_status_guidance["reply_shape"] = standalone_status_guidance["frame_reply_shape"]
+        return expand_response(standalone_status_guidance, policy, lowered)
 
     governance_guidance = _try_governance_boundary_guidance(message, lowered)
     if governance_guidance is not None:
