@@ -143,6 +143,7 @@ from weslr.deterministic_handlers import dispatch_deterministic_handler
 from weslr.write_handlers import dispatch_write_handler
 from weslr.state_checkpoint import get_state_checkpoint
 from weslr.conversation_resilience import build_resilience_guidance
+from weslr.ordinary_explanation_guidance import build_ordinary_explanation_guidance
 from weslr.modules.materials_workflow_guidance import guide_materials_workflow
 from entity_extractor import extract_entity_names_from_text
 
@@ -1346,6 +1347,16 @@ def _try_conversation_resilience_guidance(message: str, lowered: str) -> dict | 
     return guidance
 
 
+def _try_ordinary_explanation_guidance(message: str, lowered: str) -> dict | None:
+    """Return read-only ordinary explanation guidance before generic fallback."""
+    del lowered
+    guidance = build_ordinary_explanation_guidance(message)
+    if guidance is None:
+        return None
+    guidance["message"] = message
+    return guidance
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1463,6 +1474,17 @@ def interpret_human_turn(message: str) -> dict:
             resilience_guidance["turn_type"] = resilience_guidance["frame_turn_type"]
             resilience_guidance["reply_shape"] = resilience_guidance["frame_reply_shape"]
             return expand_response(resilience_guidance, policy, lowered)
+
+        ordinary_explanation_guidance = _try_ordinary_explanation_guidance(message, lowered)
+        if ordinary_explanation_guidance is not None:
+            policy = decide_response_policy(ordinary_explanation_guidance, lowered, _WESLR_MODE)
+            ordinary_explanation_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            ordinary_explanation_guidance["frame_turn_type"] = _turn_type_from_frame(ordinary_explanation_guidance["interaction_frame"])
+            ordinary_explanation_guidance["frame_reply_shape"] = _reply_shape_from_frame(ordinary_explanation_guidance["interaction_frame"])
+            ordinary_explanation_guidance["response_contract"] = _response_contract_from_frame(ordinary_explanation_guidance["interaction_frame"])
+            ordinary_explanation_guidance["turn_type"] = ordinary_explanation_guidance["frame_turn_type"]
+            ordinary_explanation_guidance["reply_shape"] = ordinary_explanation_guidance["frame_reply_shape"]
+            return expand_response(ordinary_explanation_guidance, policy, lowered)
 
         # No handler matched at all — safe fallback
         resp = _build_safe_response(
@@ -1592,6 +1614,17 @@ def interpret_human_turn(message: str) -> dict:
                 "result": result,
             },
         }
+
+    ordinary_explanation_guidance = _try_ordinary_explanation_guidance(message, lowered)
+    if ordinary_explanation_guidance is not None:
+        policy = decide_response_policy(ordinary_explanation_guidance, lowered, _WESLR_MODE)
+        ordinary_explanation_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        ordinary_explanation_guidance["frame_turn_type"] = _turn_type_from_frame(ordinary_explanation_guidance["interaction_frame"])
+        ordinary_explanation_guidance["frame_reply_shape"] = _reply_shape_from_frame(ordinary_explanation_guidance["interaction_frame"])
+        ordinary_explanation_guidance["response_contract"] = _response_contract_from_frame(ordinary_explanation_guidance["interaction_frame"])
+        ordinary_explanation_guidance["turn_type"] = ordinary_explanation_guidance["frame_turn_type"]
+        ordinary_explanation_guidance["reply_shape"] = ordinary_explanation_guidance["frame_reply_shape"]
+        return expand_response(ordinary_explanation_guidance, policy, lowered)
 
     # Write handler dispatch — state-changing operations
     write_result = dispatch_write_handler(message, lowered)
