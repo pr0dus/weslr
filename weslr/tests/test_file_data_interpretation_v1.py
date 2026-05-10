@@ -6,12 +6,14 @@ import sys
 import tempfile
 import types
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from weslr.archive_ingestion import inspect_archive_package
 from weslr.file_router import FileRouterError, create_file_router
 from weslr.scientific_structure_ingestion import inspect_scientific_structure_file
 from weslr.sqlite_ingestion import inspect_sqlite_database
@@ -218,6 +220,61 @@ class TestFileDataInterpretationV1(unittest.TestCase):
         else:
             with self.assertRaises(FileRouterError):
                 self.router.route(str(path))
+
+    def test_zip_manifest_summary_returns_archive_metadata(self):
+        path = self.workspace / "bundle.zip"
+        with zipfile.ZipFile(path, "w") as zf:
+            zf.writestr("tia/export.json", "{}")
+            zf.writestr("plc/tags.json", "{}")
+            zf.writestr("docs/readme.md", "hello")
+
+        result = inspect_archive_package(str(path), workspace_dir=str(self.workspace))
+
+        self.assertEqual(result["type"], "archive_package")
+        self.assertEqual(result["archive_format"], "zip")
+        self.assertTrue(result["read_only"])
+        self.assertEqual(result["file_count"], 3)
+        self.assertIn("tia", result["top_level_directories"])
+        self.assertIn("plc", result["top_level_directories"])
+        self.assertEqual(result["extension_counts"][".json"], 2)
+        self.assertIn("industrial_tia_export_candidate", result["package_hints"])
+
+    def test_zip_unsafe_entry_detected_without_extraction(self):
+        path = self.workspace / "unsafe.zip"
+        with zipfile.ZipFile(path, "w") as zf:
+            zf.writestr("../evil.txt", "nope")
+            zf.writestr("/abs/path.txt", "nope")
+
+        result = inspect_archive_package(str(path), workspace_dir=str(self.workspace))
+
+        self.assertEqual(result["unsafe_entry_count"], 2)
+        self.assertTrue(result["warnings"])
+        self.assertIn("../evil.txt", result["unsafe_entries"])
+        self.assertIn("/abs/path.txt", result["unsafe_entries"])
+
+    def test_file_router_routes_zip_archive(self):
+        path = self.workspace / "science-bundle.zip"
+        with zipfile.ZipFile(path, "w") as zf:
+            zf.writestr("structures/POSCAR", "Si\n1.0\n1 0 0\n0 1 0\n0 0 1\nSi\n1\nDirect\n0 0 0\n")
+            zf.writestr("data/sample.fits", "placeholder")
+            zf.writestr("materials/sample.cif", "data_x")
+
+        result = self.router.route(str(path))
+
+        self.assertEqual(result.category, "archive")
+        self.assertTrue(result.read_only)
+        self.assertEqual(result.content_type, "structured")
+        self.assertIn("archive_package", result.labels)
+        self.assertEqual(result.metadata["archive_format"], "zip")
+        self.assertEqual(result.metadata["file_count"], 3)
+        self.assertIn("scientific_dataset_bundle_candidate", result.metadata["package_hints"])
+
+    def test_bad_archive_returns_safe_error_behavior(self):
+        path = self.workspace / "broken.zip"
+        path.write_bytes(b"not-a-real-zip")
+
+        with self.assertRaises(FileRouterError):
+            self.router.route(str(path))
 
     def test_existing_json_csv_and_text_routing_still_works(self):
         json_path = self.workspace / "sample.json"

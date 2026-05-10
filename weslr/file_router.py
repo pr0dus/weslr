@@ -5,7 +5,7 @@ Routes files to appropriate understanding modules based on type.
 
 Architecture:
   - FileRouter - Main class for unified file routing
-  - Supported types: PDF, text-based files, SQLite databases, scientific structure files, FITS datasets
+  - Supported types: PDF, text-based files, SQLite databases, scientific structure files, FITS datasets, archive packages
   - Normalized result structure for downstream code
 
 Safety Boundaries:
@@ -38,6 +38,7 @@ STRUCTURED_EXTENSIONS = {".json", ".yaml", ".yml", ".csv"}
 # Supported file extensions per category
 PDF_EXTENSIONS = {".pdf"}
 FITS_EXTENSIONS = {".fits", ".fit", ".fts"}
+ARCHIVE_EXTENSIONS = {".zip", ".tar", ".tgz", ".tar.gz"}
 SQLITE_EXTENSIONS = {".sqlite", ".sqlite3", ".db"}
 SCIENTIFIC_STRUCTURE_EXTENSIONS = {".xyz", ".cif", ".vasp"}
 SCIENTIFIC_STRUCTURE_FILENAMES = {"POSCAR", "CONTCAR"}
@@ -179,6 +180,7 @@ class FileRouter:
     - SQLite databases → Read-only SQLite inspection (weslr/sqlite_ingestion.py)
     - Scientific structure files → Read-only structure inspection (weslr/scientific_structure_ingestion.py)
     - FITS files → Read-only FITS metadata ingestion (weslr/fits_ingestion.py)
+    - Archive packages → Read-only archive manifest inspection (weslr/archive_ingestion.py)
     
     Usage:
         from weslr.file_router import create_file_router
@@ -209,6 +211,7 @@ class FileRouter:
         self._structured_data = None
         self._file_ingestion = None
         self._fits_ingestion = None
+        self._archive_ingestion = None
         self._sqlite_ingestion = None
         self._scientific_structure_ingestion = None
     
@@ -230,6 +233,10 @@ class FileRouter:
             import weslr.fits_ingestion as fits_ingestion
             self._fits_ingestion = fits_ingestion
 
+        if self._archive_ingestion is None:
+            import weslr.archive_ingestion as archive_ingestion
+            self._archive_ingestion = archive_ingestion
+
         if self._sqlite_ingestion is None:
             import weslr.sqlite_ingestion as sqlite_ingestion
             self._sqlite_ingestion = sqlite_ingestion
@@ -240,6 +247,9 @@ class FileRouter:
     
     def _get_file_extension(self, filepath: str) -> str:
         """Get file extension."""
+        name = Path(filepath).name.lower()
+        if name.endswith(".tar.gz"):
+            return ".tar.gz"
         return Path(filepath).suffix.lower()
 
     def _is_scientific_structure_file(self, filepath: str) -> bool:
@@ -249,6 +259,9 @@ class FileRouter:
             or path.name in SCIENTIFIC_STRUCTURE_FILENAMES
         )
     
+    def _is_archive_file(self, filepath: str) -> bool:
+        return self._get_file_extension(filepath) in ARCHIVE_EXTENSIONS
+
     def _is_safe_path(self, filepath: str, workspace_dir: str) -> bool:
         """Check if filepath is within workspace directory."""
         try:
@@ -292,6 +305,8 @@ class FileRouter:
             return self._route_pdf(filepath, user_query, task_context)
         elif ext in FITS_EXTENSIONS:
             return self._route_fits(filepath, user_query, task_context)
+        elif self._is_archive_file(filepath):
+            return self._route_archive(filepath, user_query, task_context)
         elif ext in SQLITE_EXTENSIONS:
             return self._route_sqlite(filepath, user_query, task_context)
         elif self._is_scientific_structure_file(filepath):
@@ -303,7 +318,7 @@ class FileRouter:
         else:
             raise FileRouterError(
                 f"Unsupported file type: {ext}. "
-                f"Supported: {PDF_EXTENSIONS | FITS_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS | SQLITE_EXTENSIONS | SCIENTIFIC_STRUCTURE_EXTENSIONS} plus {SCIENTIFIC_STRUCTURE_FILENAMES}"
+                f"Supported: {PDF_EXTENSIONS | FITS_EXTENSIONS | ARCHIVE_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS | SQLITE_EXTENSIONS | SCIENTIFIC_STRUCTURE_EXTENSIONS} plus {SCIENTIFIC_STRUCTURE_FILENAMES}"
             )
     
     def _route_pdf(
@@ -403,6 +418,48 @@ class FileRouter:
             raise FileRouterError(f"FITS routing failed: {e}")
         except Exception as e:
             raise FileRouterError(f"Unexpected FITS routing error: {e}")
+
+    def _route_archive(
+        self,
+        filepath: str,
+        user_query: str,
+        task_context: Dict[str, Any],
+    ) -> RouterResult:
+        """Route archive package to read-only manifest inspection."""
+        self._import_modules()
+
+        try:
+            ingestor = self._archive_ingestion.create_archive_ingestor(
+                workspace_dir=self.workspace_dir
+            )
+            result = ingestor.ingest(filepath, user_query, task_context or {})
+            parsed = result.get("parsed_data", {})
+
+            return RouterResult(
+                file_type=result.get("file_type", self._get_file_extension(filepath)),
+                category="archive",
+                content=result.get("structured_output", result.get("relevance_reason", "")),
+                content_type="structured",
+                relevance=result.get("relevance", "high"),
+                relevance_reason=result.get("relevance_reason", "Archive package inspection available"),
+                read_only=True,
+                labels=["user_file_upload", "file_content", "archive_package"],
+                metadata={
+                    "source_file": Path(filepath).name,
+                    "read_only": True,
+                    "archive_format": parsed.get("archive_format", result.get("metadata", {}).get("archive_format")),
+                    "file_count": parsed.get("file_count", result.get("metadata", {}).get("file_count", 0)),
+                    "unsafe_entry_count": parsed.get("unsafe_entry_count", result.get("metadata", {}).get("unsafe_entry_count", 0)),
+                    "package_hints": parsed.get("package_hints", result.get("metadata", {}).get("package_hints", [])),
+                    "parsed_successfully": result.get("metadata", {}).get("parsed_successfully", False),
+                    "parse_error": result.get("metadata", {}).get("parse_error"),
+                },
+                safety={"injection_risk": "low", "content_type": "structured"},
+            )
+        except self._archive_ingestion.ArchiveIngestionError as e:
+            raise FileRouterError(f"Archive routing failed: {e}")
+        except Exception as e:
+            raise FileRouterError(f"Unexpected archive routing error: {e}")
 
     def _route_text(
         self,
