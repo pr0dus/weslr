@@ -142,6 +142,7 @@ from weslr.omnichat.response_expander import expand_response
 from weslr.deterministic_handlers import dispatch_deterministic_handler
 from weslr.write_handlers import dispatch_write_handler
 from weslr.state_checkpoint import get_state_checkpoint
+from weslr.conversation_resilience import build_resilience_guidance
 from weslr.modules.materials_workflow_guidance import guide_materials_workflow
 from entity_extractor import extract_entity_names_from_text
 
@@ -1335,6 +1336,16 @@ def _try_governance_boundary_guidance(message: str, lowered: str) -> dict | None
     }
 
 
+def _try_conversation_resilience_guidance(message: str, lowered: str) -> dict | None:
+    """Return read-only topic-aware guidance before the generic fallback."""
+    del lowered
+    guidance = build_resilience_guidance(message)
+    if guidance is None:
+        return None
+    guidance["message"] = message
+    return guidance
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1419,6 +1430,17 @@ def interpret_human_turn(message: str) -> dict:
             governance_guidance["reply_shape"] = governance_guidance["frame_reply_shape"]
             return expand_response(governance_guidance, policy, lowered)
 
+        resilience_guidance = _try_conversation_resilience_guidance(message, lowered)
+        if resilience_guidance is not None:
+            policy = decide_response_policy(resilience_guidance, lowered, _WESLR_MODE)
+            resilience_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            resilience_guidance["frame_turn_type"] = _turn_type_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["frame_reply_shape"] = _reply_shape_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["response_contract"] = _response_contract_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["turn_type"] = resilience_guidance["frame_turn_type"]
+            resilience_guidance["reply_shape"] = resilience_guidance["frame_reply_shape"]
+            return expand_response(resilience_guidance, policy, lowered)
+
         # Not a write — try deterministic (read-only) handlers
         dispatched = dispatch_deterministic_handler(message, lowered)
         if dispatched is not None:
@@ -1430,6 +1452,17 @@ def interpret_human_turn(message: str) -> dict:
             dispatched["turn_type"] = dispatched["frame_turn_type"]
             dispatched["reply_shape"] = dispatched["frame_reply_shape"]
             return expand_response(dispatched, policy, lowered)
+
+        resilience_guidance = _try_conversation_resilience_guidance(message, lowered)
+        if resilience_guidance is not None:
+            policy = decide_response_policy(resilience_guidance, lowered, _WESLR_MODE)
+            resilience_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            resilience_guidance["frame_turn_type"] = _turn_type_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["frame_reply_shape"] = _reply_shape_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["response_contract"] = _response_contract_from_frame(resilience_guidance["interaction_frame"])
+            resilience_guidance["turn_type"] = resilience_guidance["frame_turn_type"]
+            resilience_guidance["reply_shape"] = resilience_guidance["frame_reply_shape"]
+            return expand_response(resilience_guidance, policy, lowered)
 
         # No handler matched at all — safe fallback
         resp = _build_safe_response(
@@ -1480,6 +1513,17 @@ def interpret_human_turn(message: str) -> dict:
         governance_guidance["turn_type"] = governance_guidance["frame_turn_type"]
         governance_guidance["reply_shape"] = governance_guidance["frame_reply_shape"]
         return expand_response(governance_guidance, policy, lowered)
+
+    resilience_guidance = _try_conversation_resilience_guidance(message, lowered)
+    if resilience_guidance is not None:
+        policy = decide_response_policy(resilience_guidance, lowered, _WESLR_MODE)
+        resilience_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        resilience_guidance["frame_turn_type"] = _turn_type_from_frame(resilience_guidance["interaction_frame"])
+        resilience_guidance["frame_reply_shape"] = _reply_shape_from_frame(resilience_guidance["interaction_frame"])
+        resilience_guidance["response_contract"] = _response_contract_from_frame(resilience_guidance["interaction_frame"])
+        resilience_guidance["turn_type"] = resilience_guidance["frame_turn_type"]
+        resilience_guidance["reply_shape"] = resilience_guidance["frame_reply_shape"]
+        return expand_response(resilience_guidance, policy, lowered)
 
     # Handler registry dispatch — read-only queries first
     dispatched = dispatch_deterministic_handler(message, lowered)
