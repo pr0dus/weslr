@@ -1,8 +1,10 @@
+import importlib.util
 import json
 import os
 import sqlite3
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
@@ -10,7 +12,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from weslr.file_router import create_file_router
+from weslr.file_router import FileRouterError, create_file_router
 from weslr.scientific_structure_ingestion import inspect_scientific_structure_file
 from weslr.sqlite_ingestion import inspect_sqlite_database
 
@@ -159,6 +161,63 @@ class TestFileDataInterpretationV1(unittest.TestCase):
         self.assertTrue(result["read_only"])
         self.assertIn("warnings", result)
         self.assertIn("read_only: true", result["summary"])
+
+    def test_file_router_routes_fits_extensions(self):
+        for name in ("sample.fits", "sample.fit", "sample.fts"):
+            path = self.workspace / name
+            path.write_bytes(b"not-a-real-fits")
+
+            fake_module = types.SimpleNamespace(
+                FITSIngestionError=Exception,
+                create_fits_ingestor=lambda workspace_dir=None: types.SimpleNamespace(
+                    ingest=lambda filepath, user_query="", task_context=None: {
+                        "file_type": Path(filepath).suffix.lower(),
+                        "category": "fits_dataset",
+                        "relevance": "high",
+                        "relevance_reason": "FITS dataset ingested",
+                        "metadata": {
+                            "source_file": Path(filepath).name,
+                            "parsed_successfully": True,
+                            "parse_error": None,
+                            "width": 12,
+                            "height": 34,
+                        },
+                        "structured_output": "[FITS DATASET INGESTION]\nread_only: true\nDimensions: 12 x 34 pixels",
+                        "parsed_data": {
+                            "width": 12,
+                            "height": 34,
+                            "analysis_type": "fits_ingestion",
+                            "fits_info": {
+                                "naxis": 2,
+                                "object": "TestObject",
+                                "telescope": "TestScope",
+                                "instrument": "TestCam",
+                            },
+                        },
+                    }
+                ),
+            )
+            self.router._fits_ingestion = fake_module
+
+            result = self.router.route(str(path))
+            self.assertEqual(result.category, "fits")
+            self.assertTrue(result.read_only)
+            self.assertEqual(result.metadata["width"], 12)
+            self.assertEqual(result.metadata["height"], 34)
+            self.assertIn("fits_dataset", result.labels)
+            self.assertIn("FITS DATASET INGESTION", result.content)
+
+    def test_bad_fits_file_returns_safe_error_behavior(self):
+        path = self.workspace / "broken.fits"
+        path.write_bytes(b"not-a-real-fits")
+        self.router._fits_ingestion = None
+
+        if importlib.util.find_spec("astropy") is None:
+            with self.assertRaises(FileRouterError):
+                self.router.route(str(path))
+        else:
+            with self.assertRaises(FileRouterError):
+                self.router.route(str(path))
 
     def test_existing_json_csv_and_text_routing_still_works(self):
         json_path = self.workspace / "sample.json"

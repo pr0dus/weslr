@@ -5,7 +5,7 @@ Routes files to appropriate understanding modules based on type.
 
 Architecture:
   - FileRouter - Main class for unified file routing
-  - Supported types: PDF, text-based files, SQLite databases, scientific structure files
+  - Supported types: PDF, text-based files, SQLite databases, scientific structure files, FITS datasets
   - Normalized result structure for downstream code
 
 Safety Boundaries:
@@ -37,6 +37,7 @@ STRUCTURED_EXTENSIONS = {".json", ".yaml", ".yml", ".csv"}
 
 # Supported file extensions per category
 PDF_EXTENSIONS = {".pdf"}
+FITS_EXTENSIONS = {".fits", ".fit", ".fts"}
 SQLITE_EXTENSIONS = {".sqlite", ".sqlite3", ".db"}
 SCIENTIFIC_STRUCTURE_EXTENSIONS = {".xyz", ".cif", ".vasp"}
 SCIENTIFIC_STRUCTURE_FILENAMES = {"POSCAR", "CONTCAR"}
@@ -177,6 +178,7 @@ class FileRouter:
     - Text-based files → Generic ingestion (weslr/file_ingestion.py)
     - SQLite databases → Read-only SQLite inspection (weslr/sqlite_ingestion.py)
     - Scientific structure files → Read-only structure inspection (weslr/scientific_structure_ingestion.py)
+    - FITS files → Read-only FITS metadata ingestion (weslr/fits_ingestion.py)
     
     Usage:
         from weslr.file_router import create_file_router
@@ -206,6 +208,7 @@ class FileRouter:
         self._pdf_context = None
         self._structured_data = None
         self._file_ingestion = None
+        self._fits_ingestion = None
         self._sqlite_ingestion = None
         self._scientific_structure_ingestion = None
     
@@ -222,6 +225,10 @@ class FileRouter:
         if self._file_ingestion is None:
             import weslr.file_ingestion as file_ingestion
             self._file_ingestion = file_ingestion
+
+        if self._fits_ingestion is None:
+            import weslr.fits_ingestion as fits_ingestion
+            self._fits_ingestion = fits_ingestion
 
         if self._sqlite_ingestion is None:
             import weslr.sqlite_ingestion as sqlite_ingestion
@@ -283,6 +290,8 @@ class FileRouter:
         # Determine category and route
         if ext in PDF_EXTENSIONS:
             return self._route_pdf(filepath, user_query, task_context)
+        elif ext in FITS_EXTENSIONS:
+            return self._route_fits(filepath, user_query, task_context)
         elif ext in SQLITE_EXTENSIONS:
             return self._route_sqlite(filepath, user_query, task_context)
         elif self._is_scientific_structure_file(filepath):
@@ -294,7 +303,7 @@ class FileRouter:
         else:
             raise FileRouterError(
                 f"Unsupported file type: {ext}. "
-                f"Supported: {PDF_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS | SQLITE_EXTENSIONS | SCIENTIFIC_STRUCTURE_EXTENSIONS} plus {SCIENTIFIC_STRUCTURE_FILENAMES}"
+                f"Supported: {PDF_EXTENSIONS | FITS_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS | SQLITE_EXTENSIONS | SCIENTIFIC_STRUCTURE_EXTENSIONS} plus {SCIENTIFIC_STRUCTURE_FILENAMES}"
             )
     
     def _route_pdf(
@@ -349,6 +358,52 @@ class FileRouter:
         except Exception as e:
             raise FileRouterError(f"PDF routing failed: {e}")
     
+    def _route_fits(
+        self,
+        filepath: str,
+        user_query: str,
+        task_context: Dict[str, Any],
+    ) -> RouterResult:
+        """Route FITS file to read-only FITS ingestion."""
+        self._import_modules()
+
+        try:
+            ingestor = self._fits_ingestion.create_fits_ingestor(
+                workspace_dir=self.workspace_dir
+            )
+            result = ingestor.ingest(filepath, user_query, task_context or {})
+            parsed = result.get("parsed_data", {})
+            fits_info = parsed.get("fits_info", {}) if isinstance(parsed, dict) else {}
+
+            return RouterResult(
+                file_type=result.get("file_type", self._get_file_extension(filepath)),
+                category="fits",
+                content=result.get("structured_output", result.get("relevance_reason", "")),
+                content_type="structured",
+                relevance=result.get("relevance", "high"),
+                relevance_reason=result.get("relevance_reason", "FITS dataset inspection available"),
+                read_only=True,
+                labels=["user_file_upload", "file_content", "fits_dataset"],
+                metadata={
+                    "source_file": Path(filepath).name,
+                    "read_only": True,
+                    "parsed_successfully": result.get("metadata", {}).get("parsed_successfully", False),
+                    "parse_error": result.get("metadata", {}).get("parse_error"),
+                    "width": parsed.get("width", result.get("metadata", {}).get("width", 0)),
+                    "height": parsed.get("height", result.get("metadata", {}).get("height", 0)),
+                    "analysis_type": parsed.get("analysis_type"),
+                    "naxis": fits_info.get("naxis"),
+                    "object": fits_info.get("object"),
+                    "telescope": fits_info.get("telescope"),
+                    "instrument": fits_info.get("instrument"),
+                },
+                safety={"injection_risk": "low", "content_type": "structured"},
+            )
+        except self._fits_ingestion.FITSIngestionError as e:
+            raise FileRouterError(f"FITS routing failed: {e}")
+        except Exception as e:
+            raise FileRouterError(f"Unexpected FITS routing error: {e}")
+
     def _route_text(
         self,
         filepath: str,
