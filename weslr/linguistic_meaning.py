@@ -58,6 +58,109 @@ SAFETY_KEYWORDS = {
     "memory_claim_requires_evidence": ["what do you remember", "what did we", "earlier", "past", "history", "previous", "before"],
 }
 
+HUMAN_CONTEXT_KEYWORDS = {
+    "overwhelm_or_stuckness": {
+        "positive": [
+            "overwhelmed", "stuck", "stuckness", "blocked", "frozen", "spinning",
+            "can't start", "too much", "not sure where to start", "paralyzed", "lost",
+        ],
+        "negative": [
+            "diagnose", "disorder", "clinical", "trauma", "bipolar", "depression", "anxiety disorder",
+        ],
+    },
+    "decision_avoidance": {
+        "positive": [
+            "avoid decisions", "can't decide", "putting off deciding", "won't choose",
+            "decision paralysis", "avoiding choice", "hesitating",
+        ],
+        "negative": [
+            "tell me my personality", "diagnose indecision", "what disorder causes this",
+        ],
+    },
+    "difficult_conversation": {
+        "positive": [
+            "difficult conversation", "hard conversation", "talk to someone",
+            "say this without conflict", "sensitive conversation", "calm down before talking",
+        ],
+        "negative": [
+            "manipulate", "make them agree", "control them", "win psychologically",
+        ],
+    },
+    "bias_pattern": {
+        "positive": [
+            "confirmation bias", "bias", "motivated reasoning", "blind spot",
+            "seeing what they want to see",
+        ],
+        "negative": [
+            "prove they are irrational", "weaponize bias", "exploit their weakness",
+        ],
+    },
+    "non_clinical_emotion_context": {
+        "positive": [
+            "calm down", "frustrated", "upset", "nervous", "stressed", "worried", "tense", "emotionally hard", "feel stuck",
+        ],
+        "negative": [
+            "diagnose me", "therapy", "treat", "mental illness", "prescribe",
+        ],
+    },
+    "motivation_or_procrastination": {
+        "positive": [
+            "procrastinate", "can't get started", "no motivation", "keep delaying", "avoid important things",
+        ],
+        "negative": [
+            "lazy personality", "diagnose adhd", "what disorder do i have",
+        ],
+    },
+}
+
+CREATIVE_CONVERSATION_KEYWORDS = {
+    "reflective_question_generation": {
+        "positive": [
+            "thoughtful question", "what would you ask", "good question to ask", "reflective question",
+        ],
+        "negative": [],
+    },
+    "ideation": {
+        "positive": [
+            "ideas", "brainstorm", "possibilities", "ways to think", "options", "generate possibilities", "what makes a project feel alive", "three different ways to think",
+        ],
+        "negative": [
+            "invent facts", "make up evidence", "pretend this is true",
+        ],
+    },
+    "analogy_generation": {
+        "positive": [
+            "analogy", "metaphor", "compare", "like", "invent an analogy",
+        ],
+        "negative": [],
+    },
+    "multi_perspective_reframing": {
+        "positive": [
+            "three ways to think", "three different ways to think", "different angles", "multiple perspectives",
+            "other ways to see this", "reframe",
+        ],
+        "negative": [
+            "persuade them at any cost", "manipulate perspective",
+        ],
+    },
+    "project_imagination": {
+        "positive": [
+            "what makes a project feel alive", "imagine this project", "new kind of", "possible future", "project vision",
+        ],
+        "negative": [
+            "claim this exists", "state speculation as fact",
+        ],
+    },
+    "research_question_generation": {
+        "positive": [
+            "ask a researcher", "research question", "what would you ask someone building", "investigate",
+        ],
+        "negative": [
+            "fabricate literature", "invent citations",
+        ],
+    },
+}
+
 
 # ── Scoring helpers ────────────────────────────────────────────────────────────
 
@@ -90,6 +193,31 @@ def _score_phrase_match(normalized: str, phrases: list[str]) -> float:
     return 1.0 if any(p in text_lower for p in phrases) else 0.0
 
 
+def _score_shadow_dimensions(normalized: str, dimension_map: dict[str, dict[str, list[str]]]) -> tuple[dict, list[dict]]:
+    """Score shadow-only enrichment dimensions.
+
+    Shadow scores are analysis-only and must not feed runtime routing.
+    Negative-boundary phrases suppress the score for that dimension.
+    """
+    scores = {}
+    evidence: list[dict] = []
+
+    for dim, config in dimension_map.items():
+        positive = config.get("positive", [])
+        negative = config.get("negative", [])
+        negative_hit = _score_phrase_match(normalized, negative) > 0
+        positive_score = _score_phrase_match(normalized, positive)
+        score = 0.0 if negative_hit else positive_score
+        scores[dim] = min(score, 1.0)
+
+        if negative_hit:
+            evidence.append({"dim": dim, "kind": "shadow_negative_boundary", "score": 1.0})
+        elif positive_score > 0:
+            evidence.append({"dim": dim, "kind": "shadow_positive_phrase", "score": positive_score})
+
+    return scores, evidence
+
+
 # ── Main class ─────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -109,7 +237,10 @@ class MeaningVector:
     primary_relational_frame: str
     primary_state_query: str
     required_state: list[str]
+    human_context_scores: dict = field(default_factory=dict)
+    creative_conversation_scores: dict = field(default_factory=dict)
     evidence: list[dict] = field(default_factory=list)
+    shadow_evidence: list[dict] = field(default_factory=list)
 
 
 def analyze_meaning(raw_text: str) -> MeaningVector:
@@ -165,6 +296,11 @@ def analyze_meaning(raw_text: str) -> MeaningVector:
         phrase_score = _score_phrase_match(normalized, keywords)
         score = max(kw_score * 0.5, phrase_score)
         safety_scores[dim] = min(score, 1.0)
+
+    # ── Shadow-only enrichment dimensions ───────────────────────────────────
+    human_context_scores, human_shadow_evidence = _score_shadow_dimensions(normalized, HUMAN_CONTEXT_KEYWORDS)
+    creative_conversation_scores, creative_shadow_evidence = _score_shadow_dimensions(normalized, CREATIVE_CONVERSATION_KEYWORDS)
+    shadow_evidence = human_shadow_evidence + creative_shadow_evidence
 
     # ── Affect scoring (simple) ──────────────────────────────────────────────
     positive = sum(1 for t in tokens if t in ["thanks", "great", "good", "love", "appreciate", "excellent", "wonderful", "nice"])
@@ -257,7 +393,10 @@ def analyze_meaning(raw_text: str) -> MeaningVector:
         primary_relational_frame=primary_relational_frame,
         primary_state_query=primary_state_query,
         required_state=deduped,
+        human_context_scores=human_context_scores,
+        creative_conversation_scores=creative_conversation_scores,
         evidence=evidence,
+        shadow_evidence=shadow_evidence,
     )
 
 
@@ -277,5 +416,8 @@ def _empty_vector(raw_text: str) -> MeaningVector:
         primary_relational_frame="unknown",
         primary_state_query="unknown",
         required_state=[],
+        human_context_scores={},
+        creative_conversation_scores={},
         evidence=[],
+        shadow_evidence=[],
     )
