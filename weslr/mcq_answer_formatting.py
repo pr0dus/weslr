@@ -10,8 +10,13 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from weslr.ethics_tradeoff_scorer import score_ethics_tradeoff_choices
+
 
 CHOICE_LINE_RE = re.compile(r"^\s*([A-Z])\.\s+(.+?)\s*$")
+_REQUIRED_SKILL_RE = re.compile(r"required_skill\s*[:=]\s*([a-zA-Z0-9_\-]+)", re.IGNORECASE)
+_ETHICS_DOMAIN_MARKERS = {"business_ethics", "ethics_safety"}
+_ETHICS_SKILL_MARKERS = {"ethics_tradeoff_reasoning", "ethics_reasoning"}
 
 _SAFE_BLOCK_PHRASES = (
     "fabricated evidence",
@@ -70,10 +75,16 @@ def parse_mcq_prompt(message: str) -> dict[str, Any] | None:
     if len(choices) < 2:
         return None
 
+    required_skill = None
+    required_skill_match = _REQUIRED_SKILL_RE.search(str(message or ""))
+    if required_skill_match:
+        required_skill = required_skill_match.group(1).strip() or None
+
     return {
         "domain": domain,
         "question": " ".join(question_lines).strip(),
         "choices": choices,
+        "required_skill": required_skill,
     }
 
 
@@ -99,6 +110,40 @@ def _label_by_phrase_choice(choices: list[dict[str, str]], phrases: tuple[str, .
     if len(scored) > 1 and scored[0][0] == scored[1][0]:
         return None, scored[0][0]
     return scored[0][1], scored[0][0]
+
+
+def _is_ethics_mcq_context(parsed: dict[str, Any], message: str) -> bool:
+    domain = _lower(parsed.get("domain") or "")
+    required_skill = _lower(parsed.get("required_skill") or "")
+    raw = _lower(message)
+    if domain in _ETHICS_DOMAIN_MARKERS or required_skill in _ETHICS_SKILL_MARKERS:
+        return True
+    return any(marker in raw for marker in _ETHICS_DOMAIN_MARKERS | _ETHICS_SKILL_MARKERS)
+
+
+def _ethics_scored_response(parsed: dict[str, Any]) -> dict[str, Any]:
+    scored = score_ethics_tradeoff_choices(parsed.get("question", ""), parsed.get("choices", []))
+    selected_label = scored.get("selected_label")
+    confidence = str(scored.get("confidence") or "low")
+    explanation = str(scored.get("explanation") or "insufficient rubric signal")
+    failure_mode = None if selected_label is not None else "insufficient_ethics_rubric_signal"
+    answer_text = selected_label if selected_label is not None else "None"
+    return {
+        "path": "official_mcq_answer_formatting",
+        "response_text": f"Answer: {answer_text}\nExplanation: {explanation}\nConfidence: {confidence}",
+        "selected_label": selected_label,
+        "confidence": confidence,
+        "read_only": True,
+        "sample_only_behavior": True,
+        "official_score_claimed": False,
+        "failure_mode": failure_mode,
+        "scoring_method": "ethics_tradeoff_scorer_v1",
+        "mcq_answer_formatting": {
+            "domain": parsed.get("domain"),
+            "choices": parsed.get("choices"),
+            "required_skill": parsed.get("required_skill"),
+        },
+    }
 
 
 def _select_label(parsed: dict[str, Any]) -> tuple[str | None, str, str | None]:
@@ -138,6 +183,29 @@ def build_official_mcq_response(message: str) -> dict[str, Any] | None:
     if parsed is None:
         return None
 
+    if _is_ethics_mcq_context(parsed, message):
+        ethics_result = _ethics_scored_response(parsed)
+        if ethics_result.get("selected_label") is not None:
+            return ethics_result
+        selected_label, confidence, explanation = _select_label(parsed)
+        if selected_label is None:
+            return ethics_result
+        return {
+            "path": "official_mcq_answer_formatting",
+            "response_text": f"Answer: {selected_label}\nExplanation: {explanation}\nConfidence: {confidence}",
+            "selected_label": selected_label,
+            "confidence": confidence,
+            "read_only": True,
+            "sample_only_behavior": True,
+            "official_score_claimed": False,
+            "failure_mode": None,
+            "mcq_answer_formatting": {
+                "domain": parsed.get("domain"),
+                "choices": parsed.get("choices"),
+                "required_skill": parsed.get("required_skill"),
+            },
+        }
+
     selected_label, confidence, explanation = _select_label(parsed)
     if selected_label is None:
         explanation_text = (
@@ -156,8 +224,8 @@ def build_official_mcq_response(message: str) -> dict[str, Any] | None:
             "failure_mode": "insufficient_signal",
             "mcq_answer_formatting": {
                 "domain": parsed.get("domain"),
-                "question": parsed.get("question"),
                 "choices": parsed.get("choices"),
+                "required_skill": parsed.get("required_skill"),
             },
         }
 
@@ -172,7 +240,7 @@ def build_official_mcq_response(message: str) -> dict[str, Any] | None:
         "failure_mode": None,
         "mcq_answer_formatting": {
             "domain": parsed.get("domain"),
-            "question": parsed.get("question"),
             "choices": parsed.get("choices"),
+            "required_skill": parsed.get("required_skill"),
         },
     }
