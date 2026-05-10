@@ -142,6 +142,7 @@ from weslr.omnichat.response_expander import expand_response
 from weslr.deterministic_handlers import dispatch_deterministic_handler
 from weslr.write_handlers import dispatch_write_handler
 from weslr.state_checkpoint import get_state_checkpoint
+from weslr.modules.materials_workflow_guidance import guide_materials_workflow
 from entity_extractor import extract_entity_names_from_text
 
 _FEEDBACK_LOG_PATH = _Path(__file__).resolve().parent / "weslr" / "operator_feedback_log.jsonl"
@@ -1069,6 +1070,60 @@ def _response_contract_from_frame(frame: str) -> str:
     }.get(frame, "uncertainty_boundary")
 
 
+def _try_materials_workflow_guidance(message: str) -> dict | None:
+    """Return a read-only guided response for materials workflow requests."""
+    guidance = guide_materials_workflow(message)
+    if guidance.get("domain") == "unknown":
+        return None
+
+    payload = {
+        "domain": guidance.get("domain"),
+        "read_only": True,
+        "normalized_formula": guidance.get("normalized_formula"),
+        "workflow_stage": guidance.get("workflow_stage"),
+        "missing_evidence_count": len(guidance.get("missing_evidence", [])),
+        "missing_evidence": guidance.get("missing_evidence", []),
+        "missing_evidence_preview": guidance.get("missing_evidence", [])[:5],
+        "next_steps": guidance.get("next_steps", []),
+        "next_steps_preview": guidance.get("next_steps", [])[:3],
+        "claim_boundary": guidance.get("claim_boundary", {}),
+        "completed_evidence": guidance.get("completed_evidence", []),
+        "confidence": guidance.get("confidence", 0.0),
+        "candidates": guidance.get("candidates", []),
+    }
+
+    candidate_label = payload.get("normalized_formula") or "this candidate"
+    safe_terms = payload["claim_boundary"].get(
+        "safe_terms", ["candidate", "predicted compound", "requires validation"]
+    )
+    safe_terms_text = ", ".join(safe_terms[:3])
+    missing_preview = payload.get("missing_evidence_preview", [])[:3]
+    missing_text = ", ".join(missing_preview) if missing_preview else "none recorded"
+    next_step_preview = payload.get("next_steps_preview", [])
+    next_step_text = next_step_preview[0] if next_step_preview else "Record the missing evidence before stronger claims."
+    claim_boundary_summary = payload["claim_boundary"].get(
+        "summary",
+        "Prefer candidate, predicted compound, and requires validation wording.",
+    )
+
+    response_text = (
+        f"This looks like a materials workflow request for {candidate_label} as a candidate or predicted compound. "
+        f"Current workflow stage: {payload.get('workflow_stage', 'unknown')}. "
+        f"Missing evidence: {missing_text}. "
+        f"Use safe terms like {safe_terms_text}. {claim_boundary_summary} "
+        f"Next step: {next_step_text}"
+    )
+
+    return {
+        "message": message,
+        "path": "materials_workflow_guidance",
+        "response_text": response_text,
+        "confidence": "medium" if payload.get("missing_evidence_count", 0) else "high",
+        "materials_workflow_guidance": payload,
+        "read_only": True,
+    }
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1120,6 +1175,17 @@ def interpret_human_turn(message: str) -> dict:
             resp["reply_shape"] = resp["frame_reply_shape"]
             return expand_response(resp, policy, lowered)
 
+        materials_guidance = _try_materials_workflow_guidance(message)
+        if materials_guidance is not None:
+            policy = decide_response_policy(materials_guidance, lowered, _WESLR_MODE)
+            materials_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            materials_guidance["frame_turn_type"] = _turn_type_from_frame(materials_guidance["interaction_frame"])
+            materials_guidance["frame_reply_shape"] = _reply_shape_from_frame(materials_guidance["interaction_frame"])
+            materials_guidance["response_contract"] = _response_contract_from_frame(materials_guidance["interaction_frame"])
+            materials_guidance["turn_type"] = materials_guidance["frame_turn_type"]
+            materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
+            return expand_response(materials_guidance, policy, lowered)
+
         # Not a write — try deterministic (read-only) handlers
         dispatched = dispatch_deterministic_handler(message, lowered)
         if dispatched is not None:
@@ -1149,6 +1215,17 @@ def interpret_human_turn(message: str) -> dict:
         return expand_response(resp, policy, lowered)
 
     # SECTION 3/3 — Normal flow (private_dev / local_demo)
+    materials_guidance = _try_materials_workflow_guidance(message)
+    if materials_guidance is not None:
+        policy = decide_response_policy(materials_guidance, lowered, _WESLR_MODE)
+        materials_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        materials_guidance["frame_turn_type"] = _turn_type_from_frame(materials_guidance["interaction_frame"])
+        materials_guidance["frame_reply_shape"] = _reply_shape_from_frame(materials_guidance["interaction_frame"])
+        materials_guidance["response_contract"] = _response_contract_from_frame(materials_guidance["interaction_frame"])
+        materials_guidance["turn_type"] = materials_guidance["frame_turn_type"]
+        materials_guidance["reply_shape"] = materials_guidance["frame_reply_shape"]
+        return expand_response(materials_guidance, policy, lowered)
+
     # Handler registry dispatch — read-only queries first
     dispatched = dispatch_deterministic_handler(message, lowered)
     if dispatched is not None:
