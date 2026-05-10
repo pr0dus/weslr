@@ -12,7 +12,6 @@ All classes support serialization to/from dict for persistence.
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -423,19 +422,23 @@ class NodeFactory:
         id: str,
         name: str,
         description: str,
+        node_subtype: str = "detection",
         severity: str = "medium",
         confidence: float = 0.7,
     ) -> Node:
         """Create a bottleneck node."""
         if confidence < cls.BOTTLENECK_SEVERITY_MIN:
             raise ValueError(f"Bottleneck confidence must be >= {cls.BOTTLENECK_SEVERITY_MIN}")
+
+        if node_subtype not in ["detection", "analysis"]:
+            raise ValueError("Bottleneck node_subtype must be 'detection' or 'analysis'")
         
         return Node(
             id=id,
             name=name,
             description=description,
             node_type="bottleneck",
-            node_subtype="detection",
+            node_subtype=node_subtype,
             confidence=confidence,
             status="active",
             metadata={
@@ -641,6 +644,122 @@ class NodeFactory:
                 "rejection_action": rejection_action,
             },
         )
+
+    @classmethod
+    def create_enrichment_gap_record(
+        cls,
+        id: str,
+        name: str,
+        description: str,
+        source_eval: str,
+        category: str,
+        current_path: str,
+        failure_mode: str,
+        missing_skill: str,
+        target_substrate: str,
+        proposed_enrichment: str,
+        legibility_summary: str,
+        source_prompt: Optional[str] = None,
+        source_prompt_fingerprint: Optional[str] = None,
+        evidence_refs: Optional[List[str]] = None,
+        before_score: Optional[float] = None,
+        after_score: Optional[float] = None,
+        affected_node_ids: Optional[List[str]] = None,
+        status: str = "observed",
+        operator_review_required: bool = True,
+        read_only: bool = True,
+        severity: str = "medium",
+        confidence: float = 0.7,
+    ) -> Node:
+        """Create a legible enrichment-gap record on the existing graph substrate."""
+        required_fields = {
+            "source_eval": source_eval,
+            "category": category,
+            "current_path": current_path,
+            "failure_mode": failure_mode,
+            "missing_skill": missing_skill,
+            "target_substrate": target_substrate,
+            "proposed_enrichment": proposed_enrichment,
+            "legibility_summary": legibility_summary,
+        }
+        for field_name, value in required_fields.items():
+            if value is None or (isinstance(value, str) and not value.strip()):
+                raise ValueError(f"Enrichment gap record must specify {field_name}")
+
+        valid_statuses = ["observed", "triaged", "proposed", "accepted", "implemented", "rejected"]
+        if status not in valid_statuses:
+            raise ValueError(f"Invalid enrichment gap status: {status}")
+
+        if source_prompt and not source_prompt_fingerprint:
+            raise ValueError("source_prompt_fingerprint is required when source_prompt is stored")
+
+        node = cls.create_bottleneck(
+            id=id,
+            name=name,
+            description=description,
+            node_subtype="analysis",
+            severity=severity,
+            confidence=confidence,
+        )
+        node.metadata.update({
+            "record_kind": "enrichment_gap",
+            "record_type": "enrichment_gap",
+            "gap_id": id,
+            "source_eval": source_eval,
+            "source_prompt": source_prompt,
+            "source_prompt_fingerprint": source_prompt_fingerprint,
+            "category": category,
+            "current_path": current_path,
+            "failure_mode": failure_mode,
+            "missing_skill": missing_skill,
+            "target_substrate": target_substrate,
+            "proposed_enrichment": proposed_enrichment,
+            "evidence_refs": evidence_refs or [],
+            "before_score": before_score,
+            "after_score": after_score,
+            "status": status,
+            "operator_review_required": operator_review_required,
+            "read_only": read_only,
+            "legibility_summary": legibility_summary,
+            "created_at": node.created_at,
+            "affected_node_ids": affected_node_ids or [],
+            "execution_allowed": False,
+            "graph_links": {},
+        })
+        return node
+
+    @classmethod
+    def create_enrichment_record(
+        cls,
+        id: str,
+        name: str,
+        description: str,
+        proposed_by: str,
+        target_node_ids: List[str],
+        gap_id: Optional[str] = None,
+        enrichment_type: str = "capability",
+        confidence: float = 0.6,
+        required_governance: str = "operator_review",
+    ) -> Node:
+        """Create an explicit enrichment proposal record within the existing graph."""
+        if not target_node_ids:
+            raise ValueError("Enrichment record must specify target_node_ids")
+
+        node = cls.create_proposal(
+            id=id,
+            name=name,
+            description=description,
+            proposed_by=proposed_by,
+            proposal_type=enrichment_type,
+            confidence=confidence,
+            required_governance=required_governance,
+        )
+        node.metadata.update({
+            "record_kind": "enrichment_record",
+            "target_node_ids": target_node_ids,
+            "gap_id": gap_id,
+        })
+        return node
 
 
 # ============================================================================
@@ -946,6 +1065,55 @@ class NodeValidator:
         if gate_type not in ["proposition", "modification", "proposal", "assimilation"]:
             return False, f"Invalid trust_gate type: {gate_type}"
         
+        return True, "Valid"
+
+    @classmethod
+    def validate_record_metadata(cls, node: Node) -> Tuple[bool, str]:
+        """Validate structured metadata for enrichment records stored in existing node types."""
+        metadata = node.metadata or {}
+        record_kind = metadata.get("record_kind")
+
+        if record_kind == "enrichment_gap":
+            if node.node_type != "bottleneck":
+                return False, "Enrichment gap records must use node_type 'bottleneck'"
+            required_fields = [
+                "record_type",
+                "gap_id",
+                "source_eval",
+                "category",
+                "current_path",
+                "failure_mode",
+                "missing_skill",
+                "target_substrate",
+                "proposed_enrichment",
+                "status",
+                "operator_review_required",
+                "read_only",
+                "legibility_summary",
+                "created_at",
+            ]
+            for field_name in required_fields:
+                if field_name not in metadata:
+                    return False, f"Enrichment gap record requires metadata.{field_name}"
+
+            valid_statuses = ["observed", "triaged", "proposed", "accepted", "implemented", "rejected"]
+            if metadata.get("status") not in valid_statuses:
+                return False, "Enrichment gap record has invalid metadata.status"
+            if metadata.get("record_type") != "enrichment_gap":
+                return False, "Enrichment gap record metadata.record_type must be 'enrichment_gap'"
+            if metadata.get("operator_review_required") is not True:
+                return False, "Enrichment gap record must require operator review"
+            if metadata.get("read_only") is not True:
+                return False, "Enrichment gap record helpers must remain read_only"
+            if metadata.get("source_prompt") and not metadata.get("source_prompt_fingerprint"):
+                return False, "Stored source_prompt requires metadata.source_prompt_fingerprint"
+
+        if record_kind == "enrichment_record":
+            if node.node_type != "proposal":
+                return False, "Enrichment records must use node_type 'proposal'"
+            if not metadata.get("target_node_ids"):
+                return False, "Enrichment record requires metadata.target_node_ids"
+
         return True, "Valid"
 
 

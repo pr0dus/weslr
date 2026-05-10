@@ -269,13 +269,39 @@ class InternalReasoningGraphQuery:
     # --------------------------------------------------------------------------
     
     def detect_architecture_gaps(self) -> List[GapReport]:
-        """Detect architecture gaps: missing capabilities, unmet dependencies."""
+        """Detect architecture gaps: missing capabilities, unmet dependencies, explicit enrichment gaps."""
         gaps = []
         gap_id = 0
         
         # Get all nodes
         all_nodes = self.store.list_nodes()
         all_nodes_dict = {n.id: n for n in all_nodes}
+
+        # Include explicit enrichment gap records already stored in the graph
+        for node in all_nodes:
+            metadata = node.metadata or {}
+            if node.node_type == "bottleneck" and metadata.get("record_kind") == "enrichment_gap":
+                gap_id += 1
+                affected_nodes = metadata.get("affected_node_ids") or []
+                target_substrate_node_id = metadata.get("graph_links", {}).get("target_substrate_node_id")
+                if target_substrate_node_id and target_substrate_node_id not in affected_nodes:
+                    affected_nodes = affected_nodes + [target_substrate_node_id]
+                gaps.append(GapReport(
+                    gap_id=node.id,
+                    gap_type=metadata.get("category", "capability"),
+                    affected_nodes=affected_nodes,
+                    suggested_proposals=[{
+                        "proposal_name": metadata.get("proposed_enrichment", f"Address enrichment gap: {node.name}"),
+                        "proposal_description": metadata.get("legibility_summary", node.description),
+                        "confidence": node.confidence,
+                        "source_eval": metadata.get("source_eval"),
+                        "before_score": metadata.get("before_score"),
+                        "after_score": metadata.get("after_score"),
+                        "failure_mode": metadata.get("failure_mode"),
+                        "target_substrate": metadata.get("target_substrate"),
+                    }],
+                    confidence=node.confidence,
+                ))
         
         # Check for nodes with unmet dependencies
         for node in all_nodes:
@@ -321,6 +347,18 @@ class InternalReasoningGraphQuery:
     # GOVERNANCE BLOCKING QUERIES
     # --------------------------------------------------------------------------
     
+    def get_enrichment_gap_records(self) -> List[GapReport]:
+        """Return explicit enrichment gap records as read-only gap reports."""
+        explicit_gap_ids = {node.id for node in self.store.get_enrichment_gap_records()}
+        return [
+            gap for gap in self.detect_architecture_gaps()
+            if gap.gap_id in explicit_gap_ids
+        ]
+
+    def get_enrichment_records(self) -> List[Node]:
+        """Return explicit enrichment proposal records."""
+        return self.store.get_enrichment_records()
+
     def get_governance_blocking(self, node_id: str) -> Optional[GovernanceBlock]:
         """Get governance blocking status for a node.
         

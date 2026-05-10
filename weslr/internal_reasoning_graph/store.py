@@ -15,6 +15,7 @@ Storage structure:
 from __future__ import annotations
 
 import json
+import hashlib
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -78,6 +79,8 @@ class InternalReasoningGraphStore:
         # In-memory cache
         self._node_cache: Dict[str, Node] = {}
         self._edge_cache: Dict[str, Edge] = {}
+
+    ENRICHMENT_GAP_STATUSES = ["observed", "triaged", "proposed", "accepted", "implemented", "rejected"]
     
     def _load_metadata(self) -> Dict[str, Any]:
         """Load or initialize graph metadata."""
@@ -162,6 +165,11 @@ class InternalReasoningGraphStore:
             valid, reason = NodeValidator.validate_trust_gate(node)
             if not valid:
                 raise ValueError(f"Invalid trust gate: {reason}")
+
+        # Structured metadata validation for enrichment records
+        valid, reason = NodeValidator.validate_record_metadata(node)
+        if not valid:
+            raise ValueError(f"Invalid record metadata: {reason}")
         
         path = self.nodes_dir / f"{node.id}.json"
         path.write_text(json.dumps(node.to_dict(), indent=2))
@@ -308,6 +316,396 @@ class InternalReasoningGraphStore:
     def get_pending_proposals(self) -> List[Node]:
         """Get all pending proposals requiring governance."""
         return self.get_proposals(status=GovernanceStatus.PENDING.value)
+
+    def _next_graph_id(self, prefix: str) -> str:
+        """Generate a stable-enough unique id for temp and persistent stores."""
+        return f"{prefix}_{time.time_ns()}"
+
+    def _save_edge_if_missing(self, edge: Edge) -> Edge:
+        """Persist edge once and return the stored edge."""
+        existing = self.load_edge(edge.source_id, edge.target_id, edge.edge_type)
+        if existing:
+            return existing
+        self.save_edge(edge)
+        return edge
+
+    def _record_summary(self, node: Node, include_sensitive: bool = False) -> Dict[str, Any]:
+        """Return the legible enrichment-gap payload for a node."""
+        metadata = node.metadata or {}
+        summary = {
+            "record_type": metadata.get("record_type"),
+            "gap_id": metadata.get("gap_id", node.id),
+            "source_prompt": metadata.get("source_prompt") if include_sensitive else None,
+            "source_eval": metadata.get("source_eval"),
+            "source_prompt_fingerprint": metadata.get("source_prompt_fingerprint"),
+            "category": metadata.get("category"),
+            "current_path": metadata.get("current_path"),
+            "failure_mode": metadata.get("failure_mode"),
+            "missing_skill": metadata.get("missing_skill"),
+            "target_substrate": metadata.get("target_substrate"),
+            "proposed_enrichment": metadata.get("proposed_enrichment"),
+            "evidence_refs": metadata.get("evidence_refs", []),
+            "before_score": metadata.get("before_score"),
+            "after_score": metadata.get("after_score"),
+            "status": metadata.get("status"),
+            "operator_review_required": metadata.get("operator_review_required"),
+            "read_only": metadata.get("read_only"),
+            "legibility_summary": metadata.get("legibility_summary"),
+            "created_at": metadata.get("created_at", node.created_at),
+            "graph_links": metadata.get("graph_links", {}),
+            "execution_allowed": metadata.get("execution_allowed", False),
+        }
+        if not include_sensitive:
+            summary.pop("source_prompt", None)
+        return summary
+
+    def _build_prompt_fingerprint(self, source_prompt: Optional[str], prompt_fingerprint: Optional[str]) -> Optional[str]:
+        """Prefer explicit fingerprints; otherwise derive one from the prompt."""
+        if prompt_fingerprint:
+            return prompt_fingerprint
+        if not source_prompt:
+            return None
+        return hashlib.sha256(source_prompt.encode("utf-8")).hexdigest()
+
+    def _resolve_or_create_target_substrate_node(self, gap: Node) -> Node:
+        metadata = gap.metadata or {}
+        graph_links = metadata.get("graph_links", {})
+        existing_id = graph_links.get("target_substrate_node_id")
+        if existing_id:
+            existing = self.load_node(existing_id)
+            if existing:
+                return existing
+
+        target_substrate = metadata["target_substrate"]
+        existing = self.find_node_by_name(target_substrate)
+        if existing:
+            return existing
+
+        substrate = NodeFactory.create_subsystem(
+            id=self._next_graph_id("substrate"),
+            name=target_substrate,
+            description=f"Target substrate for enrichment gap {gap.id}",
+            node_subtype="subsystem",
+            confidence=max(0.5, gap.confidence),
+        )
+        self.save_node(substrate)
+        return substrate
+
+    def _create_missing_skill_node(self, gap: Node) -> Node:
+        metadata = gap.metadata or {}
+        graph_links = metadata.get("graph_links", {})
+        existing_id = graph_links.get("missing_skill_node_id")
+        if existing_id:
+            existing = self.load_node(existing_id)
+            if existing:
+                return existing
+
+        skill = NodeFactory.create_capability(
+            id=self._next_graph_id("skill"),
+            name=metadata["missing_skill"],
+            description=f"Missing skill identified by enrichment gap {gap.id}",
+            node_subtype="analysis",
+            confidence=max(0.6, gap.confidence),
+        )
+        self.save_node(skill)
+        return skill
+
+    def _create_tests_required_workflow(self, gap: Node) -> Node:
+        metadata = gap.metadata or {}
+        graph_links = metadata.get("graph_links", {})
+        existing_id = graph_links.get("tests_required_node_id")
+        if existing_id:
+            existing = self.load_node(existing_id)
+            if existing:
+                return existing
+
+        workflow = NodeFactory.create_workflow(
+            id=self._next_graph_id("tests"),
+            name=f"Tests required for {gap.id}",
+            description=f"Validation workflow for enrichment gap {gap.id}",
+            steps=[
+                "Add or update targeted tests for the proposed enrichment.",
+                "Run focused doctrine and release validation checks.",
+                "Review before/after scores without auto-execution.",
+            ],
+            governance_required=True,
+            confidence=max(0.7, gap.confidence),
+        )
+        self.save_node(workflow)
+        return workflow
+
+    def _create_operator_review_gate(self, gap: Node) -> Node:
+        metadata = gap.metadata or {}
+        graph_links = metadata.get("graph_links", {})
+        existing_id = graph_links.get("operator_review_node_id")
+        if existing_id:
+            existing = self.load_node(existing_id)
+            if existing:
+                return existing
+
+        gate = NodeFactory.create_trust_gate(
+            id=self._next_graph_id("review"),
+            name=f"Operator review for {gap.id}",
+            description=f"Operator review gate for proposed enrichment from gap {gap.id}",
+            gate_type="proposal",
+            approval_required=True,
+            rejection_action="escalate",
+            confidence=0.9,
+        )
+        self.save_node(gate)
+        return gate
+
+    def create_enrichment_gap_record(
+        self,
+        name: str,
+        description: str,
+        source_eval: str,
+        category: str,
+        current_path: str,
+        failure_mode: str,
+        missing_skill: str,
+        target_substrate: str,
+        proposed_enrichment: str,
+        legibility_summary: str,
+        source_prompt: Optional[str] = None,
+        prompt_fingerprint: Optional[str] = None,
+        evidence_refs: Optional[List[str]] = None,
+        before_score: Optional[float] = None,
+        after_score: Optional[float] = None,
+        affected_node_ids: Optional[List[str]] = None,
+        store_raw_prompt: bool = False,
+        severity: str = "medium",
+        confidence: float = 0.7,
+    ) -> Node:
+        """Create an explicit enrichment-gap record in the existing graph substrate."""
+        fingerprint = self._build_prompt_fingerprint(source_prompt, prompt_fingerprint)
+        gap = NodeFactory.create_enrichment_gap_record(
+            id=self._next_graph_id("gap"),
+            name=name,
+            description=description,
+            source_eval=source_eval,
+            source_prompt=source_prompt if store_raw_prompt else None,
+            source_prompt_fingerprint=fingerprint,
+            category=category,
+            current_path=current_path,
+            failure_mode=failure_mode,
+            missing_skill=missing_skill,
+            target_substrate=target_substrate,
+            proposed_enrichment=proposed_enrichment,
+            legibility_summary=legibility_summary,
+            evidence_refs=evidence_refs,
+            before_score=before_score,
+            after_score=after_score,
+            affected_node_ids=affected_node_ids,
+            severity=severity,
+            confidence=confidence,
+        )
+        self.save_node(gap)
+
+        for node_id in affected_node_ids or []:
+            if self.load_node(node_id):
+                edge = EdgeFactory.create_bottleneck_for(
+                    source_id=node_id,
+                    target_id=gap.id,
+                    severity=severity,
+                    reason=f"Enrichment gap record: {name}",
+                    confidence=confidence,
+                )
+                self._save_edge_if_missing(edge)
+
+        return gap
+
+    def link_enrichment_gap_to_graph(self, gap_id: str) -> Dict[str, Any]:
+        """Represent the enrichment gap with existing node/edge primitives only."""
+        gap = self.load_node(gap_id)
+        if not gap:
+            raise ValueError(f"Unknown enrichment gap record: {gap_id}")
+
+        metadata = gap.metadata or {}
+        if metadata.get("record_kind") != "enrichment_gap":
+            raise ValueError(f"Node {gap_id} is not an enrichment gap record")
+
+        missing_skill_node = self._create_missing_skill_node(gap)
+        target_substrate_node = self._resolve_or_create_target_substrate_node(gap)
+        proposal = self.create_enrichment_record(
+            name=metadata["proposed_enrichment"],
+            description=f"Proposed enrichment for gap {gap.id}: {metadata['legibility_summary']}",
+            proposed_by="operator_review_required",
+            target_node_ids=[target_substrate_node.id],
+            gap_id=gap.id,
+            enrichment_type=metadata["category"],
+            confidence=max(0.6, gap.confidence),
+            required_governance="operator_review",
+        )
+        tests_required = self._create_tests_required_workflow(gap)
+        operator_review = self._create_operator_review_gate(gap)
+
+        edges = [
+            self._save_edge_if_missing(EdgeFactory.create_depends_on(
+                source_id=gap.id,
+                target_id=missing_skill_node.id,
+                reason="Eval failure indicates missing skill coverage.",
+                confidence=gap.confidence,
+            )),
+            self._save_edge_if_missing(EdgeFactory.create_depends_on(
+                source_id=missing_skill_node.id,
+                target_id=target_substrate_node.id,
+                reason="Missing skill should be enriched in the selected substrate.",
+                confidence=gap.confidence,
+            )),
+            self._save_edge_if_missing(EdgeFactory.create_strengthens(
+                source_id=target_substrate_node.id,
+                target_id=proposal.id,
+                reason="Target substrate is linked to the proposed enrichment record.",
+                confidence=max(0.6, gap.confidence),
+            )),
+            self._save_edge_if_missing(EdgeFactory.create_validated_by(
+                source_id=proposal.id,
+                target_id=tests_required.id,
+                validation_status="pending",
+                reason="Proposed enrichment requires targeted tests before implementation.",
+                confidence=max(0.6, gap.confidence),
+            )),
+            self._save_edge_if_missing(EdgeFactory.create_governed_by(
+                source_id=proposal.id,
+                target_id=operator_review.id,
+                enforcement_level="hard",
+                reason="Proposed enrichment requires explicit operator review.",
+                confidence=max(0.7, gap.confidence),
+            )),
+        ]
+
+        metadata["graph_links"] = {
+            "missing_skill_node_id": missing_skill_node.id,
+            "target_substrate_node_id": target_substrate_node.id,
+            "proposed_enrichment_node_id": proposal.id,
+            "tests_required_node_id": tests_required.id,
+            "operator_review_node_id": operator_review.id,
+        }
+        gap.metadata = metadata
+        self.save_node(gap)
+
+        return {
+            "gap_record_id": gap.id,
+            **metadata["graph_links"],
+            "edges": [edge.to_dict() for edge in edges],
+        }
+
+    def summarize_enrichment_gap_record(self, gap_id: str, include_sensitive: bool = False) -> Dict[str, Any]:
+        """Return a legible summary of an enrichment-gap record."""
+        gap = self.load_node(gap_id)
+        if not gap:
+            raise ValueError(f"Unknown enrichment gap record: {gap_id}")
+        summary = self._record_summary(gap, include_sensitive=include_sensitive)
+        summary["graph_relationships"] = [
+            {
+                "relation": "eval_failure_to_missing_skill",
+                "source": gap.id,
+                "target": summary.get("graph_links", {}).get("missing_skill_node_id"),
+            },
+            {
+                "relation": "missing_skill_to_target_substrate",
+                "source": summary.get("graph_links", {}).get("missing_skill_node_id"),
+                "target": summary.get("graph_links", {}).get("target_substrate_node_id"),
+            },
+            {
+                "relation": "target_substrate_to_proposed_enrichment",
+                "source": summary.get("graph_links", {}).get("target_substrate_node_id"),
+                "target": summary.get("graph_links", {}).get("proposed_enrichment_node_id"),
+            },
+            {
+                "relation": "proposed_enrichment_to_tests_required",
+                "source": summary.get("graph_links", {}).get("proposed_enrichment_node_id"),
+                "target": summary.get("graph_links", {}).get("tests_required_node_id"),
+            },
+            {
+                "relation": "proposed_enrichment_to_operator_review",
+                "source": summary.get("graph_links", {}).get("proposed_enrichment_node_id"),
+                "target": summary.get("graph_links", {}).get("operator_review_node_id"),
+            },
+        ]
+        return summary
+
+    def mark_enrichment_gap_status(self, gap_id: str, status: str, decided_by: Optional[str] = None) -> Node:
+        """Explicitly advance or reject an enrichment-gap record state."""
+        if status not in self.ENRICHMENT_GAP_STATUSES:
+            raise ValueError(f"Invalid enrichment gap status: {status}")
+
+        gap = self.load_node(gap_id)
+        if not gap:
+            raise ValueError(f"Unknown enrichment gap record: {gap_id}")
+        metadata = gap.metadata or {}
+        if metadata.get("record_kind") != "enrichment_gap":
+            raise ValueError(f"Node {gap_id} is not an enrichment gap record")
+
+        metadata["status"] = status
+        if status == "accepted":
+            gap.governance_status = GovernanceStatus.APPROVED.value
+            gap.governance_decided_by = decided_by
+            gap.governance_decided_at = int(time.time())
+        elif status == "rejected":
+            gap.governance_status = GovernanceStatus.REJECTED.value
+            gap.governance_decided_by = decided_by
+            gap.governance_decided_at = int(time.time())
+        elif status in ["observed", "triaged", "proposed"]:
+            gap.governance_status = GovernanceStatus.PENDING.value
+
+        gap.metadata = metadata
+        gap.updated_at = int(time.time())
+        self.save_node(gap)
+        return gap
+
+    def create_enrichment_record(
+        self,
+        name: str,
+        description: str,
+        proposed_by: str,
+        target_node_ids: List[str],
+        gap_id: Optional[str] = None,
+        enrichment_type: str = "capability",
+        confidence: float = 0.6,
+        required_governance: str = "operator_review",
+    ) -> Node:
+        """Create an explicit enrichment proposal record in the existing graph substrate."""
+        proposal = NodeFactory.create_enrichment_record(
+            id=self._next_graph_id("enrich"),
+            name=name,
+            description=description,
+            proposed_by=proposed_by,
+            target_node_ids=target_node_ids,
+            gap_id=gap_id,
+            enrichment_type=enrichment_type,
+            confidence=confidence,
+            required_governance=required_governance,
+        )
+        self.save_node(proposal)
+
+        for node_id in target_node_ids:
+            if self.load_node(node_id):
+                edge = EdgeFactory.create_proposes_change_to(
+                    source_id=proposal.id,
+                    target_id=node_id,
+                    change_type="modify",
+                    reason=f"Enrichment record: {name}",
+                    confidence=confidence,
+                )
+                self.save_edge(edge)
+
+        return proposal
+
+    def get_enrichment_gap_records(self) -> List[Node]:
+        """Get explicit enrichment gap records stored as bottleneck nodes."""
+        return [
+            node for node in self.list_nodes()
+            if node.node_type == "bottleneck" and (node.metadata or {}).get("record_kind") == "enrichment_gap"
+        ]
+
+    def get_enrichment_records(self) -> List[Node]:
+        """Get explicit enrichment proposal records stored as proposal nodes."""
+        return [
+            node for node in self.list_nodes()
+            if node.node_type == "proposal" and (node.metadata or {}).get("record_kind") == "enrichment_record"
+        ]
     
     def approve_proposal(self, proposal_id: str, approved_by: Optional[str] = None) -> bool:
         """Approve a proposal (requires governance)."""

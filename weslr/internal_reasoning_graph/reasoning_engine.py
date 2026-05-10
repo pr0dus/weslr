@@ -17,6 +17,7 @@ Constraints:
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -113,10 +114,14 @@ class ReasoningEngine:
         
         for gap in gaps:
             if gap.confidence >= 0.6:  # Only generate proposals for confident gaps
+                suggested = gap.suggested_proposals[0] if gap.suggested_proposals else {
+                    "proposal_name": f"Address gap: {gap.gap_id}",
+                    "proposal_description": f"Address detected {gap.gap_type} gap",
+                }
                 proposal = ProposalCandidate(
                     proposal_id=f"prop_{gap.gap_id}",
-                    proposal_name=gap.suggested_proposals[0]["proposal_name"],
-                    proposal_description=gap.suggested_proposals[0]["proposal_description"],
+                    proposal_name=suggested["proposal_name"],
+                    proposal_description=suggested["proposal_description"],
                     proposal_type=gap.gap_type,
                     confidence=gap.confidence,
                     required_governance="operator_review",
@@ -289,6 +294,35 @@ def create_reasoning_engine(store: InternalReasoningGraphStore) -> ReasoningEngi
     return ReasoningEngine(store)
 
 
+def create_enrichment_gap_record(store: InternalReasoningGraphStore, **kwargs) -> Node:
+    """Create a read-only enrichment-gap record using the existing graph substrate."""
+    return store.create_enrichment_gap_record(**kwargs)
+
+
+def link_enrichment_gap_to_graph(store: InternalReasoningGraphStore, gap_id: str) -> Dict[str, Any]:
+    """Link an enrichment-gap record into graph-compatible nodes and edges."""
+    return store.link_enrichment_gap_to_graph(gap_id)
+
+
+def summarize_enrichment_gap_record(
+    store: InternalReasoningGraphStore,
+    gap_id: str,
+    include_sensitive: bool = False,
+) -> Dict[str, Any]:
+    """Return a legible, non-executing summary of an enrichment-gap record."""
+    return store.summarize_enrichment_gap_record(gap_id, include_sensitive=include_sensitive)
+
+
+def mark_enrichment_gap_status(
+    store: InternalReasoningGraphStore,
+    gap_id: str,
+    status: str,
+    decided_by: Optional[str] = None,
+) -> Node:
+    """Explicitly transition enrichment-gap status without executing implementation."""
+    return store.mark_enrichment_gap_status(gap_id, status=status, decided_by=decided_by)
+
+
 # ============================================================================
 # EXPORTS
 # ============================================================================
@@ -298,4 +332,8 @@ __all__ = [
     "ProposalCandidate",
     "ReasoningResult",
     "create_reasoning_engine",
+    "create_enrichment_gap_record",
+    "link_enrichment_gap_to_graph",
+    "summarize_enrichment_gap_record",
+    "mark_enrichment_gap_status",
 ]
