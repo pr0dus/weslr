@@ -21,16 +21,33 @@ from pathlib import Path
 from typing import Iterable
 
 from weslr.evals.conversation_eval import (
+    Responder,
     SuiteResult,
     compare_to_baseline,
     deterministic_public_demo_responder,
     evaluate_suite_file,
+    interpretation_responder,
     iter_suite_files,
     save_result,
 )
 
 DEFAULT_SUITE_DIR = Path(__file__).resolve().parent / "conversation_suites"
 DEFAULT_OUTPUT_DIR = Path(".weslr") / "eval_results" / "conversation"
+RESPONDERS: dict[str, Responder] = {
+    "public_demo": deterministic_public_demo_responder,
+    "interpretation": interpretation_responder,
+}
+
+
+def resolve_responder(responder: str | Responder | None) -> Responder:
+    if responder is None:
+        return deterministic_public_demo_responder
+    if callable(responder):
+        return responder
+    try:
+        return RESPONDERS[responder]
+    except KeyError as exc:
+        raise ValueError(f"Unknown responder: {responder}") from exc
 
 
 def _baseline_path_for(result: SuiteResult, baseline_dir: str | Path | None) -> Path | None:
@@ -112,16 +129,27 @@ def run_suites(
     suite_paths: Iterable[Path],
     output_dir: str | Path | None = DEFAULT_OUTPUT_DIR,
     baseline_dir: str | Path | None = None,
+    responder: str | Responder | None = None,
 ) -> list[dict]:
     reports: list[dict] = []
+    resolved_responder = resolve_responder(responder)
+    responder_name = responder if isinstance(responder, str) else None
+    if responder_name is None:
+        for key, value in RESPONDERS.items():
+            if value is resolved_responder:
+                responder_name = key
+                break
+    responder_name = responder_name or getattr(resolved_responder, "__name__", "custom")
+
     for suite_path in suite_paths:
-        result = evaluate_suite_file(suite_path, deterministic_public_demo_responder)
+        result = evaluate_suite_file(suite_path, resolved_responder)
         saved_path: Path | None = None
         if output_dir:
             saved_path = save_result(result, output_dir)
         summary = result_summary(result, baseline_dir=baseline_dir)
         summary["suite_path"] = str(suite_path)
         summary["saved_path"] = str(saved_path) if saved_path else None
+        summary["responder"] = responder_name
         reports.append(summary)
     return reports
 
@@ -140,11 +168,17 @@ def main() -> int:
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT_DIR), help="Directory for saved result JSON files; use empty string to disable")
     parser.add_argument("--baseline-dir", help="Directory containing baseline result JSON files")
     parser.add_argument("--json", action="store_true", help="Print JSON report")
+    parser.add_argument("--responder", choices=sorted(RESPONDERS.keys()), default="public_demo", help="Responder to run against the suite")
     args = parser.parse_args()
 
     suite_paths = _collect_suite_paths(args)
     output_dir = args.output if args.output else None
-    reports = run_suites(suite_paths, output_dir=output_dir, baseline_dir=args.baseline_dir)
+    reports = run_suites(
+        suite_paths,
+        output_dir=output_dir,
+        baseline_dir=args.baseline_dir,
+        responder=args.responder,
+    )
 
     passed = all(r["passed"] and r["baseline_ok"] for r in reports)
 

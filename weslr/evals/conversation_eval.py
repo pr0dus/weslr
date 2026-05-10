@@ -196,6 +196,22 @@ def deterministic_public_demo_responder(message: str, _history: list[dict[str, s
     return str(public_demo_chat(message).get("reply", ""))
 
 
+def interpretation_responder(message: str, _history: list[dict[str, str]]) -> str:
+    """Route evaluation turns through WESLR interpretation without side effects."""
+
+    from interpretation import interpret_human_turn
+
+    result = interpret_human_turn(message)
+    if isinstance(result, dict):
+        response_text = result.get("response_text")
+        if isinstance(response_text, str) and response_text:
+            return response_text
+        message_value = result.get("message")
+        if isinstance(message_value, str) and message_value:
+            return message_value
+    return str(result)
+
+
 def iter_suite_files(root: str | Path) -> Iterable[Path]:
     """Return all suite JSON files under root, including nested suite groups."""
 

@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
-from weslr.evals.conversation_eval import evaluate_suite
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from weslr.evals.conversation_eval import evaluate_suite, interpretation_responder
 from weslr.evals.run_conversation_eval import (
+    RESPONDERS,
     format_text_report,
+    resolve_responder,
     result_summary,
     run_suites,
 )
@@ -59,6 +67,7 @@ def test_run_suites_saves_results(tmp_path):
     report = reports[0]
     assert report["suite_id"] == "public_demo_identity"
     assert report["passed"] is True
+    assert report["responder"] == "public_demo"
     saved = Path(report["saved_path"])
     assert saved.exists()
     assert saved.name == "public_demo_identity.result.json"
@@ -99,3 +108,31 @@ def test_run_suites_detects_baseline_regression(tmp_path):
     report = reports[0]
     assert report["baseline_ok"] is False
     assert report["baseline_reasons"]
+
+
+def test_default_responder_remains_public_demo():
+    assert resolve_responder(None) is RESPONDERS["public_demo"]
+    assert resolve_responder("public_demo") is RESPONDERS["public_demo"]
+
+
+def test_run_suites_with_interpretation_responder_passes_materials_suite(tmp_path):
+    suite_path = SUITES / "weslr_materials_claim_boundaries.json"
+    reports = run_suites(
+        [suite_path],
+        output_dir=tmp_path,
+        responder="interpretation",
+    )
+    assert len(reports) == 1
+    report = reports[0]
+    assert report["suite_id"] == "weslr_materials_claim_boundaries"
+    assert report["responder"] == "interpretation"
+    assert report["passed"] is True
+    assert report["score"] >= 0.85
+
+
+def test_direct_interpretation_responder_passes_materials_suite():
+    suite = json.loads((SUITES / "weslr_materials_claim_boundaries.json").read_text(encoding="utf-8"))
+    result = evaluate_suite(suite, interpretation_responder)
+    assert result.suite_id == "weslr_materials_claim_boundaries"
+    assert result.passed is True
+    assert len(result.turn_scores) == 5
