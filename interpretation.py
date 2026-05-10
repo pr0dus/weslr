@@ -145,6 +145,7 @@ from weslr.state_checkpoint import get_state_checkpoint
 from weslr.conversation_resilience import build_resilience_guidance
 from weslr.ordinary_explanation_guidance import build_ordinary_explanation_guidance
 from weslr.ordinary_reasoning_guidance import build_ordinary_reasoning_guidance
+from weslr.mcq_answer_formatting import build_official_mcq_response
 from weslr.modules.materials_workflow_guidance import guide_materials_workflow
 from entity_extractor import extract_entity_names_from_text
 
@@ -1358,6 +1359,15 @@ def _try_ordinary_explanation_guidance(message: str, lowered: str) -> dict | Non
     return guidance
 
 
+def _try_official_mcq_answer_formatting(message: str) -> dict | None:
+    """Return explicit answer-label formatting for clearly structured MCQ prompts only."""
+    response = build_official_mcq_response(message)
+    if response is None:
+        return None
+    response["message"] = message
+    return response
+
+
 def _try_ordinary_reasoning_guidance(message: str, lowered: str) -> dict | None:
     """Return read-only ordinary reasoning guidance before generic fallback."""
     del lowered
@@ -1484,6 +1494,17 @@ def interpret_human_turn(message: str) -> dict:
             resp["turn_type"] = resp["frame_turn_type"]
             resp["reply_shape"] = resp["frame_reply_shape"]
             return expand_response(resp, policy, lowered)
+
+        mcq_guidance = _try_official_mcq_answer_formatting(message)
+        if mcq_guidance is not None:
+            policy = decide_response_policy(mcq_guidance, lowered, _WESLR_MODE)
+            mcq_guidance["interaction_frame"] = _classify_interaction_frame(text)
+            mcq_guidance["frame_turn_type"] = _turn_type_from_frame(mcq_guidance["interaction_frame"])
+            mcq_guidance["frame_reply_shape"] = _reply_shape_from_frame(mcq_guidance["interaction_frame"])
+            mcq_guidance["response_contract"] = _response_contract_from_frame(mcq_guidance["interaction_frame"])
+            mcq_guidance["turn_type"] = mcq_guidance["frame_turn_type"]
+            mcq_guidance["reply_shape"] = mcq_guidance["frame_reply_shape"]
+            return expand_response(mcq_guidance, policy, lowered)
 
         materials_guidance = _try_materials_workflow_guidance(message)
         if materials_guidance is not None:
@@ -1624,6 +1645,17 @@ def interpret_human_turn(message: str) -> dict:
         return expand_response(resp, policy, lowered)
 
     # SECTION 3/3 — Normal flow (private_dev / local_demo)
+    mcq_guidance = _try_official_mcq_answer_formatting(message)
+    if mcq_guidance is not None:
+        policy = decide_response_policy(mcq_guidance, lowered, _WESLR_MODE)
+        mcq_guidance["interaction_frame"] = _classify_interaction_frame(text)
+        mcq_guidance["frame_turn_type"] = _turn_type_from_frame(mcq_guidance["interaction_frame"])
+        mcq_guidance["frame_reply_shape"] = _reply_shape_from_frame(mcq_guidance["interaction_frame"])
+        mcq_guidance["response_contract"] = _response_contract_from_frame(mcq_guidance["interaction_frame"])
+        mcq_guidance["turn_type"] = mcq_guidance["frame_turn_type"]
+        mcq_guidance["reply_shape"] = mcq_guidance["frame_reply_shape"]
+        return expand_response(mcq_guidance, policy, lowered)
+
     materials_guidance = _try_materials_workflow_guidance(message)
     if materials_guidance is not None:
         policy = decide_response_policy(materials_guidance, lowered, _WESLR_MODE)
