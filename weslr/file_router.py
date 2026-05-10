@@ -5,7 +5,7 @@ Routes files to appropriate understanding modules based on type.
 
 Architecture:
   - FileRouter - Main class for unified file routing
-  - Supported types: PDF, text-based files
+  - Supported types: PDF, text-based files, SQLite databases, scientific structure files
   - Normalized result structure for downstream code
 
 Safety Boundaries:
@@ -37,6 +37,9 @@ STRUCTURED_EXTENSIONS = {".json", ".yaml", ".yml", ".csv"}
 
 # Supported file extensions per category
 PDF_EXTENSIONS = {".pdf"}
+SQLITE_EXTENSIONS = {".sqlite", ".sqlite3", ".db"}
+SCIENTIFIC_STRUCTURE_EXTENSIONS = {".xyz", ".cif", ".vasp"}
+SCIENTIFIC_STRUCTURE_FILENAMES = {"POSCAR", "CONTCAR"}
 TEXT_EXTENSIONS = {
     ".txt", ".md",
     ".py", ".js", ".ts", ".java", ".cpp", ".c", ".h", ".hpp",
@@ -66,6 +69,7 @@ class RouterResult:
         content_type: str,
         relevance: str = "unknown",
         relevance_reason: str = "",
+        read_only: bool = True,
         labels: list = None,
         metadata: Dict[str, Any] = None,
         safety: Dict[str, Any] = None,
@@ -76,6 +80,7 @@ class RouterResult:
         self.content_type = content_type
         self.relevance = relevance
         self.relevance_reason = relevance_reason
+        self.read_only = read_only
         self.labels = labels or ["user_file_upload", "file_content"]
         self.metadata = metadata or {}
         self.safety = safety or {"injection_risk": "low", "content_type": "text"}
@@ -89,6 +94,7 @@ class RouterResult:
             "content_type": self.content_type,
             "relevance": self.relevance,
             "relevance_reason": self.relevance_reason,
+            "read_only": self.read_only,
             "labels": self.labels,
             "metadata": self.metadata,
             "safety": self.safety,
@@ -109,6 +115,7 @@ class RouterResult:
             content_type=data.get("content_type", ""),
             relevance=data.get("relevance", "unknown"),
             relevance_reason=data.get("relevance_reason", ""),
+            read_only=data.get("read_only", True),
             labels=data.get("labels", []),
             metadata=data.get("metadata", {}),
             safety=data.get("safety", {}),
@@ -124,6 +131,7 @@ class RouterResult:
             content_type="",
             relevance="none",
             relevance_reason="No file content available",
+            read_only=True,
         )
 
 
@@ -144,12 +152,14 @@ class StructuredDataResultAdapter:
             content_type="structured",
             relevance=sd_result.get("relevance", "unknown"),
             relevance_reason=sd_result.get("relevance_reason", ""),
+            read_only=sd_result.get("read_only", True),
             labels=["user_file_upload", "file_content", "structured_data"],
             metadata={
                 "source_file": sd_result.get("metadata", {}).get("source_file", ""),
                 "parsed_successfully": sd_result.get("metadata", {}).get("parsed_successfully", False),
                 "parse_error": sd_result.get("metadata", {}).get("parse_error"),
                 "category": "structured",
+                "read_only": sd_result.get("read_only", True),
             },
             safety={
                 "injection_risk": "low",
@@ -165,6 +175,8 @@ class FileRouter:
     - PDF files → PDF understanding (weslr/pdf_context.py)
     - Structured data (JSON/YAML/CSV) → Structured data understanding (weslr/structured_data.py)
     - Text-based files → Generic ingestion (weslr/file_ingestion.py)
+    - SQLite databases → Read-only SQLite inspection (weslr/sqlite_ingestion.py)
+    - Scientific structure files → Read-only structure inspection (weslr/scientific_structure_ingestion.py)
     
     Usage:
         from weslr.file_router import create_file_router
@@ -194,6 +206,8 @@ class FileRouter:
         self._pdf_context = None
         self._structured_data = None
         self._file_ingestion = None
+        self._sqlite_ingestion = None
+        self._scientific_structure_ingestion = None
     
     def _import_modules(self):
         """Import required modules lazily."""
@@ -208,10 +222,25 @@ class FileRouter:
         if self._file_ingestion is None:
             import weslr.file_ingestion as file_ingestion
             self._file_ingestion = file_ingestion
+
+        if self._sqlite_ingestion is None:
+            import weslr.sqlite_ingestion as sqlite_ingestion
+            self._sqlite_ingestion = sqlite_ingestion
+
+        if self._scientific_structure_ingestion is None:
+            import weslr.scientific_structure_ingestion as scientific_structure_ingestion
+            self._scientific_structure_ingestion = scientific_structure_ingestion
     
     def _get_file_extension(self, filepath: str) -> str:
         """Get file extension."""
         return Path(filepath).suffix.lower()
+
+    def _is_scientific_structure_file(self, filepath: str) -> bool:
+        path = Path(filepath)
+        return (
+            path.suffix.lower() in SCIENTIFIC_STRUCTURE_EXTENSIONS
+            or path.name in SCIENTIFIC_STRUCTURE_FILENAMES
+        )
     
     def _is_safe_path(self, filepath: str, workspace_dir: str) -> bool:
         """Check if filepath is within workspace directory."""
@@ -254,6 +283,10 @@ class FileRouter:
         # Determine category and route
         if ext in PDF_EXTENSIONS:
             return self._route_pdf(filepath, user_query, task_context)
+        elif ext in SQLITE_EXTENSIONS:
+            return self._route_sqlite(filepath, user_query, task_context)
+        elif self._is_scientific_structure_file(filepath):
+            return self._route_scientific_structure(filepath, user_query, task_context)
         elif ext in STRUCTURED_EXTENSIONS:
             return self._route_structured(filepath, user_query, task_context)
         elif ext in TEXT_EXTENSIONS:
@@ -261,7 +294,7 @@ class FileRouter:
         else:
             raise FileRouterError(
                 f"Unsupported file type: {ext}. "
-                f"Supported: {PDF_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS}"
+                f"Supported: {PDF_EXTENSIONS | TEXT_EXTENSIONS | STRUCTURED_EXTENSIONS | SQLITE_EXTENSIONS | SCIENTIFIC_STRUCTURE_EXTENSIONS} plus {SCIENTIFIC_STRUCTURE_FILENAMES}"
             )
     
     def _route_pdf(
@@ -303,11 +336,13 @@ class FileRouter:
                 content_type="text",
                 relevance=ctx.relevance,
                 relevance_reason=ctx.relevance_reason,
+                read_only=True,
                 labels=["user_file_upload", "file_content"],
                 metadata={
                     "source_file": Path(filepath).name,
                     "content_length": len(ctx.extracted_text),
                     "max_chars_used": 100000,
+                    "read_only": True,
                 },
                 safety={"injection_risk": "low", "content_type": "text"},
             )
@@ -337,10 +372,12 @@ class FileRouter:
                 content_type="text",
                 relevance=result.relevance,
                 relevance_reason=result.relevance_reason,
+                read_only=True,
                 labels=["user_file_upload", "file_content"],
                 metadata={
                     "source_file": Path(filepath).name,
                     "content_length": len(result.content),
+                    "read_only": True,
                 },
                 safety={"injection_risk": "low", "content_type": "text"},
             )
@@ -370,6 +407,83 @@ class FileRouter:
             raise FileRouterError(f"Structured data routing failed: {e}")
         except Exception as e:
             raise FileRouterError(f"Unexpected structured data error: {e}")
+
+    def _route_sqlite(
+        self,
+        filepath: str,
+        user_query: str,
+        task_context: Dict[str, Any],
+    ) -> RouterResult:
+        """Route SQLite file to read-only SQLite inspection."""
+        self._import_modules()
+
+        try:
+            result = self._sqlite_ingestion.inspect_sqlite_database(
+                filepath,
+                workspace_dir=self.workspace_dir,
+            )
+            return RouterResult(
+                file_type=self._get_file_extension(filepath),
+                category="sqlite",
+                content=result.get("structured_output", result.get("summary", "")),
+                content_type="structured",
+                relevance="high",
+                relevance_reason="SQLite database inspection available",
+                read_only=True,
+                labels=["user_file_upload", "file_content", "sqlite_database"],
+                metadata={
+                    "source_file": Path(filepath).name,
+                    "category": "sqlite",
+                    "read_only": True,
+                    "table_count": result.get("table_count", 0),
+                    "parsed_successfully": result.get("metadata", {}).get("parsed_successfully", False),
+                    "parse_error": result.get("metadata", {}).get("parse_error"),
+                },
+                safety={"injection_risk": "low", "content_type": "structured"},
+            )
+        except self._sqlite_ingestion.SQLiteInspectionError as e:
+            raise FileRouterError(f"SQLite routing failed: {e}")
+        except Exception as e:
+            raise FileRouterError(f"Unexpected SQLite routing error: {e}")
+
+    def _route_scientific_structure(
+        self,
+        filepath: str,
+        user_query: str,
+        task_context: Dict[str, Any],
+    ) -> RouterResult:
+        """Route scientific structure file to read-only inspection."""
+        self._import_modules()
+
+        try:
+            result = self._scientific_structure_ingestion.inspect_scientific_structure_file(
+                filepath,
+                workspace_dir=self.workspace_dir,
+            )
+            return RouterResult(
+                file_type=self._get_file_extension(filepath) or Path(filepath).name,
+                category="scientific_structure",
+                content=result.get("structured_output", result.get("summary", "")),
+                content_type="structured",
+                relevance="high",
+                relevance_reason="Scientific structure inspection available",
+                read_only=True,
+                labels=["user_file_upload", "file_content", "scientific_structure"],
+                metadata={
+                    "source_file": Path(filepath).name,
+                    "category": "scientific_structure",
+                    "read_only": True,
+                    "atom_count": result.get("atom_count", 0),
+                    "formula": result.get("formula", ""),
+                    "parsed_successfully": result.get("metadata", {}).get("parsed_successfully", False),
+                    "parse_error": result.get("metadata", {}).get("parse_error"),
+                },
+                safety={"injection_risk": "low", "content_type": "structured"},
+            )
+        except self._scientific_structure_ingestion.ScientificStructureInspectionError as e:
+            raise FileRouterError(f"Scientific structure routing failed: {e}")
+        except Exception as e:
+            raise FileRouterError(f"Unexpected scientific structure routing error: {e}")
 
 
 def create_file_router(workspace_dir: str = None) -> FileRouter:
