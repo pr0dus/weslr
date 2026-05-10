@@ -19,6 +19,8 @@ CANDIDATE_TYPES = [
     "MEMORY_STATE_REPORT",
     "SELF_MODEL_DESCRIPTION",
     "CAPABILITY_ORIENTATION",
+    "CREATIVE_CONVERSATION_GUIDANCE",
+    "EVIDENCE_IDEATION_BOUNDARY",
     "CLARIFYING_QUESTION",
     "BOUNDED_UNCERTAINTY",
 ]
@@ -277,6 +279,91 @@ def _compose_bounded_uncertainty(state) -> MeaningResponseCandidate:
     )
 
 
+def _compose_creative_conversation_guidance(meaning, obligation) -> MeaningResponseCandidate:
+    """Bounded creative response with no evidence or memory claims."""
+    scores = getattr(meaning, "creative_conversation_scores", {}) or {}
+    active = {k for k, v in scores.items() if v > 0}
+    text = "Here are a few bounded ways to approach it as ideation rather than fact: start with the core question, generate a few contrasting angles, and keep any strong claim clearly labeled as speculative."
+
+    if {"reflective_question_generation", "research_question_generation"} & active:
+        text = (
+            "Here are a few bounded questions you could ask a researcher: "
+            "1) What assumption in this work deserves a harder test? "
+            "2) What evidence would most change your current view? "
+            "3) What question feels important but still underexplored? "
+            "These are prompts for inquiry, not claims about the answer."
+        )
+    elif "analogy_generation" in active:
+        text = (
+            "Here is an analogy-style framing: learning is a workshop, not a warehouse. "
+            "You do not just stack facts on shelves; you handle them, test them, reshape them, and slowly build better tools for the next problem. "
+            "That framing is creative guidance, not evidence."
+        )
+    elif "project_imagination" in active:
+        text = (
+            "Speculatively, a project feels alive when it starts generating useful questions, attracting honest feedback, and revealing its next constraints instead of hiding them. "
+            "That is creative framing rather than a factual diagnosis, but it can be a useful lens for thinking."
+        )
+    elif "multi_perspective_reframing" in active or "ideation" in active:
+        text = (
+            "Here are three bounded ways to think about it: "
+            "1) the constraint view — what is blocking movement right now, "
+            "2) the opportunity view — what becomes possible if one assumption changes, "
+            "3) the systems view — what relationships or feedback loops are shaping the problem. "
+            "Treat these as perspectives for exploration, not settled conclusions."
+        )
+
+    return MeaningResponseCandidate(
+        candidate_type="CREATIVE_CONVERSATION_GUIDANCE",
+        text=text,
+        grounding_score=0.8,
+        obligation_fit=0.95,
+        identity_safety=1.0,
+        memory_safety=1.0,
+        humility=0.9,
+        clarity=0.88,
+        relationship_fit=0.8,
+        confidence=0.72,
+        evidence=[
+            {"source": "creative_obligation", "obligation_type": obligation.obligation_type},
+            {"source": "creative_shadow_signal", "active_labels": sorted(active)},
+        ],
+        limitations=[
+            "Bounded ideation only — no evidence claims.",
+            "No memory use or personal-state inference.",
+        ],
+    )
+
+
+def _compose_evidence_ideation_boundary(meaning, obligation) -> MeaningResponseCandidate:
+    """Refuse fabricated evidence and redirect toward safe ideation."""
+    text = (
+        "I can't help fabricate evidence, citations, or manipulative framing. "
+        "The boundary here is simple: ideas can be exploratory, but evidence must not be invented. "
+        "I can help in two safe ways instead: brainstorm clearly labeled ideas, or define what real evidence would be needed to support a claim."
+    )
+    return MeaningResponseCandidate(
+        candidate_type="EVIDENCE_IDEATION_BOUNDARY",
+        text=text,
+        grounding_score=0.85,
+        obligation_fit=0.98,
+        identity_safety=1.0,
+        memory_safety=1.0,
+        humility=0.95,
+        clarity=0.92,
+        relationship_fit=0.8,
+        confidence=0.78,
+        evidence=[
+            {"source": "creative_boundary_obligation", "obligation_type": obligation.obligation_type},
+            {"source": "creative_boundary_prompt", "text": getattr(meaning, "normalized_text", "")[:120]},
+        ],
+        limitations=[
+            "No fake evidence, fabricated citations, or manipulative persuasion.",
+            "Redirects to safe ideation or evidence definition only.",
+        ],
+    )
+
+
 # ── Main formation function ───────────────────────────────────────────────────
 
 def form_meaning_response(
@@ -323,6 +410,12 @@ def form_meaning_response(
     elif ob_type == "acknowledge_emotion":
         # Emotional acknowledgment — lightweight, can be generic
         candidates.append(_compose_new_contact_orientation(state))  # placeholder
+
+    elif ob_type == "support_creative_conversation":
+        candidates.append(_compose_creative_conversation_guidance(meaning, obligation))
+
+    elif ob_type == "clarify_evidence_vs_ideation":
+        candidates.append(_compose_evidence_ideation_boundary(meaning, obligation))
 
     elif ob_type == "fallback_uncertainty":
         if state.state_confidence >= 0.4:

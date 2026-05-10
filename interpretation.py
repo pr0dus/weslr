@@ -1368,6 +1368,72 @@ def _try_ordinary_reasoning_guidance(message: str, lowered: str) -> dict | None:
     return guidance
 
 
+def _try_creative_meaning_obligation_bridge(message: str) -> dict | None:
+    """Narrow bridge for creative obligation types only."""
+    try:
+        from weslr.linguistic_meaning import analyze_meaning
+        from weslr.response_obligation import ResponseObligation, determine_response_obligation
+        from weslr.meaning_state_context import gather_meaning_state
+        from weslr.meaning_response import form_meaning_response
+
+        meaning = analyze_meaning(message)
+        obligation = determine_response_obligation(meaning)
+        lowered = str(message or "").lower()
+        boundary_phrases = (
+            "invent the evidence",
+            "fabricate literature",
+            "invent citations",
+            "manipulate perspective",
+            "fake evidence",
+        )
+        if (
+            obligation.obligation_type not in {"support_creative_conversation", "clarify_evidence_vs_ideation"}
+            and any(phrase in lowered for phrase in boundary_phrases)
+        ):
+            obligation = ResponseObligation(
+                obligation_type="clarify_evidence_vs_ideation",
+                required_state=[],
+                disclosure_level="none",
+                identity_verification_required=False,
+                memory_evidence_required=False,
+                should_answer_bounded=True,
+                should_ask_clarifying=False,
+                confidence=0.7,
+                reason="Interpretation boundary bridge for fabricated-evidence/manipulation phrasing.",
+                evidence=[{"source": "interpretation_creative_boundary_phrase"}],
+            )
+
+        if obligation.obligation_type not in {"support_creative_conversation", "clarify_evidence_vs_ideation"}:
+            return None
+
+        state = gather_meaning_state(obligation, {}, {}, None, None)
+        result = form_meaning_response(meaning, obligation, state)
+        if result is None or not result.content:
+            return None
+
+        path = (
+            "creative_evidence_boundary"
+            if obligation.obligation_type == "clarify_evidence_vs_ideation"
+            else "creative_conversation_obligation"
+        )
+        return {
+            "message": message,
+            "response_text": result.content,
+            "path": path,
+            "confidence": "medium",
+            "read_only": True,
+            "obligation_type": obligation.obligation_type,
+            "meaning_response": {
+                "candidate_type": result.selected_candidate_type,
+                "candidates_considered": result.candidates_considered,
+                "confidence": result.confidence,
+                "metadata": result.metadata,
+            },
+        }
+    except Exception:
+        return None
+
+
 def interpret_human_turn(message: str) -> dict:
     import time as _time
     _t0 = _time.perf_counter()
@@ -1529,6 +1595,17 @@ def interpret_human_turn(message: str) -> dict:
             ordinary_reasoning_guidance["turn_type"] = ordinary_reasoning_guidance["frame_turn_type"]
             ordinary_reasoning_guidance["reply_shape"] = ordinary_reasoning_guidance["frame_reply_shape"]
             return expand_response(ordinary_reasoning_guidance, policy, lowered)
+
+        creative_bridge = _try_creative_meaning_obligation_bridge(message)
+        if creative_bridge is not None:
+            policy = decide_response_policy(creative_bridge, lowered, _WESLR_MODE)
+            creative_bridge["interaction_frame"] = _classify_interaction_frame(text)
+            creative_bridge["frame_turn_type"] = _turn_type_from_frame(creative_bridge["interaction_frame"])
+            creative_bridge["frame_reply_shape"] = _reply_shape_from_frame(creative_bridge["interaction_frame"])
+            creative_bridge["response_contract"] = _response_contract_from_frame(creative_bridge["interaction_frame"])
+            creative_bridge["turn_type"] = creative_bridge["frame_turn_type"]
+            creative_bridge["reply_shape"] = creative_bridge["frame_reply_shape"]
+            return expand_response(creative_bridge, policy, lowered)
 
         # No handler matched at all — safe fallback
         resp = _build_safe_response(
@@ -1707,6 +1784,17 @@ def interpret_human_turn(message: str) -> dict:
     write_result = dispatch_write_handler(message, lowered)
     if write_result is not None:
         return write_result
+
+    creative_bridge = _try_creative_meaning_obligation_bridge(message)
+    if creative_bridge is not None:
+        policy = decide_response_policy(creative_bridge, lowered, _WESLR_MODE)
+        creative_bridge["interaction_frame"] = _classify_interaction_frame(text)
+        creative_bridge["frame_turn_type"] = _turn_type_from_frame(creative_bridge["interaction_frame"])
+        creative_bridge["frame_reply_shape"] = _reply_shape_from_frame(creative_bridge["interaction_frame"])
+        creative_bridge["response_contract"] = _response_contract_from_frame(creative_bridge["interaction_frame"])
+        creative_bridge["turn_type"] = creative_bridge["frame_turn_type"]
+        creative_bridge["reply_shape"] = creative_bridge["frame_reply_shape"]
+        return expand_response(creative_bridge, policy, lowered)
 
     # Safe fallback for None returns
     resp = _build_safe_response(
