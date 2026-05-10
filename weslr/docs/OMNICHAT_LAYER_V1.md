@@ -17,6 +17,8 @@ The interface is not the intelligence. The interface surfaces the intelligence t
 
 **Core principle:** Every OmniChat response originates from a deterministic source — a registry lookup, a state checkpoint, an ISS diagnostic, a proposal trace, a plan explanation. The conversational surface wraps structured data, not raw language generation.
 
+**Cognitive legibility rule:** OmniChat must translate internal structures into human-meaningful language. It may reference internal state when useful, but it must not expose private, gibberish, or unexplained internal notation as authority for a claim or decision.
+
 ---
 
 ## SECTION 2 — Layered Architecture
