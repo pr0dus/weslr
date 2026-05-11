@@ -153,7 +153,7 @@ class LogicalFormParse:
 
 
 _LOGICAL_MARKER_RE = re.compile(
-    r"\b(unless|either|or|and|not|no|none|never|all|every|some|therefore|so|hence|follows|must be true|which follows|could be true|can be inferred|logically follows|follows from|valid conclusion|best supported)\b",
+    r"\b(if|unless|either|or|and|not|no|none|never|all|every|some|therefore|so|hence|follows|must be true|which follows|could be true|can be inferred|logically follows|follows from|valid conclusion|best supported)\b",
     re.I,
 )
 
@@ -173,6 +173,8 @@ _INSTRUCTION_MARKERS = [
     "select",
     "which follows",
 ]
+
+_SAFE_CHOICE_LABEL_RE = re.compile(r"^[A-Za-z0-9]{1,4}$")
 
 
 def fingerprint_text(text: str) -> str:
@@ -363,6 +365,17 @@ def _extract_unless_parts(normalized: str) -> tuple[str, str] | None:
     return exception, main
 
 
+def _extract_if_then_parts(normalized: str) -> tuple[str, str] | None:
+    match = re.search(r"^if\s+(.*?)\s+then\s+(.*?)$", normalized)
+    if not match:
+        return None
+    antecedent = match.group(1).strip(" ?")
+    consequent = match.group(2).strip(" ?")
+    if not antecedent or not consequent:
+        return None
+    return antecedent, consequent
+
+
 def _contains_obvious_logical_marker(normalized: str) -> bool:
     return bool(_LOGICAL_MARKER_RE.search(normalized))
 
@@ -372,6 +385,33 @@ def _append_unique_terms(parse: LogicalFormParse, normalized: str) -> None:
 
 
 def _add_structural_records(parse: LogicalFormParse, *, idx: str, statement_id: str, normalized: str) -> None:
+    if normalized.startswith("if ") and " then " in normalized:
+        parts = _extract_if_then_parts(normalized)
+        if parts:
+            antecedent, consequent = parts
+            parse.conditionals.append(
+                ConditionalRecord(
+                    record_id=f"cond_{idx}",
+                    antecedent=antecedent,
+                    consequent=consequent,
+                    conditional_type="direct_conditional",
+                    source_statement_ids=[statement_id],
+                    normalized_form=normalized,
+                    confidence="medium",
+                    human_translation="Conditional structure detected from if-then phrasing.",
+                )
+            )
+            parse.operators.append(
+                LogicalOperatorRecord(
+                    record_id=f"op_cond_{idx}",
+                    operator_type="conditional",
+                    source_statement_ids=[statement_id],
+                    normalized_form=normalized,
+                    confidence="medium",
+                    human_translation="Conditional structure detected from ordinary language.",
+                )
+            )
+
     if "unless" in normalized:
         parts = _extract_unless_parts(normalized)
         if parts:
@@ -509,12 +549,13 @@ def _populate_statement(
     fragment: str,
     role: str,
     store_raw_text: bool,
+    statement_id: str | None = None,
 ) -> tuple[ParsedStatement, bool]:
     normalized = normalize_logical_text(fragment)
     has_marker = _contains_obvious_logical_marker(normalized)
     statement = add_parsed_statement(
         parse,
-        statement_id=f"stmt_{idx}",
+        statement_id=statement_id or f"stmt_{idx}",
         raw_text_runtime_only=fragment if store_raw_text else "",
         text_fingerprint=fingerprint_text(fragment),
         normalized_text=normalized,
@@ -574,6 +615,19 @@ def parse_runtime_text_to_logical_form(
     return parse
 
 
+def safe_choice_identifier(choice: Any, index: int) -> str:
+    label = ""
+    if hasattr(choice, "label"):
+        label = str(getattr(choice, "label") or "")
+    elif isinstance(choice, dict):
+        label = str(choice.get("label", "") or "")
+
+    label = label.strip()
+    if _SAFE_CHOICE_LABEL_RE.fullmatch(label):
+        return f"choice_{label}"
+    return f"choice_{index}"
+
+
 def parse_mcq_runtime_text_to_logical_form(
     question_text: str,
     choices: list[dict],
@@ -596,7 +650,14 @@ def parse_mcq_runtime_text_to_logical_form(
         if not text.strip():
             continue
         # choice_claim is a non-answer-selecting candidate-conclusion role for parser-only MCQ structure awareness.
-        _, has_marker = _populate_statement(parse, idx=f"c{idx}", fragment=text, role="choice_claim", store_raw_text=store_raw_text)
+        _, has_marker = _populate_statement(
+            parse,
+            idx=f"c{idx}",
+            statement_id=safe_choice_identifier(choice, idx),
+            fragment=text,
+            role="choice_claim",
+            store_raw_text=store_raw_text,
+        )
         any_marker = any_marker or has_marker
 
     parse.parse_confidence = "medium" if any_marker else "low"
@@ -688,5 +749,6 @@ __all__ = [
     "add_parser_warning",
     "parse_runtime_text_to_logical_form",
     "parse_mcq_runtime_text_to_logical_form",
+    "safe_choice_identifier",
     "summarize_logical_form_parse",
 ]

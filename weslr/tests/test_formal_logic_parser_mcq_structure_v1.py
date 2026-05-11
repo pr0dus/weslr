@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 from weslr.formal_logic_parser import (  # noqa: E402
     logical_form_parse_to_dict,
     parse_mcq_runtime_text_to_logical_form,
+    safe_choice_identifier,
     summarize_logical_form_parse,
 )
 
@@ -74,6 +75,33 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
         )
         self.assertEqual(len(parse.candidate_conclusions), 2)
 
+    def test_visible_choice_label_becomes_safe_candidate_statement_id(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Question?",
+            [{"label": "A", "text": "All cats are mammals"}, {"label": "B", "text": "No cats are reptiles"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        self.assertEqual(parse.statements[1].statement_id, "choice_A")
+        self.assertEqual(parse.statements[2].statement_id, "choice_B")
+
+    def test_safe_choice_identifier_ignores_answer_label_correct_answer_and_answer_key(self):
+        choice = {"label": "A", "answer_label": "Z", "correct_answer": "B", "answer_key": "C", "text": "Claim"}
+        self.assertEqual(safe_choice_identifier(choice, 1), "choice_A")
+
+    def test_unsafe_or_missing_choice_label_falls_back_to_index(self):
+        self.assertEqual(safe_choice_identifier({"label": "A/B", "text": "Claim"}, 2), "choice_2")
+        self.assertEqual(safe_choice_identifier({"text": "Claim"}, 3), "choice_3")
+
+    def test_candidate_conclusions_use_safe_candidate_ids(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Question?",
+            [{"label": "A", "text": "All cats are mammals"}, {"label": "@bad", "text": "No cats are reptiles"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        self.assertEqual(parse.candidate_conclusions, ["choice_A", "choice_2"])
+
     def test_summary_includes_choice_claim_count(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "Question?",
@@ -110,7 +138,7 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
             parse_id="p1",
             source_task_id="t1",
         )
-        self.assertEqual(len([u for u in parse.unsupported_fragments if "stmt_c1" in u.source_statement_ids]), 0)
+        self.assertEqual(len([u for u in parse.unsupported_fragments if "choice_A" in u.source_statement_ids]), 0)
 
     def test_quantifier_negation_disjunction_detection_still_works_inside_choices(self):
         parse = parse_mcq_runtime_text_to_logical_form(
@@ -130,7 +158,7 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
     def test_no_answer_label_copied_if_present_in_input(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "Question?",
-            [{"label": "A", "text": "All cats are mammals", "answer_label": "A"}],
+            [{"label": "A", "text": "All cats are mammals", "answer_label": "Z"}],
             parse_id="p1",
             source_task_id="t1",
         )
@@ -140,7 +168,7 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
     def test_no_answer_key_field_exists_in_parse_dict(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "Question?",
-            [{"label": "A", "text": "All cats are mammals"}],
+            [{"label": "A", "text": "All cats are mammals", "answer_key": "B"}],
             parse_id="p1",
             source_task_id="t1",
         )

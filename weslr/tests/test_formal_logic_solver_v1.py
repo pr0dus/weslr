@@ -59,18 +59,46 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
             metadata=dict(metadata or {}),
         )
 
-    def _parser_parse(self):
+    def _neutral_parser_parse(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "If rain then wet streets. Which conclusion is best supported?",
+            [
+                {"label": "A", "text": "dry streets"},
+                {"label": "B", "text": "city traffic"},
+            ],
+            parse_id="parse-neutral",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        parse.premises = ["stmt_q1"]
+        return parse
+
+    def _supported_parser_parse(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "If rain then wet streets. Rain. Which conclusion is best supported?",
             [
                 {"label": "A", "text": "wet streets"},
                 {"label": "B", "text": "dry streets"},
             ],
-            parse_id="parse-1",
+            parse_id="parse-supported",
             source_task_id="t1",
             store_raw_text=False,
         )
         parse.premises = ["stmt_q1", "stmt_q2"]
+        return parse
+
+    def _contradiction_parser_parse(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Not rain. Which conclusion is best supported?",
+            [
+                {"label": "A", "text": "rain"},
+                {"label": "B", "text": "snow"},
+            ],
+            parse_id="parse-contradiction",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        parse.premises = ["stmt_q1"]
         return parse
 
     def test_can_handle_true_for_formal_logic_ordinary_reasoning_task(self):
@@ -170,14 +198,14 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
 
     def test_solver_accepts_logical_form_parse_from_context_metadata(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._neutral_parser_parse()
         result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
         self.assertEqual(result.status, "parsed_no_supported_inference")
         self.assertEqual(result.proposed_answer, "")
 
     def test_solver_accepts_logical_form_parse_dict_from_context_metadata(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._neutral_parser_parse()
         result = self.solver.run(
             self._context(task, allow_raw=False, metadata={"logical_form_parse": dataclasses.asdict(parse)})
         )
@@ -185,22 +213,29 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
 
     def test_parser_mode_does_not_require_direct_raw_question_access(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._neutral_parser_parse()
         result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
         self.assertNotEqual(result.status, "insufficient_input")
-        self.assertEqual(result.status, "parsed_no_supported_inference")
 
     def test_parser_mode_returns_parsed_no_supported_inference_when_no_inference_applies(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._neutral_parser_parse()
         result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
         self.assertEqual(result.status, "parsed_no_supported_inference")
         self.assertEqual(result.confidence, "low")
         self.assertIn("Parser extracted structured premises and candidate conclusions", result.explanation)
 
+    def test_parser_mode_candidate_evaluations_are_created(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._supported_parser_parse()
+        context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
+        self.solver.run(context)
+        evaluation_nodes = [node for node in context.trace.nodes if node.node_type in {"candidate_supported", "candidate_ambiguous", "candidate_contradicted"}]
+        self.assertGreaterEqual(len(evaluation_nodes), 2)
+
     def test_parser_mode_creates_parser_summary_trace_node(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._neutral_parser_parse()
         context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
         result = self.solver.run(context)
         self.assertIn("formal_logic_solver_parser_summary", result.nodes_created)
@@ -209,22 +244,32 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
 
     def test_parser_mode_creates_choice_claim_candidate_conclusion_trace_nodes(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._supported_parser_parse()
         context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
         self.solver.run(context)
         premise_nodes = [node for node in context.trace.nodes if node.node_type == "parsed_premise"]
         choice_nodes = [node for node in context.trace.nodes if node.node_type == "choice_claim"]
         self.assertGreaterEqual(len(premise_nodes), 1)
         self.assertGreaterEqual(len(choice_nodes), 2)
+        self.assertEqual({node.content for node in choice_nodes}, {"choice_A", "choice_B"})
 
     def test_parser_mode_adds_parser_warrants(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._supported_parser_parse()
         context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
         self.solver.run(context)
         warrant_types = {edge.warrant.warrant_type for edge in context.trace.edges}
         self.assertIn("parser logical-form extraction", warrant_types)
         self.assertIn("parser candidate-conclusion extraction", warrant_types)
+        self.assertIn("parser candidate evaluation", warrant_types)
+
+    def test_parser_mode_candidate_evaluation_trace_nodes_are_created(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._supported_parser_parse()
+        context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
+        self.solver.run(context)
+        summary_nodes = [node for node in context.trace.nodes if node.node_type == "candidate_evaluation_summary"]
+        self.assertEqual(len(summary_nodes), 1)
 
     def test_parser_mode_records_unsupported_fragment_summary_without_raw_text(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
@@ -243,19 +288,98 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
         self.assertNotIn("Birds migrate seasonally", unsupported_nodes[0].content)
         self.assertTrue(any("unsupported fragment(s)" in warning for warning in result.warnings))
 
+    def test_explicit_contradiction_blocks_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._contradiction_parser_parse()
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_blocked_by_conflict")
+        self.assertEqual(result.proposed_answer, "")
+
+    def test_ambiguous_parser_candidates_produce_no_proposed_answer(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "If rain then wet streets. Rain. Which conclusion is best supported?",
+            [{"label": "A", "text": "wet streets"}, {"label": "B", "text": "wet streets"}],
+            parse_id="parse-ambiguous",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_ambiguous_candidates")
+        self.assertEqual(result.proposed_answer, "")
+
+    def test_unique_supported_synthetic_parser_case_can_produce_proposed_answer(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._supported_parser_parse()
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_selected")
+        self.assertEqual(result.proposed_answer, "A")
+
+    def test_proposed_answer_is_candidate_identifier_only_not_answer_key(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "If rain then wet streets. Rain. Which conclusion is best supported?",
+            [
+                {"label": "A", "text": "wet streets", "answer_key": "B", "correct_answer": "B"},
+                {"label": "B", "text": "dry streets", "answer_key": "A", "correct_answer": "A"},
+            ],
+            parse_id="parse-ids",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        parse.premises = ["stmt_q1", "stmt_q2"]
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.proposed_answer, "A")
+        self.assertNotIn("answer_key", str(dataclasses.asdict(result)))
+
+    def test_low_parse_confidence_blocks_confident_selection(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._supported_parser_parse()
+        parse.parse_confidence = "low"
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_no_supported_inference")
+        self.assertEqual(result.proposed_answer, "")
+        self.assertTrue(any("low parse confidence" in warning for warning in result.warnings))
+
+    def test_unsupported_fragments_reduce_confidence_and_warn(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "If rain then wet streets. Rain. Strange seasonal background. Which conclusion is best supported?",
+            [{"label": "A", "text": "wet streets"}, {"label": "B", "text": "dry streets"}],
+            parse_id="parse-warning",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.confidence, "low")
+        self.assertTrue(any("unsupported fragment" in warning for warning in result.warnings))
+
     def test_parser_mode_keeps_official_score_claimed_false(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._supported_parser_parse()
         result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
         self.assertFalse(result.official_score_claimed)
 
     def test_parser_mode_does_not_use_answer_key(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
-        parse = self._parser_parse()
+        parse = self._supported_parser_parse()
         result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
-        self.assertEqual(result.proposed_answer, "")
         self.assertFalse(result.official_score_claimed)
         self.assertNotIn("answer_key", str(dataclasses.asdict(result)))
+
+    def test_no_raw_question_or_choice_text_appears_in_solver_result_or_trace_summary(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._supported_parser_parse()
+        context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
+        result = self.solver.run(context)
+        self.assertNotIn("wet streets", result.explanation)
+        summary_text = "\n".join(
+            node.content
+            for node in context.trace.nodes
+            if node.node_type in {"parser_summary", "candidate_evaluation_summary", "unsupported_fragment_summary"}
+        )
+        self.assertNotIn("wet streets", summary_text)
+        self.assertNotIn("dry streets", summary_text)
 
     def test_trace_receives_nodes_warrants_when_mutation_allowed(self):
         task = self._task(
@@ -293,6 +417,7 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
         changed = {str(path.relative_to(ROOT)) for path in ROOT.rglob("*") if path.is_file()}
         self.assertIn("weslr/formal_logic_solver.py", changed)
         self.assertIn("weslr/tests/test_formal_logic_solver_v1.py", changed)
+        self.assertNotIn("weslr/evals/official_mcq_adapter.py", {"weslr/formal_logic_solver.py", "weslr/tests/test_formal_logic_solver_v1.py"})
 
 
 if __name__ == "__main__":

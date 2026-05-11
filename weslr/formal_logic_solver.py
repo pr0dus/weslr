@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from typing import Any
 
 from weslr.formal_logic_parser import LogicalFormParse, logical_form_parse_from_dict
@@ -12,6 +13,18 @@ from weslr.solver_interface import (
     SolverRunResult,
     validate_solver_run_context,
 )
+
+
+@dataclass
+class CandidateEvaluation:
+    candidate_id: str
+    support_score: int = 0
+    contradiction_score: int = 0
+    matched_premise_count: int = 0
+    matched_operator_count: int = 0
+    reasons: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    confidence: str = "low"
 
 
 class FormalLogicSolver(ReasoningSolverProtocol):
@@ -51,29 +64,40 @@ class FormalLogicSolver(ReasoningSolverProtocol):
 
         if logical_form_parse is not None:
             parser_claims = _extract_parser_claims(logical_form_parse)
+            evaluations = _evaluate_parser_candidates(parser_claims)
+            selection = _select_parser_candidate(parser_claims, evaluations)
+            warnings.extend(selection["warnings"])
+
             if context.allow_trace_mutation:
                 _add_parser_trace_nodes(
                     trace,
                     parser_claims=parser_claims,
+                    evaluations=evaluations,
                     nodes_created=nodes_created,
                     edges_created=edges_created,
                     source=self.solver_id,
                 )
+                if selection["conflict_ids"]:
+                    for idx, candidate_id in enumerate(selection["conflict_ids"], start=1):
+                        conflict_id = f"{self.solver_id}_parser_conflict_{idx}"
+                        add_conflict(
+                            trace,
+                            conflict_id=conflict_id,
+                            conflict_type="candidate_contradiction",
+                            node_ids=[],
+                            explanation=f"candidate conflict detected for {candidate_id}",
+                            severity="medium",
+                            resolved=False,
+                        )
+                        conflicts_created.append(conflict_id)
 
-            explanation = (
-                "Parser extracted structured premises and candidate conclusions, "
-                "but no supported inference rule selected a unique answer in this phase."
-            )
-            if parser_claims["unsupported_count"]:
-                warnings.append(
-                    f"parser reported {parser_claims['unsupported_count']} unsupported fragment(s) still requiring broader logical-form coverage"
-                )
             return SolverRunResult(
                 solver_id=self.solver_id,
                 solver_family=self.solver_family,
-                status="parsed_no_supported_inference",
-                confidence="low",
-                explanation=explanation,
+                status=selection["status"],
+                proposed_answer=selection["proposed_answer"],
+                confidence=selection["confidence"],
+                explanation=selection["explanation"],
                 nodes_created=nodes_created,
                 edges_created=edges_created,
                 conflicts_created=conflicts_created,
@@ -272,6 +296,7 @@ def _add_parser_trace_nodes(
     trace,
     *,
     parser_claims: dict[str, Any],
+    evaluations: list[CandidateEvaluation],
     nodes_created: list[str],
     edges_created: list[str],
     source: str,
@@ -293,6 +318,7 @@ def _add_parser_trace_nodes(
     )
     nodes_created.append(summary_id)
 
+    premise_node_ids: dict[str, str] = {}
     for idx, statement in enumerate(parser_claims["premises"], start=1):
         node_id = f"{source}_parsed_premise_{idx}"
         add_inference_node(
@@ -304,6 +330,7 @@ def _add_parser_trace_nodes(
             source=source,
         )
         nodes_created.append(node_id)
+        premise_node_ids[statement.statement_id] = node_id
         edge_id = f"{source}_parser_premise_edge_{idx}"
         add_inference_edge(
             trace,
@@ -323,18 +350,20 @@ def _add_parser_trace_nodes(
         )
         edges_created.append(edge_id)
 
+    candidate_node_ids: dict[str, str] = {}
     for idx, statement in enumerate(parser_claims["candidate_conclusions"], start=1):
-        node_id = f"{source}_candidate_conclusion_{idx}"
+        node_id = f"{source}_{statement.statement_id}"
         node_type = "choice_claim" if statement.role == "choice_claim" else "candidate_conclusion"
         add_inference_node(
             trace,
             node_id=node_id,
             node_type=node_type,
-            content=statement.logical_form or statement.normalized_text,
+            content=statement.statement_id,
             confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
             source=source,
         )
         nodes_created.append(node_id)
+        candidate_node_ids[statement.statement_id] = node_id
         edge_id = f"{source}_parser_choice_edge_{idx}"
         add_inference_edge(
             trace,
@@ -345,7 +374,7 @@ def _add_parser_trace_nodes(
             warrant=WarrantRecord(
                 warrant_type="parser candidate-conclusion extraction",
                 source=source,
-                explanation="Parser extracted a candidate conclusion from structured MCQ text without exposing raw text.",
+                explanation="Parser extracted a candidate identifier from structured MCQ text without exposing raw text.",
                 confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
                 deterministic=False,
                 human_teachable=True,
@@ -353,6 +382,101 @@ def _add_parser_trace_nodes(
             confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
         )
         edges_created.append(edge_id)
+
+    for idx, evaluation in enumerate(evaluations, start=1):
+        node_type = "candidate_ambiguous"
+        if evaluation.contradiction_score > 0:
+            node_type = "candidate_contradicted"
+        elif evaluation.support_score > 0 and evaluation.contradiction_score == 0:
+            node_type = "candidate_supported"
+        node_id = f"{source}_candidate_evaluation_{idx}"
+        add_inference_node(
+            trace,
+            node_id=node_id,
+            node_type=node_type,
+            content=(
+                f"candidate={evaluation.candidate_id}; support={evaluation.support_score}; "
+                f"contradiction={evaluation.contradiction_score}; matched_premises={evaluation.matched_premise_count}; "
+                f"matched_operators={evaluation.matched_operator_count}; confidence={evaluation.confidence}"
+            ),
+            confidence=evaluation.confidence,
+            source=source,
+        )
+        nodes_created.append(node_id)
+
+        candidate_node_id = candidate_node_ids.get(evaluation.candidate_id, summary_id)
+        support_edge_id = f"{source}_candidate_eval_edge_{idx}"
+        add_inference_edge(
+            trace,
+            edge_id=support_edge_id,
+            from_node=candidate_node_id,
+            to_node=node_id,
+            relation_type="evaluates",
+            warrant=WarrantRecord(
+                warrant_type="parser candidate evaluation",
+                source=source,
+                explanation="Candidate identifiers were evaluated against parser-visible premises and operators.",
+                confidence=evaluation.confidence,
+                deterministic=False,
+                human_teachable=True,
+            ),
+            confidence=evaluation.confidence,
+        )
+        edges_created.append(support_edge_id)
+
+        if evaluation.contradiction_score > 0:
+            contradiction_edge_id = f"{source}_candidate_contradiction_edge_{idx}"
+            add_inference_edge(
+                trace,
+                edge_id=contradiction_edge_id,
+                from_node=summary_id,
+                to_node=node_id,
+                relation_type="blocks",
+                warrant=WarrantRecord(
+                    warrant_type="contradiction check",
+                    source=source,
+                    explanation="Contradiction checks blocked confident candidate selection.",
+                    confidence=evaluation.confidence,
+                    deterministic=False,
+                    human_teachable=True,
+                ),
+                confidence=evaluation.confidence,
+            )
+            edges_created.append(contradiction_edge_id)
+
+    summary_eval_id = f"{source}_candidate_evaluation_summary"
+    supported = sum(1 for evaluation in evaluations if evaluation.support_score > 0 and evaluation.contradiction_score == 0)
+    contradicted = sum(1 for evaluation in evaluations if evaluation.contradiction_score > 0)
+    add_inference_node(
+        trace,
+        node_id=summary_eval_id,
+        node_type="candidate_evaluation_summary",
+        content=(
+            f"candidate evaluations: total={len(evaluations)}; supported={supported}; "
+            f"contradicted={contradicted}; unsupported_fragments={parser_claims['unsupported_count']}"
+        ),
+        confidence=parser_claims["parse_confidence"] or "low",
+        source=source,
+    )
+    nodes_created.append(summary_eval_id)
+    summary_edge_id = f"{source}_candidate_evaluation_summary_edge"
+    add_inference_edge(
+        trace,
+        edge_id=summary_edge_id,
+        from_node=summary_id,
+        to_node=summary_eval_id,
+        relation_type="supports",
+        warrant=WarrantRecord(
+            warrant_type="parser candidate evaluation",
+            source=source,
+            explanation="Evaluation summary records how parser-visible candidates were compared without using answer keys.",
+            confidence=parser_claims["parse_confidence"] or "low",
+            deterministic=False,
+            human_teachable=True,
+        ),
+        confidence=parser_claims["parse_confidence"] or "low",
+    )
+    edges_created.append(summary_edge_id)
 
     if parser_claims["unsupported_count"]:
         node_id = f"{source}_unsupported_fragment_summary"
@@ -399,6 +523,205 @@ def _normalize_logic_text(text: str) -> str:
     lowered = re.sub(r"\b(an|a|the)\b", " ", lowered)
     lowered = re.sub(r"\s+", " ", lowered).strip()
     return " ".join(_canonical_token(token) for token in lowered.split())
+
+
+def _tokenize_logic_text(text: str) -> set[str]:
+    return {token for token in _normalize_logic_text(text).split() if token}
+
+
+def _is_negated(text: str) -> bool:
+    return _normalize_logic_text(text).startswith("not ")
+
+
+def _strip_negation(text: str) -> str:
+    normalized = _normalize_logic_text(text)
+    return normalized[4:] if normalized.startswith("not ") else normalized
+
+
+def _confidence_from_scores(*, support_score: int, contradiction_score: int, parse_confidence: str, unsupported_count: int) -> str:
+    if contradiction_score > 0:
+        return "low"
+    if support_score >= 4 and parse_confidence == "medium" and unsupported_count == 0:
+        return "medium"
+    if support_score >= 2 and parse_confidence == "medium":
+        return "low"
+    return "low"
+
+
+def _evaluate_parser_candidates(parser_claims: dict[str, Any]) -> list[CandidateEvaluation]:
+    premise_texts = [statement.logical_form or statement.normalized_text for statement in parser_claims["premises"]]
+    premise_norms = [_normalize_logic_text(text) for text in premise_texts if text]
+    premise_tokens = [_tokenize_logic_text(text) for text in premise_texts if text]
+    positive_premises = {_normalize_logic_text(text) for text in premise_texts if text and not _is_negated(text)}
+    negative_premises = {_strip_negation(text) for text in premise_texts if text and _is_negated(text)}
+
+    satisfied_conditionals: list[tuple[str, str]] = []
+    for conditional in parser_claims["conditionals"]:
+        antecedent = _normalize_logic_text(conditional.antecedent)
+        consequent = _normalize_logic_text(conditional.consequent)
+        if antecedent and consequent and antecedent in positive_premises:
+            satisfied_conditionals.append((antecedent, consequent))
+        if antecedent and consequent and f"not {consequent}" in {_normalize_logic_text(text) for text in premise_texts if text}:
+            satisfied_conditionals.append((f"not {consequent}", f"not {antecedent}"))
+
+    evaluations: list[CandidateEvaluation] = []
+    unsupported_count = parser_claims["unsupported_count"]
+    parse_confidence = parser_claims["parse_confidence"] or "low"
+
+    for candidate in parser_claims["candidate_conclusions"]:
+        candidate_text = candidate.logical_form or candidate.normalized_text
+        candidate_norm = _normalize_logic_text(candidate_text)
+        candidate_tokens = _tokenize_logic_text(candidate_text)
+        evaluation = CandidateEvaluation(candidate_id=candidate.statement_id)
+
+        if candidate_norm in positive_premises:
+            evaluation.support_score += 3
+            evaluation.matched_premise_count += 1
+            evaluation.reasons.append("matched_direct_premise")
+        if _is_negated(candidate_norm) and _strip_negation(candidate_norm) in negative_premises:
+            evaluation.support_score += 3
+            evaluation.matched_premise_count += 1
+            evaluation.reasons.append("matched_direct_negated_premise")
+
+        for tokens, premise_norm in zip(premise_tokens, premise_norms, strict=False):
+            if not candidate_tokens or not tokens:
+                continue
+            overlap = candidate_tokens & tokens
+            if len(overlap) >= 2 and candidate_tokens.issubset(tokens) and premise_norm != candidate_norm:
+                evaluation.support_score += 1
+                evaluation.matched_premise_count += 1
+                evaluation.reasons.append("token_overlap")
+
+        if _is_negated(candidate_norm) and _strip_negation(candidate_norm) in positive_premises:
+            evaluation.contradiction_score += 3
+            evaluation.warnings.append("explicit_negation_conflict")
+        if not _is_negated(candidate_norm) and candidate_norm in negative_premises:
+            evaluation.contradiction_score += 3
+            evaluation.warnings.append("explicit_negation_conflict")
+
+        for _, consequent in satisfied_conditionals:
+            if candidate_norm == consequent:
+                evaluation.support_score += 4
+                evaluation.matched_operator_count += 1
+                evaluation.reasons.append("supported_by_conditional")
+
+        for negation in parser_claims["negations"]:
+            neg_norm = _normalize_logic_text(negation.normalized_form)
+            if neg_norm and candidate_norm and _strip_negation(candidate_norm) == _strip_negation(neg_norm) and candidate_norm != neg_norm:
+                evaluation.contradiction_score += 2
+                evaluation.matched_operator_count += 1
+                evaluation.warnings.append("negation_record_conflict")
+                break
+
+        if parser_claims["disjunctions"] and evaluation.support_score > 0:
+            evaluation.warnings.append("disjunctions_require_conservative_selection")
+        if unsupported_count:
+            evaluation.warnings.append("unsupported_fragments_reduce_confidence")
+
+        evaluation.confidence = _confidence_from_scores(
+            support_score=evaluation.support_score,
+            contradiction_score=evaluation.contradiction_score,
+            parse_confidence=parse_confidence,
+            unsupported_count=unsupported_count,
+        )
+        evaluations.append(evaluation)
+
+    return evaluations
+
+
+def _select_parser_candidate(parser_claims: dict[str, Any], evaluations: list[CandidateEvaluation]) -> dict[str, Any]:
+    unsupported_count = parser_claims["unsupported_count"]
+    parse_confidence = parser_claims["parse_confidence"] or "low"
+    contradicted = [evaluation for evaluation in evaluations if evaluation.contradiction_score > 0]
+    supportable = [
+        evaluation
+        for evaluation in evaluations
+        if evaluation.support_score > 0 and evaluation.contradiction_score == 0
+    ]
+
+    explanation = (
+        "Parser extracted structured premises and candidate conclusions, "
+        "but no supported inference rule selected a unique answer in this phase."
+    )
+    warnings: list[str] = []
+    if unsupported_count:
+        warnings.append(
+            f"parser reported {unsupported_count} unsupported fragment(s) still requiring broader logical-form coverage"
+        )
+
+    if contradicted and not supportable:
+        return {
+            "status": "parsed_candidate_blocked_by_conflict",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": "Parser-mode candidate checks found contradiction signals, so selection remained blocked.",
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    if parse_confidence == "low":
+        warnings.append("low parse confidence blocked candidate selection")
+        return {
+            "status": "parsed_no_supported_inference",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": explanation,
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    if not supportable:
+        return {
+            "status": "parsed_no_supported_inference",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": explanation,
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    ranked = sorted(supportable, key=lambda evaluation: (evaluation.support_score, evaluation.matched_operator_count), reverse=True)
+    best = ranked[0]
+    if len(ranked) > 1 and ranked[1].support_score == best.support_score and ranked[1].matched_operator_count == best.matched_operator_count:
+        warnings.append("candidate evaluations tied, so no answer was selected")
+        return {
+            "status": "parsed_ambiguous_candidates",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": "Parser-mode candidate checks found multiple similarly supported candidates, so selection remained ambiguous.",
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    if unsupported_count and best.support_score < 4:
+        warnings.append("unsupported fragments lowered confidence below selection threshold")
+        return {
+            "status": "parsed_no_supported_inference",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": explanation,
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    if best.support_score < 4:
+        return {
+            "status": "parsed_no_supported_inference",
+            "proposed_answer": "",
+            "confidence": "low",
+            "explanation": explanation,
+            "warnings": warnings,
+            "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+        }
+
+    return {
+        "status": "parsed_candidate_selected",
+        "proposed_answer": best.candidate_id.replace("choice_", "", 1),
+        "confidence": "medium" if best.confidence == "medium" else "low",
+        "explanation": f"Parser-mode candidate evaluation selected {best.candidate_id} from structured support only.",
+        "warnings": warnings,
+        "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
+    }
 
 
 def _split_statements(text: str) -> list[str]:
@@ -556,4 +879,4 @@ def _analyze_formal_logic(question_text: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["FormalLogicSolver"]
+__all__ = ["FormalLogicSolver", "CandidateEvaluation"]
