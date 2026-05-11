@@ -43,6 +43,15 @@ class PredicateLike:
     subject_candidate_id: str = ""
     relation_hint: str = ""
     object_candidate_id: str = ""
+    subject_canonical_hint: str = ""
+    object_canonical_hint: str = ""
+    relation_canonical_hint: str = ""
+    subject_hint: str = ""
+    object_hint: str = ""
+    canonical_subject: str = ""
+    canonical_object: str = ""
+    subject_fingerprint: str = ""
+    object_fingerprint: str = ""
     polarity: str = "positive"
     quantifier_hint: str = ""
     modality_hint: str = ""
@@ -119,6 +128,39 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         )
         self.assertEqual("left supports right", proposition.human_translation)
 
+    def test_proposition_stores_subject_canonical_hint(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            subject="atomic:left",
+            subject_canonical_hint="left term",
+        )
+        self.assertEqual("left term", proposition.subject_canonical_hint)
+
+    def test_proposition_stores_object_canonical_hint(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            object="atomic:right",
+            object_canonical_hint="right term",
+        )
+        self.assertEqual("right term", proposition.object_canonical_hint)
+
+    def test_proposition_stores_relation_canonical_hint(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            relation="supports",
+            relation_canonical_hint="supports",
+        )
+        self.assertEqual("supports", proposition.relation_canonical_hint)
+
+    def test_proposition_stores_subject_and_object_fingerprints(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            subject_fingerprint="abc123",
+            object_fingerprint="def456",
+        )
+        self.assertEqual("abc123", proposition.subject_fingerprint)
+        self.assertEqual("def456", proposition.object_fingerprint)
+
     def test_unsupported_gaps_remain_visible(self):
         proposition = create_proposition_candidate_from_predicate(
             predicate_id="pred:1",
@@ -172,6 +214,27 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertEqual(["stmt:1"], propositions[0].source_statement_ids)
         self.assertEqual(["premise"], propositions[0].source_statement_roles)
 
+    def test_projection_helper_reads_canonical_hints_from_dict_like_predicate(self):
+        propositions = create_proposition_candidates_from_predicates([
+            {
+                "predicate_candidate_id": "pred:1",
+                "subject_candidate_id": "subj:1",
+                "object_candidate_id": "obj:1",
+                "relation_hint": "supports",
+                "subject_canonical_hint": "alpha",
+                "object_canonical_hint": "beta",
+                "relation_canonical_hint": "supports",
+                "subject_fingerprint": "fp-subj",
+                "object_fingerprint": "fp-obj",
+            }
+        ])
+        proposition = propositions[0]
+        self.assertEqual("alpha", proposition.subject_canonical_hint)
+        self.assertEqual("beta", proposition.object_canonical_hint)
+        self.assertEqual("supports", proposition.relation_canonical_hint)
+        self.assertEqual("fp-subj", proposition.subject_fingerprint)
+        self.assertEqual("fp-obj", proposition.object_fingerprint)
+
     def test_object_like_predicate_role_is_projected(self):
         propositions = create_proposition_candidates_from_predicates([
             PredicateLike(
@@ -187,6 +250,40 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertEqual("subj:1", propositions[0].subject)
         self.assertEqual("choice_claim", propositions[0].proposition_role)
         self.assertEqual(["choice_claim"], propositions[0].source_statement_roles)
+
+    def test_projection_helper_reads_canonical_hints_from_object_like_predicate(self):
+        propositions = create_proposition_candidates_from_predicates([
+            PredicateLike(
+                predicate_candidate_id="pred:1",
+                subject_candidate_id="subj:1",
+                object_candidate_id="obj:1",
+                relation_hint="supports",
+                subject_hint="alpha",
+                canonical_object="beta",
+                subject_fingerprint="fp-subj",
+                object_fingerprint="fp-obj",
+            )
+        ])
+        proposition = propositions[0]
+        self.assertEqual("alpha", proposition.subject_canonical_hint)
+        self.assertEqual("beta", proposition.object_canonical_hint)
+        self.assertEqual("supports", proposition.relation_canonical_hint)
+        self.assertEqual("fp-subj", proposition.subject_fingerprint)
+        self.assertEqual("fp-obj", proposition.object_fingerprint)
+
+    def test_projection_helper_does_not_invent_canonical_hints_from_opaque_ids(self):
+        propositions = create_proposition_candidates_from_predicates([
+            {
+                "predicate_candidate_id": "pred:1",
+                "subject_candidate_id": "atomic:stmt_q1:1",
+                "relation_hint": "is",
+                "object_candidate_id": "atomic:stmt_q1:2",
+            }
+        ])
+        proposition = propositions[0]
+        self.assertEqual("", proposition.subject_canonical_hint)
+        self.assertEqual("", proposition.object_canonical_hint)
+        self.assertEqual("is", proposition.relation_canonical_hint)
 
     def test_helper_skips_predicate_without_id(self):
         propositions = create_proposition_candidates_from_predicates([
@@ -219,6 +316,24 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         summary = summarize_proposition_projection_diagnostics([])
         self.assertIn("source_predicate_link_count", summary)
 
+    def test_summary_includes_subject_canonical_hint_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", subject_canonical_hint="alpha")
+        ])
+        self.assertEqual(1, summary["subject_canonical_hint_count"])
+
+    def test_summary_includes_object_canonical_hint_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", object_canonical_hint="beta")
+        ])
+        self.assertEqual(1, summary["object_canonical_hint_count"])
+
+    def test_summary_includes_relation_canonical_hint_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", relation_canonical_hint="supports")
+        ])
+        self.assertEqual(1, summary["relation_canonical_hint_count"])
+
     def test_summary_includes_premise_proposition_count(self):
         summary = summarize_proposition_projection_diagnostics([
             create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise")
@@ -244,6 +359,26 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertNotIn("answer_label", summary_text)
         self.assertNotIn("correct_answer", summary_text)
         self.assertNotIn("raw_text", summary_text)
+
+    def test_summary_remains_redacted_with_canonical_hints(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(
+                predicate_id="pred:1",
+                subject_canonical_hint="hidden subject",
+                object_canonical_hint="hidden object",
+                relation_canonical_hint="hidden relation",
+                subject_fingerprint="finger-a",
+                object_fingerprint="finger-b",
+            )
+        ])
+        summary_text = str(summary)
+        for snippet in ["hidden subject", "hidden object", "hidden relation", "finger-a", "finger-b"]:
+            self.assertNotIn(snippet, summary_text)
+
+    def test_summary_does_not_contain_question_choices_or_answer_fields(self):
+        summary_text = str(summarize_proposition_projection_diagnostics([]))
+        for snippet in ["question", "choices", "answer_key", "correct_answer"]:
+            self.assertNotIn(snippet, summary_text)
 
     def test_no_answer_selection_field_exists(self):
         data = proposition_candidate_to_dict(create_proposition_candidate_from_predicate(predicate_id="pred:1"))

@@ -45,6 +45,11 @@ class PropositionCandidate:
     subject: str = ""
     relation: str = ""
     object: str = ""
+    subject_canonical_hint: str = ""
+    object_canonical_hint: str = ""
+    relation_canonical_hint: str = ""
+    subject_fingerprint: str = ""
+    object_fingerprint: str = ""
     polarity: str = "positive"
     quantifier: str = ""
     modality: str = ""
@@ -213,6 +218,11 @@ def proposition_candidate_from_dict(data: dict[str, Any]) -> PropositionCandidat
         subject=data.get("subject", ""),
         relation=data.get("relation", ""),
         object=data.get("object", ""),
+        subject_canonical_hint=data.get("subject_canonical_hint", ""),
+        object_canonical_hint=data.get("object_canonical_hint", ""),
+        relation_canonical_hint=data.get("relation_canonical_hint", ""),
+        subject_fingerprint=data.get("subject_fingerprint", ""),
+        object_fingerprint=data.get("object_fingerprint", ""),
         polarity=data.get("polarity", "positive"),
         quantifier=data.get("quantifier", ""),
         modality=data.get("modality", ""),
@@ -285,6 +295,11 @@ def create_proposition_candidate_from_predicate(
     subject: str = "",
     relation: str = "",
     object: str = "",
+    subject_canonical_hint: str = "",
+    object_canonical_hint: str = "",
+    relation_canonical_hint: str = "",
+    subject_fingerprint: str = "",
+    object_fingerprint: str = "",
     polarity: str = "positive",
     quantifier: str = "",
     modality: str = "",
@@ -317,6 +332,11 @@ def create_proposition_candidate_from_predicate(
         subject=subject,
         relation=relation,
         object=object,
+        subject_canonical_hint=str(subject_canonical_hint or "").strip(),
+        object_canonical_hint=str(object_canonical_hint or "").strip(),
+        relation_canonical_hint=str(relation_canonical_hint or relation or "").strip(),
+        subject_fingerprint=str(subject_fingerprint or "").strip(),
+        object_fingerprint=str(object_fingerprint or "").strip(),
         polarity=polarity,
         quantifier=quantifier,
         modality=modality,
@@ -350,12 +370,34 @@ def create_proposition_candidates_from_predicates(predicates: list[object]) -> l
             or _safe_predicate_value(predicate, "source_statement_role")
             or ""
         )
+        subject_canonical_hint = str(
+            _safe_predicate_value(predicate, "subject_canonical_hint")
+            or _safe_predicate_value(predicate, "subject_hint")
+            or _safe_predicate_value(predicate, "canonical_subject")
+            or ""
+        ).strip()
+        object_canonical_hint = str(
+            _safe_predicate_value(predicate, "object_canonical_hint")
+            or _safe_predicate_value(predicate, "object_hint")
+            or _safe_predicate_value(predicate, "canonical_object")
+            or ""
+        ).strip()
+        relation_canonical_hint = str(
+            _safe_predicate_value(predicate, "relation_canonical_hint")
+            or _safe_predicate_value(predicate, "relation_hint")
+            or ""
+        ).strip()
         created.append(
             create_proposition_candidate_from_predicate(
                 predicate_id=predicate_id,
                 subject=str(_safe_predicate_value(predicate, "subject_candidate_id") or ""),
                 relation=str(_safe_predicate_value(predicate, "relation_hint") or ""),
                 object=str(_safe_predicate_value(predicate, "object_candidate_id") or ""),
+                subject_canonical_hint=subject_canonical_hint,
+                object_canonical_hint=object_canonical_hint,
+                relation_canonical_hint=relation_canonical_hint,
+                subject_fingerprint=str(_safe_predicate_value(predicate, "subject_fingerprint") or "").strip(),
+                object_fingerprint=str(_safe_predicate_value(predicate, "object_fingerprint") or "").strip(),
                 polarity=str(_safe_predicate_value(predicate, "polarity") or "positive"),
                 quantifier=str(_safe_predicate_value(predicate, "quantifier_hint") or ""),
                 modality=str(_safe_predicate_value(predicate, "modality_hint") or ""),
@@ -377,6 +419,11 @@ def summarize_proposition_projection_diagnostics(propositions: list[PropositionC
         "choice_claim_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "choice_claim"),
         "background_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "background"),
         "unknown_role_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "unknown"),
+        "subject_canonical_hint_count": sum(1 for proposition in propositions if proposition.subject_canonical_hint.strip()),
+        "object_canonical_hint_count": sum(1 for proposition in propositions if proposition.object_canonical_hint.strip()),
+        "relation_canonical_hint_count": sum(1 for proposition in propositions if proposition.relation_canonical_hint.strip()),
+        "subject_fingerprint_count": sum(1 for proposition in propositions if proposition.subject_fingerprint.strip()),
+        "object_fingerprint_count": sum(1 for proposition in propositions if proposition.object_fingerprint.strip()),
         "high_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "high"),
         "medium_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "medium"),
         "low_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "low"),
