@@ -29,6 +29,13 @@ _atomic_helper_required_markers = {
     "execution_allowed = false",
     "official_score_claimed = false",
 }
+_predicate_helper_approval_doc = "docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md"
+_predicate_helper_required_markers = {
+    "APPROVE_PREDICATE_DECOMPOSITION_HELPERS_ONLY",
+    "operator_approved_helper_phase",
+    "execution_allowed = false",
+    "official_score_claimed = false",
+}
 
 
 def _run_harness():
@@ -57,15 +64,23 @@ def _get_staged_files():
     return [p.strip() for p in diff_cached.stdout.strip().split("\n") if p.strip()]
 
 
-def _atomic_helper_approval_doc_is_valid():
-    doc_path = _workspace / _atomic_helper_approval_doc
+def _doc_with_markers_is_valid(doc_rel_path, required_markers):
+    doc_path = _workspace / doc_rel_path
     if not doc_path.exists():
         return False
     try:
         text = doc_path.read_text(encoding="utf-8")
     except Exception:
         return False
-    return all(marker in text for marker in _atomic_helper_required_markers)
+    return all(marker in text for marker in required_markers)
+
+
+def _atomic_helper_approval_doc_is_valid():
+    return _doc_with_markers_is_valid(_atomic_helper_approval_doc, _atomic_helper_required_markers)
+
+
+def _predicate_helper_approval_doc_is_valid():
+    return _doc_with_markers_is_valid(_predicate_helper_approval_doc, _predicate_helper_required_markers)
 
 
 def _check_git_scope():
@@ -76,6 +91,8 @@ def _check_git_scope():
       - interpretation.py
       - docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md only when
         the operator-approved helper-phase markers are present
+      - docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md only when
+        the operator-approved predicate-helper markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -91,6 +108,7 @@ def _check_git_scope():
 
     violations = []
     approval_doc_valid = _atomic_helper_approval_doc_is_valid()
+    predicate_approval_doc_valid = _predicate_helper_approval_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -102,6 +120,10 @@ def _check_git_scope():
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
             if not approval_doc_valid:
+                violations.append(f"  approval doc missing required markers: {path}")
+        if path == _predicate_helper_approval_doc:
+            allowed = predicate_approval_doc_valid
+            if not predicate_approval_doc_valid:
                 violations.append(f"  approval doc missing required markers: {path}")
 
         if not allowed:

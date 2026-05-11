@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 APPROVAL_DOC = "docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md"
+PREDICATE_APPROVAL_DOC = "docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md"
 
 APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES = {
     "weslr/logical_form_normalizer.py",
@@ -19,6 +20,14 @@ APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES = {
     "weslr/tests/test_logical_form_normalizer_v1_1_schema_extension.py",
     "weslr/tests/test_logical_form_normalizer_schema_v1.py",
     "weslr/tests/test_logical_form_normalizer_helpers_v1.py",
+}
+
+APPROVED_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPER_FILES = {
+    "weslr/logical_form_normalizer.py",
+    "weslr/tests/phase_scope_policy.py",
+    "weslr/tests/release_gate_v1.py",
+    "weslr/tests/test_logical_form_normalizer_predicate_helpers_v1.py",
+    "docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md",
 }
 
 FORBIDDEN_PATHS = {
@@ -70,22 +79,43 @@ def read_changed_files() -> set[str]:
     return changed
 
 
-def approval_doc_is_valid() -> bool:
-    path = ROOT / APPROVAL_DOC
+def _doc_has_required_markers(path_text: str, required: set[str]) -> bool:
+    path = ROOT / path_text
     if not path.exists():
         return False
     text = path.read_text(encoding="utf-8")
-    required = {
-        "APPROVE_ATOMIC_EXTRACTION_HELPERS_ONLY",
-        "operator_approved_helper_phase",
-        "execution_allowed = false",
-        "official_score_claimed = false",
-    }
     return all(term in text for term in required)
 
 
+def approval_doc_is_valid() -> bool:
+    return _doc_has_required_markers(
+        APPROVAL_DOC,
+        {
+            "APPROVE_ATOMIC_EXTRACTION_HELPERS_ONLY",
+            "operator_approved_helper_phase",
+            "execution_allowed = false",
+            "official_score_claimed = false",
+        },
+    )
+
+
+def predicate_approval_doc_is_valid() -> bool:
+    return _doc_has_required_markers(
+        PREDICATE_APPROVAL_DOC,
+        {
+            "APPROVE_PREDICATE_DECOMPOSITION_HELPERS_ONLY",
+            "operator_approved_helper_phase",
+            "execution_allowed = false",
+            "official_score_claimed = false",
+        },
+    )
+
+
 def assert_logical_form_normalizer_atomic_helper_phase_allowed(testcase):
-    testcase.assertTrue(approval_doc_is_valid(), f"approval doc invalid: {APPROVAL_DOC}")
+    testcase.assertTrue(
+        approval_doc_is_valid() or predicate_approval_doc_is_valid(),
+        f"approval doc invalid: {APPROVAL_DOC} or {PREDICATE_APPROVAL_DOC}",
+    )
     changed = read_changed_files()
     forbidden_hits = {
         path
@@ -93,5 +123,8 @@ def assert_logical_form_normalizer_atomic_helper_phase_allowed(testcase):
         if path in FORBIDDEN_PATHS or any(path.lower().startswith(prefix) for prefix in FORBIDDEN_PREFIXES)
     }
     testcase.assertEqual(set(), forbidden_hits)
-    disallowed = changed - APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES
+    allowed = set(APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES)
+    if predicate_approval_doc_is_valid():
+        allowed.update(APPROVED_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPER_FILES)
+    disallowed = changed - allowed
     testcase.assertEqual(set(), disallowed)

@@ -806,6 +806,158 @@ def summarize_atomic_extraction_diagnostics(form: NormalizedLogicalForm) -> dict
     }
 
 
+PREDICATE_RELATION_HINTS = {
+    "is": "is",
+    "support": "supports",
+    "supports": "supports",
+    "oppose": "opposes",
+    "opposes": "opposes",
+    "require": "requires",
+    "requires": "requires",
+    "prevent": "prevents",
+    "prevents": "prevents",
+    "permit": "permits",
+    "permits": "permits",
+    "allow": "permits",
+    "allows": "permits",
+    "imply": "implies",
+    "implies": "implies",
+}
+
+
+def detect_relation_hint_from_tokens(tokens: list[str]) -> str:
+    for token in tokens:
+        normalized = normalize_term_surface(token)
+        relation_hint = PREDICATE_RELATION_HINTS.get(normalized)
+        if relation_hint:
+            return relation_hint
+    return ""
+
+
+def create_predicate_candidates_from_atomic_terms(
+    form: NormalizedLogicalForm,
+    *,
+    source_statement_id: str,
+    source_statement_role: str = "",
+    confidence: str = "low",
+) -> list[PredicateCandidate]:
+    statement_candidates = [
+        candidate
+        for candidate in form.atomic_term_candidates
+        if candidate.source_statement_id == source_statement_id
+    ]
+    if len(statement_candidates) < 3:
+        return []
+
+    relation_index = -1
+    relation_hint = ""
+    for index, candidate in enumerate(statement_candidates):
+        relation_hint = detect_relation_hint_from_tokens([candidate.canonical_hint])
+        if relation_hint:
+            relation_index = index
+            break
+    if not relation_hint or relation_index <= 0 or relation_index >= len(statement_candidates) - 1:
+        return []
+
+    subject = statement_candidates[relation_index - 1]
+    obj = statement_candidates[relation_index + 1]
+    if not subject.candidate_id or not obj.candidate_id:
+        return []
+
+    existing_keys = {
+        (candidate.source_statement_id, candidate.subject_candidate_id, candidate.relation_hint, candidate.object_candidate_id)
+        for candidate in form.predicate_candidates
+    }
+    candidate_key = (source_statement_id, subject.candidate_id, relation_hint, obj.candidate_id)
+    if candidate_key in existing_keys:
+        return []
+
+    created = add_predicate_candidate(
+        form,
+        predicate_candidate_id=f"predicate:{source_statement_id}:1",
+        source_statement_id=source_statement_id,
+        subject_candidate_id=subject.candidate_id,
+        relation_hint=relation_hint,
+        object_candidate_id=obj.candidate_id,
+        polarity="positive",
+        confidence=confidence,
+        decomposition_method="predicate_hint_decomposition",
+        human_explanation=(
+            "Predicate candidate conservatively derived from adjacent atomic term candidates and a supported relation hint without retaining raw text."
+        ),
+    )
+    if source_statement_role and not created.human_explanation:
+        created.human_explanation = f"Predicate candidate created for statement role {source_statement_role}."
+    return [created]
+
+
+def create_predicate_candidates_for_form(form: NormalizedLogicalForm) -> list[PredicateCandidate]:
+    created: list[PredicateCandidate] = []
+    statement_roles: dict[str, str] = {}
+    statement_confidences: dict[str, str] = {}
+    for candidate in form.atomic_term_candidates:
+        if not candidate.source_statement_id:
+            continue
+        statement_roles.setdefault(candidate.source_statement_id, candidate.source_statement_role)
+        statement_confidences.setdefault(candidate.source_statement_id, candidate.confidence)
+
+    for source_statement_id in statement_roles:
+        created.extend(
+            create_predicate_candidates_from_atomic_terms(
+                form,
+                source_statement_id=source_statement_id,
+                source_statement_role=statement_roles.get(source_statement_id, ""),
+                confidence=statement_confidences.get(source_statement_id, "low"),
+            )
+        )
+    return created
+
+
+def summarize_predicate_decomposition_diagnostics(form: NormalizedLogicalForm) -> dict[str, Any]:
+    anti = form.anti_gaming
+    legibility = form.legibility
+    statement_groups: dict[str, list[AtomicTermCandidate]] = {}
+    for candidate in form.atomic_term_candidates:
+        if not candidate.source_statement_id:
+            continue
+        statement_groups.setdefault(candidate.source_statement_id, []).append(candidate)
+
+    relation_hint_count = 0
+    empty_relation_hint_count = 0
+    for statement_candidates in statement_groups.values():
+        relation_hint = detect_relation_hint_from_tokens([candidate.canonical_hint for candidate in statement_candidates])
+        if relation_hint:
+            relation_hint_count += 1
+        else:
+            empty_relation_hint_count += 1
+
+    return {
+        "atomic_term_candidate_count": len(form.atomic_term_candidates),
+        "predicate_candidate_count": len(form.predicate_candidates),
+        "predicate_source_statement_count": len({candidate.source_statement_id for candidate in form.predicate_candidates if candidate.source_statement_id}),
+        "relation_hint_count": relation_hint_count,
+        "empty_relation_hint_count": empty_relation_hint_count,
+        "anti_gaming_safe": not any(
+            [
+                anti.uses_answer_key,
+                anti.uses_item_id,
+                anti.uses_answer_position_bias,
+                anti.stores_raw_text_by_default,
+                anti.official_score_claimed,
+                anti.benchmark_specific_rule_used,
+            ]
+        ),
+        "legibility_safe": all(
+            [
+                legibility.human_explanation_available,
+                legibility.normalization_warrants_available,
+                legibility.unsupported_gaps_visible,
+                not legibility.private_symbolic_authority_used,
+            ]
+        ),
+    }
+
+
 def normalize_relation_surface(text: str) -> str:
     normalized = normalize_term_surface(text)
     mapping = {
