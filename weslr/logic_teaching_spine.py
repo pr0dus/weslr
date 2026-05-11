@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import re
+import string
 from typing import Any
 
 
@@ -9,6 +11,7 @@ SAFE_VALIDITY_TYPES = {"valid", "invalid", "ambiguous", "unsupported", "unknown"
 SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "unknown"}
 SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
 SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
+_ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
 @dataclass
@@ -350,6 +353,100 @@ def _safe_predicate_value(predicate: object, field_name: str) -> Any:
     if isinstance(predicate, dict):
         return predicate.get(field_name)
     return getattr(predicate, field_name, None)
+
+
+def normalize_term_for_alignment(term: str) -> str:
+    text = str(term or "").strip().lower()
+    if not text:
+        return ""
+    text = re.sub(r"[_\-/]+", " ", text)
+    text = re.sub(rf"[{re.escape(string.punctuation)}]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return ""
+
+    normalized_tokens: list[str] = []
+    for token in text.split(" "):
+        token = token.strip()
+        if not token or token in _ALIGNMENT_STOPWORDS:
+            continue
+        if token.endswith("ies") and len(token) > 3:
+            token = token[:-3] + "y"
+        elif len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+            token = token[:-1]
+        if token:
+            normalized_tokens.append(token)
+    return " ".join(normalized_tokens)
+
+
+def term_alignment_key(term: str) -> str:
+    normalized = normalize_term_for_alignment(term)
+    return normalized if normalized else ""
+
+
+def compare_proposition_terms_for_alignment(left: object, right: object) -> dict[str, Any]:
+    left_subject = term_alignment_key(str(_safe_predicate_value(left, "subject_canonical_hint") or ""))
+    right_subject = term_alignment_key(str(_safe_predicate_value(right, "subject_canonical_hint") or ""))
+    left_object = term_alignment_key(str(_safe_predicate_value(left, "object_canonical_hint") or ""))
+    right_object = term_alignment_key(str(_safe_predicate_value(right, "object_canonical_hint") or ""))
+    left_relation = term_alignment_key(str(_safe_predicate_value(left, "relation_canonical_hint") or ""))
+    right_relation = term_alignment_key(str(_safe_predicate_value(right, "relation_canonical_hint") or ""))
+
+    subject_match = bool(left_subject and right_subject and left_subject == right_subject)
+    object_match = bool(left_object and right_object and left_object == right_object)
+    relation_match = bool(left_relation and right_relation and left_relation == right_relation)
+    any_term_match = subject_match or object_match or relation_match
+    if subject_match and object_match and relation_match:
+        match_type = "exact_normalized"
+    elif subject_match:
+        match_type = "subject_only"
+    elif object_match:
+        match_type = "object_only"
+    elif relation_match:
+        match_type = "relation_only"
+    else:
+        match_type = "none"
+    return {
+        "subject_match": subject_match,
+        "object_match": object_match,
+        "relation_match": relation_match,
+        "any_term_match": any_term_match,
+        "match_type": match_type,
+    }
+
+
+def summarize_term_alignment_candidates(propositions: list[PropositionCandidate]) -> dict[str, Any]:
+    premise_props = [proposition for proposition in propositions if proposition.proposition_role == "premise"]
+    choice_props = [proposition for proposition in propositions if proposition.proposition_role == "choice_claim"]
+    comparison_count = 0
+    subject_match_count = 0
+    object_match_count = 0
+    relation_match_count = 0
+    any_term_match_count = 0
+    no_match_count = 0
+
+    for premise in premise_props:
+        for choice in choice_props:
+            comparison_count += 1
+            match = compare_proposition_terms_for_alignment(premise, choice)
+            subject_match_count += int(match["subject_match"])
+            object_match_count += int(match["object_match"])
+            relation_match_count += int(match["relation_match"])
+            any_term_match_count += int(match["any_term_match"])
+            no_match_count += int(not match["any_term_match"])
+
+    return {
+        "premise_proposition_count": len(premise_props),
+        "choice_claim_proposition_count": len(choice_props),
+        "comparison_count": comparison_count,
+        "subject_match_count": subject_match_count,
+        "object_match_count": object_match_count,
+        "relation_match_count": relation_match_count,
+        "any_term_match_count": any_term_match_count,
+        "no_match_count": no_match_count,
+        "anti_gaming_safe": all(_anti_gaming_safe(proposition.anti_gaming) for proposition in propositions),
+        "legibility_safe": all(_legibility_safe(proposition.legibility) for proposition in propositions),
+    }
 
 
 def create_proposition_candidates_from_predicates(predicates: list[object]) -> list[PropositionCandidate]:

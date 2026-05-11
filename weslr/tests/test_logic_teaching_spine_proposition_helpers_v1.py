@@ -12,11 +12,15 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from weslr.logic_teaching_spine import (  # noqa: E402
+    compare_proposition_terms_for_alignment,
     create_proposition_candidate_from_predicate,
     create_proposition_candidates_from_predicates,
     normalize_proposition_role,
+    normalize_term_for_alignment,
     proposition_candidate_to_dict,
     summarize_proposition_projection_diagnostics,
+    summarize_term_alignment_candidates,
+    term_alignment_key,
 )
 
 FORBIDDEN_CHANGED = {
@@ -285,6 +289,56 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertEqual("", proposition.object_canonical_hint)
         self.assertEqual("is", proposition.relation_canonical_hint)
 
+    def test_alignment_normalization_lowercases_terms(self):
+        self.assertEqual("alpha beta", normalize_term_for_alignment("  Alpha Beta  "))
+
+    def test_alignment_normalization_strips_punctuation(self):
+        self.assertEqual("alpha beta", normalize_term_for_alignment("alpha, beta!"))
+
+    def test_alignment_normalization_handles_separator_characters(self):
+        self.assertEqual("alpha beta gamma", normalize_term_for_alignment("alpha_beta-gamma"))
+
+    def test_alignment_normalization_removes_standalone_tiny_stopwords(self):
+        self.assertEqual("cat dog", normalize_term_for_alignment("the cat and a dog"))
+
+    def test_alignment_normalization_singularizes_simple_plurals(self):
+        self.assertEqual("policy cat", normalize_term_for_alignment("policies cats"))
+
+    def test_no_benchmark_specific_mappings_exist(self):
+        self.assertNotEqual("answer", normalize_term_for_alignment("choice_a"))
+        self.assertNotEqual("correct", normalize_term_for_alignment("correct_answer"))
+
+    def test_term_alignment_key_returns_empty_for_empty_input(self):
+        self.assertEqual("", term_alignment_key("   "))
+
+    def test_proposition_term_comparison_detects_subject_match(self):
+        left = create_proposition_candidate_from_predicate(predicate_id="pred:l", subject_canonical_hint="Alpha-Cats")
+        right = create_proposition_candidate_from_predicate(predicate_id="pred:r", subject_canonical_hint="alpha cats")
+        match = compare_proposition_terms_for_alignment(left, right)
+        self.assertTrue(match["subject_match"])
+        self.assertEqual("subject_only", match["match_type"])
+
+    def test_proposition_term_comparison_detects_object_match(self):
+        left = create_proposition_candidate_from_predicate(predicate_id="pred:l", object_canonical_hint="Policies")
+        right = create_proposition_candidate_from_predicate(predicate_id="pred:r", object_canonical_hint="policy")
+        match = compare_proposition_terms_for_alignment(left, right)
+        self.assertTrue(match["object_match"])
+        self.assertEqual("object_only", match["match_type"])
+
+    def test_proposition_term_comparison_detects_relation_match(self):
+        left = create_proposition_candidate_from_predicate(predicate_id="pred:l", relation_canonical_hint="supports")
+        right = create_proposition_candidate_from_predicate(predicate_id="pred:r", relation_canonical_hint="supports")
+        match = compare_proposition_terms_for_alignment(left, right)
+        self.assertTrue(match["relation_match"])
+        self.assertEqual("relation_only", match["match_type"])
+
+    def test_proposition_term_comparison_returns_none_when_no_match(self):
+        left = create_proposition_candidate_from_predicate(predicate_id="pred:l", subject_canonical_hint="alpha")
+        right = create_proposition_candidate_from_predicate(predicate_id="pred:r", object_canonical_hint="beta")
+        match = compare_proposition_terms_for_alignment(left, right)
+        self.assertFalse(match["any_term_match"])
+        self.assertEqual("none", match["match_type"])
+
     def test_helper_skips_predicate_without_id(self):
         propositions = create_proposition_candidates_from_predicates([
             {"predicate_candidate_id": "", "subject_candidate_id": "subj:1"},
@@ -307,6 +361,39 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         summary_text = str(summary)
         for snippet in ["question", "choices", "answer_label", "correct_answer", "answer_key", "raw_text"]:
             self.assertNotIn(snippet, summary_text)
+
+    def test_summary_compares_only_premise_vs_choice_claim_propositions(self):
+        propositions = [
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise"),
+            create_proposition_candidate_from_predicate(predicate_id="pred:2", proposition_role="choice_claim"),
+            create_proposition_candidate_from_predicate(predicate_id="pred:3", proposition_role="background"),
+        ]
+        summary = summarize_term_alignment_candidates(propositions)
+        self.assertEqual(1, summary["comparison_count"])
+
+    def test_summary_counts_subject_matches(self):
+        propositions = [
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise", subject_canonical_hint="alpha"),
+            create_proposition_candidate_from_predicate(predicate_id="pred:2", proposition_role="choice_claim", subject_canonical_hint="alpha"),
+        ]
+        summary = summarize_term_alignment_candidates(propositions)
+        self.assertEqual(1, summary["subject_match_count"])
+
+    def test_summary_counts_object_matches(self):
+        propositions = [
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise", object_canonical_hint="policy"),
+            create_proposition_candidate_from_predicate(predicate_id="pred:2", proposition_role="choice_claim", object_canonical_hint="policies"),
+        ]
+        summary = summarize_term_alignment_candidates(propositions)
+        self.assertEqual(1, summary["object_match_count"])
+
+    def test_summary_counts_relation_matches(self):
+        propositions = [
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise", relation_canonical_hint="supports"),
+            create_proposition_candidate_from_predicate(predicate_id="pred:2", proposition_role="choice_claim", relation_canonical_hint="supports"),
+        ]
+        summary = summarize_term_alignment_candidates(propositions)
+        self.assertEqual(1, summary["relation_match_count"])
 
     def test_summary_contains_proposition_count(self):
         summary = summarize_proposition_projection_diagnostics([])
@@ -373,6 +460,26 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         ])
         summary_text = str(summary)
         for snippet in ["hidden subject", "hidden object", "hidden relation", "finger-a", "finger-b"]:
+            self.assertNotIn(snippet, summary_text)
+
+    def test_term_alignment_summary_remains_redacted(self):
+        summary = summarize_term_alignment_candidates([
+            create_proposition_candidate_from_predicate(
+                predicate_id="pred:1",
+                proposition_role="premise",
+                subject_canonical_hint="hidden subject",
+            ),
+            create_proposition_candidate_from_predicate(
+                predicate_id="pred:2",
+                proposition_role="choice_claim",
+                subject_canonical_hint="hidden subject",
+            ),
+        ])
+        self.assertNotIn("hidden subject", str(summary))
+
+    def test_term_alignment_summary_does_not_contain_question_choices_or_answer_fields(self):
+        summary_text = str(summarize_term_alignment_candidates([]))
+        for snippet in ["question", "choices", "answer_key", "correct_answer"]:
             self.assertNotIn(snippet, summary_text)
 
     def test_summary_does_not_contain_question_choices_or_answer_fields(self):
