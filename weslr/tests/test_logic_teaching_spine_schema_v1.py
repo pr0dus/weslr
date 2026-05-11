@@ -16,6 +16,7 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     create_empty_counterexample_candidate,
     create_empty_proof_step,
     create_empty_proposition_candidate,
+    create_empty_teaching_explanation,
     proof_step_from_dict,
     proof_step_to_dict,
     proposition_candidate_from_dict,
@@ -23,9 +24,13 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     summarize_counterexample_candidate,
     summarize_proof_step,
     summarize_proposition_candidate,
+    summarize_teaching_explanation,
+    teaching_explanation_from_dict,
+    teaching_explanation_to_dict,
     validate_counterexample_candidate,
     validate_proof_step,
     validate_proposition_candidate,
+    validate_teaching_explanation,
 )
 
 FORBIDDEN_CHANGED = {
@@ -40,6 +45,7 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_inference_pattern_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_counterexample_schema_v1.py",
+    "weslr/tests/test_logic_teaching_spine_teaching_explanation_schema_v1.py",
 }
 
 
@@ -328,6 +334,109 @@ class LogicTeachingSpineSchemaV1Tests(unittest.TestCase):
         )
         self.assertEqual("prop:challenged:1", counterexample.challenged_proposition_id)
         self.assertEqual("step:challenged:1", counterexample.challenged_proof_step_id)
+
+    def test_instantiate_empty_teaching_explanation(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        self.assertEqual("explain:1", explanation.explanation_id)
+
+    def test_teaching_explanation_safe_anti_gaming_defaults(self):
+        explanation = create_empty_teaching_explanation()
+        self.assertFalse(explanation.anti_gaming.uses_answer_key)
+        self.assertFalse(explanation.anti_gaming.uses_item_id_as_authority)
+        self.assertFalse(explanation.anti_gaming.uses_answer_position_bias)
+        self.assertFalse(explanation.anti_gaming.claims_official_score)
+        self.assertTrue(explanation.anti_gaming.no_answer_selection)
+
+    def test_teaching_explanation_safe_legibility_defaults(self):
+        explanation = create_empty_teaching_explanation()
+        self.assertFalse(explanation.legibility.stores_raw_benchmark_text)
+        self.assertTrue(explanation.legibility.redacted_summary_only)
+        self.assertFalse(explanation.legibility.private_symbolic_authority)
+
+    def test_teaching_explanation_roundtrip_to_from_dict(self):
+        explanation = create_empty_teaching_explanation(
+            explanation_id="explain:1",
+            support_status="supported",
+            teaching_mode="standard",
+            learner_level="general",
+        )
+        explanation.source_proposition_ids = ["prop:1"]
+        explanation.source_proof_step_ids = ["step:1"]
+        explanation.source_counterexample_ids = ["counter:1"]
+        explanation.conclusion = "A conclusion"
+        explanation.step_by_step_explanation = ["Step 1", "Step 2"]
+        explanation.uncertainty_note = "Some uncertainty"
+        explanation.human_explanation = "Human teaching explanation"
+        data = teaching_explanation_to_dict(explanation)
+        restored = teaching_explanation_from_dict(data)
+        self.assertEqual(data, teaching_explanation_to_dict(restored))
+
+    def test_teaching_explanation_summary_is_redacted(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.conclusion = "secret conclusion"
+        explanation.step_by_step_explanation = ["secret step"]
+        explanation.uncertainty_note = "secret uncertainty"
+        explanation.human_explanation = "secret explanation"
+        summary = summarize_teaching_explanation(explanation)
+        self.assertNotIn("conclusion", summary)
+        self.assertNotIn("step_by_step_explanation", summary)
+        self.assertNotIn("uncertainty_note", summary)
+        self.assertNotIn("human_explanation", summary)
+
+    def test_teaching_explanation_validation_flags_missing_id(self):
+        self.assertIn("missing explanation id", validate_teaching_explanation(create_empty_teaching_explanation()))
+
+    def test_teaching_explanation_validation_flags_invalid_support_status(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.support_status = "certainly_supported"
+        self.assertIn("invalid support status", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_invalid_teaching_mode(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.teaching_mode = "wizard_mode"
+        self.assertIn("invalid teaching mode", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_official_score_claim(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.anti_gaming.claims_official_score = True
+        self.assertIn("official-score claim is forbidden", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_answer_key_use(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.anti_gaming.uses_answer_key = True
+        self.assertIn("answer-key use is forbidden", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_item_id_authority(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.anti_gaming.uses_item_id_as_authority = True
+        self.assertIn("item-id authority is forbidden", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_raw_benchmark_storage(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.legibility.stores_raw_benchmark_text = True
+        self.assertIn("raw benchmark storage by default is forbidden", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_validation_flags_answer_selection(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.anti_gaming.no_answer_selection = False
+        self.assertIn("answer selection must remain disabled", validate_teaching_explanation(explanation))
+
+    def test_teaching_explanation_supports_spock_mode_structurally(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1", teaching_mode="spock")
+        self.assertEqual("spock", explanation.teaching_mode)
+
+    def test_teaching_explanation_supports_socratic_hint_mode_structurally(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1", teaching_mode="socratic_hint")
+        self.assertEqual("socratic_hint", explanation.teaching_mode)
+
+    def test_teaching_explanation_can_reference_propositions_proof_steps_and_counterexamples_structurally(self):
+        explanation = create_empty_teaching_explanation(explanation_id="explain:1")
+        explanation.source_proposition_ids = ["prop:1", "prop:2"]
+        explanation.source_proof_step_ids = ["step:1"]
+        explanation.source_counterexample_ids = ["counter:1"]
+        self.assertEqual(["prop:1", "prop:2"], explanation.source_proposition_ids)
+        self.assertEqual(["step:1"], explanation.source_proof_step_ids)
+        self.assertEqual(["counter:1"], explanation.source_counterexample_ids)
 
     def test_existing_teaching_spine_design_test_passes(self):
         output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_design_v1.py")

@@ -6,6 +6,8 @@ from typing import Any
 
 SAFE_CONFIDENCE_VALUES = {"low", "medium", "high"}
 SAFE_VALIDITY_TYPES = {"valid", "invalid", "ambiguous", "unsupported", "unknown"}
+SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "unknown"}
+SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
 
 
 @dataclass
@@ -95,6 +97,26 @@ class CounterexampleCandidate:
     violated_assumption: str = ""
     fallacy_pattern_id: str = ""
     confidence: str = "low"
+    human_explanation: str = ""
+    unsupported_gaps: list[str] = field(default_factory=list)
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class TeachingExplanation:
+    schema_version: str = "1.0"
+    explanation_id: str = ""
+    source_proposition_ids: list[str] = field(default_factory=list)
+    source_proof_step_ids: list[str] = field(default_factory=list)
+    source_counterexample_ids: list[str] = field(default_factory=list)
+    conclusion: str = ""
+    support_status: str = "unknown"
+    common_fallacy: str = ""
+    learner_level: str = "general"
+    teaching_mode: str = "standard"
+    step_by_step_explanation: list[str] = field(default_factory=list)
+    uncertainty_note: str = ""
     human_explanation: str = ""
     unsupported_gaps: list[str] = field(default_factory=list)
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
@@ -437,6 +459,85 @@ def summarize_counterexample_candidate(counterexample: CounterexampleCandidate) 
         "unsupported_gap_count": len(counterexample.unsupported_gaps),
         "legibility_safe": _legibility_safe(counterexample.legibility),
         "anti_gaming_safe": _anti_gaming_safe(counterexample.anti_gaming),
+    }
+
+
+def create_empty_teaching_explanation(
+    *,
+    explanation_id: str = "",
+    support_status: str = "unknown",
+    teaching_mode: str = "standard",
+    learner_level: str = "general",
+) -> TeachingExplanation:
+    return TeachingExplanation(
+        explanation_id=explanation_id,
+        support_status=support_status,
+        teaching_mode=teaching_mode,
+        learner_level=learner_level,
+    )
+
+
+def teaching_explanation_to_dict(explanation: TeachingExplanation) -> dict[str, Any]:
+    return asdict(explanation)
+
+
+def teaching_explanation_from_dict(data: dict[str, Any]) -> TeachingExplanation:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return TeachingExplanation(
+        schema_version=data.get("schema_version", "1.0"),
+        explanation_id=data.get("explanation_id", ""),
+        source_proposition_ids=list(data.get("source_proposition_ids") or []),
+        source_proof_step_ids=list(data.get("source_proof_step_ids") or []),
+        source_counterexample_ids=list(data.get("source_counterexample_ids") or []),
+        conclusion=data.get("conclusion", ""),
+        support_status=data.get("support_status", "unknown"),
+        common_fallacy=data.get("common_fallacy", ""),
+        learner_level=data.get("learner_level", "general"),
+        teaching_mode=data.get("teaching_mode", "standard"),
+        step_by_step_explanation=list(data.get("step_by_step_explanation") or []),
+        uncertainty_note=data.get("uncertainty_note", ""),
+        human_explanation=data.get("human_explanation", ""),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_teaching_explanation(explanation: TeachingExplanation) -> list[str]:
+    messages: list[str] = []
+    if not explanation.explanation_id:
+        messages.append("missing explanation id")
+    if explanation.support_status not in SAFE_SUPPORT_STATUSES:
+        messages.append("invalid support status")
+    if explanation.teaching_mode not in SAFE_TEACHING_MODES:
+        messages.append("invalid teaching mode")
+    if explanation.legibility.human_translation_available and not explanation.human_explanation.strip():
+        messages.append("missing human explanation when legibility requires it")
+    if explanation.support_status != "unknown" and not explanation.step_by_step_explanation:
+        messages.append("empty step-by-step explanation is not allowed when support status is known")
+    messages.extend(_validate_shared_safety(explanation.legibility, explanation.anti_gaming))
+    return messages
+
+
+def summarize_teaching_explanation(explanation: TeachingExplanation) -> dict[str, Any]:
+    return {
+        "schema_version": explanation.schema_version,
+        "explanation_id": explanation.explanation_id,
+        "source_proposition_count": len(explanation.source_proposition_ids),
+        "source_proof_step_count": len(explanation.source_proof_step_ids),
+        "source_counterexample_count": len(explanation.source_counterexample_ids),
+        "has_conclusion": bool(explanation.conclusion.strip()),
+        "support_status": explanation.support_status,
+        "common_fallacy": explanation.common_fallacy,
+        "learner_level": explanation.learner_level,
+        "teaching_mode": explanation.teaching_mode,
+        "step_count": len(explanation.step_by_step_explanation),
+        "has_uncertainty_note": bool(explanation.uncertainty_note.strip()),
+        "human_explanation_available": bool(explanation.human_explanation.strip()),
+        "unsupported_gap_count": len(explanation.unsupported_gaps),
+        "legibility_safe": _legibility_safe(explanation.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(explanation.anti_gaming),
     }
 
 
