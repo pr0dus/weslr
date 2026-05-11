@@ -11,10 +11,15 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from weslr.logic_teaching_spine import (  # noqa: E402
+    create_empty_proof_step,
     create_empty_proposition_candidate,
+    proof_step_from_dict,
+    proof_step_to_dict,
     proposition_candidate_from_dict,
     proposition_candidate_to_dict,
+    summarize_proof_step,
     summarize_proposition_candidate,
+    validate_proof_step,
     validate_proposition_candidate,
 )
 
@@ -127,6 +132,103 @@ class LogicTeachingSpineSchemaV1Tests(unittest.TestCase):
         data = proposition_candidate_to_dict(create_empty_proposition_candidate(proposition_id="prop:1"))
         self.assertNotIn("answer_selection", data)
         self.assertNotIn("selected_answer", data)
+
+    def test_instantiate_empty_proof_step(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        self.assertEqual("step:1", proof_step.proof_step_id)
+
+    def test_proof_step_safe_anti_gaming_defaults(self):
+        proof_step = create_empty_proof_step()
+        self.assertFalse(proof_step.anti_gaming.uses_answer_key)
+        self.assertFalse(proof_step.anti_gaming.uses_item_id_as_authority)
+        self.assertFalse(proof_step.anti_gaming.uses_answer_position_bias)
+        self.assertFalse(proof_step.anti_gaming.claims_official_score)
+        self.assertTrue(proof_step.anti_gaming.no_answer_selection)
+
+    def test_proof_step_safe_legibility_defaults(self):
+        proof_step = create_empty_proof_step()
+        self.assertFalse(proof_step.legibility.stores_raw_benchmark_text)
+        self.assertTrue(proof_step.legibility.redacted_summary_only)
+        self.assertFalse(proof_step.legibility.private_symbolic_authority)
+
+    def test_proof_step_roundtrip_to_from_dict(self):
+        proof_step = create_empty_proof_step(
+            proof_step_id="step:1",
+            source_proposition_ids=["prop:1", "prop:2"],
+            target_proposition_id="prop:3",
+            inference_pattern_id="pattern:modus_ponens",
+            validity_status="valid",
+        )
+        proof_step.warrant = "Structural warrant only."
+        proof_step.human_explanation = "This proof step is described structurally."
+        data = proof_step_to_dict(proof_step)
+        restored = proof_step_from_dict(data)
+        self.assertEqual(data, proof_step_to_dict(restored))
+
+    def test_proof_step_summary_is_redacted(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.warrant = "secret warrant"
+        proof_step.human_explanation = "secret explanation"
+        summary = summarize_proof_step(proof_step)
+        self.assertNotIn("warrant", summary)
+        self.assertNotIn("human_explanation", summary)
+
+    def test_proof_step_validation_flags_missing_id(self):
+        self.assertIn("missing proof step id", validate_proof_step(create_empty_proof_step()))
+
+    def test_proof_step_validation_flags_invalid_validity_status(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.validity_status = "definitely_right"
+        self.assertIn("invalid validity status", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_missing_warrant_when_high_confidence(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.confidence = "high"
+        proof_step.human_explanation = "present"
+        self.assertIn("missing warrant for high-confidence proof step", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_missing_explanation_when_high_confidence(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.confidence = "high"
+        proof_step.warrant = "present"
+        self.assertIn("missing human explanation for high-confidence proof step", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_official_score_claim(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.anti_gaming.claims_official_score = True
+        self.assertIn("official-score claim is forbidden", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_answer_key_use(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.anti_gaming.uses_answer_key = True
+        self.assertIn("answer-key use is forbidden", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_item_id_authority(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.anti_gaming.uses_item_id_as_authority = True
+        self.assertIn("item-id authority is forbidden", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_raw_benchmark_storage(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.legibility.stores_raw_benchmark_text = True
+        self.assertIn("raw benchmark storage by default is forbidden", validate_proof_step(proof_step))
+
+    def test_proof_step_validation_flags_answer_selection(self):
+        proof_step = create_empty_proof_step(proof_step_id="step:1")
+        proof_step.anti_gaming.no_answer_selection = False
+        self.assertIn("answer selection must remain disabled", validate_proof_step(proof_step))
+
+    def test_proof_step_can_reference_proposition_ids_and_inference_pattern_id_structurally(self):
+        proof_step = create_empty_proof_step(
+            proof_step_id="step:1",
+            source_proposition_ids=["prop:premise:1", "prop:premise:2"],
+            target_proposition_id="prop:target:1",
+            inference_pattern_id="pattern:modus_ponens",
+            validity_status="valid",
+        )
+        self.assertEqual(["prop:premise:1", "prop:premise:2"], proof_step.source_proposition_ids)
+        self.assertEqual("prop:target:1", proof_step.target_proposition_id)
+        self.assertEqual("pattern:modus_ponens", proof_step.inference_pattern_id)
 
     def test_existing_teaching_spine_design_test_passes(self):
         output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_design_v1.py")

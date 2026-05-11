@@ -67,6 +67,23 @@ class InferencePattern:
     anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
 
 
+@dataclass
+class ProofStep:
+    schema_version: str = "1.0"
+    proof_step_id: str = ""
+    source_proposition_ids: list[str] = field(default_factory=list)
+    target_proposition_id: str = ""
+    inference_pattern_id: str = ""
+    warrant: str = ""
+    validity_status: str = "unknown"
+    confidence: str = "low"
+    human_explanation: str = ""
+    unsupported_assumptions: list[str] = field(default_factory=list)
+    requires_counterexample: bool = False
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
 def _validate_shared_safety(legibility: PropositionLegibilityRecord, anti_gaming: PropositionAntiGamingRecord) -> list[str]:
     messages: list[str] = []
     if anti_gaming.uses_answer_key:
@@ -255,6 +272,81 @@ def summarize_inference_pattern(pattern: InferencePattern) -> dict[str, Any]:
         "human_explanation_available": bool(pattern.human_explanation.strip()),
         "legibility_safe": _legibility_safe(pattern.legibility),
         "anti_gaming_safe": _anti_gaming_safe(pattern.anti_gaming),
+    }
+
+
+def create_empty_proof_step(
+    *,
+    proof_step_id: str = "",
+    source_proposition_ids: list[str] | None = None,
+    target_proposition_id: str = "",
+    inference_pattern_id: str = "",
+    validity_status: str = "unknown",
+) -> ProofStep:
+    return ProofStep(
+        proof_step_id=proof_step_id,
+        source_proposition_ids=list(source_proposition_ids or []),
+        target_proposition_id=target_proposition_id,
+        inference_pattern_id=inference_pattern_id,
+        validity_status=validity_status,
+    )
+
+
+def proof_step_to_dict(proof_step: ProofStep) -> dict[str, Any]:
+    return asdict(proof_step)
+
+
+def proof_step_from_dict(data: dict[str, Any]) -> ProofStep:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return ProofStep(
+        schema_version=data.get("schema_version", "1.0"),
+        proof_step_id=data.get("proof_step_id", ""),
+        source_proposition_ids=list(data.get("source_proposition_ids") or []),
+        target_proposition_id=data.get("target_proposition_id", ""),
+        inference_pattern_id=data.get("inference_pattern_id", ""),
+        warrant=data.get("warrant", ""),
+        validity_status=data.get("validity_status", "unknown"),
+        confidence=data.get("confidence", "low"),
+        human_explanation=data.get("human_explanation", ""),
+        unsupported_assumptions=list(data.get("unsupported_assumptions") or []),
+        requires_counterexample=bool(data.get("requires_counterexample", False)),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_proof_step(proof_step: ProofStep) -> list[str]:
+    messages: list[str] = []
+    if not proof_step.proof_step_id:
+        messages.append("missing proof step id")
+    if proof_step.validity_status not in SAFE_VALIDITY_TYPES:
+        messages.append("invalid validity status")
+    if proof_step.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence value")
+    if proof_step.confidence == "high" and not proof_step.warrant.strip():
+        messages.append("missing warrant for high-confidence proof step")
+    if proof_step.confidence == "high" and not proof_step.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence proof step")
+    messages.extend(_validate_shared_safety(proof_step.legibility, proof_step.anti_gaming))
+    return messages
+
+
+def summarize_proof_step(proof_step: ProofStep) -> dict[str, Any]:
+    return {
+        "schema_version": proof_step.schema_version,
+        "proof_step_id": proof_step.proof_step_id,
+        "source_proposition_count": len(proof_step.source_proposition_ids),
+        "has_target_proposition": bool(proof_step.target_proposition_id),
+        "has_inference_pattern": bool(proof_step.inference_pattern_id),
+        "validity_status": proof_step.validity_status,
+        "confidence": proof_step.confidence,
+        "has_warrant": bool(proof_step.warrant.strip()),
+        "human_explanation_available": bool(proof_step.human_explanation.strip()),
+        "unsupported_assumption_count": len(proof_step.unsupported_assumptions),
+        "requires_counterexample": proof_step.requires_counterexample,
+        "legibility_safe": _legibility_safe(proof_step.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(proof_step.anti_gaming),
     }
 
 
