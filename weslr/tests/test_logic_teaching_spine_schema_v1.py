@@ -46,6 +46,7 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_logic_teaching_spine_inference_pattern_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_counterexample_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_teaching_explanation_schema_v1.py",
+    "weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py",
 }
 
 

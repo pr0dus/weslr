@@ -240,6 +240,94 @@ def summarize_proposition_candidate(candidate: PropositionCandidate) -> dict[str
     }
 
 
+def _conservative_proposition_translation(subject: str, relation: str, object: str, polarity: str = "positive") -> str:
+    parts = [part.strip() for part in (subject, relation, object) if part and part.strip()]
+    if not parts:
+        return "Conservative structural proposition with unsupported content."
+    translation = " ".join(parts)
+    if polarity.strip().lower() == "negative":
+        return f"It is not the case that {translation}."
+    return translation
+
+
+def create_proposition_candidate_from_predicate(
+    *,
+    predicate_id: str,
+    subject: str = "",
+    relation: str = "",
+    object: str = "",
+    polarity: str = "positive",
+    quantifier: str = "",
+    modality: str = "",
+    confidence: str = "low",
+    human_translation: str = "",
+    unsupported_gaps: list[str] | None = None,
+) -> PropositionCandidate:
+    gaps = list(unsupported_gaps or [])
+    if not subject:
+        gaps.append("missing_subject")
+    if not relation:
+        gaps.append("missing_relation")
+    if not object:
+        gaps.append("missing_object")
+    proposition_type = "binary_relation" if subject and relation and object else "incomplete_relation"
+    translation = human_translation.strip() or _conservative_proposition_translation(subject, relation, object, polarity)
+    return PropositionCandidate(
+        proposition_id=f"proposition:{predicate_id}",
+        source_predicate_ids=[predicate_id],
+        proposition_type=proposition_type,
+        subject=subject,
+        relation=relation,
+        object=object,
+        polarity=polarity,
+        quantifier=quantifier,
+        modality=modality,
+        confidence=confidence,
+        human_translation=translation,
+        unsupported_gaps=list(dict.fromkeys(gaps)),
+    )
+
+
+def _safe_predicate_value(predicate: object, field_name: str) -> Any:
+    if isinstance(predicate, dict):
+        return predicate.get(field_name)
+    return getattr(predicate, field_name, None)
+
+
+def create_proposition_candidates_from_predicates(predicates: list[object]) -> list[PropositionCandidate]:
+    created: list[PropositionCandidate] = []
+    for predicate in predicates:
+        predicate_id = str(_safe_predicate_value(predicate, "predicate_candidate_id") or "").strip()
+        if not predicate_id:
+            continue
+        created.append(
+            create_proposition_candidate_from_predicate(
+                predicate_id=predicate_id,
+                subject=str(_safe_predicate_value(predicate, "subject_candidate_id") or ""),
+                relation=str(_safe_predicate_value(predicate, "relation_hint") or ""),
+                object=str(_safe_predicate_value(predicate, "object_candidate_id") or ""),
+                polarity=str(_safe_predicate_value(predicate, "polarity") or "positive"),
+                quantifier=str(_safe_predicate_value(predicate, "quantifier_hint") or ""),
+                modality=str(_safe_predicate_value(predicate, "modality_hint") or ""),
+                confidence=str(_safe_predicate_value(predicate, "confidence") or "low"),
+            )
+        )
+    return created
+
+
+def summarize_proposition_projection_diagnostics(propositions: list[PropositionCandidate]) -> dict[str, Any]:
+    return {
+        "proposition_candidate_count": len(propositions),
+        "source_predicate_link_count": sum(len(proposition.source_predicate_ids) for proposition in propositions),
+        "high_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "high"),
+        "medium_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "medium"),
+        "low_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "low"),
+        "unsupported_gap_count": sum(len(proposition.unsupported_gaps) for proposition in propositions),
+        "anti_gaming_safe": all(_anti_gaming_safe(proposition.anti_gaming) for proposition in propositions),
+        "legibility_safe": all(_legibility_safe(proposition.legibility) for proposition in propositions),
+    }
+
+
 def create_empty_inference_pattern(
     *,
     pattern_id: str = "",
