@@ -27,6 +27,16 @@ class CandidateEvaluation:
     confidence: str = "low"
 
 
+@dataclass
+class CategoricalFacts:
+    universal_affirmatives: list[tuple[str, str]] = field(default_factory=list)
+    universal_negatives: list[tuple[str, str]] = field(default_factory=list)
+    entity_affirmatives: list[tuple[str, str]] = field(default_factory=list)
+    entity_negatives: list[tuple[str, str]] = field(default_factory=list)
+    direct_facts: set[str] = field(default_factory=set)
+    negated_facts: set[str] = field(default_factory=set)
+
+
 class FormalLogicSolver(ReasoningSolverProtocol):
     solver_id = "formal_logic_solver"
     solver_family = "symbolic_reasoning"
@@ -406,6 +416,14 @@ def _add_parser_trace_nodes(
 
         candidate_node_id = candidate_node_ids.get(evaluation.candidate_id, summary_id)
         support_edge_id = f"{source}_candidate_eval_edge_{idx}"
+        warrant_type = "parser candidate evaluation"
+        explanation = "Candidate identifiers were evaluated against parser-visible premises and operators."
+        if any(reason in evaluation.reasons for reason in {"universal_syllogism", "negative_universal_syllogism", "class_transitivity"}):
+            warrant_type = "categorical syllogism"
+            explanation = "Categorical premises supported this candidate through a teachable syllogistic step."
+        elif any(reason in evaluation.reasons for reason in {"direct_fact_match", "direct_negation_conflict"}):
+            warrant_type = "simple entailment check"
+            explanation = "Direct entailment and contradiction checks compared the candidate against parsed premises."
         add_inference_edge(
             trace,
             edge_id=support_edge_id,
@@ -413,9 +431,9 @@ def _add_parser_trace_nodes(
             to_node=node_id,
             relation_type="evaluates",
             warrant=WarrantRecord(
-                warrant_type="parser candidate evaluation",
+                warrant_type=warrant_type,
                 source=source,
-                explanation="Candidate identifiers were evaluated against parser-visible premises and operators.",
+                explanation=explanation,
                 confidence=evaluation.confidence,
                 deterministic=False,
                 human_teachable=True,
@@ -554,6 +572,7 @@ def _evaluate_parser_candidates(parser_claims: dict[str, Any]) -> list[Candidate
     premise_tokens = [_tokenize_logic_text(text) for text in premise_texts if text]
     positive_premises = {_normalize_logic_text(text) for text in premise_texts if text and not _is_negated(text)}
     negative_premises = {_strip_negation(text) for text in premise_texts if text and _is_negated(text)}
+    categorical_facts = _extract_categorical_facts(parser_claims)
 
     satisfied_conditionals: list[tuple[str, str]] = []
     for conditional in parser_claims["conditionals"]:
@@ -604,6 +623,18 @@ def _evaluate_parser_candidates(parser_claims: dict[str, Any]) -> list[Candidate
                 evaluation.support_score += 4
                 evaluation.matched_operator_count += 1
                 evaluation.reasons.append("supported_by_conditional")
+
+        categorical_delta = _score_candidate_against_categorical_facts(candidate_norm, categorical_facts)
+        evaluation.support_score += categorical_delta.support_score
+        evaluation.contradiction_score += categorical_delta.contradiction_score
+        evaluation.matched_premise_count += categorical_delta.matched_premise_count
+        evaluation.matched_operator_count += categorical_delta.matched_operator_count
+        for reason in categorical_delta.reasons:
+            if reason not in evaluation.reasons:
+                evaluation.reasons.append(reason)
+        for warning in categorical_delta.warnings:
+            if warning not in evaluation.warnings:
+                evaluation.warnings.append(warning)
 
         for negation in parser_claims["negations"]:
             neg_norm = _normalize_logic_text(negation.normalized_form)
@@ -722,6 +753,118 @@ def _select_parser_candidate(parser_claims: dict[str, Any], evaluations: list[Ca
         "warnings": warnings,
         "conflict_ids": [evaluation.candidate_id for evaluation in contradicted],
     }
+
+
+def _extract_categorical_facts(parser_claims: dict[str, Any]) -> CategoricalFacts:
+    facts = CategoricalFacts()
+    premise_texts = [statement.logical_form or statement.normalized_text for statement in parser_claims["premises"]]
+    for premise_text in premise_texts:
+        normalized = _normalize_logic_text(premise_text)
+        if not normalized:
+            continue
+        facts.direct_facts.add(normalized)
+        if normalized.startswith("not "):
+            facts.negated_facts.add(_strip_negation(normalized))
+
+        all_match = re.fullmatch(r"all\s+(.+?)\s+are\s+(.+)", normalized)
+        if all_match:
+            facts.universal_affirmatives.append((all_match.group(1).strip(), all_match.group(2).strip()))
+            continue
+
+        no_match = re.fullmatch(r"no\s+(.+?)\s+are\s+(.+)", normalized)
+        if no_match:
+            facts.universal_negatives.append((no_match.group(1).strip(), no_match.group(2).strip()))
+            continue
+
+        neg_entity_match = re.fullmatch(r"(.+?)\s+is\s+not\s+(.+)", normalized)
+        if neg_entity_match:
+            facts.entity_negatives.append((neg_entity_match.group(1).strip(), neg_entity_match.group(2).strip()))
+            continue
+
+        pos_entity_match = re.fullmatch(r"(.+?)\s+is\s+(.+)", normalized)
+        if pos_entity_match:
+            facts.entity_affirmatives.append((pos_entity_match.group(1).strip(), pos_entity_match.group(2).strip()))
+            continue
+
+        relation_neg_match = re.fullmatch(r"(.+?)\s+does\s+not\s+(.+)", normalized)
+        if relation_neg_match:
+            facts.negated_facts.add(f"{relation_neg_match.group(1).strip()} {relation_neg_match.group(2).strip()}")
+            continue
+
+    return facts
+
+
+def _score_candidate_against_categorical_facts(candidate_norm: str, facts: CategoricalFacts) -> CandidateEvaluation:
+    delta = CandidateEvaluation(candidate_id="")
+    if not candidate_norm:
+        return delta
+
+    if candidate_norm in facts.direct_facts:
+        delta.support_score += 4
+        delta.matched_premise_count += 1
+        delta.reasons.append("direct_fact_match")
+
+    if candidate_norm in facts.negated_facts or _strip_negation(candidate_norm) in facts.negated_facts:
+        if candidate_norm not in facts.direct_facts:
+            delta.contradiction_score += 4
+            delta.matched_premise_count += 1
+            delta.reasons.append("direct_negation_conflict")
+
+    entity_pos_match = re.fullmatch(r"(.+?)\s+is\s+(.+)", candidate_norm)
+    entity_neg_match = re.fullmatch(r"(.+?)\s+is\s+not\s+(.+)", candidate_norm)
+    universal_match = re.fullmatch(r"all\s+(.+?)\s+are\s+(.+)", candidate_norm)
+
+    if entity_pos_match:
+        entity, cls = entity_pos_match.group(1).strip(), entity_pos_match.group(2).strip()
+        for fact_entity, fact_cls in facts.entity_affirmatives:
+            if fact_entity == entity and fact_cls == cls:
+                delta.support_score = max(delta.support_score, 4)
+                delta.matched_premise_count += 1
+                if "direct_fact_match" not in delta.reasons:
+                    delta.reasons.append("direct_fact_match")
+            for source_cls, target_cls in facts.universal_affirmatives:
+                if fact_entity == entity and fact_cls == source_cls and target_cls == cls:
+                    delta.support_score += 5
+                    delta.matched_premise_count += 2
+                    delta.matched_operator_count += 1
+                    delta.reasons.append("universal_syllogism")
+        for fact_entity, fact_cls in facts.entity_negatives:
+            if fact_entity == entity and fact_cls == cls:
+                delta.contradiction_score += 4
+                delta.matched_premise_count += 1
+                delta.reasons.append("direct_negation_conflict")
+
+    if entity_neg_match:
+        entity, cls = entity_neg_match.group(1).strip(), entity_neg_match.group(2).strip()
+        for fact_entity, fact_cls in facts.entity_negatives:
+            if fact_entity == entity and fact_cls == cls:
+                delta.support_score += 4
+                delta.matched_premise_count += 1
+                delta.reasons.append("direct_fact_match")
+        for fact_entity, fact_cls in facts.entity_affirmatives:
+            if fact_entity == entity and fact_cls == cls:
+                delta.contradiction_score += 4
+                delta.matched_premise_count += 1
+                delta.reasons.append("direct_negation_conflict")
+            for source_cls, target_cls in facts.universal_negatives:
+                if fact_entity == entity and fact_cls == source_cls and target_cls == cls:
+                    delta.support_score += 5
+                    delta.matched_premise_count += 2
+                    delta.matched_operator_count += 1
+                    delta.reasons.append("negative_universal_syllogism")
+
+    if universal_match:
+        source_cls, target_cls = universal_match.group(1).strip(), universal_match.group(2).strip()
+        for left_cls, mid_cls in facts.universal_affirmatives:
+            for mid2_cls, right_cls in facts.universal_affirmatives:
+                if left_cls == source_cls and mid_cls == mid2_cls and right_cls == target_cls:
+                    delta.support_score += 5
+                    delta.matched_premise_count += 2
+                    delta.matched_operator_count += 1
+                    delta.reasons.append("class_transitivity")
+                    break
+
+    return delta
 
 
 def _split_statements(text: str) -> list[str]:

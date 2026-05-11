@@ -101,6 +101,18 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
         parse.premises = ["stmt_q1"]
         return parse
 
+    def _syllogism_parser_parse(self):
+        return parse_mcq_runtime_text_to_logical_form(
+            "All cats are mammals. Felix is a cat. Which conclusion is best supported?",
+            [
+                {"label": "A", "text": "Felix is a mammal"},
+                {"label": "B", "text": "Felix is a reptile"},
+            ],
+            parse_id="parse-syllogism",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+
     def test_can_handle_true_for_formal_logic_ordinary_reasoning_task(self):
         task = self._task("If P then Q. P.", [{"label": "A", "text": "Q"}])
         self.assertTrue(self.solver.can_handle(task))
@@ -233,6 +245,78 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
         evaluation_nodes = [node for node in context.trace.nodes if node.node_type in {"candidate_supported", "candidate_ambiguous", "candidate_contradicted"}]
         self.assertGreaterEqual(len(evaluation_nodes), 2)
 
+    def test_universal_syllogism_selects_unique_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._syllogism_parser_parse()
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_selected")
+        self.assertEqual(result.proposed_answer, "A")
+
+    def test_negative_universal_selects_unique_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "No cats are reptiles. Felix is a cat. Which conclusion is best supported?",
+            [{"label": "A", "text": "Felix is not a reptile"}, {"label": "B", "text": "Felix is a reptile"}],
+            parse_id="parse-negative-universal",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_selected")
+        self.assertEqual(result.proposed_answer, "A")
+
+    def test_direct_fact_match_selects_unique_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Alpha supports Beta. Which conclusion is best supported?",
+            [{"label": "A", "text": "Alpha supports Beta"}, {"label": "B", "text": "Beta supports Alpha"}],
+            parse_id="parse-direct-fact",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_selected")
+        self.assertEqual(result.proposed_answer, "A")
+
+    def test_direct_negation_conflict_blocks_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Alpha is helpful. Which conclusion is best supported?",
+            [{"label": "A", "text": "Alpha is not helpful"}, {"label": "B", "text": "Beta is helpful"}],
+            parse_id="parse-direct-negation",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.proposed_answer, "")
+        self.assertIn(result.status, {"parsed_candidate_blocked_by_conflict", "parsed_no_supported_inference"})
+
+    def test_class_transitivity_selects_unique_candidate(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "All cats are mammals. All mammals are animals. Which conclusion is best supported?",
+            [{"label": "A", "text": "All cats are animals"}, {"label": "B", "text": "All animals are cats"}],
+            parse_id="parse-transitivity",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_candidate_selected")
+        self.assertEqual(result.proposed_answer, "A")
+
+    def test_ambiguous_two_supported_candidates_produce_no_answer(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Alpha supports Beta. Which conclusion is best supported?",
+            [{"label": "A", "text": "Alpha supports Beta"}, {"label": "B", "text": "Alpha supports Beta"}],
+            parse_id="parse-two-supported",
+            source_task_id="t1",
+            store_raw_text=False,
+        )
+        result = self.solver.run(self._context(task, allow_raw=False, metadata={"logical_form_parse": parse}))
+        self.assertEqual(result.status, "parsed_ambiguous_candidates")
+        self.assertEqual(result.proposed_answer, "")
+
     def test_parser_mode_creates_parser_summary_trace_node(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
         parse = self._neutral_parser_parse()
@@ -262,6 +346,14 @@ class FormalLogicSolverV1Tests(unittest.TestCase):
         self.assertIn("parser logical-form extraction", warrant_types)
         self.assertIn("parser candidate-conclusion extraction", warrant_types)
         self.assertIn("parser candidate evaluation", warrant_types)
+
+    def test_trace_includes_simple_entailment_or_categorical_warrant(self):
+        task = self._task("", [{"label": "A", "text": "unused"}])
+        parse = self._syllogism_parser_parse()
+        context = self._context(task, allow_raw=False, metadata={"logical_form_parse": parse})
+        self.solver.run(context)
+        warrant_types = {edge.warrant.warrant_type for edge in context.trace.edges}
+        self.assertTrue("categorical syllogism" in warrant_types or "simple entailment check" in warrant_types)
 
     def test_parser_mode_candidate_evaluation_trace_nodes_are_created(self):
         task = self._task("", [{"label": "A", "text": "unused"}])
