@@ -14,6 +14,7 @@ from weslr.formal_logic_parser import (  # noqa: E402
     split_candidate_statements,
     normalize_logical_text,
     detect_statement_role,
+    classify_question_fragment,
     logical_form_parse_to_dict,
     parse_runtime_text_to_logical_form,
     summarize_logical_form_parse,
@@ -36,6 +37,16 @@ class FormalLogicParserHelpersV1Tests(unittest.TestCase):
     def test_detect_statement_role_detects_conclusion_and_instruction_language(self):
         self.assertEqual(detect_statement_role("Therefore, p."), "conclusion_candidate")
         self.assertEqual(detect_statement_role("Which follows from the premises?"), "question_instruction")
+
+    def test_classify_question_fragment_exists_and_marks_declarative_pre_instruction_as_premise(self):
+        self.assertEqual(classify_question_fragment("Felix is a cat", position=1, total=2), "premise")
+
+    def test_classify_question_fragment_marks_instruction_language_as_question_instruction(self):
+        self.assertEqual(classify_question_fragment("Which of the following must be true?", position=2, total=2), "question_instruction")
+        self.assertEqual(classify_question_fragment("Based on the statements above", position=2, total=2), "question_instruction")
+
+    def test_relation_sentence_without_explicit_logic_operator_can_be_premise(self):
+        self.assertEqual(classify_question_fragment("Alpha supports Beta", position=1, total=2), "premise")
 
     def test_parse_runtime_text_to_logical_form_does_not_store_raw_text_by_default(self):
         parse = parse_runtime_text_to_logical_form(

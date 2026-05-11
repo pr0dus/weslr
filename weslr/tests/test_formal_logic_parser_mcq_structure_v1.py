@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from weslr.formal_logic_parser import (  # noqa: E402
+    classify_question_fragment,
     logical_form_parse_to_dict,
     parse_mcq_runtime_text_to_logical_form,
     safe_choice_identifier,
@@ -56,6 +57,31 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
         )
         self.assertEqual(parse.statements[0].role, "question_instruction")
 
+    def test_classify_question_fragment_marks_based_on_statements_as_instruction(self):
+        self.assertEqual(classify_question_fragment("Based on the statements above", position=2, total=2), "question_instruction")
+
+    def test_parse_adds_question_body_premises(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Felix is a cat. All cats are mammals. Which of the following must be true?",
+            [{"label": "A", "text": "Felix is a mammal"}, {"label": "B", "text": "Felix is a reptile"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        self.assertEqual(parse.premises, ["stmt_q1", "stmt_q2"])
+        self.assertEqual(parse.statements[0].role, "premise")
+        self.assertEqual(parse.statements[1].role, "premise")
+        self.assertEqual(parse.statements[2].role, "question_instruction")
+
+    def test_relation_sentence_without_explicit_logic_operator_becomes_premise(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Alpha supports Beta. Which statement follows?",
+            [{"label": "A", "text": "Alpha supports Beta"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        self.assertEqual(parse.statements[0].role, "premise")
+        self.assertEqual(parse.premises, ["stmt_q1"])
+
     def test_choice_texts_become_choice_claim(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "Question?",
@@ -65,6 +91,8 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
         )
         self.assertEqual(parse.statements[1].role, "choice_claim")
         self.assertEqual(parse.statements[2].role, "choice_claim")
+        self.assertNotIn(parse.statements[1].statement_id, parse.premises)
+        self.assertNotIn(parse.statements[2].statement_id, parse.premises)
 
     def test_choice_claims_added_to_candidate_conclusions(self):
         parse = parse_mcq_runtime_text_to_logical_form(
@@ -122,6 +150,16 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
         summary = summarize_logical_form_parse(parse)
         self.assertEqual(summary["question_instruction_count"], 1)
 
+    def test_summary_premise_count_increases_on_synthetic_mcq(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Felix is a cat. All cats are mammals. Which of the following must be true?",
+            [{"label": "A", "text": "Felix is a mammal"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        summary = summarize_logical_form_parse(parse)
+        self.assertGreaterEqual(summary["premise_count"], 2)
+
     def test_question_instruction_not_counted_as_unsupported_just_because_no_operator(self):
         parse = parse_mcq_runtime_text_to_logical_form(
             "Which one is best supported?",
@@ -129,6 +167,16 @@ class FormalLogicParserMcqStructureV1Tests(unittest.TestCase):
             parse_id="p1",
             source_task_id="t1",
         )
+        self.assertEqual(len([u for u in parse.unsupported_fragments if "stmt_q1" in u.source_statement_ids]), 0)
+
+    def test_premise_not_counted_as_unsupported_just_because_it_lacks_if_then(self):
+        parse = parse_mcq_runtime_text_to_logical_form(
+            "Felix is furry. Which of the following must be true?",
+            [{"label": "A", "text": "Felix is furry"}],
+            parse_id="p1",
+            source_task_id="t1",
+        )
+        self.assertEqual(parse.premises, ["stmt_q1"])
         self.assertEqual(len([u for u in parse.unsupported_fragments if "stmt_q1" in u.source_statement_ids]), 0)
 
     def test_choice_claim_not_counted_as_unsupported_just_because_no_operator(self):

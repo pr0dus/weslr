@@ -175,6 +175,9 @@ _INSTRUCTION_MARKERS = [
 ]
 
 _SAFE_CHOICE_LABEL_RE = re.compile(r"^[A-Za-z0-9]{1,4}$")
+_DECLARATIVE_VERB_RE = re.compile(r"\b(is|are|was|were|has|have|had|belongs|owns|supports|opposes|requires|permits|prevents|implies|entails|excludes|causes)\b", re.I)
+_SYMBOLIC_RELATION_RE = re.compile(r"\b([A-Za-z]|[A-Za-z][A-Za-z0-9_]*)\b\s+(is|are|implies|entails|requires|supports|opposes|prevents)\s+\b([A-Za-z]|[A-Za-z][A-Za-z0-9_]*)\b", re.I)
+_BACKGROUND_SHELL_RE = re.compile(r"^(question|statements above|the statements above|information above|above)$", re.I)
 
 
 def fingerprint_text(text: str) -> str:
@@ -205,6 +208,41 @@ def detect_statement_role(statement: str) -> str:
         return "conclusion_candidate"
     if _LOGICAL_MARKER_RE.search(lowered):
         return "premise"
+    return "background"
+
+
+def _looks_declarative_premise(fragment: str) -> bool:
+    normalized = normalize_logical_text(fragment)
+    if not normalized or re.search(r"\?$", fragment.strip()):
+        return False
+    if _LOGICAL_MARKER_RE.search(normalized):
+        return True
+    if _DECLARATIVE_VERB_RE.search(normalized):
+        return True
+    if _SYMBOLIC_RELATION_RE.search(fragment):
+        return True
+    tokens = re.findall(r"[A-Za-z0-9_]+", fragment)
+    if len(tokens) >= 2 and all(len(token) <= 3 for token in tokens) and any(token.isalpha() for token in tokens):
+        return True
+    return False
+
+
+def classify_question_fragment(fragment: str, *, position: int, total: int) -> str:
+    lowered = normalize_logical_text(fragment)
+    if not lowered:
+        return "background"
+    if any(marker in lowered for marker in _INSTRUCTION_MARKERS):
+        return "question_instruction"
+    if lowered.startswith(("which", "what", "determine", "identify", "select", "based on")):
+        return "question_instruction"
+    if "based on the statements above" in lowered or "based on" in lowered or "from the information above" in lowered:
+        return "question_instruction"
+    if re.search(r"\?$", fragment.strip()):
+        return "question_instruction"
+    if _looks_declarative_premise(fragment):
+        return "premise"
+    if position < total and not fragment.strip().endswith("?"):
+        return "background"
     return "background"
 
 
@@ -534,12 +572,14 @@ def _add_structural_records(parse: LogicalFormParse, *, idx: str, statement_id: 
         )
 
 
-def _should_mark_unsupported(*, role: str, has_marker: bool) -> bool:
+def _should_mark_unsupported(*, role: str, has_marker: bool, normalized: str) -> bool:
     if has_marker:
         return False
-    if role in {"question_instruction", "choice_claim"}:
+    if role in {"question_instruction", "choice_claim", "premise"}:
         return False
-    return True
+    if _BACKGROUND_SHELL_RE.fullmatch(normalized):
+        return False
+    return len(re.findall(r"[a-z0-9]+", normalized)) >= 3
 
 
 def _populate_statement(
@@ -561,7 +601,7 @@ def _populate_statement(
         normalized_text=normalized,
         role=role,
         logical_form=normalized,
-        confidence="medium" if has_marker else "low",
+        confidence="medium" if has_marker or role == "premise" else "low",
     )
     _append_unique_terms(parse, normalized)
 
@@ -572,7 +612,7 @@ def _populate_statement(
 
     _add_structural_records(parse, idx=idx, statement_id=statement.statement_id, normalized=normalized)
 
-    if _should_mark_unsupported(role=role, has_marker=has_marker):
+    if _should_mark_unsupported(role=role, has_marker=has_marker, normalized=normalized):
         add_unsupported_fragment(
             parse,
             record_id=f"unsupported_{idx}",
@@ -640,10 +680,11 @@ def parse_mcq_runtime_text_to_logical_form(
     any_marker = False
 
     question_fragments = split_candidate_statements(question_text)
+    total_question_fragments = len(question_fragments)
     for idx, fragment in enumerate(question_fragments, start=1):
-        role = detect_statement_role(fragment)
+        role = classify_question_fragment(fragment, position=idx, total=total_question_fragments)
         _, has_marker = _populate_statement(parse, idx=f"q{idx}", fragment=fragment, role=role, store_raw_text=store_raw_text)
-        any_marker = any_marker or has_marker
+        any_marker = any_marker or has_marker or role == "premise"
 
     for idx, choice in enumerate(choices, start=1):
         text = str(choice.text if hasattr(choice, "text") else choice.get("text", ""))
@@ -740,6 +781,7 @@ __all__ = [
     "split_candidate_statements",
     "normalize_logical_text",
     "detect_statement_role",
+    "classify_question_fragment",
     "create_empty_logical_form_parse",
     "logical_form_parse_to_dict",
     "logical_form_parse_from_dict",
