@@ -21,12 +21,9 @@ from weslr.logical_form_normalizer import (  # noqa: E402
     summarize_normalized_logical_form,
     validate_normalized_logical_form,
 )
-
-ALLOWED_CHANGED = {
-    "weslr/logical_form_normalizer.py",
-    "weslr/tests/test_logical_form_normalizer_schema_v1.py",
-    "weslr/tests/test_logical_form_normalizer_helpers_v1.py",
-}
+from weslr.tests.phase_scope_policy import (  # noqa: E402
+    assert_logical_form_normalizer_atomic_helper_phase_allowed,
+)
 
 
 class LogicalFormNormalizerSchemaV1Tests(unittest.TestCase):
@@ -210,16 +207,7 @@ class LogicalFormNormalizerSchemaV1Tests(unittest.TestCase):
         self.assertTrue((ROOT / "weslr/tests/test_formal_logic_normalization_governed_proposal_v1.py").exists())
 
     def test_no_parser_solver_runtime_files_changed(self):
-        proc = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"],
-            cwd=str(ROOT),
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
-        disallowed = changed - ALLOWED_CHANGED
-        self.assertEqual(set(), disallowed)
+        assert_logical_form_normalizer_atomic_helper_phase_allowed(self)
 
 
 if __name__ == "__main__":

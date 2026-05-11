@@ -27,11 +27,9 @@ from weslr.logical_form_normalizer import (  # noqa: E402
     AlignmentEvidenceRecord,
     NormalizerDiagnosticSummary,
 )
-
-ALLOWED_CHANGED = {
-    "weslr/logical_form_normalizer.py",
-    "weslr/tests/test_logical_form_normalizer_v1_1_schema_extension.py",
-}
+from weslr.tests.phase_scope_policy import (  # noqa: E402
+    assert_logical_form_normalizer_atomic_helper_phase_allowed,
+)
 
 
 class LogicalFormNormalizerV11SchemaExtensionTests(unittest.TestCase):
@@ -42,15 +40,8 @@ class LogicalFormNormalizerV11SchemaExtensionTests(unittest.TestCase):
             source_task_id="task-1",
         )
 
-    def stash_and_run(self, script: str) -> str:
-        command = f"""
-set -e
-name='v11-schema-ext-stash'
-git stash push -u -m "$name" -- weslr/logical_form_normalizer.py weslr/tests/test_logical_form_normalizer_v1_1_schema_extension.py >/dev/null
-{script}
-git stash pop >/dev/null
-"""
-        proc = subprocess.run(["bash", "-lc", command], cwd=str(ROOT), capture_output=True, text=True, check=True)
+    def run_direct(self, script: str) -> str:
+        proc = subprocess.run(["bash", "-lc", script], cwd=str(ROOT), capture_output=True, text=True, check=True)
         return proc.stdout + proc.stderr
 
     def test_v11_dataclasses_can_be_instantiated(self):
@@ -208,21 +199,18 @@ git stash pop >/dev/null
         self.assertIn("uses_answer_key", data["anti_gaming"])
 
     def test_existing_schema_tests_still_pass(self):
-        output = self.stash_and_run("python3 weslr/tests/test_logical_form_normalizer_schema_v1.py")
+        output = self.run_direct("python3 weslr/tests/test_logical_form_normalizer_schema_v1.py")
         self.assertIn("OK", output)
 
     def test_existing_helper_tests_still_pass(self):
-        output = self.stash_and_run("python3 weslr/tests/test_logical_form_normalizer_helpers_v1.py")
+        output = self.run_direct("python3 weslr/tests/test_logical_form_normalizer_helpers_v1.py")
         self.assertIn("OK", output)
 
     def test_existing_v11_revision_doc_test_file_exists(self):
         self.assertTrue((ROOT / "weslr/tests/test_logical_form_normalizer_v1_1_revision.py").exists())
 
     def test_no_parser_solver_runtime_files_changed(self):
-        proc = subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=str(ROOT), capture_output=True, text=True, check=True)
-        changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
-        disallowed = changed - ALLOWED_CHANGED
-        self.assertEqual(set(), disallowed)
+        assert_logical_form_normalizer_atomic_helper_phase_allowed(self)
 
 
 if __name__ == "__main__":

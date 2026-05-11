@@ -578,6 +578,234 @@ def normalize_term_surface(text: str) -> str:
     return normalized
 
 
+ATOMIC_SURFACE_STOPWORDS = {
+    "the",
+    "a",
+    "an",
+    "of",
+    "to",
+    "from",
+    "and",
+    "or",
+    "not",
+    "no",
+    "none",
+    "all",
+    "some",
+    "every",
+    "each",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "if",
+    "then",
+    "unless",
+    "which",
+    "following",
+    "must",
+    "could",
+    "can",
+    "true",
+    "false",
+    "statement",
+    "statements",
+}
+
+PREMISE_ATOMIC_ROLES = {"premise", "premise_term", "parsed_premise"}
+CANDIDATE_ATOMIC_ROLES = {"choice_claim", "candidate", "candidate_term"}
+BACKGROUND_ATOMIC_ROLES = {"background", "question_instruction"}
+
+
+def tokenize_surface_for_atomic_terms(text: str) -> list[str]:
+    lowered = (text or "").lower()
+    punctuation_to_space = str.maketrans({char: " " for char in string.punctuation})
+    stripped = lowered.translate(punctuation_to_space)
+    collapsed = re.sub(r"\s+", " ", stripped).strip()
+    if not collapsed:
+        return []
+
+    tokens: list[str] = []
+    seen: set[str] = set()
+    for raw_token in collapsed.split(" "):
+        token = raw_token.strip()
+        if not token or token in ATOMIC_SURFACE_STOPWORDS:
+            continue
+        if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+            token = token[:-1]
+        if not token or token in ATOMIC_SURFACE_STOPWORDS or token in seen:
+            continue
+        seen.add(token)
+        tokens.append(token)
+    return tokens
+
+
+def create_atomic_term_candidates_from_surface(
+    form: NormalizedLogicalForm,
+    *,
+    source_statement_id: str,
+    source_statement_role: str,
+    surface: str,
+    safe_origin_type: str = "parsed_statement",
+    confidence: str = "low",
+    extraction_method: str = "atomic_surface_tokenization",
+) -> list[AtomicTermCandidate]:
+    created: list[AtomicTermCandidate] = []
+    for index, token in enumerate(tokenize_surface_for_atomic_terms(surface), start=1):
+        created.append(
+            add_atomic_term_candidate(
+                form,
+                candidate_id=f"atomic:{source_statement_id}:{index}",
+                source_statement_id=source_statement_id,
+                source_statement_role=source_statement_role,
+                safe_origin_type=safe_origin_type,
+                token_fingerprints=[fingerprint_surface(token)],
+                canonical_hint=token,
+                term_type_hint="atomic_term",
+                confidence=confidence,
+                extraction_method=extraction_method,
+                human_explanation="Atomic term candidate derived from safe tokenization of the statement surface without retaining raw text.",
+            )
+        )
+    return created
+
+
+def build_role_aware_index_from_atomic_candidates(
+    form: NormalizedLogicalForm,
+    *,
+    index_id: str,
+    source_parse_id: str = "",
+    source_task_id: str = "",
+) -> RoleAwareTermIndex:
+    premise_ids: list[str] = []
+    candidate_ids: list[str] = []
+    background_ids: list[str] = []
+    unsupported_ids: list[str] = []
+
+    for candidate in form.atomic_term_candidates:
+        role = candidate.source_statement_role
+        if role in PREMISE_ATOMIC_ROLES:
+            premise_ids.append(candidate.candidate_id)
+        elif role in CANDIDATE_ATOMIC_ROLES:
+            candidate_ids.append(candidate.candidate_id)
+        elif role in BACKGROUND_ATOMIC_ROLES:
+            background_ids.append(candidate.candidate_id)
+        else:
+            unsupported_ids.append(candidate.candidate_id)
+
+    return add_role_aware_term_index(
+        form,
+        index_id=index_id,
+        source_parse_id=source_parse_id,
+        source_task_id=source_task_id,
+        premise_term_candidate_ids=premise_ids,
+        candidate_term_candidate_ids=candidate_ids,
+        background_term_candidate_ids=background_ids,
+        unsupported_term_candidate_ids=unsupported_ids,
+        confidence="low",
+        human_explanation="Role-aware index groups atomic term candidates by supported statement roles without selecting answers.",
+    )
+
+
+def create_alignment_evidence_from_role_index(
+    form: NormalizedLogicalForm,
+    *,
+    index: RoleAwareTermIndex,
+    min_confidence: str = "low",
+) -> list[AlignmentEvidenceRecord]:
+    candidates_by_id = {candidate.candidate_id: candidate for candidate in form.atomic_term_candidates}
+    seen_pairs = {
+        (evidence.left_candidate_id, evidence.right_candidate_id)
+        for evidence in form.alignment_evidence
+        if evidence.left_candidate_id and evidence.right_candidate_id
+    }
+    created: list[AlignmentEvidenceRecord] = []
+
+    for left_id in index.premise_term_candidate_ids:
+        left = candidates_by_id.get(left_id)
+        if not left or not left.canonical_hint:
+            continue
+        for right_id in index.candidate_term_candidate_ids:
+            right = candidates_by_id.get(right_id)
+            if not right or not right.canonical_hint:
+                continue
+            if left.canonical_hint != right.canonical_hint:
+                continue
+            pair = (left.candidate_id, right.candidate_id)
+            if pair in seen_pairs:
+                continue
+            created.append(
+                add_alignment_evidence_record(
+                    form,
+                    evidence_id=f"evidence:{left.candidate_id}:{right.candidate_id}",
+                    left_candidate_id=left.candidate_id,
+                    right_candidate_id=right.candidate_id,
+                    evidence_type="exact_canonical_hint_match",
+                    evidence_fingerprints=list(dict.fromkeys([*left.token_fingerprints, *right.token_fingerprints])),
+                    confidence=min_confidence,
+                    human_explanation="Alignment evidence created from an exact canonical hint match between premise-side and candidate-side atomic terms.",
+                )
+            )
+            seen_pairs.add(pair)
+    return created
+
+
+def summarize_atomic_extraction_diagnostics(form: NormalizedLogicalForm) -> dict[str, Any]:
+    anti = form.anti_gaming
+    legibility = form.legibility
+    premise_atomic_count = 0
+    candidate_atomic_count = 0
+    background_atomic_count = 0
+    unsupported_atomic_count = 0
+    canonical_hints: set[str] = set()
+
+    for candidate in form.atomic_term_candidates:
+        if candidate.canonical_hint:
+            canonical_hints.add(candidate.canonical_hint)
+        role = candidate.source_statement_role
+        if role in PREMISE_ATOMIC_ROLES:
+            premise_atomic_count += 1
+        elif role in CANDIDATE_ATOMIC_ROLES:
+            candidate_atomic_count += 1
+        elif role in BACKGROUND_ATOMIC_ROLES:
+            background_atomic_count += 1
+        else:
+            unsupported_atomic_count += 1
+
+    return {
+        "atomic_term_candidate_count": len(form.atomic_term_candidates),
+        "predicate_candidate_count": len(form.predicate_candidates),
+        "role_index_count": len(form.role_aware_indexes),
+        "alignment_evidence_count": len(form.alignment_evidence),
+        "premise_atomic_count": premise_atomic_count,
+        "candidate_atomic_count": candidate_atomic_count,
+        "background_atomic_count": background_atomic_count,
+        "unsupported_atomic_count": unsupported_atomic_count,
+        "unique_canonical_hint_count": len(canonical_hints),
+        "anti_gaming_safe": not any(
+            [
+                anti.uses_answer_key,
+                anti.uses_item_id,
+                anti.uses_answer_position_bias,
+                anti.stores_raw_text_by_default,
+                anti.official_score_claimed,
+                anti.benchmark_specific_rule_used,
+            ]
+        ),
+        "legibility_safe": all(
+            [
+                legibility.human_explanation_available,
+                legibility.normalization_warrants_available,
+                legibility.unsupported_gaps_visible,
+                not legibility.private_symbolic_authority_used,
+            ]
+        ),
+    }
+
+
 def normalize_relation_surface(text: str) -> str:
     normalized = normalize_term_surface(text)
     mapping = {

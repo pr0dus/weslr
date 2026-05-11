@@ -11,10 +11,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 DOC = ROOT / "docs/WESLR_LOGICAL_FORM_NORMALIZER_HELPER_DIAGNOSTIC_V1.md"
-ALLOWED_CHANGED = {
-    "docs/WESLR_LOGICAL_FORM_NORMALIZER_HELPER_DIAGNOSTIC_V1.md",
-    "weslr/tests/test_logical_form_normalizer_helper_diagnostic_v1.py",
-}
+
+from weslr.tests.phase_scope_policy import (  # noqa: E402
+    assert_logical_form_normalizer_atomic_helper_phase_allowed,
+)
 
 
 class LogicalFormNormalizerHelperDiagnosticV1Tests(unittest.TestCase):
@@ -104,16 +104,7 @@ class LogicalFormNormalizerHelperDiagnosticV1Tests(unittest.TestCase):
             self.assertIn("OK", proc.stdout + proc.stderr)
 
     def test_no_runtime_files_changed(self):
-        proc = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"],
-            cwd=str(ROOT),
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
-        disallowed = changed - ALLOWED_CHANGED
-        self.assertEqual(set(), disallowed)
+        assert_logical_form_normalizer_atomic_helper_phase_allowed(self)
 
 
 if __name__ == "__main__":

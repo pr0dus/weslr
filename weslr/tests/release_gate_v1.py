@@ -22,6 +22,13 @@ import re
 
 _workspace = pathlib.Path(__file__).resolve().parents[2]
 _harness = _workspace / "weslr" / "tests" / "test_harness_v1.py"
+_atomic_helper_approval_doc = "docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md"
+_atomic_helper_required_markers = {
+    "APPROVE_ATOMIC_EXTRACTION_HELPERS_ONLY",
+    "operator_approved_helper_phase",
+    "execution_allowed = false",
+    "official_score_claimed = false",
+}
 
 
 def _run_harness():
@@ -50,12 +57,25 @@ def _get_staged_files():
     return [p.strip() for p in diff_cached.stdout.strip().split("\n") if p.strip()]
 
 
+def _atomic_helper_approval_doc_is_valid():
+    doc_path = _workspace / _atomic_helper_approval_doc
+    if not doc_path.exists():
+        return False
+    try:
+        text = doc_path.read_text(encoding="utf-8")
+    except Exception:
+        return False
+    return all(marker in text for marker in _atomic_helper_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
     Allowed paths:
       - weslr/** (any file inside weslr/)
       - interpretation.py
+      - docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md only when
+        the operator-approved helper-phase markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -70,13 +90,21 @@ def _check_git_scope():
     FORBIDDEN_EXTENSIONS = {".cs"}
 
     violations = []
+    approval_doc_valid = _atomic_helper_approval_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
                 violations.append(f"  forbidden prefix {prefix!r}: {path}")
         if any(path.endswith(ext) for ext in FORBIDDEN_EXTENSIONS):
             violations.append(f"  forbidden extension: {path}")
-        if not (path.startswith("weslr/") or path == "interpretation.py"):
+
+        allowed = path.startswith("weslr/") or path == "interpretation.py"
+        if path == _atomic_helper_approval_doc:
+            allowed = approval_doc_valid
+            if not approval_doc_valid:
+                violations.append(f"  approval doc missing required markers: {path}")
+
+        if not allowed:
             violations.append(f"  outside allowed scope: {path}")
 
     if violations:
