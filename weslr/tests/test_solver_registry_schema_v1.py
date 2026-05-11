@@ -68,6 +68,48 @@ class SolverRegistrySchemaV1Tests(unittest.TestCase):
         self.assertIn("formal_logic_solver", ids)
         self.assertNotIn("science_mechanism_solver", ids)
 
+    def test_candidate_solver_lookup_supports_reasoning_logic_ordinary_reasoning(self):
+        registry = create_empty_solver_registry()
+        candidates = list_candidate_solvers(
+            registry,
+            task_type="multiple_choice_reasoning",
+            domain="reasoning_logic",
+            required_skill="ordinary_reasoning",
+        )
+        ids = {solver.solver_id for solver in candidates}
+        self.assertIn("formal_logic_solver", ids)
+
+    def test_formal_logic_solver_descriptor_supports_reasoning_logic_capability(self):
+        registry = create_empty_solver_registry()
+        formal = get_solver(registry, "formal_logic_solver")
+        self.assertIsNotNone(formal)
+        self.assertFalse(formal.enabled)
+        self.assertFalse(formal.safety_profile.uses_item_id)
+        self.assertFalse(formal.safety_profile.uses_answer_key)
+        self.assertFalse(formal.safety_profile.stores_raw_question_by_default)
+        self.assertFalse(formal.safety_profile.official_score_claimed)
+        self.assertFalse(formal.safety_profile.private_authority_used)
+        self.assertFalse(formal.safety_profile.opaque_output_allowed)
+        self.assertTrue(formal.safety_profile.requires_human_legible_explanation)
+        self.assertIn("reasoning_logic", formal.supported_domains)
+        self.assertIn("ordinary_reasoning", formal.supported_skills)
+
+        capability = next(
+            (
+                cap
+                for cap in formal.capabilities
+                if cap.task_type == "multiple_choice_reasoning"
+                and cap.domain == "reasoning_logic"
+                and cap.required_skill == "ordinary_reasoning"
+            ),
+            None,
+        )
+        self.assertIsNotNone(capability)
+        self.assertTrue(capability.can_select_answer)
+        self.assertTrue(capability.can_create_trace_nodes)
+        self.assertTrue(capability.can_create_conflicts)
+        self.assertTrue(capability.can_block_answer)
+
     def test_validation_flags_answer_key_use(self):
         descriptor = SolverDescriptor(solver_id="bad")
         descriptor.safety_profile.uses_answer_key = True

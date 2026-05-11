@@ -60,7 +60,7 @@ def _predefined_solver_descriptors() -> list[SolverDescriptor]:
             solver_family="symbolic_reasoning",
             description="Descriptor for future formal logic reasoning solver.",
             supported_task_types=["multiple_choice_reasoning", "structured_reasoning"],
-            supported_domains=["formal_logic"],
+            supported_domains=["formal_logic", "reasoning_logic"],
             supported_skills=["ordinary_reasoning", "formal_logic_reasoning"],
             deterministic=True,
             verifier=True,
@@ -76,7 +76,17 @@ def _predefined_solver_descriptors() -> list[SolverDescriptor]:
                     can_create_trace_nodes=True,
                     can_create_conflicts=True,
                     can_block_answer=True,
-                )
+                ),
+                SolverCapability(
+                    task_type="multiple_choice_reasoning",
+                    domain="reasoning_logic",
+                    required_skill="ordinary_reasoning",
+                    confidence_floor="medium",
+                    can_select_answer=True,
+                    can_create_trace_nodes=True,
+                    can_create_conflicts=True,
+                    can_block_answer=True,
+                ),
             ],
         ),
         SolverDescriptor(

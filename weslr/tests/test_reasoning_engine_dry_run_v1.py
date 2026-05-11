@@ -26,6 +26,18 @@ class ReasoningEngineDryRunV1Tests(unittest.TestCase):
             "required_skill": "ordinary_reasoning",
             "explanation_required": True,
         }
+        self.reasoning_logic_item = {
+            "id": "reasoning-1",
+            "benchmark_family": "official_mcq",
+            "domain": "reasoning_logic",
+            "question": "If all squares are rectangles and this figure is a square, what follows?",
+            "choices": [
+                {"label": "A", "text": "The figure is a rectangle"},
+                {"label": "B", "text": "The figure is not a rectangle"},
+            ],
+            "required_skill": "ordinary_reasoning",
+            "explanation_required": True,
+        }
         self.non_formal_item = {
             "id": "bio-1",
             "benchmark_family": "official_mcq",
@@ -69,6 +81,28 @@ class ReasoningEngineDryRunV1Tests(unittest.TestCase):
     def test_candidate_solver_list_includes_formal_logic_solver_for_formal_logic_task(self):
         result = run_reasoning_dry_run_for_mcq_item(self.formal_item)
         self.assertIn("formal_logic_solver", result["candidate_solvers"])
+
+    def test_candidate_solver_list_includes_formal_logic_solver_for_reasoning_logic_ordinary_reasoning_task(self):
+        result = run_reasoning_dry_run_for_mcq_item(self.reasoning_logic_item)
+        self.assertIn("formal_logic_solver", result["candidate_solvers"])
+
+    def test_default_reasoning_logic_dry_run_keeps_raw_text_redacted_and_returns_insufficient_input(self):
+        result = run_reasoning_dry_run_for_mcq_item(self.reasoning_logic_item)
+        self.assertFalse(result["question_text_stored"])
+        self.assertEqual(result["solver_statuses"].get("formal_logic_solver"), "insufficient_input")
+
+    def test_explicit_raw_reasoning_logic_dry_run_can_run_formal_logic_solver(self):
+        result = run_reasoning_dry_run_for_mcq_item(
+            self.reasoning_logic_item,
+            store_raw_question=True,
+            allow_solver_raw_access=True,
+            allow_answer_selection=False,
+        )
+        self.assertIn("formal_logic_solver", result["implemented_solvers_run"])
+        self.assertIn(
+            result["solver_statuses"].get("formal_logic_solver"),
+            {"ok", "ambiguous_choice_match", "no_unique_supported_choice", "conflict_detected", "no_supported_pattern"},
+        )
 
     def test_implemented_solvers_run_includes_formal_logic_solver_when_applicable(self):
         result = run_reasoning_dry_run_for_mcq_item(
