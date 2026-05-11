@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from weslr.logical_form_normalizer import (  # noqa: E402
+    add_atomic_term_candidate,
     create_atomic_term_candidates_from_surface,
     create_empty_normalized_logical_form,
     create_predicate_candidates_for_form,
@@ -64,6 +65,71 @@ class LogicalFormNormalizerPredicateHelpersV1Tests(unittest.TestCase):
         create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
         self.assertTrue(created[0].human_explanation)
+
+    def test_predicate_created_from_premise_atomic_terms_has_premise_role(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="premise")
+        self.assertEqual("premise", created[0].role)
+
+    def test_predicate_created_from_choice_claim_atomic_terms_has_choice_claim_role(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="choice_claim")
+        self.assertEqual("choice_claim", created[0].role)
+
+    def test_predicate_created_from_background_atomic_terms_has_background_role(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="question_instruction", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="question_instruction")
+        self.assertEqual("background", created[0].role)
+
+    def test_mixed_unclear_roles_become_unknown(self):
+        form = self.make_form()
+        add_atomic_term_candidate(
+            form,
+            candidate_id="atomic:stmt-1:1",
+            source_statement_id="stmt-1",
+            source_statement_role="premise",
+            safe_origin_type="parsed_statement",
+            token_fingerprints=["a"],
+            canonical_hint="cats",
+            term_type_hint="atomic_term",
+        )
+        add_atomic_term_candidate(
+            form,
+            candidate_id="atomic:stmt-1:2",
+            source_statement_id="stmt-1",
+            source_statement_role="choice_claim",
+            safe_origin_type="parsed_statement",
+            token_fingerprints=["b"],
+            canonical_hint="supports",
+            term_type_hint="relation_hint",
+        )
+        add_atomic_term_candidate(
+            form,
+            candidate_id="atomic:stmt-1:3",
+            source_statement_id="stmt-1",
+            source_statement_role="background",
+            safe_origin_type="parsed_statement",
+            token_fingerprints=["c"],
+            canonical_hint="dogs",
+            term_type_hint="atomic_term",
+        )
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
+        self.assertEqual("unknown", created[0].role)
+
+    def test_predicate_preserves_source_statement_id(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-9", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-9", source_statement_role="premise")
+        self.assertEqual("stmt-9", created[0].source_statement_id)
+
+    def test_predicate_preserves_source_statement_role(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-9", source_statement_role="parsed_premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-9", source_statement_role="parsed_premise")
+        self.assertEqual("premise", created[0].source_statement_role)
 
     def test_predicate_candidate_does_not_store_raw_text(self):
         form = self.make_form()

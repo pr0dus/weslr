@@ -89,6 +89,8 @@ class AtomicTermCandidate:
 class PredicateCandidate:
     predicate_candidate_id: str = ""
     source_statement_id: str = ""
+    source_statement_role: str = ""
+    role: str = ""
     subject_candidate_id: str = ""
     relation_hint: str = ""
     object_candidate_id: str = ""
@@ -446,6 +448,8 @@ def add_predicate_candidate(
     *,
     predicate_candidate_id: str,
     source_statement_id: str = "",
+    source_statement_role: str = "",
+    role: str = "",
     subject_candidate_id: str = "",
     relation_hint: str = "",
     object_candidate_id: str = "",
@@ -459,6 +463,8 @@ def add_predicate_candidate(
     candidate = PredicateCandidate(
         predicate_candidate_id=predicate_candidate_id,
         source_statement_id=source_statement_id,
+        source_statement_role=source_statement_role,
+        role=role,
         subject_candidate_id=subject_candidate_id,
         relation_hint=relation_hint,
         object_candidate_id=object_candidate_id,
@@ -618,6 +624,34 @@ ATOMIC_SURFACE_STOPWORDS = {
 PREMISE_ATOMIC_ROLES = {"premise", "premise_term", "parsed_premise"}
 CANDIDATE_ATOMIC_ROLES = {"choice_claim", "candidate", "candidate_term"}
 BACKGROUND_ATOMIC_ROLES = {"background", "question_instruction"}
+
+
+def normalize_predicate_statement_role(role: str) -> str:
+    normalized = (role or "").strip().lower()
+    if normalized in PREMISE_ATOMIC_ROLES:
+        return "premise"
+    if normalized in CANDIDATE_ATOMIC_ROLES:
+        return "choice_claim"
+    if normalized in BACKGROUND_ATOMIC_ROLES:
+        return "background"
+    return "unknown"
+
+
+def infer_predicate_role_from_atomic_candidates(
+    candidates: list[AtomicTermCandidate],
+    fallback_role: str = "",
+) -> str:
+    role_counts: dict[str, int] = {"premise": 0, "choice_claim": 0, "background": 0, "unknown": 0}
+    for candidate in candidates:
+        role_counts[normalize_predicate_statement_role(candidate.source_statement_role)] += 1
+    best_role = max(role_counts, key=role_counts.get)
+    best_count = role_counts[best_role]
+    if best_count == 0:
+        return normalize_predicate_statement_role(fallback_role)
+    winners = [role for role, count in role_counts.items() if count == best_count and count > 0]
+    if len(winners) != 1:
+        return "unknown"
+    return best_role
 
 RELATION_HINT_WORDS = {
     "is": "is",
@@ -915,6 +949,10 @@ def create_predicate_candidates_from_atomic_terms(
     if not subject.candidate_id or not obj.candidate_id or subject.candidate_id == obj.candidate_id:
         return []
 
+    normalized_role = infer_predicate_role_from_atomic_candidates(statement_candidates, fallback_role=source_statement_role)
+    normalized_statement_role = normalize_predicate_statement_role(source_statement_role)
+    preserved_statement_role = normalized_statement_role if normalized_statement_role != "unknown" else normalized_role
+
     existing_keys = {
         (candidate.source_statement_id, candidate.subject_candidate_id, candidate.relation_hint, candidate.object_candidate_id)
         for candidate in form.predicate_candidates
@@ -927,6 +965,8 @@ def create_predicate_candidates_from_atomic_terms(
         form,
         predicate_candidate_id=f"predicate:{source_statement_id}:1",
         source_statement_id=source_statement_id,
+        source_statement_role=preserved_statement_role,
+        role=normalized_role,
         subject_candidate_id=subject.candidate_id,
         relation_hint=relation_hint,
         object_candidate_id=obj.candidate_id,

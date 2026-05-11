@@ -94,6 +94,16 @@ class LogicalFormNormalizerRelationPreservationHelpersV1Tests(unittest.TestCase)
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
         self.assertTrue(created[0].human_explanation)
 
+    def test_predicate_candidate_role_is_preserved_for_premise(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats is dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="premise")
+        self.assertEqual("premise", created[0].role)
+
+    def test_existing_proposition_helper_tests_pass(self):
+        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py")
+        self.assertIn("OK", output)
+
     def test_no_answer_selection_field_exists(self):
         data = normalized_logical_form_to_dict(self.make_form())
         self.assertNotIn("answer_selection", data)
