@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
 from typing import Any
 
+from weslr.formal_logic_parser import LogicalFormParse, logical_form_parse_from_dict
 from weslr.reasoning_task import ReasoningTask
 from weslr.reasoning_trace import WarrantRecord, add_conflict, add_inference_edge, add_inference_node
 from weslr.solver_interface import (
@@ -47,6 +47,41 @@ class FormalLogicSolver(ReasoningSolverProtocol):
         nodes_created: list[str] = []
         edges_created: list[str] = []
         conflicts_created: list[str] = []
+        logical_form_parse = _coerce_logical_form_parse(context.metadata.get("logical_form_parse"))
+
+        if logical_form_parse is not None:
+            parser_claims = _extract_parser_claims(logical_form_parse)
+            if context.allow_trace_mutation:
+                _add_parser_trace_nodes(
+                    trace,
+                    parser_claims=parser_claims,
+                    nodes_created=nodes_created,
+                    edges_created=edges_created,
+                    source=self.solver_id,
+                )
+
+            explanation = (
+                "Parser extracted structured premises and candidate conclusions, "
+                "but no supported inference rule selected a unique answer in this phase."
+            )
+            if parser_claims["unsupported_count"]:
+                warnings.append(
+                    f"parser reported {parser_claims['unsupported_count']} unsupported fragment(s) still requiring broader logical-form coverage"
+                )
+            return SolverRunResult(
+                solver_id=self.solver_id,
+                solver_family=self.solver_family,
+                status="parsed_no_supported_inference",
+                confidence="low",
+                explanation=explanation,
+                nodes_created=nodes_created,
+                edges_created=edges_created,
+                conflicts_created=conflicts_created,
+                warnings=warnings,
+                anti_gaming_passed=True,
+                legibility_passed=True,
+                official_score_claimed=False,
+            )
 
         if not context.allow_raw_question_access or not task.input.question_text:
             warnings.append("raw question access was not available")
@@ -200,6 +235,154 @@ class FormalLogicSolver(ReasoningSolverProtocol):
             legibility_passed=True,
             official_score_claimed=False,
         )
+
+
+def _coerce_logical_form_parse(value: Any) -> LogicalFormParse | None:
+    if value is None:
+        return None
+    if isinstance(value, LogicalFormParse):
+        return value
+    if isinstance(value, dict):
+        return logical_form_parse_from_dict(value)
+    return None
+
+
+def _extract_parser_claims(logical_form_parse: LogicalFormParse) -> dict[str, Any]:
+    statements_by_id = {statement.statement_id: statement for statement in logical_form_parse.statements}
+    premises = [statements_by_id[statement_id] for statement_id in logical_form_parse.premises if statement_id in statements_by_id]
+    candidate_conclusions = [
+        statements_by_id[statement_id]
+        for statement_id in logical_form_parse.candidate_conclusions
+        if statement_id in statements_by_id
+    ]
+    return {
+        "premises": premises,
+        "candidate_conclusions": candidate_conclusions,
+        "conditionals": list(logical_form_parse.conditionals),
+        "quantifiers": list(logical_form_parse.quantifiers),
+        "negations": list(logical_form_parse.negations),
+        "disjunctions": list(logical_form_parse.disjunctions),
+        "conjunctions": list(logical_form_parse.conjunctions),
+        "unsupported_count": len(logical_form_parse.unsupported_fragments),
+        "parse_confidence": logical_form_parse.parse_confidence,
+    }
+
+
+def _add_parser_trace_nodes(
+    trace,
+    *,
+    parser_claims: dict[str, Any],
+    nodes_created: list[str],
+    edges_created: list[str],
+    source: str,
+) -> None:
+    summary_id = f"{source}_parser_summary"
+    summary_content = (
+        f"parser summary: premises={len(parser_claims['premises'])}, "
+        f"candidate_conclusions={len(parser_claims['candidate_conclusions'])}, "
+        f"unsupported_fragments={parser_claims['unsupported_count']}, "
+        f"parse_confidence={parser_claims['parse_confidence'] or 'low'}"
+    )
+    add_inference_node(
+        trace,
+        node_id=summary_id,
+        node_type="parser_summary",
+        content=summary_content,
+        confidence=parser_claims["parse_confidence"] or "low",
+        source=source,
+    )
+    nodes_created.append(summary_id)
+
+    for idx, statement in enumerate(parser_claims["premises"], start=1):
+        node_id = f"{source}_parsed_premise_{idx}"
+        add_inference_node(
+            trace,
+            node_id=node_id,
+            node_type="parsed_premise",
+            content=statement.logical_form or statement.normalized_text,
+            confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+            source=source,
+        )
+        nodes_created.append(node_id)
+        edge_id = f"{source}_parser_premise_edge_{idx}"
+        add_inference_edge(
+            trace,
+            edge_id=edge_id,
+            from_node=summary_id,
+            to_node=node_id,
+            relation_type="supports",
+            warrant=WarrantRecord(
+                warrant_type="parser logical-form extraction",
+                source=source,
+                explanation="Parser extracted a structured premise without exposing raw text.",
+                confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+                deterministic=False,
+                human_teachable=True,
+            ),
+            confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+        )
+        edges_created.append(edge_id)
+
+    for idx, statement in enumerate(parser_claims["candidate_conclusions"], start=1):
+        node_id = f"{source}_candidate_conclusion_{idx}"
+        node_type = "choice_claim" if statement.role == "choice_claim" else "candidate_conclusion"
+        add_inference_node(
+            trace,
+            node_id=node_id,
+            node_type=node_type,
+            content=statement.logical_form or statement.normalized_text,
+            confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+            source=source,
+        )
+        nodes_created.append(node_id)
+        edge_id = f"{source}_parser_choice_edge_{idx}"
+        add_inference_edge(
+            trace,
+            edge_id=edge_id,
+            from_node=summary_id,
+            to_node=node_id,
+            relation_type="supports",
+            warrant=WarrantRecord(
+                warrant_type="parser candidate-conclusion extraction",
+                source=source,
+                explanation="Parser extracted a candidate conclusion from structured MCQ text without exposing raw text.",
+                confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+                deterministic=False,
+                human_teachable=True,
+            ),
+            confidence=statement.confidence or parser_claims["parse_confidence"] or "low",
+        )
+        edges_created.append(edge_id)
+
+    if parser_claims["unsupported_count"]:
+        node_id = f"{source}_unsupported_fragment_summary"
+        add_inference_node(
+            trace,
+            node_id=node_id,
+            node_type="unsupported_fragment_summary",
+            content=f"unsupported fragment summary: count={parser_claims['unsupported_count']}",
+            confidence="low",
+            source=source,
+        )
+        nodes_created.append(node_id)
+        edge_id = f"{source}_unsupported_summary_edge"
+        add_inference_edge(
+            trace,
+            edge_id=edge_id,
+            from_node=summary_id,
+            to_node=node_id,
+            relation_type="supports",
+            warrant=WarrantRecord(
+                warrant_type="parser logical-form extraction",
+                source=source,
+                explanation="Parser exposed unsupported fragment count instead of hiding unresolved structure.",
+                confidence="low",
+                deterministic=False,
+                human_teachable=True,
+            ),
+            confidence="low",
+        )
+        edges_created.append(edge_id)
 
 
 def _canonical_token(token: str) -> str:
