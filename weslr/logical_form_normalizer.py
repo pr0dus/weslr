@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import re
+import string
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -280,6 +283,135 @@ def add_normalization_warning(
     else:
         form.warnings.append(warning)
     return warning
+
+
+def fingerprint_surface(text: str) -> str:
+    normalized = " ".join((text or "").strip().lower().split())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def normalize_term_surface(text: str) -> str:
+    normalized = (text or "").strip().lower()
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = normalized.strip(string.punctuation + " ")
+    normalized = re.sub(rf"^[{re.escape(string.punctuation)}]+|[{re.escape(string.punctuation)}]+$", "", normalized)
+    if len(normalized) > 3 and normalized.endswith("s") and not normalized.endswith("ss"):
+        normalized = normalized[:-1]
+    return normalized
+
+
+def normalize_relation_surface(text: str) -> str:
+    normalized = normalize_term_surface(text)
+    mapping = {
+        "is": "is",
+        "are": "is",
+        "was": "is",
+        "were": "is",
+        "support": "supports",
+        "supports": "supports",
+        "oppose": "opposes",
+        "opposes": "opposes",
+        "require": "requires",
+        "requires": "requires",
+        "prevent": "prevents",
+        "prevents": "prevents",
+        "permit": "permits",
+        "permits": "permits",
+        "allow": "permits",
+        "allows": "permits",
+    }
+    return mapping.get(normalized, normalized)
+
+
+def infer_polarity(text: str) -> str:
+    normalized = f" {normalize_term_surface(text)} "
+    markers = [" not ", " no ", " never ", " none ", " is not ", " are not "]
+    return "negative" if any(marker in normalized for marker in markers) else "positive"
+
+
+def safe_candidate_term_id(label: str, index: int = 0) -> str:
+    normalized = (label or "").strip()
+    if len(normalized) == 1 and normalized in string.ascii_uppercase:
+        return f"choice_{normalized}"
+    return f"choice_{index}"
+
+
+def create_normalized_term_from_surface(
+    form: NormalizedLogicalForm,
+    *,
+    source_statement_ids: list[str] | None = None,
+    surface: str,
+    term_id: str | None = None,
+    term_type: str = "concept",
+    confidence: str = "low",
+    normalization_method: str = "surface_normalization",
+) -> NormalizedTerm:
+    canonical_form = normalize_term_surface(surface)
+    safe_term_id = term_id or canonical_form or f"term_{len(form.normalized_terms)}"
+    fingerprint = fingerprint_surface(surface)
+    human_translation = canonical_form
+    return add_normalized_term(
+        form,
+        term_id=safe_term_id,
+        source_statement_ids=source_statement_ids,
+        canonical_form=canonical_form,
+        surface_fingerprints=[fingerprint],
+        term_type=term_type,
+        confidence=confidence,
+        normalization_method=normalization_method,
+        human_translation=human_translation,
+    )
+
+
+def align_terms_by_canonical_form(
+    form: NormalizedLogicalForm,
+    *,
+    min_confidence: str = "low",
+) -> list[TermAlignmentRecord]:
+    created: list[TermAlignmentRecord] = []
+    seen_pairs = {
+        tuple(sorted((alignment.left_term_id, alignment.right_term_id)))
+        for alignment in form.term_alignments
+    }
+    for i, left in enumerate(form.normalized_terms):
+        for right in form.normalized_terms[i + 1 :]:
+            if left.term_id == right.term_id:
+                continue
+            if not left.canonical_form or left.canonical_form != right.canonical_form:
+                continue
+            pair = tuple(sorted((left.term_id, right.term_id)))
+            if pair in seen_pairs:
+                continue
+            evidence = list(dict.fromkeys([*left.surface_fingerprints, *right.surface_fingerprints]))
+            alignment = add_term_alignment(
+                form,
+                alignment_id=f"align:{left.term_id}:{right.term_id}",
+                left_term_id=left.term_id,
+                right_term_id=right.term_id,
+                alignment_type="canonical_match",
+                confidence=min_confidence,
+                evidence_fingerprints=evidence,
+                human_explanation="Terms share identical canonical form after safe normalization.",
+            )
+            created.append(alignment)
+            seen_pairs.add(pair)
+    return created
+
+
+def summarize_term_alignment_gaps(form: NormalizedLogicalForm) -> dict[str, Any]:
+    canonical_counts: dict[str, int] = {}
+    for term in form.normalized_terms:
+        if term.canonical_form:
+            canonical_counts[term.canonical_form] = canonical_counts.get(term.canonical_form, 0) + 1
+    aligned_ids = {a.left_term_id for a in form.term_alignments} | {a.right_term_id for a in form.term_alignments}
+    return {
+        "term_count": len(form.normalized_terms),
+        "unique_canonical_term_count": len(canonical_counts),
+        "alignment_count": len(form.term_alignments),
+        "unaligned_term_count": sum(1 for term in form.normalized_terms if term.term_id not in aligned_ids),
+        "warning_count": len(form.warnings),
+        "unsupported_gap_count": len(form.unsupported_normalization_gaps),
+    }
 
 
 def summarize_normalized_logical_form(form: NormalizedLogicalForm) -> dict[str, Any]:
