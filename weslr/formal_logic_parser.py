@@ -153,9 +153,26 @@ class LogicalFormParse:
 
 
 _LOGICAL_MARKER_RE = re.compile(
-    r"\b(unless|either|or|and|not|no|none|never|all|every|some|therefore|so|hence|follows|must be true|which follows)\b",
+    r"\b(unless|either|or|and|not|no|none|never|all|every|some|therefore|so|hence|follows|must be true|which follows|could be true|can be inferred|logically follows|follows from|valid conclusion|best supported)\b",
     re.I,
 )
+
+_INSTRUCTION_MARKERS = [
+    "which of the following",
+    "which one",
+    "which statement",
+    "must be true",
+    "could be true",
+    "can be inferred",
+    "logically follows",
+    "follows from",
+    "based on the statements",
+    "from the information above",
+    "valid conclusion",
+    "best supported",
+    "select",
+    "which follows",
+]
 
 
 def fingerprint_text(text: str) -> str:
@@ -176,7 +193,7 @@ def detect_statement_role(statement: str) -> str:
     lowered = normalize_logical_text(statement)
     if not lowered:
         return "background"
-    if "must be true" in lowered or "which follows" in lowered:
+    if any(marker in lowered for marker in _INSTRUCTION_MARKERS):
         return "question_instruction"
     if re.search(r"\?$", statement.strip()) or lowered.startswith(("which", "what", "determine", "identify", "select")):
         return "question_instruction"
@@ -350,6 +367,184 @@ def _contains_obvious_logical_marker(normalized: str) -> bool:
     return bool(_LOGICAL_MARKER_RE.search(normalized))
 
 
+def _append_unique_terms(parse: LogicalFormParse, normalized: str) -> None:
+    parse.normalized_terms.extend([token for token in re.findall(r"[a-z0-9]+", normalized) if token not in parse.normalized_terms])
+
+
+def _add_structural_records(parse: LogicalFormParse, *, idx: str, statement_id: str, normalized: str) -> None:
+    if "unless" in normalized:
+        parts = _extract_unless_parts(normalized)
+        if parts:
+            exception, main = parts
+            normalized_form = f"if not {exception} then {main}"
+            parse.conditionals.append(
+                ConditionalRecord(
+                    record_id=f"cond_{idx}",
+                    antecedent=f"not {exception}",
+                    consequent=main,
+                    conditional_type="unless_translation",
+                    source_statement_ids=[statement_id],
+                    normalized_form=normalized_form,
+                    confidence="medium",
+                    human_translation="Unless is translated conservatively as if the exception does not hold, the main claim holds.",
+                )
+            )
+            parse.operators.append(
+                LogicalOperatorRecord(
+                    record_id=f"op_cond_{idx}",
+                    operator_type="conditional",
+                    source_statement_ids=[statement_id],
+                    normalized_form=normalized_form,
+                    confidence="medium",
+                    human_translation="Conditional structure detected from unless phrasing.",
+                )
+            )
+            parse.exceptions.append(exception)
+
+    if " or " in f" {normalized} ":
+        alternatives = [part.strip() for part in re.split(r"\bor\b", normalized) if part.strip()]
+        parse.disjunctions.append(
+            DisjunctionRecord(
+                record_id=f"disj_{idx}",
+                alternatives=alternatives,
+                exhaustive="either" in normalized or "at least one" in normalized,
+                exclusive="either" in normalized,
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Disjunctive structure detected; case analysis may be required.",
+            )
+        )
+        parse.operators.append(
+            LogicalOperatorRecord(
+                record_id=f"op_disj_{idx}",
+                operator_type="disjunction",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Disjunction detected from ordinary language.",
+            )
+        )
+
+    if " and " in f" {normalized} ":
+        parse.conjunctions.append(
+            ConjunctionRecord(
+                record_id=f"conj_{idx}",
+                conjunction_type="and",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Conjunctive structure detected from ordinary language.",
+            )
+        )
+        parse.operators.append(
+            LogicalOperatorRecord(
+                record_id=f"op_conj_{idx}",
+                operator_type="conjunction",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Conjunction detected from ordinary language.",
+            )
+        )
+
+    if re.search(r"\b(not|no|none|never)\b", normalized):
+        parse.negations.append(
+            NegationRecord(
+                record_id=f"neg_{idx}",
+                negation_type="explicit_negation",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Explicit negation detected from ordinary language.",
+            )
+        )
+        parse.operators.append(
+            LogicalOperatorRecord(
+                record_id=f"op_neg_{idx}",
+                operator_type="negation",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Negation detected from ordinary language.",
+            )
+        )
+
+    quantifier_match = re.search(r"\b(all|every|some|no)\b", normalized)
+    if quantifier_match:
+        parse.quantifiers.append(
+            QuantifierRecord(
+                record_id=f"quant_{idx}",
+                quantifier_type=quantifier_match.group(1),
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Quantifier detected from ordinary language.",
+            )
+        )
+        parse.operators.append(
+            LogicalOperatorRecord(
+                record_id=f"op_quant_{idx}",
+                operator_type="quantifier",
+                source_statement_ids=[statement_id],
+                normalized_form=normalized,
+                confidence="medium",
+                human_translation="Quantifier structure detected from ordinary language.",
+            )
+        )
+
+
+def _should_mark_unsupported(*, role: str, has_marker: bool) -> bool:
+    if has_marker:
+        return False
+    if role in {"question_instruction", "choice_claim"}:
+        return False
+    return True
+
+
+def _populate_statement(
+    parse: LogicalFormParse,
+    *,
+    idx: str,
+    fragment: str,
+    role: str,
+    store_raw_text: bool,
+) -> tuple[ParsedStatement, bool]:
+    normalized = normalize_logical_text(fragment)
+    has_marker = _contains_obvious_logical_marker(normalized)
+    statement = add_parsed_statement(
+        parse,
+        statement_id=f"stmt_{idx}",
+        raw_text_runtime_only=fragment if store_raw_text else "",
+        text_fingerprint=fingerprint_text(fragment),
+        normalized_text=normalized,
+        role=role,
+        logical_form=normalized,
+        confidence="medium" if has_marker else "low",
+    )
+    _append_unique_terms(parse, normalized)
+
+    if role == "premise":
+        parse.premises.append(statement.statement_id)
+    elif role in {"conclusion_candidate", "choice_claim"}:
+        parse.candidate_conclusions.append(statement.statement_id)
+
+    _add_structural_records(parse, idx=idx, statement_id=statement.statement_id, normalized=normalized)
+
+    if _should_mark_unsupported(role=role, has_marker=has_marker):
+        add_unsupported_fragment(
+            parse,
+            record_id=f"unsupported_{idx}",
+            fragment_type="natural_language_fragment",
+            source_statement_ids=[statement.statement_id],
+            normalized_form=normalized,
+            confidence="low",
+            human_translation="No obvious logical marker was detected, so this fragment remains visible as unsupported.",
+        )
+
+    return statement, has_marker
+
+
 def parse_runtime_text_to_logical_form(
     text: str,
     *,
@@ -362,162 +557,9 @@ def parse_runtime_text_to_logical_form(
     any_marker = False
 
     for idx, fragment in enumerate(fragments, start=1):
-        normalized = normalize_logical_text(fragment)
-        statement_id = f"stmt_{idx}"
         role = detect_statement_role(fragment)
-        has_marker = _contains_obvious_logical_marker(normalized)
-        if has_marker:
-            any_marker = True
-
-        statement = add_parsed_statement(
-            parse,
-            statement_id=statement_id,
-            raw_text_runtime_only=fragment if store_raw_text else "",
-            text_fingerprint=fingerprint_text(fragment),
-            normalized_text=normalized,
-            role=role,
-            logical_form=normalized,
-            confidence="medium" if has_marker else "low",
-        )
-
-        parse.normalized_terms.extend([token for token in re.findall(r"[a-z0-9]+", normalized) if token not in parse.normalized_terms])
-
-        if role == "premise":
-            parse.premises.append(statement.statement_id)
-        elif role == "conclusion_candidate":
-            parse.candidate_conclusions.append(statement.statement_id)
-
-        if "unless" in normalized:
-            parts = _extract_unless_parts(normalized)
-            if parts:
-                exception, main = parts
-                normalized_form = f"if not {exception} then {main}"
-                parse.conditionals.append(
-                    ConditionalRecord(
-                        record_id=f"cond_{idx}",
-                        antecedent=f"not {exception}",
-                        consequent=main,
-                        conditional_type="unless_translation",
-                        source_statement_ids=[statement_id],
-                        normalized_form=normalized_form,
-                        confidence="medium",
-                        human_translation="Unless is translated conservatively as if the exception does not hold, the main claim holds.",
-                    )
-                )
-                parse.operators.append(
-                    LogicalOperatorRecord(
-                        record_id=f"op_cond_{idx}",
-                        operator_type="conditional",
-                        source_statement_ids=[statement_id],
-                        normalized_form=normalized_form,
-                        confidence="medium",
-                        human_translation="Conditional structure detected from unless phrasing.",
-                    )
-                )
-                parse.exceptions.append(exception)
-
-        if " or " in f" {normalized} ":
-            alternatives = [part.strip() for part in re.split(r"\bor\b", normalized) if part.strip()]
-            parse.disjunctions.append(
-                DisjunctionRecord(
-                    record_id=f"disj_{idx}",
-                    alternatives=alternatives,
-                    exhaustive="either" in normalized or "at least one" in normalized,
-                    exclusive="either" in normalized,
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Disjunctive structure detected; case analysis may be required.",
-                )
-            )
-            parse.operators.append(
-                LogicalOperatorRecord(
-                    record_id=f"op_disj_{idx}",
-                    operator_type="disjunction",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Disjunction detected from ordinary language.",
-                )
-            )
-
-        if " and " in f" {normalized} ":
-            parse.conjunctions.append(
-                ConjunctionRecord(
-                    record_id=f"conj_{idx}",
-                    conjunction_type="and",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Conjunctive structure detected from ordinary language.",
-                )
-            )
-            parse.operators.append(
-                LogicalOperatorRecord(
-                    record_id=f"op_conj_{idx}",
-                    operator_type="conjunction",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Conjunction detected from ordinary language.",
-                )
-            )
-
-        if re.search(r"\b(not|no|none|never)\b", normalized):
-            parse.negations.append(
-                NegationRecord(
-                    record_id=f"neg_{idx}",
-                    negation_type="explicit_negation",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Explicit negation detected from ordinary language.",
-                )
-            )
-            parse.operators.append(
-                LogicalOperatorRecord(
-                    record_id=f"op_neg_{idx}",
-                    operator_type="negation",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Negation detected from ordinary language.",
-                )
-            )
-
-        quantifier_match = re.search(r"\b(all|every|some|no)\b", normalized)
-        if quantifier_match:
-            parse.quantifiers.append(
-                QuantifierRecord(
-                    record_id=f"quant_{idx}",
-                    quantifier_type=quantifier_match.group(1),
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Quantifier detected from ordinary language.",
-                )
-            )
-            parse.operators.append(
-                LogicalOperatorRecord(
-                    record_id=f"op_quant_{idx}",
-                    operator_type="quantifier",
-                    source_statement_ids=[statement_id],
-                    normalized_form=normalized,
-                    confidence="medium",
-                    human_translation="Quantifier structure detected from ordinary language.",
-                )
-            )
-
-        if not has_marker:
-            add_unsupported_fragment(
-                parse,
-                record_id=f"unsupported_{idx}",
-                fragment_type="natural_language_fragment",
-                source_statement_ids=[statement_id],
-                normalized_form=normalized,
-                confidence="low",
-                human_translation="No obvious logical marker was detected, so this fragment remains visible as unsupported.",
-            )
+        _, has_marker = _populate_statement(parse, idx=str(idx), fragment=fragment, role=role, store_raw_text=store_raw_text)
+        any_marker = any_marker or has_marker
 
     parse.parse_confidence = "medium" if any_marker else "low"
     parse.human_translation = (
@@ -528,6 +570,49 @@ def parse_runtime_text_to_logical_form(
     parse.anti_gaming.official_score_claimed = False
     parse.legibility.symbolic_forms_translated = True
     parse.legibility.unsupported_fragments_visible = True
+    parse.legibility.human_translation_available = bool(parse.human_translation)
+    return parse
+
+
+def parse_mcq_runtime_text_to_logical_form(
+    question_text: str,
+    choices: list[dict],
+    *,
+    parse_id: str,
+    source_task_id: str,
+    store_raw_text: bool = False,
+) -> LogicalFormParse:
+    parse = create_empty_logical_form_parse(parse_id=parse_id, source_task_id=source_task_id)
+    any_marker = False
+
+    question_fragments = split_candidate_statements(question_text)
+    for idx, fragment in enumerate(question_fragments, start=1):
+        role = detect_statement_role(fragment)
+        _, has_marker = _populate_statement(parse, idx=f"q{idx}", fragment=fragment, role=role, store_raw_text=store_raw_text)
+        any_marker = any_marker or has_marker
+
+    for idx, choice in enumerate(choices, start=1):
+        text = str(choice.text if hasattr(choice, "text") else choice.get("text", ""))
+        if not text.strip():
+            continue
+        # choice_claim is a non-answer-selecting candidate-conclusion role for parser-only MCQ structure awareness.
+        _, has_marker = _populate_statement(parse, idx=f"c{idx}", fragment=text, role="choice_claim", store_raw_text=store_raw_text)
+        any_marker = any_marker or has_marker
+
+    parse.parse_confidence = "medium" if any_marker else "low"
+    parse.human_translation = (
+        "Preliminary MCQ-aware natural-language logical-form extraction only. "
+        "Question instructions and choice claims are recorded without selecting or scoring answers."
+    )
+    parse.anti_gaming.uses_item_id = False
+    parse.anti_gaming.uses_answer_key = False
+    parse.anti_gaming.uses_answer_position_bias = False
+    parse.anti_gaming.stores_raw_text_by_default = False
+    parse.anti_gaming.official_score_claimed = False
+    parse.anti_gaming.benchmark_specific_rule_used = False
+    parse.legibility.symbolic_forms_translated = True
+    parse.legibility.unsupported_fragments_visible = True
+    parse.legibility.private_symbolic_authority_used = False
     parse.legibility.human_translation_available = bool(parse.human_translation)
     return parse
 
@@ -553,12 +638,16 @@ def summarize_logical_form_parse(parse: LogicalFormParse) -> dict[str, Any]:
             "unsupported_fragments_visible false is not allowed",
         ]
     )
+    question_instruction_count = sum(1 for statement in parse.statements if statement.role == "question_instruction")
+    choice_claim_count = sum(1 for statement in parse.statements if statement.role == "choice_claim")
     return {
         "parse_id": parse.parse_id,
         "source_task_id": parse.source_task_id,
         "statement_count": len(parse.statements),
         "premise_count": len(parse.premises),
         "candidate_conclusion_count": len(parse.candidate_conclusions),
+        "question_instruction_count": question_instruction_count,
+        "choice_claim_count": choice_claim_count,
         "operator_count": len(parse.operators),
         "quantifier_count": len(parse.quantifiers),
         "conditional_count": len(parse.conditionals),
@@ -598,5 +687,6 @@ __all__ = [
     "add_unsupported_fragment",
     "add_parser_warning",
     "parse_runtime_text_to_logical_form",
+    "parse_mcq_runtime_text_to_logical_form",
     "summarize_logical_form_parse",
 ]
