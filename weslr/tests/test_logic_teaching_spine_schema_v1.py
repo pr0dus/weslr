@@ -115,7 +115,14 @@ class LogicTeachingSpineSchemaV1Tests(unittest.TestCase):
         self.assertIn("missing human translation for high-confidence proposition", validate_proposition_candidate(candidate))
 
     def test_roundtrip_to_from_dict(self):
-        candidate = create_empty_proposition_candidate(proposition_id="prop:1", source_predicate_ids=["pred:1"], proposition_type="binary_relation")
+        candidate = create_empty_proposition_candidate(
+            proposition_id="prop:1",
+            source_predicate_ids=["pred:1"],
+            source_statement_ids=["stmt:1"],
+            source_statement_roles=["parsed_premise"],
+            proposition_role="parsed_premise",
+            proposition_type="binary_relation",
+        )
         candidate.subject = "subject"
         candidate.relation = "relates_to"
         candidate.object = "object"
@@ -125,7 +132,7 @@ class LogicTeachingSpineSchemaV1Tests(unittest.TestCase):
         self.assertEqual(data, proposition_candidate_to_dict(restored))
 
     def test_summary_is_redacted(self):
-        candidate = create_empty_proposition_candidate(proposition_id="prop:1")
+        candidate = create_empty_proposition_candidate(proposition_id="prop:1", proposition_role="premise")
         candidate.subject = "secret_subject"
         candidate.relation = "secret_relation"
         candidate.object = "secret_object"
@@ -135,6 +142,7 @@ class LogicTeachingSpineSchemaV1Tests(unittest.TestCase):
         self.assertNotIn("relation", summary)
         self.assertNotIn("object", summary)
         self.assertNotIn("human_translation", summary)
+        self.assertEqual("premise", summary["proposition_role"])
 
     def test_summary_does_not_contain_raw_question_choices_answers(self):
         summary_text = str(summarize_proposition_candidate(create_empty_proposition_candidate(proposition_id="prop:1")))

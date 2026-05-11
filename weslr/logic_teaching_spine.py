@@ -8,6 +8,7 @@ SAFE_CONFIDENCE_VALUES = {"low", "medium", "high"}
 SAFE_VALIDITY_TYPES = {"valid", "invalid", "ambiguous", "unsupported", "unknown"}
 SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "unknown"}
 SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
+SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
 
 
 @dataclass
@@ -37,6 +38,9 @@ class PropositionCandidate:
     schema_version: str = "WESLR_LOGIC_TEACHING_SPINE_V1"
     proposition_id: str = ""
     source_predicate_ids: list[str] = field(default_factory=list)
+    source_statement_ids: list[str] = field(default_factory=list)
+    source_statement_roles: list[str] = field(default_factory=list)
+    proposition_role: str = "unknown"
     proposition_type: str = "unknown"
     subject: str = ""
     relation: str = ""
@@ -176,11 +180,17 @@ def create_empty_proposition_candidate(
     *,
     proposition_id: str = "",
     source_predicate_ids: list[str] | None = None,
+    source_statement_ids: list[str] | None = None,
+    source_statement_roles: list[str] | None = None,
+    proposition_role: str = "unknown",
     proposition_type: str = "unknown",
 ) -> PropositionCandidate:
     return PropositionCandidate(
         proposition_id=proposition_id,
         source_predicate_ids=list(source_predicate_ids or []),
+        source_statement_ids=list(source_statement_ids or []),
+        source_statement_roles=[normalize_proposition_role(role) for role in list(source_statement_roles or []) if str(role).strip()],
+        proposition_role=normalize_proposition_role(proposition_role),
         proposition_type=proposition_type,
     )
 
@@ -196,6 +206,9 @@ def proposition_candidate_from_dict(data: dict[str, Any]) -> PropositionCandidat
         schema_version=data.get("schema_version", "WESLR_LOGIC_TEACHING_SPINE_V1"),
         proposition_id=data.get("proposition_id", ""),
         source_predicate_ids=list(data.get("source_predicate_ids") or []),
+        source_statement_ids=list(data.get("source_statement_ids") or []),
+        source_statement_roles=[normalize_proposition_role(role) for role in list(data.get("source_statement_roles") or []) if str(role).strip()],
+        proposition_role=normalize_proposition_role(data.get("proposition_role", "unknown")),
         proposition_type=data.get("proposition_type", "unknown"),
         subject=data.get("subject", ""),
         relation=data.get("relation", ""),
@@ -219,6 +232,8 @@ def validate_proposition_candidate(candidate: PropositionCandidate) -> list[str]
         messages.append("invalid confidence value")
     if candidate.confidence == "high" and not candidate.human_translation.strip():
         messages.append("missing human translation for high-confidence proposition")
+    if candidate.proposition_role not in SAFE_PROPOSITION_ROLES:
+        messages.append("invalid proposition role")
     messages.extend(_validate_shared_safety(candidate.legibility, candidate.anti_gaming))
     return messages
 
@@ -227,17 +242,31 @@ def summarize_proposition_candidate(candidate: PropositionCandidate) -> dict[str
     return {
         "schema_version": candidate.schema_version,
         "proposition_id": candidate.proposition_id,
+        "proposition_role": candidate.proposition_role,
         "proposition_type": candidate.proposition_type,
         "polarity": candidate.polarity,
         "quantifier": candidate.quantifier,
         "modality": candidate.modality,
         "confidence": candidate.confidence,
         "source_predicate_count": len(candidate.source_predicate_ids),
+        "source_statement_count": len(candidate.source_statement_ids),
+        "source_statement_role_count": len(candidate.source_statement_roles),
         "unsupported_gap_count": len(candidate.unsupported_gaps),
         "human_translation_available": bool(candidate.human_translation.strip()),
         "legibility_safe": _legibility_safe(candidate.legibility),
         "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
     }
+
+
+def normalize_proposition_role(role: str) -> str:
+    normalized = str(role or "").strip().lower()
+    if normalized in {"premise", "parsed_premise", "premise_term"}:
+        return "premise"
+    if normalized in {"choice_claim", "candidate", "candidate_term"}:
+        return "choice_claim"
+    if normalized in {"background", "question_instruction"}:
+        return "background"
+    return "unknown"
 
 
 def _conservative_proposition_translation(subject: str, relation: str, object: str, polarity: str = "positive") -> str:
@@ -262,6 +291,9 @@ def create_proposition_candidate_from_predicate(
     confidence: str = "low",
     human_translation: str = "",
     unsupported_gaps: list[str] | None = None,
+    source_statement_id: str = "",
+    source_statement_role: str = "",
+    proposition_role: str = "",
 ) -> PropositionCandidate:
     gaps = list(unsupported_gaps or [])
     if not subject:
@@ -272,9 +304,15 @@ def create_proposition_candidate_from_predicate(
         gaps.append("missing_object")
     proposition_type = "binary_relation" if subject and relation and object else "incomplete_relation"
     translation = human_translation.strip() or _conservative_proposition_translation(subject, relation, object, polarity)
+    normalized_role = normalize_proposition_role(proposition_role or source_statement_role)
+    statement_id = str(source_statement_id or "").strip()
+    raw_statement_role = str(source_statement_role or proposition_role or "").strip()
     return PropositionCandidate(
         proposition_id=f"proposition:{predicate_id}",
         source_predicate_ids=[predicate_id],
+        source_statement_ids=[statement_id] if statement_id else [],
+        source_statement_roles=[normalized_role] if raw_statement_role else [],
+        proposition_role=normalized_role,
         proposition_type=proposition_type,
         subject=subject,
         relation=relation,
@@ -300,6 +338,18 @@ def create_proposition_candidates_from_predicates(predicates: list[object]) -> l
         predicate_id = str(_safe_predicate_value(predicate, "predicate_candidate_id") or "").strip()
         if not predicate_id:
             continue
+        source_statement_role = str(
+            _safe_predicate_value(predicate, "source_statement_role")
+            or _safe_predicate_value(predicate, "statement_role")
+            or _safe_predicate_value(predicate, "role")
+            or ""
+        )
+        proposition_role = str(
+            _safe_predicate_value(predicate, "role")
+            or _safe_predicate_value(predicate, "statement_role")
+            or _safe_predicate_value(predicate, "source_statement_role")
+            or ""
+        )
         created.append(
             create_proposition_candidate_from_predicate(
                 predicate_id=predicate_id,
@@ -310,6 +360,9 @@ def create_proposition_candidates_from_predicates(predicates: list[object]) -> l
                 quantifier=str(_safe_predicate_value(predicate, "quantifier_hint") or ""),
                 modality=str(_safe_predicate_value(predicate, "modality_hint") or ""),
                 confidence=str(_safe_predicate_value(predicate, "confidence") or "low"),
+                source_statement_id=str(_safe_predicate_value(predicate, "source_statement_id") or ""),
+                source_statement_role=source_statement_role,
+                proposition_role=proposition_role,
             )
         )
     return created
@@ -319,6 +372,11 @@ def summarize_proposition_projection_diagnostics(propositions: list[PropositionC
     return {
         "proposition_candidate_count": len(propositions),
         "source_predicate_link_count": sum(len(proposition.source_predicate_ids) for proposition in propositions),
+        "source_statement_link_count": sum(len(proposition.source_statement_ids) for proposition in propositions),
+        "premise_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "premise"),
+        "choice_claim_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "choice_claim"),
+        "background_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "background"),
+        "unknown_role_proposition_count": sum(1 for proposition in propositions if proposition.proposition_role == "unknown"),
         "high_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "high"),
         "medium_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "medium"),
         "low_confidence_count": sum(1 for proposition in propositions if proposition.confidence == "low"),

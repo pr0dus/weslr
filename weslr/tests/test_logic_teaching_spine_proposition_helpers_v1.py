@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from weslr.logic_teaching_spine import (  # noqa: E402
     create_proposition_candidate_from_predicate,
     create_proposition_candidates_from_predicates,
+    normalize_proposition_role,
     proposition_candidate_to_dict,
     summarize_proposition_projection_diagnostics,
 )
@@ -35,6 +36,10 @@ ALLOWED_CHANGED = {
 @dataclass
 class PredicateLike:
     predicate_candidate_id: str = ""
+    source_statement_id: str = ""
+    source_statement_role: str = ""
+    role: str = ""
+    statement_role: str = ""
     subject_candidate_id: str = ""
     relation_hint: str = ""
     object_candidate_id: str = ""
@@ -72,6 +77,27 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         proposition = create_proposition_candidate_from_predicate(predicate_id="pred:1")
         self.assertEqual(["pred:1"], proposition.source_predicate_ids)
 
+    def test_proposition_can_store_source_statement_ids(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            source_statement_id="stmt:1",
+        )
+        self.assertEqual(["stmt:1"], proposition.source_statement_ids)
+
+    def test_proposition_can_store_source_statement_roles(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            source_statement_role="parsed_premise",
+        )
+        self.assertEqual(["premise"], proposition.source_statement_roles)
+
+    def test_proposition_stores_normalized_proposition_role(self):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id="pred:1",
+            proposition_role="candidate_term",
+        )
+        self.assertEqual("choice_claim", proposition.proposition_role)
+
     def test_proposition_uses_subject_relation_object_structurally(self):
         proposition = create_proposition_candidate_from_predicate(
             predicate_id="pred:1",
@@ -104,10 +130,24 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertIn("missing_context", proposition.unsupported_gaps)
         self.assertIn("missing_relation", proposition.unsupported_gaps)
 
+    def test_premise_role_normalizes_from_parsed_premise(self):
+        self.assertEqual("premise", normalize_proposition_role("parsed_premise"))
+
+    def test_choice_role_normalizes_from_choice_claim(self):
+        self.assertEqual("choice_claim", normalize_proposition_role("choice_claim"))
+
+    def test_background_role_normalizes_from_question_instruction(self):
+        self.assertEqual("background", normalize_proposition_role("question_instruction"))
+
+    def test_unknown_role_becomes_unknown(self):
+        self.assertEqual("unknown", normalize_proposition_role("surprising_role"))
+
     def test_helper_accepts_dict_like_predicate_input(self):
         propositions = create_proposition_candidates_from_predicates([
             {
                 "predicate_candidate_id": "pred:1",
+                "source_statement_id": "stmt:1",
+                "source_statement_role": "parsed_premise",
                 "subject_candidate_id": "subj:1",
                 "relation_hint": "supports",
                 "object_candidate_id": "obj:1",
@@ -117,10 +157,27 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertEqual(1, len(propositions))
         self.assertEqual(["pred:1"], propositions[0].source_predicate_ids)
 
-    def test_helper_accepts_object_like_predicate_input(self):
+    def test_dict_like_predicate_role_is_projected(self):
+        propositions = create_proposition_candidates_from_predicates([
+            {
+                "predicate_candidate_id": "pred:1",
+                "source_statement_id": "stmt:1",
+                "source_statement_role": "parsed_premise",
+                "subject_candidate_id": "subj:1",
+                "relation_hint": "supports",
+                "object_candidate_id": "obj:1",
+            }
+        ])
+        self.assertEqual("premise", propositions[0].proposition_role)
+        self.assertEqual(["stmt:1"], propositions[0].source_statement_ids)
+        self.assertEqual(["premise"], propositions[0].source_statement_roles)
+
+    def test_object_like_predicate_role_is_projected(self):
         propositions = create_proposition_candidates_from_predicates([
             PredicateLike(
                 predicate_candidate_id="pred:1",
+                source_statement_id="stmt:2",
+                role="candidate_term",
                 subject_candidate_id="subj:1",
                 relation_hint="supports",
                 object_candidate_id="obj:1",
@@ -128,6 +185,8 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         ])
         self.assertEqual(1, len(propositions))
         self.assertEqual("subj:1", propositions[0].subject)
+        self.assertEqual("choice_claim", propositions[0].proposition_role)
+        self.assertEqual(["choice_claim"], propositions[0].source_statement_roles)
 
     def test_helper_skips_predicate_without_id(self):
         propositions = create_proposition_candidates_from_predicates([
@@ -160,20 +219,31 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         summary = summarize_proposition_projection_diagnostics([])
         self.assertIn("source_predicate_link_count", summary)
 
-    def test_summary_does_not_contain_question(self):
-        self.assertNotIn("question", str(summarize_proposition_projection_diagnostics([])))
+    def test_summary_includes_premise_proposition_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="premise")
+        ])
+        self.assertEqual(1, summary["premise_proposition_count"])
 
-    def test_summary_does_not_contain_choices(self):
-        self.assertNotIn("choices", str(summarize_proposition_projection_diagnostics([])))
+    def test_summary_includes_choice_proposition_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1", proposition_role="choice_claim")
+        ])
+        self.assertEqual(1, summary["choice_claim_proposition_count"])
 
-    def test_summary_does_not_contain_answer_label(self):
-        self.assertNotIn("answer_label", str(summarize_proposition_projection_diagnostics([])))
+    def test_summary_includes_unknown_role_proposition_count(self):
+        summary = summarize_proposition_projection_diagnostics([
+            create_proposition_candidate_from_predicate(predicate_id="pred:1")
+        ])
+        self.assertEqual(1, summary["unknown_role_proposition_count"])
 
-    def test_summary_does_not_contain_correct_answer(self):
-        self.assertNotIn("correct_answer", str(summarize_proposition_projection_diagnostics([])))
-
-    def test_summary_does_not_contain_answer_key(self):
-        self.assertNotIn("answer_key", str(summarize_proposition_projection_diagnostics([])))
+    def test_no_raw_text_appears_in_summary(self):
+        summary_text = str(summarize_proposition_projection_diagnostics([]))
+        self.assertNotIn("question", summary_text)
+        self.assertNotIn("choices", summary_text)
+        self.assertNotIn("answer_label", summary_text)
+        self.assertNotIn("correct_answer", summary_text)
+        self.assertNotIn("raw_text", summary_text)
 
     def test_no_answer_selection_field_exists(self):
         data = proposition_candidate_to_dict(create_proposition_candidate_from_predicate(predicate_id="pred:1"))
