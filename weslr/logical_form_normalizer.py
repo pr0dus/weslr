@@ -94,6 +94,11 @@ class PredicateCandidate:
     subject_candidate_id: str = ""
     relation_hint: str = ""
     object_candidate_id: str = ""
+    subject_canonical_hint: str = ""
+    object_canonical_hint: str = ""
+    relation_canonical_hint: str = ""
+    subject_fingerprint: str = ""
+    object_fingerprint: str = ""
     polarity: str = "positive"
     quantifier_hint: str = ""
     modality_hint: str = ""
@@ -453,6 +458,11 @@ def add_predicate_candidate(
     subject_candidate_id: str = "",
     relation_hint: str = "",
     object_candidate_id: str = "",
+    subject_canonical_hint: str = "",
+    object_canonical_hint: str = "",
+    relation_canonical_hint: str = "",
+    subject_fingerprint: str = "",
+    object_fingerprint: str = "",
     polarity: str = "positive",
     quantifier_hint: str = "",
     modality_hint: str = "",
@@ -468,6 +478,11 @@ def add_predicate_candidate(
         subject_candidate_id=subject_candidate_id,
         relation_hint=relation_hint,
         object_candidate_id=object_candidate_id,
+        subject_canonical_hint=subject_canonical_hint,
+        object_canonical_hint=object_canonical_hint,
+        relation_canonical_hint=relation_canonical_hint,
+        subject_fingerprint=subject_fingerprint,
+        object_fingerprint=object_fingerprint,
         polarity=polarity,
         quantifier_hint=quantifier_hint,
         modality_hint=modality_hint,
@@ -961,6 +976,9 @@ def create_predicate_candidates_from_atomic_terms(
     if candidate_key in existing_keys:
         return []
 
+    subject_fingerprint = subject.token_fingerprints[0] if subject.token_fingerprints else ""
+    object_fingerprint = obj.token_fingerprints[0] if obj.token_fingerprints else ""
+
     created = add_predicate_candidate(
         form,
         predicate_candidate_id=f"predicate:{source_statement_id}:1",
@@ -970,11 +988,16 @@ def create_predicate_candidates_from_atomic_terms(
         subject_candidate_id=subject.candidate_id,
         relation_hint=relation_hint,
         object_candidate_id=obj.candidate_id,
+        subject_canonical_hint=subject.canonical_hint,
+        object_canonical_hint=obj.canonical_hint,
+        relation_canonical_hint=relation_hint,
+        subject_fingerprint=subject_fingerprint,
+        object_fingerprint=object_fingerprint,
         polarity="positive",
         confidence=confidence,
         decomposition_method="predicate_hint_decomposition",
         human_explanation=(
-            "Predicate candidate conservatively derived from preserved relation hints and existing atomic term candidate IDs without retaining raw text."
+            "Predicate candidate conservatively derived from preserved relation hints, redacted canonical term hints, and existing atomic term candidate IDs without retaining raw text."
         ),
     )
     if source_statement_role and not created.human_explanation:

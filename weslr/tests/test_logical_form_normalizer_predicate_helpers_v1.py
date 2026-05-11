@@ -66,6 +66,38 @@ class LogicalFormNormalizerPredicateHelpersV1Tests(unittest.TestCase):
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
         self.assertTrue(created[0].human_explanation)
 
+    def test_predicate_preserves_subject_canonical_hint_from_atomic_candidate(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
+        self.assertEqual("cat", created[0].subject_canonical_hint)
+
+    def test_predicate_preserves_object_canonical_hint_from_atomic_candidate(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
+        self.assertEqual("dog", created[0].object_canonical_hint)
+
+    def test_predicate_preserves_relation_canonical_hint(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
+        self.assertEqual("supports", created[0].relation_canonical_hint)
+
+    def test_predicate_preserves_subject_and_object_fingerprints(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
+        atomic_by_id = {candidate.candidate_id: candidate for candidate in form.atomic_term_candidates}
+        self.assertEqual(
+            atomic_by_id[created[0].subject_candidate_id].token_fingerprints[0],
+            created[0].subject_fingerprint,
+        )
+        self.assertEqual(
+            atomic_by_id[created[0].object_candidate_id].token_fingerprints[0],
+            created[0].object_fingerprint,
+        )
+
     def test_predicate_created_from_premise_atomic_terms_has_premise_role(self):
         form = self.make_form()
         create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats supports dogs")
@@ -136,6 +168,8 @@ class LogicalFormNormalizerPredicateHelpersV1Tests(unittest.TestCase):
         create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="Secret supports Surface")
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1")
         self.assertNotIn("Secret supports Surface", str(created[0].__dict__))
+        self.assertNotIn("Secret", str(created[0].__dict__))
+        self.assertNotIn("Surface", str(created[0].__dict__))
 
     def test_no_predicate_created_when_too_few_atomic_terms_exist(self):
         form = self.make_form()

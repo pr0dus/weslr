@@ -100,6 +100,18 @@ class LogicalFormNormalizerRelationPreservationHelpersV1Tests(unittest.TestCase)
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="premise")
         self.assertEqual("premise", created[0].role)
 
+    def test_predicate_candidate_preserves_relation_and_term_hints(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats is dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="premise")
+        predicate = created[0]
+        atomic_by_id = {candidate.candidate_id: candidate for candidate in form.atomic_term_candidates}
+        self.assertEqual("cat", predicate.subject_canonical_hint)
+        self.assertEqual("dog", predicate.object_canonical_hint)
+        self.assertEqual("is", predicate.relation_canonical_hint)
+        self.assertEqual(atomic_by_id[predicate.subject_candidate_id].token_fingerprints[0], predicate.subject_fingerprint)
+        self.assertEqual(atomic_by_id[predicate.object_candidate_id].token_fingerprints[0], predicate.object_fingerprint)
+
     def test_existing_proposition_helper_tests_pass(self):
         output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py")
         self.assertIn("OK", output)
@@ -118,6 +130,13 @@ class LogicalFormNormalizerRelationPreservationHelpersV1Tests(unittest.TestCase)
         text = str(summarize_predicate_decomposition_diagnostics(self.make_form()))
         for term in ["question", "choices", "answer_label", "correct_answer", "raw_text"]:
             self.assertNotIn(term, text)
+
+    def test_predicate_candidate_does_not_add_answer_selection(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="premise", surface="cats is dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="premise")
+        self.assertNotIn("answer_selection", created[0].__dict__)
+        self.assertNotIn("selected_answer", created[0].__dict__)
 
     def test_existing_atomic_helper_tests_pass(self):
         output = self.run_direct("python3 weslr/tests/test_logical_form_normalizer_atomic_helpers_v1.py")
