@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 APPROVAL_DOC = "docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md"
 PREDICATE_APPROVAL_DOC = "docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md"
+RELATION_APPROVAL_DOC = "docs/WESLR_LOGICAL_FORM_NORMALIZER_RELATION_PRESERVATION_APPROVAL_V1.md"
 
 APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES = {
     "weslr/logical_form_normalizer.py",
@@ -28,6 +29,14 @@ APPROVED_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPER_FILES = {
     "weslr/tests/release_gate_v1.py",
     "weslr/tests/test_logical_form_normalizer_predicate_helpers_v1.py",
     "docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md",
+}
+
+APPROVED_LOGICAL_FORM_NORMALIZER_RELATION_HELPER_FILES = {
+    "weslr/logical_form_normalizer.py",
+    "weslr/tests/phase_scope_policy.py",
+    "weslr/tests/release_gate_v1.py",
+    "weslr/tests/test_logical_form_normalizer_relation_preservation_helpers_v1.py",
+    "docs/WESLR_LOGICAL_FORM_NORMALIZER_RELATION_PRESERVATION_APPROVAL_V1.md",
 }
 
 FORBIDDEN_PATHS = {
@@ -111,10 +120,22 @@ def predicate_approval_doc_is_valid() -> bool:
     )
 
 
+def relation_approval_doc_is_valid() -> bool:
+    return _doc_has_required_markers(
+        RELATION_APPROVAL_DOC,
+        {
+            "APPROVE_RELATION_PRESERVATION_HELPERS_ONLY",
+            "operator_approved_helper_phase",
+            "execution_allowed = false",
+            "official_score_claimed = false",
+        },
+    )
+
+
 def assert_logical_form_normalizer_atomic_helper_phase_allowed(testcase):
     testcase.assertTrue(
-        approval_doc_is_valid() or predicate_approval_doc_is_valid(),
-        f"approval doc invalid: {APPROVAL_DOC} or {PREDICATE_APPROVAL_DOC}",
+        approval_doc_is_valid() or predicate_approval_doc_is_valid() or relation_approval_doc_is_valid(),
+        f"approval doc invalid: {APPROVAL_DOC} or {PREDICATE_APPROVAL_DOC} or {RELATION_APPROVAL_DOC}",
     )
     changed = read_changed_files()
     forbidden_hits = {
@@ -126,5 +147,8 @@ def assert_logical_form_normalizer_atomic_helper_phase_allowed(testcase):
     allowed = set(APPROVED_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPER_FILES)
     if predicate_approval_doc_is_valid():
         allowed.update(APPROVED_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPER_FILES)
+    if relation_approval_doc_is_valid():
+        allowed.update(APPROVED_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPER_FILES)
+        allowed.update(APPROVED_LOGICAL_FORM_NORMALIZER_RELATION_HELPER_FILES)
     disallowed = changed - allowed
     testcase.assertEqual(set(), disallowed)

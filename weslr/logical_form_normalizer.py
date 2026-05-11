@@ -619,6 +619,49 @@ PREMISE_ATOMIC_ROLES = {"premise", "premise_term", "parsed_premise"}
 CANDIDATE_ATOMIC_ROLES = {"choice_claim", "candidate", "candidate_term"}
 BACKGROUND_ATOMIC_ROLES = {"background", "question_instruction"}
 
+RELATION_HINT_WORDS = {
+    "is": "is",
+    "are": "is",
+    "was": "is",
+    "were": "is",
+    "support": "supports",
+    "supports": "supports",
+    "oppose": "opposes",
+    "opposes": "opposes",
+    "require": "requires",
+    "requires": "requires",
+    "prevent": "prevents",
+    "prevents": "prevents",
+    "permit": "permits",
+    "permits": "permits",
+    "allow": "permits",
+    "allows": "permits",
+    "imply": "implies",
+    "implies": "implies",
+}
+
+
+def extract_relation_hints_from_surface(text: str) -> list[str]:
+    lowered = (text or "").lower()
+    punctuation_to_space = str.maketrans({char: " " for char in string.punctuation})
+    stripped = lowered.translate(punctuation_to_space)
+    collapsed = re.sub(r"\s+", " ", stripped).strip()
+    if not collapsed:
+        return []
+
+    hints: list[str] = []
+    seen: set[str] = set()
+    for raw_token in collapsed.split(" "):
+        token = raw_token.strip()
+        if not token:
+            continue
+        normalized = RELATION_HINT_WORDS.get(token)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        hints.append(normalized)
+    return hints
+
 
 def tokenize_surface_for_atomic_terms(text: str) -> list[str]:
     lowered = (text or "").lower()
@@ -654,11 +697,12 @@ def create_atomic_term_candidates_from_surface(
     extraction_method: str = "atomic_surface_tokenization",
 ) -> list[AtomicTermCandidate]:
     created: list[AtomicTermCandidate] = []
-    for index, token in enumerate(tokenize_surface_for_atomic_terms(surface), start=1):
+    next_index = 1
+    for token in tokenize_surface_for_atomic_terms(surface):
         created.append(
             add_atomic_term_candidate(
                 form,
-                candidate_id=f"atomic:{source_statement_id}:{index}",
+                candidate_id=f"atomic:{source_statement_id}:{next_index}",
                 source_statement_id=source_statement_id,
                 source_statement_role=source_statement_role,
                 safe_origin_type=safe_origin_type,
@@ -670,6 +714,25 @@ def create_atomic_term_candidates_from_surface(
                 human_explanation="Atomic term candidate derived from safe tokenization of the statement surface without retaining raw text.",
             )
         )
+        next_index += 1
+
+    for relation_hint in extract_relation_hints_from_surface(surface):
+        created.append(
+            add_atomic_term_candidate(
+                form,
+                candidate_id=f"atomic:{source_statement_id}:{next_index}",
+                source_statement_id=source_statement_id,
+                source_statement_role=source_statement_role,
+                safe_origin_type=safe_origin_type,
+                token_fingerprints=[fingerprint_surface(relation_hint)],
+                canonical_hint=relation_hint,
+                term_type_hint="relation_hint",
+                confidence=confidence,
+                extraction_method="relation_hint_preservation",
+                human_explanation="Relation-hint candidate preserves structural predicate cues from the statement surface without retaining raw text.",
+            )
+        )
+        next_index += 1
     return created
 
 
@@ -806,23 +869,7 @@ def summarize_atomic_extraction_diagnostics(form: NormalizedLogicalForm) -> dict
     }
 
 
-PREDICATE_RELATION_HINTS = {
-    "is": "is",
-    "support": "supports",
-    "supports": "supports",
-    "oppose": "opposes",
-    "opposes": "opposes",
-    "require": "requires",
-    "requires": "requires",
-    "prevent": "prevents",
-    "prevents": "prevents",
-    "permit": "permits",
-    "permits": "permits",
-    "allow": "permits",
-    "allows": "permits",
-    "imply": "implies",
-    "implies": "implies",
-}
+PREDICATE_RELATION_HINTS = dict(RELATION_HINT_WORDS)
 
 
 def detect_relation_hint_from_tokens(tokens: list[str]) -> str:
@@ -849,19 +896,23 @@ def create_predicate_candidates_from_atomic_terms(
     if len(statement_candidates) < 3:
         return []
 
-    relation_index = -1
-    relation_hint = ""
-    for index, candidate in enumerate(statement_candidates):
-        relation_hint = detect_relation_hint_from_tokens([candidate.canonical_hint])
-        if relation_hint:
-            relation_index = index
-            break
-    if not relation_hint or relation_index <= 0 or relation_index >= len(statement_candidates) - 1:
+    relation_candidates = [
+        candidate for candidate in statement_candidates if candidate.term_type_hint == "relation_hint"
+    ]
+    term_candidates = [
+        candidate for candidate in statement_candidates if candidate.term_type_hint != "relation_hint"
+    ]
+    if len(term_candidates) < 2:
         return []
 
-    subject = statement_candidates[relation_index - 1]
-    obj = statement_candidates[relation_index + 1]
-    if not subject.candidate_id or not obj.candidate_id:
+    relation_candidate = relation_candidates[0] if relation_candidates else None
+    relation_hint = relation_candidate.canonical_hint if relation_candidate else detect_relation_hint_from_tokens([candidate.canonical_hint for candidate in statement_candidates])
+    if not relation_hint:
+        return []
+
+    subject = term_candidates[0]
+    obj = term_candidates[-1]
+    if not subject.candidate_id or not obj.candidate_id or subject.candidate_id == obj.candidate_id:
         return []
 
     existing_keys = {
@@ -883,7 +934,7 @@ def create_predicate_candidates_from_atomic_terms(
         confidence=confidence,
         decomposition_method="predicate_hint_decomposition",
         human_explanation=(
-            "Predicate candidate conservatively derived from adjacent atomic term candidates and a supported relation hint without retaining raw text."
+            "Predicate candidate conservatively derived from preserved relation hints and existing atomic term candidate IDs without retaining raw text."
         ),
     )
     if source_statement_role and not created.human_explanation:
