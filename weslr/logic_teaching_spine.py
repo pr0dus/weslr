@@ -84,6 +84,23 @@ class ProofStep:
     anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
 
 
+@dataclass
+class CounterexampleCandidate:
+    schema_version: str = "1.0"
+    counterexample_id: str = ""
+    challenged_proposition_id: str = ""
+    challenged_proof_step_id: str = ""
+    counterexample_type: str = ""
+    possible_world_sketch: str = ""
+    violated_assumption: str = ""
+    fallacy_pattern_id: str = ""
+    confidence: str = "low"
+    human_explanation: str = ""
+    unsupported_gaps: list[str] = field(default_factory=list)
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
 def _validate_shared_safety(legibility: PropositionLegibilityRecord, anti_gaming: PropositionAntiGamingRecord) -> list[str]:
     messages: list[str] = []
     if anti_gaming.uses_answer_key:
@@ -347,6 +364,79 @@ def summarize_proof_step(proof_step: ProofStep) -> dict[str, Any]:
         "requires_counterexample": proof_step.requires_counterexample,
         "legibility_safe": _legibility_safe(proof_step.legibility),
         "anti_gaming_safe": _anti_gaming_safe(proof_step.anti_gaming),
+    }
+
+
+def create_empty_counterexample_candidate(
+    *,
+    counterexample_id: str = "",
+    challenged_proposition_id: str = "",
+    challenged_proof_step_id: str = "",
+    counterexample_type: str = "",
+) -> CounterexampleCandidate:
+    return CounterexampleCandidate(
+        counterexample_id=counterexample_id,
+        challenged_proposition_id=challenged_proposition_id,
+        challenged_proof_step_id=challenged_proof_step_id,
+        counterexample_type=counterexample_type,
+    )
+
+
+def counterexample_candidate_to_dict(counterexample: CounterexampleCandidate) -> dict[str, Any]:
+    return asdict(counterexample)
+
+
+def counterexample_candidate_from_dict(data: dict[str, Any]) -> CounterexampleCandidate:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return CounterexampleCandidate(
+        schema_version=data.get("schema_version", "1.0"),
+        counterexample_id=data.get("counterexample_id", ""),
+        challenged_proposition_id=data.get("challenged_proposition_id", ""),
+        challenged_proof_step_id=data.get("challenged_proof_step_id", ""),
+        counterexample_type=data.get("counterexample_type", ""),
+        possible_world_sketch=data.get("possible_world_sketch", ""),
+        violated_assumption=data.get("violated_assumption", ""),
+        fallacy_pattern_id=data.get("fallacy_pattern_id", ""),
+        confidence=data.get("confidence", "low"),
+        human_explanation=data.get("human_explanation", ""),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_counterexample_candidate(counterexample: CounterexampleCandidate) -> list[str]:
+    messages: list[str] = []
+    if not counterexample.counterexample_id:
+        messages.append("missing counterexample id")
+    if counterexample.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence value")
+    if counterexample.confidence == "high" and not (
+        counterexample.challenged_proposition_id.strip() or counterexample.challenged_proof_step_id.strip()
+    ):
+        messages.append("missing challenged target for high-confidence counterexample")
+    if counterexample.confidence == "high" and not counterexample.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence counterexample")
+    messages.extend(_validate_shared_safety(counterexample.legibility, counterexample.anti_gaming))
+    return messages
+
+
+def summarize_counterexample_candidate(counterexample: CounterexampleCandidate) -> dict[str, Any]:
+    return {
+        "schema_version": counterexample.schema_version,
+        "counterexample_id": counterexample.counterexample_id,
+        "has_challenged_proposition": bool(counterexample.challenged_proposition_id),
+        "has_challenged_proof_step": bool(counterexample.challenged_proof_step_id),
+        "counterexample_type": counterexample.counterexample_type,
+        "has_possible_world_sketch": bool(counterexample.possible_world_sketch.strip()),
+        "has_violated_assumption": bool(counterexample.violated_assumption.strip()),
+        "has_fallacy_pattern": bool(counterexample.fallacy_pattern_id),
+        "confidence": counterexample.confidence,
+        "human_explanation_available": bool(counterexample.human_explanation.strip()),
+        "unsupported_gap_count": len(counterexample.unsupported_gaps),
+        "legibility_safe": _legibility_safe(counterexample.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(counterexample.anti_gaming),
     }
 
 
