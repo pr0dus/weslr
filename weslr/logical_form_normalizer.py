@@ -942,8 +942,6 @@ def create_predicate_candidates_from_atomic_terms(
         for candidate in form.atomic_term_candidates
         if candidate.source_statement_id == source_statement_id
     ]
-    if len(statement_candidates) < 3:
-        return []
 
     relation_candidates = [
         candidate for candidate in statement_candidates if candidate.term_type_hint == "relation_hint"
@@ -954,8 +952,38 @@ def create_predicate_candidates_from_atomic_terms(
     if len(term_candidates) < 2:
         return []
 
+    normalized_role = infer_predicate_role_from_atomic_candidates(statement_candidates, fallback_role=source_statement_role)
+    normalized_statement_role = normalize_predicate_statement_role(source_statement_role)
+    preserved_statement_role = normalized_statement_role if normalized_statement_role != "unknown" else normalized_role
+
     relation_candidate = relation_candidates[0] if relation_candidates else None
     relation_hint = relation_candidate.canonical_hint if relation_candidate else detect_relation_hint_from_tokens([candidate.canonical_hint for candidate in statement_candidates])
+    decomposition_method = "predicate_hint_decomposition"
+    explanation = (
+        "Predicate candidate conservatively derived from preserved relation hints, redacted canonical term hints, and existing atomic term candidate IDs without retaining raw text."
+    )
+
+    if not relation_hint and normalized_statement_role == "choice_claim":
+        relation_hint = "unknown_relation"
+        confidence = "low"
+        decomposition_method = "predicate_hint_choice_fallback"
+        warning_id = f"gap:{source_statement_id}:relation_not_explicit"
+        if not any(warning.warning_id == warning_id for warning in form.unsupported_normalization_gaps):
+            add_normalization_warning(
+                form,
+                warning_id=warning_id,
+                warning_type="relation_not_explicit",
+                severity="low",
+                source_statement_ids=[source_statement_id],
+                human_explanation=(
+                    "Choice-side predicate fallback used unknown_relation because two or more content terms were present but no explicit relation hint was preserved."
+                ),
+                unsupported_gap=True,
+            )
+        explanation = (
+            "Low-confidence choice-side predicate candidate created from existing atomic term candidate IDs and redacted canonical term hints with unknown_relation because no explicit relation hint was preserved."
+        )
+
     if not relation_hint:
         return []
 
@@ -963,10 +991,6 @@ def create_predicate_candidates_from_atomic_terms(
     obj = term_candidates[-1]
     if not subject.candidate_id or not obj.candidate_id or subject.candidate_id == obj.candidate_id:
         return []
-
-    normalized_role = infer_predicate_role_from_atomic_candidates(statement_candidates, fallback_role=source_statement_role)
-    normalized_statement_role = normalize_predicate_statement_role(source_statement_role)
-    preserved_statement_role = normalized_statement_role if normalized_statement_role != "unknown" else normalized_role
 
     existing_keys = {
         (candidate.source_statement_id, candidate.subject_candidate_id, candidate.relation_hint, candidate.object_candidate_id)
@@ -995,10 +1019,8 @@ def create_predicate_candidates_from_atomic_terms(
         object_fingerprint=object_fingerprint,
         polarity="positive",
         confidence=confidence,
-        decomposition_method="predicate_hint_decomposition",
-        human_explanation=(
-            "Predicate candidate conservatively derived from preserved relation hints, redacted canonical term hints, and existing atomic term candidate IDs without retaining raw text."
-        ),
+        decomposition_method=decomposition_method,
+        human_explanation=explanation,
     )
     if source_statement_role and not created.human_explanation:
         created.human_explanation = f"Predicate candidate created for statement role {source_statement_role}."

@@ -110,6 +110,78 @@ class LogicalFormNormalizerPredicateHelpersV1Tests(unittest.TestCase):
         created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-1", source_statement_role="choice_claim")
         self.assertEqual("choice_claim", created[0].role)
 
+    def test_choice_claim_with_explicit_relation_hint_creates_predicate(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-1", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-1", source_statement_role="choice_claim")
+        self.assertEqual(1, len(created))
+
+    def test_choice_claim_predicate_preserves_role(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-2", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-2", source_statement_role="choice_claim")
+        self.assertEqual("choice_claim", created[0].role)
+        self.assertEqual("choice_claim", created[0].source_statement_role)
+
+    def test_choice_claim_predicate_preserves_source_statement_id(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-3", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-3", source_statement_role="choice_claim")
+        self.assertEqual("stmt-choice-3", created[0].source_statement_id)
+
+    def test_choice_claim_predicate_preserves_subject_canonical_hint(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-4", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-4", source_statement_role="choice_claim")
+        self.assertEqual("cat", created[0].subject_canonical_hint)
+
+    def test_choice_claim_predicate_preserves_object_canonical_hint(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-5", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-5", source_statement_role="choice_claim")
+        self.assertEqual("dog", created[0].object_canonical_hint)
+
+    def test_choice_claim_predicate_preserves_fingerprints(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-6", source_statement_role="choice_claim", surface="cats supports dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-6", source_statement_role="choice_claim")
+        atomic_by_id = {candidate.candidate_id: candidate for candidate in form.atomic_term_candidates}
+        self.assertEqual(atomic_by_id[created[0].subject_candidate_id].token_fingerprints[0], created[0].subject_fingerprint)
+        self.assertEqual(atomic_by_id[created[0].object_candidate_id].token_fingerprints[0], created[0].object_fingerprint)
+
+    def test_choice_claim_without_relation_hint_creates_low_confidence_unknown_relation_with_gap(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-7", source_statement_role="choice_claim", surface="cats dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-7", source_statement_role="choice_claim")
+        self.assertEqual(1, len(created))
+        self.assertEqual("unknown_relation", created[0].relation_hint)
+        self.assertEqual("unknown_relation", created[0].relation_canonical_hint)
+        self.assertEqual("low", created[0].confidence)
+        self.assertEqual("predicate_hint_choice_fallback", created[0].decomposition_method)
+        self.assertTrue(any(gap.warning_type == "relation_not_explicit" for gap in form.unsupported_normalization_gaps))
+
+    def test_choice_claim_fallback_does_not_select_answer(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-8", source_statement_role="choice_claim", surface="cats dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-8", source_statement_role="choice_claim")
+        self.assertNotIn("answer_selection", created[0].__dict__)
+        self.assertNotIn("selected_answer", created[0].__dict__)
+
+    def test_choice_claim_fallback_does_not_use_answer_label(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-9", source_statement_role="choice_claim", surface="cats dogs")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-9", source_statement_role="choice_claim")
+        self.assertNotIn("answer_label", created[0].human_explanation)
+        self.assertNotIn("label", created[0].human_explanation)
+
+    def test_choice_claim_fallback_does_not_store_raw_text(self):
+        form = self.make_form()
+        create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-choice-10", source_statement_role="choice_claim", surface="Secret Surface")
+        created = create_predicate_candidates_from_atomic_terms(form, source_statement_id="stmt-choice-10", source_statement_role="choice_claim")
+        self.assertNotIn("Secret Surface", str(created[0].__dict__))
+        self.assertNotIn("Secret", str(created[0].__dict__))
+        self.assertNotIn("Surface", str(created[0].__dict__))
+
     def test_predicate_created_from_background_atomic_terms_has_background_role(self):
         form = self.make_form()
         create_atomic_term_candidates_from_surface(form, source_statement_id="stmt-1", source_statement_role="question_instruction", surface="cats supports dogs")
