@@ -373,6 +373,147 @@ def summarize_proposition_merge_candidate(candidate: PropositionMergeCandidate) 
     }
 
 
+
+def _safe_proposition_list_value(proposition: object, field_name: str) -> list[str]:
+    value = _safe_predicate_value(proposition, field_name)
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    if str(value).strip():
+        return [str(value).strip()]
+    return []
+
+
+def _source_origins_from_proposition(proposition: object) -> list[str]:
+    explicit = _safe_proposition_list_value(proposition, "source_origins")
+    if not explicit:
+        explicit = _safe_proposition_list_value(proposition, "source_origin") or _safe_proposition_list_value(proposition, "origin")
+    origins = [origin for origin in explicit if origin in SAFE_PROPOSITION_MERGE_ORIGINS]
+    if origins:
+        return list(dict.fromkeys(origins))
+
+    proposition_type = str(_safe_predicate_value(proposition, "proposition_type") or "")
+    if proposition_type.startswith("binding_"):
+        return ["binding_derived"]
+    if _safe_proposition_list_value(proposition, "source_predicate_ids"):
+        return ["predicate_derived"]
+    return ["unknown"]
+
+
+def proposition_structural_signature(proposition: object) -> str:
+    """Return a redacted structural signature for proposition merge grouping."""
+    role = normalize_proposition_role(str(_safe_predicate_value(proposition, "proposition_role") or "unknown"))
+    subject = term_alignment_key(str(_safe_predicate_value(proposition, "subject_canonical_hint") or ""))
+    relation = term_alignment_key(str(_safe_predicate_value(proposition, "relation_canonical_hint") or ""))
+    obj = term_alignment_key(str(_safe_predicate_value(proposition, "object_canonical_hint") or ""))
+    polarity = str(_safe_predicate_value(proposition, "polarity") or "positive").strip().lower() or "positive"
+    quantifier = term_alignment_key(str(_safe_predicate_value(proposition, "quantifier") or ""))
+    modality = term_alignment_key(str(_safe_predicate_value(proposition, "modality") or ""))
+    return "|".join(
+        [
+            f"role={role}",
+            f"subject={subject}",
+            f"relation={relation}",
+            f"object={obj}",
+            f"polarity={polarity}",
+            f"quantifier={quantifier}",
+            f"modality={modality}",
+        ]
+    )
+
+
+def _confidence_summary_for_merge_group(propositions: list[object]) -> str:
+    confidences = [str(_safe_predicate_value(proposition, "confidence") or "low") for proposition in propositions]
+    unsupported_gap_count = sum(len(_safe_proposition_list_value(proposition, "unsupported_gaps")) for proposition in propositions)
+    if confidences and all(confidence == "high" for confidence in confidences):
+        return "high"
+    if unsupported_gap_count == 0 and any(confidence == "medium" for confidence in confidences):
+        return "medium"
+    return "low"
+
+
+def create_proposition_merge_candidates(propositions: list[PropositionCandidate]) -> list[PropositionMergeCandidate]:
+    """Create helper-only merge candidates for duplicate structural signatures."""
+    groups: dict[str, list[object]] = {}
+    for proposition in propositions:
+        signature = proposition_structural_signature(proposition)
+        if not signature.strip():
+            continue
+        groups.setdefault(signature, []).append(proposition)
+
+    candidates: list[PropositionMergeCandidate] = []
+    for index, (signature, group) in enumerate(groups.items(), start=1):
+        if len(group) < 2:
+            continue
+        first = group[0]
+        source_ids: list[str] = []
+        source_origins: list[str] = []
+        unsupported_gaps: list[str] = []
+        for proposition in group:
+            proposition_id = str(_safe_predicate_value(proposition, "proposition_id") or "").strip()
+            if proposition_id:
+                source_ids.append(proposition_id)
+            source_origins.extend(_source_origins_from_proposition(proposition))
+            unsupported_gaps.extend(_safe_proposition_list_value(proposition, "unsupported_gaps"))
+
+        candidate = PropositionMergeCandidate(
+            merge_id=f"merge:{index}",
+            structural_signature=signature,
+            source_proposition_ids=list(dict.fromkeys(source_ids)),
+            source_origins=source_origins or ["unknown"],
+            proposition_role=normalize_proposition_role(str(_safe_predicate_value(first, "proposition_role") or "unknown")),
+            subject_canonical_hint=str(_safe_predicate_value(first, "subject_canonical_hint") or "").strip(),
+            relation_canonical_hint=str(_safe_predicate_value(first, "relation_canonical_hint") or "").strip(),
+            object_canonical_hint=str(_safe_predicate_value(first, "object_canonical_hint") or "").strip(),
+            confidence_summary=_confidence_summary_for_merge_group(group),
+            duplicate_count=len(group),
+            unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+            human_explanation="Redacted helper-only proposition merge candidate created from duplicate structural signatures; not a truth claim, proof step, or answer selection.",
+        )
+        candidates.append(candidate)
+    return candidates
+
+
+def summarize_proposition_merge_diagnostics(merge_candidates: list[PropositionMergeCandidate]) -> dict[str, Any]:
+    predicate_count = 0
+    binding_count = 0
+    unknown_count = 0
+    low_count = 0
+    medium_count = 0
+    high_count = 0
+    unsupported_gap_count = 0
+    merged_source_count = 0
+    anti_gaming_safe = True
+    legibility_safe = True
+
+    for candidate in merge_candidates:
+        merged_source_count += len(candidate.source_proposition_ids)
+        predicate_count += sum(1 for origin in candidate.source_origins if origin == "predicate_derived")
+        binding_count += sum(1 for origin in candidate.source_origins if origin == "binding_derived")
+        unknown_count += sum(1 for origin in candidate.source_origins if origin == "unknown")
+        low_count += int(candidate.confidence_summary == "low")
+        medium_count += int(candidate.confidence_summary == "medium")
+        high_count += int(candidate.confidence_summary == "high")
+        unsupported_gap_count += len(candidate.unsupported_gaps)
+        anti_gaming_safe = anti_gaming_safe and _anti_gaming_safe(candidate.anti_gaming)
+        legibility_safe = legibility_safe and _legibility_safe(candidate.legibility)
+
+    return {
+        "merge_candidate_count": len(merge_candidates),
+        "merged_source_proposition_count": merged_source_count,
+        "predicate_derived_source_count": predicate_count,
+        "binding_derived_source_count": binding_count,
+        "unknown_source_count": unknown_count,
+        "low_confidence_count": low_count,
+        "medium_confidence_count": medium_count,
+        "high_confidence_count": high_count,
+        "unsupported_gap_count": unsupported_gap_count,
+        "anti_gaming_safe": anti_gaming_safe,
+        "legibility_safe": legibility_safe,
+    }
+
+
 def normalize_proposition_role(role: str) -> str:
     normalized = str(role or "").strip().lower()
     if normalized in {"premise", "parsed_premise", "premise_term"}:

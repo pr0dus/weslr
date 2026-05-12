@@ -16,10 +16,14 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     create_proposition_candidate_from_choice_stem_binding,
     create_proposition_candidate_from_predicate,
     create_proposition_candidates_from_predicates,
+    create_proposition_merge_candidates,
     normalize_proposition_role,
     normalize_term_for_alignment,
     proposition_candidate_to_dict,
+    proposition_merge_candidate_to_dict,
+    proposition_structural_signature,
     summarize_binding_to_proposition_projection_diagnostics,
+    summarize_proposition_merge_diagnostics,
     summarize_proposition_projection_diagnostics,
     summarize_term_alignment_candidates,
     term_alignment_key,
@@ -35,6 +39,7 @@ FORBIDDEN_CHANGED = {
 ALLOWED_CHANGED = {
     "weslr/logic_teaching_spine.py",
     "weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py",
+    "weslr/tests/test_logic_teaching_spine_proposition_merge_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_choice_stem_binding_helpers_v1.py",
 }
@@ -611,6 +616,104 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         self.assertEqual(1, summary["binding_count"])
         self.assertEqual(1, summary["projection_ready_binding_count"])
         self.assertEqual(1, summary["proposition_candidate_count"])
+
+
+    def _merge_prop(self, proposition_id: str, *, role: str = "premise", subject: str = "cats", relation: str = "supports", obj: str = "dogs", confidence: str = "low", origin: str | None = None):
+        proposition = create_proposition_candidate_from_predicate(
+            predicate_id=proposition_id.replace("prop:", "pred:"),
+            subject="safe_subject_ref",
+            relation="safe_relation_ref",
+            object="safe_object_ref",
+            subject_canonical_hint=subject,
+            relation_canonical_hint=relation,
+            object_canonical_hint=obj,
+            proposition_role=role,
+            confidence=confidence,
+        )
+        proposition.proposition_id = proposition_id
+        if origin:
+            proposition.source_origins = [origin]
+        return proposition
+
+    def test_merge_structural_signature_is_stable(self):
+        proposition = self._merge_prop("prop:1")
+        self.assertEqual(proposition_structural_signature(proposition), proposition_structural_signature(proposition))
+
+    def test_merge_structural_signature_uses_canonical_hints(self):
+        proposition = self._merge_prop("prop:1", subject="Cats", relation="Supports", obj="Dogs")
+        signature = proposition_structural_signature(proposition)
+        self.assertIn("subject=cat", signature)
+        self.assertIn("relation=support", signature)
+        self.assertIn("object=dog", signature)
+
+    def test_merge_structural_signature_excludes_raw_text(self):
+        proposition = self._merge_prop("prop:1")
+        proposition.raw_text_runtime_only = "secret raw question choice answer"
+        signature = proposition_structural_signature(proposition)
+        self.assertNotIn("secret", signature)
+        self.assertNotIn("answer", signature)
+
+    def test_identical_proposition_signatures_merge(self):
+        merges = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])
+        self.assertEqual(1, len(merges))
+
+    def test_single_proposition_does_not_create_merge_candidate(self):
+        self.assertEqual([], create_proposition_merge_candidates([self._merge_prop("prop:1")]))
+
+    def test_merge_candidate_preserves_source_proposition_ids(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        self.assertEqual(["prop:1", "prop:2"], merge.source_proposition_ids)
+
+    def test_merge_candidate_preserves_predicate_derived_origin(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        self.assertIn("predicate_derived", merge.source_origins)
+
+    def test_merge_candidate_preserves_binding_derived_origin(self):
+        left = self._merge_prop("prop:1", origin="binding_derived")
+        right = self._merge_prop("prop:2", origin="binding_derived")
+        merge = create_proposition_merge_candidates([left, right])[0]
+        self.assertEqual(2, merge.source_origins.count("binding_derived"))
+
+    def test_merge_candidate_duplicate_count_is_correct(self):
+        merge = create_proposition_merge_candidates([
+            self._merge_prop("prop:1"),
+            self._merge_prop("prop:2"),
+            self._merge_prop("prop:3"),
+        ])[0]
+        self.assertEqual(3, merge.duplicate_count)
+
+    def test_merge_confidence_summary_remains_conservative(self):
+        low = self._merge_prop("prop:1", confidence="low")
+        high = self._merge_prop("prop:2", confidence="high")
+        merge = create_proposition_merge_candidates([low, high])[0]
+        self.assertEqual("low", merge.confidence_summary)
+
+    def test_merge_diagnostic_summary_is_redacted(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        summary_text = str(summarize_proposition_merge_diagnostics([merge]))
+        for snippet in ["question", "choices", "answer_key", "correct_answer", "raw_text", "structural_signature"]:
+            self.assertNotIn(snippet, summary_text)
+
+    def test_merge_diagnostic_summary_counts_merged_sources(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        summary = summarize_proposition_merge_diagnostics([merge])
+        self.assertEqual(1, summary["merge_candidate_count"])
+        self.assertEqual(2, summary["merged_source_proposition_count"])
+
+    def test_merge_candidate_has_no_answer_selection_field(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        data = proposition_merge_candidate_to_dict(merge)
+        self.assertNotIn("answer_selection", data)
+        self.assertNotIn("selected_answer", data)
+        self.assertTrue(merge.anti_gaming.no_answer_selection)
+
+    def test_merge_candidate_has_no_answer_key_use(self):
+        merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
+        self.assertFalse(merge.anti_gaming.uses_answer_key)
+
+    def test_proposition_merge_schema_tests_still_pass(self):
+        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_proposition_merge_schema_v1.py")
+        self.assertIn("OK", output)
 
     def test_release_gate_and_check_pass(self):
         output = self.run_direct("python3 weslr/tests/release_gate_v1.py && bash scripts/weslr_release_check.sh")
