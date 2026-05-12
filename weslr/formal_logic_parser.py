@@ -161,7 +161,11 @@ _INSTRUCTION_MARKERS = [
     "which of the following",
     "which one",
     "which statement",
+    "what follows",
     "must be true",
+    "must be false",
+    "is valid",
+    "is invalid",
     "could be true",
     "can be inferred",
     "logically follows",
@@ -174,8 +178,16 @@ _INSTRUCTION_MARKERS = [
     "which follows",
 ]
 
+_BACKGROUND_CONTEXT_MARKERS = [
+    "consider the following",
+    "given the following",
+    "suppose the following",
+    "in a scenario",
+    "the following statements",
+]
+
 _SAFE_CHOICE_LABEL_RE = re.compile(r"^[A-Za-z0-9]{1,4}$")
-_DECLARATIVE_VERB_RE = re.compile(r"\b(is|are|was|were|has|have|had|belongs|owns|supports|opposes|requires|permits|prevents|implies|entails|excludes|causes)\b", re.I)
+_DECLARATIVE_VERB_RE = re.compile(r"\b(is|are|was|were|has|have|had|belongs|belong|owns|supports|opposes|requires|permits|prevents|implies|entails|excludes|causes|equals)\b", re.I)
 _SYMBOLIC_RELATION_RE = re.compile(r"\b([A-Za-z]|[A-Za-z][A-Za-z0-9_]*)\b\s+(is|are|implies|entails|requires|supports|opposes|prevents)\s+\b([A-Za-z]|[A-Za-z][A-Za-z0-9_]*)\b", re.I)
 _BACKGROUND_SHELL_RE = re.compile(r"^(question|statements above|the statements above|information above|above)$", re.I)
 
@@ -194,19 +206,31 @@ def normalize_logical_text(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower().strip())
 
 
+def _is_question_instruction_text(lowered: str, fragment: str) -> bool:
+    if any(marker in lowered for marker in _INSTRUCTION_MARKERS):
+        return True
+    if re.search(r"\?$", fragment.strip()) and lowered.startswith(("which", "what", "determine", "identify", "select", "based on")):
+        return True
+    return lowered.startswith(("which", "what follows", "determine", "identify", "select", "based on"))
+
+
+def _is_background_context_shell(lowered: str) -> bool:
+    return bool(_BACKGROUND_SHELL_RE.fullmatch(lowered)) or any(marker in lowered for marker in _BACKGROUND_CONTEXT_MARKERS)
+
+
 def detect_statement_role(statement: str) -> str:
     lowered = normalize_logical_text(statement)
     if not lowered:
         return "background"
-    if any(marker in lowered for marker in _INSTRUCTION_MARKERS):
+    if _is_question_instruction_text(lowered, statement):
         return "question_instruction"
-    if re.search(r"\?$", statement.strip()) or lowered.startswith(("which", "what", "determine", "identify", "select")):
-        return "question_instruction"
+    if _is_background_context_shell(lowered):
+        return "background"
     if any(marker in lowered for marker in ["therefore", "hence", " so ", "follows"]):
         if "which follows" in lowered or "follows that" in lowered or lowered.startswith("what follows"):
             return "question_instruction"
         return "conclusion_candidate"
-    if _LOGICAL_MARKER_RE.search(lowered):
+    if _looks_declarative_premise(statement):
         return "premise"
     return "background"
 
@@ -231,12 +255,10 @@ def classify_question_fragment(fragment: str, *, position: int, total: int) -> s
     lowered = normalize_logical_text(fragment)
     if not lowered:
         return "background"
-    if any(marker in lowered for marker in _INSTRUCTION_MARKERS):
+    if _is_question_instruction_text(lowered, fragment):
         return "question_instruction"
-    if lowered.startswith(("which", "what", "determine", "identify", "select", "based on")):
-        return "question_instruction"
-    if "based on the statements above" in lowered or "based on" in lowered or "from the information above" in lowered:
-        return "question_instruction"
+    if _is_background_context_shell(lowered):
+        return "background"
     if re.search(r"\?$", fragment.strip()):
         return "question_instruction"
     if _looks_declarative_premise(fragment):
