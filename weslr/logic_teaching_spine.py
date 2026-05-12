@@ -1147,6 +1147,136 @@ def summarize_reasoning_context_binding_diagnostics(candidates: list[ReasoningCo
         "legibility_safe": legibility_safe,
     }
 
+def classify_proof_step_candidate_type(context_binding: object) -> str:
+    relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip()
+    if relation == "support":
+        return "support_step_candidate"
+    if relation == "contradict":
+        return "contradiction_step_candidate"
+    if relation == "provide_counterexample":
+        return "counterexample_step_candidate"
+    if relation in {"apply_condition", "instantiate_rule"}:
+        return "rule_application_candidate"
+    if relation == "test_validity":
+        return "invalidity_test_candidate"
+    if relation == "complete_template":
+        return "template_completion_candidate"
+    return "unsupported_step_candidate"
+
+
+def _proof_step_candidate_support_status(context_binding: object, candidate_type: str) -> str:
+    premise_ids = _safe_record_list_value(context_binding, "source_premise_proposition_ids")
+    choice_ids = _safe_record_list_value(context_binding, "source_choice_proposition_ids")
+    context_id = str(_safe_record_value(context_binding, "binding_id", "") or "").strip()
+    relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip()
+    support_role = str(_safe_record_value(context_binding, "candidate_support_role", "unknown") or "unknown").strip()
+    choice_role = str(_safe_record_value(context_binding, "choice_target_role", "unknown") or "unknown").strip()
+    if not (context_id and premise_ids and choice_ids):
+        return "insufficient_support"
+    if relation == "unknown" or candidate_type == "unsupported_step_candidate":
+        return "unsupported"
+    if support_role == "unknown" or choice_role == "unknown":
+        return "ambiguous"
+    return "candidate_only"
+
+
+def create_proof_step_candidate_from_context_binding(context_binding: object) -> ProofStepCandidate:
+    binding_id = str(_safe_record_value(context_binding, "binding_id", "") or "").strip()
+    premise_ids = _safe_record_list_value(context_binding, "source_premise_proposition_ids")
+    choice_ids = _safe_record_list_value(context_binding, "source_choice_proposition_ids")
+    unsupported_gaps = _safe_record_list_value(context_binding, "unsupported_gaps")
+    expected_relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip() or "unknown"
+    candidate_type = classify_proof_step_candidate_type(context_binding)
+    support_status = _proof_step_candidate_support_status(context_binding, candidate_type)
+    source_context_binding_ids = [binding_id] if binding_id else []
+    confidence = "medium" if support_status == "candidate_only" else "low"
+    if not source_context_binding_ids:
+        unsupported_gaps.append("missing_context_binding_ref")
+    if not premise_ids:
+        unsupported_gaps.append("missing_premise_proposition_refs")
+    if not choice_ids:
+        unsupported_gaps.append("missing_choice_proposition_refs")
+    if expected_relation == "unknown":
+        unsupported_gaps.append("expected_reasoning_relation_unknown")
+    return ProofStepCandidate(
+        candidate_id=f"proof_step_candidate:{binding_id}" if binding_id else "",
+        source_context_binding_ids=source_context_binding_ids,
+        source_premise_proposition_ids=list(dict.fromkeys(premise_ids)),
+        source_choice_proposition_ids=list(dict.fromkeys(choice_ids)),
+        candidate_type=candidate_type,
+        expected_reasoning_relation=expected_relation,
+        inference_pattern_hint=str(_safe_record_value(context_binding, "candidate_support_role", "") or ""),
+        support_status=support_status,
+        confidence=confidence,
+        unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+        human_explanation=str(_safe_record_value(context_binding, "human_explanation", "") or "").strip()
+        or "Helper-only proof-step candidate hypothesis from redacted context binding; not proof and not answer selection.",
+        legibility=PropositionLegibilityRecord(),
+        anti_gaming=PropositionAntiGamingRecord(),
+    )
+
+
+def create_proof_step_candidates_from_context_bindings(context_bindings: list[object]) -> list[ProofStepCandidate]:
+    return [create_proof_step_candidate_from_context_binding(binding) for binding in list(context_bindings or [])]
+
+
+def summarize_proof_step_candidate_diagnostics(candidates: list[ProofStepCandidate]) -> dict[str, Any]:
+    type_counts = {value: 0 for value in SAFE_PROOF_STEP_CANDIDATE_TYPES}
+    support_counts = {value: 0 for value in SAFE_PROOF_STEP_CANDIDATE_SUPPORT_STATUSES}
+    confidence_counts = {"low": 0, "medium": 0, "high": 0}
+    unsupported_gap_count = 0
+    candidates_with_premise_refs = 0
+    candidates_with_choice_refs = 0
+    candidates_with_context_refs = 0
+    anti_gaming_safe = True
+    legibility_safe = True
+    for candidate in candidates:
+        type_counts[candidate.candidate_type] = type_counts.get(candidate.candidate_type, 0) + 1
+        support_counts[candidate.support_status] = support_counts.get(candidate.support_status, 0) + 1
+        if candidate.confidence in confidence_counts:
+            confidence_counts[candidate.confidence] += 1
+        unsupported_gap_count += len(candidate.unsupported_gaps)
+        candidates_with_premise_refs += int(bool(candidate.source_premise_proposition_ids))
+        candidates_with_choice_refs += int(bool(candidate.source_choice_proposition_ids))
+        candidates_with_context_refs += int(bool(candidate.source_context_binding_ids))
+        findings = validate_proof_step_candidate(candidate)
+        anti_gaming_safe = anti_gaming_safe and not any(
+            finding in findings
+            for finding in [
+                "answer-key use is forbidden",
+                "item-id authority is forbidden",
+                "answer-position bias is forbidden",
+                "official-score claim is forbidden",
+                "benchmark-specific tuning is forbidden",
+                "answer selection must remain disabled",
+            ]
+        )
+        legibility_safe = legibility_safe and not any(
+            finding in findings
+            for finding in [
+                "raw benchmark storage by default is forbidden",
+                "private symbolic authority is forbidden",
+                "unsupported assumptions must remain visible",
+            ]
+        )
+    return {
+        "proof_step_candidate_count": len(candidates),
+        "candidate_type_counts": dict(sorted(type_counts.items())),
+        "support_status_counts": dict(sorted(support_counts.items())),
+        "low_confidence_count": confidence_counts["low"],
+        "medium_confidence_count": confidence_counts["medium"],
+        "high_confidence_count": confidence_counts["high"],
+        "unsupported_gap_count": unsupported_gap_count,
+        "candidates_with_premise_refs": candidates_with_premise_refs,
+        "candidates_with_choice_refs": candidates_with_choice_refs,
+        "candidates_with_context_refs": candidates_with_context_refs,
+        "proof_behavior_generated": False,
+        "answer_selection_enabled": False,
+        "anti_gaming_safe": anti_gaming_safe,
+        "legibility_safe": legibility_safe,
+    }
+
+
 def _merge_value(merge: object, field_name: str, default: Any = "") -> Any:
     if isinstance(merge, dict):
         return merge.get(field_name, default)

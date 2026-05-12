@@ -48,6 +48,7 @@ ALLOWED_CHANGED = {
     "weslr/logic_teaching_spine.py",
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_proof_step_candidate_schema_v1.py",
+    "weslr/tests/test_proof_step_candidate_helpers_v1.py",
 }
 
 
