@@ -19,6 +19,8 @@ SAFE_REASONING_CONTEXT_PREMISE_CONTEXT_TYPES = {"given_fact", "conditional_rule"
 SAFE_REASONING_CONTEXT_CHOICE_TARGET_ROLES = {"candidate_conclusion", "candidate_counterexample", "candidate_invalid_statement", "candidate_valid_statement", "candidate_restatement", "candidate_irrelevant", "fragment_needs_binding", "unknown"}
 SAFE_REASONING_CONTEXT_EXPECTED_RELATIONS = {"support", "contradict", "instantiate_rule", "apply_condition", "test_validity", "provide_counterexample", "complete_template", "unknown"}
 SAFE_REASONING_CONTEXT_CANDIDATE_SUPPORT_ROLES = {"supports_target", "contradicts_target", "tests_target", "restates_target", "irrelevant_to_target", "unknown"}
+SAFE_PROOF_STEP_CANDIDATE_TYPES = {"support_step_candidate", "contradiction_step_candidate", "counterexample_step_candidate", "rule_application_candidate", "invalidity_test_candidate", "template_completion_candidate", "unsupported_step_candidate"}
+SAFE_PROOF_STEP_CANDIDATE_SUPPORT_STATUSES = {"candidate_only", "insufficient_support", "ambiguous", "unsupported", "unknown"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -124,6 +126,24 @@ class ReasoningContextBindingCandidate:
     choice_target_role: str = "unknown"
     expected_reasoning_relation: str = "unknown"
     candidate_support_role: str = "unknown"
+    confidence: str = "low"
+    unsupported_gaps: list[str] = field(default_factory=list)
+    human_explanation: str = ""
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class ProofStepCandidate:
+    schema_version: str = "1.0"
+    candidate_id: str = ""
+    source_context_binding_ids: list[str] = field(default_factory=list)
+    source_premise_proposition_ids: list[str] = field(default_factory=list)
+    source_choice_proposition_ids: list[str] = field(default_factory=list)
+    candidate_type: str = "unsupported_step_candidate"
+    expected_reasoning_relation: str = "unknown"
+    inference_pattern_hint: str = ""
+    support_status: str = "unknown"
     confidence: str = "low"
     unsupported_gaps: list[str] = field(default_factory=list)
     human_explanation: str = ""
@@ -740,6 +760,93 @@ def summarize_reasoning_context_binding_candidate(candidate: ReasoningContextBin
         "target_role": candidate.choice_target_role,
         "expected_relation": candidate.expected_reasoning_relation,
         "support_role": candidate.candidate_support_role,
+        "confidence": candidate.confidence,
+        "unsupported_gap_count": len(candidate.unsupported_gaps),
+        "human_explanation_available": bool(candidate.human_explanation.strip()),
+        "legibility_safe": _legibility_safe(candidate.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
+    }
+
+
+def create_empty_proof_step_candidate(
+    *,
+    candidate_id: str = "",
+    source_context_binding_ids: list[str] | None = None,
+    source_premise_proposition_ids: list[str] | None = None,
+    source_choice_proposition_ids: list[str] | None = None,
+    candidate_type: str = "unsupported_step_candidate",
+    expected_reasoning_relation: str = "unknown",
+    inference_pattern_hint: str = "",
+    support_status: str = "unknown",
+) -> ProofStepCandidate:
+    return ProofStepCandidate(
+        candidate_id=candidate_id,
+        source_context_binding_ids=list(source_context_binding_ids or []),
+        source_premise_proposition_ids=list(source_premise_proposition_ids or []),
+        source_choice_proposition_ids=list(source_choice_proposition_ids or []),
+        candidate_type=candidate_type,
+        expected_reasoning_relation=expected_reasoning_relation,
+        inference_pattern_hint=inference_pattern_hint,
+        support_status=support_status,
+    )
+
+
+def proof_step_candidate_to_dict(candidate: ProofStepCandidate) -> dict[str, Any]:
+    return asdict(candidate)
+
+
+def proof_step_candidate_from_dict(data: dict[str, Any]) -> ProofStepCandidate:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return ProofStepCandidate(
+        schema_version=data.get("schema_version", "1.0"),
+        candidate_id=data.get("candidate_id", ""),
+        source_context_binding_ids=list(data.get("source_context_binding_ids") or []),
+        source_premise_proposition_ids=list(data.get("source_premise_proposition_ids") or []),
+        source_choice_proposition_ids=list(data.get("source_choice_proposition_ids") or []),
+        candidate_type=data.get("candidate_type", "unsupported_step_candidate"),
+        expected_reasoning_relation=data.get("expected_reasoning_relation", "unknown"),
+        inference_pattern_hint=data.get("inference_pattern_hint", ""),
+        support_status=data.get("support_status", "unknown"),
+        confidence=data.get("confidence", "low"),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        human_explanation=data.get("human_explanation", ""),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_proof_step_candidate(candidate: ProofStepCandidate) -> list[str]:
+    messages: list[str] = []
+    if not candidate.candidate_id:
+        messages.append("missing candidate id")
+    if candidate.candidate_type not in SAFE_PROOF_STEP_CANDIDATE_TYPES:
+        messages.append("invalid candidate type")
+    if candidate.support_status not in SAFE_PROOF_STEP_CANDIDATE_SUPPORT_STATUSES:
+        messages.append("invalid support status")
+    if candidate.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence")
+    if candidate.confidence == "high" and not candidate.source_context_binding_ids:
+        messages.append("missing context binding ids for high-confidence proof step candidate")
+    if candidate.confidence == "high" and not (candidate.source_premise_proposition_ids and candidate.source_choice_proposition_ids):
+        messages.append("missing premise/choice proposition ids for high-confidence proof step candidate")
+    if candidate.confidence == "high" and not candidate.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence proof step candidate")
+    messages.extend(_validate_shared_safety(candidate.legibility, candidate.anti_gaming))
+    return messages
+
+
+def summarize_proof_step_candidate(candidate: ProofStepCandidate) -> dict[str, Any]:
+    return {
+        "schema_version": candidate.schema_version,
+        "candidate_id": candidate.candidate_id,
+        "context_binding_source_count": len(candidate.source_context_binding_ids),
+        "premise_proposition_source_count": len(candidate.source_premise_proposition_ids),
+        "target_proposition_source_count": len(candidate.source_choice_proposition_ids),
+        "candidate_type": candidate.candidate_type,
+        "expected_reasoning_relation": candidate.expected_reasoning_relation,
+        "inference_pattern_hint_available": bool(candidate.inference_pattern_hint.strip()),
+        "support_status": candidate.support_status,
         "confidence": candidate.confidence,
         "unsupported_gap_count": len(candidate.unsupported_gaps),
         "human_explanation_available": bool(candidate.human_explanation.strip()),
