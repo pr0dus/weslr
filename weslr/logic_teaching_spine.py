@@ -748,6 +748,276 @@ def summarize_reasoning_context_binding_candidate(candidate: ReasoningContextBin
     }
 
 
+
+def _safe_record_value(record: object, field_name: str, default: Any = "") -> Any:
+    if isinstance(record, dict):
+        return record.get(field_name, default)
+    return getattr(record, field_name, default)
+
+
+def _safe_record_list_value(record: object, field_name: str) -> list[str]:
+    value = _safe_record_value(record, field_name, [])
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    if str(value).strip():
+        return [str(value).strip()]
+    return []
+
+
+def _record_markers(*records: object) -> set[str]:
+    parts: list[str] = []
+    for record in records:
+        if record is None:
+            continue
+        for field_name in [
+            "normalized_text", "logical_form", "human_translation", "human_explanation",
+            "question_instruction_template", "expected_structural_pattern",
+            "expected_context_binding_type", "expected_teaching_focus", "proposition_type",
+            "proposition_role", "subject", "relation", "object", "subject_canonical_hint",
+            "relation_canonical_hint", "object_canonical_hint", "pattern_type",
+            "choice_target_role", "expected_reasoning_relation",
+        ]:
+            value = _safe_record_value(record, field_name, "")
+            if value:
+                parts.append(str(value))
+        for field_name in ["source_statement_roles", "unsupported_gaps", "source_proposition_ids"]:
+            parts.extend(_safe_record_list_value(record, field_name))
+    surface = " ".join(parts).lower()
+    cleaned = "".join(char if char.isalnum() or char == "_" else " " for char in surface)
+    return {token for token in cleaned.split() if token}
+
+
+def classify_question_target_type(question_instruction: object | None = None, *, markers: list[str] | None = None) -> str:
+    selected = _record_markers(question_instruction) | {str(marker).lower() for marker in (markers or [])}
+    if selected & {"counterexample", "counterexamples"}:
+        return "counterexample"
+    if selected & {"invalid", "invalidity", "fallacy", "unsupported"}:
+        return "invalid_argument"
+    if selected & {"valid", "validity"}:
+        return "valid_argument"
+    if selected & {"must_false", "false", "cannot"}:
+        return "must_be_false"
+    if selected & {"must_true", "true"}:
+        return "must_be_true"
+    if selected & {"does_not_follow", "not_follow"} or ({"does", "not", "follow"} <= selected):
+        return "does_not_follow"
+    if selected & {"follows", "follow"}:
+        return "follows"
+    if selected & {"complete", "completion", "completes", "supplies", "bind", "binding"}:
+        return "completion"
+    return "unknown"
+
+
+def classify_premise_context_type(premise_propositions: list[object] | object | None = None) -> str:
+    records = premise_propositions if isinstance(premise_propositions, list) else [premise_propositions]
+    markers = _record_markers(*[record for record in records if record is not None])
+    detected: set[str] = set()
+    if markers & {"if", "then", "conditional", "implies", "sufficient", "necessary"}:
+        detected.add("conditional_rule")
+    if markers & {"all", "every", "some", "no", "quantifier", "universal", "existential"}:
+        detected.add("quantified_rule")
+    if markers & {"not", "no", "excludes", "exclusion", "lacks", "without"}:
+        detected.add("exclusion_rule")
+    if markers & {"definition", "defines", "defined", "means", "identical"}:
+        detected.add("definition_like")
+    if markers & {"background", "context"}:
+        detected.add("background_context")
+    if len(detected) > 1:
+        return "mixed_context"
+    if detected:
+        return next(iter(detected))
+    if records and any(record is not None for record in records):
+        return "given_fact"
+    return "unknown"
+
+
+def classify_choice_target_role(choice_proposition: object | None = None, question_instruction: object | None = None) -> str:
+    markers = _record_markers(choice_proposition, question_instruction)
+    if markers & {"counterexample", "counterexamples", "lacks", "outside"}:
+        return "candidate_counterexample"
+    if markers & {"invalid", "fallacy", "unsupported"}:
+        return "candidate_invalid_statement"
+    if markers & {"valid", "validity"}:
+        return "candidate_valid_statement"
+    if markers & {"irrelevant", "unrelated"}:
+        return "candidate_irrelevant"
+    if markers & {"restate", "restatement", "duplicate"}:
+        return "candidate_restatement"
+    prop_type = str(_safe_record_value(choice_proposition, "proposition_type", "") or "")
+    relation = str(_safe_record_value(choice_proposition, "relation", "") or _safe_record_value(choice_proposition, "relation_canonical_hint", "") or "")
+    if prop_type == "binding_projection_weak_or_unsupported" or not relation.strip():
+        if markers & {"fragment", "noun", "phrase", "binding", "bind"}:
+            return "fragment_needs_binding"
+    role = str(_safe_record_value(choice_proposition, "proposition_role", "") or "")
+    if role == "choice_claim" or prop_type:
+        return "candidate_conclusion"
+    return "unknown"
+
+
+def _context_expected_relation(question_target_type: str, premise_context_type: str, choice_target_role: str) -> str:
+    if choice_target_role == "candidate_counterexample" or question_target_type == "counterexample":
+        return "provide_counterexample"
+    if question_target_type in {"valid_argument", "invalid_argument"} or choice_target_role in {"candidate_valid_statement", "candidate_invalid_statement"}:
+        return "test_validity"
+    if question_target_type == "completion" or choice_target_role == "fragment_needs_binding":
+        return "complete_template"
+    if premise_context_type == "conditional_rule":
+        return "apply_condition"
+    if premise_context_type == "quantified_rule":
+        return "instantiate_rule"
+    if question_target_type == "must_be_false":
+        return "contradict"
+    if question_target_type in {"must_be_true", "follows"} or choice_target_role == "candidate_conclusion":
+        return "support"
+    return "unknown"
+
+
+def _context_support_role(expected_relation: str, choice_target_role: str) -> str:
+    if expected_relation in {"support", "apply_condition", "instantiate_rule", "complete_template"}:
+        return "supports_target"
+    if expected_relation == "contradict":
+        return "contradicts_target"
+    if expected_relation in {"test_validity", "provide_counterexample"}:
+        return "tests_target"
+    if choice_target_role == "candidate_restatement":
+        return "restates_target"
+    if choice_target_role == "candidate_irrelevant":
+        return "irrelevant_to_target"
+    return "unknown"
+
+
+def create_reasoning_context_binding_candidate_from_structures(
+    *,
+    binding_id: str = "",
+    premise_propositions: list[object] | None = None,
+    question_instruction_records: list[object] | None = None,
+    choice_propositions: list[object] | None = None,
+    simple_inference_candidates: list[object] | None = None,
+) -> ReasoningContextBindingCandidate:
+    premises = list(premise_propositions or [])
+    questions = list(question_instruction_records or [])
+    choices = list(choice_propositions or [])
+    simple_candidates = list(simple_inference_candidates or [])
+
+    premise_ids = []
+    for proposition in premises:
+        premise_ids.extend(_safe_record_list_value(proposition, "source_proposition_ids"))
+        value = str(_safe_record_value(proposition, "proposition_id", "") or "").strip()
+        if value:
+            premise_ids.append(value)
+    question_ids = []
+    for question in questions:
+        value = str(_safe_record_value(question, "statement_id", "") or _safe_record_value(question, "id", "") or "").strip()
+        if value:
+            question_ids.append(value)
+    choice_ids = []
+    for proposition in choices:
+        choice_ids.extend(_safe_record_list_value(proposition, "source_proposition_ids"))
+        value = str(_safe_record_value(proposition, "proposition_id", "") or "").strip()
+        if value:
+            choice_ids.append(value)
+
+    question_target_type = classify_question_target_type(questions[0] if questions else None)
+    premise_context_type = classify_premise_context_type(premises)
+    choice_target_role = classify_choice_target_role(choices[0] if choices else None, questions[0] if questions else None)
+    expected_relation = _context_expected_relation(question_target_type, premise_context_type, choice_target_role)
+    support_role = _context_support_role(expected_relation, choice_target_role)
+    unsupported_gaps: list[str] = []
+    if not premise_ids:
+        unsupported_gaps.append("missing_premise_proposition_refs")
+    if not question_ids:
+        unsupported_gaps.append("missing_question_instruction_refs")
+    if not choice_ids:
+        unsupported_gaps.append("missing_choice_proposition_refs")
+    if question_target_type == "unknown":
+        unsupported_gaps.append("question_target_type_unknown")
+    if premise_context_type == "unknown":
+        unsupported_gaps.append("premise_context_type_unknown")
+    if choice_target_role == "unknown":
+        unsupported_gaps.append("choice_target_role_unknown")
+    if expected_relation == "unknown":
+        unsupported_gaps.append("expected_reasoning_relation_unknown")
+    for record in [*premises, *choices, *simple_candidates]:
+        unsupported_gaps.extend(_safe_record_list_value(record, "unsupported_gaps"))
+
+    confidence = "medium" if premise_ids and question_ids and choice_ids and expected_relation != "unknown" else "low"
+    if any(str(_safe_record_value(candidate, "confidence", "") or "") == "high" for candidate in simple_candidates):
+        confidence = "medium"
+
+    return ReasoningContextBindingCandidate(
+        binding_id=binding_id or "reasoning_context_binding:synthetic:unknown",
+        source_premise_proposition_ids=list(dict.fromkeys(premise_ids)),
+        source_question_instruction_ids=list(dict.fromkeys(question_ids)),
+        source_choice_proposition_ids=list(dict.fromkeys(choice_ids)),
+        question_target_type=question_target_type,
+        premise_context_type=premise_context_type,
+        choice_target_role=choice_target_role,
+        expected_reasoning_relation=expected_relation,
+        candidate_support_role=support_role,
+        confidence=confidence,
+        unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+        human_explanation=(
+            "Helper-only reasoning context binding from redacted structural records; "
+            "does not select answers, assert correctness, generate proof steps, or use answer keys."
+        ),
+        legibility=PropositionLegibilityRecord(),
+        anti_gaming=PropositionAntiGamingRecord(),
+    )
+
+
+def summarize_reasoning_context_binding_diagnostics(candidates: list[ReasoningContextBindingCandidate]) -> dict[str, Any]:
+    question_counts = {value: 0 for value in SAFE_REASONING_CONTEXT_QUESTION_TARGET_TYPES}
+    premise_counts = {value: 0 for value in SAFE_REASONING_CONTEXT_PREMISE_CONTEXT_TYPES}
+    choice_counts = {value: 0 for value in SAFE_REASONING_CONTEXT_CHOICE_TARGET_ROLES}
+    relation_counts = {value: 0 for value in SAFE_REASONING_CONTEXT_EXPECTED_RELATIONS}
+    confidence_counts = {"low": 0, "medium": 0, "high": 0}
+    unsupported_gap_count = 0
+    anti_gaming_safe = True
+    legibility_safe = True
+    for candidate in candidates:
+        question_counts[candidate.question_target_type] = question_counts.get(candidate.question_target_type, 0) + 1
+        premise_counts[candidate.premise_context_type] = premise_counts.get(candidate.premise_context_type, 0) + 1
+        choice_counts[candidate.choice_target_role] = choice_counts.get(candidate.choice_target_role, 0) + 1
+        relation_counts[candidate.expected_reasoning_relation] = relation_counts.get(candidate.expected_reasoning_relation, 0) + 1
+        if candidate.confidence in confidence_counts:
+            confidence_counts[candidate.confidence] += 1
+        unsupported_gap_count += len(candidate.unsupported_gaps)
+        findings = validate_reasoning_context_binding_candidate(candidate)
+        anti_gaming_safe = anti_gaming_safe and not any(
+            finding in findings
+            for finding in [
+                "answer-key use is forbidden",
+                "item-id authority is forbidden",
+                "answer-position bias is forbidden",
+                "official-score claim is forbidden",
+                "benchmark-specific tuning is forbidden",
+                "answer selection must remain disabled",
+            ]
+        )
+        legibility_safe = legibility_safe and not any(
+            finding in findings
+            for finding in [
+                "raw benchmark storage by default is forbidden",
+                "private symbolic authority is forbidden",
+                "unsupported assumptions must remain visible",
+            ]
+        )
+    return {
+        "context_binding_count": len(candidates),
+        "question_target_type_counts": dict(sorted(question_counts.items())),
+        "premise_context_type_counts": dict(sorted(premise_counts.items())),
+        "choice_target_role_counts": dict(sorted(choice_counts.items())),
+        "expected_reasoning_relation_counts": dict(sorted(relation_counts.items())),
+        "low_confidence_count": confidence_counts["low"],
+        "medium_confidence_count": confidence_counts["medium"],
+        "high_confidence_count": confidence_counts["high"],
+        "unsupported_gap_count": unsupported_gap_count,
+        "anti_gaming_safe": anti_gaming_safe,
+        "legibility_safe": legibility_safe,
+    }
+
 def _merge_value(merge: object, field_name: str, default: Any = "") -> Any:
     if isinstance(merge, dict):
         return merge.get(field_name, default)
