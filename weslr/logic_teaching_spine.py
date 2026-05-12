@@ -129,6 +129,7 @@ class ReasoningContextBindingCandidate:
     choice_target_role: str = "unknown"
     expected_reasoning_relation: str = "unknown"
     candidate_support_role: str = "unknown"
+    conditional_form_slots: dict[str, Any] = field(default_factory=dict)
     confidence: str = "low"
     unsupported_gaps: list[str] = field(default_factory=list)
     human_explanation: str = ""
@@ -147,6 +148,8 @@ class ProofStepCandidate:
     expected_reasoning_relation: str = "unknown"
     inference_pattern_hint: str = ""
     support_status: str = "unknown"
+    conditional_form_mapping: dict[str, Any] = field(default_factory=dict)
+    conditional_form_mapping_origin: str = "insufficient_slot_evidence"
     confidence: str = "low"
     unsupported_gaps: list[str] = field(default_factory=list)
     human_explanation: str = ""
@@ -206,6 +209,8 @@ class ProofStep:
     inference_pattern_id: str = ""
     warrant: str = ""
     validity_status: str = "unknown"
+    conditional_form_mapping: dict[str, Any] = field(default_factory=dict)
+    conditional_form_mapping_origin: str = "insufficient_slot_evidence"
     confidence: str = "low"
     human_explanation: str = ""
     unsupported_gaps: list[str] = field(default_factory=list)
@@ -709,6 +714,7 @@ def create_empty_reasoning_context_binding_candidate(
     choice_target_role: str = "unknown",
     expected_reasoning_relation: str = "unknown",
     candidate_support_role: str = "unknown",
+    conditional_form_slots: dict[str, Any] | None = None,
 ) -> ReasoningContextBindingCandidate:
     return ReasoningContextBindingCandidate(
         binding_id=binding_id,
@@ -720,6 +726,7 @@ def create_empty_reasoning_context_binding_candidate(
         choice_target_role=choice_target_role,
         expected_reasoning_relation=expected_reasoning_relation,
         candidate_support_role=candidate_support_role,
+        conditional_form_slots=dict(conditional_form_slots or {}),
     )
 
 
@@ -741,6 +748,7 @@ def reasoning_context_binding_candidate_from_dict(data: dict[str, Any]) -> Reaso
         choice_target_role=data.get("choice_target_role", "unknown"),
         expected_reasoning_relation=data.get("expected_reasoning_relation", "unknown"),
         candidate_support_role=data.get("candidate_support_role", "unknown"),
+        conditional_form_slots=dict(data.get("conditional_form_slots") or {}),
         confidence=data.get("confidence", "low"),
         unsupported_gaps=list(data.get("unsupported_gaps") or []),
         human_explanation=data.get("human_explanation", ""),
@@ -789,6 +797,7 @@ def summarize_reasoning_context_binding_candidate(candidate: ReasoningContextBin
         "target_role": candidate.choice_target_role,
         "expected_relation": candidate.expected_reasoning_relation,
         "support_role": candidate.candidate_support_role,
+        "conditional_slot_evidence_available": bool(candidate.conditional_form_slots),
         "confidence": candidate.confidence,
         "unsupported_gap_count": len(candidate.unsupported_gaps),
         "human_explanation_available": bool(candidate.human_explanation.strip()),
@@ -807,6 +816,8 @@ def create_empty_proof_step_candidate(
     expected_reasoning_relation: str = "unknown",
     inference_pattern_hint: str = "",
     support_status: str = "unknown",
+    conditional_form_mapping: dict[str, Any] | None = None,
+    conditional_form_mapping_origin: str = "insufficient_slot_evidence",
 ) -> ProofStepCandidate:
     return ProofStepCandidate(
         candidate_id=candidate_id,
@@ -817,6 +828,8 @@ def create_empty_proof_step_candidate(
         expected_reasoning_relation=expected_reasoning_relation,
         inference_pattern_hint=inference_pattern_hint,
         support_status=support_status,
+        conditional_form_mapping=dict(conditional_form_mapping or {}),
+        conditional_form_mapping_origin=conditional_form_mapping_origin,
     )
 
 
@@ -837,6 +850,8 @@ def proof_step_candidate_from_dict(data: dict[str, Any]) -> ProofStepCandidate:
         expected_reasoning_relation=data.get("expected_reasoning_relation", "unknown"),
         inference_pattern_hint=data.get("inference_pattern_hint", ""),
         support_status=data.get("support_status", "unknown"),
+        conditional_form_mapping=dict(data.get("conditional_form_mapping") or {}),
+        conditional_form_mapping_origin=data.get("conditional_form_mapping_origin", "insufficient_slot_evidence"),
         confidence=data.get("confidence", "low"),
         unsupported_gaps=list(data.get("unsupported_gaps") or []),
         human_explanation=data.get("human_explanation", ""),
@@ -876,6 +891,8 @@ def summarize_proof_step_candidate(candidate: ProofStepCandidate) -> dict[str, A
         "expected_reasoning_relation": candidate.expected_reasoning_relation,
         "inference_pattern_hint_available": bool(candidate.inference_pattern_hint.strip()),
         "support_status": candidate.support_status,
+        "conditional_form_mapping_origin": candidate.conditional_form_mapping_origin,
+        "conditional_form_mapping_available": bool(candidate.conditional_form_mapping),
         "confidence": candidate.confidence,
         "unsupported_gap_count": len(candidate.unsupported_gaps),
         "human_explanation_available": bool(candidate.human_explanation.strip()),
@@ -1049,6 +1066,32 @@ def _context_support_role(expected_relation: str, choice_target_role: str) -> st
     return "unknown"
 
 
+def _derive_conditional_form_slots_from_structural_markers(markers: set[str]) -> dict[str, Any]:
+    pattern_aliases = {
+        "modus_ponens": ("P", "Q"),
+        "modus_tollens": ("¬Q", "¬P"),
+        "affirming_consequent": ("Q", "P"),
+        "necessary_sufficient_confusion": ("Q", "P"),
+        "denying_antecedent": ("¬P", "¬Q"),
+    }
+    matched = [pattern for pattern in pattern_aliases if pattern in markers]
+    if len(matched) != 1:
+        return {}
+    asserted, conclusion = pattern_aliases[matched[0]]
+    return {
+        "conditional": "P -> Q",
+        "asserted_literal": asserted,
+        "conclusion_literal": conclusion,
+        "conditional_count": 1,
+        "conditional_direction": "P_to_Q",
+        "negation_scope_status": "clear",
+        "slot_binding_status": "complete",
+        "conclusion_binding_count": 1,
+        "requires_semantic_bridge": False,
+        "source_structural_pattern": matched[0],
+    }
+
+
 def create_reasoning_context_binding_candidate_from_structures(
     *,
     binding_id: str = "",
@@ -1104,7 +1147,11 @@ def create_reasoning_context_binding_candidate_from_structures(
     question_target_type = classify_question_target_type(questions[0] if questions else None, markers=question_marker_sources)
     premise_context_type = classify_premise_context_type(premises)
     choice_target_role = classify_choice_target_role(choices[0] if choices else None, questions[0] if questions else None)
+    structural_markers = _record_markers(*premises, *questions, *choices, *simple_candidates)
+    conditional_form_slots = _derive_conditional_form_slots_from_structural_markers(structural_markers)
     expected_relation = _context_expected_relation(question_target_type, premise_context_type, choice_target_role)
+    if conditional_form_slots and expected_relation in {"support", "unknown"}:
+        expected_relation = "apply_condition"
     support_role = _context_support_role(expected_relation, choice_target_role)
     unsupported_gaps: list[str] = []
     if not premise_ids:
@@ -1138,6 +1185,7 @@ def create_reasoning_context_binding_candidate_from_structures(
         choice_target_role=choice_target_role,
         expected_reasoning_relation=expected_relation,
         candidate_support_role=support_role,
+        conditional_form_slots=conditional_form_slots,
         confidence=confidence,
         unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
         human_explanation=(
@@ -1426,6 +1474,99 @@ def _has_conditional_form_slots(context_binding: object) -> bool:
     )
 
 
+def _conditional_form_mapping_to_provenance(
+    result: ConditionalFormMappingResult,
+    *,
+    source_context_binding_ids: list[str],
+    source_candidate_id: str = "",
+    source_premise_proposition_ids: list[str] | None = None,
+    source_choice_proposition_ids: list[str] | None = None,
+    expected_reasoning_relation: str = "unknown",
+    inference_pattern_hint: str = "",
+    origin: str = "pipeline_derived_mapping",
+) -> dict[str, Any]:
+    return {
+        "schema_version": result.schema_version,
+        "origin": origin,
+        "form_label": result.form_label,
+        "support_assessment": result.support_assessment,
+        "conditional_direction": result.conditional_direction,
+        "asserted_literal": result.asserted_literal,
+        "conclusion_literal": result.conclusion_literal,
+        "slot_binding_status": result.slot_binding_status,
+        "fallacy_shaped": result.fallacy_shaped,
+        "supported_form": result.supported_form,
+        "unsupported_gaps": list(result.unsupported_gaps),
+        "source_context_binding_ids": list(source_context_binding_ids),
+        "source_candidate_id": source_candidate_id,
+        "source_premise_proposition_ids": list(source_premise_proposition_ids or []),
+        "source_choice_proposition_ids": list(source_choice_proposition_ids or []),
+        "expected_reasoning_relation": expected_reasoning_relation,
+        "inference_pattern_hint": inference_pattern_hint or result.form_label,
+    }
+
+
+def derive_conditional_form_mapping_from_context_binding(context_binding: object) -> dict[str, Any]:
+    binding_id = str(_safe_record_value(context_binding, "binding_id", "") or "").strip()
+    premise_ids = _safe_record_list_value(context_binding, "source_premise_proposition_ids")
+    choice_ids = _safe_record_list_value(context_binding, "source_choice_proposition_ids")
+    expected_relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip() or "unknown"
+    if not _has_conditional_form_slots(context_binding):
+        return {
+            "origin": "insufficient_slot_evidence",
+            "form_label": "ambiguous_form",
+            "support_assessment": "insufficient_structure",
+            "slot_binding_status": "missing",
+            "fallacy_shaped": False,
+            "supported_form": False,
+            "unsupported_gaps": ["conditional_slot_evidence_unavailable"],
+            "source_context_binding_ids": [binding_id] if binding_id else [],
+            "source_candidate_id": "",
+            "source_premise_proposition_ids": list(dict.fromkeys(premise_ids)),
+            "source_choice_proposition_ids": list(dict.fromkeys(choice_ids)),
+            "expected_reasoning_relation": expected_relation,
+            "inference_pattern_hint": "",
+        }
+    result = classify_conditional_form_mapping(context_binding=context_binding)
+    return _conditional_form_mapping_to_provenance(
+        result,
+        source_context_binding_ids=[binding_id] if binding_id else [],
+        source_premise_proposition_ids=list(dict.fromkeys(premise_ids)),
+        source_choice_proposition_ids=list(dict.fromkeys(choice_ids)),
+        expected_reasoning_relation=expected_relation,
+        inference_pattern_hint=result.form_label,
+        origin="pipeline_derived_mapping",
+    )
+
+
+def derive_conditional_form_mapping_from_proof_step_candidate(candidate: object) -> dict[str, Any]:
+    mapping = _safe_record_value(candidate, "conditional_form_mapping", {})
+    if isinstance(mapping, dict) and mapping:
+        result = dict(mapping)
+        result["source_candidate_id"] = str(_safe_record_value(candidate, "candidate_id", result.get("source_candidate_id", "")) or "")
+        result["source_context_binding_ids"] = _safe_record_list_value(candidate, "source_context_binding_ids") or list(result.get("source_context_binding_ids") or [])
+        result["source_premise_proposition_ids"] = _safe_record_list_value(candidate, "source_premise_proposition_ids") or list(result.get("source_premise_proposition_ids") or [])
+        result["source_choice_proposition_ids"] = _safe_record_list_value(candidate, "source_choice_proposition_ids") or list(result.get("source_choice_proposition_ids") or [])
+        result["expected_reasoning_relation"] = str(_safe_record_value(candidate, "expected_reasoning_relation", result.get("expected_reasoning_relation", "unknown")) or "unknown")
+        result["inference_pattern_hint"] = str(_safe_record_value(candidate, "inference_pattern_hint", result.get("inference_pattern_hint", "")) or "")
+        return result
+    return {
+        "origin": "insufficient_slot_evidence",
+        "form_label": "ambiguous_form",
+        "support_assessment": "insufficient_structure",
+        "slot_binding_status": "missing",
+        "fallacy_shaped": False,
+        "supported_form": False,
+        "unsupported_gaps": ["conditional_slot_evidence_unavailable"],
+        "source_context_binding_ids": _safe_record_list_value(candidate, "source_context_binding_ids"),
+        "source_candidate_id": str(_safe_record_value(candidate, "candidate_id", "") or ""),
+        "source_premise_proposition_ids": _safe_record_list_value(candidate, "source_premise_proposition_ids"),
+        "source_choice_proposition_ids": _safe_record_list_value(candidate, "source_choice_proposition_ids"),
+        "expected_reasoning_relation": str(_safe_record_value(candidate, "expected_reasoning_relation", "unknown") or "unknown"),
+        "inference_pattern_hint": str(_safe_record_value(candidate, "inference_pattern_hint", "") or ""),
+    }
+
+
 def create_proof_step_candidate_from_context_binding(context_binding: object) -> ProofStepCandidate:
     binding_id = str(_safe_record_value(context_binding, "binding_id", "") or "").strip()
     premise_ids = _safe_record_list_value(context_binding, "source_premise_proposition_ids")
@@ -1435,14 +1576,18 @@ def create_proof_step_candidate_from_context_binding(context_binding: object) ->
     candidate_type = classify_proof_step_candidate_type(context_binding)
     support_status = _proof_step_candidate_support_status(context_binding, candidate_type)
     inference_pattern_hint = str(_safe_record_value(context_binding, "candidate_support_role", "") or "")
+    conditional_mapping: dict[str, Any] = {}
+    conditional_mapping_origin = "insufficient_slot_evidence"
     if _has_conditional_form_slots(context_binding):
-        conditional_result = classify_conditional_form_mapping(context_binding=context_binding)
-        inference_pattern_hint = conditional_result.form_label
-        unsupported_gaps.extend(conditional_result.unsupported_gaps)
-        if conditional_result.support_assessment == "fallacy_shaped":
+        conditional_mapping = derive_conditional_form_mapping_from_context_binding(context_binding)
+        conditional_mapping_origin = str(conditional_mapping.get("origin", "insufficient_slot_evidence"))
+        inference_pattern_hint = str(conditional_mapping.get("form_label", "") or inference_pattern_hint)
+        unsupported_gaps.extend(list(conditional_mapping.get("unsupported_gaps") or []))
+        support_assessment = str(conditional_mapping.get("support_assessment", "") or "")
+        if support_assessment == "fallacy_shaped":
             support_status = "unsupported"
             unsupported_gaps.append("recognized_fallacy_shaped_pattern")
-        elif conditional_result.support_assessment == "insufficient_structure":
+        elif support_assessment == "insufficient_structure":
             support_status = "ambiguous" if support_status == "candidate_only" else support_status
             unsupported_gaps.append("conditional_form_mapping_insufficient_structure")
     source_context_binding_ids = [binding_id] if binding_id else []
@@ -1464,6 +1609,8 @@ def create_proof_step_candidate_from_context_binding(context_binding: object) ->
         expected_reasoning_relation=expected_relation,
         inference_pattern_hint=inference_pattern_hint,
         support_status=support_status,
+        conditional_form_mapping=conditional_mapping,
+        conditional_form_mapping_origin=conditional_mapping_origin,
         confidence=confidence,
         unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
         human_explanation=str(_safe_record_value(context_binding, "human_explanation", "") or "").strip()
@@ -1485,6 +1632,15 @@ def summarize_proof_step_candidate_diagnostics(candidates: list[ProofStepCandida
     candidates_with_premise_refs = 0
     candidates_with_choice_refs = 0
     candidates_with_context_refs = 0
+    pipeline_conditional_mapping_count = 0
+    ad_hoc_conditional_mapping_count = 0
+    insufficient_slot_evidence_count = 0
+    conditional_with_context_refs = 0
+    conditional_with_premise_refs = 0
+    conditional_with_choice_refs = 0
+    conditional_with_unsupported_gaps = 0
+    conditional_form_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_LABELS}
+    conditional_support_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_SUPPORT_ASSESSMENTS}
     anti_gaming_safe = True
     legibility_safe = True
     for candidate in candidates:
@@ -1496,6 +1652,22 @@ def summarize_proof_step_candidate_diagnostics(candidates: list[ProofStepCandida
         candidates_with_premise_refs += int(bool(candidate.source_premise_proposition_ids))
         candidates_with_choice_refs += int(bool(candidate.source_choice_proposition_ids))
         candidates_with_context_refs += int(bool(candidate.source_context_binding_ids))
+        mapping = candidate.conditional_form_mapping if isinstance(candidate.conditional_form_mapping, dict) else {}
+        origin = candidate.conditional_form_mapping_origin
+        if origin == "pipeline_derived_mapping" and mapping:
+            pipeline_conditional_mapping_count += 1
+            form_label = str(mapping.get("form_label", "ambiguous_form") or "ambiguous_form")
+            support_assessment = str(mapping.get("support_assessment", "insufficient_structure") or "insufficient_structure")
+            conditional_form_counts[form_label] = conditional_form_counts.get(form_label, 0) + 1
+            conditional_support_counts[support_assessment] = conditional_support_counts.get(support_assessment, 0) + 1
+            conditional_with_context_refs += int(bool(mapping.get("source_context_binding_ids")))
+            conditional_with_premise_refs += int(bool(mapping.get("source_premise_proposition_ids")))
+            conditional_with_choice_refs += int(bool(mapping.get("source_choice_proposition_ids")))
+            conditional_with_unsupported_gaps += int(bool(mapping.get("unsupported_gaps")))
+        elif origin == "ad_hoc_test_mapping" and mapping:
+            ad_hoc_conditional_mapping_count += 1
+        else:
+            insufficient_slot_evidence_count += 1
         findings = validate_proof_step_candidate(candidate)
         anti_gaming_safe = anti_gaming_safe and not any(
             finding in findings
@@ -1527,6 +1699,17 @@ def summarize_proof_step_candidate_diagnostics(candidates: list[ProofStepCandida
         "candidates_with_premise_refs": candidates_with_premise_refs,
         "candidates_with_choice_refs": candidates_with_choice_refs,
         "candidates_with_context_refs": candidates_with_context_refs,
+        "pipeline_conditional_form_mapping_count": pipeline_conditional_mapping_count,
+        "ad_hoc_conditional_form_mapping_count": ad_hoc_conditional_mapping_count,
+        "insufficient_slot_evidence_count": insufficient_slot_evidence_count,
+        "conditional_form_mapping_counts": dict(sorted(conditional_form_counts.items())),
+        "conditional_support_assessment_counts": dict(sorted(conditional_support_counts.items())),
+        "conditional_mappings_with_context_refs": conditional_with_context_refs,
+        "conditional_mappings_with_premise_refs": conditional_with_premise_refs,
+        "conditional_mappings_with_choice_refs": conditional_with_choice_refs,
+        "conditional_mappings_with_unsupported_gaps": conditional_with_unsupported_gaps,
+        "fallacy_shaped_count": conditional_support_counts.get("fallacy_shaped", 0),
+        "supported_form_count": conditional_support_counts.get("supported_form", 0),
         "proof_behavior_generated": False,
         "answer_selection_enabled": False,
         "anti_gaming_safe": anti_gaming_safe,
@@ -2282,6 +2465,8 @@ def summarize_proof_step(proof_step: ProofStep) -> dict[str, Any]:
         "has_inference_pattern": bool(proof_step.inference_pattern.strip() or proof_step.inference_pattern_id.strip()),
         "support_status": proof_step.support_status,
         "validity_status": proof_step.validity_status,
+        "conditional_form_mapping_origin": proof_step.conditional_form_mapping_origin,
+        "conditional_form_mapping_available": bool(proof_step.conditional_form_mapping),
         "confidence": proof_step.confidence,
         "has_warrant": bool(proof_step.warrant.strip()),
         "human_explanation_available": bool(proof_step.human_explanation.strip()),
@@ -2338,6 +2523,8 @@ def create_proof_step_from_candidate(candidate: object) -> ProofStep:
     if confidence not in SAFE_CONFIDENCE_VALUES:
         confidence = "low"
     unsupported_gaps = _safe_record_list_value(candidate, "unsupported_gaps")
+    conditional_mapping = derive_conditional_form_mapping_from_proof_step_candidate(candidate)
+    conditional_mapping_origin = str(conditional_mapping.get("origin", "insufficient_slot_evidence") or "insufficient_slot_evidence")
     support_status = _proof_step_support_status_from_candidate(candidate)
     if not candidate_id:
         unsupported_gaps.append("missing_source_candidate_id")
@@ -2370,6 +2557,8 @@ def create_proof_step_from_candidate(candidate: object) -> ProofStep:
         inference_pattern_id=inference_pattern,
         warrant="Helper-only structural warrant from safe ProofStepCandidate; not answer selection and not a benchmark truth claim.",
         validity_status=_proof_step_validity_status(support_status),
+        conditional_form_mapping=conditional_mapping if conditional_mapping_origin == "pipeline_derived_mapping" else {},
+        conditional_form_mapping_origin=conditional_mapping_origin,
         confidence=confidence,
         human_explanation=str(_safe_record_value(candidate, "human_explanation", "") or "").strip()
         or "Helper-only proof step from redacted synthetic candidate; no teaching explanation generated.",
@@ -2391,6 +2580,16 @@ def summarize_proof_step_generation_diagnostics(proof_steps: list[ProofStep]) ->
     pattern_counts: dict[str, int] = {}
     confidence_counts = {"low": 0, "medium": 0, "high": 0}
     unsupported_gap_count = 0
+    pipeline_conditional_mapping_count = 0
+    ad_hoc_conditional_mapping_count = 0
+    insufficient_slot_evidence_count = 0
+    conditional_with_context_refs = 0
+    conditional_with_premise_refs = 0
+    conditional_with_choice_refs = 0
+    conditional_with_visible_warrant = 0
+    conditional_with_unsupported_gaps = 0
+    conditional_form_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_LABELS}
+    conditional_support_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_SUPPORT_ASSESSMENTS}
     anti_gaming_safe = True
     legibility_safe = True
     for proof_step in proof_steps:
@@ -2401,6 +2600,23 @@ def summarize_proof_step_generation_diagnostics(proof_steps: list[ProofStep]) ->
         if proof_step.confidence in confidence_counts:
             confidence_counts[proof_step.confidence] += 1
         unsupported_gap_count += len(proof_step.unsupported_gaps)
+        mapping = proof_step.conditional_form_mapping if isinstance(proof_step.conditional_form_mapping, dict) else {}
+        origin = proof_step.conditional_form_mapping_origin
+        if origin == "pipeline_derived_mapping" and mapping:
+            pipeline_conditional_mapping_count += 1
+            form_label = str(mapping.get("form_label", "ambiguous_form") or "ambiguous_form")
+            support_assessment = str(mapping.get("support_assessment", "insufficient_structure") or "insufficient_structure")
+            conditional_form_counts[form_label] = conditional_form_counts.get(form_label, 0) + 1
+            conditional_support_counts[support_assessment] = conditional_support_counts.get(support_assessment, 0) + 1
+            conditional_with_context_refs += int(bool(mapping.get("source_context_binding_ids")))
+            conditional_with_premise_refs += int(bool(mapping.get("source_premise_proposition_ids")))
+            conditional_with_choice_refs += int(bool(mapping.get("source_choice_proposition_ids")))
+            conditional_with_visible_warrant += int(bool(proof_step.warrant))
+            conditional_with_unsupported_gaps += int(bool(mapping.get("unsupported_gaps")))
+        elif origin == "ad_hoc_test_mapping" and mapping:
+            ad_hoc_conditional_mapping_count += 1
+        else:
+            insufficient_slot_evidence_count += 1
         findings = validate_proof_step(proof_step)
         anti_gaming_safe = anti_gaming_safe and not any(
             finding in findings
@@ -2430,6 +2646,18 @@ def summarize_proof_step_generation_diagnostics(proof_steps: list[ProofStep]) ->
         "medium_confidence_count": confidence_counts["medium"],
         "high_confidence_count": confidence_counts["high"],
         "unsupported_gap_count": unsupported_gap_count,
+        "pipeline_conditional_form_mapping_count": pipeline_conditional_mapping_count,
+        "ad_hoc_conditional_form_mapping_count": ad_hoc_conditional_mapping_count,
+        "insufficient_slot_evidence_count": insufficient_slot_evidence_count,
+        "conditional_form_mapping_counts": dict(sorted(conditional_form_counts.items())),
+        "conditional_support_assessment_counts": dict(sorted(conditional_support_counts.items())),
+        "conditional_mappings_with_context_refs": conditional_with_context_refs,
+        "conditional_mappings_with_premise_refs": conditional_with_premise_refs,
+        "conditional_mappings_with_choice_refs": conditional_with_choice_refs,
+        "conditional_mappings_with_visible_warrant": conditional_with_visible_warrant,
+        "conditional_mappings_with_unsupported_gaps": conditional_with_unsupported_gaps,
+        "fallacy_shaped_count": conditional_support_counts.get("fallacy_shaped", 0),
+        "supported_form_count": conditional_support_counts.get("supported_form", 0),
         "proof_chain_generated": False,
         "teaching_explanation_generated": False,
         "answer_selection_enabled": False,

@@ -17,8 +17,12 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     classify_proof_step_candidate_type,
     create_proof_step_candidate_from_context_binding,
     create_proof_step_candidates_from_context_bindings,
+    create_proof_step_from_candidate,
+    create_reasoning_context_binding_candidate_from_structures,
+    derive_conditional_form_mapping_from_context_binding,
     summarize_conditional_form_mapping_diagnostics,
     summarize_proof_step_candidate_diagnostics,
+    summarize_proof_step_generation_diagnostics,
 )
 
 
@@ -37,6 +41,7 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_synthetic_proof_step_helpers_v1.py",
     "weslr/tests/test_conditional_form_mapping_helpers_v1.py",
+    "weslr/tests/test_conditional_slot_provenance_helpers_v1.py",
 }
 
 
@@ -225,6 +230,30 @@ class ProofStepCandidateHelpersV1Tests(unittest.TestCase):
         self.assertFalse(summary["truth_claim_made"])
         self.assertFalse(summary["official_score_claimed"])
 
+    def conditional_binding(self, asserted: str = "P", conclusion: str = "Q", **kwargs):
+        data = {
+            "binding_id": "ctx:conditional:pipeline",
+            "source_premise_proposition_ids": ["premise:conditional", "premise:literal"],
+            "source_question_instruction_ids": ["question:structural"],
+            "source_choice_proposition_ids": ["choice:conclusion"],
+            "expected_reasoning_relation": "apply_condition",
+            "candidate_support_role": "supports_target",
+            "choice_target_role": "candidate_conclusion",
+            "conditional_form_slots": {
+                "conditional": "P -> Q",
+                "asserted_literal": asserted,
+                "conclusion_literal": conclusion,
+                "conditional_count": 1,
+                "conditional_direction": "P_to_Q",
+                "negation_scope_status": "clear",
+                "slot_binding_status": "complete",
+                "conclusion_binding_count": 1,
+                "requires_semantic_bridge": False,
+            },
+        }
+        data.update(kwargs)
+        return data
+
     def test_conditional_fallacy_mapping_is_structural_hint_only(self):
         candidate = create_proof_step_candidate_from_context_binding(
             {
@@ -250,11 +279,94 @@ class ProofStepCandidateHelpersV1Tests(unittest.TestCase):
         )
         self.assertEqual("invalidity_test_candidate", candidate.candidate_type)
         self.assertEqual("affirming_consequent", candidate.inference_pattern_hint)
+        self.assertEqual("pipeline_derived_mapping", candidate.conditional_form_mapping_origin)
+        self.assertEqual("affirming_consequent", candidate.conditional_form_mapping["form_label"])
         self.assertEqual("unsupported", candidate.support_status)
         self.assertEqual("low", candidate.confidence)
         self.assertIn("recognized_fallacy_shaped_pattern", candidate.unsupported_gaps)
         self.assertFalse(candidate.anti_gaming.uses_answer_key)
         self.assertTrue(candidate.anti_gaming.no_answer_selection)
+
+    def test_actual_structure_pipeline_derives_conditional_mapping(self):
+        binding = create_reasoning_context_binding_candidate_from_structures(
+            binding_id="ctx:fixture:modus_ponens",
+            premise_propositions=[{"proposition_id": "premise:conditional"}, {"proposition_id": "premise:literal"}],
+            question_instruction_records=[{"statement_id": "question:structural", "normalized_text": "what follows"}],
+            choice_propositions=[{"proposition_id": "choice:conclusion", "proposition_role": "choice_claim"}],
+            simple_inference_candidates=[{"expected_structural_pattern": "modus_ponens"}],
+        )
+        candidate = create_proof_step_candidate_from_context_binding(binding)
+        self.assertEqual("pipeline_derived_mapping", candidate.conditional_form_mapping_origin)
+        self.assertEqual("modus_ponens", candidate.conditional_form_mapping["form_label"])
+        self.assertEqual(["ctx:fixture:modus_ponens"], candidate.conditional_form_mapping["source_context_binding_ids"])
+
+    def test_pipeline_conditional_mapping_preserves_candidate_refs(self):
+        candidate = create_proof_step_candidate_from_context_binding(self.conditional_binding("P", "Q"))
+        self.assertEqual("pipeline_derived_mapping", candidate.conditional_form_mapping_origin)
+        self.assertEqual("modus_ponens", candidate.conditional_form_mapping["form_label"])
+        self.assertEqual(["ctx:conditional:pipeline"], candidate.conditional_form_mapping["source_context_binding_ids"])
+        self.assertEqual(["premise:conditional", "premise:literal"], candidate.conditional_form_mapping["source_premise_proposition_ids"])
+        self.assertEqual(["choice:conclusion"], candidate.conditional_form_mapping["source_choice_proposition_ids"])
+
+    def test_pipeline_conditional_mapping_preserves_proof_step_refs(self):
+        step = create_proof_step_from_candidate(create_proof_step_candidate_from_context_binding(self.conditional_binding("P", "Q")))
+        self.assertEqual("pipeline_derived_mapping", step.conditional_form_mapping_origin)
+        self.assertEqual("modus_ponens", step.conditional_form_mapping["form_label"])
+        self.assertTrue(step.conditional_form_mapping["source_context_binding_ids"])
+        self.assertTrue(step.warrant)
+
+    def test_ad_hoc_mapping_not_counted_as_pipeline_mapping(self):
+        helper_result = classify_conditional_form_mapping(asserted_literal="P", conclusion_literal="Q")
+        self.assertEqual("modus_ponens", helper_result.form_label)
+        candidate = create_proof_step_candidate_from_context_binding(self.binding("apply_condition"))
+        summary = summarize_proof_step_candidate_diagnostics([candidate])
+        self.assertEqual(0, summary["pipeline_conditional_form_mapping_count"])
+        self.assertEqual(0, summary["ad_hoc_conditional_form_mapping_count"])
+        self.assertEqual(1, summary["insufficient_slot_evidence_count"])
+
+    def test_missing_slot_evidence_remains_insufficient(self):
+        mapping = derive_conditional_form_mapping_from_context_binding({"binding_id": "ctx:missing"})
+        self.assertEqual("insufficient_slot_evidence", mapping["origin"])
+        self.assertEqual("ambiguous_form", mapping["form_label"])
+        self.assertIn("conditional_slot_evidence_unavailable", mapping["unsupported_gaps"])
+
+    def test_incomplete_pipeline_slots_remain_ambiguous(self):
+        candidate = create_proof_step_candidate_from_context_binding(self.conditional_binding("P", ""))
+        self.assertEqual("pipeline_derived_mapping", candidate.conditional_form_mapping_origin)
+        self.assertEqual("ambiguous_form", candidate.conditional_form_mapping["form_label"])
+        self.assertEqual("insufficient_structure", candidate.conditional_form_mapping["support_assessment"])
+        self.assertEqual("low", candidate.confidence)
+        self.assertIn("conditional_form_mapping_insufficient_structure", candidate.unsupported_gaps)
+
+    def test_conditional_pipeline_mapping_counts_by_type(self):
+        candidates = [
+            create_proof_step_candidate_from_context_binding(self.conditional_binding("P", "Q")),
+            create_proof_step_candidate_from_context_binding(self.conditional_binding("¬Q", "¬P")),
+            create_proof_step_candidate_from_context_binding(self.conditional_binding("Q", "P")),
+            create_proof_step_candidate_from_context_binding(self.conditional_binding("¬P", "¬Q")),
+        ]
+        summary = summarize_proof_step_candidate_diagnostics(candidates)
+        self.assertEqual(4, summary["pipeline_conditional_form_mapping_count"])
+        self.assertEqual(0, summary["ad_hoc_conditional_form_mapping_count"])
+        self.assertEqual(1, summary["conditional_form_mapping_counts"]["modus_ponens"])
+        self.assertEqual(1, summary["conditional_form_mapping_counts"]["modus_tollens"])
+        self.assertEqual(1, summary["conditional_form_mapping_counts"]["affirming_consequent"])
+        self.assertEqual(1, summary["conditional_form_mapping_counts"]["denying_antecedent"])
+        self.assertEqual(2, summary["fallacy_shaped_count"])
+        self.assertEqual(2, summary["supported_form_count"])
+
+    def test_proof_step_conditional_diagnostics_preserve_refs_and_safety(self):
+        step = create_proof_step_from_candidate(create_proof_step_candidate_from_context_binding(self.conditional_binding("P", "Q")))
+        summary = summarize_proof_step_generation_diagnostics([step])
+        self.assertEqual(1, summary["pipeline_conditional_form_mapping_count"])
+        self.assertEqual(0, summary["ad_hoc_conditional_form_mapping_count"])
+        self.assertEqual(1, summary["conditional_mappings_with_context_refs"])
+        self.assertEqual(1, summary["conditional_mappings_with_premise_refs"])
+        self.assertEqual(1, summary["conditional_mappings_with_choice_refs"])
+        self.assertEqual(1, summary["conditional_mappings_with_visible_warrant"])
+        self.assertFalse(summary["answer_selection_enabled"])
+        self.assertFalse(summary["truth_claim_made"])
+        self.assertFalse(summary["official_score_claimed"])
 
     def test_summary_is_redacted(self):
         candidate = create_proof_step_candidate_from_context_binding(
