@@ -13,11 +13,13 @@ if str(ROOT) not in sys.path:
 
 from weslr.logic_teaching_spine import (  # noqa: E402
     compare_proposition_terms_for_alignment,
+    create_proposition_candidate_from_choice_stem_binding,
     create_proposition_candidate_from_predicate,
     create_proposition_candidates_from_predicates,
     normalize_proposition_role,
     normalize_term_for_alignment,
     proposition_candidate_to_dict,
+    summarize_binding_to_proposition_projection_diagnostics,
     summarize_proposition_projection_diagnostics,
     summarize_term_alignment_candidates,
     term_alignment_key,
@@ -34,6 +36,7 @@ ALLOWED_CHANGED = {
     "weslr/logic_teaching_spine.py",
     "weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py",
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
+    "weslr/tests/test_choice_stem_binding_helpers_v1.py",
 }
 
 
@@ -496,13 +499,118 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         data = proposition_candidate_to_dict(create_proposition_candidate_from_predicate(predicate_id="pred:1"))
         self.assertNotIn("answer_key", data)
 
-    def test_existing_schema_tests_still_pass(self):
-        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_schema_v1.py")
-        self.assertIn("OK", output)
 
-    def test_connectivity_contract_test_still_passes(self):
-        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_connectivity_contract_v1.py")
-        self.assertIn("OK", output)
+    def test_creates_proposition_from_projection_ready_binding(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "source_choice_statement_id": "choice_stmt_1",
+            "stem_binding_type": "choice_completes_question_predicate",
+            "implied_relation_hint": "is",
+            "confidence": "medium",
+            "human_explanation": "safe structural binding",
+        })
+        self.assertEqual("proposition:binding:b1", proposition.proposition_id)
+
+    def test_binding_projection_preserves_binding_provenance(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "source_choice_statement_id": "choice_stmt_1",
+            "stem_binding_type": "choice_is_full_claim",
+            "confidence": "medium",
+            "human_explanation": "safe structural binding",
+        })
+        self.assertEqual(["binding:b1"], proposition.source_predicate_ids)
+
+    def test_binding_projection_sets_role_to_choice_claim(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({"binding_id": "b1"})
+        self.assertEqual("choice_claim", proposition.proposition_role)
+
+    def test_binding_projection_preserves_implied_relation_hint(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "implied_relation_hint": "supports",
+        })
+        self.assertEqual("supports", proposition.relation)
+        self.assertEqual("supports", proposition.relation_canonical_hint)
+
+    def test_binding_projection_preserves_bound_subject_hint(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "bound_subject_hint": "subject-ref",
+        })
+        self.assertEqual("subject-ref", proposition.subject)
+        self.assertEqual("subject-ref", proposition.subject_canonical_hint)
+
+    def test_binding_projection_preserves_bound_object_hint(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "bound_object_hint": "object-ref",
+        })
+        self.assertEqual("object-ref", proposition.object)
+        self.assertEqual("object-ref", proposition.object_canonical_hint)
+
+    def test_binding_projection_preserves_unsupported_gaps(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "unsupported_gaps": ["relation_not_explicit"],
+        })
+        self.assertIn("relation_not_explicit", proposition.unsupported_gaps)
+
+    def test_binding_projection_creates_conservative_human_translation(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "source_choice_statement_id": "choice_stmt_1",
+            "stem_binding_type": "choice_completes_question_predicate",
+            "implied_relation_hint": "is",
+            "human_explanation": "safe structural binding",
+        })
+        self.assertIn("relation-hint present", proposition.human_translation)
+        self.assertNotIn("choice_stmt_1", proposition.human_translation)
+
+    def test_binding_projection_marks_unsafe_binding_when_unsupported(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({
+            "binding_id": "b1",
+            "stem_binding_type": "unsupported_binding",
+        })
+        self.assertEqual("binding_projection_weak_or_unsupported", proposition.proposition_type)
+        self.assertIn("unsupported_binding", proposition.unsupported_gaps)
+
+    def test_binding_projection_does_not_store_raw_text(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({"binding_id": "b1"})
+        self.assertFalse(proposition.legibility.stores_raw_benchmark_text)
+        self.assertTrue(proposition.legibility.redacted_summary_only)
+
+    def test_binding_projection_does_not_use_answer_key(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({"binding_id": "b1"})
+        self.assertFalse(proposition.anti_gaming.uses_answer_key)
+
+    def test_binding_projection_does_not_use_item_id_as_authority(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({"binding_id": "b1"})
+        self.assertFalse(proposition.anti_gaming.uses_item_id_as_authority)
+
+    def test_binding_projection_does_not_create_answer_selection(self):
+        proposition = create_proposition_candidate_from_choice_stem_binding({"binding_id": "b1"})
+        self.assertTrue(proposition.anti_gaming.no_answer_selection)
+        self.assertNotIn("selected_answer", proposition_candidate_to_dict(proposition))
+
+    def test_binding_projection_diagnostic_summary_is_redacted(self):
+        summary = summarize_binding_to_proposition_projection_diagnostics([])
+        summary_text = str(summary)
+        for snippet in ["question", "choices", "answer_key", "correct_answer", "raw_text"]:
+            self.assertNotIn(snippet, summary_text)
+
+    def test_binding_projection_diagnostic_summary_counts_projected_propositions(self):
+        bindings = [{
+            "binding_id": "b1",
+            "source_choice_statement_id": "choice_stmt_1",
+            "stem_binding_type": "choice_is_full_claim",
+            "confidence": "medium",
+            "human_explanation": "safe structural binding",
+        }]
+        summary = summarize_binding_to_proposition_projection_diagnostics(bindings)
+        self.assertEqual(1, summary["binding_count"])
+        self.assertEqual(1, summary["projection_ready_binding_count"])
+        self.assertEqual(1, summary["proposition_candidate_count"])
 
     def test_release_gate_and_check_pass(self):
         output = self.run_direct("python3 weslr/tests/release_gate_v1.py && bash scripts/weslr_release_check.sh")

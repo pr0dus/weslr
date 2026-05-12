@@ -530,6 +530,164 @@ def summarize_proposition_projection_diagnostics(propositions: list[PropositionC
     }
 
 
+
+def _binding_value(binding: object, field_name: str) -> Any:
+    if isinstance(binding, dict):
+        return binding.get(field_name)
+    return getattr(binding, field_name, None)
+
+
+def _binding_anti_gaming_safe(binding: object) -> bool:
+    anti = _binding_value(binding, "anti_gaming")
+    if anti is None:
+        return True
+    unsafe_fields = [
+        "uses_answer_key",
+        "uses_item_id_as_authority",
+        "uses_answer_position_bias",
+        "stores_raw_benchmark_text_by_default",
+        "benchmark_specific_tuning_used",
+        "answer_selection_enabled",
+        "official_score_claimed",
+    ]
+    return not any(bool(_binding_value(anti, field)) for field in unsafe_fields)
+
+
+def _binding_legibility_safe(binding: object) -> bool:
+    legibility = _binding_value(binding, "legibility")
+    if legibility is None:
+        return True
+    return not any(
+        [
+            bool(_binding_value(legibility, "private_symbolic_authority_used")),
+            not bool(_binding_value(legibility, "unsupported_gaps_visible") if _binding_value(legibility, "unsupported_gaps_visible") is not None else True),
+        ]
+    )
+
+
+def _choice_stem_binding_projection_ready(binding: object) -> bool:
+    binding_type = str(_binding_value(binding, "stem_binding_type") or "")
+    if binding_type in {"", "unsupported_binding", "choice_is_fragment_unknown"}:
+        return False
+    if not str(_binding_value(binding, "source_choice_statement_id") or "").strip():
+        return False
+    if not str(_binding_value(binding, "human_explanation") or "").strip():
+        return False
+    if not _binding_anti_gaming_safe(binding) or not _binding_legibility_safe(binding):
+        return False
+    has_safe_structure = any(
+        str(_binding_value(binding, field) or "").strip()
+        for field in ["implied_relation_hint", "bound_subject_hint", "bound_object_hint"]
+    ) or binding_type == "choice_is_full_claim"
+    return bool(has_safe_structure)
+
+
+def create_proposition_candidate_from_choice_stem_binding(binding: object) -> PropositionCandidate:
+    """Project one ChoiceStemBindingCandidate-like record into PropositionCandidate.
+
+    This helper uses only structural binding fields. It does not use raw text,
+    answer keys, item ids as authority, answer positions, or correctness labels.
+    """
+
+    binding_id = str(_binding_value(binding, "binding_id") or "").strip()
+    source_choice_statement_id = str(_binding_value(binding, "source_choice_statement_id") or "").strip()
+    stem_binding_type = str(_binding_value(binding, "stem_binding_type") or "unsupported_binding").strip()
+    relation_hint = str(_binding_value(binding, "implied_relation_hint") or "").strip()
+    subject_hint = str(_binding_value(binding, "bound_subject_hint") or "").strip()
+    object_hint = str(_binding_value(binding, "bound_object_hint") or "").strip()
+    confidence = str(_binding_value(binding, "confidence") or "low").strip() or "low"
+    unsupported_gaps = [str(gap) for gap in (_binding_value(binding, "unsupported_gaps") or [])]
+    explanation = str(_binding_value(binding, "human_explanation") or "").strip()
+
+    if not binding_id:
+        unsupported_gaps.append("missing_binding_id")
+    if stem_binding_type in {"unsupported_binding", "choice_is_fragment_unknown"}:
+        unsupported_gaps.append(stem_binding_type)
+    if not source_choice_statement_id:
+        unsupported_gaps.append("missing_choice_statement_ref")
+    if not _binding_anti_gaming_safe(binding):
+        unsupported_gaps.append("binding_anti_gaming_violation")
+    if not _binding_legibility_safe(binding):
+        unsupported_gaps.append("binding_legibility_violation")
+
+    proposition_type = "binding_projected_choice_claim" if _choice_stem_binding_projection_ready(binding) else "binding_projection_weak_or_unsupported"
+    translation_parts = []
+    if subject_hint:
+        translation_parts.append("subject-hint present")
+    if relation_hint:
+        translation_parts.append("relation-hint present")
+    if object_hint:
+        translation_parts.append("object-hint present")
+    if stem_binding_type == "choice_is_full_claim":
+        translation_parts.append("full-claim choice structure")
+    human_translation = "; ".join(translation_parts) or "Conservative binding-derived proposition with unsupported structure."
+    if explanation:
+        human_translation = f"{human_translation}. Binding explanation available."
+
+    return PropositionCandidate(
+        proposition_id=f"proposition:binding:{binding_id}" if binding_id else "proposition:binding:missing",
+        source_predicate_ids=[f"binding:{binding_id}"] if binding_id else [],
+        source_statement_ids=[source_choice_statement_id] if source_choice_statement_id else [],
+        source_statement_roles=["choice_claim"] if source_choice_statement_id else [],
+        proposition_role="choice_claim",
+        proposition_type=proposition_type,
+        subject=subject_hint,
+        relation=relation_hint,
+        object=object_hint,
+        subject_canonical_hint=subject_hint,
+        object_canonical_hint=object_hint,
+        relation_canonical_hint=relation_hint,
+        confidence=confidence if confidence in SAFE_CONFIDENCE_VALUES else "low",
+        human_translation=human_translation,
+        unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+        legibility=PropositionLegibilityRecord(
+            human_translation_available=True,
+            redacted_summary_only=True,
+            stores_raw_benchmark_text=False,
+            hides_unsupported_assumptions=False,
+            private_symbolic_authority=False,
+            human_explanation="Binding-derived proposition is redacted and structural only.",
+        ),
+        anti_gaming=PropositionAntiGamingRecord(
+            uses_answer_key=False,
+            uses_item_id_as_authority=False,
+            uses_answer_position_bias=False,
+            claims_official_score=False,
+            benchmark_specific_tuning=False,
+            uses_private_symbolic_authority=False,
+            no_answer_selection=True,
+            human_explanation="Binding-derived projection does not select answers or use benchmark authority.",
+        ),
+    )
+
+
+def summarize_binding_to_proposition_projection_diagnostics(
+    bindings: list[object],
+    propositions: list[PropositionCandidate] | None = None,
+) -> dict[str, Any]:
+    """Return redacted counts for binding-derived proposition projection."""
+
+    projected = list(propositions) if propositions is not None else [
+        create_proposition_candidate_from_choice_stem_binding(binding)
+        for binding in bindings
+        if _choice_stem_binding_projection_ready(binding)
+    ]
+    confidence_counts = {"low": 0, "medium": 0, "high": 0}
+    for proposition in projected:
+        if proposition.confidence in confidence_counts:
+            confidence_counts[proposition.confidence] += 1
+    return {
+        "binding_count": len(bindings),
+        "projection_ready_binding_count": sum(1 for binding in bindings if _choice_stem_binding_projection_ready(binding)),
+        "proposition_candidate_count": len(projected),
+        "low_confidence_count": confidence_counts["low"],
+        "medium_confidence_count": confidence_counts["medium"],
+        "high_confidence_count": confidence_counts["high"],
+        "unsupported_gap_count": sum(len(proposition.unsupported_gaps) for proposition in projected),
+        "anti_gaming_safe": all(_binding_anti_gaming_safe(binding) for binding in bindings) and all(_anti_gaming_safe(proposition.anti_gaming) for proposition in projected),
+        "legibility_safe": all(_binding_legibility_safe(binding) for binding in bindings) and all(_legibility_safe(proposition.legibility) for proposition in projected),
+    }
+
 def create_empty_inference_pattern(
     *,
     pattern_id: str = "",

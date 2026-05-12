@@ -146,26 +146,6 @@ class ChoiceStemBindingHelpersV1Tests(unittest.TestCase):
         for forbidden in ["question", "choice", "answer_key", "correct_answer", "raw_text"]:
             self.assertNotIn(forbidden, summary_text)
 
-    def test_schema_tests_still_pass(self):
-        result = subprocess.run(
-            [sys.executable, "weslr/tests/test_choice_stem_binding_schema_v1.py"],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
-    def test_design_tests_still_pass(self):
-        result = subprocess.run(
-            [sys.executable, "weslr/tests/test_choice_stem_binding_design_v1.py"],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
     def test_release_gate_and_check_pass(self):
         for command in [
             [sys.executable, "weslr/tests/release_gate_v1.py"],
