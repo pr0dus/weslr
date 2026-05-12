@@ -61,10 +61,19 @@ def choice_prop(pid: str = "choice:1", relation: str = "supports") -> Propositio
 
 class ReasoningContextBindingHelpersV1Tests(unittest.TestCase):
     def test_classifier_detects_must_be_true(self):
-        self.assertEqual("must_be_true", classify_question_target_type(markers=["must_true"]))
+        self.assertEqual("must_be_true", classify_question_target_type(Record(normalized_text="must be true")))
+
+    def test_classifier_detects_must_be_false(self):
+        self.assertEqual("must_be_false", classify_question_target_type(Record(normalized_text="must be false")))
 
     def test_classifier_detects_follows(self):
         self.assertEqual("follows", classify_question_target_type(Record(normalized_text="what follows")))
+
+    def test_classifier_detects_does_not_follow(self):
+        self.assertEqual("does_not_follow", classify_question_target_type(Record(normalized_text="does not follow")))
+
+    def test_classifier_detects_valid_argument(self):
+        self.assertEqual("valid_argument", classify_question_target_type(Record(normalized_text="valid argument")))
 
     def test_classifier_detects_counterexample(self):
         self.assertEqual("counterexample", classify_question_target_type(Record(normalized_text="identify counterexample")))
@@ -72,11 +81,20 @@ class ReasoningContextBindingHelpersV1Tests(unittest.TestCase):
     def test_classifier_detects_invalid_argument(self):
         self.assertEqual("invalid_argument", classify_question_target_type(Record(normalized_text="invalid argument")))
 
+    def test_classifier_detects_completion(self):
+        self.assertEqual("completion", classify_question_target_type(Record(normalized_text="complete the template")))
+
     def test_premise_classifier_detects_conditional_rule(self):
         self.assertEqual("conditional_rule", classify_premise_context_type([premise_prop(relation="if then")]))
 
     def test_premise_classifier_detects_quantified_rule(self):
         self.assertEqual("quantified_rule", classify_premise_context_type([premise_prop(relation="all")]))
+
+    def test_premise_classifier_detects_exclusion_rule(self):
+        self.assertEqual("exclusion_rule", classify_premise_context_type([premise_prop(relation="not")]))
+
+    def test_premise_classifier_detects_mixed_context(self):
+        self.assertEqual("mixed_context", classify_premise_context_type([premise_prop(relation="if then"), premise_prop(pid="premise:2", relation="all")]))
 
     def test_choice_classifier_detects_candidate_conclusion(self):
         self.assertEqual("candidate_conclusion", classify_choice_target_role(choice_prop()))
@@ -114,6 +132,26 @@ class ReasoningContextBindingHelpersV1Tests(unittest.TestCase):
 
     def test_context_binding_does_not_use_answer_key(self):
         self.assertFalse(self._candidate().anti_gaming.uses_answer_key)
+
+    def test_context_binding_does_not_use_item_id_authority(self):
+        self.assertFalse(self._candidate().anti_gaming.uses_item_id_as_authority)
+
+    def test_context_binding_preserves_premise_refs_when_provided(self):
+        candidate = create_reasoning_context_binding_candidate_from_structures(
+            binding_id="ctx:preserve",
+            premise_propositions=[premise_prop(pid="premise:provided")],
+            question_instruction_records=[Record(statement_id="question:provided", normalized_text="what follows")],
+            choice_propositions=[choice_prop(pid="choice:provided")],
+        )
+        self.assertIn("premise:provided", candidate.source_premise_proposition_ids)
+
+    def test_context_binding_keeps_gap_when_premise_refs_missing(self):
+        candidate = create_reasoning_context_binding_candidate_from_structures(
+            binding_id="ctx:missing-premise",
+            question_instruction_records=[Record(statement_id="question:provided", normalized_text="what follows")],
+            choice_propositions=[choice_prop(pid="choice:provided")],
+        )
+        self.assertIn("missing_premise_proposition_refs", candidate.unsupported_gaps)
 
     def test_summary_is_redacted(self):
         summary = summarize_reasoning_context_binding_diagnostics([self._candidate()])

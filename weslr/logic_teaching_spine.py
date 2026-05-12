@@ -789,24 +789,39 @@ def _record_markers(*records: object) -> set[str]:
     return {token for token in cleaned.split() if token}
 
 
+def _has_any_marker(markers: set[str], *groups: set[str]) -> bool:
+    return any(markers & group for group in groups)
+
+
 def classify_question_target_type(question_instruction: object | None = None, *, markers: list[str] | None = None) -> str:
-    selected = _record_markers(question_instruction) | {str(marker).lower() for marker in (markers or [])}
-    if selected & {"counterexample", "counterexamples"}:
+    selected = _record_markers(question_instruction) | {str(marker).lower().replace(" ", "_") for marker in (markers or [])}
+    phrase_markers = " ".join(sorted(selected))
+    if _has_any_marker(selected, {"counterexample", "counterexamples", "counter_example"}):
         return "counterexample"
-    if selected & {"invalid", "invalidity", "fallacy", "unsupported"}:
-        return "invalid_argument"
-    if selected & {"valid", "validity"}:
-        return "valid_argument"
-    if selected & {"must_false", "false", "cannot"}:
-        return "must_be_false"
-    if selected & {"must_true", "true"}:
-        return "must_be_true"
-    if selected & {"does_not_follow", "not_follow"} or ({"does", "not", "follow"} <= selected):
+    if _has_any_marker(selected, {"does_not_follow", "not_follow", "not_follows"}) or ({"does", "not", "follow"} <= selected):
         return "does_not_follow"
-    if selected & {"follows", "follow"}:
+    if _has_any_marker(selected, {"invalid_argument", "invalid", "invalidity", "fallacy", "fallacy_shaped"}):
+        return "invalid_argument"
+    if _has_any_marker(selected, {"valid_argument", "validity"}) or ({"valid", "argument"} <= selected):
+        return "valid_argument"
+    if _has_any_marker(selected, {"must_be_false", "must_false"}) or ({"must", "be", "false"} <= selected):
+        return "must_be_false"
+    if _has_any_marker(selected, {"must_be_true", "must_true"}) or ({"must", "be", "true"} <= selected):
+        return "must_be_true"
+    if _has_any_marker(selected, {"follows", "follow", "conclusion", "candidate_conclusion"}):
         return "follows"
-    if selected & {"complete", "completion", "completes", "supplies", "bind", "binding"}:
+    if _has_any_marker(
+        selected,
+        {"complete", "completion", "completes", "supplies", "bind", "binding", "fragment", "template"},
+        {"noun_phrase_choice_binding", "noun", "phrase"},
+    ):
         return "completion"
+    if _has_any_marker(selected, {"modus_ponens", "modus_tollens", "universal_syllogism", "quantifier_reasoning", "disjunction_reasoning", "negation_reasoning"}):
+        return "follows"
+    if _has_any_marker(selected, {"contradiction"}):
+        return "must_be_false"
+    if "necessary sufficient confusion" in phrase_markers or _has_any_marker(selected, {"necessary_sufficient_confusion"}):
+        return "invalid_argument"
     return "unknown"
 
 
@@ -814,15 +829,15 @@ def classify_premise_context_type(premise_propositions: list[object] | object | 
     records = premise_propositions if isinstance(premise_propositions, list) else [premise_propositions]
     markers = _record_markers(*[record for record in records if record is not None])
     detected: set[str] = set()
-    if markers & {"if", "then", "conditional", "implies", "sufficient", "necessary"}:
+    if _has_any_marker(markers, {"if", "then", "conditional", "condition", "implies", "imply", "sufficient", "necessary", "modus_ponens", "modus_tollens"}):
         detected.add("conditional_rule")
-    if markers & {"all", "every", "some", "no", "quantifier", "universal", "existential"}:
+    if _has_any_marker(markers, {"all", "every", "some", "no", "quantifier", "quantified", "universal", "existential", "group", "class"}):
         detected.add("quantified_rule")
-    if markers & {"not", "no", "excludes", "exclusion", "lacks", "without"}:
+    if _has_any_marker(markers, {"not", "no", "excludes", "exclusion", "lacks", "without", "contradiction", "negation"}):
         detected.add("exclusion_rule")
-    if markers & {"definition", "defines", "defined", "means", "identical"}:
+    if _has_any_marker(markers, {"definition", "defines", "defined", "means", "identical", "necessary_sufficient"}):
         detected.add("definition_like")
-    if markers & {"background", "context"}:
+    if _has_any_marker(markers, {"background", "context"}):
         detected.add("background_context")
     if len(detected) > 1:
         return "mixed_context"
@@ -831,7 +846,6 @@ def classify_premise_context_type(premise_propositions: list[object] | object | 
     if records and any(record is not None for record in records):
         return "given_fact"
     return "unknown"
-
 
 def classify_choice_target_role(choice_proposition: object | None = None, question_instruction: object | None = None) -> str:
     markers = _record_markers(choice_proposition, question_instruction)
