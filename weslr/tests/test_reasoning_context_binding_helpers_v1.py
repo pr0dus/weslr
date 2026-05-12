@@ -96,6 +96,21 @@ class ReasoningContextBindingHelpersV1Tests(unittest.TestCase):
     def test_premise_classifier_detects_mixed_context(self):
         self.assertEqual("mixed_context", classify_premise_context_type([premise_prop(relation="if then"), premise_prop(pid="premise:2", relation="all")]))
 
+    def test_premise_classifier_detects_definition_like_context(self):
+        self.assertEqual("definition_like", classify_premise_context_type([premise_prop(relation="defines")]))
+
+    def test_premise_classifier_detects_given_fact_context(self):
+        self.assertEqual("given_fact", classify_premise_context_type([premise_prop(relation="supports")]))
+
+    def test_context_binding_preserves_statement_ref_when_premise_proposition_id_missing(self):
+        candidate = create_reasoning_context_binding_candidate_from_structures(
+            binding_id="ctx:statement-ref",
+            premise_propositions=[Record(statement_id="stmt:p1", normalized_text="if p then q")],
+            question_instruction_records=[Record(statement_id="question:provided", normalized_text="what follows")],
+            choice_propositions=[choice_prop(pid="choice:provided")],
+        )
+        self.assertIn("premise_statement:stmt:p1", candidate.source_premise_proposition_ids)
+
     def test_choice_classifier_detects_candidate_conclusion(self):
         self.assertEqual("candidate_conclusion", classify_choice_target_role(choice_prop()))
 

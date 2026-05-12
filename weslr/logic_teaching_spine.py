@@ -921,6 +921,14 @@ def create_reasoning_context_binding_candidate_from_structures(
         value = str(_safe_record_value(proposition, "proposition_id", "") or "").strip()
         if value:
             premise_ids.append(value)
+            continue
+        statement_ref = str(
+            _safe_record_value(proposition, "statement_id", "")
+            or _safe_record_value(proposition, "source_statement_id", "")
+            or ""
+        ).strip()
+        if statement_ref:
+            premise_ids.append(f"premise_statement:{statement_ref}")
     question_ids = []
     for question in questions:
         value = str(_safe_record_value(question, "statement_id", "") or _safe_record_value(question, "id", "") or "").strip()
