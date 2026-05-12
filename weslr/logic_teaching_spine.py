@@ -11,6 +11,7 @@ SAFE_VALIDITY_TYPES = {"valid", "invalid", "ambiguous", "unsupported", "unknown"
 SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "unknown"}
 SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
 SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
+SAFE_PROPOSITION_MERGE_ORIGINS = {"predicate_derived", "binding_derived", "merged", "unknown"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -59,6 +60,25 @@ class PropositionCandidate:
     confidence: str = "low"
     human_translation: str = ""
     unsupported_gaps: list[str] = field(default_factory=list)
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class PropositionMergeCandidate:
+    schema_version: str = "1.0"
+    merge_id: str = ""
+    structural_signature: str = ""
+    source_proposition_ids: list[str] = field(default_factory=list)
+    source_origins: list[str] = field(default_factory=list)
+    proposition_role: str = "unknown"
+    subject_canonical_hint: str = ""
+    relation_canonical_hint: str = ""
+    object_canonical_hint: str = ""
+    confidence_summary: str = "low"
+    duplicate_count: int = 0
+    unsupported_gaps: list[str] = field(default_factory=list)
+    human_explanation: str = ""
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
     anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
 
@@ -266,6 +286,88 @@ def summarize_proposition_candidate(candidate: PropositionCandidate) -> dict[str
         "source_statement_role_count": len(candidate.source_statement_roles),
         "unsupported_gap_count": len(candidate.unsupported_gaps),
         "human_translation_available": bool(candidate.human_translation.strip()),
+        "legibility_safe": _legibility_safe(candidate.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
+    }
+
+
+
+def create_empty_proposition_merge_candidate(
+    *,
+    merge_id: str = "",
+    structural_signature: str = "",
+    source_proposition_ids: list[str] | None = None,
+    source_origins: list[str] | None = None,
+    proposition_role: str = "unknown",
+) -> PropositionMergeCandidate:
+    return PropositionMergeCandidate(
+        merge_id=merge_id,
+        structural_signature=structural_signature,
+        source_proposition_ids=list(source_proposition_ids or []),
+        source_origins=list(source_origins or []),
+        proposition_role=normalize_proposition_role(proposition_role),
+    )
+
+
+def proposition_merge_candidate_to_dict(candidate: PropositionMergeCandidate) -> dict[str, Any]:
+    return asdict(candidate)
+
+
+def proposition_merge_candidate_from_dict(data: dict[str, Any]) -> PropositionMergeCandidate:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return PropositionMergeCandidate(
+        schema_version=data.get("schema_version", "1.0"),
+        merge_id=data.get("merge_id", ""),
+        structural_signature=data.get("structural_signature", ""),
+        source_proposition_ids=list(data.get("source_proposition_ids") or []),
+        source_origins=list(data.get("source_origins") or []),
+        proposition_role=normalize_proposition_role(data.get("proposition_role", "unknown")),
+        subject_canonical_hint=data.get("subject_canonical_hint", ""),
+        relation_canonical_hint=data.get("relation_canonical_hint", ""),
+        object_canonical_hint=data.get("object_canonical_hint", ""),
+        confidence_summary=data.get("confidence_summary", "low"),
+        duplicate_count=int(data.get("duplicate_count", 0) or 0),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        human_explanation=data.get("human_explanation", ""),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_proposition_merge_candidate(candidate: PropositionMergeCandidate) -> list[str]:
+    messages: list[str] = []
+    if not candidate.merge_id:
+        messages.append("missing merge id")
+    if not candidate.structural_signature:
+        messages.append("missing structural signature")
+    if candidate.confidence_summary not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence summary")
+    if candidate.proposition_role not in SAFE_PROPOSITION_ROLES:
+        messages.append("invalid proposition role")
+    invalid_origins = [origin for origin in candidate.source_origins if origin not in SAFE_PROPOSITION_MERGE_ORIGINS]
+    if invalid_origins:
+        messages.append("invalid source origin")
+    if candidate.confidence_summary == "high" and not candidate.source_proposition_ids:
+        messages.append("empty source proposition ids for high-confidence merge candidate")
+    if candidate.confidence_summary == "high" and not candidate.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence merge candidate")
+    messages.extend(_validate_shared_safety(candidate.legibility, candidate.anti_gaming))
+    return messages
+
+
+def summarize_proposition_merge_candidate(candidate: PropositionMergeCandidate) -> dict[str, Any]:
+    return {
+        "schema_version": candidate.schema_version,
+        "merge_id": candidate.merge_id,
+        "has_structural_signature": bool(candidate.structural_signature.strip()),
+        "source_proposition_count": len(candidate.source_proposition_ids),
+        "source_origins": sorted(set(candidate.source_origins)),
+        "proposition_role": candidate.proposition_role,
+        "confidence_summary": candidate.confidence_summary,
+        "duplicate_count": candidate.duplicate_count,
+        "unsupported_gap_count": len(candidate.unsupported_gaps),
+        "human_explanation_available": bool(candidate.human_explanation.strip()),
         "legibility_safe": _legibility_safe(candidate.legibility),
         "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
     }
