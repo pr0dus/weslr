@@ -624,6 +624,180 @@ def summarize_simple_inference_pattern_candidate(candidate: SimpleInferencePatte
     }
 
 
+
+def _merge_value(merge: object, field_name: str, default: Any = "") -> Any:
+    if isinstance(merge, dict):
+        return merge.get(field_name, default)
+    return getattr(merge, field_name, default)
+
+
+def _merge_list_value(merge: object, field_name: str) -> list[str]:
+    value = _merge_value(merge, field_name, [])
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    if str(value).strip():
+        return [str(value).strip()]
+    return []
+
+
+def _merge_id(merge: object) -> str:
+    return str(_merge_value(merge, "merge_id", "") or "").strip()
+
+
+def _merge_confidence(merge: object) -> str:
+    confidence = str(_merge_value(merge, "confidence_summary", "low") or "low").strip()
+    return confidence if confidence in SAFE_CONFIDENCE_VALUES else "low"
+
+
+def _simple_candidate_confidence(left: object, right: object | None = None) -> str:
+    confidences = [_merge_confidence(left)]
+    if right is not None:
+        confidences.append(_merge_confidence(right))
+    if confidences and all(confidence == "high" for confidence in confidences):
+        return "high"
+    if any(confidence == "medium" for confidence in confidences):
+        return "medium"
+    return "low"
+
+
+def _make_simple_inference_candidate(
+    *,
+    candidate_id: str,
+    pattern_type: str,
+    merges: list[object],
+    shared_subject: bool = False,
+    shared_object: bool = False,
+    relation_overlap: bool = False,
+    contradiction_signal: bool = False,
+    transitivity_signal: bool = False,
+) -> SimpleInferencePatternCandidate:
+    source_merge_ids: list[str] = []
+    source_proposition_ids: list[str] = []
+    unsupported_gaps: list[str] = []
+    premise_role_count = 0
+    choice_role_count = 0
+    for merge in merges:
+        merge_id = _merge_id(merge)
+        if merge_id:
+            source_merge_ids.append(merge_id)
+        source_proposition_ids.extend(_merge_list_value(merge, "source_proposition_ids"))
+        unsupported_gaps.extend(_merge_list_value(merge, "unsupported_gaps"))
+        role = normalize_proposition_role(str(_merge_value(merge, "proposition_role", "unknown") or "unknown"))
+        premise_role_count += int(role == "premise")
+        choice_role_count += int(role == "choice_claim")
+    confidence = _simple_candidate_confidence(merges[0], merges[1] if len(merges) > 1 else None)
+    return SimpleInferencePatternCandidate(
+        candidate_id=candidate_id,
+        pattern_type=pattern_type,
+        source_merge_ids=list(dict.fromkeys(source_merge_ids)),
+        source_proposition_ids=list(dict.fromkeys(source_proposition_ids)),
+        premise_role_count=premise_role_count,
+        choice_role_count=choice_role_count,
+        shared_subject=shared_subject,
+        shared_object=shared_object,
+        relation_overlap=relation_overlap,
+        contradiction_signal=contradiction_signal,
+        transitivity_signal=transitivity_signal,
+        confidence=confidence,
+        validity_status="candidate_only",
+        unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+        human_explanation="Redacted helper-only simple inference pattern opportunity; not a proof step, truth claim, or answer selection.",
+    )
+
+
+def _opposite_polarity(left: object, right: object) -> bool:
+    left_polarity = str(_merge_value(left, "polarity", "") or "").strip().lower()
+    right_polarity = str(_merge_value(right, "polarity", "") or "").strip().lower()
+    if not left_polarity or not right_polarity:
+        left_sig = str(_merge_value(left, "structural_signature", "") or "").lower()
+        right_sig = str(_merge_value(right, "structural_signature", "") or "").lower()
+        left_polarity = "negative" if "polarity=negative" in left_sig else "positive" if "polarity=positive" in left_sig else ""
+        right_polarity = "negative" if "polarity=negative" in right_sig else "positive" if "polarity=positive" in right_sig else ""
+    return bool({left_polarity, right_polarity} == {"positive", "negative"})
+
+
+def create_simple_inference_pattern_candidates_from_merges(
+    merges: list[PropositionMergeCandidate],
+) -> list[SimpleInferencePatternCandidate]:
+    """Create helper-only simple inference opportunity candidates from merge records."""
+    candidates: list[SimpleInferencePatternCandidate] = []
+    next_index = 1
+
+    for merge in merges:
+        if int(_merge_value(merge, "duplicate_count", 0) or 0) >= 2:
+            candidates.append(
+                _make_simple_inference_candidate(
+                    candidate_id=f"simple:{next_index}",
+                    pattern_type="duplicate-support-candidate",
+                    merges=[merge],
+                )
+            )
+            next_index += 1
+
+    for left_index, left in enumerate(merges):
+        for right in merges[left_index + 1:]:
+            left_subject = term_alignment_key(str(_merge_value(left, "subject_canonical_hint", "") or ""))
+            right_subject = term_alignment_key(str(_merge_value(right, "subject_canonical_hint", "") or ""))
+            left_object = term_alignment_key(str(_merge_value(left, "object_canonical_hint", "") or ""))
+            right_object = term_alignment_key(str(_merge_value(right, "object_canonical_hint", "") or ""))
+            left_relation = term_alignment_key(str(_merge_value(left, "relation_canonical_hint", "") or ""))
+            right_relation = term_alignment_key(str(_merge_value(right, "relation_canonical_hint", "") or ""))
+
+            shared_subject = bool(left_subject and right_subject and left_subject == right_subject)
+            shared_object = bool(left_object and right_object and left_object == right_object)
+            relation_overlap = bool(left_relation and right_relation and left_relation == right_relation)
+            same_terms = shared_subject and shared_object and relation_overlap
+            opposite_polarity = same_terms and _opposite_polarity(left, right)
+            transitivity_signal = bool(left_object and right_subject and left_object == right_subject and left_relation and right_relation)
+
+            pattern_specs = []
+            if shared_subject:
+                pattern_specs.append(("shared-subject", {"shared_subject": True}))
+            if shared_object:
+                pattern_specs.append(("shared-object", {"shared_object": True}))
+            if relation_overlap:
+                pattern_specs.append(("relation-overlap", {"relation_overlap": True}))
+            if opposite_polarity:
+                pattern_specs.append(("contradiction-candidate", {"contradiction_signal": True}))
+            if transitivity_signal:
+                pattern_specs.append(("transitivity-candidate", {"transitivity_signal": True}))
+
+            for pattern_type, flags in pattern_specs:
+                candidates.append(
+                    _make_simple_inference_candidate(
+                        candidate_id=f"simple:{next_index}",
+                        pattern_type=pattern_type,
+                        merges=[left, right],
+                        **flags,
+                    )
+                )
+                next_index += 1
+
+    return candidates
+
+
+def summarize_simple_inference_candidate_diagnostics(
+    candidates: list[SimpleInferencePatternCandidate],
+) -> dict[str, Any]:
+    return {
+        "candidate_count": len(candidates),
+        "shared_subject_count": sum(1 for candidate in candidates if candidate.pattern_type == "shared-subject"),
+        "shared_object_count": sum(1 for candidate in candidates if candidate.pattern_type == "shared-object"),
+        "relation_overlap_count": sum(1 for candidate in candidates if candidate.pattern_type == "relation-overlap"),
+        "duplicate_support_count": sum(1 for candidate in candidates if candidate.pattern_type == "duplicate-support-candidate"),
+        "contradiction_candidate_count": sum(1 for candidate in candidates if candidate.pattern_type == "contradiction-candidate"),
+        "transitivity_candidate_count": sum(1 for candidate in candidates if candidate.pattern_type == "transitivity-candidate"),
+        "unsupported_no_pattern_count": sum(1 for candidate in candidates if candidate.pattern_type == "unsupported/no-pattern"),
+        "low_confidence_count": sum(1 for candidate in candidates if candidate.confidence == "low"),
+        "medium_confidence_count": sum(1 for candidate in candidates if candidate.confidence == "medium"),
+        "high_confidence_count": sum(1 for candidate in candidates if candidate.confidence == "high"),
+        "anti_gaming_safe": all(_anti_gaming_safe(candidate.anti_gaming) for candidate in candidates),
+        "legibility_safe": all(_legibility_safe(candidate.legibility) for candidate in candidates),
+    }
+
+
 def normalize_proposition_role(role: str) -> str:
     normalized = str(role or "").strip().lower()
     if normalized in {"premise", "parsed_premise", "premise_term"}:

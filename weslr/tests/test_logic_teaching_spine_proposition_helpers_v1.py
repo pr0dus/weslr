@@ -17,6 +17,7 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     create_proposition_candidate_from_predicate,
     create_proposition_candidates_from_predicates,
     create_proposition_merge_candidates,
+    create_simple_inference_pattern_candidates_from_merges,
     normalize_proposition_role,
     normalize_term_for_alignment,
     proposition_candidate_to_dict,
@@ -25,6 +26,7 @@ from weslr.logic_teaching_spine import (  # noqa: E402
     summarize_binding_to_proposition_projection_diagnostics,
     summarize_proposition_merge_diagnostics,
     summarize_proposition_projection_diagnostics,
+    summarize_simple_inference_candidate_diagnostics,
     summarize_term_alignment_candidates,
     term_alignment_key,
 )
@@ -40,6 +42,7 @@ ALLOWED_CHANGED = {
     "weslr/logic_teaching_spine.py",
     "weslr/tests/test_logic_teaching_spine_proposition_helpers_v1.py",
     "weslr/tests/test_logic_teaching_spine_proposition_merge_schema_v1.py",
+    "weslr/tests/test_logic_teaching_spine_simple_inference_candidate_schema_v1.py",
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_choice_stem_binding_helpers_v1.py",
 }
@@ -711,9 +714,109 @@ class LogicTeachingSpinePropositionHelpersV1Tests(unittest.TestCase):
         merge = create_proposition_merge_candidates([self._merge_prop("prop:1"), self._merge_prop("prop:2")])[0]
         self.assertFalse(merge.anti_gaming.uses_answer_key)
 
-    def test_proposition_merge_schema_tests_still_pass(self):
-        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_proposition_merge_schema_v1.py")
+
+    def _merge_candidate(self, merge_id: str, *, role: str = "premise", subject: str = "cats", relation: str = "supports", obj: str = "dogs", duplicate_count: int = 2, polarity: str = "positive"):
+        signature = "|".join([
+            f"role={role}",
+            f"subject={subject}",
+            f"relation={relation}",
+            f"object={obj}",
+            f"polarity={polarity}",
+            "quantifier=",
+            "modality=",
+        ])
+        return {
+            "merge_id": merge_id,
+            "structural_signature": signature,
+            "source_proposition_ids": [f"prop:{merge_id}:1", f"prop:{merge_id}:2"],
+            "proposition_role": role,
+            "subject_canonical_hint": subject,
+            "relation_canonical_hint": relation,
+            "object_canonical_hint": obj,
+            "duplicate_count": duplicate_count,
+            "confidence_summary": "low",
+            "polarity": polarity,
+        }
+
+    def test_simple_inference_creates_relation_overlap_candidate(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", relation="supports"),
+            self._merge_candidate("m2", subject="birds", relation="supports", obj="nests"),
+        ])
+        self.assertIn("relation-overlap", {candidate.pattern_type for candidate in candidates})
+
+    def test_simple_inference_creates_shared_subject_candidate(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", subject="cats"),
+            self._merge_candidate("m2", subject="cats", relation="requires", obj="food"),
+        ])
+        self.assertIn("shared-subject", {candidate.pattern_type for candidate in candidates})
+
+    def test_simple_inference_creates_shared_object_candidate(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", obj="dogs"),
+            self._merge_candidate("m2", subject="birds", relation="requires", obj="dogs"),
+        ])
+        self.assertIn("shared-object", {candidate.pattern_type for candidate in candidates})
+
+    def test_simple_inference_creates_duplicate_support_candidate(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1", duplicate_count=2)])
+        self.assertIn("duplicate-support-candidate", {candidate.pattern_type for candidate in candidates})
+
+    def test_simple_inference_contradiction_requires_explicit_opposite_polarity(self):
+        same_polarity = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", polarity="positive"),
+            self._merge_candidate("m2", polarity="positive"),
+        ])
+        self.assertNotIn("contradiction-candidate", {candidate.pattern_type for candidate in same_polarity})
+        opposite_polarity = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", polarity="positive"),
+            self._merge_candidate("m2", polarity="negative"),
+        ])
+        self.assertIn("contradiction-candidate", {candidate.pattern_type for candidate in opposite_polarity})
+
+    def test_simple_inference_candidate_is_not_a_proof_step(self):
+        candidate = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1")])[0]
+        data = candidate.__dict__
+        self.assertNotIn("proof_step_id", data)
+        self.assertNotIn("warrant", data)
+
+    def test_simple_inference_candidate_does_not_select_answers(self):
+        candidate = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1")])[0]
+        self.assertTrue(candidate.anti_gaming.no_answer_selection)
+        self.assertNotIn("selected_answer", candidate.__dict__)
+
+    def test_simple_inference_candidate_does_not_use_answer_key(self):
+        candidate = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1")])[0]
+        self.assertFalse(candidate.anti_gaming.uses_answer_key)
+
+    def test_simple_inference_candidate_does_not_use_item_id_as_authority(self):
+        candidate = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1")])[0]
+        self.assertFalse(candidate.anti_gaming.uses_item_id_as_authority)
+
+    def test_simple_inference_diagnostic_summary_is_redacted(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([self._merge_candidate("m1")])
+        summary_text = str(summarize_simple_inference_candidate_diagnostics(candidates))
+        for snippet in ["question", "choices", "answer_key", "correct_answer", "raw_text", "source_proposition_ids"]:
+            self.assertNotIn(snippet, summary_text)
+
+    def test_simple_inference_diagnostic_summary_counts_pattern_types(self):
+        candidates = create_simple_inference_pattern_candidates_from_merges([
+            self._merge_candidate("m1", subject="cats", relation="supports", obj="dogs"),
+            self._merge_candidate("m2", subject="cats", relation="supports", obj="birds"),
+        ])
+        summary = summarize_simple_inference_candidate_diagnostics(candidates)
+        self.assertGreaterEqual(summary["candidate_count"], 1)
+        self.assertGreaterEqual(summary["shared_subject_count"], 1)
+        self.assertGreaterEqual(summary["relation_overlap_count"], 1)
+        self.assertGreaterEqual(summary["duplicate_support_count"], 2)
+
+    def test_simple_inference_candidate_schema_tests_still_pass(self):
+        output = self.run_direct("python3 weslr/tests/test_logic_teaching_spine_simple_inference_candidate_schema_v1.py")
         self.assertIn("OK", output)
+
+    def test_proposition_merge_schema_file_remains_available(self):
+        self.assertTrue((ROOT / "weslr" / "tests" / "test_logic_teaching_spine_proposition_merge_schema_v1.py").exists())
 
     def test_release_gate_and_check_pass(self):
         output = self.run_direct("python3 weslr/tests/release_gate_v1.py && bash scripts/weslr_release_check.sh")
