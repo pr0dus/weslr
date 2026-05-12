@@ -9,7 +9,11 @@ from typing import Any
 SAFE_CONFIDENCE_VALUES = {"low", "medium", "high"}
 SAFE_VALIDITY_TYPES = {"valid", "invalid", "ambiguous", "unsupported", "unknown"}
 SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "unknown"}
-SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
+SAFE_TEACHING_MODES = {"beginner", "technical", "academic", "spock", "operator_audit", "unknown"}
+SAFE_TEACHING_EXPLANATION_SUPPORT_STATUSES = {
+    "supported", "contradicted", "counterexample_supported", "rule_application_supported",
+    "template_completed", "ambiguous", "unsupported", "unknown"
+}
 SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
 SAFE_PROPOSITION_MERGE_ORIGINS = {"predicate_derived", "binding_derived", "merged", "unknown"}
 SAFE_SIMPLE_INFERENCE_PATTERN_TYPES = {"shared-subject", "shared-object", "relation-overlap", "contradiction-candidate", "duplicate-support-candidate", "transitivity-candidate", "unsupported/no-pattern"}
@@ -243,12 +247,19 @@ class TeachingExplanation:
     explanation_id: str = ""
     source_proposition_ids: list[str] = field(default_factory=list)
     source_proof_step_ids: list[str] = field(default_factory=list)
+    source_context_binding_ids: list[str] = field(default_factory=list)
     source_counterexample_ids: list[str] = field(default_factory=list)
     conclusion: str = ""
     support_status: str = "unknown"
+    core_claim: str = ""
+    why_it_follows_or_fails: str = ""
+    pattern_name: str = ""
+    fallacy_name: str = ""
+    counterexample_note: str = ""
+    confidence: str = "low"
     common_fallacy: str = ""
     learner_level: str = "general"
-    teaching_mode: str = "standard"
+    teaching_mode: str = "unknown"
     step_by_step_explanation: list[str] = field(default_factory=list)
     uncertainty_note: str = ""
     human_explanation: str = ""
@@ -2744,15 +2755,33 @@ def summarize_counterexample_candidate(counterexample: CounterexampleCandidate) 
 def create_empty_teaching_explanation(
     *,
     explanation_id: str = "",
+    source_proof_step_ids: list[str] | None = None,
+    source_context_binding_ids: list[str] | None = None,
+    source_proposition_ids: list[str] | None = None,
     support_status: str = "unknown",
-    teaching_mode: str = "standard",
+    teaching_mode: str = "unknown",
     learner_level: str = "general",
+    core_claim: str = "",
+    why_it_follows_or_fails: str = "",
+    pattern_name: str = "",
+    fallacy_name: str = "",
+    counterexample_note: str = "",
+    confidence: str = "low",
 ) -> TeachingExplanation:
     return TeachingExplanation(
         explanation_id=explanation_id,
+        source_proof_step_ids=list(source_proof_step_ids or []),
+        source_context_binding_ids=list(source_context_binding_ids or []),
+        source_proposition_ids=list(source_proposition_ids or []),
         support_status=support_status,
         teaching_mode=teaching_mode,
         learner_level=learner_level,
+        core_claim=core_claim,
+        why_it_follows_or_fails=why_it_follows_or_fails,
+        pattern_name=pattern_name,
+        fallacy_name=fallacy_name,
+        counterexample_note=counterexample_note,
+        confidence=confidence,
     )
 
 
@@ -2768,12 +2797,19 @@ def teaching_explanation_from_dict(data: dict[str, Any]) -> TeachingExplanation:
         explanation_id=data.get("explanation_id", ""),
         source_proposition_ids=list(data.get("source_proposition_ids") or []),
         source_proof_step_ids=list(data.get("source_proof_step_ids") or []),
+        source_context_binding_ids=list(data.get("source_context_binding_ids") or []),
         source_counterexample_ids=list(data.get("source_counterexample_ids") or []),
         conclusion=data.get("conclusion", ""),
         support_status=data.get("support_status", "unknown"),
+        core_claim=data.get("core_claim", ""),
+        why_it_follows_or_fails=data.get("why_it_follows_or_fails", ""),
+        pattern_name=data.get("pattern_name", ""),
+        fallacy_name=data.get("fallacy_name", ""),
+        counterexample_note=data.get("counterexample_note", ""),
+        confidence=data.get("confidence", "low"),
         common_fallacy=data.get("common_fallacy", ""),
         learner_level=data.get("learner_level", "general"),
-        teaching_mode=data.get("teaching_mode", "standard"),
+        teaching_mode=data.get("teaching_mode", "unknown"),
         step_by_step_explanation=list(data.get("step_by_step_explanation") or []),
         uncertainty_note=data.get("uncertainty_note", ""),
         human_explanation=data.get("human_explanation", ""),
@@ -2787,14 +2823,18 @@ def validate_teaching_explanation(explanation: TeachingExplanation) -> list[str]
     messages: list[str] = []
     if not explanation.explanation_id:
         messages.append("missing explanation id")
-    if explanation.support_status not in SAFE_SUPPORT_STATUSES:
+    if explanation.support_status not in SAFE_TEACHING_EXPLANATION_SUPPORT_STATUSES:
         messages.append("invalid support status")
     if explanation.teaching_mode not in SAFE_TEACHING_MODES:
         messages.append("invalid teaching mode")
-    if explanation.legibility.human_translation_available and not explanation.human_explanation.strip():
-        messages.append("missing human explanation when legibility requires it")
-    if explanation.support_status != "unknown" and not explanation.step_by_step_explanation:
-        messages.append("empty step-by-step explanation is not allowed when support status is known")
+    if explanation.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence")
+    if explanation.confidence == "high" and not explanation.source_proof_step_ids:
+        messages.append("missing proof step refs for high-confidence teaching explanation")
+    if explanation.confidence == "high" and not explanation.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence teaching explanation")
+    if explanation.legibility.hides_unsupported_assumptions:
+        messages.append("unsupported gaps must remain visible")
     messages.extend(_validate_shared_safety(explanation.legibility, explanation.anti_gaming))
     return messages
 
@@ -2805,10 +2845,16 @@ def summarize_teaching_explanation(explanation: TeachingExplanation) -> dict[str
         "explanation_id": explanation.explanation_id,
         "source_proposition_count": len(explanation.source_proposition_ids),
         "source_proof_step_count": len(explanation.source_proof_step_ids),
+        "source_context_binding_count": len(explanation.source_context_binding_ids),
         "source_counterexample_count": len(explanation.source_counterexample_ids),
         "has_conclusion": bool(explanation.conclusion.strip()),
         "support_status": explanation.support_status,
-        "common_fallacy": explanation.common_fallacy,
+        "has_core_claim": bool(explanation.core_claim.strip()),
+        "has_why_it_follows_or_fails": bool(explanation.why_it_follows_or_fails.strip()),
+        "has_pattern_name": bool(explanation.pattern_name.strip()),
+        "has_fallacy_name": bool(explanation.fallacy_name.strip() or explanation.common_fallacy.strip()),
+        "has_counterexample_note": bool(explanation.counterexample_note.strip()),
+        "confidence": explanation.confidence,
         "learner_level": explanation.learner_level,
         "teaching_mode": explanation.teaching_mode,
         "step_count": len(explanation.step_by_step_explanation),
