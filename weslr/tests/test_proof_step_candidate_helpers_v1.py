@@ -13,9 +13,11 @@ if str(ROOT) not in sys.path:
 from weslr.logic_teaching_spine import (  # noqa: E402
     ProofStep,
     ReasoningContextBindingCandidate,
+    classify_conditional_form_mapping,
     classify_proof_step_candidate_type,
     create_proof_step_candidate_from_context_binding,
     create_proof_step_candidates_from_context_bindings,
+    summarize_conditional_form_mapping_diagnostics,
     summarize_proof_step_candidate_diagnostics,
 )
 
@@ -34,6 +36,7 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_proof_step_candidate_helpers_v1.py",
     "weslr/tests/test_logic_teaching_spine_schema_v1.py",
     "weslr/tests/test_synthetic_proof_step_helpers_v1.py",
+    "weslr/tests/test_conditional_form_mapping_helpers_v1.py",
 }
 
 
@@ -144,6 +147,114 @@ class ProofStepCandidateHelpersV1Tests(unittest.TestCase):
 
     def test_does_not_use_item_id_as_authority(self):
         self.assertFalse(create_proof_step_candidate_from_context_binding(self.binding()).anti_gaming.uses_item_id_as_authority)
+
+    def conditional_mapping(self, asserted: str, conclusion: str, **kwargs):
+        data = {
+            "conditional": "P -> Q",
+            "asserted_literal": asserted,
+            "conclusion_literal": conclusion,
+            "conditional_count": 1,
+            "conditional_direction": "P_to_Q",
+            "negation_scope_status": "clear",
+            "slot_binding_status": "complete",
+            "conclusion_binding_count": 1,
+            "requires_semantic_bridge": False,
+        }
+        data.update(kwargs)
+        return classify_conditional_form_mapping(**data)
+
+    def test_conditional_mapping_classifies_modus_ponens(self):
+        result = self.conditional_mapping("P", "Q")
+        self.assertEqual("modus_ponens", result.form_label)
+        self.assertEqual("supported_form", result.support_assessment)
+        self.assertTrue(result.supported_form)
+        self.assertFalse(result.fallacy_shaped)
+
+    def test_conditional_mapping_classifies_modus_tollens(self):
+        result = self.conditional_mapping("¬Q", "¬P")
+        self.assertEqual("modus_tollens", result.form_label)
+        self.assertEqual("supported_form", result.support_assessment)
+
+    def test_conditional_mapping_classifies_affirming_consequent(self):
+        result = self.conditional_mapping("Q", "P")
+        self.assertEqual("affirming_consequent", result.form_label)
+        self.assertEqual("fallacy_shaped", result.support_assessment)
+        self.assertTrue(result.fallacy_shaped)
+
+    def test_conditional_mapping_classifies_denying_antecedent(self):
+        result = self.conditional_mapping("¬P", "¬Q")
+        self.assertEqual("denying_antecedent", result.form_label)
+        self.assertEqual("fallacy_shaped", result.support_assessment)
+
+    def test_conditional_mapping_swapped_conclusion_stays_unsupported(self):
+        result = self.conditional_mapping("P", "¬Q")
+        self.assertEqual("unsupported_form", result.form_label)
+        self.assertEqual("insufficient_structure", result.support_assessment)
+
+    def test_conditional_mapping_missing_conclusion_stays_ambiguous(self):
+        result = self.conditional_mapping("P", "")
+        self.assertEqual("ambiguous_form", result.form_label)
+        self.assertIn("conclusion_literal_unbound", result.unsupported_gaps)
+
+    def test_conditional_mapping_unclear_negation_scope_stays_ambiguous(self):
+        result = self.conditional_mapping("¬Q", "¬P", negation_scope_status="unclear")
+        self.assertEqual("ambiguous_form", result.form_label)
+        self.assertIn("negation_scope_unclear", result.unsupported_gaps)
+
+    def test_conditional_mapping_multiple_conditionals_stays_ambiguous(self):
+        result = self.conditional_mapping("P", "Q", conditional_count=2)
+        self.assertEqual("ambiguous_form", result.form_label)
+        self.assertIn("conditional_count_not_one", result.unsupported_gaps)
+
+    def test_conditional_mapping_fallacy_flag_is_derived_not_primary_input(self):
+        result = self.conditional_mapping("P", "Q", fallacy_shaped=True)
+        self.assertEqual("modus_ponens", result.form_label)
+        self.assertEqual("supported_form", result.support_assessment)
+        self.assertFalse(result.fallacy_shaped)
+
+    def test_conditional_mapping_summary_preserves_safety_flags(self):
+        summary = summarize_conditional_form_mapping_diagnostics([
+            self.conditional_mapping("P", "Q"),
+            self.conditional_mapping("Q", "P"),
+            self.conditional_mapping("P", "¬Q"),
+        ])
+        self.assertEqual(1, summary["supported_form_count"])
+        self.assertEqual(1, summary["fallacy_shaped_count"])
+        self.assertEqual(1, summary["unsupported_or_insufficient_structure_count"])
+        self.assertFalse(summary["answer_selection_enabled"])
+        self.assertFalse(summary["truth_claim_made"])
+        self.assertFalse(summary["official_score_claimed"])
+
+    def test_conditional_fallacy_mapping_is_structural_hint_only(self):
+        candidate = create_proof_step_candidate_from_context_binding(
+            {
+                "binding_id": "ctx:conditional:fallacy",
+                "source_premise_proposition_ids": ["premise:conditional", "premise:literal"],
+                "source_question_instruction_ids": ["question:invalidity"],
+                "source_choice_proposition_ids": ["choice:conclusion"],
+                "expected_reasoning_relation": "test_validity",
+                "candidate_support_role": "tests_target",
+                "choice_target_role": "candidate_invalid_statement",
+                "conditional_form_slots": {
+                    "conditional": "P -> Q",
+                    "asserted_literal": "Q",
+                    "conclusion_literal": "P",
+                    "conditional_count": 1,
+                    "conditional_direction": "P_to_Q",
+                    "negation_scope_status": "clear",
+                    "slot_binding_status": "complete",
+                    "conclusion_binding_count": 1,
+                    "requires_semantic_bridge": False,
+                },
+            }
+        )
+        self.assertEqual("invalidity_test_candidate", candidate.candidate_type)
+        self.assertEqual("affirming_consequent", candidate.inference_pattern_hint)
+        self.assertEqual("unsupported", candidate.support_status)
+        self.assertEqual("low", candidate.confidence)
+        self.assertIn("recognized_fallacy_shaped_pattern", candidate.unsupported_gaps)
+        self.assertFalse(candidate.anti_gaming.uses_answer_key)
+        self.assertTrue(candidate.anti_gaming.no_answer_selection)
 
     def test_summary_is_redacted(self):
         candidate = create_proof_step_candidate_from_context_binding(

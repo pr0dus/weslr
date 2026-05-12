@@ -22,6 +22,8 @@ SAFE_REASONING_CONTEXT_CANDIDATE_SUPPORT_ROLES = {"supports_target", "contradict
 SAFE_PROOF_STEP_CANDIDATE_TYPES = {"support_step_candidate", "contradiction_step_candidate", "counterexample_step_candidate", "rule_application_candidate", "invalidity_test_candidate", "template_completion_candidate", "unsupported_step_candidate"}
 SAFE_PROOF_STEP_CANDIDATE_SUPPORT_STATUSES = {"candidate_only", "insufficient_support", "ambiguous", "unsupported", "unknown"}
 SAFE_PROOF_STEP_SUPPORT_STATUSES = {"supported", "contradicted", "counterexample_supported", "rule_application_supported", "template_completed", "ambiguous", "unsupported"}
+SAFE_CONDITIONAL_FORM_LABELS = {"modus_ponens", "modus_tollens", "affirming_consequent", "denying_antecedent", "ambiguous_form", "unsupported_form"}
+SAFE_CONDITIONAL_FORM_SUPPORT_ASSESSMENTS = {"supported_form", "fallacy_shaped", "insufficient_structure"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -150,6 +152,24 @@ class ProofStepCandidate:
     human_explanation: str = ""
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
     anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class ConditionalFormMappingResult:
+    schema_version: str = "1.0"
+    form_label: str = "ambiguous_form"
+    support_assessment: str = "insufficient_structure"
+    conditional_direction: str = "unknown"
+    asserted_literal: str = "unknown"
+    conclusion_literal: str = "unknown"
+    slot_binding_status: str = "unknown"
+    fallacy_shaped: bool = False
+    supported_form: bool = False
+    unsupported_gaps: list[str] = field(default_factory=list)
+    human_explanation: str = (
+        "Helper-only conditional form mapping from structural slots; does not select answers, "
+        "assert truth, claim soundness, or use benchmark authority."
+    )
 
 
 @dataclass
@@ -1180,6 +1200,179 @@ def summarize_reasoning_context_binding_diagnostics(candidates: list[ReasoningCo
         "legibility_safe": legibility_safe,
     }
 
+def _normalize_conditional_literal(value: object) -> str:
+    text = str(value or "").strip().lower()
+    text = text.replace(" ", "")
+    text = text.replace("¬", "not_").replace("~", "not_").replace("!", "not_")
+    text = text.replace("not", "not_") if text in {"notp", "notq"} else text
+    aliases = {
+        "p": "P",
+        "antecedent": "P",
+        "asserted_antecedent": "P",
+        "q": "Q",
+        "consequent": "Q",
+        "asserted_consequent": "Q",
+        "not_p": "¬P",
+        "not__p": "¬P",
+        "negated_antecedent": "¬P",
+        "denied_antecedent": "¬P",
+        "not_q": "¬Q",
+        "not__q": "¬Q",
+        "negated_consequent": "¬Q",
+        "denied_consequent": "¬Q",
+    }
+    return aliases.get(text, "unknown")
+
+
+def _normalize_conditional_direction(value: object) -> str:
+    text = str(value or "").strip().lower().replace(" ", "_")
+    if text in {"p_to_q", "p→q", "p->q", "if_p_then_q", "clear", "locked", "direction_locked"}:
+        return "P_to_Q"
+    if text in {"unknown", "unclear", "ambiguous", "", "multi", "multiple"}:
+        return "unknown"
+    return "unknown"
+
+
+def _safe_bool_value(record: object, field_name: str, default: bool = False) -> bool:
+    value = _safe_record_value(record, field_name, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "required", "semantic_bridge_required"}
+    return bool(value)
+
+
+def _safe_int_value(record: object, field_name: str, default: int = 0) -> int:
+    value = _safe_record_value(record, field_name, default)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _conditional_slot_value(context_binding: object | None, field_name: str, default: Any = "") -> Any:
+    if context_binding is None:
+        return default
+    slot_payload = _safe_record_value(context_binding, "conditional_form_slots", None) or _safe_record_value(context_binding, "conditional_mapping", None)
+    if isinstance(slot_payload, dict) and field_name in slot_payload:
+        return slot_payload.get(field_name, default)
+    return _safe_record_value(context_binding, field_name, default)
+
+
+def classify_conditional_form_mapping(
+    *,
+    conditional: object = "P -> Q",
+    asserted_literal: object = "",
+    conclusion_literal: object = "",
+    conditional_count: int = 1,
+    conditional_direction: object = "P_to_Q",
+    negation_scope_status: object = "clear",
+    slot_binding_status: object = "complete",
+    conclusion_binding_count: int = 1,
+    requires_semantic_bridge: bool = False,
+    fallacy_shaped: bool | None = None,
+    context_binding: object | None = None,
+) -> ConditionalFormMappingResult:
+    """Classify a completed conditional slot pattern without truth or answer selection.
+
+    The helper accepts only structural slots.  Any caller-provided fallacy flag is ignored;
+    fallacy-shaped status is derived only when the slots exactly match a known invalid form.
+    """
+    if context_binding is not None:
+        conditional = _conditional_slot_value(context_binding, "conditional", conditional)
+        asserted_literal = _conditional_slot_value(context_binding, "asserted_literal", asserted_literal)
+        conclusion_literal = _conditional_slot_value(context_binding, "conclusion_literal", conclusion_literal)
+        conditional_count = _safe_int_value(context_binding, "conditional_count", conditional_count)
+        conditional_direction = _conditional_slot_value(context_binding, "conditional_direction", conditional_direction)
+        negation_scope_status = _conditional_slot_value(context_binding, "negation_scope_status", negation_scope_status)
+        slot_binding_status = _conditional_slot_value(context_binding, "slot_binding_status", slot_binding_status)
+        conclusion_binding_count = _safe_int_value(context_binding, "conclusion_binding_count", conclusion_binding_count)
+        requires_semantic_bridge = _safe_bool_value(context_binding, "requires_semantic_bridge", requires_semantic_bridge)
+
+    gaps: list[str] = []
+    conditional_text = str(conditional or "").strip().lower().replace(" ", "")
+    direction = _normalize_conditional_direction(conditional_direction)
+    asserted = _normalize_conditional_literal(asserted_literal)
+    conclusion = _normalize_conditional_literal(conclusion_literal)
+    slot_status = str(slot_binding_status or "unknown").strip().lower() or "unknown"
+    negation_scope = str(negation_scope_status or "unknown").strip().lower() or "unknown"
+
+    if conditional_count != 1:
+        gaps.append("conditional_count_not_one")
+    if not any(marker in conditional_text for marker in ["p->q", "p→q", "p=>q", "ifpthenq"]):
+        gaps.append("conditional_pattern_not_locked")
+    if direction != "P_to_Q":
+        gaps.append("conditional_direction_unclear")
+    if asserted == "unknown":
+        gaps.append("asserted_literal_unbound")
+    if conclusion == "unknown":
+        gaps.append("conclusion_literal_unbound")
+    if conclusion_binding_count != 1:
+        gaps.append("conclusion_not_single_bound")
+    if negation_scope not in {"clear", "locked", "whole_literal", "unambiguous"}:
+        gaps.append("negation_scope_unclear")
+    if slot_status not in {"complete", "exact", "locked"}:
+        gaps.append("slot_binding_incomplete")
+    if requires_semantic_bridge:
+        gaps.append("semantic_bridge_required")
+
+    if gaps:
+        return ConditionalFormMappingResult(
+            form_label="ambiguous_form",
+            support_assessment="insufficient_structure",
+            conditional_direction=direction,
+            asserted_literal=asserted,
+            conclusion_literal=conclusion,
+            slot_binding_status=slot_status,
+            fallacy_shaped=False,
+            supported_form=False,
+            unsupported_gaps=list(dict.fromkeys(gaps)),
+        )
+
+    mapping = {
+        ("P", "Q"): ("modus_ponens", "supported_form"),
+        ("¬Q", "¬P"): ("modus_tollens", "supported_form"),
+        ("Q", "P"): ("affirming_consequent", "fallacy_shaped"),
+        ("¬P", "¬Q"): ("denying_antecedent", "fallacy_shaped"),
+    }
+    form_label, support_assessment = mapping.get((asserted, conclusion), ("unsupported_form", "insufficient_structure"))
+    return ConditionalFormMappingResult(
+        form_label=form_label,
+        support_assessment=support_assessment,
+        conditional_direction=direction,
+        asserted_literal=asserted,
+        conclusion_literal=conclusion,
+        slot_binding_status=slot_status,
+        fallacy_shaped=support_assessment == "fallacy_shaped",
+        supported_form=support_assessment == "supported_form",
+        unsupported_gaps=[] if support_assessment != "insufficient_structure" else ["unrecognized_conditional_form_mapping"],
+    )
+
+
+def summarize_conditional_form_mapping_diagnostics(results: list[ConditionalFormMappingResult]) -> dict[str, Any]:
+    form_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_LABELS}
+    support_counts = {value: 0 for value in SAFE_CONDITIONAL_FORM_SUPPORT_ASSESSMENTS}
+    unsupported_gap_count = 0
+    for result in results:
+        form_counts[result.form_label] = form_counts.get(result.form_label, 0) + 1
+        support_counts[result.support_assessment] = support_counts.get(result.support_assessment, 0) + 1
+        unsupported_gap_count += len(result.unsupported_gaps)
+    return {
+        "conditional_form_mapping_count": len(results),
+        "conditional_form_mapping_counts": dict(sorted(form_counts.items())),
+        "conditional_support_assessment_counts": dict(sorted(support_counts.items())),
+        "fallacy_shaped_count": sum(1 for result in results if result.fallacy_shaped),
+        "supported_form_count": sum(1 for result in results if result.supported_form),
+        "unsupported_or_insufficient_structure_count": sum(1 for result in results if result.support_assessment == "insufficient_structure"),
+        "unsupported_gap_count": unsupported_gap_count,
+        "answer_selection_enabled": False,
+        "truth_claim_made": False,
+        "official_score_claimed": False,
+        "anti_gaming_safe": True,
+        "legibility_safe": True,
+    }
+
+
 def classify_proof_step_candidate_type(context_binding: object) -> str:
     relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip()
     if relation == "support":
@@ -1213,6 +1406,26 @@ def _proof_step_candidate_support_status(context_binding: object, candidate_type
     return "candidate_only"
 
 
+def _has_conditional_form_slots(context_binding: object) -> bool:
+    slot_payload = _safe_record_value(context_binding, "conditional_form_slots", None) or _safe_record_value(context_binding, "conditional_mapping", None)
+    if isinstance(slot_payload, dict) and slot_payload:
+        return True
+    return any(
+        _safe_record_value(context_binding, field_name, None) is not None
+        for field_name in [
+            "conditional",
+            "asserted_literal",
+            "conclusion_literal",
+            "conditional_count",
+            "conditional_direction",
+            "negation_scope_status",
+            "slot_binding_status",
+            "conclusion_binding_count",
+            "requires_semantic_bridge",
+        ]
+    )
+
+
 def create_proof_step_candidate_from_context_binding(context_binding: object) -> ProofStepCandidate:
     binding_id = str(_safe_record_value(context_binding, "binding_id", "") or "").strip()
     premise_ids = _safe_record_list_value(context_binding, "source_premise_proposition_ids")
@@ -1221,6 +1434,17 @@ def create_proof_step_candidate_from_context_binding(context_binding: object) ->
     expected_relation = str(_safe_record_value(context_binding, "expected_reasoning_relation", "unknown") or "unknown").strip() or "unknown"
     candidate_type = classify_proof_step_candidate_type(context_binding)
     support_status = _proof_step_candidate_support_status(context_binding, candidate_type)
+    inference_pattern_hint = str(_safe_record_value(context_binding, "candidate_support_role", "") or "")
+    if _has_conditional_form_slots(context_binding):
+        conditional_result = classify_conditional_form_mapping(context_binding=context_binding)
+        inference_pattern_hint = conditional_result.form_label
+        unsupported_gaps.extend(conditional_result.unsupported_gaps)
+        if conditional_result.support_assessment == "fallacy_shaped":
+            support_status = "unsupported"
+            unsupported_gaps.append("recognized_fallacy_shaped_pattern")
+        elif conditional_result.support_assessment == "insufficient_structure":
+            support_status = "ambiguous" if support_status == "candidate_only" else support_status
+            unsupported_gaps.append("conditional_form_mapping_insufficient_structure")
     source_context_binding_ids = [binding_id] if binding_id else []
     confidence = "medium" if support_status == "candidate_only" else "low"
     if not source_context_binding_ids:
@@ -1238,7 +1462,7 @@ def create_proof_step_candidate_from_context_binding(context_binding: object) ->
         source_choice_proposition_ids=list(dict.fromkeys(choice_ids)),
         candidate_type=candidate_type,
         expected_reasoning_relation=expected_relation,
-        inference_pattern_hint=str(_safe_record_value(context_binding, "candidate_support_role", "") or ""),
+        inference_pattern_hint=inference_pattern_hint,
         support_status=support_status,
         confidence=confidence,
         unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
