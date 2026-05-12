@@ -12,6 +12,8 @@ SAFE_SUPPORT_STATUSES = {"supported", "unsupported", "invalid", "ambiguous", "un
 SAFE_TEACHING_MODES = {"beginner", "academic", "proof_only", "counterexample_first", "socratic_hint", "spock", "standard"}
 SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
 SAFE_PROPOSITION_MERGE_ORIGINS = {"predicate_derived", "binding_derived", "merged", "unknown"}
+SAFE_SIMPLE_INFERENCE_PATTERN_TYPES = {"shared-subject", "shared-object", "relation-overlap", "contradiction-candidate", "duplicate-support-candidate", "transitivity-candidate", "unsupported/no-pattern"}
+SAFE_SIMPLE_INFERENCE_VALIDITY_STATUSES = {"candidate_only", "unsupported", "ambiguous", "unknown"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -77,6 +79,28 @@ class PropositionMergeCandidate:
     object_canonical_hint: str = ""
     confidence_summary: str = "low"
     duplicate_count: int = 0
+    unsupported_gaps: list[str] = field(default_factory=list)
+    human_explanation: str = ""
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class SimpleInferencePatternCandidate:
+    schema_version: str = "1.0"
+    candidate_id: str = ""
+    pattern_type: str = "unsupported/no-pattern"
+    source_merge_ids: list[str] = field(default_factory=list)
+    source_proposition_ids: list[str] = field(default_factory=list)
+    premise_role_count: int = 0
+    choice_role_count: int = 0
+    shared_subject: bool = False
+    shared_object: bool = False
+    relation_overlap: bool = False
+    contradiction_signal: bool = False
+    transitivity_signal: bool = False
+    confidence: str = "low"
+    validity_status: str = "unknown"
     unsupported_gaps: list[str] = field(default_factory=list)
     human_explanation: str = ""
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
@@ -511,6 +535,92 @@ def summarize_proposition_merge_diagnostics(merge_candidates: list[PropositionMe
         "unsupported_gap_count": unsupported_gap_count,
         "anti_gaming_safe": anti_gaming_safe,
         "legibility_safe": legibility_safe,
+    }
+
+
+
+def create_empty_simple_inference_pattern_candidate(
+    *,
+    candidate_id: str = "",
+    pattern_type: str = "unsupported/no-pattern",
+    source_merge_ids: list[str] | None = None,
+    source_proposition_ids: list[str] | None = None,
+) -> SimpleInferencePatternCandidate:
+    return SimpleInferencePatternCandidate(
+        candidate_id=candidate_id,
+        pattern_type=pattern_type,
+        source_merge_ids=list(source_merge_ids or []),
+        source_proposition_ids=list(source_proposition_ids or []),
+    )
+
+
+def simple_inference_pattern_candidate_to_dict(candidate: SimpleInferencePatternCandidate) -> dict[str, Any]:
+    return asdict(candidate)
+
+
+def simple_inference_pattern_candidate_from_dict(data: dict[str, Any]) -> SimpleInferencePatternCandidate:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return SimpleInferencePatternCandidate(
+        schema_version=data.get("schema_version", "1.0"),
+        candidate_id=data.get("candidate_id", ""),
+        pattern_type=data.get("pattern_type", "unsupported/no-pattern"),
+        source_merge_ids=list(data.get("source_merge_ids") or []),
+        source_proposition_ids=list(data.get("source_proposition_ids") or []),
+        premise_role_count=int(data.get("premise_role_count", 0) or 0),
+        choice_role_count=int(data.get("choice_role_count", 0) or 0),
+        shared_subject=bool(data.get("shared_subject", False)),
+        shared_object=bool(data.get("shared_object", False)),
+        relation_overlap=bool(data.get("relation_overlap", False)),
+        contradiction_signal=bool(data.get("contradiction_signal", False)),
+        transitivity_signal=bool(data.get("transitivity_signal", False)),
+        confidence=data.get("confidence", "low"),
+        validity_status=data.get("validity_status", "unknown"),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        human_explanation=data.get("human_explanation", ""),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_simple_inference_pattern_candidate(candidate: SimpleInferencePatternCandidate) -> list[str]:
+    messages: list[str] = []
+    if not candidate.candidate_id:
+        messages.append("missing candidate id")
+    if candidate.pattern_type not in SAFE_SIMPLE_INFERENCE_PATTERN_TYPES:
+        messages.append("invalid pattern type")
+    if candidate.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence")
+    if candidate.validity_status not in SAFE_SIMPLE_INFERENCE_VALIDITY_STATUSES:
+        messages.append("invalid validity status")
+    if candidate.confidence == "high" and not (candidate.source_merge_ids or candidate.source_proposition_ids):
+        messages.append("missing source ids for high-confidence simple inference candidate")
+    if candidate.confidence == "high" and not candidate.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence simple inference candidate")
+    messages.extend(_validate_shared_safety(candidate.legibility, candidate.anti_gaming))
+    return messages
+
+
+def summarize_simple_inference_pattern_candidate(candidate: SimpleInferencePatternCandidate) -> dict[str, Any]:
+    return {
+        "schema_version": candidate.schema_version,
+        "candidate_id": candidate.candidate_id,
+        "pattern_type": candidate.pattern_type,
+        "source_merge_count": len(candidate.source_merge_ids),
+        "source_proposition_count": len(candidate.source_proposition_ids),
+        "premise_role_count": candidate.premise_role_count,
+        "choice_role_count": candidate.choice_role_count,
+        "shared_subject": candidate.shared_subject,
+        "shared_object": candidate.shared_object,
+        "relation_overlap": candidate.relation_overlap,
+        "contradiction_signal": candidate.contradiction_signal,
+        "transitivity_signal": candidate.transitivity_signal,
+        "confidence": candidate.confidence,
+        "validity_status": candidate.validity_status,
+        "unsupported_gap_count": len(candidate.unsupported_gaps),
+        "human_explanation_available": bool(candidate.human_explanation.strip()),
+        "legibility_safe": _legibility_safe(candidate.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
     }
 
 
