@@ -14,6 +14,11 @@ SAFE_PROPOSITION_ROLES = {"premise", "choice_claim", "background", "unknown"}
 SAFE_PROPOSITION_MERGE_ORIGINS = {"predicate_derived", "binding_derived", "merged", "unknown"}
 SAFE_SIMPLE_INFERENCE_PATTERN_TYPES = {"shared-subject", "shared-object", "relation-overlap", "contradiction-candidate", "duplicate-support-candidate", "transitivity-candidate", "unsupported/no-pattern"}
 SAFE_SIMPLE_INFERENCE_VALIDITY_STATUSES = {"candidate_only", "unsupported", "ambiguous", "unknown"}
+SAFE_REASONING_CONTEXT_QUESTION_TARGET_TYPES = {"must_be_true", "must_be_false", "follows", "does_not_follow", "valid_argument", "invalid_argument", "counterexample", "completion", "unknown"}
+SAFE_REASONING_CONTEXT_PREMISE_CONTEXT_TYPES = {"given_fact", "conditional_rule", "quantified_rule", "exclusion_rule", "definition_like", "background_context", "mixed_context", "unknown"}
+SAFE_REASONING_CONTEXT_CHOICE_TARGET_ROLES = {"candidate_conclusion", "candidate_counterexample", "candidate_invalid_statement", "candidate_valid_statement", "candidate_restatement", "candidate_irrelevant", "fragment_needs_binding", "unknown"}
+SAFE_REASONING_CONTEXT_EXPECTED_RELATIONS = {"support", "contradict", "instantiate_rule", "apply_condition", "test_validity", "provide_counterexample", "complete_template", "unknown"}
+SAFE_REASONING_CONTEXT_CANDIDATE_SUPPORT_ROLES = {"supports_target", "contradicts_target", "tests_target", "restates_target", "irrelevant_to_target", "unknown"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -101,6 +106,25 @@ class SimpleInferencePatternCandidate:
     transitivity_signal: bool = False
     confidence: str = "low"
     validity_status: str = "unknown"
+    unsupported_gaps: list[str] = field(default_factory=list)
+    human_explanation: str = ""
+    legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
+    anti_gaming: PropositionAntiGamingRecord = field(default_factory=PropositionAntiGamingRecord)
+
+
+@dataclass
+class ReasoningContextBindingCandidate:
+    schema_version: str = "1.0"
+    binding_id: str = ""
+    source_premise_proposition_ids: list[str] = field(default_factory=list)
+    source_question_instruction_ids: list[str] = field(default_factory=list)
+    source_choice_proposition_ids: list[str] = field(default_factory=list)
+    question_target_type: str = "unknown"
+    premise_context_type: str = "unknown"
+    choice_target_role: str = "unknown"
+    expected_reasoning_relation: str = "unknown"
+    candidate_support_role: str = "unknown"
+    confidence: str = "low"
     unsupported_gaps: list[str] = field(default_factory=list)
     human_explanation: str = ""
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
@@ -623,6 +647,105 @@ def summarize_simple_inference_pattern_candidate(candidate: SimpleInferencePatte
         "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
     }
 
+
+
+def create_empty_reasoning_context_binding_candidate(
+    *,
+    binding_id: str = "",
+    source_premise_proposition_ids: list[str] | None = None,
+    source_question_instruction_ids: list[str] | None = None,
+    source_choice_proposition_ids: list[str] | None = None,
+    question_target_type: str = "unknown",
+    premise_context_type: str = "unknown",
+    choice_target_role: str = "unknown",
+    expected_reasoning_relation: str = "unknown",
+    candidate_support_role: str = "unknown",
+) -> ReasoningContextBindingCandidate:
+    return ReasoningContextBindingCandidate(
+        binding_id=binding_id,
+        source_premise_proposition_ids=list(source_premise_proposition_ids or []),
+        source_question_instruction_ids=list(source_question_instruction_ids or []),
+        source_choice_proposition_ids=list(source_choice_proposition_ids or []),
+        question_target_type=question_target_type,
+        premise_context_type=premise_context_type,
+        choice_target_role=choice_target_role,
+        expected_reasoning_relation=expected_reasoning_relation,
+        candidate_support_role=candidate_support_role,
+    )
+
+
+def reasoning_context_binding_candidate_to_dict(candidate: ReasoningContextBindingCandidate) -> dict[str, Any]:
+    return asdict(candidate)
+
+
+def reasoning_context_binding_candidate_from_dict(data: dict[str, Any]) -> ReasoningContextBindingCandidate:
+    legibility_data = data.get("legibility") or {}
+    anti_gaming_data = data.get("anti_gaming") or {}
+    return ReasoningContextBindingCandidate(
+        schema_version=data.get("schema_version", "1.0"),
+        binding_id=data.get("binding_id", ""),
+        source_premise_proposition_ids=list(data.get("source_premise_proposition_ids") or []),
+        source_question_instruction_ids=list(data.get("source_question_instruction_ids") or []),
+        source_choice_proposition_ids=list(data.get("source_choice_proposition_ids") or []),
+        question_target_type=data.get("question_target_type", "unknown"),
+        premise_context_type=data.get("premise_context_type", "unknown"),
+        choice_target_role=data.get("choice_target_role", "unknown"),
+        expected_reasoning_relation=data.get("expected_reasoning_relation", "unknown"),
+        candidate_support_role=data.get("candidate_support_role", "unknown"),
+        confidence=data.get("confidence", "low"),
+        unsupported_gaps=list(data.get("unsupported_gaps") or []),
+        human_explanation=data.get("human_explanation", ""),
+        legibility=PropositionLegibilityRecord(**legibility_data),
+        anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
+    )
+
+
+def validate_reasoning_context_binding_candidate(candidate: ReasoningContextBindingCandidate) -> list[str]:
+    messages: list[str] = []
+    if not candidate.binding_id:
+        messages.append("missing binding id")
+    if candidate.question_target_type not in SAFE_REASONING_CONTEXT_QUESTION_TARGET_TYPES:
+        messages.append("invalid question target type")
+    if candidate.premise_context_type not in SAFE_REASONING_CONTEXT_PREMISE_CONTEXT_TYPES:
+        messages.append("invalid premise context type")
+    if candidate.choice_target_role not in SAFE_REASONING_CONTEXT_CHOICE_TARGET_ROLES:
+        messages.append("invalid choice target role")
+    if candidate.expected_reasoning_relation not in SAFE_REASONING_CONTEXT_EXPECTED_RELATIONS:
+        messages.append("invalid expected reasoning relation")
+    if candidate.candidate_support_role not in SAFE_REASONING_CONTEXT_CANDIDATE_SUPPORT_ROLES:
+        messages.append("invalid candidate support role")
+    if candidate.confidence not in SAFE_CONFIDENCE_VALUES:
+        messages.append("invalid confidence")
+    if candidate.confidence == "high" and not candidate.source_premise_proposition_ids:
+        messages.append("missing premise source ids for high-confidence context binding")
+    if candidate.confidence == "high" and not candidate.source_question_instruction_ids:
+        messages.append("missing question instruction source ids for high-confidence context binding")
+    if candidate.confidence == "high" and not candidate.source_choice_proposition_ids:
+        messages.append("missing choice source ids for high-confidence context binding")
+    if candidate.confidence == "high" and not candidate.human_explanation.strip():
+        messages.append("missing human explanation for high-confidence context binding")
+    messages.extend(_validate_shared_safety(candidate.legibility, candidate.anti_gaming))
+    return messages
+
+
+def summarize_reasoning_context_binding_candidate(candidate: ReasoningContextBindingCandidate) -> dict[str, Any]:
+    return {
+        "schema_version": candidate.schema_version,
+        "binding_id": candidate.binding_id,
+        "premise_source_count": len(candidate.source_premise_proposition_ids),
+        "instruction_source_count": len(candidate.source_question_instruction_ids),
+        "candidate_source_count": len(candidate.source_choice_proposition_ids),
+        "target_type": candidate.question_target_type,
+        "context_type": candidate.premise_context_type,
+        "target_role": candidate.choice_target_role,
+        "expected_relation": candidate.expected_reasoning_relation,
+        "support_role": candidate.candidate_support_role,
+        "confidence": candidate.confidence,
+        "unsupported_gap_count": len(candidate.unsupported_gaps),
+        "human_explanation_available": bool(candidate.human_explanation.strip()),
+        "legibility_safe": _legibility_safe(candidate.legibility),
+        "anti_gaming_safe": _anti_gaming_safe(candidate.anti_gaming),
+    }
 
 
 def _merge_value(merge: object, field_name: str, default: Any = "") -> Any:
