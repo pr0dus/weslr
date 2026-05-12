@@ -51,6 +51,8 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_logic_teaching_spine_simple_inference_candidate_schema_v1.py",
     "weslr/tests/test_reasoning_context_binding_schema_v1.py",
     "weslr/tests/test_proof_step_candidate_schema_v1.py",
+    "weslr/tests/test_proof_step_candidate_helpers_v1.py",
+    "weslr/tests/test_synthetic_proof_step_helpers_v1.py",
 }
 
 

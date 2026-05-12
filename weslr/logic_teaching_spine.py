@@ -21,6 +21,7 @@ SAFE_REASONING_CONTEXT_EXPECTED_RELATIONS = {"support", "contradict", "instantia
 SAFE_REASONING_CONTEXT_CANDIDATE_SUPPORT_ROLES = {"supports_target", "contradicts_target", "tests_target", "restates_target", "irrelevant_to_target", "unknown"}
 SAFE_PROOF_STEP_CANDIDATE_TYPES = {"support_step_candidate", "contradiction_step_candidate", "counterexample_step_candidate", "rule_application_candidate", "invalidity_test_candidate", "template_completion_candidate", "unsupported_step_candidate"}
 SAFE_PROOF_STEP_CANDIDATE_SUPPORT_STATUSES = {"candidate_only", "insufficient_support", "ambiguous", "unsupported", "unknown"}
+SAFE_PROOF_STEP_SUPPORT_STATUSES = {"supported", "contradicted", "counterexample_supported", "rule_application_supported", "template_completed", "ambiguous", "unsupported"}
 _ALIGNMENT_STOPWORDS = {"the", "a", "an", "of", "to", "and", "or"}
 
 
@@ -173,6 +174,13 @@ class InferencePattern:
 class ProofStep:
     schema_version: str = "1.0"
     proof_step_id: str = ""
+    source_candidate_id: str = ""
+    source_context_binding_ids: list[str] = field(default_factory=list)
+    source_premise_proposition_ids: list[str] = field(default_factory=list)
+    source_choice_proposition_ids: list[str] = field(default_factory=list)
+    reasoning_relation: str = "unknown"
+    inference_pattern: str = ""
+    support_status: str = "unsupported"
     source_proposition_ids: list[str] = field(default_factory=list)
     target_proposition_id: str = ""
     inference_pattern_id: str = ""
@@ -180,6 +188,7 @@ class ProofStep:
     validity_status: str = "unknown"
     confidence: str = "low"
     human_explanation: str = ""
+    unsupported_gaps: list[str] = field(default_factory=list)
     unsupported_assumptions: list[str] = field(default_factory=list)
     requires_counterexample: bool = False
     legibility: PropositionLegibilityRecord = field(default_factory=PropositionLegibilityRecord)
@@ -1978,7 +1987,9 @@ def create_empty_proof_step(
         source_proposition_ids=list(source_proposition_ids or []),
         target_proposition_id=target_proposition_id,
         inference_pattern_id=inference_pattern_id,
+        inference_pattern=inference_pattern_id,
         validity_status=validity_status,
+        support_status="unsupported" if validity_status == "unknown" else "supported",
     )
 
 
@@ -1989,17 +2000,26 @@ def proof_step_to_dict(proof_step: ProofStep) -> dict[str, Any]:
 def proof_step_from_dict(data: dict[str, Any]) -> ProofStep:
     legibility_data = data.get("legibility") or {}
     anti_gaming_data = data.get("anti_gaming") or {}
+    unsupported_gaps = list(data.get("unsupported_gaps") or data.get("unsupported_assumptions") or [])
     return ProofStep(
         schema_version=data.get("schema_version", "1.0"),
         proof_step_id=data.get("proof_step_id", ""),
+        source_candidate_id=data.get("source_candidate_id", ""),
+        source_context_binding_ids=list(data.get("source_context_binding_ids") or []),
+        source_premise_proposition_ids=list(data.get("source_premise_proposition_ids") or []),
+        source_choice_proposition_ids=list(data.get("source_choice_proposition_ids") or []),
+        reasoning_relation=data.get("reasoning_relation", "unknown"),
+        inference_pattern=data.get("inference_pattern", data.get("inference_pattern_id", "")),
+        support_status=data.get("support_status", "unsupported"),
         source_proposition_ids=list(data.get("source_proposition_ids") or []),
         target_proposition_id=data.get("target_proposition_id", ""),
-        inference_pattern_id=data.get("inference_pattern_id", ""),
+        inference_pattern_id=data.get("inference_pattern_id", data.get("inference_pattern", "")),
         warrant=data.get("warrant", ""),
         validity_status=data.get("validity_status", "unknown"),
         confidence=data.get("confidence", "low"),
         human_explanation=data.get("human_explanation", ""),
-        unsupported_assumptions=list(data.get("unsupported_assumptions") or []),
+        unsupported_gaps=unsupported_gaps,
+        unsupported_assumptions=list(data.get("unsupported_assumptions") or unsupported_gaps),
         requires_counterexample=bool(data.get("requires_counterexample", False)),
         legibility=PropositionLegibilityRecord(**legibility_data),
         anti_gaming=PropositionAntiGamingRecord(**anti_gaming_data),
@@ -2012,6 +2032,8 @@ def validate_proof_step(proof_step: ProofStep) -> list[str]:
         messages.append("missing proof step id")
     if proof_step.validity_status not in SAFE_VALIDITY_TYPES:
         messages.append("invalid validity status")
+    if proof_step.support_status not in SAFE_PROOF_STEP_SUPPORT_STATUSES:
+        messages.append("invalid proof step support status")
     if proof_step.confidence not in SAFE_CONFIDENCE_VALUES:
         messages.append("invalid confidence value")
     if proof_step.confidence == "high" and not proof_step.warrant.strip():
@@ -2026,17 +2048,171 @@ def summarize_proof_step(proof_step: ProofStep) -> dict[str, Any]:
     return {
         "schema_version": proof_step.schema_version,
         "proof_step_id": proof_step.proof_step_id,
+        "has_source_candidate": bool(proof_step.source_candidate_id),
+        "context_binding_source_count": len(proof_step.source_context_binding_ids),
+        "premise_proposition_source_count": len(proof_step.source_premise_proposition_ids),
+        "choice_proposition_source_count": len(proof_step.source_choice_proposition_ids),
         "source_proposition_count": len(proof_step.source_proposition_ids),
         "has_target_proposition": bool(proof_step.target_proposition_id),
-        "has_inference_pattern": bool(proof_step.inference_pattern_id),
+        "reasoning_relation": proof_step.reasoning_relation,
+        "has_inference_pattern": bool(proof_step.inference_pattern.strip() or proof_step.inference_pattern_id.strip()),
+        "support_status": proof_step.support_status,
         "validity_status": proof_step.validity_status,
         "confidence": proof_step.confidence,
         "has_warrant": bool(proof_step.warrant.strip()),
         "human_explanation_available": bool(proof_step.human_explanation.strip()),
+        "unsupported_gap_count": len(proof_step.unsupported_gaps),
         "unsupported_assumption_count": len(proof_step.unsupported_assumptions),
         "requires_counterexample": proof_step.requires_counterexample,
         "legibility_safe": _legibility_safe(proof_step.legibility),
         "anti_gaming_safe": _anti_gaming_safe(proof_step.anti_gaming),
+    }
+
+
+_PROOF_STEP_CANDIDATE_STATUS_MAP = {
+    "support_step_candidate": "supported",
+    "contradiction_step_candidate": "contradicted",
+    "counterexample_step_candidate": "counterexample_supported",
+    "rule_application_candidate": "rule_application_supported",
+    "invalidity_test_candidate": "rule_application_supported",
+    "template_completion_candidate": "template_completed",
+}
+
+
+def _proof_step_support_status_from_candidate(candidate: object) -> str:
+    candidate_type = str(_safe_record_value(candidate, "candidate_type", "unsupported_step_candidate") or "unsupported_step_candidate")
+    candidate_status = str(_safe_record_value(candidate, "support_status", "unknown") or "unknown")
+    if candidate_type not in _PROOF_STEP_CANDIDATE_STATUS_MAP:
+        return "ambiguous" if candidate_status == "ambiguous" else "unsupported"
+    if candidate_status in {"unsupported", "insufficient_support", "unknown"}:
+        return "unsupported"
+    if candidate_status == "ambiguous":
+        return "ambiguous"
+    return _PROOF_STEP_CANDIDATE_STATUS_MAP[candidate_type]
+
+
+def _proof_step_validity_status(support_status: str) -> str:
+    if support_status in {"supported", "rule_application_supported", "template_completed"}:
+        return "valid"
+    if support_status in {"contradicted", "counterexample_supported"}:
+        return "invalid"
+    if support_status == "ambiguous":
+        return "ambiguous"
+    return "unsupported"
+
+
+def create_proof_step_from_candidate(candidate: object) -> ProofStep:
+    if isinstance(candidate, dict):
+        candidate = proof_step_candidate_from_dict(candidate)
+    candidate_id = str(_safe_record_value(candidate, "candidate_id", "") or "").strip()
+    context_ids = _safe_record_list_value(candidate, "source_context_binding_ids")
+    premise_ids = _safe_record_list_value(candidate, "source_premise_proposition_ids")
+    choice_ids = _safe_record_list_value(candidate, "source_choice_proposition_ids")
+    relation = str(_safe_record_value(candidate, "expected_reasoning_relation", "unknown") or "unknown").strip() or "unknown"
+    inference_pattern = str(_safe_record_value(candidate, "inference_pattern_hint", "") or "").strip()
+    confidence = str(_safe_record_value(candidate, "confidence", "low") or "low").strip()
+    if confidence not in SAFE_CONFIDENCE_VALUES:
+        confidence = "low"
+    unsupported_gaps = _safe_record_list_value(candidate, "unsupported_gaps")
+    support_status = _proof_step_support_status_from_candidate(candidate)
+    if not candidate_id:
+        unsupported_gaps.append("missing_source_candidate_id")
+    if not context_ids:
+        unsupported_gaps.append("missing_context_binding_ref")
+    if not premise_ids:
+        unsupported_gaps.append("missing_premise_proposition_refs")
+    if not choice_ids:
+        unsupported_gaps.append("missing_choice_proposition_refs")
+    if relation == "unknown":
+        unsupported_gaps.append("expected_reasoning_relation_unknown")
+    if not inference_pattern:
+        unsupported_gaps.append("inference_pattern_hint_unknown")
+    structural_gap_markers = ("missing_", "_unknown", "unknown_")
+    has_structural_gap = any(str(gap).startswith("missing_") or any(marker in str(gap) for marker in structural_gap_markers[1:]) for gap in unsupported_gaps)
+    if has_structural_gap and support_status not in {"ambiguous", "unsupported"}:
+        support_status = "ambiguous"
+    unique_gaps = list(dict.fromkeys(unsupported_gaps))
+    return ProofStep(
+        proof_step_id=f"proof_step:{candidate_id}" if candidate_id else "",
+        source_candidate_id=candidate_id,
+        source_context_binding_ids=context_ids,
+        source_premise_proposition_ids=premise_ids,
+        source_choice_proposition_ids=choice_ids,
+        reasoning_relation=relation,
+        inference_pattern=inference_pattern,
+        support_status=support_status,
+        source_proposition_ids=list(dict.fromkeys(premise_ids)),
+        target_proposition_id=choice_ids[0] if choice_ids else "",
+        inference_pattern_id=inference_pattern,
+        warrant="Helper-only structural warrant from safe ProofStepCandidate; not answer selection and not a benchmark truth claim.",
+        validity_status=_proof_step_validity_status(support_status),
+        confidence=confidence,
+        human_explanation=str(_safe_record_value(candidate, "human_explanation", "") or "").strip()
+        or "Helper-only proof step from redacted synthetic candidate; no teaching explanation generated.",
+        unsupported_gaps=unique_gaps,
+        unsupported_assumptions=unique_gaps,
+        requires_counterexample=support_status == "counterexample_supported",
+        legibility=PropositionLegibilityRecord(),
+        anti_gaming=PropositionAntiGamingRecord(),
+    )
+
+
+def create_proof_steps_from_candidates(candidates: list[object]) -> list[ProofStep]:
+    return [create_proof_step_from_candidate(candidate) for candidate in list(candidates or [])]
+
+
+def summarize_proof_step_generation_diagnostics(proof_steps: list[ProofStep]) -> dict[str, Any]:
+    support_counts = {value: 0 for value in SAFE_PROOF_STEP_SUPPORT_STATUSES}
+    relation_counts: dict[str, int] = {}
+    pattern_counts: dict[str, int] = {}
+    confidence_counts = {"low": 0, "medium": 0, "high": 0}
+    unsupported_gap_count = 0
+    anti_gaming_safe = True
+    legibility_safe = True
+    for proof_step in proof_steps:
+        support_counts[proof_step.support_status] = support_counts.get(proof_step.support_status, 0) + 1
+        relation_counts[proof_step.reasoning_relation] = relation_counts.get(proof_step.reasoning_relation, 0) + 1
+        pattern_key = proof_step.inference_pattern or "unknown"
+        pattern_counts[pattern_key] = pattern_counts.get(pattern_key, 0) + 1
+        if proof_step.confidence in confidence_counts:
+            confidence_counts[proof_step.confidence] += 1
+        unsupported_gap_count += len(proof_step.unsupported_gaps)
+        findings = validate_proof_step(proof_step)
+        anti_gaming_safe = anti_gaming_safe and not any(
+            finding in findings
+            for finding in [
+                "answer-key use is forbidden",
+                "item-id authority is forbidden",
+                "answer-position bias is forbidden",
+                "official-score claim is forbidden",
+                "benchmark-specific tuning is forbidden",
+                "answer selection must remain disabled",
+            ]
+        )
+        legibility_safe = legibility_safe and not any(
+            finding in findings
+            for finding in [
+                "raw benchmark storage by default is forbidden",
+                "private symbolic authority is forbidden",
+                "unsupported assumptions must remain visible",
+            ]
+        )
+    return {
+        "proof_step_count": len(proof_steps),
+        "support_status_counts": dict(sorted(support_counts.items())),
+        "reasoning_relation_counts": dict(sorted(relation_counts.items())),
+        "inference_pattern_counts": dict(sorted(pattern_counts.items())),
+        "low_confidence_count": confidence_counts["low"],
+        "medium_confidence_count": confidence_counts["medium"],
+        "high_confidence_count": confidence_counts["high"],
+        "unsupported_gap_count": unsupported_gap_count,
+        "proof_chain_generated": False,
+        "teaching_explanation_generated": False,
+        "answer_selection_enabled": False,
+        "truth_claim_made": False,
+        "official_score_claimed": False,
+        "anti_gaming_safe": anti_gaming_safe,
+        "legibility_safe": legibility_safe,
     }
 
 
