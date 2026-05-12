@@ -889,11 +889,16 @@ def _record_markers(*records: object) -> set[str]:
             value = _safe_record_value(record, field_name, "")
             if value:
                 parts.append(str(value))
-        for field_name in ["source_statement_roles", "unsupported_gaps", "source_proposition_ids"]:
+        for field_name in [
+            "source_statement_roles", "unsupported_gaps", "source_proposition_ids",
+            "question_instruction_markers", "question_markers", "target_markers",
+        ]:
             parts.extend(_safe_record_list_value(record, field_name))
     surface = " ".join(parts).lower()
     cleaned = "".join(char if char.isalnum() or char == "_" else " " for char in surface)
-    return {token for token in cleaned.split() if token}
+    tokens = {token for token in cleaned.split() if token}
+    compact_markers = {part.strip().lower().replace(" ", "_") for part in parts if str(part).strip()}
+    return tokens | compact_markers
 
 
 def _has_any_marker(markers: set[str], *groups: set[str]) -> bool:
@@ -901,25 +906,31 @@ def _has_any_marker(markers: set[str], *groups: set[str]) -> bool:
 
 
 def classify_question_target_type(question_instruction: object | None = None, *, markers: list[str] | None = None) -> str:
-    selected = _record_markers(question_instruction) | {str(marker).lower().replace(" ", "_") for marker in (markers or [])}
+    marker_records = [question_instruction] if question_instruction is not None else []
+    selected = _record_markers(*marker_records)
+    for marker in markers or []:
+        marker_text = str(marker).strip().lower()
+        if marker_text:
+            selected.add(marker_text.replace(" ", "_"))
+            selected.update(_record_markers({"normalized_text": marker_text}))
     phrase_markers = " ".join(sorted(selected))
-    if _has_any_marker(selected, {"counterexample", "counterexamples", "counter_example"}):
+    if _has_any_marker(selected, {"counterexample", "counterexamples", "counter_example", "refutes"}) or ({"shows", "false"} <= selected):
         return "counterexample"
-    if _has_any_marker(selected, {"does_not_follow", "not_follow", "not_follows"}) or ({"does", "not", "follow"} <= selected):
+    if _has_any_marker(selected, {"does_not_follow", "not_follow", "not_follows", "not_entailed", "cannot_be_concluded"}) or ({"does", "not", "follow"} <= selected):
         return "does_not_follow"
-    if _has_any_marker(selected, {"invalid_argument", "invalid", "invalidity", "fallacy", "fallacy_shaped"}):
+    if _has_any_marker(selected, {"invalid_argument", "invalid_inference", "invalid", "invalidity", "fallacy", "fallacy_shaped"}):
         return "invalid_argument"
-    if _has_any_marker(selected, {"valid_argument", "validity"}) or ({"valid", "argument"} <= selected):
+    if _has_any_marker(selected, {"valid_argument", "valid_inference", "validity"}) or ({"valid", "argument"} <= selected) or ({"valid", "inference"} <= selected):
         return "valid_argument"
-    if _has_any_marker(selected, {"must_be_false", "must_false"}) or ({"must", "be", "false"} <= selected):
+    if _has_any_marker(selected, {"must_be_false", "must_false", "cannot_be_true"}) or ({"must", "be", "false"} <= selected):
         return "must_be_false"
-    if _has_any_marker(selected, {"must_be_true", "must_true"}) or ({"must", "be", "true"} <= selected):
+    if _has_any_marker(selected, {"must_be_true", "must_true", "necessarily_true", "has_to_be_true"}) or ({"must", "be", "true"} <= selected):
         return "must_be_true"
-    if _has_any_marker(selected, {"follows", "follow", "conclusion", "candidate_conclusion"}):
+    if _has_any_marker(selected, {"follows", "follow", "conclusion", "candidate_conclusion", "can_be_concluded", "valid_conclusion", "entailed"}):
         return "follows"
     if _has_any_marker(
         selected,
-        {"complete", "completion", "completes", "supplies", "bind", "binding", "fragment", "template"},
+        {"complete", "completion", "completes", "supplies", "bind", "binding", "fragment", "template", "fills_the_blank", "which_object", "which_property", "which_statement_completes"},
         {"noun_phrase_choice_binding", "noun", "phrase"},
     ):
         return "completion"
@@ -1048,7 +1059,20 @@ def create_reasoning_context_binding_candidate_from_structures(
         if value:
             choice_ids.append(value)
 
-    question_target_type = classify_question_target_type(questions[0] if questions else None)
+    question_marker_sources: list[str] = []
+    for record in [*questions, *premises, *choices, *simple_candidates]:
+        for field_name in [
+            "question_instruction_markers", "question_markers", "target_markers",
+            "expected_context_binding_type", "expected_structural_pattern",
+            "question_instruction_template", "relation", "relation_canonical_hint",
+            "pattern_type", "choice_target_role", "expected_reasoning_relation",
+        ]:
+            value = _safe_record_value(record, field_name, "")
+            if value:
+                question_marker_sources.append(str(value))
+        for field_name in ["question_instruction_markers", "question_markers", "target_markers"]:
+            question_marker_sources.extend(_safe_record_list_value(record, field_name))
+    question_target_type = classify_question_target_type(questions[0] if questions else None, markers=question_marker_sources)
     premise_context_type = classify_premise_context_type(premises)
     choice_target_role = classify_choice_target_role(choices[0] if choices else None, questions[0] if questions else None)
     expected_relation = _context_expected_relation(question_target_type, premise_context_type, choice_target_role)

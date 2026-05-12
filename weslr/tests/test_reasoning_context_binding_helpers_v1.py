@@ -66,23 +66,44 @@ class ReasoningContextBindingHelpersV1Tests(unittest.TestCase):
     def test_classifier_detects_must_be_false(self):
         self.assertEqual("must_be_false", classify_question_target_type(Record(normalized_text="must be false")))
 
+    def test_classifier_detects_must_be_false_from_cannot_be_true_marker(self):
+        self.assertEqual("must_be_false", classify_question_target_type(Record(question_markers=["cannot be true"])))
+
     def test_classifier_detects_follows(self):
         self.assertEqual("follows", classify_question_target_type(Record(normalized_text="what follows")))
+
+    def test_classifier_detects_valid_conclusion_as_follows(self):
+        self.assertEqual("follows", classify_question_target_type(Record(target_markers=["valid conclusion"])))
 
     def test_classifier_detects_does_not_follow(self):
         self.assertEqual("does_not_follow", classify_question_target_type(Record(normalized_text="does not follow")))
 
+    def test_classifier_detects_not_entailed_as_does_not_follow(self):
+        self.assertEqual("does_not_follow", classify_question_target_type(Record(question_instruction_markers=["not entailed"])))
+
     def test_classifier_detects_valid_argument(self):
         self.assertEqual("valid_argument", classify_question_target_type(Record(normalized_text="valid argument")))
-
-    def test_classifier_detects_counterexample(self):
-        self.assertEqual("counterexample", classify_question_target_type(Record(normalized_text="identify counterexample")))
 
     def test_classifier_detects_invalid_argument(self):
         self.assertEqual("invalid_argument", classify_question_target_type(Record(normalized_text="invalid argument")))
 
+    def test_classifier_detects_fallacy_as_invalid_argument(self):
+        self.assertEqual("invalid_argument", classify_question_target_type(Record(target_markers=["fallacy"])))
+
+    def test_classifier_detects_counterexample(self):
+        self.assertEqual("counterexample", classify_question_target_type(Record(normalized_text="identify counterexample")))
+
+    def test_classifier_detects_refutes_as_counterexample(self):
+        self.assertEqual("counterexample", classify_question_target_type(Record(question_markers=["refutes"])))
+
     def test_classifier_detects_completion(self):
         self.assertEqual("completion", classify_question_target_type(Record(normalized_text="complete the template")))
+
+    def test_classifier_detects_which_object_as_completion(self):
+        self.assertEqual("completion", classify_question_target_type(Record(question_markers=["which object"])))
+
+    def test_classifier_unknown_remains_unknown(self):
+        self.assertEqual("unknown", classify_question_target_type(Record(normalized_text="structural prompt")))
 
     def test_premise_classifier_detects_conditional_rule(self):
         self.assertEqual("conditional_rule", classify_premise_context_type([premise_prop(relation="if then")]))
