@@ -36,6 +36,7 @@ from weslr.unregistered_source_detection import (  # noqa: E402
 ALLOWED_CHANGED = {
     "weslr/unregistered_source_detection.py",
     "weslr/tests/test_unregistered_source_detection_schema_v1.py",
+    "weslr/tests/test_unregistered_source_detection_helpers_v1.py",
 }
 FORBIDDEN_CHANGED = {
     "docs/WESLR_UNREGISTERED_SOURCE_DETECTION_DESIGN_V1.md",

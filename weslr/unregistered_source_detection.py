@@ -417,3 +417,237 @@ def summarize_unregistered_source_detection_report(item: UnregisteredSourceDetec
         "validation_error_count": validation_error_count,
         "contains_redactions": bool(_detect_sensitive_text([item.report_id, item.summary, item.created_at])),
     }
+
+
+def _metadata_values(*values: Any) -> list[str]:
+    collected: list[str] = []
+
+    def collect(value: Any) -> None:
+        if value is None:
+            return
+        if isinstance(value, str):
+            collected.append(value)
+            return
+        if isinstance(value, dict):
+            for nested in value.values():
+                collect(nested)
+            return
+        if isinstance(value, (list, tuple, set)):
+            for nested in value:
+                collect(nested)
+            return
+        collected.append(str(value))
+
+    for value in values:
+        collect(value)
+    return collected
+
+
+def _metadata_text(*values: Any) -> str:
+    return " ".join(_metadata_values(*values)).lower().replace("-", "_")
+
+
+def _registered_source_ids(registered_sources: Any) -> set[str]:
+    source_ids: set[str] = set()
+    for item in registered_sources or []:
+        if isinstance(item, str):
+            if item.strip():
+                source_ids.add(item.strip())
+            continue
+        source_id = getattr(item, "source_id", "")
+        if isinstance(source_id, str) and source_id.strip():
+            source_ids.add(source_id.strip())
+    return source_ids
+
+
+def classify_candidate_source_type(candidate_module_path: str = "", hints: Any = None) -> str:
+    """Classify explicit candidate metadata into a conservative source type.
+
+    This helper uses only caller-provided strings/hints. It does not inspect the
+    filesystem, scan repository contents, call models, or claim certainty.
+    """
+    text = _metadata_text(candidate_module_path, hints)
+    if "self_improvement" in text or "self improvement" in text:
+        return "self_improvement_candidate"
+    if "self_review" in text or "self review" in text:
+        return "self_review"
+    if "ambient" in text:
+        return "ambient_loop"
+    if "voice" in text:
+        return "voice_surface"
+    if "proactive" in text or "suggestion" in text:
+        return "proactive_suggestion"
+    if "advisor" in text or "review" in text or "queue" in text:
+        return "advisor_review"
+    if "memory" in text:
+        return "memory_capture"
+    if "checkpoint" in text or "state" in text:
+        return "state_checkpoint"
+    if "capability" in text:
+        return "capability_guidance"
+    if "teaching" in text or "synthetic" in text:
+        return "teaching_explanation"
+    if "cli" in text or "operator" in text:
+        return "operator_cli"
+    if "institution" in text or "client" in text or "adapter" in text:
+        return "institution_extension"
+    return "unknown"
+
+
+def classify_detection_signal(candidate_module_path: str = "", hints: Any = None) -> str:
+    """Classify explicit candidate metadata into a conservative signal.
+
+    This helper is non-mutating and does not perform repo-wide scanning.
+    """
+    text = _metadata_text(candidate_module_path, hints)
+    if "self_improvement" in text or "self improvement" in text:
+        return "self_improvement_behavior"
+    if "self_review" in text or "self review" in text:
+        return "self_review_behavior"
+    if "voice" in text or "proactive" in text or "ambient" in text:
+        return "voice_or_proactive_behavior"
+    if "advisor" in text:
+        return "advisor_review_behavior"
+    if "queue" in text or "review" in text:
+        return "queue_or_review_behavior"
+    if "memory" in text and ("write" in text or "capture" in text or "mutation" in text):
+        return "memory_write_behavior"
+    if "route" in text or "routing" in text or "decision" in text:
+        return "routing_or_decision_behavior"
+    if "suggest" in text or "proposal" in text:
+        return "suggestion_generation_function"
+    if "doc" in text:
+        return "doc_reference"
+    if "test" in text:
+        return "test_reference"
+    if "unknown_source" in text or "unknown source" in text:
+        return "provenance_unknown_source"
+    if "stale" in text or "incomplete" in text:
+        return "seed_entry_stale_or_incomplete"
+    if "output" in text or "generate" in text:
+        return "module_name_output_like"
+    return "unknown"
+
+
+def _candidate_value(candidate: dict[str, Any], *names: str, default: Any = "") -> Any:
+    for name in names:
+        if name in candidate and candidate[name] is not None:
+            return candidate[name]
+    return default
+
+
+def create_unregistered_source_finding_from_candidate(
+    candidate_source_id: str = "",
+    candidate_module_path: str = "",
+    candidate_metadata: dict[str, Any] | None = None,
+    registered_sources: Any = None,
+    **overrides: Any,
+) -> UnregisteredSourceFinding | None:
+    """Create an in-memory finding from explicit candidate metadata.
+
+    Registered candidates return ``None``. Unregistered candidates return a safe
+    review-only finding. This helper does not scan files, persist registries,
+    write queues, mutate runtime state, or call external models/advisors.
+    """
+    metadata = dict(candidate_metadata or {})
+    source_id = candidate_source_id or str(_candidate_value(metadata, "source_id", "candidate_source_id", default=""))
+    module_path = candidate_module_path or str(_candidate_value(metadata, "module_path", "candidate_module_path", "name", default=""))
+    registered_ids = _registered_source_ids(registered_sources)
+    if source_id and source_id in registered_ids:
+        return None
+
+    hints = _candidate_value(metadata, "hints", "hint", "signals", "tags", default=[])
+    source_type = overrides.pop("candidate_source_type", "") or classify_candidate_source_type(module_path or source_id, hints)
+    signal = overrides.pop("detection_signal", "") or classify_detection_signal(module_path or source_id, hints)
+    finding_type = overrides.pop("finding_type", "unregistered_source_candidate")
+    if signal == "voice_or_proactive_behavior" or source_type in {"voice_surface", "ambient_loop", "proactive_suggestion"}:
+        finding_type = "unregistered_voice_or_proactive_source"
+    if signal == "self_improvement_behavior" or source_type == "self_improvement_candidate":
+        finding_type = "unregistered_self_improvement_source"
+
+    finding = create_empty_unregistered_source_finding(
+        finding_id=overrides.pop("finding_id", f"finding_{source_id or 'unknown_source'}"),
+        candidate_source_id=source_id,
+        finding_type=finding_type,
+        candidate_module_path=module_path,
+        candidate_source_type=source_type,
+        detection_signal=signal,
+        evidence_summary=overrides.pop("evidence_summary", "explicit candidate metadata indicates source review may be required"),
+        is_registered=False,
+        authority_level=overrides.pop("authority_level", "unknown"),
+        operator_review_required=True,
+        recommended_action=overrides.pop("recommended_action", "operator review required before registration or activation"),
+        risk_level=overrides.pop("risk_level", "medium" if finding_type in {"unregistered_voice_or_proactive_source", "unregistered_self_improvement_source"} else "low"),
+        related_docs=list(_candidate_value(metadata, "related_docs", default=[])),
+        related_tests=list(_candidate_value(metadata, "related_tests", default=[])),
+        safety_flags=UnregisteredSourceDetectionSafetyFlags(),
+    )
+    for key, value in overrides.items():
+        if not hasattr(finding, key):
+            raise ValueError(f"unknown unregistered source finding field: {key}")
+        setattr(finding, key, value)
+    return finding
+
+
+def create_unregistered_source_detection_report_from_candidates(
+    candidates: list[dict[str, Any]],
+    registered_sources: Any = None,
+    report_id: str = "unregistered_source_detection_report",
+    registry_seed_entry_count: int = 0,
+    **overrides: Any,
+) -> UnregisteredSourceDetectionReport:
+    """Create an in-memory report from explicit candidate metadata records."""
+    findings: list[UnregisteredSourceFinding] = []
+    for candidate in candidates:
+        finding = create_unregistered_source_finding_from_candidate(
+            candidate_source_id=str(_candidate_value(candidate, "source_id", "candidate_source_id", default="")),
+            candidate_module_path=str(_candidate_value(candidate, "module_path", "candidate_module_path", "name", default="")),
+            candidate_metadata=candidate,
+            registered_sources=registered_sources,
+        )
+        if finding is not None:
+            findings.append(finding)
+
+    report = create_empty_unregistered_source_detection_report(
+        report_id=report_id,
+        findings=findings,
+        scan_mode="manual_review_only",
+        registry_seed_entry_count=registry_seed_entry_count,
+        summary="explicit candidate metadata converted to review-only findings",
+        safety_flags=UnregisteredSourceDetectionSafetyFlags(),
+    )
+    for key, value in overrides.items():
+        if not hasattr(report, key):
+            raise ValueError(f"unknown unregistered source report field: {key}")
+        setattr(report, key, value)
+    report.finding_count = len(report.findings)
+    return report
+
+
+def summarize_unregistered_source_detection_diagnostics(
+    report: UnregisteredSourceDetectionReport,
+    candidate_count: int | None = None,
+    registered_count: int | None = None,
+) -> dict[str, Any]:
+    """Return redacted/count-only diagnostics for helper-created reports."""
+    base = summarize_unregistered_source_detection_report(report)
+    inferred_candidate_count = candidate_count if candidate_count is not None else base["finding_count"]
+    inferred_registered_count = registered_count if registered_count is not None else max(0, inferred_candidate_count - base["finding_count"])
+    return {
+        "schema_version": report.schema_version,
+        "summary_mode": "redacted_count_only",
+        "candidate_count": inferred_candidate_count,
+        "finding_count": base["finding_count"],
+        "finding_type_counts": base["by_finding_type"],
+        "detection_signal_counts": base["by_detection_signal"],
+        "risk_counts": base["by_risk_level"],
+        "registered_count": inferred_registered_count,
+        "unregistered_count": base["finding_count"],
+        "operator_review_required_count": base["operator_review_required_count"],
+        "unsafe_flag_count": base["safety_error_count"],
+        "queue_writes_performed": False,
+        "registry_persistence_performed": False,
+        "external_model_calls_performed": False,
+        "runtime_changes_performed": False,
+        "validation_error_count": base["validation_error_count"],
+    }
