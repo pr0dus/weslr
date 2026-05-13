@@ -30,8 +30,10 @@ FORBIDDEN_CHANGED = {
 }
 ALLOWED_CHANGED = {
     "weslr/logic_teaching_spine.py",
+    "weslr/tests/test_synthetic_proof_step_helpers_v1.py",
     "weslr/tests/test_teaching_explanation_schema_alignment_v1.py",
     "weslr/tests/test_teaching_explanation_helpers_v1.py",
+    "weslr/tests/test_teaching_explanation_fallacy_mapping_helpers_v1.py",
 }
 
 

@@ -2434,6 +2434,8 @@ def proof_step_from_dict(data: dict[str, Any]) -> ProofStep:
         inference_pattern_id=data.get("inference_pattern_id", data.get("inference_pattern", "")),
         warrant=data.get("warrant", ""),
         validity_status=data.get("validity_status", "unknown"),
+        conditional_form_mapping=dict(data.get("conditional_form_mapping") or {}),
+        conditional_form_mapping_origin=data.get("conditional_form_mapping_origin", "insufficient_slot_evidence"),
         confidence=data.get("confidence", "low"),
         human_explanation=data.get("human_explanation", ""),
         unsupported_gaps=unsupported_gaps,
@@ -2883,6 +2885,24 @@ def _teaching_proof_step_list_value(proof_step: object, field_name: str) -> list
     return []
 
 
+
+def _teaching_source_legibility(proof_step: object) -> PropositionLegibilityRecord:
+    source = _teaching_proof_step_value(proof_step, "legibility", None)
+    if isinstance(source, PropositionLegibilityRecord):
+        return PropositionLegibilityRecord(**asdict(source))
+    if isinstance(source, dict):
+        return PropositionLegibilityRecord(**source)
+    return PropositionLegibilityRecord()
+
+
+def _teaching_source_anti_gaming(proof_step: object) -> PropositionAntiGamingRecord:
+    source = _teaching_proof_step_value(proof_step, "anti_gaming", None)
+    if isinstance(source, PropositionAntiGamingRecord):
+        return PropositionAntiGamingRecord(**asdict(source))
+    if isinstance(source, dict):
+        return PropositionAntiGamingRecord(**source)
+    return PropositionAntiGamingRecord()
+
 def _teaching_pattern_name_from_proof_step(proof_step: object) -> str:
     mapping = _teaching_proof_step_value(proof_step, "conditional_form_mapping", {})
     mapping = mapping if isinstance(mapping, dict) else {}
@@ -2899,13 +2919,10 @@ def _teaching_fallacy_name_from_proof_step(proof_step: object, pattern_name: str
     mapping = mapping if isinstance(mapping, dict) else {}
     support_assessment = str(mapping.get("support_assessment", "") or "").strip()
     fallacy_shaped = bool(mapping.get("fallacy_shaped", False)) or support_assessment == "fallacy_shaped"
-    normalized_pattern = pattern_name.replace("_", " ").strip()
     if fallacy_shaped and pattern_name in {"affirming_consequent", "affirming the consequent"}:
         return "affirming the consequent"
     if fallacy_shaped and pattern_name in {"denying_antecedent", "denying the antecedent"}:
         return "denying the antecedent"
-    if fallacy_shaped and normalized_pattern and normalized_pattern != "unknown pattern":
-        return normalized_pattern
     return ""
 
 
@@ -2963,6 +2980,8 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
     confidence = str(_teaching_proof_step_value(proof_step, "confidence", "low") or "low").strip()
     if confidence not in SAFE_CONFIDENCE_VALUES:
         confidence = "low"
+    legibility = _teaching_source_legibility(proof_step)
+    anti_gaming = _teaching_source_anti_gaming(proof_step)
     context_ids = _teaching_proof_step_list_value(proof_step, "source_context_binding_ids")
     premise_ids = _teaching_proof_step_list_value(proof_step, "source_premise_proposition_ids")
     choice_ids = _teaching_proof_step_list_value(proof_step, "source_choice_proposition_ids")
@@ -2974,10 +2993,14 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
         unsupported_gaps.append("structural_support_missing_or_ambiguous")
     pattern_name = _teaching_pattern_name_from_proof_step(proof_step)
     fallacy_name = _teaching_fallacy_name_from_proof_step(proof_step, pattern_name)
+    if fallacy_name or support_status in {"ambiguous", "unsupported", "unknown"}:
+        confidence = "low"
     counterexample_note = _teaching_counterexample_note(proof_step, support_status)
     core_claim, why, steps = _teaching_mode_text(mode, support_status, pattern_name, fallacy_name, len(unsupported_gaps))
-    if fallacy_name:
-        steps.append(f"Fallacy-shaped pattern: {fallacy_name}.")
+    if fallacy_name == "affirming the consequent":
+        steps.append("This has the structure of affirming the consequent.")
+    elif fallacy_name == "denying the antecedent":
+        steps.append("This has the structure of denying the antecedent.")
     if counterexample_note:
         steps.append("Counterexample support is recorded structurally.")
     if unsupported_gaps:
@@ -3002,8 +3025,8 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
         uncertainty_note="Unsupported or ambiguous structure is not upgraded to certainty." if support_status in {"ambiguous", "unsupported", "unknown"} else "No truth, soundness, answer, or score claim is made.",
         human_explanation="Redacted helper-only teaching explanation from synthetic proof-step structure.",
         unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
-        legibility=PropositionLegibilityRecord(),
-        anti_gaming=PropositionAntiGamingRecord(),
+        legibility=legibility,
+        anti_gaming=anti_gaming,
     )
     return explanation
 
