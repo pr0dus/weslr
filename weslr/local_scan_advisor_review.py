@@ -13,6 +13,13 @@ from datetime import datetime, timezone
 from typing import Any
 import re
 
+from weslr.advisor_review_queue import (
+    AdvisorReviewQueueItem,
+    AdvisorReviewQueueSafetyFlags,
+    create_empty_advisor_review_queue_item,
+    validate_advisor_review_queue_item,
+)
+
 
 ALLOWED_FINDING_TYPES = {
     "stale_prompt_template",
@@ -74,6 +81,18 @@ PROHIBITED_ACTION_PATTERNS = {
 }
 
 SUMMARY_REDACTION = "[redacted]"
+
+FINDING_TYPE_TO_SUGGESTION_TYPE = {
+    "stale_prompt_template": "prompt_template_review",
+    "missing_template_coverage": "prompt_template_review",
+    "provider_health_note": "provider_registry_review",
+    "provider_registry_gap": "provider_registry_review",
+    "capability_scope_gap": "capability_scope_review",
+    "safety_policy_drift": "safety_policy_review",
+    "unsupported_gap_trend": "gap_taxonomy_review",
+    "review_due": "advisor_review",
+    "unknown": "advisor_review",
+}
 
 
 @dataclass
@@ -349,5 +368,194 @@ def summarize_local_scan_report(report: LocalScanReport) -> dict[str, Any]:
         "safety_error_count": len(_safety_flag_errors(report.safety_flags)),
         "validation_error_count": validation_error_count,
         "redaction_count": redaction_count,
+        "summary_mode": "redacted_count_only",
+    }
+
+
+def _coerce_local_scan_finding(finding: LocalScanFinding | dict[str, Any]) -> LocalScanFinding:
+    return finding if isinstance(finding, LocalScanFinding) else local_scan_finding_from_dict(finding)
+
+
+def _coerce_local_scan_report(report: LocalScanReport | dict[str, Any]) -> LocalScanReport:
+    return report if isinstance(report, LocalScanReport) else local_scan_report_from_dict(report)
+
+
+def _map_finding_type_to_suggestion_type(finding_type: str) -> str:
+    return FINDING_TYPE_TO_SUGGESTION_TYPE.get(finding_type, "advisor_review")
+
+
+def _safe_queue_notes_from_finding(finding: LocalScanFinding, *, force_unknown_note: bool = False) -> list[str]:
+    notes: list[str] = []
+    for note in list(finding.notes or []):
+        redacted = _redact_text(note).strip()
+        if redacted:
+            notes.append(redacted)
+    redacted_evidence = _redact_text(finding.evidence_summary).strip()
+    if redacted_evidence:
+        notes.append(f"evidence_summary: {redacted_evidence}")
+    if finding.source_artifact.strip():
+        notes.append("source_artifact: [redacted]")
+    if force_unknown_note:
+        notes.append("mapping_note: unknown finding_type mapped conservatively")
+    return list(dict.fromkeys(notes))
+
+
+def map_local_scan_finding_to_advisor_queue_item(finding: LocalScanFinding | dict[str, Any]) -> dict[str, Any]:
+    source_finding = _coerce_local_scan_finding(finding)
+    source_errors = validate_local_scan_finding(source_finding)
+    if source_errors:
+        return {
+            "queue_item": None,
+            "validation_errors": source_errors,
+            "source_validation_errors": source_errors,
+            "target_validation_errors": [],
+            "persisted": False,
+            "external_model_calls_made": False,
+            "runtime_changes_made": False,
+            "answer_selection": False,
+            "truth_claim": False,
+            "official_score": False,
+        }
+
+    force_unknown_note = source_finding.finding_type == "unknown" or source_finding.finding_type not in FINDING_TYPE_TO_SUGGESTION_TYPE
+    mapped_risk_level = "unknown" if force_unknown_note else source_finding.risk_level
+    queue_item = create_empty_advisor_review_queue_item(
+        suggestion_id=source_finding.finding_id,
+        trigger_reason=source_finding.trigger_reason,
+        recommended_action=source_finding.recommended_action,
+        suggestion_type=_map_finding_type_to_suggestion_type(source_finding.finding_type),
+        source="local_scan",
+        affected_templates=list(source_finding.affected_templates),
+        affected_providers=list(source_finding.affected_providers),
+        capability_scope=list(source_finding.capability_scope),
+        risk_level=mapped_risk_level,
+        requires_operator_approval=True,
+        advisor_call_allowed=False,
+        advisor_call_mode="local_scan_only",
+        review_status="pending_review",
+        operator_decision="pending_review",
+        safety_flags=AdvisorReviewQueueSafetyFlags(),
+        linked_advisor_review_ids=[],
+        linked_proposal_ids=[],
+        notes=_safe_queue_notes_from_finding(source_finding, force_unknown_note=force_unknown_note),
+    )
+
+    target_errors = validate_advisor_review_queue_item(queue_item)
+    if target_errors:
+        return {
+            "queue_item": None,
+            "validation_errors": target_errors,
+            "source_validation_errors": [],
+            "target_validation_errors": target_errors,
+            "persisted": False,
+            "external_model_calls_made": False,
+            "runtime_changes_made": False,
+            "answer_selection": False,
+            "truth_claim": False,
+            "official_score": False,
+        }
+
+    return {
+        "queue_item": queue_item,
+        "validation_errors": [],
+        "source_validation_errors": [],
+        "target_validation_errors": [],
+        "persisted": False,
+        "external_model_calls_made": False,
+        "runtime_changes_made": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+    }
+
+
+def map_local_scan_report_to_advisor_queue_items(report: LocalScanReport | dict[str, Any]) -> dict[str, Any]:
+    source_report = _coerce_local_scan_report(report)
+    report_errors = validate_local_scan_report(source_report)
+    queue_items: list[AdvisorReviewQueueItem] = []
+    validation_errors: list[str] = []
+    finding_results: list[dict[str, Any]] = []
+
+    for index, finding in enumerate(source_report.findings):
+        result = map_local_scan_finding_to_advisor_queue_item(finding)
+        finding_results.append(result)
+        if result["queue_item"] is not None:
+            queue_items.append(result["queue_item"])
+        for error in result["validation_errors"]:
+            validation_errors.append(f"finding[{index}]: {error}")
+
+    for error in report_errors:
+        if error not in validation_errors:
+            validation_errors.append(error)
+
+    return {
+        "queue_items": queue_items,
+        "validation_errors": validation_errors,
+        "report_validation_errors": report_errors,
+        "finding_results": finding_results,
+        "persisted": False,
+        "external_model_calls_made": False,
+        "runtime_changes_made": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+    }
+
+
+def summarize_local_scan_queue_mapping_diagnostics(
+    findings_or_report: LocalScanReport | list[AdvisorReviewQueueItem] | list[dict[str, Any]] | dict[str, Any],
+) -> dict[str, Any]:
+    if isinstance(findings_or_report, LocalScanReport) or (
+        isinstance(findings_or_report, dict) and "findings" in findings_or_report and "scan_id" in findings_or_report
+    ):
+        mapping_result = map_local_scan_report_to_advisor_queue_items(findings_or_report)
+        finding_count = len(_coerce_local_scan_report(findings_or_report).findings)
+    elif isinstance(findings_or_report, dict) and "queue_items" in findings_or_report:
+        mapping_result = findings_or_report
+        finding_count = len(mapping_result.get("finding_results", [])) or len(mapping_result.get("queue_items", []))
+    else:
+        queue_items = [
+            item if isinstance(item, AdvisorReviewQueueItem) else item.get("queue_item")
+            for item in list(findings_or_report or [])
+            if item is not None and (isinstance(item, AdvisorReviewQueueItem) or item.get("queue_item") is not None)
+        ]
+        mapping_result = {
+            "queue_items": queue_items,
+            "validation_errors": [],
+            "persisted": False,
+            "external_model_calls_made": False,
+            "runtime_changes_made": False,
+            "answer_selection": False,
+            "truth_claim": False,
+            "official_score": False,
+        }
+        finding_count = len(list(findings_or_report or []))
+
+    suggestion_type_counts: dict[str, int] = {}
+    risk_level_counts: dict[str, int] = {}
+    advisor_call_allowed_count = 0
+    requires_operator_approval_count = 0
+    queue_items = [item for item in mapping_result.get("queue_items", []) if isinstance(item, AdvisorReviewQueueItem)]
+
+    for item in queue_items:
+        suggestion_type_counts[item.suggestion_type] = suggestion_type_counts.get(item.suggestion_type, 0) + 1
+        risk_level_counts[item.risk_level] = risk_level_counts.get(item.risk_level, 0) + 1
+        advisor_call_allowed_count += int(item.advisor_call_allowed)
+        requires_operator_approval_count += int(item.requires_operator_approval)
+
+    return {
+        "finding_count": finding_count,
+        "mapped_queue_item_proposal_count": len(queue_items),
+        "validation_error_count": len(mapping_result.get("validation_errors", [])),
+        "risk_level_counts": dict(sorted(risk_level_counts.items())),
+        "suggestion_type_counts": dict(sorted(suggestion_type_counts.items())),
+        "advisor_call_allowed_count": advisor_call_allowed_count,
+        "requires_operator_approval_count": requires_operator_approval_count,
+        "persistence_performed": False,
+        "external_model_calls_made": False,
+        "runtime_changes_made": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
         "summary_mode": "redacted_count_only",
     }

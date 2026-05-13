@@ -25,6 +25,7 @@ from weslr.local_scan_advisor_review import (  # noqa: E402
     local_scan_finding_to_dict,
     local_scan_report_from_dict,
     local_scan_report_to_dict,
+    map_local_scan_finding_to_advisor_queue_item,
     summarize_local_scan_finding,
     summarize_local_scan_report,
     validate_local_scan_finding,
@@ -34,6 +35,7 @@ from weslr.local_scan_advisor_review import (  # noqa: E402
 ALLOWED_CHANGED = {
     "weslr/local_scan_advisor_review.py",
     "weslr/tests/test_local_scan_advisor_review_schema_v1.py",
+    "weslr/tests/test_local_scan_advisor_queue_mapping_helpers_v1.py",
 }
 FORBIDDEN_CHANGED = {
     "weslr/advisor_review_queue.py",
@@ -258,14 +260,17 @@ class LocalScanAdvisorReviewSchemaV1Tests(unittest.TestCase):
     def test_41_local_scan_adapter_design_test_still_passes(self):
         subprocess.run(["python3", "weslr/tests/test_local_scan_only_advisor_review_adapter_design_v1.py"], cwd=str(ROOT), check=True)
 
-    def test_42_advisor_review_queue_schema_test_still_passes(self):
+    def test_42_mapping_helper_import_smoke_test(self):
+        self.assertIsNotNone(map_local_scan_finding_to_advisor_queue_item)
+
+    def test_43_advisor_review_queue_schema_test_still_passes(self):
         subprocess.run(["python3", "weslr/tests/test_advisor_review_queue_schema_v1.py"], cwd=str(ROOT), check=True)
 
-    def test_43_release_gate_check_pass(self):
+    def test_44_release_gate_check_pass(self):
         subprocess.run(["python3", "weslr/tests/release_gate_v1.py"], cwd=str(ROOT), check=True)
         subprocess.run(["bash", "scripts/weslr_release_check.sh"], cwd=str(ROOT), check=True)
 
-    def test_44_no_forbidden_files_changed(self):
+    def test_45_no_forbidden_files_changed(self):
         changed = set(subprocess.check_output(["git", "diff", "--name-only"], cwd=str(ROOT), text=True).splitlines())
         staged = set(subprocess.check_output(["git", "diff", "--cached", "--name-only"], cwd=str(ROOT), text=True).splitlines())
         untracked = set(subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], cwd=str(ROOT), text=True).splitlines())
