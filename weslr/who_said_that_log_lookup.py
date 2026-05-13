@@ -11,9 +11,25 @@ answers, or claim truth/soundness/official scores.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 import json
+import os
 import re
+import tempfile
+
+from weslr.voice_source_attribution_log import (
+    VoiceAttributionLogEvent,
+    validate_voice_attribution_log_event,
+    voice_attribution_log_event_from_dict,
+    voice_attribution_log_event_to_dict,
+)
+from weslr.who_said_that_query_surface import (
+    WhoSaidThatQueryIntent,
+    create_missing_attribution_answer,
+    resolve_who_said_that_from_provided_records,
+)
 
 
 ALLOWED_STORAGE_FORMATS = {"jsonl", "json", "unknown"}
@@ -406,4 +422,273 @@ def summarize_who_said_that_log_lookup_results(items: list[WhoSaidThatLogLookupR
         "truth_claim_made_count": sum(1 for item in items if item.truth_claim_made),
         "official_score_claimed_count": sum(1 for item in items if item.official_score_claimed),
         "validation_error_count_total": sum(summary["validation_error_count"] for summary in summaries),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Read-only helper layer V1
+# ---------------------------------------------------------------------------
+
+def _stable_lookup_result_id(request_id: str, suffix: str = "result") -> str:
+    safe_request_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", request_id.strip() or "unknown_request")
+    return f"{safe_request_id}_{suffix}"
+
+
+def _is_external_storage_path(value: str) -> bool:
+    lowered = value.lower()
+    return lowered.startswith(("s3://", "gs://", "http://", "https://", "ftp://", "file://"))
+
+
+def _has_path_traversal(path: Path) -> bool:
+    return any(part == ".." for part in path.parts)
+
+
+def validate_who_said_that_lookup_path(
+    path: str | os.PathLike[str],
+    policy: WhoSaidThatLogLookupPathPolicy,
+) -> list[str]:
+    """Validate an explicit lookup path without creating or reading files."""
+    errors = validate_who_said_that_log_lookup_path_policy(policy)
+    raw_path = os.fspath(path)
+    if not raw_path.strip():
+        errors.append("missing explicit lookup path")
+        return errors
+    if _is_external_storage_path(raw_path) and not policy.allow_external_storage:
+        errors.append("external storage path rejected")
+    candidate = Path(raw_path)
+    safe_temp_root = Path(tempfile.gettempdir()).resolve()
+    is_safe_temp_path = False
+    if candidate.is_absolute():
+        try:
+            is_safe_temp_path = candidate.resolve(strict=False).is_relative_to(safe_temp_root)
+        except OSError:
+            is_safe_temp_path = False
+    if candidate.is_absolute() and not policy.allow_absolute_paths and not is_safe_temp_path:
+        errors.append("absolute path rejected")
+    if _has_path_traversal(candidate) and not policy.allow_path_traversal:
+        errors.append("path traversal rejected")
+    if policy.create_if_missing_allowed:
+        errors.append("create_if_missing_allowed true")
+    if policy.writes_allowed:
+        errors.append("writes_allowed true")
+    if not policy.read_only_required:
+        errors.append("read_only_required disabled")
+    if not policy.explicit_path_policy_required:
+        errors.append("explicit_path_policy_required disabled")
+    if not policy.redaction_required:
+        errors.append("redaction_required disabled")
+    return list(dict.fromkeys(errors))
+
+
+def _safe_event_snapshot(event: VoiceAttributionLogEvent) -> dict[str, Any]:
+    data = voice_attribution_log_event_to_dict(event)
+    allowed_keys = [
+        "schema_version",
+        "event_id",
+        "event_type",
+        "utterance_id",
+        "output_provenance_id",
+        "source_subsystem",
+        "spoken_text_hash",
+        "spoken_text_stored",
+        "speech_emitted",
+        "speech_success",
+        "tts_engine",
+        "stt_engine",
+        "model_provider",
+        "model_name",
+        "llm_assisted",
+        "authority_level",
+        "truth_class",
+        "redacted_summary",
+        "created_at",
+        "trace_refs",
+        "attribution_record_snapshot",
+    ]
+    snapshot = {key: data.get(key) for key in allowed_keys if key in data}
+    if snapshot.get("spoken_text_stored") is True:
+        snapshot["spoken_text_stored"] = False
+        snapshot["redaction_note"] = "raw spoken text not included"
+    snapshot.pop("raw_spoken_text", None)
+    snapshot.pop("spoken_text", None)
+    snapshot.pop("transcript", None)
+    return snapshot
+
+
+def _redacted_event_summary(event: VoiceAttributionLogEvent) -> str:
+    parts = [
+        f"event_type={event.event_type or 'unknown'}",
+        f"utterance_id_present={bool(event.utterance_id)}",
+        f"trace_ref_count={len(event.trace_refs)}",
+        f"source_subsystem={event.source_subsystem or 'unknown'}",
+    ]
+    if event.redacted_summary:
+        parts.append(f"summary={_redact_text(event.redacted_summary)}")
+    return "; ".join(parts)
+
+
+def _event_sort_key(event: VoiceAttributionLogEvent) -> tuple[str, str]:
+    return (event.created_at or "", event.event_id or "")
+
+
+def _within_time_window(event: VoiceAttributionLogEvent, start: str, end: str) -> bool:
+    created = event.created_at or ""
+    if not created:
+        return False
+    return start <= created <= end
+
+
+def select_voice_attribution_log_events(
+    events: list[VoiceAttributionLogEvent | dict[str, Any]],
+    request: WhoSaidThatLogLookupRequest,
+) -> list[VoiceAttributionLogEvent]:
+    """Pure in-memory event selection. It performs no disk IO and no answer selection."""
+    parsed: list[VoiceAttributionLogEvent] = []
+    for event in events:
+        try:
+            candidate = event if isinstance(event, VoiceAttributionLogEvent) else voice_attribution_log_event_from_dict(event)
+            if not validate_voice_attribution_log_event(candidate):
+                parsed.append(candidate)
+        except (TypeError, ValueError):
+            continue
+    limit = max(1, request.max_events)
+    if request.lookup_mode == "by_utterance_id":
+        selected = [event for event in parsed if event.utterance_id == request.requested_utterance_id]
+    elif request.lookup_mode == "by_trace_ref":
+        selected = [event for event in parsed if request.requested_trace_ref in event.trace_refs]
+    elif request.lookup_mode == "by_time_window":
+        selected = [event for event in parsed if _within_time_window(event, request.time_window_start, request.time_window_end)]
+    elif request.lookup_mode == "manual_review_only" or request.manual_review_only:
+        selected = []
+    else:
+        selected = sorted(parsed, key=_event_sort_key, reverse=True)[:limit]
+    return selected[:limit]
+
+
+def load_voice_attribution_log_events_read_only(
+    path: str | os.PathLike[str],
+    request: WhoSaidThatLogLookupRequest,
+    policy: WhoSaidThatLogLookupPathPolicy | None = None,
+) -> WhoSaidThatLogLookupResult:
+    """Load JSONL voice attribution events from an explicit path only, read-only."""
+    active_policy = policy or request.path_policy
+    result = create_empty_who_said_that_log_lookup_result(
+        result_id=_stable_lookup_result_id(request.request_id, "lookup"),
+        request_id=request.request_id,
+        lookup_mode=request.lookup_mode,
+        read_only=True,
+    )
+    request_errors = validate_who_said_that_log_lookup_request(request)
+    path_errors = validate_who_said_that_lookup_path(path, active_policy)
+    if request_errors or path_errors:
+        result.errors.extend(request_errors + path_errors)
+        result.attribution_missing = True
+        return result
+    lookup_path = Path(os.fspath(path))
+    if not lookup_path.exists():
+        result.log_exists = False
+        result.missing_log = True
+        result.records_found = 0
+        result.attribution_missing = True
+        result.warnings.append("missing explicit attribution log")
+        return result
+    if not lookup_path.is_file():
+        result.errors.append("explicit lookup path is not a file")
+        result.attribution_missing = True
+        return result
+
+    events: list[VoiceAttributionLogEvent] = []
+    result.log_exists = True
+    result.log_read_performed = True
+    with lookup_path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                data = json.loads(stripped)
+                event = voice_attribution_log_event_from_dict(data)
+            except (json.JSONDecodeError, TypeError, ValueError):
+                result.warnings.append(f"invalid jsonl line ignored: {line_number}")
+                continue
+            event_errors = validate_voice_attribution_log_event(event)
+            if event_errors:
+                result.warnings.append(f"invalid attribution event ignored: {line_number}")
+                continue
+            events.append(event)
+    result.records_found = len(events)
+    selected = select_voice_attribution_log_events(events, request)
+    result.selected_event_snapshots = [_safe_event_snapshot(event) for event in selected]
+    result.redacted_event_summaries = [_redacted_event_summary(event) for event in selected]
+    result.selected_event_count = len(selected)
+    result.attribution_missing = len(selected) == 0
+    result.attribution_partial = bool(selected) and any(not event.trace_refs or event.source_subsystem == "unknown" for event in selected)
+    result.ambiguous_matches = request.lookup_mode in {"by_utterance_id", "by_trace_ref", "by_time_window"} and len(selected) > 1
+    return result
+
+
+def _query_intent_from_request(request_or_intent: WhoSaidThatLogLookupRequest | WhoSaidThatQueryIntent | dict[str, Any]) -> WhoSaidThatQueryIntent:
+    if isinstance(request_or_intent, WhoSaidThatQueryIntent):
+        return request_or_intent
+    if isinstance(request_or_intent, WhoSaidThatLogLookupRequest):
+        return WhoSaidThatQueryIntent(
+            query_id=request_or_intent.query_id or request_or_intent.request_id,
+            intent_type="who_said_that",
+            lookback_mode=request_or_intent.lookup_mode if request_or_intent.lookup_mode in {"most_recent", "by_utterance_id", "by_trace_ref", "unknown"} else "unknown",
+            requested_utterance_id=request_or_intent.requested_utterance_id,
+            operator_review_required=True,
+        )
+    data = dict(request_or_intent)
+    if "request_id" in data and "query_id" not in data:
+        data["query_id"] = data.get("request_id", "")
+    return WhoSaidThatQueryIntent(
+        query_id=str(data.get("query_id") or data.get("request_id") or "lookup_query"),
+        intent_type=str(data.get("intent_type") or "who_said_that"),
+        lookback_mode=str(data.get("lookback_mode") or data.get("lookup_mode") or "unknown"),
+        requested_utterance_id=str(data.get("requested_utterance_id") or ""),
+        operator_review_required=True,
+    )
+
+
+def resolve_who_said_that_from_lookup_result(
+    request_or_intent: WhoSaidThatLogLookupRequest | WhoSaidThatQueryIntent | dict[str, Any],
+    lookup_result: WhoSaidThatLogLookupResult,
+):
+    """Resolve from already-provided lookup snapshots only. No log IO and no guessing."""
+    intent = _query_intent_from_request(request_or_intent)
+    if lookup_result.missing_log or lookup_result.records_found == 0 or not lookup_result.selected_event_snapshots:
+        return create_missing_attribution_answer(
+            answer_id=f"answer_{intent.query_id or lookup_result.request_id or 'lookup'}",
+            query_id=intent.query_id or lookup_result.request_id,
+            intent_type="who_said_that",
+            reason="missing attribution from read-only lookup result; no provenance guessed",
+        )
+    return resolve_who_said_that_from_provided_records(
+        intent,
+        attribution_records=[],
+        log_events=lookup_result.selected_event_snapshots,
+        requested_trace_ref="",
+        answer_id=f"answer_{intent.query_id or lookup_result.request_id or 'lookup'}",
+    )
+
+
+def summarize_who_said_that_log_lookup_diagnostics(results: list[WhoSaidThatLogLookupResult]) -> dict[str, Any]:
+    """Return redacted/count-only diagnostics for read-only lookup helper results."""
+    safe_results = results or []
+    return {
+        "summary_mode": "redacted_count_only",
+        "lookup_request_count": len(safe_results),
+        "missing_log_count": sum(1 for item in safe_results if item.missing_log),
+        "records_found_total": sum(item.records_found for item in safe_results),
+        "selected_event_count_total": sum(item.selected_event_count for item in safe_results),
+        "error_count_total": sum(len(item.errors) for item in safe_results),
+        "warning_count_total": sum(len(item.warnings) for item in safe_results),
+        "log_writes_performed": False,
+        "log_created": False,
+        "queue_writes_performed": False,
+        "external_model_calls_performed": False,
+        "runtime_changes_performed": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
     }

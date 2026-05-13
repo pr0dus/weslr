@@ -35,6 +35,7 @@ from weslr.who_said_that_log_lookup import (  # noqa: E402
 ALLOWED_CHANGED_FILES = {
     "weslr/who_said_that_log_lookup.py",
     "weslr/tests/test_who_said_that_read_only_log_lookup_schema_v1.py",
+    "weslr/tests/test_who_said_that_read_only_log_lookup_helpers_v1.py",
 }
 
 
