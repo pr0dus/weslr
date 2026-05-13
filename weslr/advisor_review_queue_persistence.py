@@ -1,9 +1,9 @@
 """WESLR Advisor Review Queue Persistence Schema V1.
 
-Schema-only dataclasses and validation helpers for future advisor-review queue
-persistence records. This module does not implement queue readers, queue
-writers, status updaters, persistence, database behavior, scheduling, daemon
-behavior, model calls, advisor calls, prompt mutation, provider activation, or
+Dataclasses, validation helpers, and safe explicit-path JSONL helper functions
+for advisor-review queue persistence records. This module does not implement
+daemon behavior, scheduling, database behavior, model calls, advisor calls,
+prompt mutation, provider activation, automatic implementation, or
 runtime/config changes.
 """
 
@@ -11,8 +11,11 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+import json
 import re
+import tempfile
 
 
 ALLOWED_STORAGE_FORMATS = {"jsonl", "json", "unknown"}
@@ -288,3 +291,166 @@ def summarize_persistence_event(event: AdvisorQueuePersistenceEvent) -> dict[str
         "official_score": False,
         "summary_mode": "redacted_count_only",
     }
+
+
+def validate_queue_storage_path(
+    path: str | Path,
+    policy: AdvisorQueuePersistencePathPolicy | None = None,
+) -> list[str]:
+    """Validate a queue storage path without reading or writing it."""
+    active_policy = policy or create_empty_persistence_path_policy()
+    errors = validate_persistence_path_policy(active_policy)
+    path_obj = Path(path)
+    path_text = str(path)
+
+    if ".." in path_obj.parts:
+        errors.append("path traversal is not allowed")
+    if path_obj.is_absolute() and not active_policy.allow_absolute_paths:
+        try:
+            temp_root = Path(tempfile.gettempdir()).resolve()
+            resolved = path_obj.resolve(strict=False)
+            if temp_root not in (resolved, *resolved.parents):
+                errors.append("absolute paths are not allowed")
+        except (OSError, RuntimeError):
+            errors.append("absolute paths are not allowed")
+    if "://" in path_text or path_text.startswith(("s3:", "gs:", "http:", "https:")):
+        errors.append("external storage paths are not allowed")
+    if not path_text.strip():
+        errors.append("missing queue storage path")
+
+    return errors
+
+
+def append_persistence_event(
+    path: str | Path,
+    event: AdvisorQueuePersistenceEvent | dict[str, Any],
+    policy: AdvisorQueuePersistencePathPolicy | None = None,
+) -> dict[str, Any]:
+    """Append one validated JSONL event to an explicit path."""
+    active_policy = policy or create_empty_persistence_path_policy()
+    queue_path = Path(path)
+    persistence_event = event if isinstance(event, AdvisorQueuePersistenceEvent) else persistence_event_from_dict(event)
+    errors = validate_queue_storage_path(queue_path, active_policy)
+    errors.extend(validate_persistence_event(persistence_event))
+    if errors:
+        return {
+            "success": False,
+            "validation_errors": errors,
+            "event_id": persistence_event.event_id,
+            "persistence_performed": False,
+            "external_model_calls_made": False,
+            "runtime_changes_made": False,
+            "answer_selection": False,
+            "truth_claim": False,
+            "official_score": False,
+        }
+
+    if queue_path.parent and str(queue_path) != active_policy.queue_path:
+        queue_path.parent.mkdir(parents=True, exist_ok=True)
+    with queue_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(persistence_event_to_dict(persistence_event), ensure_ascii=False, sort_keys=True) + "\n")
+
+    return {
+        "success": True,
+        "validation_errors": [],
+        "event_id": persistence_event.event_id,
+        "persistence_performed": True,
+        "external_model_calls_made": False,
+        "runtime_changes_made": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+    }
+
+
+def load_persistence_events(
+    path: str | Path,
+    policy: AdvisorQueuePersistencePathPolicy | None = None,
+) -> dict[str, Any]:
+    """Load validated JSONL events from an explicit path."""
+    active_policy = policy or create_empty_persistence_path_policy()
+    queue_path = Path(path)
+    path_errors = validate_queue_storage_path(queue_path, active_policy)
+    if path_errors:
+        return {"events": [], "validation_errors": path_errors, "load_errors": path_errors}
+    if not queue_path.exists():
+        return {"events": [], "validation_errors": [], "load_errors": []}
+
+    events: list[AdvisorQueuePersistenceEvent] = []
+    validation_errors: list[str] = []
+    try:
+        with queue_path.open("r", encoding="utf-8") as handle:
+            for index, line in enumerate(handle):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    event = persistence_event_from_dict(json.loads(stripped))
+                except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                    validation_errors.append(f"line[{index}]: invalid json event: {exc}")
+                    continue
+                event_errors = validate_persistence_event(event)
+                if event_errors:
+                    validation_errors.extend(f"line[{index}]: {error}" for error in event_errors)
+                    continue
+                events.append(event)
+    except (FileNotFoundError, PermissionError, OSError) as exc:
+        validation_errors.append(f"read failed: {exc}")
+
+    return {"events": events, "validation_errors": validation_errors, "load_errors": validation_errors}
+
+
+def summarize_persistence_events(events: list[AdvisorQueuePersistenceEvent] | list[dict[str, Any]]) -> dict[str, Any]:
+    """Return redacted/count-only summary statistics for persistence events."""
+    by_event_type: dict[str, int] = {}
+    by_status: dict[str, int] = {}
+    by_operator_decision: dict[str, int] = {}
+    validation_error_count = 0
+    redaction_count = 0
+    normalized_events: list[AdvisorQueuePersistenceEvent] = []
+    for event in events:
+        normalized = event if isinstance(event, AdvisorQueuePersistenceEvent) else persistence_event_from_dict(event)
+        normalized_events.append(normalized)
+        by_event_type[normalized.event_type] = by_event_type.get(normalized.event_type, 0) + 1
+        status_key = normalized.new_status or normalized.previous_status or "unknown"
+        by_status[status_key] = by_status.get(status_key, 0) + 1
+        by_operator_decision[normalized.operator_decision] = by_operator_decision.get(normalized.operator_decision, 0) + 1
+        validation_error_count += len(validate_persistence_event(normalized))
+        redaction_count += int(bool(_detect_sensitive_text(_string_values(asdict(normalized)))))
+
+    return {
+        "event_count": len(normalized_events),
+        "event_type_counts": dict(sorted(by_event_type.items())),
+        "status_counts": dict(sorted(by_status.items())),
+        "operator_decision_counts": dict(sorted(by_operator_decision.items())),
+        "validation_error_count": validation_error_count,
+        "redaction_count": redaction_count,
+        "persistence_performed": False,
+        "external_model_calls_made": False,
+        "runtime_changes_made": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+        "summary_mode": "redacted_count_only",
+    }
+
+
+def create_status_update_event(
+    queue_item_id: str,
+    previous_status: str,
+    new_status: str,
+    operator_decision: str,
+    actor: str = "operator",
+) -> AdvisorQueuePersistenceEvent:
+    """Create an in-memory status update event without writing it."""
+    return create_empty_persistence_event(
+        event_id=f"status_update:{queue_item_id}:{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+        event_type="status_update_requested",
+        queue_item_id=queue_item_id,
+        previous_status=previous_status,
+        new_status=new_status,
+        operator_decision=operator_decision,
+        actor=actor,
+        redacted_summary="status update requested",
+    )
+
