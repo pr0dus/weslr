@@ -667,3 +667,307 @@ def summarize_who_said_that_query_diagnostics(items: list[WhoSaidThatAnswer]) ->
         }
     )
     return base
+
+
+def _coerce_query_intent(item: WhoSaidThatQueryIntent | dict[str, Any]) -> WhoSaidThatQueryIntent:
+    if isinstance(item, WhoSaidThatQueryIntent):
+        return item
+    if isinstance(item, dict):
+        return who_said_that_query_intent_from_dict(item)
+    raise TypeError("who-said-that query intent must be WhoSaidThatQueryIntent or dict")
+
+
+def _safe_missing_answer_id(query_id: str) -> str:
+    if query_id.strip() and not _detect_sensitive_text([query_id]):
+        return f"missing_{query_id}"
+    return "missing_attribution"
+
+
+def _candidate_created_at(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> str:
+    return str(getattr(candidate, "created_at", "") or "")
+
+
+def _has_parseable_created_at(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> bool:
+    value = _candidate_created_at(candidate)
+    if not value:
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _created_at_sort_key(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> datetime:
+    value = _candidate_created_at(candidate)
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _candidate_utterance_id(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> str:
+    return str(getattr(candidate, "utterance_id", "") or "")
+
+
+def _candidate_trace_refs(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> list[str]:
+    refs = getattr(candidate, "trace_refs", []) or []
+    if isinstance(refs, list):
+        return [str(ref) for ref in refs]
+    return []
+
+
+def _candidate_source_subsystem(candidate: VoiceSourceAttributionRecord | VoiceAttributionLogEvent) -> str:
+    return str(getattr(candidate, "source_subsystem", "unknown") or "unknown")
+
+
+def _coerce_candidate_items(
+    attribution_records: list[VoiceSourceAttributionRecord | dict[str, Any]] | None = None,
+    log_events: list[VoiceAttributionLogEvent | dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    candidates: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for index, record in enumerate(attribution_records or []):
+        try:
+            coerced = _coerce_attribution_record(record)
+            validation_errors = validate_voice_source_attribution_record(coerced)
+            if validation_errors:
+                errors.append(f"invalid attribution record at index {index}")
+                continue
+            candidates.append({"kind": "record", "item": coerced, "index": index})
+        except (TypeError, ValueError):
+            errors.append(f"invalid attribution record at index {index}")
+    event_offset = len(candidates)
+    for index, event in enumerate(log_events or []):
+        try:
+            coerced_event = _coerce_log_event(event)
+            if coerced_event is None:
+                errors.append(f"invalid log event at index {index}")
+                continue
+            candidates.append({"kind": "event", "item": coerced_event, "index": event_offset + index})
+        except (TypeError, ValueError):
+            errors.append(f"invalid log event at index {index}")
+    return candidates, errors
+
+
+def select_candidate_attribution_record(
+    query_intent: WhoSaidThatQueryIntent | dict[str, Any],
+    attribution_records: list[VoiceSourceAttributionRecord | dict[str, Any]] | None = None,
+    log_events: list[VoiceAttributionLogEvent | dict[str, Any]] | None = None,
+    requested_trace_ref: str = "",
+) -> dict[str, Any]:
+    """Select one caller-provided in-memory attribution candidate without lookup or inference."""
+    try:
+        intent = _coerce_query_intent(query_intent)
+    except (TypeError, ValueError):
+        return {
+            "matched": False,
+            "ambiguous": False,
+            "partial": False,
+            "candidate": None,
+            "candidate_kind": "none",
+            "note": "invalid query intent",
+            "provided_record_count": len(attribution_records or []),
+            "provided_event_count": len(log_events or []),
+            "invalid_candidate_count": 0,
+        }
+    intent_errors = validate_who_said_that_query_intent(intent)
+    candidates, candidate_errors = _coerce_candidate_items(attribution_records=attribution_records, log_events=log_events)
+    if intent_errors:
+        return {
+            "matched": False,
+            "ambiguous": False,
+            "partial": False,
+            "candidate": None,
+            "candidate_kind": "none",
+            "note": "invalid query intent",
+            "provided_record_count": len(attribution_records or []),
+            "provided_event_count": len(log_events or []),
+            "invalid_candidate_count": len(candidate_errors),
+        }
+    if not candidates:
+        return {
+            "matched": False,
+            "ambiguous": False,
+            "partial": False,
+            "candidate": None,
+            "candidate_kind": "none",
+            "note": "no provided attribution candidates",
+            "provided_record_count": len(attribution_records or []),
+            "provided_event_count": len(log_events or []),
+            "invalid_candidate_count": len(candidate_errors),
+        }
+
+    matches: list[dict[str, Any]] = []
+    if intent.lookback_mode == "by_utterance_id":
+        matches = [entry for entry in candidates if _candidate_utterance_id(entry["item"]) == intent.requested_utterance_id]
+    elif intent.lookback_mode == "by_trace_ref":
+        trace_ref = requested_trace_ref or intent.query_text_hash
+        if trace_ref:
+            matches = [entry for entry in candidates if trace_ref in _candidate_trace_refs(entry["item"])]
+    elif intent.lookback_mode == "most_recent":
+        if any(_has_parseable_created_at(entry["item"]) for entry in candidates):
+            matches = [max(candidates, key=lambda entry: _created_at_sort_key(entry["item"]))]
+        else:
+            matches = [candidates[-1]]
+    else:
+        matches = []
+
+    if not matches:
+        return {
+            "matched": False,
+            "ambiguous": False,
+            "partial": False,
+            "candidate": None,
+            "candidate_kind": "none",
+            "note": "no trusted match from provided candidates",
+            "provided_record_count": len(attribution_records or []),
+            "provided_event_count": len(log_events or []),
+            "invalid_candidate_count": len(candidate_errors),
+        }
+    if len(matches) > 1:
+        return {
+            "matched": False,
+            "ambiguous": True,
+            "partial": True,
+            "candidate": None,
+            "candidate_kind": "none",
+            "note": "ambiguous provided attribution candidates; no guess made",
+            "provided_record_count": len(attribution_records or []),
+            "provided_event_count": len(log_events or []),
+            "invalid_candidate_count": len(candidate_errors),
+        }
+    selected = matches[0]
+    candidate = selected["item"]
+    partial = _candidate_source_subsystem(candidate) == "unknown" or not _candidate_trace_refs(candidate)
+    return {
+        "matched": True,
+        "ambiguous": False,
+        "partial": partial,
+        "candidate": candidate,
+        "candidate_kind": selected["kind"],
+        "note": "matched provided in-memory attribution candidate only",
+        "provided_record_count": len(attribution_records or []),
+        "provided_event_count": len(log_events or []),
+        "invalid_candidate_count": len(candidate_errors),
+    }
+
+
+def resolve_who_said_that_from_provided_records(
+    query_intent: WhoSaidThatQueryIntent | dict[str, Any],
+    attribution_records: list[VoiceSourceAttributionRecord | dict[str, Any]] | None = None,
+    log_events: list[VoiceAttributionLogEvent | dict[str, Any]] | None = None,
+    requested_trace_ref: str = "",
+    answer_id: str = "",
+) -> WhoSaidThatAnswer:
+    """Resolve a who-said-that answer from caller-provided records/events only."""
+    try:
+        intent = _coerce_query_intent(query_intent)
+        intent_errors = validate_who_said_that_query_intent(intent)
+    except (TypeError, ValueError):
+        return create_missing_attribution_answer(
+            answer_id=answer_id or "missing_attribution",
+            query_id="unknown_query",
+            intent_type="who_said_that",
+            reason="invalid query intent; no attribution lookup performed",
+        )
+    if intent_errors:
+        return create_missing_attribution_answer(
+            answer_id=answer_id or _safe_missing_answer_id(intent.query_id),
+            query_id=intent.query_id,
+            intent_type=intent.intent_type if intent.intent_type in ALLOWED_INTENT_TYPES else "unknown",
+            reason="invalid query intent; no attribution lookup performed",
+        )
+    selection = select_candidate_attribution_record(
+        intent,
+        attribution_records=attribution_records,
+        log_events=log_events,
+        requested_trace_ref=requested_trace_ref,
+    )
+    safe_answer_id = answer_id or f"answer_{intent.query_id}"
+    if not selection["matched"]:
+        return create_missing_attribution_answer(
+            answer_id=safe_answer_id,
+            query_id=intent.query_id,
+            intent_type=intent.intent_type,
+            reason=str(selection["note"]),
+        )
+    try:
+        if selection["candidate_kind"] == "record":
+            return create_answer_from_voice_attribution_record(
+                selection["candidate"],
+                answer_id=safe_answer_id,
+                query_id=intent.query_id,
+                intent_type=intent.intent_type,
+            )
+        if selection["candidate_kind"] == "event":
+            return create_answer_from_voice_log_event(
+                selection["candidate"],
+                answer_id=safe_answer_id,
+                query_id=intent.query_id,
+                intent_type=intent.intent_type,
+            )
+    except (TypeError, ValueError):
+        return create_missing_attribution_answer(
+            answer_id=safe_answer_id,
+            query_id=intent.query_id,
+            intent_type=intent.intent_type,
+            reason="invalid provided attribution candidate; no attribution claim made",
+        )
+    return create_missing_attribution_answer(
+        answer_id=safe_answer_id,
+        query_id=intent.query_id,
+        intent_type=intent.intent_type,
+        reason="unsupported provided attribution candidate; no attribution claim made",
+    )
+
+
+def summarize_who_said_that_resolver_diagnostics(
+    answers: list[WhoSaidThatAnswer] | None = None,
+    selections: list[dict[str, Any]] | None = None,
+    provided_record_count: int = 0,
+    provided_event_count: int = 0,
+) -> dict[str, Any]:
+    """Return redacted/count-only diagnostics for parser-less resolver helpers."""
+    safe_answers = answers or []
+    safe_selections = selections or []
+    ownership_category_counts: dict[str, int] = {}
+    for answer in safe_answers:
+        ownership_category_counts[answer.ownership_category] = ownership_category_counts.get(answer.ownership_category, 0) + 1
+    for selection in safe_selections:
+        candidate = selection.get("candidate")
+        if candidate is None:
+            continue
+        category = derive_ownership_category_from_records(
+            source_subsystem=_candidate_source_subsystem(candidate),
+            llm_assisted=bool(getattr(candidate, "llm_assisted", False)),
+            advisor_assisted=bool(getattr(candidate, "advisor_assisted", False)),
+            generated_by=str(getattr(candidate, "generated_by", "") or ""),
+            attribution_found=True,
+        )
+        ownership_category_counts[category] = ownership_category_counts.get(category, 0) + 1
+    return {
+        "summary_mode": "redacted_count_only",
+        "answer_count": len(safe_answers),
+        "provided_record_count": provided_record_count,
+        "provided_event_count": provided_event_count,
+        "matched_count": sum(1 for selection in safe_selections if selection.get("matched") is True),
+        "missing_count": sum(1 for answer in safe_answers if not answer.attribution_found),
+        "partial_count": sum(1 for answer in safe_answers if answer.attribution_partial) + sum(1 for selection in safe_selections if selection.get("partial") is True),
+        "ambiguous_count": sum(1 for selection in safe_selections if selection.get("ambiguous") is True),
+        "ownership_category_counts": ownership_category_counts,
+        "llm_assisted_count": sum(1 for answer in safe_answers if answer.llm_assisted),
+        "advisor_assisted_count": sum(1 for answer in safe_answers if answer.advisor_assisted),
+        "operator_review_required_count": sum(1 for answer in safe_answers if answer.operator_review_required),
+        "log_reads_performed": False,
+        "log_writes_performed": False,
+        "queue_writes_performed": False,
+        "external_model_calls_performed": False,
+        "runtime_changes_performed": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+    }
