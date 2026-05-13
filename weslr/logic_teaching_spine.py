@@ -2950,39 +2950,167 @@ def _teaching_actual_uncertainty_gaps(gaps: list[str], *, fallacy_name: str = ""
 def _teaching_counterexample_note(proof_step: object, support_status: str) -> str:
     requires_counterexample = bool(_teaching_proof_step_value(proof_step, "requires_counterexample", False))
     if support_status == "counterexample_supported" or requires_counterexample:
-        return "A counterexample-shaped structural note is available; this is not a benchmark truth claim."
+        return "A counterexample-shaped structural note is available; it is reported only as recorded structure."
     return ""
 
 
-def _teaching_mode_text(mode: str, support_status: str, pattern_name: str, fallacy_name: str, gap_count: int) -> tuple[str, str, list[str]]:
-    pattern_label = pattern_name.replace("_", " ") if pattern_name else "unknown pattern"
-    if support_status in {"ambiguous", "unsupported", "unknown"}:
-        why = "The proof step is not treated as established because required structural support is missing or ambiguous."
-    elif fallacy_name:
-        why = "The proof step is fallacy-shaped, so the helper explains the structural failure rather than certifying the conclusion."
-    elif support_status == "counterexample_supported":
-        why = "The proof step carries counterexample-shaped support and is explained as a structural challenge only."
-    else:
-        why = "The proof step has structural support under its recorded pattern, without selecting an answer or asserting benchmark truth."
+def _teaching_pattern_label(pattern_name: str) -> str:
+    return pattern_name.replace("_", " ") if pattern_name else "unknown pattern"
 
+
+def _teaching_structural_relation(support_status: str, fallacy_name: str) -> str:
+    if fallacy_name:
+        return f"has the structure of {fallacy_name}"
+    if support_status in {"ambiguous", "unsupported", "unknown"}:
+        return "has incomplete structural support"
+    if support_status == "counterexample_supported":
+        return "carries counterexample-shaped structural support"
+    return "has recorded structural support"
+
+
+def _teaching_bounded_takeaway(support_status: str, fallacy_name: str) -> str:
+    if fallacy_name:
+        return "This introduces a structural risk and does not by itself establish the target relation."
+    if support_status in {"ambiguous", "unsupported", "unknown"}:
+        return "The connection remains unestablished in the available trace."
+    if support_status == "counterexample_supported":
+        return "The note can challenge a proposed relation, but only within the recorded structure."
+    return "The explanation stays within the recorded structure and does not choose among responses."
+
+
+def _teaching_limitation_text(gap_count: int, has_counterexample_note: bool = False) -> str:
+    if gap_count:
+        return "Visible limitation: support is incomplete; the trace does not yet establish every link."
+    if has_counterexample_note:
+        return "Visible limitation: counterexample support is recorded as structure, not as external authority."
+    return "Visible limitation: no additional unsupported gap is recorded in the available trace."
+
+
+def _teaching_uncertainty_note(support_status: str, gap_count: int, has_counterexample_note: bool = False) -> str:
+    if support_status in {"ambiguous", "unsupported", "unknown"} or gap_count:
+        return "Support is incomplete; the trace does not yet establish this link."
+    if has_counterexample_note:
+        return "Counterexample support is bounded to the available trace."
+    return "The explanation is bounded to recorded structure and makes no external authority claim."
+
+
+def format_beginner_teaching_explanation(
+    support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
+    pattern_label = _teaching_pattern_label(pattern_name)
+    relation = _teaching_structural_relation(support_status, fallacy_name)
+    takeaway = _teaching_bounded_takeaway(support_status, fallacy_name)
+    limitation = _teaching_limitation_text(gap_count, has_counterexample_note)
+    core = "Plain structural teaching note."
+    why = f"The recorded pattern is {pattern_label}; it matters because it {relation}."
+    steps = [
+        f"Observed pattern: {pattern_label}.",
+        f"Why it matters: it {relation}.",
+        f"Takeaway: {takeaway}",
+        limitation,
+    ]
+    human = f"Observed pattern: {pattern_label}. {takeaway} {limitation}"
+    return core, why, steps, _teaching_uncertainty_note(support_status, gap_count, has_counterexample_note), human
+
+
+def format_technical_teaching_explanation(
+    support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
+    pattern_label = _teaching_pattern_label(pattern_name)
+    relation = _teaching_structural_relation(support_status, fallacy_name)
+    takeaway = _teaching_bounded_takeaway(support_status, fallacy_name)
+    limitation = _teaching_limitation_text(gap_count, has_counterexample_note)
+    core = f"Technical structural note for pattern {pattern_label}."
+    why = f"Pattern field {pattern_label} has support status {support_status}; structurally, it {relation}."
+    steps = [
+        f"Pattern field: {pattern_label}.",
+        f"Recorded relation: {relation}.",
+        f"Gap constraint: {gap_count} unsupported trace gap(s).",
+        f"Bounded takeaway: {takeaway}",
+        limitation,
+    ]
+    human = f"Pattern field {pattern_label}; relation {relation}; gap constraint {gap_count}; {takeaway} {limitation}"
+    return core, why, steps, _teaching_uncertainty_note(support_status, gap_count, has_counterexample_note), human
+
+
+def format_academic_teaching_explanation(
+    support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
+    pattern_label = _teaching_pattern_label(pattern_name)
+    relation = _teaching_structural_relation(support_status, fallacy_name)
+    takeaway = _teaching_bounded_takeaway(support_status, fallacy_name)
+    limitation = _teaching_limitation_text(gap_count, has_counterexample_note)
+    core = "Reviewer-style structural explanation."
+    why = f"Claim: the recorded pattern is {pattern_label}. Warrant: the relation {relation}. Limitation: the account is bounded to the trace."
+    steps = [
+        f"Claim: the observed pattern is {pattern_label}.",
+        f"Warrant: the recorded relation {relation}.",
+        f"Limitation: {limitation}",
+        f"Bounded takeaway: {takeaway}",
+    ]
+    human = f"Claim: {pattern_label}. Warrant: {relation}. Limitation: {limitation} Takeaway: {takeaway}"
+    return core, why, steps, _teaching_uncertainty_note(support_status, gap_count, has_counterexample_note), human
+
+
+def format_spock_teaching_explanation(
+    support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
+    pattern_label = _teaching_pattern_label(pattern_name)
+    relation = _teaching_structural_relation(support_status, fallacy_name)
+    takeaway = _teaching_bounded_takeaway(support_status, fallacy_name)
+    limitation = _teaching_limitation_text(gap_count, has_counterexample_note)
+    core = "Structural note. Non-conclusive."
+    why = f"Observed: {pattern_label}. Relation: {relation}."
+    steps = [
+        f"Observed pattern: {pattern_label}.",
+        f"Structural relation: {relation}.",
+        f"Takeaway: {takeaway}",
+        limitation,
+    ]
+    human = f"Observed: {pattern_label}. Relation: {relation}. {takeaway} {limitation}"
+    return core, why, steps, _teaching_uncertainty_note(support_status, gap_count, has_counterexample_note), human
+
+
+def format_operator_audit_teaching_explanation(
+    support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
+    pattern_label = _teaching_pattern_label(pattern_name)
+    relation = _teaching_structural_relation(support_status, fallacy_name)
+    takeaway = _teaching_bounded_takeaway(support_status, fallacy_name)
+    limitation = _teaching_limitation_text(gap_count, has_counterexample_note)
+    core = "Audit trace teaching explanation."
+    why = f"Observed={pattern_label}; inferred relation={relation}; not-established scope is limited to unavailable trace links."
+    steps = [
+        f"OBSERVED: pattern={pattern_label}.",
+        f"INFERRED: relation={relation}.",
+        f"NOT_ESTABLISHED: unsupported gap count={gap_count}.",
+        f"BOUNDED_TAKEAWAY: {takeaway}",
+        f"TRACE_LIMITATION: {limitation}",
+    ]
+    human = f"OBSERVED pattern={pattern_label}; INFERRED relation={relation}; NOT_ESTABLISHED gaps={gap_count}; {takeaway} {limitation}"
+    return core, why, steps, _teaching_uncertainty_note(support_status, gap_count, has_counterexample_note), human
+
+
+def format_teaching_explanation_text(
+    mode: str, support_status: str, pattern_name: str, fallacy_name: str, gap_count: int, has_counterexample_note: bool = False
+) -> tuple[str, str, list[str], str, str]:
     if mode == "beginner":
-        core = "This explains the proof step in plain structural terms."
-        steps = ["Look at the recorded premises and target.", why]
-    elif mode == "technical":
-        core = f"Structural explanation using pattern: {pattern_label}."
-        steps = [f"Pattern field: {pattern_label}.", f"Support status: {support_status}.", why]
-    elif mode == "academic":
-        core = "Conservative formal explanation of the recorded inference structure."
-        steps = ["Identify the recorded inference form.", "Check whether the support status licenses only a structural explanation.", why]
-    elif mode == "spock":
-        core = "Logical structure noted; certainty is not inferred."
-        steps = [f"Form: {pattern_label}.", f"Status: {support_status}."]
-    elif mode == "operator_audit":
-        core = "Audit-only teaching explanation with provenance and gap visibility."
-        steps = ["Proof-step refs are preserved when available.", f"Unsupported gap count: {gap_count}.", "Safety flags remain non-authoritative."]
-    else:
-        core = "Conservative structural teaching explanation."
-        steps = [why]
+        return format_beginner_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+    if mode == "technical":
+        return format_technical_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+    if mode == "academic":
+        return format_academic_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+    if mode == "spock":
+        return format_spock_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+    if mode == "operator_audit":
+        return format_operator_audit_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+    return format_beginner_teaching_explanation(support_status, pattern_name, fallacy_name, gap_count, has_counterexample_note)
+
+
+def _teaching_mode_text(mode: str, support_status: str, pattern_name: str, fallacy_name: str, gap_count: int) -> tuple[str, str, list[str]]:
+    core, why, steps, _uncertainty_note, _human = format_teaching_explanation_text(
+        mode, support_status, pattern_name, fallacy_name, gap_count
+    )
     return core, why, steps
 
 
@@ -3018,7 +3146,9 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
     if fallacy_name or support_status in {"ambiguous", "unsupported", "unknown"}:
         confidence = "low"
     counterexample_note = _teaching_counterexample_note(proof_step, support_status)
-    core_claim, why, steps = _teaching_mode_text(mode, support_status, pattern_name, fallacy_name, len(unsupported_gaps))
+    core_claim, why, steps, uncertainty_note, human_explanation = format_teaching_explanation_text(
+        mode, support_status, pattern_name, fallacy_name, len(unsupported_gaps), bool(counterexample_note)
+    )
     if fallacy_name == "affirming the consequent":
         steps.append("This has the structure of affirming the consequent.")
     elif fallacy_name == "denying the antecedent":
@@ -3027,6 +3157,7 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
         steps.append("Counterexample support is recorded structurally.")
     if unsupported_gaps:
         steps.append("Unsupported or ambiguous gaps remain visible.")
+        steps.append("Support is incomplete; the trace does not yet establish every link.")
     explanation = TeachingExplanation(
         explanation_id=f"teaching:{proof_step_id}" if proof_step_id else "",
         source_proof_step_ids=[proof_step_id] if proof_step_id else [],
@@ -3044,8 +3175,8 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
         learner_level="general",
         teaching_mode=mode,
         step_by_step_explanation=steps,
-        uncertainty_note="Unsupported or ambiguous structure is not upgraded to certainty." if support_status in {"ambiguous", "unsupported", "unknown"} else "No truth, soundness, answer, or score claim is made.",
-        human_explanation="Redacted helper-only teaching explanation from synthetic proof-step structure.",
+        uncertainty_note=uncertainty_note,
+        human_explanation=human_explanation,
         unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
         legibility=legibility,
         anti_gaming=anti_gaming,

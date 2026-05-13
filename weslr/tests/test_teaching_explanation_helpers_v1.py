@@ -34,6 +34,7 @@ ALLOWED_CHANGED = {
     "weslr/tests/test_teaching_explanation_schema_alignment_v1.py",
     "weslr/tests/test_teaching_explanation_helpers_v1.py",
     "weslr/tests/test_teaching_explanation_fallacy_mapping_helpers_v1.py",
+    "weslr/tests/test_teaching_explanation_style_helpers_v1.py",
 }
 
 
@@ -96,7 +97,7 @@ class TeachingExplanationHelpersV1Tests(unittest.TestCase):
         explanation = create_teaching_explanation_from_proof_step(step, teaching_mode="academic")
         self.assertEqual("affirming the consequent", explanation.fallacy_name)
         self.assertNotIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
-        self.assertIn("This has the structure of affirming the consequent.", explanation.step_by_step_explanation)
+        self.assertIn("has the structure of affirming the consequent", " ".join(explanation.step_by_step_explanation))
 
 
     def test_fallacy_structural_note_removed_but_real_uncertainty_remains(self):
@@ -133,7 +134,7 @@ class TeachingExplanationHelpersV1Tests(unittest.TestCase):
         explanation = self.explanation(support_status="ambiguous", validity_status="ambiguous", unsupported_gaps=["slot_missing"])
         self.assertEqual("ambiguous", explanation.support_status)
         self.assertIn("slot_missing", explanation.unsupported_gaps)
-        self.assertIn("not upgraded to certainty", explanation.uncertainty_note)
+        self.assertIn("trace does not yet establish", explanation.uncertainty_note)
 
     def test_preserves_proof_step_refs(self):
         self.assertEqual(["proof_step:1"], self.explanation().source_proof_step_ids)
@@ -160,7 +161,7 @@ class TeachingExplanationHelpersV1Tests(unittest.TestCase):
     def test_operator_audit_mode_works(self):
         explanation = create_teaching_explanation_from_proof_step(self.proof_step(unsupported_gaps=["gap:visible"]), teaching_mode="operator_audit")
         self.assertEqual("operator_audit", explanation.teaching_mode)
-        self.assertIn("Unsupported gap count", " ".join(explanation.step_by_step_explanation))
+        self.assertIn("unsupported gap count", " ".join(explanation.step_by_step_explanation))
 
     def test_summary_is_redacted(self):
         summary = summarize_teaching_explanation_generation_diagnostics([self.explanation()])
