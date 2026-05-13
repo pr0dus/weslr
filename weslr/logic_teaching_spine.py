@@ -2866,6 +2866,193 @@ def summarize_teaching_explanation(explanation: TeachingExplanation) -> dict[str
     }
 
 
+def _teaching_proof_step_value(proof_step: object, field_name: str, default: Any = "") -> Any:
+    if isinstance(proof_step, dict):
+        return proof_step.get(field_name, default)
+    return getattr(proof_step, field_name, default)
+
+
+def _teaching_proof_step_list_value(proof_step: object, field_name: str) -> list[str]:
+    value = _teaching_proof_step_value(proof_step, field_name, [])
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    if str(value).strip():
+        return [str(value).strip()]
+    return []
+
+
+def _teaching_pattern_name_from_proof_step(proof_step: object) -> str:
+    mapping = _teaching_proof_step_value(proof_step, "conditional_form_mapping", {})
+    mapping = mapping if isinstance(mapping, dict) else {}
+    pattern = str(mapping.get("form_label", "") or "").strip()
+    if not pattern:
+        pattern = str(_teaching_proof_step_value(proof_step, "inference_pattern", "") or "").strip()
+    if not pattern:
+        pattern = str(_teaching_proof_step_value(proof_step, "inference_pattern_id", "") or "").strip()
+    return pattern or "unknown_pattern"
+
+
+def _teaching_fallacy_name_from_proof_step(proof_step: object, pattern_name: str) -> str:
+    mapping = _teaching_proof_step_value(proof_step, "conditional_form_mapping", {})
+    mapping = mapping if isinstance(mapping, dict) else {}
+    support_assessment = str(mapping.get("support_assessment", "") or "").strip()
+    fallacy_shaped = bool(mapping.get("fallacy_shaped", False)) or support_assessment == "fallacy_shaped"
+    normalized_pattern = pattern_name.replace("_", " ").strip()
+    if fallacy_shaped and pattern_name in {"affirming_consequent", "affirming the consequent"}:
+        return "affirming the consequent"
+    if fallacy_shaped and pattern_name in {"denying_antecedent", "denying the antecedent"}:
+        return "denying the antecedent"
+    if fallacy_shaped and normalized_pattern and normalized_pattern != "unknown pattern":
+        return normalized_pattern
+    return ""
+
+
+def _teaching_counterexample_note(proof_step: object, support_status: str) -> str:
+    requires_counterexample = bool(_teaching_proof_step_value(proof_step, "requires_counterexample", False))
+    if support_status == "counterexample_supported" or requires_counterexample:
+        return "A counterexample-shaped structural note is available; this is not a benchmark truth claim."
+    return ""
+
+
+def _teaching_mode_text(mode: str, support_status: str, pattern_name: str, fallacy_name: str, gap_count: int) -> tuple[str, str, list[str]]:
+    pattern_label = pattern_name.replace("_", " ") if pattern_name else "unknown pattern"
+    if support_status in {"ambiguous", "unsupported", "unknown"}:
+        why = "The proof step is not treated as established because required structural support is missing or ambiguous."
+    elif fallacy_name:
+        why = "The proof step is fallacy-shaped, so the helper explains the structural failure rather than certifying the conclusion."
+    elif support_status == "counterexample_supported":
+        why = "The proof step carries counterexample-shaped support and is explained as a structural challenge only."
+    else:
+        why = "The proof step has structural support under its recorded pattern, without selecting an answer or asserting benchmark truth."
+
+    if mode == "beginner":
+        core = "This explains the proof step in plain structural terms."
+        steps = ["Look at the recorded premises and target.", why]
+    elif mode == "technical":
+        core = f"Structural explanation using pattern: {pattern_label}."
+        steps = [f"Pattern field: {pattern_label}.", f"Support status: {support_status}.", why]
+    elif mode == "academic":
+        core = "Conservative formal explanation of the recorded inference structure."
+        steps = ["Identify the recorded inference form.", "Check whether the support status licenses only a structural explanation.", why]
+    elif mode == "spock":
+        core = "Logical structure noted; certainty is not inferred."
+        steps = [f"Form: {pattern_label}.", f"Status: {support_status}."]
+    elif mode == "operator_audit":
+        core = "Audit-only teaching explanation with provenance and gap visibility."
+        steps = ["Proof-step refs are preserved when available.", f"Unsupported gap count: {gap_count}.", "Safety flags remain non-authoritative."]
+    else:
+        core = "Conservative structural teaching explanation."
+        steps = [why]
+    return core, why, steps
+
+
+def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_mode: str = "beginner") -> TeachingExplanation:
+    """Create a helper-only TeachingExplanation from a safe synthetic ProofStep-like record.
+
+    This helper is structural only. It does not select answers, assert truth or soundness,
+    claim official scores, use answer keys, use item ids as authority, or tune to a benchmark.
+    """
+
+    mode = teaching_mode if teaching_mode in SAFE_TEACHING_MODES else "unknown"
+    proof_step_id = str(_teaching_proof_step_value(proof_step, "proof_step_id", "") or "").strip()
+    support_status = str(_teaching_proof_step_value(proof_step, "support_status", "unknown") or "unknown").strip()
+    if support_status not in SAFE_TEACHING_EXPLANATION_SUPPORT_STATUSES:
+        support_status = "unknown"
+    confidence = str(_teaching_proof_step_value(proof_step, "confidence", "low") or "low").strip()
+    if confidence not in SAFE_CONFIDENCE_VALUES:
+        confidence = "low"
+    context_ids = _teaching_proof_step_list_value(proof_step, "source_context_binding_ids")
+    premise_ids = _teaching_proof_step_list_value(proof_step, "source_premise_proposition_ids")
+    choice_ids = _teaching_proof_step_list_value(proof_step, "source_choice_proposition_ids")
+    source_ids = _teaching_proof_step_list_value(proof_step, "source_proposition_ids")
+    target_id = str(_teaching_proof_step_value(proof_step, "target_proposition_id", "") or "").strip()
+    proposition_ids = list(dict.fromkeys(source_ids + premise_ids + choice_ids + ([target_id] if target_id else [])))
+    unsupported_gaps = _teaching_proof_step_list_value(proof_step, "unsupported_gaps")
+    if support_status in {"ambiguous", "unsupported", "unknown"} and not unsupported_gaps:
+        unsupported_gaps.append("structural_support_missing_or_ambiguous")
+    pattern_name = _teaching_pattern_name_from_proof_step(proof_step)
+    fallacy_name = _teaching_fallacy_name_from_proof_step(proof_step, pattern_name)
+    counterexample_note = _teaching_counterexample_note(proof_step, support_status)
+    core_claim, why, steps = _teaching_mode_text(mode, support_status, pattern_name, fallacy_name, len(unsupported_gaps))
+    if fallacy_name:
+        steps.append(f"Fallacy-shaped pattern: {fallacy_name}.")
+    if counterexample_note:
+        steps.append("Counterexample support is recorded structurally.")
+    if unsupported_gaps:
+        steps.append("Unsupported or ambiguous gaps remain visible.")
+    explanation = TeachingExplanation(
+        explanation_id=f"teaching:{proof_step_id}" if proof_step_id else "",
+        source_proof_step_ids=[proof_step_id] if proof_step_id else [],
+        source_context_binding_ids=context_ids,
+        source_proposition_ids=proposition_ids,
+        conclusion="Redacted structural conclusion reference only." if target_id else "",
+        support_status=support_status,
+        core_claim=core_claim,
+        why_it_follows_or_fails=why,
+        pattern_name=pattern_name,
+        fallacy_name=fallacy_name,
+        counterexample_note=counterexample_note,
+        confidence=confidence,
+        common_fallacy=fallacy_name,
+        learner_level="general",
+        teaching_mode=mode,
+        step_by_step_explanation=steps,
+        uncertainty_note="Unsupported or ambiguous structure is not upgraded to certainty." if support_status in {"ambiguous", "unsupported", "unknown"} else "No truth, soundness, answer, or score claim is made.",
+        human_explanation="Redacted helper-only teaching explanation from synthetic proof-step structure.",
+        unsupported_gaps=list(dict.fromkeys(unsupported_gaps)),
+        legibility=PropositionLegibilityRecord(),
+        anti_gaming=PropositionAntiGamingRecord(),
+    )
+    return explanation
+
+
+def create_teaching_explanations_from_proof_steps(proof_steps: list[object], *, teaching_mode: str = "beginner") -> list[TeachingExplanation]:
+    return [create_teaching_explanation_from_proof_step(proof_step, teaching_mode=teaching_mode) for proof_step in list(proof_steps or [])]
+
+
+def summarize_teaching_explanation_generation_diagnostics(explanations: list[TeachingExplanation]) -> dict[str, Any]:
+    mode_counts = {mode: 0 for mode in SAFE_TEACHING_MODES}
+    support_counts = {status: 0 for status in SAFE_TEACHING_EXPLANATION_SUPPORT_STATUSES}
+    pattern_counts: dict[str, int] = {}
+    fallacy_count = 0
+    counterexample_note_count = 0
+    unsupported_gap_count = 0
+    explanation_text_present_count = 0
+    proof_step_refs_present_count = 0
+    anti_gaming_safe = True
+    legibility_safe = True
+    for explanation in explanations:
+        mode_counts[explanation.teaching_mode] = mode_counts.get(explanation.teaching_mode, 0) + 1
+        support_counts[explanation.support_status] = support_counts.get(explanation.support_status, 0) + 1
+        pattern_key = explanation.pattern_name or "unknown"
+        pattern_counts[pattern_key] = pattern_counts.get(pattern_key, 0) + 1
+        fallacy_count += int(bool(explanation.fallacy_name or explanation.common_fallacy))
+        counterexample_note_count += int(bool(explanation.counterexample_note.strip()))
+        unsupported_gap_count += len(explanation.unsupported_gaps)
+        explanation_text_present_count += int(bool(explanation.human_explanation.strip() or explanation.core_claim.strip() or explanation.why_it_follows_or_fails.strip()))
+        proof_step_refs_present_count += int(bool(explanation.source_proof_step_ids))
+        anti_gaming_safe = anti_gaming_safe and _anti_gaming_safe(explanation.anti_gaming)
+        legibility_safe = legibility_safe and _legibility_safe(explanation.legibility)
+    return {
+        "teaching_explanation_count": len(explanations),
+        "teaching_mode_counts": dict(sorted(mode_counts.items())),
+        "support_status_counts": dict(sorted(support_counts.items())),
+        "pattern_counts": dict(sorted(pattern_counts.items())),
+        "fallacy_count": fallacy_count,
+        "counterexample_note_count": counterexample_note_count,
+        "unsupported_gap_count": unsupported_gap_count,
+        "explanation_text_present_count": explanation_text_present_count,
+        "proof_step_refs_present_count": proof_step_refs_present_count,
+        "answer_selection_enabled": False,
+        "truth_claim_made": False,
+        "official_score_claimed": False,
+        "anti_gaming_safe": anti_gaming_safe,
+        "legibility_safe": legibility_safe,
+    }
+
+
 def make_modus_ponens_pattern() -> InferencePattern:
     return InferencePattern(
         pattern_id="pattern:modus_ponens",
