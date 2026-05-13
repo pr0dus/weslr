@@ -35,9 +35,9 @@ class SyntheticTeachingLaneCanonV1Tests(unittest.TestCase):
         cls.doc_lower = cls.doc_text.lower()
 
     def git_changed_files(self) -> set[str]:
-        changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
-        staged = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).splitlines()
-        untracked = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], text=True).splitlines()
+        changed = subprocess.check_output(["git", "diff", "--name-only"], cwd=str(ROOT), text=True).splitlines()
+        staged = subprocess.check_output(["git", "diff", "--cached", "--name-only"], cwd=str(ROOT), text=True).splitlines()
+        untracked = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], cwd=str(ROOT), text=True).splitlines()
         return set(changed + staged + untracked)
 
     def test_doc_exists(self):
