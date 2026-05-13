@@ -1,11 +1,11 @@
 """WESLR Voice Source Attribution Log Schema V1.
 
-Schema-only dataclasses and validation helpers for future append-only voice
-source attribution log records. This module does not implement logging helpers,
-write attribution logs, create .weslr/voice_source_attribution.jsonl, wire voice
-runtime/chat behavior, write queues, persist registries, call models/advisors,
-mutate memory/prompts/config, schedule daemons, select answers, or claim
-truth/soundness/official scores.
+Schema dataclasses, validation helpers, and in-memory event construction
+helpers for future append-only voice source attribution log records. This module
+does not write attribution logs, create .weslr/voice_source_attribution.jsonl,
+wire voice runtime/chat behavior, write queues, persist registries, call
+models/advisors, mutate memory/prompts/config, schedule daemons, select answers,
+or claim truth/soundness/official scores.
 """
 
 from __future__ import annotations
@@ -15,6 +15,13 @@ from datetime import datetime, timezone
 from typing import Any
 import json
 import re
+
+from weslr.voice_source_attribution import (
+    VoiceSourceAttributionRecord,
+    validate_voice_source_attribution_record,
+    voice_source_attribution_record_from_dict,
+    voice_source_attribution_record_to_dict,
+)
 
 
 ALLOWED_STORAGE_FORMATS = {"jsonl", "json", "unknown"}
@@ -318,6 +325,213 @@ def validate_voice_attribution_log_event(item: VoiceAttributionLogEvent) -> list
         errors.append(finding)
     return errors
 
+
+def _coerce_attribution_record(item: VoiceSourceAttributionRecord | dict[str, Any]) -> VoiceSourceAttributionRecord:
+    if isinstance(item, VoiceSourceAttributionRecord):
+        return item
+    if isinstance(item, dict):
+        return voice_source_attribution_record_from_dict(item)
+    raise TypeError("attribution record must be VoiceSourceAttributionRecord or dict")
+
+
+def _validated_attribution_record(item: VoiceSourceAttributionRecord | dict[str, Any]) -> VoiceSourceAttributionRecord:
+    record = _coerce_attribution_record(item)
+    errors = validate_voice_source_attribution_record(record)
+    if errors:
+        raise ValueError(f"invalid voice source attribution record: {errors}")
+    return record
+
+
+def _safe_attribution_snapshot(record: VoiceSourceAttributionRecord) -> dict[str, Any]:
+    data = voice_source_attribution_record_to_dict(record)
+    allowed_keys = [
+        "schema_version", "utterance_id", "output_provenance_id", "spoken_text_hash", "spoken_text_stored",
+        "source_subsystem", "source_module", "generated_by", "trigger_type", "input_channel", "output_channel",
+        "voice_engine", "tts_engine", "stt_engine", "model_provider", "model_name", "llm_assisted",
+        "advisor_assisted", "ambient_loop_involved", "proactive_suggestion_involved", "operator_review_required",
+        "authority_level", "truth_class", "confidence", "trace_refs", "related_queue_item_ids", "related_advisor_review_ids",
+    ]
+    snapshot = {key: data.get(key) for key in allowed_keys}
+    snapshot["trigger_present"] = bool(record.trigger.strip())
+    return snapshot
+
+
+def _safe_event_authority(record: VoiceSourceAttributionRecord) -> str:
+    if record.llm_assisted and record.authority_level == "system_fact":
+        return "voice_surface"
+    return record.authority_level
+
+
+def _safe_event_truth(record: VoiceSourceAttributionRecord) -> str:
+    if record.llm_assisted and record.truth_class == "verified_system_fact":
+        return "unverified"
+    return record.truth_class
+
+
+def _event_id(prefix: str, utterance_id: str) -> str:
+    safe = utterance_id.strip() or "unknown"
+    return f"{prefix}_{safe}"
+
+
+def create_pre_speak_attribution_event(
+    attribution_record: VoiceSourceAttributionRecord | dict[str, Any],
+    event_id: str = "",
+) -> VoiceAttributionLogEvent:
+    """Create an in-memory pre-speak attribution event without writing logs."""
+    record = _validated_attribution_record(attribution_record)
+    return VoiceAttributionLogEvent(
+        event_id=event_id or _event_id("pre_speak", record.utterance_id),
+        event_type="pre_speak_attribution_draft",
+        utterance_id=record.utterance_id,
+        attribution_record_snapshot=_safe_attribution_snapshot(record),
+        output_provenance_id=record.output_provenance_id,
+        source_subsystem=record.source_subsystem,
+        spoken_text_hash=record.spoken_text_hash,
+        spoken_text_stored=False,
+        speech_emitted=False,
+        speech_success=False,
+        tts_engine=record.tts_engine,
+        stt_engine=record.stt_engine,
+        model_provider=record.model_provider,
+        model_name=record.model_name,
+        llm_assisted=record.llm_assisted,
+        authority_level=_safe_event_authority(record),
+        truth_class=_safe_event_truth(record),
+        redacted_summary="pre-speak attribution draft created in memory; no log write performed",
+        created_at=_utc_now(),
+        trace_refs=list(record.trace_refs),
+    )
+
+
+def create_post_speak_attribution_event(
+    attribution_record: VoiceSourceAttributionRecord | dict[str, Any],
+    speech_success: bool,
+    tts_engine: str = "",
+    stt_engine: str = "",
+    event_id: str = "",
+) -> VoiceAttributionLogEvent:
+    """Create an in-memory post-speak attribution event without runtime effects."""
+    record = _validated_attribution_record(attribution_record)
+    event_type = "post_speak_attribution_confirmed" if speech_success else "post_speak_attribution_failed"
+    return VoiceAttributionLogEvent(
+        event_id=event_id or _event_id("post_speak", record.utterance_id),
+        event_type=event_type,
+        utterance_id=record.utterance_id,
+        attribution_record_snapshot=_safe_attribution_snapshot(record),
+        output_provenance_id=record.output_provenance_id,
+        source_subsystem=record.source_subsystem,
+        spoken_text_hash=record.spoken_text_hash,
+        spoken_text_stored=False,
+        speech_emitted=bool(speech_success),
+        speech_success=bool(speech_success),
+        tts_engine=tts_engine or record.tts_engine,
+        stt_engine=stt_engine or record.stt_engine,
+        model_provider=record.model_provider,
+        model_name=record.model_name,
+        llm_assisted=record.llm_assisted,
+        authority_level=_safe_event_authority(record),
+        truth_class=_safe_event_truth(record),
+        redacted_summary="post-speak attribution confirmation created in memory; no log write performed",
+        created_at=_utc_now(),
+        trace_refs=list(record.trace_refs),
+    )
+
+
+def create_missing_attribution_event(
+    utterance_id: str = "unknown_utterance",
+    event_id: str = "",
+    source_subsystem: str = "unknown",
+    trace_refs: list[str] | None = None,
+) -> VoiceAttributionLogEvent:
+    """Create an in-memory missing-attribution event without queue/runtime effects."""
+    safe_source = source_subsystem if source_subsystem in ALLOWED_SOURCE_SUBSYSTEMS else "unknown"
+    return VoiceAttributionLogEvent(
+        event_id=event_id or _event_id("missing_attribution", utterance_id),
+        event_type="missing_attribution_detected",
+        utterance_id=utterance_id or "unknown_utterance",
+        attribution_record_snapshot={"attribution_missing": True, "operator_review_required": True, "ownership_claim": False},
+        output_provenance_id="",
+        source_subsystem=safe_source,
+        spoken_text_hash="",
+        spoken_text_stored=False,
+        speech_emitted=False,
+        speech_success=False,
+        authority_level="unknown",
+        truth_class="unknown",
+        redacted_summary="missing attribution detected; no ownership claim; no queue write performed",
+        created_at=_utc_now(),
+        trace_refs=list(trace_refs or []),
+    )
+
+
+def create_attribution_query_requested_event(
+    event_id: str = "",
+    utterance_id: str = "",
+    trace_refs: list[str] | None = None,
+) -> VoiceAttributionLogEvent:
+    """Create an in-memory future query-request event without answering or lookup."""
+    return VoiceAttributionLogEvent(
+        event_id=event_id or _event_id("attribution_query", utterance_id or "request"),
+        event_type="attribution_query_requested",
+        utterance_id=utterance_id,
+        attribution_record_snapshot={"query_requested": True, "lookup_performed": False, "answer_provided": False},
+        source_subsystem="unknown",
+        spoken_text_stored=False,
+        speech_emitted=False,
+        speech_success=False,
+        authority_level="unknown",
+        truth_class="unknown",
+        redacted_summary="attribution query requested in memory; no lookup, answer, or log write performed",
+        created_at=_utc_now(),
+        trace_refs=list(trace_refs or []),
+    )
+
+
+def summarize_voice_attribution_log_events(items: list[VoiceAttributionLogEvent]) -> dict[str, Any]:
+    """Return redacted/count-only summary statistics for in-memory log events."""
+    by_event_type: dict[str, int] = {}
+    by_source_subsystem: dict[str, int] = {}
+    validation_error_count = 0
+    redaction_count = 0
+    llm_assisted_count = 0
+    missing_attribution_count = 0
+    speech_success_count = 0
+    speech_failure_count = 0
+
+    for item in items:
+        by_event_type[item.event_type] = by_event_type.get(item.event_type, 0) + 1
+        by_source_subsystem[item.source_subsystem] = by_source_subsystem.get(item.source_subsystem, 0) + 1
+        validation_error_count += len(validate_voice_attribution_log_event(item))
+        if _detect_sensitive_event_text(item):
+            redaction_count += 1
+        if item.llm_assisted:
+            llm_assisted_count += 1
+        if item.event_type == "missing_attribution_detected":
+            missing_attribution_count += 1
+        if item.event_type == "post_speak_attribution_confirmed" and item.speech_success:
+            speech_success_count += 1
+        if item.event_type == "post_speak_attribution_failed" or (item.speech_emitted and not item.speech_success):
+            speech_failure_count += 1
+
+    return {
+        "item_count": len(items),
+        "by_event_type": by_event_type,
+        "by_source_subsystem": by_source_subsystem,
+        "llm_assisted_count": llm_assisted_count,
+        "missing_attribution_count": missing_attribution_count,
+        "speech_success_count": speech_success_count,
+        "speech_failure_count": speech_failure_count,
+        "validation_error_count": validation_error_count,
+        "redaction_count": redaction_count,
+        "log_writes_performed": False,
+        "queue_writes_performed": False,
+        "external_model_calls_performed": False,
+        "runtime_changes_performed": False,
+        "answer_selection": False,
+        "truth_claim": False,
+        "official_score": False,
+        "summary_mode": "redacted_count_only",
+    }
 
 def summarize_voice_attribution_log_path_policy(item: VoiceAttributionLogPathPolicy) -> dict[str, Any]:
     validation_errors = validate_voice_attribution_log_path_policy(item)
