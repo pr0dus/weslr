@@ -15,6 +15,14 @@ from datetime import datetime, timezone
 from typing import Any
 import re
 
+from weslr.output_provenance import OutputProvenanceEnvelope, output_provenance_envelope_from_dict
+from weslr.voice_source_attribution import (
+    VoiceSourceAttributionRecord,
+    validate_voice_source_attribution_record,
+    voice_source_attribution_record_from_dict,
+)
+from weslr.voice_source_attribution_log import VoiceAttributionLogEvent, voice_attribution_log_event_from_dict
+
 
 ALLOWED_INTENT_TYPES = {
     "who_said_that",
@@ -406,3 +414,256 @@ def summarize_who_said_that_answers(items: list[WhoSaidThatAnswer]) -> dict[str,
         "official_score": False,
         "summary_mode": "redacted_count_only",
     }
+
+
+def create_who_said_that_query_intent_from_text_metadata(
+    query_id: str,
+    intent_type: str = "unknown",
+    query_text_hash: str = "",
+    input_channel: str = "unknown",
+    requested_utterance_id: str = "",
+    lookback_mode: str = "most_recent",
+) -> WhoSaidThatQueryIntent:
+    """Create a validated query intent from explicit metadata only."""
+    item = create_empty_who_said_that_query_intent(
+        query_id=query_id,
+        intent_type=intent_type,
+        raw_query_stored=False,
+        query_text_hash=query_text_hash,
+        input_channel=input_channel,
+        requested_utterance_id=requested_utterance_id,
+        lookback_mode=lookback_mode,
+        operator_review_required=True,
+    )
+    errors = validate_who_said_that_query_intent(item)
+    if errors:
+        raise ValueError(f"invalid who-said-that query intent: {errors}")
+    return item
+
+
+def create_missing_attribution_answer(
+    answer_id: str,
+    query_id: str,
+    intent_type: str = "who_said_that",
+    reason: str = "attribution missing or unknown",
+) -> WhoSaidThatAnswer:
+    """Create a safe missing-attribution answer without ownership claims."""
+    item = create_empty_who_said_that_answer(
+        answer_id=answer_id,
+        query_id=query_id,
+        intent_type=intent_type,
+        attribution_found=False,
+        attribution_partial=False,
+        ownership_category="unknown_unattributed",
+        source_subsystem="unknown",
+        authority_level="unknown",
+        truth_class="unknown",
+        confidence="unknown",
+        operator_review_required=True,
+        missing_attribution_reason=reason,
+        redacted_answer_summary="Attribution is missing or unknown; no ownership claim is made.",
+    )
+    errors = validate_who_said_that_answer(item)
+    if errors:
+        raise ValueError(f"invalid missing-attribution answer: {errors}")
+    return item
+
+
+def _coerce_attribution_record(item: VoiceSourceAttributionRecord | dict[str, Any]) -> VoiceSourceAttributionRecord:
+    if isinstance(item, VoiceSourceAttributionRecord):
+        return item
+    if isinstance(item, dict):
+        return voice_source_attribution_record_from_dict(item)
+    raise TypeError("voice attribution record must be VoiceSourceAttributionRecord or dict")
+
+
+def _coerce_log_event(item: VoiceAttributionLogEvent | dict[str, Any] | None) -> VoiceAttributionLogEvent | None:
+    if item is None:
+        return None
+    if isinstance(item, VoiceAttributionLogEvent):
+        return item
+    if isinstance(item, dict):
+        return voice_attribution_log_event_from_dict(item)
+    raise TypeError("voice log event must be VoiceAttributionLogEvent, dict, or None")
+
+
+def _coerce_output_provenance(item: OutputProvenanceEnvelope | dict[str, Any] | None) -> OutputProvenanceEnvelope | None:
+    if item is None:
+        return None
+    if isinstance(item, OutputProvenanceEnvelope):
+        return item
+    if isinstance(item, dict):
+        return output_provenance_envelope_from_dict(item)
+    raise TypeError("output provenance must be OutputProvenanceEnvelope, dict, or None")
+
+
+def derive_ownership_category_from_records(
+    source_subsystem: str = "unknown",
+    llm_assisted: bool = False,
+    advisor_assisted: bool = False,
+    generated_by: str = "",
+    attribution_found: bool = False,
+) -> str:
+    """Conservatively derive ownership from already-provided record fields only."""
+    if not attribution_found or source_subsystem == "unknown":
+        return "unknown_unattributed"
+    if advisor_assisted:
+        return "advisor_assisted"
+    if source_subsystem == "external_model":
+        return "external_model_surface"
+    if source_subsystem == "operator_cli" or generated_by == "operator_cli":
+        return "operator_triggered"
+    if llm_assisted:
+        return "weslr_surface_llm_assisted"
+    if source_subsystem in {"voice_gateway", "ambient_voice_loop", "tts_engine", "stt_engine", "proactive_suggestions", "local_model", "llm_advisor_mode"}:
+        return "weslr_owned"
+    return "unknown_unattributed"
+
+
+def _safe_authority_for_answer(authority_level: str, llm_assisted: bool) -> str:
+    if llm_assisted and authority_level == "system_fact":
+        return "voice_surface"
+    return authority_level
+
+
+def _safe_truth_for_answer(truth_class: str, llm_assisted: bool) -> str:
+    if llm_assisted and truth_class == "verified_system_fact":
+        return "unverified"
+    return truth_class
+
+
+def create_answer_from_voice_attribution_record(
+    attribution_record: VoiceSourceAttributionRecord | dict[str, Any],
+    answer_id: str,
+    query_id: str,
+    intent_type: str = "who_said_that",
+    related_log_event: VoiceAttributionLogEvent | dict[str, Any] | None = None,
+    output_provenance: OutputProvenanceEnvelope | dict[str, Any] | None = None,
+) -> WhoSaidThatAnswer:
+    """Build an answer from caller-provided in-memory attribution/provenance records only."""
+    record = _coerce_attribution_record(attribution_record)
+    errors = validate_voice_source_attribution_record(record)
+    if errors:
+        raise ValueError(f"invalid voice source attribution record: {errors}")
+    log_event = _coerce_log_event(related_log_event)
+    provenance = _coerce_output_provenance(output_provenance)
+    partial = not all([record.source_module.strip(), record.generated_by.strip(), record.trace_refs])
+    ownership = derive_ownership_category_from_records(
+        source_subsystem=record.source_subsystem,
+        llm_assisted=record.llm_assisted,
+        advisor_assisted=record.advisor_assisted,
+        generated_by=record.generated_by,
+        attribution_found=True,
+    )
+    item = create_empty_who_said_that_answer(
+        answer_id=answer_id,
+        query_id=query_id,
+        intent_type=intent_type,
+        attribution_found=True,
+        attribution_partial=partial,
+        ownership_category=ownership,
+        source_subsystem=record.source_subsystem,
+        source_module=record.source_module,
+        generated_by=record.generated_by,
+        trigger=record.trigger,
+        trigger_type=record.trigger_type,
+        speech_emitted=bool(log_event.speech_emitted) if log_event else False,
+        tts_engine=(log_event.tts_engine if log_event else record.tts_engine),
+        stt_engine=(log_event.stt_engine if log_event else record.stt_engine),
+        llm_assisted=record.llm_assisted,
+        advisor_assisted=record.advisor_assisted,
+        ambient_loop_involved=record.ambient_loop_involved,
+        proactive_suggestion_involved=record.proactive_suggestion_involved,
+        model_provider=record.model_provider,
+        model_name=record.model_name,
+        authority_level=_safe_authority_for_answer(record.authority_level, record.llm_assisted),
+        truth_class=_safe_truth_for_answer(record.truth_class, record.llm_assisted),
+        confidence=record.confidence,
+        trace_ref_count=len(record.trace_refs) + (len(provenance.trace_refs) if provenance else 0),
+        operator_review_required=record.operator_review_required,
+        redacted_answer_summary="Attribution answer built from provided in-memory records only; no log read performed.",
+    )
+    errors = validate_who_said_that_answer(item)
+    if errors:
+        raise ValueError(f"invalid who-said-that answer: {errors}")
+    return item
+
+
+def create_answer_from_voice_log_event(
+    log_event: VoiceAttributionLogEvent | dict[str, Any],
+    answer_id: str,
+    query_id: str,
+    intent_type: str = "who_said_that",
+) -> WhoSaidThatAnswer:
+    """Build an answer from a caller-provided in-memory voice log event only."""
+    event = _coerce_log_event(log_event)
+    assert event is not None
+    snapshot = event.attribution_record_snapshot or {}
+    attribution_found = event.event_type != "missing_attribution_detected" and event.source_subsystem != "unknown"
+    source_module = str(snapshot.get("source_module", "") or "")
+    generated_by = str(snapshot.get("generated_by", "") or "")
+    partial = attribution_found and (not source_module or not generated_by or not event.trace_refs)
+    if not attribution_found:
+        return create_missing_attribution_answer(answer_id=answer_id, query_id=query_id, intent_type=intent_type)
+    ownership = derive_ownership_category_from_records(
+        source_subsystem=event.source_subsystem,
+        llm_assisted=event.llm_assisted,
+        advisor_assisted=bool(snapshot.get("advisor_assisted", False)),
+        generated_by=generated_by,
+        attribution_found=True,
+    )
+    item = create_empty_who_said_that_answer(
+        answer_id=answer_id,
+        query_id=query_id,
+        intent_type=intent_type,
+        attribution_found=True,
+        attribution_partial=partial,
+        ownership_category=ownership,
+        source_subsystem=event.source_subsystem,
+        source_module=source_module,
+        generated_by=generated_by,
+        trigger="",
+        trigger_type=str(snapshot.get("trigger_type", "unknown") or "unknown"),
+        speech_emitted=event.speech_emitted,
+        tts_engine=event.tts_engine,
+        stt_engine=event.stt_engine,
+        llm_assisted=event.llm_assisted,
+        advisor_assisted=bool(snapshot.get("advisor_assisted", False)),
+        ambient_loop_involved=bool(snapshot.get("ambient_loop_involved", False)),
+        proactive_suggestion_involved=bool(snapshot.get("proactive_suggestion_involved", False)),
+        model_provider=event.model_provider,
+        model_name=event.model_name,
+        authority_level=_safe_authority_for_answer(event.authority_level, event.llm_assisted),
+        truth_class=_safe_truth_for_answer(event.truth_class, event.llm_assisted),
+        confidence=str(snapshot.get("confidence", "unknown") or "unknown"),
+        trace_ref_count=len(event.trace_refs),
+        operator_review_required=bool(snapshot.get("operator_review_required", True)),
+        redacted_answer_summary="Attribution answer built from provided in-memory log event only; no log read performed.",
+    )
+    errors = validate_who_said_that_answer(item)
+    if errors:
+        raise ValueError(f"invalid who-said-that log-event answer: {errors}")
+    return item
+
+
+def summarize_who_said_that_query_diagnostics(items: list[WhoSaidThatAnswer]) -> dict[str, Any]:
+    """Return redacted/count-only diagnostics for already-created answers."""
+    base = summarize_who_said_that_answers(items)
+    partial_count = sum(1 for item in items if item.attribution_partial)
+    review_required_count = sum(1 for item in items if item.operator_review_required)
+    base.update(
+        {
+            "attribution_partial_count": partial_count,
+            "operator_review_required_count": review_required_count,
+            "log_reads_performed": False,
+            "log_writes_performed": False,
+            "queue_writes_performed": False,
+            "external_model_calls_performed": False,
+            "runtime_changes_performed": False,
+            "answer_selection": False,
+            "truth_claim": False,
+            "official_score": False,
+            "summary_mode": "redacted_count_only",
+        }
+    )
+    return base
