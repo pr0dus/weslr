@@ -116,9 +116,13 @@ class TeachingExplanationFallacyMappingHelpersV1Tests(unittest.TestCase):
         self.assertNotIn("sound", text)
         self.assertNotIn("official score", text)
 
-    def test_unsupported_gaps_remain_visible(self):
-        explanation = create_teaching_explanation_from_proof_step(self.proof_step(), teaching_mode="technical")
-        self.assertIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
+    def test_redundant_fallacy_gap_removed_but_actual_uncertainty_remains_visible(self):
+        explanation = create_teaching_explanation_from_proof_step(
+            self.proof_step(unsupported_gaps=["recognized_fallacy_shaped_pattern", "negation_scope_unclear"]),
+            teaching_mode="technical",
+        )
+        self.assertNotIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
+        self.assertIn("negation_scope_unclear", explanation.unsupported_gaps)
         self.assertIn("Unsupported or ambiguous gaps remain visible.", explanation.step_by_step_explanation)
 
     def test_non_fallacy_supported_form_does_not_get_fallacy_name(self):

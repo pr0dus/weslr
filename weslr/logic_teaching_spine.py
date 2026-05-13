@@ -2926,6 +2926,27 @@ def _teaching_fallacy_name_from_proof_step(proof_step: object, pattern_name: str
     return ""
 
 
+
+def _classify_teaching_unsupported_gap(gap: str, *, fallacy_name: str = "") -> str:
+    normalized = str(gap or "").strip()
+    if fallacy_name and normalized == "recognized_fallacy_shaped_pattern":
+        return "redundant_structural_note"
+    if fallacy_name and normalized == "fallacy label may be exposed without choosing a response":
+        return "safety_caution"
+    if normalized in {"helper_only_synthetic_fixture", "diagnostic_only"}:
+        return "diagnostic_note"
+    return "actual_uncertainty"
+
+
+def _teaching_actual_uncertainty_gaps(gaps: list[str], *, fallacy_name: str = "") -> list[str]:
+    return list(
+        dict.fromkeys(
+            gap
+            for gap in gaps
+            if _classify_teaching_unsupported_gap(gap, fallacy_name=fallacy_name) == "actual_uncertainty"
+        )
+    )
+
 def _teaching_counterexample_note(proof_step: object, support_status: str) -> str:
     requires_counterexample = bool(_teaching_proof_step_value(proof_step, "requires_counterexample", False))
     if support_status == "counterexample_supported" or requires_counterexample:
@@ -2993,6 +3014,7 @@ def create_teaching_explanation_from_proof_step(proof_step: object, *, teaching_
         unsupported_gaps.append("structural_support_missing_or_ambiguous")
     pattern_name = _teaching_pattern_name_from_proof_step(proof_step)
     fallacy_name = _teaching_fallacy_name_from_proof_step(proof_step, pattern_name)
+    unsupported_gaps = _teaching_actual_uncertainty_gaps(unsupported_gaps, fallacy_name=fallacy_name)
     if fallacy_name or support_status in {"ambiguous", "unsupported", "unknown"}:
         confidence = "low"
     counterexample_note = _teaching_counterexample_note(proof_step, support_status)

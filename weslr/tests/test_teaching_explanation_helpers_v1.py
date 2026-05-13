@@ -95,7 +95,39 @@ class TeachingExplanationHelpersV1Tests(unittest.TestCase):
         )
         explanation = create_teaching_explanation_from_proof_step(step, teaching_mode="academic")
         self.assertEqual("affirming the consequent", explanation.fallacy_name)
-        self.assertIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
+        self.assertNotIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
+        self.assertIn("This has the structure of affirming the consequent.", explanation.step_by_step_explanation)
+
+
+    def test_fallacy_structural_note_removed_but_real_uncertainty_remains(self):
+        explanation = create_teaching_explanation_from_proof_step(
+            self.proof_step(
+                support_status="unsupported",
+                inference_pattern="affirming_consequent",
+                conditional_form_mapping={"form_label": "affirming_consequent", "support_assessment": "fallacy_shaped", "fallacy_shaped": True},
+                unsupported_gaps=[
+                    "recognized_fallacy_shaped_pattern",
+                    "fallacy label may be exposed without choosing a response",
+                    "negation scope may require explicit tracking",
+                    "symbol normalization may be needed",
+                    "surface wording may require proposition extraction",
+                ],
+                confidence="high",
+            ),
+            teaching_mode="technical",
+        )
+        self.assertEqual("affirming the consequent", explanation.fallacy_name)
+        self.assertNotIn("recognized_fallacy_shaped_pattern", explanation.unsupported_gaps)
+        self.assertNotIn("fallacy label may be exposed without choosing a response", explanation.unsupported_gaps)
+        self.assertIn("negation scope may require explicit tracking", explanation.unsupported_gaps)
+        self.assertIn("symbol normalization may be needed", explanation.unsupported_gaps)
+        self.assertIn("surface wording may require proposition extraction", explanation.unsupported_gaps)
+        self.assertEqual("low", explanation.confidence)
+
+    def test_unsupported_ambiguous_missing_information_remains_visible(self):
+        explanation = self.explanation(support_status="ambiguous", unsupported_gaps=["slot_binding_incomplete"])
+        self.assertIn("slot_binding_incomplete", explanation.unsupported_gaps)
+        self.assertEqual("low", explanation.confidence)
 
     def test_creates_explanation_from_ambiguous_proof_step_without_pretending_certainty(self):
         explanation = self.explanation(support_status="ambiguous", validity_status="ambiguous", unsupported_gaps=["slot_missing"])
