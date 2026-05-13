@@ -15,6 +15,7 @@ import re
 
 
 ALLOWED_CLI_COMMANDS = {"list", "show", "summary", "filter", "decide", "archive", "export", "unknown"}
+ALLOWED_OPERATOR_DECISIONS = {"accepted", "rejected", "deferred", "archived"}
 SENSITIVE_TEXT_PATTERNS = {
     "possible API key": re.compile(r"api[_ -]?key|sk-[A-Za-z0-9]|AIza[0-9A-Za-z_-]", re.IGNORECASE),
     "possible token": re.compile(r"\btoken\b|token[_ -]?[A-Za-z0-9_-]*|bearer\s+[A-Za-z0-9._-]+", re.IGNORECASE),
@@ -202,4 +203,154 @@ def summarize_cli_result(result: AdvisorQueueCLIResult) -> dict[str, Any]:
         "answer_selection_made": result.answer_selection_made,
         "truth_claim_made": result.truth_claim_made,
         "official_score_claimed": result.official_score_claimed,
+    }
+
+
+def validate_operator_decision_for_cli(operator_decision: str) -> list[str]:
+    if not operator_decision.strip():
+        return ["missing operator_decision"]
+    if operator_decision not in ALLOWED_OPERATOR_DECISIONS:
+        return ["invalid operator_decision"]
+    return []
+
+
+def _raise_if_errors(errors: list[str]) -> None:
+    if errors:
+        raise ValueError("; ".join(errors))
+
+
+def create_cli_request_from_operator_intent(
+    command: str,
+    request_id: str,
+    item_id: str = "",
+    filter_status: str = "",
+    filter_type: str = "",
+    filter_risk: str = "",
+    operator_decision: str = "",
+    limit: int = 50,
+    dry_run: bool = True,
+    export_redacted: bool = True,
+    requires_operator_approval: bool = True,
+    allow_queue_write: bool = False,
+    allow_external_model_call: bool = False,
+    allow_runtime_change: bool = False,
+) -> AdvisorQueueCLIRequest:
+    """Create and validate a CLI request object without executing anything."""
+    request = create_empty_cli_request(
+        request_id=request_id,
+        command=command,
+        item_id=item_id,
+        filter_status=filter_status,
+        filter_type=filter_type,
+        filter_risk=filter_risk,
+        operator_decision=operator_decision,
+        export_redacted=export_redacted,
+        limit=limit,
+        dry_run=dry_run,
+        requires_operator_approval=requires_operator_approval,
+        allow_queue_write=allow_queue_write,
+        allow_external_model_call=allow_external_model_call,
+        allow_runtime_change=allow_runtime_change,
+    )
+    errors = validate_cli_request(request)
+    if command == "decide" and operator_decision:
+        errors.extend(validate_operator_decision_for_cli(operator_decision))
+    _raise_if_errors(errors)
+    return request
+
+
+def create_cli_result_for_request(
+    request: AdvisorQueueCLIRequest,
+    success: bool = False,
+    item_count: int = 0,
+    status_counts: dict[str, int] | None = None,
+    risk_counts: dict[str, int] | None = None,
+    messages: list[str] | None = None,
+    errors: list[str] | None = None,
+) -> AdvisorQueueCLIResult:
+    """Create a redacted result object for a validated request without executing it."""
+    _raise_if_errors(validate_cli_request(request))
+    result = create_empty_cli_result(
+        request_id=request.request_id,
+        command=request.command,
+        success=success,
+        redacted=True,
+        item_count=item_count,
+        status_counts=dict(status_counts or {}),
+        risk_counts=dict(risk_counts or {}),
+        messages=list(messages or []),
+        errors=list(errors or []),
+        queue_file_read=False,
+        queue_file_written=False,
+        external_model_call_made=False,
+        runtime_change_made=False,
+        answer_selection_made=False,
+        truth_claim_made=False,
+        official_score_claimed=False,
+    )
+    _raise_if_errors(validate_cli_result(result))
+    return result
+
+
+def summarize_cli_requests(requests: list[AdvisorQueueCLIRequest]) -> dict[str, Any]:
+    command_counts: dict[str, int] = {}
+    dry_run_counts = {"true": 0, "false": 0}
+    unsafe_request_count = 0
+    validation_error_count = 0
+    for request in requests:
+        command_counts[request.command] = command_counts.get(request.command, 0) + 1
+        dry_run_counts["true" if request.dry_run else "false"] += 1
+        errors = validate_cli_request(request)
+        if errors:
+            unsafe_request_count += 1
+            validation_error_count += len(errors)
+    return {
+        "redacted": True,
+        "summary_mode": "redacted_count_only",
+        "request_count": len(requests),
+        "command_counts": command_counts,
+        "dry_run_counts": dry_run_counts,
+        "unsafe_request_count": unsafe_request_count,
+        "validation_error_count": validation_error_count,
+        "queue_file_read": False,
+        "queue_file_written": False,
+        "external_model_call_made": False,
+        "runtime_change_made": False,
+        "answer_selection_made": False,
+        "truth_claim_made": False,
+        "official_score_claimed": False,
+    }
+
+
+def summarize_cli_results(results: list[AdvisorQueueCLIResult]) -> dict[str, Any]:
+    command_counts: dict[str, int] = {}
+    success_counts = {"true": 0, "false": 0}
+    validation_error_count = 0
+    item_count_total = 0
+    message_count = 0
+    error_count = 0
+    for result in results:
+        command_counts[result.command] = command_counts.get(result.command, 0) + 1
+        success_counts["true" if result.success else "false"] += 1
+        validation_error_count += len(validate_cli_result(result))
+        item_count_total += result.item_count
+        message_count += len(result.messages)
+        error_count += len(result.errors)
+    return {
+        "redacted": True,
+        "summary_mode": "redacted_count_only",
+        "result_count": len(results),
+        "command_counts": command_counts,
+        "success_counts": success_counts,
+        "item_count_total": item_count_total,
+        "message_count": message_count,
+        "error_count": error_count,
+        "validation_error_count": validation_error_count,
+        "queue_file_read": False,
+        "queue_file_written": False,
+        "external_model_call_made": False,
+        "runtime_change_made": False,
+        "answer_selection_made": False,
+        "truth_claim_made": False,
+        "official_score_claimed": False,
     }
