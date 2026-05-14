@@ -429,3 +429,154 @@ def summarize_chat_routing_decisions(items: list[WhoSaidThatChatRoutingDecision]
         "truth_soundness_score_claimed": False,
         "summary_mode": "redacted_count_only",
     }
+
+
+def create_chat_integration_fallthrough_result(
+    integration_result_id: str,
+    request_id: str,
+    reason: str = "normal_chat_fallthrough",
+) -> dict[str, Any]:
+    """Create a safe fallthrough result without changing runtime chat."""
+    return {
+        "schema_version": "1.0",
+        "integration_result_id": integration_result_id,
+        "request_id": request_id,
+        "integration_path": "normal_chat_fallthrough",
+        "fallthrough_to_normal_chat": True,
+        "who_said_that_path_selected": False,
+        "reason": reason,
+        "routing_performed": False,
+        "runtime_integration_performed": False,
+        "chat_responder_modified": False,
+        "runtime_output_created": False,
+        "log_read_performed": False,
+        "log_write_performed": False,
+        "queue_write_performed": False,
+        "memory_mutation_performed": False,
+        "config_mutation_performed": False,
+        "model_call_performed": False,
+        "advisor_call_performed": False,
+        "voice_wiring_performed": False,
+        "operator_review_required": True,
+        "summary_mode": "redacted_count_only",
+    }
+
+
+def simulate_who_said_that_chat_integration_from_metadata(
+    integration_result_id: str,
+    request_id: str,
+    input_channel: str,
+    message_text_hash: str,
+    confidence: str = "high",
+    transient_phrase: str = "",
+    matched_phrase_family: str = "unknown",
+    detected_attribution_intent: str = "unknown",
+    runtime_query_request_id: str = "",
+    **metadata: Any,
+) -> dict[str, Any]:
+    """Simulate future chat integration in memory without runtime wiring.
+
+    The transient phrase is only classified in memory and is never copied into
+    the returned request, decision, or result dictionaries.
+    """
+    if "raw_text" in metadata or "message_text" in metadata or "raw_message_text" in metadata:
+        raise ValueError("raw text metadata is not accepted")
+    if transient_phrase and matched_phrase_family == "unknown":
+        matched_phrase_family = classify_who_said_that_phrase_family(transient_phrase)
+    request = create_chat_routing_request_from_metadata(
+        request_id=request_id,
+        input_channel=input_channel,
+        message_text_hash=message_text_hash,
+        matched_phrase_family=matched_phrase_family,
+        detected_attribution_intent=detected_attribution_intent,
+        confidence=confidence,
+    )
+    decision = create_chat_routing_decision_from_request(
+        request,
+        decision_id=f"{integration_result_id}:decision",
+        runtime_query_request_id=runtime_query_request_id,
+    )
+    if not decision.should_route:
+        result = create_chat_integration_fallthrough_result(integration_result_id, request.request_id)
+    else:
+        result = {
+            "schema_version": "1.0",
+            "integration_result_id": integration_result_id,
+            "request_id": request.request_id,
+            "integration_path": "who_said_that_path",
+            "fallthrough_to_normal_chat": False,
+            "who_said_that_path_selected": True,
+            "detected_attribution_intent": decision.detected_attribution_intent,
+            "matched_phrase_family": decision.matched_phrase_family,
+            "confidence": decision.confidence,
+            "should_route": True,
+            "runtime_query_request_id": decision.runtime_query_request_id,
+            "routing_performed": False,
+            "runtime_integration_performed": False,
+            "chat_responder_modified": False,
+            "runtime_output_created": False,
+            "log_read_performed": False,
+            "log_write_performed": False,
+            "queue_write_performed": False,
+            "memory_mutation_performed": False,
+            "config_mutation_performed": False,
+            "model_call_performed": False,
+            "advisor_call_performed": False,
+            "voice_wiring_performed": False,
+            "operator_review_required": True,
+            "summary_mode": "redacted_count_only",
+        }
+    result["chat_routing_request"] = who_said_that_chat_routing_request_to_dict(request)
+    result["chat_routing_decision"] = who_said_that_chat_routing_decision_to_dict(decision)
+    return result
+
+
+def summarize_chat_integration_result(item: dict[str, Any]) -> dict[str, Any]:
+    """Return a redacted/count-only summary for one integration simulation."""
+    return {
+        "schema_version": item.get("schema_version", "1.0"),
+        "has_integration_result_id": bool(item.get("integration_result_id")),
+        "has_request_id": bool(item.get("request_id")),
+        "integration_path": item.get("integration_path", "unknown"),
+        "fallthrough_to_normal_chat": bool(item.get("fallthrough_to_normal_chat", False)),
+        "who_said_that_path_selected": bool(item.get("who_said_that_path_selected", False)),
+        "has_runtime_query_request_id": bool(item.get("runtime_query_request_id")),
+        "routing_performed": bool(item.get("routing_performed", False)),
+        "runtime_integration_performed": bool(item.get("runtime_integration_performed", False)),
+        "chat_responder_modified": bool(item.get("chat_responder_modified", False)),
+        "runtime_output_created": bool(item.get("runtime_output_created", False)),
+        "log_read_performed": bool(item.get("log_read_performed", False)),
+        "log_write_performed": bool(item.get("log_write_performed", False)),
+        "queue_write_performed": bool(item.get("queue_write_performed", False)),
+        "memory_mutation_performed": bool(item.get("memory_mutation_performed", False)),
+        "config_mutation_performed": bool(item.get("config_mutation_performed", False)),
+        "model_call_performed": bool(item.get("model_call_performed", False)),
+        "advisor_call_performed": bool(item.get("advisor_call_performed", False)),
+        "voice_wiring_performed": bool(item.get("voice_wiring_performed", False)),
+        "operator_review_required": bool(item.get("operator_review_required", True)),
+        "summary_mode": "redacted_count_only",
+    }
+
+
+def summarize_chat_integration_results(items: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return redacted aggregate counts for integration simulations."""
+    route_count = sum(1 for item in items if item.get("who_said_that_path_selected"))
+    fallthrough_count = sum(1 for item in items if item.get("fallthrough_to_normal_chat"))
+    return {
+        "result_count": len(items),
+        "route_count": route_count,
+        "fallthrough_count": fallthrough_count,
+        "routing_performed": False,
+        "runtime_integration_performed": False,
+        "chat_responder_modified": False,
+        "runtime_outputs_created": False,
+        "log_reads_performed": False,
+        "log_writes_performed": False,
+        "queue_writes_performed": False,
+        "memory_mutations_performed": False,
+        "config_mutations_performed": False,
+        "model_calls_performed": False,
+        "advisor_calls_performed": False,
+        "voice_wiring_performed": False,
+        "summary_mode": "redacted_count_only",
+    }
