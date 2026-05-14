@@ -213,3 +213,255 @@ def validate_ambient_voice_post_speak_hook_result(item: AmbientVoicePostSpeakHoo
         errors.append("missing input id")
     errors.extend(_validate_common_fields(item))
     return errors
+
+
+def create_post_speak_hook_input_from_metadata(
+    *,
+    input_id: str,
+    hook_id: str,
+    pre_speak_result_id: str,
+    utterance_id: str,
+    output_provenance_id: str,
+    attribution_record_id: str,
+    pre_speak_log_event_id: str = "",
+    source_subsystem: str = "unknown",
+    tts_engine: str = "unknown",
+    stt_engine: str = "unknown",
+    speech_attempted: bool = False,
+    speech_success: bool = False,
+    speech_failed: bool = False,
+    speech_blocked: bool = False,
+    failure_reason: str = "",
+    no_ownership_claim_required: bool = True,
+    operator_review_required: bool = True,
+    trace_refs: list[str] | None = None,
+    safety_flags: AmbientVoicePostSpeakHookSafetyFlags | dict[str, Any] | None = None,
+) -> AmbientVoicePostSpeakHookInput:
+    """Create an in-memory post-speak hook input from explicit metadata only."""
+    return create_empty_ambient_voice_post_speak_hook_input(
+        input_id=input_id,
+        hook_id=hook_id,
+        pre_speak_result_id=pre_speak_result_id,
+        utterance_id=utterance_id,
+        output_provenance_id=output_provenance_id,
+        attribution_record_id=attribution_record_id,
+        pre_speak_log_event_id=pre_speak_log_event_id,
+        source_subsystem=source_subsystem,
+        tts_engine=tts_engine,
+        stt_engine=stt_engine,
+        speech_attempted=speech_attempted,
+        speech_success=speech_success,
+        speech_failed=speech_failed,
+        speech_blocked=speech_blocked,
+        failure_reason=failure_reason,
+        no_ownership_claim_required=no_ownership_claim_required,
+        operator_review_required=operator_review_required,
+        trace_refs=list(trace_refs or []),
+        safety_flags=_coerce_safety_flags(safety_flags),
+    )
+
+
+def create_post_speak_hook_result_from_input(
+    input_item: AmbientVoicePostSpeakHookInput | dict[str, Any],
+    *,
+    result_id: str,
+    post_speak_log_event_id: str = "",
+) -> AmbientVoicePostSpeakHookResult:
+    """Create an in-memory post-speak hook result without side effects."""
+    if isinstance(input_item, dict):
+        input_item = ambient_voice_post_speak_hook_input_from_dict(input_item)
+    return create_empty_ambient_voice_post_speak_hook_result(
+        result_id=result_id,
+        hook_id=input_item.hook_id,
+        input_id=input_item.input_id,
+        pre_speak_result_id=input_item.pre_speak_result_id,
+        utterance_id=input_item.utterance_id,
+        output_provenance_id=input_item.output_provenance_id,
+        attribution_record_id=input_item.attribution_record_id,
+        pre_speak_log_event_id=input_item.pre_speak_log_event_id,
+        post_speak_log_event_id=post_speak_log_event_id,
+        source_subsystem=input_item.source_subsystem,
+        tts_engine=input_item.tts_engine,
+        stt_engine=input_item.stt_engine,
+        speech_attempted=input_item.speech_attempted,
+        speech_success=input_item.speech_success,
+        speech_failed=input_item.speech_failed,
+        speech_blocked=input_item.speech_blocked,
+        failure_reason=input_item.failure_reason,
+        no_ownership_claim_required=input_item.no_ownership_claim_required,
+        operator_review_required=input_item.operator_review_required or not input_item.speech_success,
+        trace_refs=list(input_item.trace_refs),
+        safety_flags=input_item.safety_flags,
+    )
+
+
+def create_successful_post_speak_hook_result(
+    *,
+    result_id: str,
+    input_id: str,
+    hook_id: str,
+    pre_speak_result_id: str,
+    utterance_id: str,
+    output_provenance_id: str,
+    attribution_record_id: str,
+    pre_speak_log_event_id: str = "",
+    post_speak_log_event_id: str = "",
+    source_subsystem: str = "unknown",
+    tts_engine: str = "unknown",
+    stt_engine: str = "unknown",
+    trace_refs: list[str] | None = None,
+) -> AmbientVoicePostSpeakHookResult:
+    """Create a successful post-speak result; validation still enforces required references."""
+    input_item = create_post_speak_hook_input_from_metadata(
+        input_id=input_id,
+        hook_id=hook_id,
+        pre_speak_result_id=pre_speak_result_id,
+        utterance_id=utterance_id,
+        output_provenance_id=output_provenance_id,
+        attribution_record_id=attribution_record_id,
+        pre_speak_log_event_id=pre_speak_log_event_id,
+        source_subsystem=source_subsystem,
+        tts_engine=tts_engine,
+        stt_engine=stt_engine,
+        speech_attempted=True,
+        speech_success=True,
+        speech_failed=False,
+        speech_blocked=False,
+        failure_reason="",
+        no_ownership_claim_required=True,
+        operator_review_required=True,
+        trace_refs=trace_refs,
+    )
+    return create_post_speak_hook_result_from_input(input_item, result_id=result_id, post_speak_log_event_id=post_speak_log_event_id)
+
+
+def create_failed_post_speak_hook_result(
+    *,
+    result_id: str,
+    input_id: str,
+    hook_id: str,
+    pre_speak_result_id: str,
+    utterance_id: str,
+    output_provenance_id: str,
+    attribution_record_id: str,
+    failure_reason: str,
+    pre_speak_log_event_id: str = "",
+    post_speak_log_event_id: str = "",
+    source_subsystem: str = "unknown",
+    tts_engine: str = "unknown",
+    stt_engine: str = "unknown",
+    trace_refs: list[str] | None = None,
+) -> AmbientVoicePostSpeakHookResult:
+    """Create a failed post-speak result with no ownership claim allowed."""
+    input_item = create_post_speak_hook_input_from_metadata(
+        input_id=input_id,
+        hook_id=hook_id,
+        pre_speak_result_id=pre_speak_result_id,
+        utterance_id=utterance_id,
+        output_provenance_id=output_provenance_id,
+        attribution_record_id=attribution_record_id,
+        pre_speak_log_event_id=pre_speak_log_event_id,
+        source_subsystem=source_subsystem,
+        tts_engine=tts_engine,
+        stt_engine=stt_engine,
+        speech_attempted=True,
+        speech_success=False,
+        speech_failed=True,
+        speech_blocked=False,
+        failure_reason=failure_reason,
+        no_ownership_claim_required=True,
+        operator_review_required=True,
+        trace_refs=trace_refs,
+    )
+    return create_post_speak_hook_result_from_input(input_item, result_id=result_id, post_speak_log_event_id=post_speak_log_event_id)
+
+
+def create_blocked_post_speak_hook_result(
+    *,
+    result_id: str,
+    input_id: str,
+    hook_id: str,
+    pre_speak_result_id: str,
+    utterance_id: str,
+    output_provenance_id: str,
+    attribution_record_id: str,
+    failure_reason: str,
+    pre_speak_log_event_id: str = "",
+    post_speak_log_event_id: str = "",
+    source_subsystem: str = "unknown",
+    tts_engine: str = "unknown",
+    stt_engine: str = "unknown",
+    trace_refs: list[str] | None = None,
+) -> AmbientVoicePostSpeakHookResult:
+    """Create a blocked post-speak result with no ownership claim allowed."""
+    input_item = create_post_speak_hook_input_from_metadata(
+        input_id=input_id,
+        hook_id=hook_id,
+        pre_speak_result_id=pre_speak_result_id,
+        utterance_id=utterance_id,
+        output_provenance_id=output_provenance_id,
+        attribution_record_id=attribution_record_id,
+        pre_speak_log_event_id=pre_speak_log_event_id,
+        source_subsystem=source_subsystem,
+        tts_engine=tts_engine,
+        stt_engine=stt_engine,
+        speech_attempted=False,
+        speech_success=False,
+        speech_failed=False,
+        speech_blocked=True,
+        failure_reason=failure_reason,
+        no_ownership_claim_required=True,
+        operator_review_required=True,
+        trace_refs=trace_refs,
+    )
+    return create_post_speak_hook_result_from_input(input_item, result_id=result_id, post_speak_log_event_id=post_speak_log_event_id)
+
+
+def summarize_post_speak_hook_result(result: AmbientVoicePostSpeakHookResult | dict[str, Any]) -> dict[str, Any]:
+    """Return redacted, count-only post-speak result diagnostics."""
+    if isinstance(result, dict):
+        result = ambient_voice_post_speak_hook_result_from_dict(result)
+    return {
+        "summary_mode": "redacted_count_only",
+        "speech_attempted": result.speech_attempted,
+        "speech_success": result.speech_success,
+        "speech_failed": result.speech_failed,
+        "speech_blocked": result.speech_blocked,
+        "no_ownership_claim_required": result.no_ownership_claim_required,
+        "operator_review_required": result.operator_review_required,
+        "trace_ref_count": len(result.trace_refs),
+        "has_output_provenance": bool(result.output_provenance_id),
+        "has_attribution_record": bool(result.attribution_record_id),
+        "has_pre_speak_log_event": bool(result.pre_speak_log_event_id),
+        "has_post_speak_log_event": bool(result.post_speak_log_event_id),
+        "validation_error_count": len(validate_ambient_voice_post_speak_hook_result(result)),
+        "runtime_voice_wiring_performed": False,
+        "log_write_performed": False,
+        "queue_write_performed": False,
+        "memory_mutation_performed": False,
+        "model_call_performed": False,
+        "speech_triggered": False,
+    }
+
+
+def summarize_post_speak_hook_results(results: list[AmbientVoicePostSpeakHookResult | dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Return redacted aggregate diagnostics for post-speak hook results."""
+    items = [ambient_voice_post_speak_hook_result_from_dict(item) if isinstance(item, dict) else item for item in (results or [])]
+    return {
+        "summary_mode": "redacted_count_only",
+        "result_count": len(items),
+        "speech_attempted_count": sum(1 for item in items if item.speech_attempted),
+        "speech_success_count": sum(1 for item in items if item.speech_success),
+        "speech_failed_count": sum(1 for item in items if item.speech_failed),
+        "speech_blocked_count": sum(1 for item in items if item.speech_blocked),
+        "no_ownership_claim_required_count": sum(1 for item in items if item.no_ownership_claim_required),
+        "operator_review_required_count": sum(1 for item in items if item.operator_review_required),
+        "trace_ref_count_total": sum(len(item.trace_refs) for item in items),
+        "validation_error_count_total": sum(len(validate_ambient_voice_post_speak_hook_result(item)) for item in items),
+        "runtime_voice_wiring_performed": False,
+        "log_write_performed": False,
+        "queue_write_performed": False,
+        "memory_mutation_performed": False,
+        "model_call_performed": False,
+        "speech_triggered": False,
+    }
