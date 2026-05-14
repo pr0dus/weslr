@@ -61,6 +61,15 @@ _frontier_intelligence_doctrine_required_markers = {
     "legal/product review",
     "not the final target",
 }
+_frontier_intelligence_dry_pipeline_canon_doc = "docs/WESLR_FRONTIER_INTELLIGENCE_DRY_PIPELINE_CANON_V1.md"
+_frontier_intelligence_dry_pipeline_required_markers = {
+    "APPROVE_WESLR_FRONTIER_INTELLIGENCE_DRY_PIPELINE_CANON_V1_ONLY",
+    "frontier_intelligence_core_v1",
+    "dry_pipeline",
+    "not_chat_wired",
+    "not_model_backed",
+    "not_safe_to_wire_runtime_yet",
+}
 
 
 def _run_harness():
@@ -120,6 +129,10 @@ def _frontier_intelligence_doctrine_doc_is_valid():
     return _doc_with_markers_is_valid(_frontier_intelligence_doctrine_doc, _frontier_intelligence_doctrine_required_markers)
 
 
+def _frontier_intelligence_dry_pipeline_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_frontier_intelligence_dry_pipeline_canon_doc, _frontier_intelligence_dry_pipeline_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -136,6 +149,8 @@ def _check_git_scope():
         the operator-approved AI-audit self-governance canon markers are present
       - docs/WESLR_FRONTIER_INTELLIGENCE_EVALUATION_AND_AI_AUDIT_DOCTRINE_V1.md only when
         the approved legacy-tests baseline doctrine markers are present
+      - docs/WESLR_FRONTIER_INTELLIGENCE_DRY_PIPELINE_CANON_V1.md only when
+        the approved dry-pipeline canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -155,6 +170,7 @@ def _check_git_scope():
     relation_approval_doc_valid = _relation_helper_approval_doc_is_valid()
     ai_audit_self_governance_doc_valid = _ai_audit_self_governance_canon_doc_is_valid()
     frontier_intelligence_doctrine_doc_valid = _frontier_intelligence_doctrine_doc_is_valid()
+    frontier_intelligence_dry_pipeline_doc_valid = _frontier_intelligence_dry_pipeline_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -183,6 +199,10 @@ def _check_git_scope():
             allowed = frontier_intelligence_doctrine_doc_valid
             if not frontier_intelligence_doctrine_doc_valid:
                 violations.append(f"  doctrine doc missing required markers: {path}")
+        if path == _frontier_intelligence_dry_pipeline_canon_doc:
+            allowed = frontier_intelligence_dry_pipeline_doc_valid
+            if not frontier_intelligence_dry_pipeline_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
