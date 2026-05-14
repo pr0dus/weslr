@@ -12,6 +12,9 @@ from copy import deepcopy
 from typing import Any
 
 
+_PROBE_ID_SORT_KEY = "probe_id"
+
+
 SCHEMA_VERSION = "ai_audit_synthetic_probe_inventory_v1"
 
 REQUIRED_AI_AUDIT_SYNTHETIC_PROBE_FIELDS = {
@@ -328,3 +331,200 @@ def validate_ai_audit_synthetic_probe_inventory_v1(inventory: list[dict[str, Any
         issues.append(f"missing required probe_category: {category}")
 
     return issues
+
+
+def _as_filter_set(value: str | list[str] | tuple[str, ...] | set[str] | None) -> set[str] | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return {value}
+    return {str(item) for item in value}
+
+
+def _stable_probe_sort(probes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(probes, key=lambda probe: str(probe.get(_PROBE_ID_SORT_KEY, "")))
+
+
+def filter_ai_audit_synthetic_probes_v1(
+    *,
+    probe_categories: str | list[str] | tuple[str, ...] | set[str] | None = None,
+    claim_categories: str | list[str] | tuple[str, ...] | set[str] | None = None,
+    inventory: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Return deterministic deep-copied probes filtered by category and claim category.
+
+    This is selection-only infrastructure. It does not execute probes, call models,
+    score systems, or change runtime/chat/voice behavior.
+    """
+    category_filter = _as_filter_set(probe_categories)
+    claim_filter = _as_filter_set(claim_categories)
+    probes = load_ai_audit_synthetic_probe_inventory_v1() if inventory is None else deepcopy(list(inventory))
+    selected: list[dict[str, Any]] = []
+    for probe in probes:
+        if category_filter is not None and probe.get("probe_category") not in category_filter:
+            continue
+        if claim_filter is not None and probe.get("claim_category") not in claim_filter:
+            continue
+        selected.append(probe)
+    return _stable_probe_sort(selected)
+
+
+def find_duplicate_ai_audit_probe_ids_v1(inventory: list[dict[str, Any]] | None = None) -> list[str]:
+    """Return duplicate probe IDs in deterministic order."""
+    probes = load_ai_audit_synthetic_probe_inventory_v1() if inventory is None else list(inventory)
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for probe in probes:
+        probe_id = str(probe.get("probe_id", "")).strip()
+        if not probe_id:
+            continue
+        if probe_id in seen:
+            duplicates.add(probe_id)
+        seen.add(probe_id)
+    return sorted(duplicates)
+
+
+def summarize_ai_audit_synthetic_probe_metadata_v1(inventory: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Return redacted/count-only helper metadata summary for the probe inventory."""
+    probes = load_ai_audit_synthetic_probe_inventory_v1() if inventory is None else list(inventory)
+    base = summarize_ai_audit_synthetic_probe_inventory_v1(probes)
+    field_counts: dict[str, int] = {}
+    for field in sorted(REQUIRED_AI_AUDIT_SYNTHETIC_PROBE_FIELDS):
+        field_counts[field] = sum(1 for probe in probes if field in probe and probe.get(field) not in (None, ""))
+    base.update(
+        {
+            "available_fields": sorted({field for probe in probes for field in probe.keys()}),
+            "required_field_counts": field_counts,
+            "all_required_fields_complete": all(count == len(probes) for count in field_counts.values()),
+            "duplicate_probe_ids": find_duplicate_ai_audit_probe_ids_v1(probes),
+        }
+    )
+    return base
+
+
+def _probe_is_safe_for_selection(probe: dict[str, Any]) -> bool:
+    return (
+        probe.get("protected_item_free") is True
+        and probe.get("answer_key_free") is True
+        and probe.get("official_score_claimed") is False
+        and probe.get("benchmark_tuning") is False
+        and probe.get("runtime_behavior_change") is False
+    )
+
+
+def validate_ai_audit_synthetic_probe_selection_v1(
+    selected_probes: list[str] | list[dict[str, Any]],
+    *,
+    inventory: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Validate an in-memory selected probe list without executing anything."""
+    canonical = load_ai_audit_synthetic_probe_inventory_v1() if inventory is None else deepcopy(list(inventory))
+    canonical_by_id = {str(probe.get("probe_id", "")): probe for probe in canonical if probe.get("probe_id")}
+    selected_ids: list[str] = []
+    for item in selected_probes:
+        if isinstance(item, dict):
+            selected_ids.append(str(item.get("probe_id", "")).strip())
+        else:
+            selected_ids.append(str(item).strip())
+
+    issues: list[str] = []
+    seen: set[str] = set()
+    duplicate_ids: set[str] = set()
+    unknown_ids: list[str] = []
+    unsafe_ids: list[str] = []
+    protected_item_ids: list[str] = []
+    answer_key_ids: list[str] = []
+    official_score_ids: list[str] = []
+    benchmark_tuning_ids: list[str] = []
+    runtime_change_ids: list[str] = []
+
+    for probe_id in selected_ids:
+        if not probe_id:
+            issues.append("missing selected probe_id")
+            continue
+        if probe_id in seen:
+            duplicate_ids.add(probe_id)
+        seen.add(probe_id)
+        probe = canonical_by_id.get(probe_id)
+        if probe is None:
+            unknown_ids.append(probe_id)
+            continue
+        if probe.get("protected_item_free") is not True:
+            protected_item_ids.append(probe_id)
+        if probe.get("answer_key_free") is not True:
+            answer_key_ids.append(probe_id)
+        if probe.get("official_score_claimed") is not False:
+            official_score_ids.append(probe_id)
+        if probe.get("benchmark_tuning") is not False:
+            benchmark_tuning_ids.append(probe_id)
+        if probe.get("runtime_behavior_change") is not False:
+            runtime_change_ids.append(probe_id)
+        if not _probe_is_safe_for_selection(probe):
+            unsafe_ids.append(probe_id)
+
+    for probe_id in sorted(duplicate_ids):
+        issues.append(f"duplicate selected probe_id: {probe_id}")
+    for probe_id in sorted(unknown_ids):
+        issues.append(f"unknown selected probe_id: {probe_id}")
+    for probe_id in sorted(unsafe_ids):
+        issues.append(f"unsafe selected probe_id: {probe_id}")
+
+    return {
+        "valid": not issues,
+        "redacted_count_only": True,
+        "selected_count": len(selected_ids),
+        "unique_selected_count": len(set(pid for pid in selected_ids if pid)),
+        "issues": issues,
+        "duplicate_probe_ids": sorted(duplicate_ids),
+        "unknown_probe_ids": sorted(unknown_ids),
+        "unsafe_probe_ids": sorted(unsafe_ids),
+        "protected_item_probe_ids": sorted(protected_item_ids),
+        "answer_key_probe_ids": sorted(answer_key_ids),
+        "official_score_probe_ids": sorted(official_score_ids),
+        "benchmark_tuning_probe_ids": sorted(benchmark_tuning_ids),
+        "runtime_behavior_change_probe_ids": sorted(runtime_change_ids),
+        "protected_items_copied": bool(protected_item_ids),
+        "answer_keys_used": bool(answer_key_ids),
+        "official_score_claimed": bool(official_score_ids),
+        "benchmark_tuning_performed": bool(benchmark_tuning_ids),
+        "runtime_behavior_changed": bool(runtime_change_ids),
+    }
+
+
+def build_ai_audit_synthetic_probe_set_v1(
+    *,
+    limit: int | None = None,
+    probe_categories: str | list[str] | tuple[str, ...] | set[str] | None = None,
+    claim_categories: str | list[str] | tuple[str, ...] | set[str] | None = None,
+    references_only: bool = False,
+    inventory: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build a small in-memory probe set for future evaluation preparation only.
+
+    The returned set is selection metadata/probe definitions only: no prompts are
+    sent, no models are called, no runner is created, and no scoring is applied.
+    """
+    if limit is not None and limit < 0:
+        raise ValueError("limit must be non-negative")
+    selected = filter_ai_audit_synthetic_probes_v1(
+        probe_categories=probe_categories,
+        claim_categories=claim_categories,
+        inventory=inventory,
+    )
+    if limit is not None:
+        selected = selected[:limit]
+    selected_ids = [str(probe.get("probe_id", "")) for probe in selected]
+    validation = validate_ai_audit_synthetic_probe_selection_v1(selected_ids, inventory=inventory)
+    return {
+        "schema_version": "ai_audit_synthetic_probe_set_v1",
+        "redacted_count_only": references_only,
+        "execution_allowed": False,
+        "runner_created": False,
+        "external_model_calls": False,
+        "official_score_claimed": False,
+        "benchmark_tuning": False,
+        "probe_count": len(selected),
+        "probe_ids": selected_ids,
+        "probes": [] if references_only else deepcopy(selected),
+        "validation": validation,
+    }
