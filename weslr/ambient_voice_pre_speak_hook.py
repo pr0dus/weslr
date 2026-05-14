@@ -215,3 +215,174 @@ def validate_ambient_voice_pre_speak_hook_result(
             errors.append("blocked speech must be marked unattributed/unknown")
 
     return errors
+
+
+def create_pre_speak_hook_input_from_metadata(
+    *,
+    input_id: str,
+    hook_id: str,
+    source_subsystem: str,
+    trigger: str,
+    output_channel: str,
+    intended_voice_tts_path: str,
+    llm_assisted: bool = False,
+    model_provider: str = "",
+    model_name: str = "",
+    output_provenance_id: str = "",
+    source_registry_entry_id: str = "",
+    trace_refs: list[str] | None = None,
+    safety_flags: AmbientVoicePreSpeakHookSafetyFlags | dict[str, Any] | None = None,
+) -> AmbientVoicePreSpeakHookInput:
+    """Create an in-memory pre-speak hook input from explicit metadata only."""
+    return create_empty_ambient_voice_pre_speak_hook_input(
+        input_id=input_id,
+        hook_id=hook_id,
+        source_subsystem=source_subsystem,
+        trigger=trigger,
+        output_channel=output_channel,
+        intended_voice_tts_path=intended_voice_tts_path,
+        llm_assisted=llm_assisted,
+        model_provider=model_provider,
+        model_name=model_name,
+        output_provenance_id=output_provenance_id,
+        source_registry_entry_id=source_registry_entry_id,
+        trace_refs=list(trace_refs or []),
+        safety_flags=_coerce_safety_flags(safety_flags),
+    )
+
+
+def create_pre_speak_hook_result_from_input(
+    input_item: AmbientVoicePreSpeakHookInput | dict[str, Any],
+    *,
+    result_id: str,
+    attribution_record_id: str = "",
+    pre_speak_log_event_id: str = "",
+    output_provenance_id: str | None = None,
+    source_registry_entry_id: str | None = None,
+    trace_refs: list[str] | None = None,
+    attribution_created: bool | None = None,
+    attribution_validated: bool | None = None,
+    operator_review_required: bool = True,
+) -> AmbientVoicePreSpeakHookResult:
+    """Build and validate an in-memory pre-speak result without side effects."""
+    if isinstance(input_item, dict):
+        input_item = ambient_voice_pre_speak_hook_input_from_dict(input_item)
+
+    effective_output_provenance_id = input_item.output_provenance_id if output_provenance_id is None else output_provenance_id
+    effective_source_registry_entry_id = input_item.source_registry_entry_id if source_registry_entry_id is None else source_registry_entry_id
+    effective_trace_refs = list(input_item.trace_refs if trace_refs is None else trace_refs)
+    created = bool(attribution_record_id) if attribution_created is None else attribution_created
+    validated = bool(attribution_record_id) if attribution_validated is None else attribution_validated
+
+    input_errors = validate_ambient_voice_pre_speak_hook_input(input_item)
+    speech_allowed = bool(
+        not input_errors
+        and created
+        and validated
+        and effective_output_provenance_id
+        and attribution_record_id
+        and effective_trace_refs
+    )
+
+    return create_empty_ambient_voice_pre_speak_hook_result(
+        result_id=result_id,
+        input_id=input_item.input_id,
+        hook_id=input_item.hook_id,
+        source_subsystem=input_item.source_subsystem,
+        trigger=input_item.trigger,
+        output_channel=input_item.output_channel,
+        intended_voice_tts_path=input_item.intended_voice_tts_path,
+        llm_assisted=input_item.llm_assisted,
+        model_provider=input_item.model_provider,
+        model_name=input_item.model_name,
+        output_provenance_id=effective_output_provenance_id,
+        source_registry_entry_id=effective_source_registry_entry_id,
+        attribution_record_id=attribution_record_id,
+        pre_speak_log_event_id=pre_speak_log_event_id,
+        attribution_created=created,
+        attribution_validated=validated,
+        speech_allowed=speech_allowed,
+        unattributed_unknown_required=not speech_allowed,
+        operator_review_required=operator_review_required or not speech_allowed,
+        trace_refs=effective_trace_refs,
+        safety_flags=input_item.safety_flags,
+    )
+
+
+def create_blocked_pre_speak_hook_result(
+    input_item: AmbientVoicePreSpeakHookInput | dict[str, Any],
+    *,
+    result_id: str,
+    reason: str = "missing_attribution",
+) -> AmbientVoicePreSpeakHookResult:
+    """Create a blocked, unattributed/unknown pre-speak result in memory."""
+    if isinstance(input_item, dict):
+        input_item = ambient_voice_pre_speak_hook_input_from_dict(input_item)
+    return create_empty_ambient_voice_pre_speak_hook_result(
+        result_id=result_id,
+        input_id=input_item.input_id,
+        hook_id=input_item.hook_id,
+        source_subsystem=input_item.source_subsystem,
+        trigger=input_item.trigger or reason,
+        output_channel=input_item.output_channel,
+        intended_voice_tts_path=input_item.intended_voice_tts_path,
+        llm_assisted=input_item.llm_assisted,
+        model_provider=input_item.model_provider,
+        model_name=input_item.model_name,
+        output_provenance_id=input_item.output_provenance_id,
+        source_registry_entry_id=input_item.source_registry_entry_id,
+        attribution_record_id="",
+        pre_speak_log_event_id="",
+        attribution_created=False,
+        attribution_validated=False,
+        speech_allowed=False,
+        unattributed_unknown_required=True,
+        operator_review_required=True,
+        trace_refs=list(input_item.trace_refs),
+        safety_flags=input_item.safety_flags,
+    )
+
+
+def summarize_pre_speak_hook_result(result: AmbientVoicePreSpeakHookResult | dict[str, Any]) -> dict[str, Any]:
+    """Return redacted, count-only pre-speak result diagnostics."""
+    if isinstance(result, dict):
+        result = ambient_voice_pre_speak_hook_result_from_dict(result)
+    return {
+        "summary_mode": "redacted_count_only",
+        "speech_allowed": result.speech_allowed,
+        "unattributed_unknown_required": result.unattributed_unknown_required,
+        "operator_review_required": result.operator_review_required,
+        "llm_assisted": result.llm_assisted,
+        "trace_ref_count": len(result.trace_refs),
+        "has_output_provenance": bool(result.output_provenance_id),
+        "has_source_registry_entry": bool(result.source_registry_entry_id),
+        "has_attribution_record": bool(result.attribution_record_id),
+        "has_pre_speak_log_event": bool(result.pre_speak_log_event_id),
+        "validation_error_count": len(validate_ambient_voice_pre_speak_hook_result(result)),
+        "runtime_voice_wiring_performed": False,
+        "log_write_performed": False,
+        "queue_write_performed": False,
+        "memory_mutation_performed": False,
+        "model_call_performed": False,
+    }
+
+
+def summarize_pre_speak_hook_results(results: list[AmbientVoicePreSpeakHookResult | dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Return redacted aggregate diagnostics for pre-speak hook results."""
+    items = [ambient_voice_pre_speak_hook_result_from_dict(item) if isinstance(item, dict) else item for item in (results or [])]
+    return {
+        "summary_mode": "redacted_count_only",
+        "result_count": len(items),
+        "speech_allowed_count": sum(1 for item in items if item.speech_allowed),
+        "blocked_count": sum(1 for item in items if not item.speech_allowed),
+        "unattributed_unknown_count": sum(1 for item in items if item.unattributed_unknown_required),
+        "operator_review_required_count": sum(1 for item in items if item.operator_review_required),
+        "llm_assisted_count": sum(1 for item in items if item.llm_assisted),
+        "trace_ref_count_total": sum(len(item.trace_refs) for item in items),
+        "validation_error_count_total": sum(len(validate_ambient_voice_pre_speak_hook_result(item)) for item in items),
+        "runtime_voice_wiring_performed": False,
+        "log_write_performed": False,
+        "queue_write_performed": False,
+        "memory_mutation_performed": False,
+        "model_call_performed": False,
+    }
