@@ -253,3 +253,186 @@ def summarize_who_said_that_runtime_query_safety() -> dict[str, bool]:
         "answer_selection_performed": False,
         "truth_soundness_score_claimed": False,
     }
+
+
+def create_runtime_query_request_from_metadata(
+    request_id: str,
+    input_channel: str,
+    query_text_hash: str,
+    detected_intent_type: str = "who_said_that",
+    lookup_mode: str = "most_recent",
+    requested_utterance_id: str = "",
+    requested_trace_ref: str = "",
+    routing_allowed: bool = False,
+    operator_review_required: bool = True,
+    safety_flags: WhoSaidThatRuntimeQuerySafetyFlags | dict[str, Any] | None = None,
+    **metadata: Any,
+) -> WhoSaidThatRuntimeQueryRequest:
+    """Build a validated runtime query request from explicit metadata only.
+
+    Raw query text is intentionally unsupported; callers must provide only a
+    query text hash and explicit routing metadata.
+    """
+    if "raw_text" in metadata or "query_text" in metadata or "raw_query_text" in metadata:
+        raise ValueError("raw text metadata is not accepted")
+    item = create_empty_who_said_that_runtime_query_request(
+        request_id=request_id,
+        input_channel=input_channel,
+        raw_text_stored=False,
+        query_text_hash=query_text_hash,
+        detected_intent_type=detected_intent_type,
+        lookup_mode=lookup_mode,
+        requested_utterance_id=requested_utterance_id,
+        requested_trace_ref=requested_trace_ref,
+        routing_allowed=routing_allowed,
+        operator_review_required=operator_review_required,
+        safety_flags=_coerce_safety_flags(safety_flags),
+    )
+    errors = validate_who_said_that_runtime_query_request(item)
+    if errors:
+        raise ValueError(f"invalid who-said-that runtime query request: {errors}")
+    return item
+
+
+def _answer_value(answer: Any, field_name: str, default: Any = "") -> Any:
+    if isinstance(answer, dict):
+        return answer.get(field_name, default)
+    return getattr(answer, field_name, default)
+
+
+def create_runtime_query_result_from_answer(
+    request: WhoSaidThatRuntimeQueryRequest | dict[str, Any],
+    answer: Any,
+    result_id: str,
+    safety_flags: WhoSaidThatRuntimeQuerySafetyFlags | dict[str, Any] | None = None,
+) -> WhoSaidThatRuntimeQueryResult:
+    """Build a validated runtime query result from an already-produced answer.
+
+    This helper only copies explicit in-memory metadata. It does not resolve,
+    route, read logs, write queues, mutate memory, or call models/advisors.
+    """
+    request_obj = who_said_that_runtime_query_request_from_dict(request) if isinstance(request, dict) else request
+    attribution_answer_id = str(_answer_value(answer, "answer_id", ""))
+    item = create_empty_who_said_that_runtime_query_result(
+        result_id=result_id,
+        request_id=request_obj.request_id,
+        attribution_answer_id=attribution_answer_id,
+        input_channel=request_obj.input_channel,
+        detected_intent_type=request_obj.detected_intent_type,
+        lookup_mode=request_obj.lookup_mode,
+        routing_allowed=request_obj.routing_allowed,
+        runtime_integration_performed=False,
+        log_read_performed=False,
+        log_write_performed=False,
+        queue_write_performed=False,
+        memory_mutation_performed=False,
+        model_advisor_call_performed=False,
+        answer_selection_performed=False,
+        truth_soundness_score_claimed=False,
+        operator_review_required=bool(_answer_value(answer, "operator_review_required", True)),
+        safety_flags=_coerce_safety_flags(safety_flags),
+    )
+    errors = validate_who_said_that_runtime_query_result(item)
+    if errors:
+        raise ValueError(f"invalid who-said-that runtime query result: {errors}")
+    return item
+
+
+def create_missing_runtime_query_result(
+    request: WhoSaidThatRuntimeQueryRequest | dict[str, Any],
+    result_id: str,
+    safety_flags: WhoSaidThatRuntimeQuerySafetyFlags | dict[str, Any] | None = None,
+) -> WhoSaidThatRuntimeQueryResult:
+    """Create a safe unknown/missing-attribution runtime result."""
+    request_obj = who_said_that_runtime_query_request_from_dict(request) if isinstance(request, dict) else request
+    item = create_empty_who_said_that_runtime_query_result(
+        result_id=result_id,
+        request_id=request_obj.request_id,
+        attribution_answer_id="",
+        input_channel=request_obj.input_channel,
+        detected_intent_type=request_obj.detected_intent_type,
+        lookup_mode=request_obj.lookup_mode,
+        routing_allowed=False,
+        runtime_integration_performed=False,
+        log_read_performed=False,
+        log_write_performed=False,
+        queue_write_performed=False,
+        memory_mutation_performed=False,
+        model_advisor_call_performed=False,
+        answer_selection_performed=False,
+        truth_soundness_score_claimed=False,
+        operator_review_required=True,
+        safety_flags=_coerce_safety_flags(safety_flags),
+    )
+    errors = validate_who_said_that_runtime_query_result(item)
+    if errors:
+        raise ValueError(f"invalid missing who-said-that runtime query result: {errors}")
+    return item
+
+
+def summarize_runtime_query_result(item: WhoSaidThatRuntimeQueryResult) -> dict[str, Any]:
+    """Return a redacted/count-only summary for one runtime query result."""
+    errors = validate_who_said_that_runtime_query_result(item)
+    return {
+        "schema_version": item.schema_version,
+        "has_result_id": bool(item.result_id),
+        "has_request_id": bool(item.request_id),
+        "has_attribution_answer_id": bool(item.attribution_answer_id),
+        "input_channel": item.input_channel,
+        "detected_intent_type": item.detected_intent_type,
+        "lookup_mode": item.lookup_mode,
+        "routing_allowed": item.routing_allowed,
+        "operator_review_required": item.operator_review_required,
+        "validation_error_count": len(errors),
+        "runtime_integration_performed": item.runtime_integration_performed,
+        "log_read_performed": item.log_read_performed,
+        "log_write_performed": item.log_write_performed,
+        "queue_write_performed": item.queue_write_performed,
+        "memory_mutation_performed": item.memory_mutation_performed,
+        "model_advisor_call_performed": item.model_advisor_call_performed,
+        "answer_selection_performed": item.answer_selection_performed,
+        "truth_soundness_score_claimed": item.truth_soundness_score_claimed,
+        "safety_error_count": sum(1 for name in PROHIBITED_SAFETY_FLAG_FIELDS if getattr(item.safety_flags, name)),
+        "summary_mode": "redacted_count_only",
+    }
+
+
+def summarize_runtime_query_results(items: list[WhoSaidThatRuntimeQueryResult]) -> dict[str, Any]:
+    """Return redacted aggregate counts for runtime query results."""
+    by_channel: dict[str, int] = {}
+    by_intent: dict[str, int] = {}
+    by_lookup_mode: dict[str, int] = {}
+    validation_error_count = 0
+    with_answer_count = 0
+    missing_answer_count = 0
+    operator_review_required_count = 0
+    for item in items:
+        by_channel[item.input_channel] = by_channel.get(item.input_channel, 0) + 1
+        by_intent[item.detected_intent_type] = by_intent.get(item.detected_intent_type, 0) + 1
+        by_lookup_mode[item.lookup_mode] = by_lookup_mode.get(item.lookup_mode, 0) + 1
+        validation_error_count += len(validate_who_said_that_runtime_query_result(item))
+        if item.attribution_answer_id:
+            with_answer_count += 1
+        else:
+            missing_answer_count += 1
+        if item.operator_review_required:
+            operator_review_required_count += 1
+    return {
+        "result_count": len(items),
+        "with_answer_count": with_answer_count,
+        "missing_answer_count": missing_answer_count,
+        "operator_review_required_count": operator_review_required_count,
+        "by_channel": by_channel,
+        "by_intent": by_intent,
+        "by_lookup_mode": by_lookup_mode,
+        "validation_error_count": validation_error_count,
+        "runtime_integration_performed": False,
+        "log_reads_performed": False,
+        "log_writes_performed": False,
+        "queue_writes_performed": False,
+        "memory_mutations_performed": False,
+        "model_advisor_calls_performed": False,
+        "answer_selection_performed": False,
+        "truth_soundness_score_claimed": False,
+        "summary_mode": "redacted_count_only",
+    }
