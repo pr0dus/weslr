@@ -30,6 +30,168 @@ def _synthesize_active_context(message: str, chat_context: Optional[List[str]], 
         "mentions_lunch": has_any(["lunch", "eat", "food", "light meal"]),
         "prefers_concise": has_any(["concise", "brief"]) or "prefers concise" in (" ".join(chat_hints or [])).lower(),
     }
+
+
+
+def _frontier_intelligence_shadow_requested(request: Dict[str, Any]) -> bool:
+    """Return true only for explicit dev/test metadata-only shadow opt-in."""
+    if request.get("frontier_intelligence_shadow") is True:
+        return True
+    if request.get("_frontier_intelligence_shadow") is True:
+        return True
+    for key in ("metadata", "request_metadata", "_identity_meta"):
+        value = request.get(key)
+        if isinstance(value, dict) and (
+            value.get("frontier_intelligence_shadow") is True
+            or value.get("_frontier_intelligence_shadow") is True
+        ):
+            return True
+    hints = request.get("chat_hints")
+    if isinstance(hints, dict) and hints.get("_frontier_intelligence_shadow") is True:
+        return True
+    return False
+
+
+def _compact_shadow_list(value: Any, *, label: str) -> List[str]:
+    if value is None:
+        return [f"{label}: not_supplied"]
+    if isinstance(value, (list, tuple, set)):
+        items = [" ".join(str(item).split()) for item in value if str(item).strip()]
+        return [f"{label}: {item}" for item in items[:5]] or [f"{label}: supplied_empty"]
+    if isinstance(value, dict):
+        keys = sorted(str(key) for key in value.keys())[:8]
+        return [f"{label}: keys={','.join(keys) if keys else 'supplied_empty'}"]
+    text = " ".join(str(value).split())
+    return [f"{label}: {text[:240] if text else 'supplied_empty'}"]
+
+
+def _build_frontier_intelligence_shadow_metadata(request: Dict[str, Any]) -> Dict[str, Any]:
+    """Build metadata-only Frontier Intelligence dry-run preview from in-memory request data.
+
+    This helper is intentionally non-runtime: it does not replace chat output,
+    call models, write files, authorize wiring, or persist state.
+    """
+    try:
+        from .native_response_dry_slice import build_native_response_dry_slice_v1
+        from .frontier_intelligence_preview_surface import build_frontier_intelligence_preview_card_v1
+
+        message = (request.get("message") or "").strip()
+        chat_context = request.get("chat_context")
+        chat_hints = request.get("chat_hints")
+        identity_meta = request.get("_identity_meta")
+        metadata = request.get("metadata")
+        request_metadata = request.get("request_metadata")
+
+        known_context: List[str] = ["chat_path_reply_already_computed"]
+        known_context.extend(_compact_shadow_list(chat_context, label="chat_context"))
+        known_context.extend(_compact_shadow_list(chat_hints, label="chat_hints"))
+        known_context.extend(_compact_shadow_list(identity_meta, label="identity_meta"))
+        known_context.extend(_compact_shadow_list(metadata, label="metadata"))
+        known_context.extend(_compact_shadow_list(request_metadata, label="request_metadata"))
+
+        missing_context = []
+        if not chat_context:
+            missing_context.append("chat_context_not_supplied")
+        if not chat_hints:
+            missing_context.append("chat_hints_not_supplied")
+        missing_context.extend([
+            "meaning_vector_result_not_supplied_to_shadow_hook",
+            "response_obligation_result_not_supplied_to_shadow_hook",
+            "verified_memory_context_not_loaded_by_shadow_hook",
+        ])
+
+        dry_slice = build_native_response_dry_slice_v1(
+            user_message=message,
+            request_summary="metadata-only chat shadow dry run; existing chat reply remains final",
+            known_context=known_context,
+            missing_context=missing_context,
+            provenance_refs=["in_memory_chat_request", "explicit_frontier_intelligence_shadow_flag"],
+            governance_safety_hints=[
+                "metadata_only",
+                "do_not_replace_response_content",
+                "no_runtime_wiring_authorized",
+                "safe_to_wire_runtime_false",
+            ],
+        )
+        preview_card = build_frontier_intelligence_preview_card_v1(dry_slice)
+        metadata_preview_card = dict(preview_card)
+        metadata_preview_card["forbidden_claims_avoided"] = ["restricted_boundaries_applied"]
+        return {
+            "enabled": True,
+            "mode": "dry_run_metadata_only",
+            "dry_slice_summary": {
+                "slice_id": dry_slice.get("slice_id"),
+                "slice_type": dry_slice.get("slice_type"),
+                "slice_status": dry_slice.get("slice_status"),
+                "execution_status": dry_slice.get("execution_status"),
+                "safe_to_preview": bool(dry_slice.get("safe_to_preview")),
+                "safe_to_wire_runtime": False,
+                "final_chat_output": False,
+                "live_runtime_output": False,
+                "candidate_returned_as_content": False,
+                "validation_status": dry_slice.get("validation_status"),
+                "side_effects": dry_slice.get("side_effects", {}),
+            },
+            "preview_card": metadata_preview_card,
+            "preview_summary": {
+                "card_id": preview_card.get("card_id"),
+                "card_type": preview_card.get("card_type"),
+                "response_mode": preview_card.get("response_mode"),
+                "slice_status": preview_card.get("slice_status"),
+                "safe_to_preview": bool(preview_card.get("safe_to_preview")),
+                "safe_to_wire_runtime": False,
+                "validation_status": preview_card.get("validation_status"),
+            },
+            "safe_to_preview": bool(preview_card.get("safe_to_preview")),
+            "safe_to_wire_runtime": False,
+            "final_chat_output": False,
+            "live_runtime_output": False,
+            "candidate_returned_as_content": False,
+            "non_execution_disclaimer": "metadata_only_shadow_not_live_chat_output_not_runtime_wired",
+            "validation_status": preview_card.get("validation_status") or dry_slice.get("validation_status"),
+            "side_effects": {
+                "model_calls": False,
+                "runtime_wiring": False,
+                "chat_or_voice_changes": False,
+                "ui_or_frontend_integration": False,
+                "cli_integration": False,
+                "runner": False,
+                "scoring_engine": False,
+                "persistence": False,
+                "weslr_runtime_state_created": False,
+                "auto_approval": False,
+                "auto_implementation": False,
+                "prompt_specific_script": False,
+            },
+        }
+    except Exception as exc:
+        return {
+            "enabled": True,
+            "mode": "dry_run_metadata_only",
+            "shadow_build_failed": True,
+            "failure_reason": type(exc).__name__,
+            "safe_to_preview": False,
+            "safe_to_wire_runtime": False,
+            "final_chat_output": False,
+            "live_runtime_output": False,
+            "candidate_returned_as_content": False,
+            "non_execution_disclaimer": "metadata_only_shadow_failed_existing_chat_output_preserved",
+            "validation_status": {"valid": False, "validation_status": "shadow_build_failed"},
+            "side_effects": {
+                "model_calls": False,
+                "runtime_wiring": False,
+                "chat_or_voice_changes": False,
+                "ui_or_frontend_integration": False,
+                "cli_integration": False,
+                "runner": False,
+                "scoring_engine": False,
+                "persistence": False,
+                "weslr_runtime_state_created": False,
+                "auto_approval": False,
+                "auto_implementation": False,
+                "prompt_specific_script": False,
+            },
+        }
 from .request_parser import parse_request, apply_request_to_decision
 from .explanation_responder import ExplanationSession
 
@@ -810,6 +972,9 @@ def handle_request(
             msg, chat_context, chat_hints, identity_meta=request.get("_identity_meta")
         )
         _maybe_promote_hints(workspace_id, user_id, msg.lower(), chat_context)
+        if _frontier_intelligence_shadow_requested(request):
+            reply_meta = dict(reply_meta or {})
+            reply_meta["_frontier_intelligence_shadow"] = _build_frontier_intelligence_shadow_metadata(request)
         return Response(content=reply, metadata=reply_meta, actions=[])
 
     try:
