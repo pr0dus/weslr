@@ -14,6 +14,31 @@ Turing tests are historical/social baselines, not the ceiling. WESLR should not 
 
 The evaluation target is not “look human.” The target is: act as WESLR with traceable reasoning, continuity, boundaries, and governed capability growth.
 
+### Legacy Tests as Baseline, Not Ceiling
+
+Official intelligence tests, Turing tests, and current AI benchmarks are legacy baselines, not ceilings.
+
+WESLR should eventually handle safe, lawful, properly scoped baseline-style checks comfortably. These checks are not the final target, and they must not define WESLR’s ambition.
+
+WESLR’s real evaluation standard must measure what older tests do not:
+
+- continuity over time;
+- provenance honesty;
+- stable identity;
+- self-attribution;
+- memory boundary honesty;
+- governed self-direction;
+- scientific reasoning;
+- evidence staging;
+- tool judgment;
+- long-horizon coherence;
+- self-correction;
+- trustworthy capability boundaries;
+- useful real-world intelligence;
+- AI pretender / false-claim audit capability.
+
+No official score, certification, IQ, protected-test, public benchmark, or clinical claim may be made without explicit evidence, an approved evaluation process, and legal/product review where relevant.
+
 ## 2. Evaluation hierarchy
 
 WESLR’s future evaluation program should use a layered hierarchy:

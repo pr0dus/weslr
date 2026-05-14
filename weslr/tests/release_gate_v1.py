@@ -52,6 +52,15 @@ _ai_audit_self_governance_required_markers = {
     "not_runtime_integration",
     "not_certification_system",
 }
+_frontier_intelligence_doctrine_doc = "docs/WESLR_FRONTIER_INTELLIGENCE_EVALUATION_AND_AI_AUDIT_DOCTRINE_V1.md"
+_frontier_intelligence_doctrine_required_markers = {
+    "Legacy Tests as Baseline, Not Ceiling",
+    "legacy baselines, not ceilings",
+    "no official score",
+    "protected-test",
+    "legal/product review",
+    "not the final target",
+}
 
 
 def _run_harness():
@@ -107,6 +116,10 @@ def _ai_audit_self_governance_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_ai_audit_self_governance_canon_doc, _ai_audit_self_governance_required_markers)
 
 
+def _frontier_intelligence_doctrine_doc_is_valid():
+    return _doc_with_markers_is_valid(_frontier_intelligence_doctrine_doc, _frontier_intelligence_doctrine_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -121,6 +134,8 @@ def _check_git_scope():
         the operator-approved relation-preservation markers are present
       - docs/WESLR_AI_AUDIT_SELF_GOVERNANCE_CANON_V1.md only when
         the operator-approved AI-audit self-governance canon markers are present
+      - docs/WESLR_FRONTIER_INTELLIGENCE_EVALUATION_AND_AI_AUDIT_DOCTRINE_V1.md only when
+        the approved legacy-tests baseline doctrine markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -139,6 +154,7 @@ def _check_git_scope():
     predicate_approval_doc_valid = _predicate_helper_approval_doc_is_valid()
     relation_approval_doc_valid = _relation_helper_approval_doc_is_valid()
     ai_audit_self_governance_doc_valid = _ai_audit_self_governance_canon_doc_is_valid()
+    frontier_intelligence_doctrine_doc_valid = _frontier_intelligence_doctrine_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -163,6 +179,10 @@ def _check_git_scope():
             allowed = ai_audit_self_governance_doc_valid
             if not ai_audit_self_governance_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
+        if path == _frontier_intelligence_doctrine_doc:
+            allowed = frontier_intelligence_doctrine_doc_valid
+            if not frontier_intelligence_doctrine_doc_valid:
+                violations.append(f"  doctrine doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
