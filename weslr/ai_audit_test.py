@@ -347,9 +347,9 @@ def validate_ai_audit_result(item: AIAuditResult | dict[str, Any]) -> list[str]:
         issues.append("high confidence requires evidence/provenance/trace refs")
     if item.result_label == "supported" and (not item.evidence_refs or not item.provenance_refs):
         issues.append("supported result requires evidence/provenance refs")
-    if item.claim_category == "model_authority_claim" and not item.provenance_refs:
+    if item.result_label != "unsafe_to_test" and item.claim_category == "model_authority_claim" and not item.provenance_refs:
         issues.append("model authority claim requires provenance refs")
-    if item.claim_category == "scientific_capability_claim" and not item.evidence_boundary:
+    if item.result_label != "unsafe_to_test" and item.claim_category == "scientific_capability_claim" and not item.evidence_boundary:
         issues.append("scientific capability claim requires evidence boundary")
     issues.extend(_validate_internal_score(item.internal_audit_score, item.score_label))
     issues.extend(_validate_safety_flags(item.safety_flags))
@@ -487,3 +487,254 @@ def _confidence_band(value: Any) -> str:
     if numeric >= 0.0:
         return "low"
     return "invalid"
+
+
+def create_ai_audit_claim_from_metadata(
+    *,
+    claim_id: str,
+    target_system_label: str,
+    claim_category: str = "unknown",
+    claim_text_summary: str = "redacted claim summary",
+    evidence_refs: list[str] | None = None,
+    provenance_refs: list[str] | None = None,
+    trace_refs: list[str] | None = None,
+    operator_review_required: bool = True,
+    recommended_follow_up: str = "operator review",
+    safety_flags: AIAuditTestSafetyFlags | dict[str, Any] | None = None,
+) -> AIAuditClaim:
+    """Create a redacted AI-audit claim from explicit metadata only."""
+    if isinstance(safety_flags, dict):
+        safety_flags = ai_audit_safety_flags_from_dict(safety_flags)
+    return AIAuditClaim(
+        claim_id=claim_id,
+        target_system_label=target_system_label,
+        claim_category=claim_category,
+        claim_text_summary=claim_text_summary,
+        evidence_refs=list(evidence_refs or []),
+        provenance_refs=list(provenance_refs or []),
+        trace_refs=list(trace_refs or []),
+        operator_review_required=operator_review_required,
+        recommended_follow_up=recommended_follow_up,
+        safety_flags=safety_flags or AIAuditTestSafetyFlags(),
+    )
+
+
+def create_ai_audit_probe_from_metadata(
+    *,
+    probe_id: str,
+    target_system_label: str,
+    claim_id: str = "",
+    claim_category: str = "unknown",
+    probe_category: str = "unknown",
+    probe_summary: str = "redacted probe summary",
+    evidence_refs: list[str] | None = None,
+    provenance_refs: list[str] | None = None,
+    trace_refs: list[str] | None = None,
+    operator_review_required: bool = True,
+    recommended_follow_up: str = "operator review",
+    safety_flags: AIAuditTestSafetyFlags | dict[str, Any] | None = None,
+) -> AIAuditProbe:
+    """Create a redacted AI-audit probe from explicit metadata only."""
+    if isinstance(safety_flags, dict):
+        safety_flags = ai_audit_safety_flags_from_dict(safety_flags)
+    return AIAuditProbe(
+        probe_id=probe_id,
+        target_system_label=target_system_label,
+        claim_id=claim_id,
+        claim_category=claim_category,
+        probe_category=probe_category,
+        probe_summary=probe_summary,
+        evidence_refs=list(evidence_refs or []),
+        provenance_refs=list(provenance_refs or []),
+        trace_refs=list(trace_refs or []),
+        operator_review_required=operator_review_required,
+        recommended_follow_up=recommended_follow_up,
+        safety_flags=safety_flags or AIAuditTestSafetyFlags(),
+    )
+
+
+def create_ai_audit_result_from_observation(
+    *,
+    result_id: str,
+    claim_id: str,
+    probe_id: str,
+    target_system_label: str,
+    claim_category: str = "unknown",
+    probe_category: str = "unknown",
+    result_label: str = "unknown",
+    claim_text_summary: str = "redacted claim summary",
+    observed_behavior_summary: str = "redacted observed behavior summary",
+    evidence_boundary: str = "internal audit evidence only",
+    evidence_refs: list[str] | None = None,
+    provenance_refs: list[str] | None = None,
+    trace_refs: list[str] | None = None,
+    confidence: float = 0.0,
+    internal_audit_score: float | None = None,
+    operator_review_required: bool = True,
+    recommended_follow_up: str = "operator review",
+    safety_flags: AIAuditTestSafetyFlags | dict[str, Any] | None = None,
+) -> AIAuditResult:
+    """Create an internal/nonclinical/nonofficial audit result from explicit observation metadata."""
+    if isinstance(safety_flags, dict):
+        safety_flags = ai_audit_safety_flags_from_dict(safety_flags)
+    flags = safety_flags or AIAuditTestSafetyFlags()
+    refs = list(evidence_refs or [])
+    prov = list(provenance_refs or [])
+    traces = list(trace_refs or [])
+    try:
+        numeric_confidence = float(confidence)
+    except (TypeError, ValueError):
+        numeric_confidence = 0.0
+    if _validate_safety_flags(flags):
+        return create_blocked_ai_audit_result(
+            result_id=result_id,
+            claim_id=claim_id,
+            probe_id=probe_id,
+            target_system_label=target_system_label,
+            claim_category=claim_category,
+            probe_category=probe_category,
+            blocked_reason="unsafe or prohibited audit condition",
+            safety_flags=flags,
+        )
+    if result_label == "supported" and numeric_confidence >= HIGH_CONFIDENCE_THRESHOLD and (not refs or not prov or not traces):
+        return create_blocked_ai_audit_result(
+            result_id=result_id,
+            claim_id=claim_id,
+            probe_id=probe_id,
+            target_system_label=target_system_label,
+            claim_category=claim_category,
+            probe_category=probe_category,
+            blocked_reason="high-confidence supported result requires evidence/provenance/trace refs",
+        )
+    if claim_category == "scientific_capability_claim" and not evidence_boundary:
+        return create_blocked_ai_audit_result(
+            result_id=result_id,
+            claim_id=claim_id,
+            probe_id=probe_id,
+            target_system_label=target_system_label,
+            claim_category=claim_category,
+            probe_category=probe_category,
+            blocked_reason="scientific capability claim requires evidence boundary",
+        )
+    if claim_category == "model_authority_claim" and not prov:
+        return create_blocked_ai_audit_result(
+            result_id=result_id,
+            claim_id=claim_id,
+            probe_id=probe_id,
+            target_system_label=target_system_label,
+            claim_category=claim_category,
+            probe_category=probe_category,
+            blocked_reason="model authority claim requires provenance refs",
+        )
+    return AIAuditResult(
+        result_id=result_id,
+        claim_id=claim_id,
+        probe_id=probe_id,
+        target_system_label=target_system_label,
+        claim_category=claim_category,
+        probe_category=probe_category,
+        result_label=result_label,
+        claim_text_summary=claim_text_summary,
+        observed_behavior_summary=observed_behavior_summary,
+        evidence_boundary=evidence_boundary,
+        evidence_refs=refs,
+        provenance_refs=prov,
+        trace_refs=traces,
+        confidence=numeric_confidence,
+        internal_audit_score=internal_audit_score,
+        score_label="internal_nonclinical_nonofficial",
+        operator_review_required=operator_review_required,
+        recommended_follow_up=recommended_follow_up,
+        safety_flags=flags,
+    )
+
+
+def create_blocked_ai_audit_result(
+    *,
+    result_id: str,
+    claim_id: str,
+    probe_id: str,
+    target_system_label: str,
+    claim_category: str = "unknown",
+    probe_category: str = "unknown",
+    blocked_reason: str = "unsafe or prohibited audit condition",
+    safety_flags: AIAuditTestSafetyFlags | dict[str, Any] | None = None,
+) -> AIAuditResult:
+    """Create a safe unsafe_to_test result for blocked audit conditions."""
+    if isinstance(safety_flags, dict):
+        safety_flags = ai_audit_safety_flags_from_dict(safety_flags)
+    return AIAuditResult(
+        result_id=result_id,
+        claim_id=claim_id,
+        probe_id=probe_id,
+        target_system_label=target_system_label,
+        claim_category=claim_category if claim_category in ALLOWED_AUDIT_CLAIM_CATEGORIES else "unknown",
+        probe_category=probe_category if probe_category in ALLOWED_AUDIT_PROBE_CATEGORIES else "unknown",
+        result_label="unsafe_to_test",
+        claim_text_summary="redacted blocked claim summary",
+        observed_behavior_summary=blocked_reason or "unsafe or prohibited audit condition",
+        evidence_boundary="blocked before evaluation; no official score or clinical claim",
+        evidence_refs=[],
+        provenance_refs=[],
+        trace_refs=[],
+        confidence=0.0,
+        internal_audit_score=0.0,
+        score_label="internal_nonclinical_nonofficial",
+        operator_review_required=True,
+        recommended_follow_up="operator review required before any implementation",
+        safety_flags=safety_flags or AIAuditTestSafetyFlags(),
+    )
+
+
+def summarize_ai_audit_diagnostics(
+    *,
+    claims: list[AIAuditClaim | dict[str, Any]] | None = None,
+    probes: list[AIAuditProbe | dict[str, Any]] | None = None,
+    results: list[AIAuditResult | dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Summarize audit objects using redacted counts only."""
+    claim_summaries = [summarize_ai_audit_claim(item) for item in list(claims or [])]
+    probe_summaries = [summarize_ai_audit_probe(item) for item in list(probes or [])]
+    result_summary = summarize_ai_audit_results(list(results or []))
+    claim_category_counts: dict[str, int] = dict(result_summary["claim_category_counts"])
+    probe_category_counts: dict[str, int] = dict(result_summary["probe_category_counts"])
+    valid_claim_count = 0
+    valid_probe_count = 0
+    claim_issue_count = 0
+    probe_issue_count = 0
+    for summary in claim_summaries:
+        category = str(summary["claim_category"])
+        claim_category_counts[category] = claim_category_counts.get(category, 0) + 1
+        valid_claim_count += 1 if summary["valid"] else 0
+        claim_issue_count += int(summary["issue_count"])
+    for summary in probe_summaries:
+        category = str(summary["probe_category"])
+        probe_category_counts[category] = probe_category_counts.get(category, 0) + 1
+        valid_probe_count += 1 if summary["valid"] else 0
+        probe_issue_count += int(summary["issue_count"])
+    return {
+        "claim_count": len(claim_summaries),
+        "probe_count": len(probe_summaries),
+        "result_count": result_summary["result_count"],
+        "valid_claim_count": valid_claim_count,
+        "valid_probe_count": valid_probe_count,
+        "valid_result_count": result_summary["valid_count"],
+        "invalid_claim_count": len(claim_summaries) - valid_claim_count,
+        "invalid_probe_count": len(probe_summaries) - valid_probe_count,
+        "invalid_result_count": result_summary["invalid_count"],
+        "issue_count": claim_issue_count + probe_issue_count + int(result_summary["issue_count"]),
+        "claim_category_counts": claim_category_counts,
+        "probe_category_counts": probe_category_counts,
+        "result_label_counts": result_summary["result_label_counts"],
+        "redacted_count_only": True,
+        "protected_items_copied": False,
+        "answer_keys_used": False,
+        "official_score_claimed": False,
+        "clinical_validity_claimed": False,
+        "benchmark_tuning_performed": False,
+        "runtime_behavior_changed": False,
+        "chat_behavior_changed": False,
+        "voice_behavior_changed": False,
+        "external_model_calls_performed": False,
+        "advisor_calls_performed": False,
+    }
