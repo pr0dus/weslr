@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -235,8 +236,12 @@ class WhoSaidThatReadOnlyLogLookupHelpersV1Tests(unittest.TestCase):
         subprocess.check_call([sys.executable, "weslr/tests/test_who_said_that_parserless_resolver_helpers_v1.py"], cwd=str(ROOT))
 
     def test_33_release_gate_check_pass(self):
-        subprocess.check_call([sys.executable, "weslr/tests/release_gate_v1.py"], cwd=str(ROOT))
-        subprocess.check_call(["bash", "scripts/weslr_release_check.sh"], cwd=str(ROOT))
+        if os.environ.get("WESLR_NESTED_RELEASE_CHECK") == "1":
+            self.skipTest("nested release check already in progress")
+        env = dict(os.environ)
+        env["WESLR_NESTED_RELEASE_CHECK"] = "1"
+        subprocess.check_call([sys.executable, "weslr/tests/release_gate_v1.py"], cwd=str(ROOT), env=env)
+        subprocess.check_call(["bash", "scripts/weslr_release_check.sh"], cwd=str(ROOT), env=env)
 
     def test_34_scope_changed_files_only_allowed(self):
         result = subprocess.run(["git", "status", "--short"], cwd=ROOT, check=True, text=True, capture_output=True)
