@@ -43,6 +43,15 @@ _relation_helper_required_markers = {
     "execution_allowed = false",
     "official_score_claimed = false",
 }
+_ai_audit_self_governance_canon_doc = "docs/WESLR_AI_AUDIT_SELF_GOVERNANCE_CANON_V1.md"
+_ai_audit_self_governance_required_markers = {
+    "APPROVE_WESLR_AI_AUDIT_SELF_GOVERNANCE_CANON_V1_ONLY",
+    "self_governance_helpers",
+    "not_runner",
+    "not_scoring_engine",
+    "not_runtime_integration",
+    "not_certification_system",
+}
 
 
 def _run_harness():
@@ -94,6 +103,10 @@ def _relation_helper_approval_doc_is_valid():
     return _doc_with_markers_is_valid(_relation_helper_approval_doc, _relation_helper_required_markers)
 
 
+def _ai_audit_self_governance_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_ai_audit_self_governance_canon_doc, _ai_audit_self_governance_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -106,6 +119,8 @@ def _check_git_scope():
         the operator-approved predicate-helper markers are present
       - docs/WESLR_LOGICAL_FORM_NORMALIZER_RELATION_PRESERVATION_APPROVAL_V1.md only when
         the operator-approved relation-preservation markers are present
+      - docs/WESLR_AI_AUDIT_SELF_GOVERNANCE_CANON_V1.md only when
+        the operator-approved AI-audit self-governance canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -123,6 +138,7 @@ def _check_git_scope():
     approval_doc_valid = _atomic_helper_approval_doc_is_valid()
     predicate_approval_doc_valid = _predicate_helper_approval_doc_is_valid()
     relation_approval_doc_valid = _relation_helper_approval_doc_is_valid()
+    ai_audit_self_governance_doc_valid = _ai_audit_self_governance_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -143,6 +159,10 @@ def _check_git_scope():
             allowed = relation_approval_doc_valid
             if not relation_approval_doc_valid:
                 violations.append(f"  approval doc missing required markers: {path}")
+        if path == _ai_audit_self_governance_canon_doc:
+            allowed = ai_audit_self_governance_doc_valid
+            if not ai_audit_self_governance_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
