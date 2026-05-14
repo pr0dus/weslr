@@ -71,6 +71,16 @@ _frontier_intelligence_dry_pipeline_required_markers = {
     "not_safe_to_wire_runtime_yet",
 }
 
+_frontier_intelligence_shadow_review_canon_doc = "docs/WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_V1.md"
+_frontier_intelligence_shadow_review_required_markers = {
+    "APPROVE_WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_ONLY",
+    "frontier_intelligence_shadow_review",
+    "non_scoring",
+    "review_signals_only",
+    "not_safe_to_wire_runtime",
+    "not_safe_to_replace_live_output",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -133,6 +143,10 @@ def _frontier_intelligence_dry_pipeline_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_frontier_intelligence_dry_pipeline_canon_doc, _frontier_intelligence_dry_pipeline_required_markers)
 
 
+def _frontier_intelligence_shadow_review_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_frontier_intelligence_shadow_review_canon_doc, _frontier_intelligence_shadow_review_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -151,6 +165,8 @@ def _check_git_scope():
         the approved legacy-tests baseline doctrine markers are present
       - docs/WESLR_FRONTIER_INTELLIGENCE_DRY_PIPELINE_CANON_V1.md only when
         the approved dry-pipeline canon markers are present
+      - docs/WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_V1.md only when
+        the approved shadow-review canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -171,6 +187,7 @@ def _check_git_scope():
     ai_audit_self_governance_doc_valid = _ai_audit_self_governance_canon_doc_is_valid()
     frontier_intelligence_doctrine_doc_valid = _frontier_intelligence_doctrine_doc_is_valid()
     frontier_intelligence_dry_pipeline_doc_valid = _frontier_intelligence_dry_pipeline_canon_doc_is_valid()
+    frontier_intelligence_shadow_review_doc_valid = _frontier_intelligence_shadow_review_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -202,6 +219,10 @@ def _check_git_scope():
         if path == _frontier_intelligence_dry_pipeline_canon_doc:
             allowed = frontier_intelligence_dry_pipeline_doc_valid
             if not frontier_intelligence_dry_pipeline_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
+        if path == _frontier_intelligence_shadow_review_canon_doc:
+            allowed = frontier_intelligence_shadow_review_doc_valid
+            if not frontier_intelligence_shadow_review_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
