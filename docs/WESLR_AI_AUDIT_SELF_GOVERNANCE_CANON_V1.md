@@ -222,6 +222,7 @@ readiness/gaps
 → preflight review
 → self-governance surface
 → safe next-step recommender
+→ dry trace export
 ```
 
 The loop is advisory and bounded. It can organize evidence about WESLR's audit infrastructure and reduce operator burden by making the next safest review phase clearer. It cannot turn recommendations into authority.
@@ -428,7 +429,7 @@ The self-direction loop explicitly preserves these boundaries:
 | Preflight review | READY | yes | Non-executing coordinator for review/helper readiness only. |
 | Self-governance surface | READY | yes | Operator-readable redacted surface over self-governance signals. |
 | Safe next-step recommender | READY | yes | Recommendation-only helper for safe non-executing next phases. |
-| Dry trace export | NOT READY / NOT AUTHORIZED | no | Future read-only export gate; not implemented by this canon. |
+| Dry trace export | READY | yes | Explanation-only redacted trace over supplied self-governance/recommendation outputs; no file writing by default. |
 | Runner | NOT READY / NOT AUTHORIZED | no | Requires separate design review and explicit implementation approval. |
 | Scoring engine | NOT READY / NOT AUTHORIZED | no | Requires separate scoring design review and explicit approval. |
 | External model audit | NOT READY / NOT AUTHORIZED | no | Requires explicit external probing approval and safety scope. |
@@ -439,7 +440,8 @@ The self-direction loop explicitly preserves these boundaries:
 
 The following names define future approval gates only. This canon does not implement or authorize them.
 
-- `AI_AUDIT_DRY_TRACE_EXPORT_ONLY`
+- `AI_AUDIT_READ_ONLY_UI_ONLY`
+- `AI_AUDIT_DRY_TRACE_FILE_EXPORT_APPROVAL_REQUIRED`
 - `AI_AUDIT_SELF_GOVERNANCE_READ_ONLY_UI_ONLY`
 - `AI_AUDIT_RUNNER_DESIGN_REVIEW_ONLY`
 - `AI_AUDIT_RUNNER_IMPLEMENTATION_APPROVAL_REQUIRED`
@@ -465,6 +467,201 @@ The line is intentional: WESLR may inspect, summarize, warn, and recommend. WESL
 
 The AI audit self-direction loop is canonized as a safe, non-executing, dry-review-only governance layer.
 
-It is ready for self-inspection, readiness review, consistency checking, drift warning, preflight coordination, operator-readable surfaces, and recommendation-only next-step selection.
+It is ready for self-inspection, readiness review, consistency checking, drift warning, preflight coordination, operator-readable surfaces, recommendation-only next-step selection, and explanation-only dry trace export.
 
-It is not ready or authorized for dry trace export, runner implementation, scoring, external model probing, runtime integration, persistence, automatic approval, automatic implementation, certification, official benchmarking, or public claims.
+It is not ready or authorized for dry trace file persistence by default, runner implementation, scoring, external model probing, runtime integration, persistence, automatic approval, automatic implementation, certification, official benchmarking, or public claims.
+
+
+---
+
+# WESLR AI Audit Dry Trace Export Canon V1
+
+Operator approval: `APPROVE_WESLR_AI_AUDIT_DRY_TRACE_EXPORT_CANON_ONLY`
+
+## Canon status
+
+- `accepted_foundation`
+- `non_executing`
+- `dry_review_only`
+- `explanation_only`
+- `redacted_trace_only`
+- `not_runner`
+- `not_scoring_engine`
+- `not_runtime_integration`
+- `not_certification_system`
+- `not_automatic_approval`
+- `not_automatic_implementation`
+- `not_persistence_by_default`
+
+Dry trace export is canonized as explanation-only infrastructure. It lets WESLR explain how it reached a self-governance or safe-next-step recommendation from supplied in-memory helper outputs. It does not let WESLR act on that recommendation.
+
+## Updated self-direction loop
+
+```text
+readiness/gaps
+→ consistency review
+→ drift monitor
+→ preflight review
+→ self-governance surface
+→ safe next-step recommender
+→ dry trace export
+```
+
+Dry trace explains the loop. Dry trace does not execute the loop. Dry trace does not approve the loop's recommendation.
+
+## What dry trace export contains
+
+### Module — `weslr/ai_audit_dry_trace_export.py`
+
+**Purpose:** Build redacted, count-only explanation artifacts from supplied AI audit self-governance outputs.
+
+**Cannot do:** execute probes, call models, score systems, evaluate answers, wire runtime behavior, approve implementation, persist files by default, expose answer keys, expose hidden prompts, expose protected material, or claim certification/benchmark results.
+
+### Dry trace events
+
+This section documents dry trace events.
+
+Dry trace events record one redacted step from a source layer:
+
+- readiness gap advisor;
+- consistency review;
+- drift monitor;
+- preflight review;
+- self-governance surface;
+- safe next-step recommender.
+
+Each event is `redacted`, `non_executing_trace_event_only`, and contains input/output summaries rather than raw sensitive material. Events cannot include raw hidden prompts, answer keys, protected material, official scores, raw model outputs, or executable instructions.
+
+### Full dry trace builder
+
+The full dry trace builder combines supplied in-memory helper outputs into one trace with:
+
+- trace events;
+- final recommendation summary;
+- safety boundaries;
+- forbidden next steps;
+- `execution_status: non_executing_dry_trace_only`;
+- authorization markers that keep runners, scoring, external testing, and runtime wiring not authorized.
+
+It does not execute anything, call models, write files, or persist reports.
+
+### Count-only/redacted summary
+
+This section documents the count-only/redacted summary.
+
+The summary helper returns a count-only view of:
+
+- total events;
+- source layers present;
+- highest severity if available;
+- final recommendation;
+- safe next steps;
+- forbidden next steps;
+- validation status.
+
+The summary is explanation-only and not a score.
+
+### Safe Markdown renderer
+
+This section documents the safe Markdown renderer.
+
+The Markdown renderer presents safe sections for operator review:
+
+- AI Audit Dry Trace;
+- Inputs Considered;
+- Readiness;
+- Consistency;
+- Drift;
+- Preflight;
+- Self-Governance Surface;
+- Safe Next-Step Recommendation;
+- Safety Boundaries;
+- Forbidden Next Steps;
+- Non-Execution Disclaimer.
+
+It must not include executable instructions, prompts to run probes, scoring language as authority, certification language as authority, answer keys, hidden prompts, or protected material.
+
+### JSON-safe export helper
+
+The JSON-safe export helper returns a JSON-serializable redacted dict. Export means in-memory representation only; export does not mean file persistence. File writing requires a future explicit approval gate.
+
+### Validation helper
+
+The validation helper rejects executable/runnable markers, score or official-score fields, certification/benchmark-result claims, answer-key fields, hidden-prompt fields, protected item markers, automatic approval, automatic truth promotion, automatic implementation, runtime authorization drift, persistence authorization drift, and recommendations implying runner/scoring/external probing authorization.
+
+## Human interpretation
+
+Dry trace export lets WESLR show how it reached a recommendation, but it does not allow WESLR to act on that recommendation.
+
+- Trace means explanation.
+- Trace does not mean approval.
+- Export does not mean persistence.
+- Recommendation does not mean implementation.
+- Safe next step still requires explicit approval before code changes.
+
+The operator receives a clearer explanation path without losing authority over what happens next.
+
+## Dry trace safety boundaries
+
+The dry trace export layer explicitly preserves:
+
+- no model calls;
+- no live AI system probing;
+- no runner;
+- no scoring;
+- no automated pass/fail grading;
+- no answer evaluation;
+- no runtime/chat/voice changes;
+- no TTS/STT or ambient loop integration;
+- no `.weslr` persistence;
+- no file writing by default;
+- no report persistence by default;
+- no answer keys;
+- no hidden prompts;
+- no protected benchmark material;
+- no protected test items;
+- no IQ claims;
+- no clinical claims;
+- no official benchmark claims;
+- no certification claims;
+- no public superiority claims;
+- no automatic truth promotion;
+- no automatic approval;
+- no automatic implementation.
+
+## Dry trace readiness matrix
+
+| Layer / capability | Status | Authorized now | Interpretation |
+|---|---|---:|---|
+| Readiness gap advisor | READY | yes | Non-executing coverage/gap/proposal-only helper. |
+| Consistency review | READY | yes | Non-executing artifact agreement review. |
+| Drift monitor | READY | yes | Static/read-only warning helper over supplied text/snapshots. |
+| Preflight review | READY | yes | Non-executing coordinator for review/helper readiness only. |
+| Self-governance surface | READY | yes | Operator-readable redacted surface over self-governance signals. |
+| Safe next-step recommender | READY | yes | Recommendation-only helper for safe non-executing next phases. |
+| Dry trace export | READY | yes | Explanation-only redacted trace; no file writing by default. |
+| Runner | NOT READY / NOT AUTHORIZED | no | Requires separate design review and explicit implementation approval. |
+| Scoring engine | NOT READY / NOT AUTHORIZED | no | Requires separate scoring design review and explicit approval. |
+| External model audit | NOT READY / NOT AUTHORIZED | no | Requires explicit external probing approval and safety scope. |
+| Runtime integration | NOT READY / NOT AUTHORIZED | no | Requires separate runtime/chat/voice integration approval. |
+| Public claims/certification | NOT READY / NOT AUTHORIZED | no | Requires evidence, governance, and separate public-claims authorization. |
+
+## Dry trace future gates
+
+The following future gates are named only. This canon does not implement or authorize them.
+
+- `AI_AUDIT_READ_ONLY_UI_ONLY`
+- `AI_AUDIT_DRY_TRACE_FILE_EXPORT_APPROVAL_REQUIRED`
+- `AI_AUDIT_RUNNER_DESIGN_REVIEW_ONLY`
+- `AI_AUDIT_RUNNER_IMPLEMENTATION_APPROVAL_REQUIRED`
+- `AI_AUDIT_SCORING_DESIGN_REVIEW_ONLY`
+- `AI_AUDIT_EXTERNAL_MODEL_PROBING_APPROVAL_REQUIRED`
+- `AI_AUDIT_PUBLIC_CLAIMS_REVIEW_REQUIRED`
+
+Any future file export, UI, runner, scoring, external probing, runtime integration, or public claim path must receive separate explicit approval.
+
+## Dry trace governance conclusion
+
+Dry trace export is accepted as safe explanation-only infrastructure. It can clarify what inputs were considered, what readiness gaps/consistency issues/drift signals were found, what preflight recommendation was produced, what safe next step was recommended, what remains forbidden, and why the process is non-executing.
+
+It is not a runner, not a scoring engine, not a certification system, not persistence by default, not approval, and not implementation.
