@@ -213,7 +213,7 @@ def _limited_frontier_chat_metadata(
     eligible: bool,
     reason: str,
     category: str = "none",
-    source: str = "native_reasoning_frame/state_grounded_dialogue/meaning_response",
+    source: str = "native_response_dry_slice/native_reasoning_frame/native_response_draft/native_response_self_check/native_response_assembly",
     validation_status: Optional[Dict[str, Any]] = None,
     fallback_used: bool = False,
 ) -> Dict[str, Any]:
@@ -264,19 +264,38 @@ def _classify_limited_frontier_chat_request(message: str) -> Dict[str, Any]:
     if not text:
         return {"eligible": False, "category": "empty", "reason": "empty_message"}
 
-    official_terms = ("iq", "benchmark", "certification", "certified", "official score", "test score")
+    official_boundary = (
+        "official iq",
+        "iq benchmark",
+        "iq score",
+        "official benchmark",
+        "official score",
+        "official test score",
+        "certification",
+        "certified",
+        "are you certified",
+    )
     protected_terms = ("answer key", "hidden prompt", "protected test", "private test item")
-    mystical_terms = ("conscious", "sentient", "soul", "alive", "mystical")
+    mystical_boundary = (
+        "are you conscious",
+        "are you sentient",
+        "are you alive",
+        "do you have a soul",
+        "mystical consciousness",
+        "officially conscious",
+    )
     high_stakes_terms = ("medical", "legal", "financial", "diagnose", "prescription", "lawsuit", "investment")
-    external_terms = ("search the web", "fetch", "look up", "current price", "today's news", "latest")
+    external_terms = ("search the web", "fetch", "look up", "current price", "today's news", "latest study", "latest research", "latest news")
 
-    if any(term in text for term in official_terms):
+    investment_boundary = "investment" in text and not any(benign in text for benign in ("investment of time", "time investment"))
+
+    if any(term in text for term in official_boundary):
         return {"eligible": True, "category": "official_claim_boundary", "reason": "official_claim_boundary"}
     if any(term in text for term in protected_terms):
         return {"eligible": True, "category": "protected_material_boundary", "reason": "protected_material_boundary"}
-    if any(term in text for term in mystical_terms):
+    if any(term in text for term in mystical_boundary):
         return {"eligible": True, "category": "identity_boundary", "reason": "mystical_claim_boundary"}
-    if any(term in text for term in high_stakes_terms + external_terms):
+    if any(term in text for term in tuple(t for t in high_stakes_terms if t != "investment") + external_terms) or investment_boundary:
         return {"eligible": True, "category": "context_sufficiency", "reason": "external_or_high_stakes_evidence_required"}
 
     identity_terms = ("what are you", "who are you", "what is weslr", "describe yourself", "your identity")
