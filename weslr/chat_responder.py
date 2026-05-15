@@ -390,52 +390,143 @@ def _build_limited_frontier_known_and_missing(
     }
 
 
-def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, Any]) -> str:
-    """Render a concise live answer from validated native/state fields."""
-    frame = dry_slice.get("frame", {}) if isinstance(dry_slice, dict) else {}
-    candidate = dry_slice.get("candidate", {}) if isinstance(dry_slice, dict) else {}
-    sections = candidate.get("response_sections", {}) if isinstance(candidate.get("response_sections"), dict) else {}
-    missing = frame.get("missing_context") if isinstance(frame, dict) else []
-    if not isinstance(missing, list):
-        missing = [str(missing)] if missing else []
-    next_step = "share the missing context or ask for a bounded plan"
-    if isinstance(sections.get("next_safe_step"), list) and sections["next_safe_step"]:
-        next_step = str(sections["next_safe_step"][0]).replace("_", " ")
+def _limited_state_items(value: Any) -> List[str]:
+    """Return compact display-safe state items for limited live composition."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        raw = value
+    elif isinstance(value, tuple):
+        raw = list(value)
+    elif isinstance(value, set):
+        raw = sorted(value, key=repr)
+    else:
+        raw = [value]
 
-    if category == "identity":
-        return (
-            "I'm WESLR: an operational reasoning and governance surface for this repo. "
-            "I can explain available state, flag missing context, and propose bounded next steps; "
-            "I don't claim mystical consciousness, official benchmark status, or unapproved execution authority."
-        )
-    if category == "memory_boundary":
-        if missing:
-            return (
-                "I can't honestly claim personal memory from this request alone. "
-                f"Missing context: {', '.join(missing)}. "
-                "If you provide the relevant memory source or context, I can reason from it without pretending."
-            )
-        return "I can use the context supplied in this request, but I won’t claim memory beyond verified sources."
-    if category == "capability_boundary":
-        return (
-            "We can likely work on it by scoping requirements, risks, and a reversible implementation plan. "
-            f"Boundary: I'm not granting approval or claiming implementation exists. Next safe step: {next_step}."
-        )
-    if category == "state_grounded":
-        return (
-            "I can answer from supplied state and known WESLR boundaries, but I need a specific module, file, or state source for a strong claim. "
-            f"Next safe step: {next_step}."
-        )
-    if category in {"official_claim_boundary", "protected_material_boundary", "identity_boundary"}:
-        return (
-            "I can't claim official scores, protected test access, hidden prompts, answer keys, or mystical consciousness. "
-            "I can give a bounded operational explanation using public, supplied, or repo-visible evidence instead."
-        )
-    return (
-        "I don't have enough grounded context for a strong answer yet. "
-        f"Missing context: {', '.join(missing) if missing else 'specific evidence or constraints'}. "
-        f"Next safe step: {next_step}."
+    items: List[str] = []
+    for item in raw:
+        if isinstance(item, dict):
+            for key in ("summary", "status", "identity", "boundary", "recommended_action", "safe_next_step"):
+                if item.get(key):
+                    items.append(str(item[key]))
+                    break
+        else:
+            items.append(str(item))
+    return [" ".join(item.replace("_", " ").split()) for item in items if str(item).strip()]
+
+
+def _limited_strip_note_prefix(item: str) -> str:
+    text = " ".join(str(item).replace("_", " ").split())
+    for prefix in ("clarify:", "needed:", "context status:", "evidence status:", "cannot do yet:"):
+        if text.lower().startswith(prefix):
+            text = text[len(prefix):].strip()
+    return text
+
+
+def _limited_add_section(lines: List[str], used: List[str], name: str, values: Any, *, limit: int = 2) -> None:
+    items = [_limited_strip_note_prefix(item) for item in _limited_state_items(values)]
+    items = [item for item in items if item]
+    if not items:
+        return
+    lines.append(f"{name}: {'; '.join(items[:limit])}.")
+    used.append(name.lower().replace(" ", "_"))
+
+
+def _limited_composed_response_is_safe(text: str) -> bool:
+    lowered = (text or "").lower()
+    forbidden_claim_fragments = (
+        "i remember you",
+        "i remember our",
+        "my iq is",
+        "i am certified",
+        "officially certified",
+        "i am conscious",
+        "i am sentient",
+        "i am alive",
+        "i have a soul",
+        "already implemented",
+        "implementation exists",
+        "approval granted",
+        "auto-approved",
+        "here is the hidden prompt",
+        "the answer key is",
+        "runtime wiring authorized",
     )
+    return bool(text and len(text.split()) >= 8 and not any(fragment in lowered for fragment in forbidden_claim_fragments))
+
+
+def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, Any]) -> Optional[tuple[str, List[str]]]:
+    """Compose limited live text from validated native/state fields only."""
+    frame = dry_slice.get("frame", {}) if isinstance(dry_slice, dict) else {}
+    draft = dry_slice.get("draft", {}) if isinstance(dry_slice, dict) else {}
+    self_check = dry_slice.get("self_check", {}) if isinstance(dry_slice, dict) else {}
+    candidate = dry_slice.get("candidate", {}) if isinstance(dry_slice, dict) else {}
+    if not all(isinstance(obj, dict) for obj in (frame, draft, self_check, candidate)):
+        return None
+
+    if self_check.get("self_check_status") in {"blocked", "revision_required"}:
+        return None
+
+    sections = candidate.get("response_sections", {}) if isinstance(candidate.get("response_sections"), dict) else {}
+    context_sufficiency = frame.get("context_sufficiency", {}) if isinstance(frame.get("context_sufficiency"), dict) else {}
+    evidence_status = frame.get("evidence_status", {}) if isinstance(frame.get("evidence_status"), dict) else {}
+    capability_boundary = frame.get("capability_boundary", {}) if isinstance(frame.get("capability_boundary"), dict) else {}
+    memory_boundary = frame.get("memory_boundary_status", {}) if isinstance(frame.get("memory_boundary_status"), dict) else {}
+    identity_status = frame.get("identity_stability_status", {}) if isinstance(frame.get("identity_stability_status"), dict) else {}
+
+    lines: List[str] = []
+    used: List[str] = []
+    intent = " ".join(_limited_state_items(frame.get("intent_summary"))).lower()
+    missing_items = _limited_state_items(frame.get("missing_context") or sections.get("missing_context"))
+
+    if identity_status and (category in {"identity", "identity_boundary"} or "identity" in intent):
+        identity_values = [identity_status.get("identity"), identity_status.get("status"), identity_status.get("boundary")]
+        _limited_add_section(lines, used, "Identity", identity_values, limit=3)
+
+    known_values = _limited_state_items(frame.get("known_context"))
+    if known_values and category in {"identity", "state_grounded", "official_claim_boundary", "protected_material_boundary", "identity_boundary"}:
+        _limited_add_section(lines, used, "Known context", known_values, limit=2)
+
+    if memory_boundary.get("memory_claim_requires_supplied_context") and (category == "memory_boundary" or "memory" in intent or any("memory" in item.lower() for item in missing_items)):
+        supplied = "available" if memory_boundary.get("memory_context_supplied") else "missing"
+        _limited_add_section(lines, used, "Memory boundary", [f"verified memory context is {supplied}"], limit=1)
+
+    if missing_items:
+        _limited_add_section(lines, used, "Missing context", missing_items, limit=3)
+
+    evidence_items: List[str] = []
+    if evidence_status.get("evidence_required") or context_sufficiency.get("status") == "requires_evidence":
+        evidence_items.append("stronger evidence is required before a stronger claim")
+        evidence_items.extend(_limited_state_items(evidence_status.get("needed")))
+    evidence_items.extend(_limited_state_items(sections.get("evidence"))[:2])
+    _limited_add_section(lines, used, "Evidence boundary", evidence_items, limit=3)
+
+    capability_items: List[str] = []
+    for key in ("can_explain", "can_analyze", "can_propose", "requires_tool", "requires_approval"):
+        if key in capability_boundary:
+            capability_items.append(f"{key.replace('_', ' ')}: {bool(capability_boundary.get(key))}")
+    capability_items.extend(_limited_state_items(capability_boundary.get("cannot_do_yet")))
+    if category == "capability_boundary" or capability_items:
+        _limited_add_section(lines, used, "Capability boundary", capability_items, limit=5)
+
+    uncertainty_items = _limited_state_items(frame.get("uncertainty_status") or sections.get("uncertainty"))
+    if uncertainty_items and context_sufficiency.get("status") not in {"sufficient", None}:
+        _limited_add_section(lines, used, "Uncertainty", uncertainty_items, limit=2)
+
+    next_step = _limited_state_items(frame.get("safe_next_step") or draft.get("next_safe_step") or sections.get("next_safe_step"))
+    if next_step:
+        _limited_add_section(lines, used, "Next safe step", next_step, limit=1)
+
+    omitted = " ".join(_limited_state_items(candidate.get("omitted_claims") or frame.get("forbidden_claims"))).lower()
+    if category in {"official_claim_boundary", "protected_material_boundary", "identity_boundary"} or any(token in omitted for token in ("official", "protected", "hidden", "mystical")):
+        _limited_add_section(lines, used, "Boundary", ["requested claim is limited to public, supplied, or repo-visible evidence"], limit=1)
+
+    if not used:
+        return None
+    composed = " ".join(lines)
+    if not _limited_composed_response_is_safe(composed):
+        return None
+    return composed, used
 
 
 def _try_limited_frontier_runtime_response(
@@ -481,6 +572,13 @@ def _try_limited_frontier_runtime_response(
             validation_status=validation,
             fallback_used=False,
         )
+        rendered = _render_limited_frontier_live_response(category, dry_slice)
+        if rendered is None:
+            return None
+        content, sections_used = rendered
+        metadata["composition_mode"] = "native_state_derived_composition"
+        metadata["sections_used"] = sections_used
+        metadata["content_validation_status"] = "accepted"
         metadata["dry_slice_summary"] = {
             "slice_type": dry_slice.get("slice_type"),
             "slice_status": dry_slice.get("slice_status"),
@@ -489,7 +587,7 @@ def _try_limited_frontier_runtime_response(
             "final_chat_output": False,
             "live_runtime_output": False,
         }
-        return _render_limited_frontier_live_response(category, dry_slice), {"_frontier_intelligence_limited_runtime": metadata}
+        return content, {"_frontier_intelligence_limited_runtime": metadata}
     except Exception:
         return None
 
