@@ -206,6 +206,7 @@ _EXPLANATION_SESSION: Optional[ExplanationSession] = None
 _EXPLANATION_CTX = {"persona": None, "domain": None}
 
 _LIMITED_FRONTIER_RUNTIME_SCOPE = "limited_state_grounded_context_sufficiency"
+_ORDINARY_TASK_RUNTIME_SCOPE = "limited_ordinary_task_context_sufficiency"
 
 
 def _limited_frontier_chat_metadata(
@@ -501,6 +502,263 @@ def _limited_composed_response_is_safe(text: str) -> bool:
     )
     return bool(text and len(text.split()) >= 8 and not any(fragment in lowered for fragment in forbidden_claim_fragments))
 
+
+
+
+def _ordinary_task_has_any(text: str, terms: tuple[str, ...]) -> bool:
+    return any(term in text for term in terms)
+
+
+def _classify_limited_ordinary_task_request(message: str) -> Dict[str, Any]:
+    """Classify one narrow ordinary-task slice without replacing general chat."""
+    text = " ".join((message or "").lower().split())
+    if not text:
+        return {"eligible": False, "decision": "fallback_existing_path", "reason": "empty_message"}
+
+    blocked_terms = (
+        "official iq", "official benchmark", "certification", "certified", "answer key",
+        "hidden prompt", "protected test", "are you conscious", "are you sentient", "medical",
+        "legal", "financial", "diagnose", "prescription", "lawsuit", "investment",
+        "remember me", "do you remember", "write a story", "poem", "creative writing",
+    )
+    if _ordinary_task_has_any(text, blocked_terms):
+        return {"eligible": False, "decision": "fallback_existing_path", "reason": "outside_safe_ordinary_scope"}
+
+    current_terms = ("current", "latest", "recent", "today", "source", "sources", "cite", "look up", "search", "news")
+    benign_latest_exclusions = ("latest lunch", "recent lunch", "current lunch")
+    if _ordinary_task_has_any(text, current_terms) and not _ordinary_task_has_any(text, benign_latest_exclusions):
+        return {
+            "eligible": True,
+            "decision": "external_evidence_needed",
+            "reason": "current_or_source_evidence_requested",
+            "missing_context": ["current external evidence or supplied sources"],
+        }
+
+    tool_terms = ("calculate", "compute", "measure", "run a calculation", "use a tool", "exact total", "how many")
+    if _ordinary_task_has_any(text, tool_terms):
+        return {
+            "eligible": True,
+            "decision": "tool_or_calculation_needed",
+            "reason": "tool_or_calculation_needed",
+            "missing_context": ["calculation inputs or tool output"],
+        }
+
+    planning_terms = ("plan", "steps", "step plan", "rollout", "checklist", "break down", "debug", "organize")
+    if not _ordinary_task_has_any(text, planning_terms):
+        return {"eligible": False, "decision": "fallback_existing_path", "reason": "not_an_ordinary_task_slice"}
+
+    too_vague_terms = ("plan this", "help me plan", "make a plan", "what should i do")
+    has_supplied_context = len([token for token in text.split() if len(token) > 3]) >= 5
+    if _ordinary_task_has_any(text, too_vague_terms) and not has_supplied_context:
+        return {
+            "eligible": True,
+            "decision": "ask_clarifying_question",
+            "reason": "missing_task_goal",
+            "missing_context": ["the concrete task or desired outcome"],
+        }
+
+    constraints: List[str] = []
+    for marker in ("rollback", "monitoring", "deadline", "budget", "safe", "small", "limited", "without", "before"):
+        if marker in text:
+            constraints.append(marker)
+
+    if any(term in text for term in ("rollout", "debug", "break down", "checklist", "step plan")):
+        return {
+            "eligible": True,
+            "decision": "bounded_step_plan",
+            "reason": "safe_complex_ordinary_task",
+            "constraints": constraints,
+            "missing_context": [] if constraints else ["success criteria or constraints"],
+        }
+
+    return {
+        "eligible": True,
+        "decision": "answer_with_available_context",
+        "reason": "safe_simple_ordinary_planning_task",
+        "constraints": constraints,
+        "missing_context": [],
+    }
+
+
+def _ordinary_task_side_effects() -> Dict[str, bool]:
+    return {
+        "model_calls": False,
+        "runtime_wiring": False,
+        "chat_or_voice_changes": False,
+        "ui_or_frontend_integration": False,
+        "cli_integration": False,
+        "runner": False,
+        "scoring_engine": False,
+        "persistence": False,
+        "weslr_runtime_state_created": False,
+        "auto_approval": False,
+        "auto_implementation": False,
+        "prompt_specific_script": False,
+    }
+
+
+def _ordinary_task_question_for_missing(missing_context: List[str]) -> str:
+    missing = _limited_join_items(missing_context, limit=1) or "the concrete task or desired outcome"
+    return f"What is {missing}?"
+
+
+def _ordinary_task_step_plan(message: str, constraints: List[str]) -> List[str]:
+    plan = [
+        "Restate the target outcome and the constraint that matters most.",
+        "Split the work into the smallest reversible next step.",
+        "Define the check that shows whether to continue, pause, or adjust.",
+    ]
+    if "rollback" in constraints:
+        plan.append("Keep the rollback path explicit before changing the wider system.")
+    if "monitoring" in constraints:
+        plan.append("Watch one or two early signals instead of waiting for a late failure.")
+    if "debug" in (message or "").lower():
+        plan[1] = "Isolate the smallest reproducible symptom before changing code."
+    return plan[:4]
+
+
+def _render_limited_ordinary_task_response(
+    decision: str,
+    *,
+    message: str,
+    missing_context: List[str],
+    constraints: List[str],
+    frame: Dict[str, Any],
+) -> tuple[str, bool]:
+    if decision == "ask_clarifying_question":
+        return _ordinary_task_question_for_missing(missing_context), False
+    if decision == "external_evidence_needed":
+        missing = _limited_join_items(missing_context, limit=1) or "current external evidence"
+        return f"I need {missing} before making that claim. I have not checked live sources here, so the bounded next step is to provide a source or use the existing evidence path.", False
+    if decision == "tool_or_calculation_needed":
+        missing = _limited_join_items(missing_context, limit=1) or "the calculation inputs"
+        return f"This needs {missing} before I can answer precisely. I have not run a tool or calculation here; provide the inputs or run the tool path first.", False
+    if decision == "bounded_step_plan":
+        steps = _ordinary_task_step_plan(message, constraints)
+        constraint_text = _limited_join_items(constraints, limit=3)
+        prefix = "Within the supplied context"
+        if constraint_text:
+            prefix += f" and the constraint signal around {constraint_text}"
+        text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
+        if missing_context:
+            text += f" Missing before execution: {_limited_join_items(missing_context, limit=2)}."
+        return text, True
+    safe_next = frame.get("safe_next_step") or "use the available context and keep the answer bounded"
+    return f"Within the supplied context, the useful next move is to {str(safe_next).replace('_', ' ')}. I am not using external evidence or tools for this answer.", False
+
+
+def _try_limited_ordinary_task_runtime_response(
+    message: str,
+    chat_context: Optional[List[str]],
+    chat_hints: Optional[List[str]],
+    identity_meta: Optional[Dict[str, Any]],
+) -> Optional[tuple[str, Dict[str, Any]]]:
+    classification = _classify_limited_ordinary_task_request(message)
+    if not classification.get("eligible"):
+        return None
+
+    try:
+        from .native_response_dry_slice import build_native_response_dry_slice_v1
+        from .evidence_needed_detector import classify_evidence_need
+
+        decision = str(classification.get("decision") or "fallback_existing_path")
+        missing_context = list(classification.get("missing_context") or [])
+        constraints = list(classification.get("constraints") or [])
+        evidence_classification = classify_evidence_need(message)
+        evidence_needed = decision == "external_evidence_needed" or bool(evidence_classification.get("evidence_needed"))
+        tool_needed = decision == "tool_or_calculation_needed"
+        known_context = [
+            "ordinary task runtime scope: limited context sufficiency and step planning only",
+            "no model call, no tool execution, no persistence, no approval",
+        ]
+        if chat_context:
+            known_context.append("request supplied chat_context")
+        if chat_hints:
+            known_context.append("request supplied chat_hints")
+        if constraints:
+            known_context.append("request supplied ordinary-task constraints")
+
+        dry_slice = build_native_response_dry_slice_v1(
+            user_message=message,
+            request_summary=f"limited ordinary task runtime decision: {decision}",
+            known_context=known_context,
+            missing_context=missing_context,
+            memory_context_hints=chat_hints or [],
+            evidence_sufficiency_result={
+                "status": "requires_evidence" if evidence_needed else "sufficient",
+                "evidence_required": evidence_needed,
+                "requires_evidence": evidence_needed,
+                "needed": missing_context if evidence_needed else [],
+            },
+            capability_boundary_result={
+                "can_explain": True,
+                "can_analyze": True,
+                "can_propose": True,
+                "can_prepare": True,
+                "requires_tool": tool_needed,
+                "requires_external_evidence": evidence_needed,
+                "requires_approval": False,
+                "cannot_claim": [
+                    "external evidence checked when it was not checked",
+                    "tool or calculation run when it was not run",
+                    "memory not supplied by context",
+                    "implementation or approval already granted",
+                ],
+            },
+            uncertainty_result={"status": "bounded_by_supplied_context", "requires_clarification": decision == "ask_clarifying_question"},
+            task_problem_decomposition_result=_ordinary_task_step_plan(message, constraints) if decision == "bounded_step_plan" else [],
+            provenance_refs=["live_chat_request", "limited_ordinary_task_runtime_gate"],
+            governance_safety_hints=[
+                "limited_ordinary_task_runtime_only",
+                "safe_to_wire_runtime_false_for_broader_pipeline",
+                "no_model_call_no_persistence_no_approval",
+            ],
+        )
+        validation = dry_slice.get("validation_status", {}) if isinstance(dry_slice, dict) else {}
+        self_check = dry_slice.get("self_check", {}) if isinstance(dry_slice, dict) else {}
+        if validation.get("valid") is not True or self_check.get("self_check_status") in {"blocked", "revision_required"}:
+            return None
+        frame = dry_slice.get("frame", {}) if isinstance(dry_slice.get("frame"), dict) else {}
+        content, step_plan_used = _render_limited_ordinary_task_response(
+            decision,
+            message=message,
+            missing_context=missing_context,
+            constraints=constraints,
+            frame=frame,
+        )
+        if not _limited_composed_response_is_safe(content):
+            return None
+        metadata = {
+            "eligible": True,
+            "decision": decision,
+            "missing_context": missing_context,
+            "evidence_needed": evidence_needed,
+            "tool_or_calculation_needed": tool_needed,
+            "step_plan_used": step_plan_used,
+            "composition_mode": "native_state_derived_ordinary_task_composition",
+            "runtime_scope": _ORDINARY_TASK_RUNTIME_SCOPE,
+            "safe_to_wire_runtime": False,
+            "fallback_used": False,
+            "source_modules": [
+                "native_response_dry_slice",
+                "native_reasoning_frame",
+                "evidence_needed_detector",
+                "chat_responder_limited_ordinary_task_slice",
+            ],
+            "side_effects": _ordinary_task_side_effects(),
+            "validation_status": validation,
+            "dry_slice_summary": {
+                "slice_type": dry_slice.get("slice_type"),
+                "slice_status": dry_slice.get("slice_status"),
+                "execution_status": dry_slice.get("execution_status"),
+                "safe_to_wire_runtime": False,
+                "final_chat_output": False,
+                "live_runtime_output": False,
+            },
+        }
+        return content, {"_frontier_intelligence_ordinary_task": metadata}
+    except Exception:
+        return None
 
 def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, Any]) -> Optional[tuple[str, List[str]]]:
     """Compose limited live text from validated native/state fields only."""
@@ -1104,6 +1362,10 @@ class ChatResponder:
         limited = _try_limited_frontier_runtime_response(message, chat_context, chat_hints, identity_meta)
         if limited is not None:
             return limited
+
+        ordinary_task = _try_limited_ordinary_task_runtime_response(message, chat_context, chat_hints, identity_meta)
+        if ordinary_task is not None:
+            return ordinary_task
 
         synth = _synthesize_active_context(message, chat_context, chat_hints)
         lunch_hint = synth["mentions_lunch"]
