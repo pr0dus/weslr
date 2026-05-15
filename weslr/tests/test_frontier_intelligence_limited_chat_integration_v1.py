@@ -413,9 +413,12 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         text = response.content.lower()
         meta = self._ordinary(response)
         self.assertTrue(meta.get("step_plan_used"))
-        self.assertIn("supplied context", text)
+        self.assertIn("supplied rollout context", text)
         self.assertIn("rollback", text)
         self.assertIn("monitoring", text)
+        self.assertIn("rollback", meta.get("constraints_detected", []))
+        self.assertIn("monitoring", meta.get("constraints_detected", []))
+        self.assertEqual("rollout", meta.get("plan_focus"))
         self.assertNotIn("i checked", text)
         self.assertNotIn("implemented", text)
 
@@ -466,6 +469,34 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         meta = self._ordinary(response)
         self.assertFalse(meta.get("step_plan_used"))
         self.assertIn("supplied context", response.content.lower())
+
+    def test_24b_ordinary_task_migration_plan_uses_bounded_step_plan(self):
+        response = _chat("Help me prepare a safe migration plan for a server change with rollback and monitoring")
+        self.assert_ordinary_task(response, "bounded_step_plan")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        self.assertTrue(meta.get("step_plan_used"))
+        self.assertEqual("migration", meta.get("plan_focus"))
+        self.assertIn("rollback", text)
+        self.assertIn("monitoring", text)
+        self.assertIn("migration", text)
+        self.assertNotIn("implemented", text)
+        self.assertNotIn("already changed", text)
+
+    def test_24c_ordinary_task_explicit_sequence_is_reflected_without_execution_claim(self):
+        response = _chat("Plan a safe rollout for this small Python helper: first run tests, then stage, then commit.")
+        self.assert_ordinary_task(response, "bounded_step_plan")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        self.assertTrue(meta.get("step_plan_used"))
+        self.assertEqual("rollout", meta.get("plan_focus"))
+        for marker in ["tests", "stage", "commit"]:
+            self.assertIn(marker, text)
+            self.assertIn(marker, meta.get("constraints_detected", []))
+        self.assertLess(text.find("tests"), text.find("stage"))
+        self.assertLess(text.find("stage"), text.find("commit"))
+        self.assertNotIn("committed", text)
+        self.assertNotIn("i ran", text)
 
     def test_25_ordinary_task_scope_preserves_existing_fallbacks_and_boundaries(self):
         lunch = _chat("latest lunch ideas")

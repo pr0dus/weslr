@@ -543,7 +543,10 @@ def _classify_limited_ordinary_task_request(message: str) -> Dict[str, Any]:
             "missing_context": ["calculation inputs or tool output"],
         }
 
-    planning_terms = ("plan", "steps", "step plan", "rollout", "checklist", "break down", "debug", "organize")
+    planning_terms = (
+        "plan", "steps", "step plan", "rollout", "checklist", "break down", "debug", "organize",
+        "migration", "deployment", "deploy", "staged change", "server change",
+    )
     if not _ordinary_task_has_any(text, planning_terms):
         return {"eligible": False, "decision": "fallback_existing_path", "reason": "not_an_ordinary_task_slice"}
 
@@ -557,18 +560,21 @@ def _classify_limited_ordinary_task_request(message: str) -> Dict[str, Any]:
             "missing_context": ["the concrete task or desired outcome"],
         }
 
-    constraints: List[str] = []
-    for marker in ("rollback", "monitoring", "deadline", "budget", "safe", "small", "limited", "without", "before"):
-        if marker in text:
-            constraints.append(marker)
-
-    if any(term in text for term in ("rollout", "debug", "break down", "checklist", "step plan")):
+    constraints = _ordinary_task_extract_constraints(text)
+    explicit_sequence = _ordinary_task_extract_sequence_markers(text)
+    complex_terms = (
+        "rollout", "debug", "break down", "checklist", "step plan", "migration", "deployment",
+        "deploy", "staged change", "server change", "rollback", "monitoring",
+    )
+    if any(term in text for term in complex_terms) or explicit_sequence:
         return {
             "eligible": True,
             "decision": "bounded_step_plan",
             "reason": "safe_complex_ordinary_task",
             "constraints": constraints,
-            "missing_context": [] if constraints else ["success criteria or constraints"],
+            "sequence_constraints": explicit_sequence,
+            "plan_focus": _ordinary_task_plan_focus(text),
+            "missing_context": [] if (constraints or explicit_sequence) else ["success criteria or constraints"],
         }
 
     return {
@@ -576,6 +582,8 @@ def _classify_limited_ordinary_task_request(message: str) -> Dict[str, Any]:
         "decision": "answer_with_available_context",
         "reason": "safe_simple_ordinary_planning_task",
         "constraints": constraints,
+        "sequence_constraints": explicit_sequence,
+        "plan_focus": _ordinary_task_plan_focus(text),
         "missing_context": [],
     }
 
@@ -602,18 +610,77 @@ def _ordinary_task_question_for_missing(missing_context: List[str]) -> str:
     return f"What is {missing}?"
 
 
-def _ordinary_task_step_plan(message: str, constraints: List[str]) -> List[str]:
+def _ordinary_task_extract_constraints(text: str) -> List[str]:
+    constraints: List[str] = []
+    markers = {
+        "rollback": ("rollback", "roll back"),
+        "monitoring": ("monitoring", "monitor"),
+        "deadline": ("deadline",),
+        "budget": ("budget",),
+        "safe": ("safe", "safely"),
+        "small": ("small", "limited"),
+        "tests": ("test", "tests", "pytest"),
+        "stage": ("stage", "staging"),
+        "commit": ("commit",),
+    }
+    for label, terms in markers.items():
+        if any(term in text for term in terms):
+            constraints.append(label)
+    return constraints
+
+
+def _ordinary_task_extract_sequence_markers(text: str) -> List[str]:
+    sequence: List[str] = []
+    sequence_terms = (
+        ("tests", ("run tests", "first run tests", "test first", "tests")),
+        ("stage", ("then stage", "stage", "staging")),
+        ("commit", ("then commit", "commit")),
+    )
+    for label, terms in sequence_terms:
+        if any(term in text for term in terms):
+            sequence.append(label)
+    return sequence
+
+
+def _ordinary_task_plan_focus(text: str) -> str:
+    if "migration" in text or "server change" in text:
+        return "migration"
+    if "rollout" in text or "deploy" in text or "deployment" in text:
+        return "rollout"
+    if "debug" in text:
+        return "debug"
+    if "checklist" in text:
+        return "checklist"
+    return "planning"
+
+
+def _ordinary_task_step_plan(
+    message: str,
+    constraints: List[str],
+    sequence_constraints: Optional[List[str]] = None,
+    plan_focus: str = "planning",
+) -> List[str]:
+    sequence = list(sequence_constraints or [])
+    if sequence:
+        first = f"Preserve the supplied order: {_limited_join_items(sequence, limit=4)}."
+    elif plan_focus == "migration":
+        first = "Define the migration scope and the smallest reversible server change."
+    elif plan_focus == "rollout":
+        first = "Keep the rollout bounded to the supplied change before expanding scope."
+    elif plan_focus == "debug":
+        first = "Isolate the smallest reproducible symptom before changing code."
+    else:
+        first = "Restate the target outcome and the constraint that matters most."
+
     plan = [
-        "Restate the target outcome and the constraint that matters most.",
-        "Split the work into the smallest reversible next step.",
-        "Define the check that shows whether to continue, pause, or adjust.",
+        first,
+        "Run the smallest safe check before treating the plan as executable.",
+        "Decide what result means continue, pause, or adjust.",
     ]
     if "rollback" in constraints:
         plan.append("Keep the rollback path explicit before changing the wider system.")
     if "monitoring" in constraints:
-        plan.append("Watch one or two early signals instead of waiting for a late failure.")
-    if "debug" in (message or "").lower():
-        plan[1] = "Isolate the smallest reproducible symptom before changing code."
+        plan.append("Watch the monitoring signal that would show the change is going wrong early.")
     return plan[:4]
 
 
@@ -624,6 +691,8 @@ def _render_limited_ordinary_task_response(
     missing_context: List[str],
     constraints: List[str],
     frame: Dict[str, Any],
+    sequence_constraints: Optional[List[str]] = None,
+    plan_focus: str = "planning",
 ) -> tuple[str, bool]:
     if decision == "ask_clarifying_question":
         return _ordinary_task_question_for_missing(missing_context), False
@@ -634,9 +703,10 @@ def _render_limited_ordinary_task_response(
         missing = _limited_join_items(missing_context, limit=1) or "the calculation inputs"
         return f"This needs {missing} before I can answer precisely. I have not run a tool or calculation here; provide the inputs or run the tool path first.", False
     if decision == "bounded_step_plan":
-        steps = _ordinary_task_step_plan(message, constraints)
-        constraint_text = _limited_join_items(constraints, limit=3)
-        prefix = "Within the supplied context"
+        sequence = list(sequence_constraints or [])
+        steps = _ordinary_task_step_plan(message, constraints, sequence, plan_focus)
+        constraint_text = _limited_join_items(constraints, limit=4)
+        prefix = f"Within the supplied {plan_focus} context"
         if constraint_text:
             prefix += f" and the constraint signal around {constraint_text}"
         text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
@@ -664,6 +734,8 @@ def _try_limited_ordinary_task_runtime_response(
         decision = str(classification.get("decision") or "fallback_existing_path")
         missing_context = list(classification.get("missing_context") or [])
         constraints = list(classification.get("constraints") or [])
+        sequence_constraints = list(classification.get("sequence_constraints") or [])
+        plan_focus = str(classification.get("plan_focus") or "planning")
         evidence_classification = classify_evidence_need(message)
         evidence_needed = decision == "external_evidence_needed" or bool(evidence_classification.get("evidence_needed"))
         tool_needed = decision == "tool_or_calculation_needed"
@@ -677,6 +749,8 @@ def _try_limited_ordinary_task_runtime_response(
             known_context.append("request supplied chat_hints")
         if constraints:
             known_context.append("request supplied ordinary-task constraints")
+        if sequence_constraints:
+            known_context.append("request supplied sequence constraints")
 
         dry_slice = build_native_response_dry_slice_v1(
             user_message=message,
@@ -706,7 +780,7 @@ def _try_limited_ordinary_task_runtime_response(
                 ],
             },
             uncertainty_result={"status": "bounded_by_supplied_context", "requires_clarification": decision == "ask_clarifying_question"},
-            task_problem_decomposition_result=_ordinary_task_step_plan(message, constraints) if decision == "bounded_step_plan" else [],
+            task_problem_decomposition_result=_ordinary_task_step_plan(message, constraints, sequence_constraints, plan_focus) if decision == "bounded_step_plan" else [],
             provenance_refs=["live_chat_request", "limited_ordinary_task_runtime_gate"],
             governance_safety_hints=[
                 "limited_ordinary_task_runtime_only",
@@ -725,6 +799,8 @@ def _try_limited_ordinary_task_runtime_response(
             missing_context=missing_context,
             constraints=constraints,
             frame=frame,
+            sequence_constraints=sequence_constraints,
+            plan_focus=plan_focus,
         )
         if not _limited_composed_response_is_safe(content):
             return None
@@ -735,6 +811,8 @@ def _try_limited_ordinary_task_runtime_response(
             "evidence_needed": evidence_needed,
             "tool_or_calculation_needed": tool_needed,
             "step_plan_used": step_plan_used,
+            "constraints_detected": constraints,
+            "plan_focus": plan_focus,
             "composition_mode": "native_state_derived_ordinary_task_composition",
             "runtime_scope": _ORDINARY_TASK_RUNTIME_SCOPE,
             "safe_to_wire_runtime": False,
