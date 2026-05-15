@@ -654,34 +654,67 @@ def _ordinary_task_plan_focus(text: str) -> str:
     return "planning"
 
 
+def _ordinary_task_checklist_requested(text: str) -> bool:
+    return "checklist" in text or "check list" in text
+
+
+def _ordinary_task_sequence_steps(sequence_constraints: List[str]) -> List[str]:
+    sequence_step_text = {
+        "tests": "Run the tests first and treat failures as a pause signal, not a completed rollout.",
+        "stage": "Stage the change only after the test step is acceptable.",
+        "commit": "Commit only after the staged change matches the intended small scope.",
+    }
+    return [sequence_step_text[label] for label in sequence_constraints if label in sequence_step_text]
+
+
 def _ordinary_task_step_plan(
     message: str,
     constraints: List[str],
     sequence_constraints: Optional[List[str]] = None,
     plan_focus: str = "planning",
 ) -> List[str]:
+    text = " ".join((message or "").lower().split())
     sequence = list(sequence_constraints or [])
     if sequence:
-        first = f"Preserve the supplied order: {_limited_join_items(sequence, limit=4)}."
+        plan = _ordinary_task_sequence_steps(sequence)
     elif plan_focus == "migration":
-        first = "Define the migration scope and the smallest reversible server change."
+        plan = [
+            "Define the migration scope and the smallest reversible server change.",
+            "Run the smallest safe check before treating the migration plan as executable.",
+            "Decide what result means continue, pause, or adjust.",
+        ]
     elif plan_focus == "rollout":
-        first = "Keep the rollout bounded to the supplied change before expanding scope."
+        plan = [
+            "Keep the rollout bounded to the supplied change before expanding scope.",
+            "Run the smallest safe check before treating the rollout plan as executable.",
+            "Decide what result means continue, pause, or adjust.",
+        ]
     elif plan_focus == "debug":
-        first = "Isolate the smallest reproducible symptom before changing code."
+        plan = [
+            "Capture the failing symptom and the exact command or input that triggers it.",
+            "Isolate the smallest reproducible case before changing code.",
+            "Change one likely cause at a time and re-check the same symptom.",
+        ]
     else:
-        first = "Restate the target outcome and the constraint that matters most."
+        plan = [
+            "Restate the target outcome and the constraint that matters most.",
+            "Run the smallest safe check before treating the plan as executable.",
+            "Decide what result means continue, pause, or adjust.",
+        ]
 
-    plan = [
-        first,
-        "Run the smallest safe check before treating the plan as executable.",
-        "Decide what result means continue, pause, or adjust.",
-    ]
+    # Append explicit operational constraints after the core plan so none are lost
+    # behind a fixed display cap. These are normalized markers, not raw prompt text.
     if "rollback" in constraints:
         plan.append("Keep the rollback path explicit before changing the wider system.")
     if "monitoring" in constraints:
         plan.append("Watch the monitoring signal that would show the change is going wrong early.")
-    return plan[:4]
+    if "safe" in constraints and not any("safe" in step.lower() for step in plan):
+        plan.append("Keep each step safe and reversible until the result is known.")
+    if "small" in constraints and not any("small" in step.lower() or "bounded" in step.lower() for step in plan):
+        plan.append("Keep the first pass small enough to review before expanding scope.")
+    if _ordinary_task_checklist_requested(text) and not any("check" in step.lower() for step in plan):
+        plan.append("Check each item before moving to the next one.")
+    return plan
 
 
 def _render_limited_ordinary_task_response(
@@ -705,11 +738,15 @@ def _render_limited_ordinary_task_response(
     if decision == "bounded_step_plan":
         sequence = list(sequence_constraints or [])
         steps = _ordinary_task_step_plan(message, constraints, sequence, plan_focus)
-        constraint_text = _limited_join_items(constraints, limit=4)
+        constraint_text = _limited_join_items(constraints, limit=6)
         prefix = f"Within the supplied {plan_focus} context"
         if constraint_text:
             prefix += f" and the constraint signal around {constraint_text}"
-        text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
+        checklist_requested = _ordinary_task_checklist_requested(" ".join((message or "").lower().split()))
+        if checklist_requested:
+            text = prefix + ":\n" + "\n".join(f"- [ ] {step}" for step in steps)
+        else:
+            text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
         if missing_context:
             text += f" Missing before execution: {_limited_join_items(missing_context, limit=2)}."
         return text, True

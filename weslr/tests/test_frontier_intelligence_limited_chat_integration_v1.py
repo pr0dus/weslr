@@ -495,8 +495,33 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
             self.assertIn(marker, meta.get("constraints_detected", []))
         self.assertLess(text.find("tests"), text.find("stage"))
         self.assertLess(text.find("stage"), text.find("commit"))
+        self.assertNotIn("preserve the supplied order", text)
         self.assertNotIn("committed", text)
         self.assertNotIn("i ran", text)
+
+    def test_24d_ordinary_task_debug_checklist_keeps_checklist_shape(self):
+        response = _chat("Help me make a debug checklist for a failing Python script")
+        self.assert_ordinary_task(response, "bounded_step_plan")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        self.assertTrue(meta.get("step_plan_used"))
+        self.assertEqual("debug", meta.get("plan_focus"))
+        self.assertIn("debug", text)
+        self.assertTrue("- [ ]" in text or "checklist" in text, response.content)
+        self.assertIn("failing symptom", text)
+        self.assertNotIn("i ran", text)
+        self.assertNotIn("result:", text)
+
+    def test_24e_ordinary_task_constraint_metadata_uses_safe_markers_only(self):
+        response = _chat("Plan a safe rollout for private codename Aurora with rollback and monitoring")
+        self.assert_ordinary_task(response, "bounded_step_plan")
+        meta = self._ordinary(response)
+        constraints = meta.get("constraints_detected", [])
+        self.assertIn("rollback", constraints)
+        self.assertIn("monitoring", constraints)
+        self.assertIn("safe", constraints)
+        self.assertNotIn("aurora", json.dumps(constraints).lower())
+        self.assertNotIn("private codename", json.dumps(meta, sort_keys=True).lower())
 
     def test_25_ordinary_task_scope_preserves_existing_fallbacks_and_boundaries(self):
         lunch = _chat("latest lunch ideas")
