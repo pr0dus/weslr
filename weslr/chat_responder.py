@@ -734,48 +734,92 @@ def _build_ordinary_problem_decomposition_v1(
     persist raw prompt text, execute solvers, select answers, call models, or
     authorize runtime wiring.
     """
+    text = " ".join((message or "").lower().split())
     sequence = list(sequence_constraints or [])
+    constraint_set = set(constraints or [])
     reversible_steps = _ordinary_task_step_plan(message, constraints, sequence, plan_focus) if decision == "bounded_step_plan" else []
-    unknowns = list(missing_context or [])
-    if decision == "ask_clarifying_question" and not unknowns:
-        unknowns = ["the concrete task or desired outcome"]
-    if evidence_needed and "current external evidence or supplied sources" not in unknowns:
-        unknowns.append("current external evidence or supplied sources")
-    if tool_needed and "calculation inputs or tool output" not in unknowns:
-        unknowns.append("calculation inputs or tool output")
 
-    knowns = [
-        "ordinary_task_runtime_scope_limited",
-        "no_model_call_no_tool_execution_no_persistence_no_approval",
-    ]
-    if constraints:
-        knowns.append("ordinary_task_constraints_detected")
-    if sequence:
-        knowns.append("ordinary_task_sequence_constraints_detected")
-    if plan_focus:
-        knowns.append(f"plan_focus:{plan_focus}")
+    def add_unique(items: List[str], marker: str) -> None:
+        if marker and marker not in items:
+            items.append(marker)
 
-    risk_boundaries = [
-        "no_execution",
+    knowns: List[str] = []
+    unknowns: List[str] = []
+    risk_boundaries: List[str] = [
+        "no_execution_performed",
         "no_approval_claim",
-        "no_persistence",
+        "bounded_by_supplied_context",
+        "requires_verification_before_execution",
         "no_solver_authority",
         "no_answer_selection",
         "no_private_text_storage",
     ]
-    if evidence_needed:
-        risk_boundaries.append("do_not_invent_current_or_external_evidence")
-    if tool_needed:
-        risk_boundaries.append("do_not_pretend_tool_or_calculation_ran")
 
+    if plan_focus:
+        add_unique(knowns, f"plan_focus:{plan_focus}")
+    if "small" in constraint_set or "small python helper" in text or "small code" in text:
+        add_unique(knowns, "small_code_change")
+    if plan_focus == "migration" or "server change" in text or "migration" in text:
+        add_unique(knowns, "server_change_requested")
+        add_unique(knowns, "migration_plan_requested")
+        for marker in ("target_environment", "success_criteria", "rollback_trigger", "monitoring_signal"):
+            add_unique(unknowns, marker)
+    if plan_focus == "rollout" or "rollout" in text:
+        add_unique(knowns, "rollout_plan_requested")
+    if "rollback" in constraint_set:
+        add_unique(knowns, "rollback_required")
+        add_unique(risk_boundaries, "rollback_needed_before_change")
+    if "monitoring" in constraint_set:
+        add_unique(knowns, "monitoring_required")
+        add_unique(risk_boundaries, "monitoring_needed_after_change")
+    if sequence:
+        add_unique(knowns, "ordered_rollout_sequence_supplied")
+        for marker in ("test_scope", "staging_target", "commit_policy"):
+            add_unique(unknowns, marker)
+    if plan_focus == "debug" or _ordinary_task_checklist_requested(text):
+        add_unique(knowns, "debug_checklist_requested" if plan_focus == "debug" else "checklist_requested")
+        for marker in ("failure_signal", "expected_behavior", "reproduction_steps"):
+            add_unique(unknowns, marker)
     if decision == "ask_clarifying_question":
-        safe_next_step = "ask_one_clarifying_question"
-    elif decision == "external_evidence_needed":
-        safe_next_step = "provide_sources_or_use_existing_evidence_path"
-    elif decision == "tool_or_calculation_needed":
-        safe_next_step = "provide_inputs_or_use_tool_path_first"
+        add_unique(unknowns, "concrete_task_or_desired_outcome")
+    if evidence_needed:
+        add_unique(knowns, "current_or_external_evidence_requested")
+        add_unique(unknowns, "current_external_evidence_or_supplied_sources")
+        add_unique(risk_boundaries, "external_evidence_required_before_current_claim")
+    if tool_needed:
+        add_unique(knowns, "calculation_requested_but_inputs_missing")
+        add_unique(unknowns, "calculation_inputs")
+        add_unique(unknowns, "formula_or_method")
+        add_unique(risk_boundaries, "tool_required_before_exact_result")
+    for marker in missing_context or []:
+        normalized = "_".join(str(marker).lower().replace("/", " ").split())
+        if normalized in {"the_concrete_task_or_desired_outcome", "concrete_task_or_desired_outcome"}:
+            add_unique(unknowns, "concrete_task_or_desired_outcome")
+        elif normalized in {"success_criteria_or_constraints", "success_criteria"}:
+            add_unique(unknowns, "success_criteria")
+        elif normalized in {"calculation_inputs_or_tool_output", "calculation_inputs"}:
+            add_unique(unknowns, "calculation_inputs")
+        elif normalized in {"current_external_evidence_or_supplied_sources"}:
+            add_unique(unknowns, "current_external_evidence_or_supplied_sources")
+        elif normalized:
+            add_unique(unknowns, normalized[:80])
+
+    if not knowns:
+        add_unique(knowns, "ordinary_task_requested")
+    if decision == "ask_clarifying_question":
+        safe_next_step = "name_the_concrete_task_or_desired_outcome"
+    elif tool_needed:
+        safe_next_step = "provide_price_tax_usage_and_formula_or_method_before_calculation"
+    elif evidence_needed:
+        safe_next_step = "provide_current_sources_or_use_evidence_path_before_claim"
+    elif plan_focus == "migration":
+        safe_next_step = "identify_target_environment_rollback_trigger_and_monitoring_signal"
+    elif plan_focus == "debug":
+        safe_next_step = "provide_failure_signal_expected_behavior_and_reproduction_steps"
+    elif sequence:
+        safe_next_step = "confirm_test_scope_and_staging_target_before_commit"
     elif reversible_steps:
-        safe_next_step = "follow_first_reversible_step_only_after_review"
+        safe_next_step = "review_first_reversible_step_before_execution"
     else:
         safe_next_step = "use_available_context_and_keep_answer_bounded"
 
@@ -826,6 +870,8 @@ def _render_limited_ordinary_task_response(
     decomposition = decomposition if isinstance(decomposition, dict) else {}
     if decision == "ask_clarifying_question":
         unknowns = list(decomposition.get("unknowns") or missing_context)
+        if "concrete_task_or_desired_outcome" in unknowns:
+            unknowns = ["the concrete task or desired outcome"]
         return _ordinary_task_question_for_missing(unknowns), False
     if decision == "external_evidence_needed":
         missing = _limited_join_items(missing_context, limit=1) or "current external evidence"
@@ -968,6 +1014,9 @@ def _try_limited_ordinary_task_runtime_response(
             "composition_mode": "native_state_derived_ordinary_task_composition",
             "runtime_scope": _ORDINARY_TASK_RUNTIME_SCOPE,
             "safe_to_wire_runtime": False,
+            "solver_execution": False,
+            "answer_selection": False,
+            "raw_text_stored": False,
             "fallback_used": False,
             "source_modules": [
                 "native_response_dry_slice",
