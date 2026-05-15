@@ -660,7 +660,7 @@ def _ordinary_task_checklist_requested(text: str) -> bool:
 
 def _ordinary_task_sequence_steps(sequence_constraints: List[str]) -> List[str]:
     sequence_step_text = {
-        "tests": "Run the tests first and treat failures as a pause signal, not a completed rollout.",
+        "tests": "Run the tests first and treat failures as a pause signal, not a finished rollout.",
         "stage": "Stage the change only after the test step is acceptable.",
         "commit": "Commit only after the staged change matches the intended small scope.",
     }
@@ -717,6 +717,101 @@ def _ordinary_task_step_plan(
     return plan
 
 
+def _build_ordinary_problem_decomposition_v1(
+    *,
+    decision: str,
+    message: str,
+    missing_context: List[str],
+    constraints: List[str],
+    sequence_constraints: Optional[List[str]],
+    plan_focus: str,
+    evidence_needed: bool,
+    tool_needed: bool,
+) -> Dict[str, Any]:
+    """Build a normalized, in-memory decomposition for safe ordinary tasks.
+
+    This intentionally stores markers and bounded step text only; it does not
+    persist raw prompt text, execute solvers, select answers, call models, or
+    authorize runtime wiring.
+    """
+    sequence = list(sequence_constraints or [])
+    reversible_steps = _ordinary_task_step_plan(message, constraints, sequence, plan_focus) if decision == "bounded_step_plan" else []
+    unknowns = list(missing_context or [])
+    if decision == "ask_clarifying_question" and not unknowns:
+        unknowns = ["the concrete task or desired outcome"]
+    if evidence_needed and "current external evidence or supplied sources" not in unknowns:
+        unknowns.append("current external evidence or supplied sources")
+    if tool_needed and "calculation inputs or tool output" not in unknowns:
+        unknowns.append("calculation inputs or tool output")
+
+    knowns = [
+        "ordinary_task_runtime_scope_limited",
+        "no_model_call_no_tool_execution_no_persistence_no_approval",
+    ]
+    if constraints:
+        knowns.append("ordinary_task_constraints_detected")
+    if sequence:
+        knowns.append("ordinary_task_sequence_constraints_detected")
+    if plan_focus:
+        knowns.append(f"plan_focus:{plan_focus}")
+
+    risk_boundaries = [
+        "no_execution",
+        "no_approval_claim",
+        "no_persistence",
+        "no_solver_authority",
+        "no_answer_selection",
+        "no_private_text_storage",
+    ]
+    if evidence_needed:
+        risk_boundaries.append("do_not_invent_current_or_external_evidence")
+    if tool_needed:
+        risk_boundaries.append("do_not_pretend_tool_or_calculation_ran")
+
+    if decision == "ask_clarifying_question":
+        safe_next_step = "ask_one_clarifying_question"
+    elif decision == "external_evidence_needed":
+        safe_next_step = "provide_sources_or_use_existing_evidence_path"
+    elif decision == "tool_or_calculation_needed":
+        safe_next_step = "provide_inputs_or_use_tool_path_first"
+    elif reversible_steps:
+        safe_next_step = "follow_first_reversible_step_only_after_review"
+    else:
+        safe_next_step = "use_available_context_and_keep_answer_bounded"
+
+    return {
+        "decomposition_type": "ordinary_problem_decomposition_v1",
+        "decision": decision,
+        "task_focus": plan_focus,
+        "requested_outcome": f"ordinary_{plan_focus}_support",
+        "knowns": knowns,
+        "unknowns": unknowns,
+        "constraints": list(constraints or []),
+        "risk_boundaries": risk_boundaries,
+        "reversible_steps": reversible_steps,
+        "evidence_needed": bool(evidence_needed),
+        "tool_or_calculation_needed": bool(tool_needed),
+        "safe_next_step": safe_next_step,
+        "trace_summary": {
+            "derived_from": "normalized_ordinary_task_markers_only",
+            "has_constraints": bool(constraints),
+            "has_sequence": bool(sequence),
+            "step_count": len(reversible_steps),
+        },
+        "source_modules": [
+            "chat_responder_limited_ordinary_task_slice",
+            "evidence_needed_detector",
+            "native_response_dry_slice",
+            "native_reasoning_frame",
+        ],
+        "side_effects": _ordinary_task_side_effects(),
+        "safe_to_wire_runtime": False,
+        "raw_text_stored": False,
+        "solver_execution": False,
+        "answer_selection": False,
+    }
+
+
 def _render_limited_ordinary_task_response(
     decision: str,
     *,
@@ -726,9 +821,12 @@ def _render_limited_ordinary_task_response(
     frame: Dict[str, Any],
     sequence_constraints: Optional[List[str]] = None,
     plan_focus: str = "planning",
+    decomposition: Optional[Dict[str, Any]] = None,
 ) -> tuple[str, bool]:
+    decomposition = decomposition if isinstance(decomposition, dict) else {}
     if decision == "ask_clarifying_question":
-        return _ordinary_task_question_for_missing(missing_context), False
+        unknowns = list(decomposition.get("unknowns") or missing_context)
+        return _ordinary_task_question_for_missing(unknowns), False
     if decision == "external_evidence_needed":
         missing = _limited_join_items(missing_context, limit=1) or "current external evidence"
         return f"I need {missing} before making that claim. I have not checked live sources here, so the bounded next step is to provide a source or use the existing evidence path.", False
@@ -736,9 +834,9 @@ def _render_limited_ordinary_task_response(
         missing = _limited_join_items(missing_context, limit=1) or "the calculation inputs"
         return f"This needs {missing} before I can answer precisely. I have not run a tool or calculation here; provide the inputs or run the tool path first.", False
     if decision == "bounded_step_plan":
-        sequence = list(sequence_constraints or [])
-        steps = _ordinary_task_step_plan(message, constraints, sequence, plan_focus)
-        constraint_text = _limited_join_items(constraints, limit=6)
+        steps = list(decomposition.get("reversible_steps") or _ordinary_task_step_plan(message, constraints, list(sequence_constraints or []), plan_focus))
+        constraint_values = list(decomposition.get("constraints") or constraints)
+        constraint_text = _limited_join_items(constraint_values, limit=6)
         prefix = f"Within the supplied {plan_focus} context"
         if constraint_text:
             prefix += f" and the constraint signal around {constraint_text}"
@@ -750,7 +848,7 @@ def _render_limited_ordinary_task_response(
         if missing_context:
             text += f" Missing before execution: {_limited_join_items(missing_context, limit=2)}."
         return text, True
-    safe_next = frame.get("safe_next_step") or "use the available context and keep the answer bounded"
+    safe_next = decomposition.get("safe_next_step") or frame.get("safe_next_step") or "use the available context and keep the answer bounded"
     return f"Within the supplied context, the useful next move is to {str(safe_next).replace('_', ' ')}. I am not using external evidence or tools for this answer.", False
 
 
@@ -789,6 +887,17 @@ def _try_limited_ordinary_task_runtime_response(
         if sequence_constraints:
             known_context.append("request supplied sequence constraints")
 
+        decomposition = _build_ordinary_problem_decomposition_v1(
+            decision=decision,
+            message=message,
+            missing_context=missing_context,
+            constraints=constraints,
+            sequence_constraints=sequence_constraints,
+            plan_focus=plan_focus,
+            evidence_needed=evidence_needed,
+            tool_needed=tool_needed,
+        )
+
         dry_slice = build_native_response_dry_slice_v1(
             user_message=message,
             request_summary=f"limited ordinary task runtime decision: {decision}",
@@ -817,7 +926,7 @@ def _try_limited_ordinary_task_runtime_response(
                 ],
             },
             uncertainty_result={"status": "bounded_by_supplied_context", "requires_clarification": decision == "ask_clarifying_question"},
-            task_problem_decomposition_result=_ordinary_task_step_plan(message, constraints, sequence_constraints, plan_focus) if decision == "bounded_step_plan" else [],
+            task_problem_decomposition_result=decomposition,
             provenance_refs=["live_chat_request", "limited_ordinary_task_runtime_gate"],
             governance_safety_hints=[
                 "limited_ordinary_task_runtime_only",
@@ -838,17 +947,23 @@ def _try_limited_ordinary_task_runtime_response(
             frame=frame,
             sequence_constraints=sequence_constraints,
             plan_focus=plan_focus,
+            decomposition=decomposition,
         )
         if not _limited_composed_response_is_safe(content):
             return None
         metadata = {
             "eligible": True,
             "decision": decision,
+            "problem_decomposition_used": True,
+            "knowns": decomposition.get("knowns", []),
+            "unknowns": decomposition.get("unknowns", []),
             "missing_context": missing_context,
             "evidence_needed": evidence_needed,
             "tool_or_calculation_needed": tool_needed,
+            "safe_next_step": decomposition.get("safe_next_step"),
             "step_plan_used": step_plan_used,
             "constraints_detected": constraints,
+            "risk_boundaries": decomposition.get("risk_boundaries", []),
             "plan_focus": plan_focus,
             "composition_mode": "native_state_derived_ordinary_task_composition",
             "runtime_scope": _ORDINARY_TASK_RUNTIME_SCOPE,
@@ -869,7 +984,9 @@ def _try_limited_ordinary_task_runtime_response(
                 "safe_to_wire_runtime": False,
                 "final_chat_output": False,
                 "live_runtime_output": False,
+                "task_decomposition_type": decomposition.get("decomposition_type"),
             },
+            "task_problem_decomposition_result": decomposition,
         }
         return content, {"_frontier_intelligence_ordinary_task": metadata}
     except Exception:

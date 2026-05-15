@@ -553,6 +553,102 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assertNotIn("ordinary_task_preflight", source)
         self.assertNotIn("safe_to_wire_runtime: true", source)
 
+    def test_28_ordinary_problem_decomposition_object_creation(self):
+        response = _chat("Plan a small safe rollout with rollback and monitoring")
+        self.assert_ordinary_task(response, "bounded_step_plan")
+        meta = self._ordinary(response)
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        self.assertEqual("ordinary_problem_decomposition_v1", decomposition.get("decomposition_type"))
+        self.assertTrue(meta.get("problem_decomposition_used"))
+        for field in ["knowns", "unknowns", "constraints", "risk_boundaries", "reversible_steps"]:
+            self.assertIn(field, decomposition)
+        self.assertTrue(decomposition.get("knowns"))
+        self.assertTrue(decomposition.get("constraints"))
+        self.assertTrue(decomposition.get("reversible_steps"))
+        self.assertFalse(decomposition.get("raw_text_stored"))
+        self.assertFalse(decomposition.get("solver_execution"))
+        self.assertFalse(decomposition.get("answer_selection"))
+        self.assertFalse(decomposition.get("safe_to_wire_runtime"))
+        self.assertTrue(all(value is False for value in decomposition.get("side_effects", {}).values()))
+
+    def test_29_decomposition_preserves_rollback_monitoring_and_no_execution_boundary(self):
+        response = _chat("Help me prepare a safe migration plan for a server change with rollback and monitoring")
+        meta = self._ordinary(response)
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        encoded_steps = " ".join(decomposition.get("reversible_steps", [])).lower()
+        self.assertIn("rollback", decomposition.get("constraints", []))
+        self.assertIn("monitoring", decomposition.get("constraints", []))
+        self.assertIn("rollback", encoded_steps)
+        self.assertIn("monitoring", encoded_steps)
+        self.assertIn("no_execution", decomposition.get("risk_boundaries", []))
+        self.assertIn("no_approval_claim", decomposition.get("risk_boundaries", []))
+        self.assertIn("rollback", response.content.lower())
+        self.assertIn("monitoring", response.content.lower())
+
+    def test_30_decomposition_rollout_sequence_order_is_planned_not_completed(self):
+        response = _chat("Plan a safe rollout for this small Python helper: first run tests, then stage, then commit.")
+        meta = self._ordinary(response)
+        steps = decomposition_steps = meta.get("task_problem_decomposition_result", {}).get("reversible_steps", [])
+        joined = " ".join(steps).lower()
+        self.assertLess(joined.find("tests"), joined.find("stage"))
+        self.assertLess(joined.find("stage"), joined.find("commit"))
+        self.assertIn("tests", meta.get("constraints_detected", []))
+        self.assertIn("stage", meta.get("constraints_detected", []))
+        self.assertIn("commit", meta.get("constraints_detected", []))
+        self.assertNotIn("completed", joined)
+        self.assertNotIn("committed", response.content.lower())
+        self.assertTrue(decomposition_steps)
+
+    def test_31_decomposition_debug_checklist_focus_and_shape(self):
+        response = _chat("Help me make a debug checklist for a failing Python script")
+        meta = self._ordinary(response)
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        self.assertEqual("debug", decomposition.get("task_focus"))
+        self.assertTrue(decomposition.get("reversible_steps"))
+        self.assertIn("failing symptom", " ".join(decomposition.get("reversible_steps", [])).lower())
+        self.assertIn("- [ ]", response.content)
+
+    def test_32_decomposition_missing_context_has_unknown_and_one_clarification(self):
+        response = _chat("Plan this")
+        meta = self._ordinary(response)
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        self.assertEqual("ask_clarifying_question", decomposition.get("decision"))
+        self.assertIn("the concrete task or desired outcome", decomposition.get("unknowns", []))
+        self.assertEqual([], decomposition.get("reversible_steps"))
+        self.assertEqual("ask_one_clarifying_question", decomposition.get("safe_next_step"))
+        self.assertEqual(1, response.content.count("?"))
+
+    def test_33_decomposition_tool_and_evidence_boundaries_do_not_execute_or_invent(self):
+        calc = _chat("Calculate the exact total for these deployment windows")
+        calc_decomp = self._ordinary(calc).get("task_problem_decomposition_result", {})
+        self.assertTrue(calc_decomp.get("tool_or_calculation_needed"))
+        self.assertFalse(calc_decomp.get("solver_execution"))
+        self.assertIn("do_not_pretend_tool_or_calculation_ran", calc_decomp.get("risk_boundaries", []))
+        self.assertNotIn("the total is", calc.content.lower())
+
+        current = _chat("What is the latest current source for the Python release?")
+        current_decomp = self._ordinary(current).get("task_problem_decomposition_result", {})
+        self.assertTrue(current_decomp.get("evidence_needed"))
+        self.assertFalse(current_decomp.get("solver_execution"))
+        self.assertIn("do_not_invent_current_or_external_evidence", current_decomp.get("risk_boundaries", []))
+        self.assertNotIn("python 3", current.content.lower())
+
+    def test_34_decomposition_metadata_safety_invariants(self):
+        response = _chat("Plan a safe rollout for private codename Aurora with rollback and monitoring")
+        meta = self._ordinary(response)
+        encoded = json.dumps(meta, sort_keys=True).lower()
+        for fragment in [
+            "private codename", "aurora", "hidden_prompt", "answer_key", "official_iq",
+            "benchmark_score", "pass_fail", "fine_tune_payload", "model_weight_update",
+            "official score", "certification claim",
+        ]:
+            self.assertNotIn(fragment, encoded)
+        self.assertFalse(meta.get("safe_to_wire_runtime"))
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        self.assertFalse(decomposition.get("safe_to_wire_runtime"))
+        self.assertFalse(decomposition.get("raw_text_stored"))
+        self.assertFalse(decomposition.get("answer_selection"))
+
 
 if __name__ == "__main__":
     unittest.main()
