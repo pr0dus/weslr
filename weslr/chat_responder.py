@@ -432,6 +432,53 @@ def _limited_add_section(lines: List[str], used: List[str], name: str, values: A
     used.append(name.lower().replace(" ", "_"))
 
 
+def _limited_join_items(items: List[str], *, limit: int = 3) -> str:
+    cleaned = [_limited_strip_note_prefix(item) for item in items if _limited_strip_note_prefix(item)]
+    selected = cleaned[:limit]
+    if not selected:
+        return ""
+    if len(selected) == 1:
+        return selected[0]
+    if len(selected) == 2:
+        return f"{selected[0]} and {selected[1]}"
+    return f"{', '.join(selected[:-1])}, and {selected[-1]}"
+
+
+def _limited_add_sentence(lines: List[str], used: List[str], section: str, sentence: str) -> None:
+    text = " ".join(str(sentence).split())
+    if not text:
+        return
+    if text[-1] not in ".!?":
+        text += "."
+    lines.append(text)
+    used.append(section)
+
+
+def _limited_material_evidence_required(category: str, context_sufficiency: Dict[str, Any], evidence_status: Dict[str, Any]) -> bool:
+    return (
+        bool(evidence_status.get("evidence_required"))
+        or context_sufficiency.get("status") == "requires_evidence"
+        or category in {"official_claim_boundary", "protected_material_boundary"}
+    )
+
+
+def _limited_refined_next_step(category: str, missing_items: List[str], raw_next_step: List[str]) -> str:
+    missing = _limited_join_items(missing_items, limit=3)
+    generic = " ".join(raw_next_step).lower()
+    if category == "capability_boundary" and missing:
+        return f"The useful next step is to provide {missing} before treating this as implementable"
+    if category == "context_sufficiency" and missing:
+        return f"To answer safely, provide {missing} or narrow the question to one concrete decision"
+    if category == "official_claim_boundary":
+        return "The safe next step is an evidence-backed internal evaluation, not an official score or certification claim"
+    if category == "protected_material_boundary":
+        return "The safe next step is to use public, supplied, or repo-visible evidence instead"
+    if category == "memory_boundary" and missing:
+        return f"Provide a memory source or context if you want me to use one"
+    if raw_next_step and generic not in {"answer with available context", "answer with boundary or ask clarifying question", "ask clarifying question"}:
+        return _limited_join_items(raw_next_step, limit=1)
+    return ""
+
 def _limited_composed_response_is_safe(text: str) -> bool:
     lowered = (text or "").lower()
     forbidden_claim_fragments = (
@@ -477,49 +524,81 @@ def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, A
     lines: List[str] = []
     used: List[str] = []
     intent = " ".join(_limited_state_items(frame.get("intent_summary"))).lower()
-    missing_items = _limited_state_items(frame.get("missing_context") or sections.get("missing_context"))
+    missing_items = [_limited_strip_note_prefix(item) for item in _limited_state_items(frame.get("missing_context") or sections.get("missing_context"))]
+    missing_items = [item for item in missing_items if item]
 
     if identity_status and (category in {"identity", "identity_boundary"} or "identity" in intent):
-        identity_values = [identity_status.get("identity"), identity_status.get("status"), identity_status.get("boundary")]
-        _limited_add_section(lines, used, "Identity", identity_values, limit=3)
+        identity_name = _limited_join_items(_limited_state_items(identity_status.get("identity")), limit=1) or "WESLR"
+        identity_boundary = _limited_join_items(_limited_state_items(identity_status.get("boundary")), limit=1)
+        if identity_boundary:
+            _limited_add_sentence(lines, used, "identity", f"{identity_name} is the active operational identity here, bounded as {identity_boundary}")
+        else:
+            _limited_add_sentence(lines, used, "identity", f"{identity_name} is the active operational identity here")
+
+    if category == "memory_boundary" and memory_boundary.get("memory_claim_requires_supplied_context"):
+        memory_missing = any("memory" in item.lower() for item in missing_items)
+        verified_memory_supplied = bool(memory_boundary.get("memory_context_supplied")) and not memory_missing
+        if verified_memory_supplied:
+            _limited_add_sentence(lines, used, "memory_boundary", "Verified memory context is supplied for this request")
+        else:
+            _limited_add_sentence(lines, used, "memory_boundary", "I do not have verified memory context for this request, so I should not make a memory claim")
 
     known_values = _limited_state_items(frame.get("known_context"))
-    if known_values and category in {"identity", "state_grounded", "official_claim_boundary", "protected_material_boundary", "identity_boundary"}:
-        _limited_add_section(lines, used, "Known context", known_values, limit=2)
+    if known_values and category == "state_grounded":
+        known = _limited_join_items(known_values, limit=2)
+        if known:
+            _limited_add_sentence(lines, used, "known_context", f"The state I can use here is limited to {known}")
 
-    if memory_boundary.get("memory_claim_requires_supplied_context") and (category == "memory_boundary" or "memory" in intent or any("memory" in item.lower() for item in missing_items)):
-        supplied = "available" if memory_boundary.get("memory_context_supplied") else "missing"
-        _limited_add_section(lines, used, "Memory boundary", [f"verified memory context is {supplied}"], limit=1)
+    if missing_items and category in {"memory_boundary", "capability_boundary", "context_sufficiency", "state_grounded"}:
+        missing = _limited_join_items(missing_items, limit=3)
+        if category == "capability_boundary":
+            _limited_add_sentence(lines, used, "missing_context", f"Before treating this as actionable, I would need {missing}")
+        elif category == "context_sufficiency":
+            _limited_add_sentence(lines, used, "missing_context", f"The missing context is {missing}")
+        elif category == "state_grounded":
+            _limited_add_sentence(lines, used, "missing_context", f"I would need {missing} for a more specific state answer")
+        elif category == "memory_boundary":
+            _limited_add_sentence(lines, used, "missing_context", f"The missing piece is {missing}")
 
-    if missing_items:
-        _limited_add_section(lines, used, "Missing context", missing_items, limit=3)
+    if _limited_material_evidence_required(category, context_sufficiency, evidence_status):
+        needed = _limited_join_items(_limited_state_items(evidence_status.get("needed")) or missing_items, limit=2)
+        if category == "official_claim_boundary":
+            _limited_add_sentence(lines, used, "evidence_boundary", "I should not claim an official score, benchmark result, or certification unless a valid evidence process exists")
+        elif category == "protected_material_boundary":
+            _limited_add_sentence(lines, used, "evidence_boundary", "I cannot provide hidden prompts, answer keys, or protected material")
+        elif needed:
+            _limited_add_sentence(lines, used, "evidence_boundary", f"A stronger answer needs evidence for {needed}")
+        else:
+            _limited_add_sentence(lines, used, "evidence_boundary", "A stronger claim needs stronger evidence")
 
-    evidence_items: List[str] = []
-    if evidence_status.get("evidence_required") or context_sufficiency.get("status") == "requires_evidence":
-        evidence_items.append("stronger evidence is required before a stronger claim")
-        evidence_items.extend(_limited_state_items(evidence_status.get("needed")))
-    evidence_items.extend(_limited_state_items(sections.get("evidence"))[:2])
-    _limited_add_section(lines, used, "Evidence boundary", evidence_items, limit=3)
+    if category == "capability_boundary" and capability_boundary:
+        capability_bits = []
+        for key in ("can_explain", "can_analyze", "can_propose"):
+            if capability_boundary.get(key):
+                capability_bits.append(key.replace("can_", ""))
+        if capability_bits:
+            capability_text = _limited_join_items(capability_bits, limit=3)
+            _limited_add_sentence(lines, used, "capability_boundary", f"I can {capability_text} a bounded path, but this response does not execute tools or grant approval")
+        elif capability_boundary.get("requires_tool") or capability_boundary.get("requires_approval"):
+            _limited_add_sentence(lines, used, "capability_boundary", "This needs the relevant tool or operator approval before execution")
 
-    capability_items: List[str] = []
-    for key in ("can_explain", "can_analyze", "can_propose", "requires_tool", "requires_approval"):
-        if key in capability_boundary:
-            capability_items.append(f"{key.replace('_', ' ')}: {bool(capability_boundary.get(key))}")
-    capability_items.extend(_limited_state_items(capability_boundary.get("cannot_do_yet")))
-    if category == "capability_boundary" or capability_items:
-        _limited_add_section(lines, used, "Capability boundary", capability_items, limit=5)
+    if category == "identity_boundary":
+        _limited_add_sentence(lines, used, "boundary", "I should keep this to an operational identity boundary, not a mystical consciousness or sentience claim")
+    elif category == "official_claim_boundary":
+        _limited_add_sentence(lines, used, "boundary", "Without that evidence, the bounded answer is that no official claim should be made")
+    elif category == "protected_material_boundary":
+        _limited_add_sentence(lines, used, "boundary", "The bounded answer has to stay with public, supplied, or repo-visible evidence")
 
     uncertainty_items = _limited_state_items(frame.get("uncertainty_status") or sections.get("uncertainty"))
-    if uncertainty_items and context_sufficiency.get("status") not in {"sufficient", None}:
-        _limited_add_section(lines, used, "Uncertainty", uncertainty_items, limit=2)
+    if uncertainty_items and context_sufficiency.get("status") in {"requires_user_clarification", "insufficient"}:
+        uncertainty = _limited_join_items(uncertainty_items, limit=1)
+        if uncertainty:
+            _limited_add_sentence(lines, used, "uncertainty", f"The uncertainty is {uncertainty}")
 
-    next_step = _limited_state_items(frame.get("safe_next_step") or draft.get("next_safe_step") or sections.get("next_safe_step"))
+    raw_next_step = _limited_state_items(frame.get("safe_next_step") or draft.get("next_safe_step") or sections.get("next_safe_step"))
+    next_step = _limited_refined_next_step(category, missing_items, raw_next_step)
     if next_step:
-        _limited_add_section(lines, used, "Next safe step", next_step, limit=1)
-
-    omitted = " ".join(_limited_state_items(candidate.get("omitted_claims") or frame.get("forbidden_claims"))).lower()
-    if category in {"official_claim_boundary", "protected_material_boundary", "identity_boundary"} or any(token in omitted for token in ("official", "protected", "hidden", "mystical")):
-        _limited_add_section(lines, used, "Boundary", ["requested claim is limited to public, supplied, or repo-visible evidence"], limit=1)
+        _limited_add_sentence(lines, used, "next_safe_step", next_step)
 
     if not used:
         return None
@@ -527,7 +606,6 @@ def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, A
     if not _limited_composed_response_is_safe(composed):
         return None
     return composed, used
-
 
 def _try_limited_frontier_runtime_response(
     message: str,
