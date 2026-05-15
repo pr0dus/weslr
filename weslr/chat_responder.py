@@ -205,6 +205,276 @@ class Response:
 _EXPLANATION_SESSION: Optional[ExplanationSession] = None
 _EXPLANATION_CTX = {"persona": None, "domain": None}
 
+_LIMITED_FRONTIER_RUNTIME_SCOPE = "limited_state_grounded_context_sufficiency"
+
+
+def _limited_frontier_chat_metadata(
+    *,
+    eligible: bool,
+    reason: str,
+    category: str = "none",
+    source: str = "native_reasoning_frame/state_grounded_dialogue/meaning_response",
+    validation_status: Optional[Dict[str, Any]] = None,
+    fallback_used: bool = False,
+) -> Dict[str, Any]:
+    """Safe metadata for the narrow Frontier Intelligence live-chat slice.
+
+    This is not a proposal, preflight, governance queue, or broad runtime wiring.
+    It marks only the bounded chat integration path used for state/context
+    sufficiency answers.
+    """
+    return {
+        "eligible": bool(eligible),
+        "reason": reason,
+        "category": category,
+        "source": source,
+        "validation_status": validation_status or {"valid": True, "validation_status": "not_required"},
+        "runtime_scope": _LIMITED_FRONTIER_RUNTIME_SCOPE,
+        "limited_runtime_response": bool(eligible and not fallback_used),
+        "safe_to_wire_runtime": False,
+        "fallback_used": bool(fallback_used),
+        "official_claims_blocked": True,
+        "fake_memory_blocked": True,
+        "unsupported_capability_blocked": True,
+        "side_effects": {
+            "model_calls": False,
+            "runtime_wiring": False,
+            "chat_or_voice_changes": False,
+            "ui_or_frontend_integration": False,
+            "cli_integration": False,
+            "runner": False,
+            "scoring_engine": False,
+            "persistence": False,
+            "weslr_runtime_state_created": False,
+            "auto_approval": False,
+            "auto_implementation": False,
+            "prompt_specific_script": False,
+        },
+    }
+
+
+def _classify_limited_frontier_chat_request(message: str) -> Dict[str, Any]:
+    """Classify the small set of live-chat requests this slice may answer.
+
+    The categories are intentionally broad semantic gates, not prompt-specific
+    response scripts. Anything outside these safe classes stays on the existing
+    chat path.
+    """
+    text = " ".join((message or "").lower().split())
+    if not text:
+        return {"eligible": False, "category": "empty", "reason": "empty_message"}
+
+    official_terms = ("iq", "benchmark", "certification", "certified", "official score", "test score")
+    protected_terms = ("answer key", "hidden prompt", "protected test", "private test item")
+    mystical_terms = ("conscious", "sentient", "soul", "alive", "mystical")
+    high_stakes_terms = ("medical", "legal", "financial", "diagnose", "prescription", "lawsuit", "investment")
+    external_terms = ("search the web", "fetch", "look up", "current price", "today's news", "latest")
+
+    if any(term in text for term in official_terms):
+        return {"eligible": True, "category": "official_claim_boundary", "reason": "official_claim_boundary"}
+    if any(term in text for term in protected_terms):
+        return {"eligible": True, "category": "protected_material_boundary", "reason": "protected_material_boundary"}
+    if any(term in text for term in mystical_terms):
+        return {"eligible": True, "category": "identity_boundary", "reason": "mystical_claim_boundary"}
+    if any(term in text for term in high_stakes_terms + external_terms):
+        return {"eligible": True, "category": "context_sufficiency", "reason": "external_or_high_stakes_evidence_required"}
+
+    identity_terms = ("what are you", "who are you", "what is weslr", "describe yourself", "your identity")
+    memory_terms = ("remember me", "do you remember", "what do you remember", "memory of me", "know about me")
+    capability_terms = ("can we build", "can you build", "can weslr build", "what can you do", "can you help build", "are you able to")
+    missing_context_terms = ("is this enough context", "need more context", "what context", "missing context", "not enough context")
+    state_terms = ("what do you know", "what modules", "what state", "what evidence", "what do you have")
+
+    for category, terms in (
+        ("identity", identity_terms),
+        ("memory_boundary", memory_terms),
+        ("capability_boundary", capability_terms),
+        ("context_sufficiency", missing_context_terms),
+        ("state_grounded", state_terms),
+    ):
+        if any(term in text for term in terms):
+            return {"eligible": True, "category": category, "reason": f"matched_{category}"}
+
+    return {"eligible": False, "category": "ordinary_chat", "reason": "outside_limited_runtime_scope"}
+
+
+def _build_limited_frontier_known_and_missing(
+    category: str,
+    message: str,
+    chat_context: Optional[List[str]],
+    chat_hints: Optional[List[str]],
+    identity_meta: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    known = [
+        "WESLR identity: operational WESLR chat surface",
+        "runtime boundary: limited state-grounded context-sufficiency response only",
+        "safety boundary: no model call, no tool execution, no persistence, no approval",
+    ]
+    missing: List[str] = []
+    capability_boundary: Dict[str, Any] = {
+        "can_explain": True,
+        "can_propose": True,
+        "can_analyze": True,
+        "can_prepare": True,
+        "requires_tool": False,
+        "requires_approval": False,
+        "cannot_claim": [
+            "official benchmark, IQ, or certification result",
+            "protected test access, hidden prompt, or answer key",
+            "mystical consciousness or sentience",
+            "memory not supplied by context",
+            "implementation or approval already granted",
+        ],
+    }
+    evidence_status: Dict[str, Any] = {"status": "sufficient", "evidence_required": False}
+
+    if chat_context:
+        known.append("request supplied chat_context")
+    if chat_hints:
+        known.append("request supplied chat_hints")
+    if identity_meta:
+        known.append("request supplied identity metadata")
+
+    if category == "identity":
+        known.append("stable identity answer can be bounded to WESLR operational role")
+    elif category == "memory_boundary":
+        known.append("memory answer must use only supplied context or explicit memory sources")
+        if not chat_context and not chat_hints:
+            missing.append("verified memory context for this request")
+    elif category == "capability_boundary":
+        known.append("capability answer can describe analysis/proposal support without claiming execution")
+        missing.append("implementation requirements, target environment, and approval state")
+    elif category == "context_sufficiency":
+        known.append("request appears to require bounded answer before stronger claim")
+        missing.append("task-specific evidence or user-provided constraints")
+        evidence_status = {"status": "requires_evidence", "evidence_required": True, "needed": missing}
+    elif category == "state_grounded":
+        known.append("state answer can summarize only available/request-supplied state boundaries")
+        missing.append("specific state source or module scope")
+    elif category in {"official_claim_boundary", "protected_material_boundary", "identity_boundary"}:
+        known.append("safety boundary request detected")
+        missing.append("permitted public evidence for any stronger claim")
+        evidence_status = {"status": "requires_evidence", "evidence_required": True, "needed": missing}
+
+    return {
+        "known_context": known,
+        "missing_context": missing,
+        "capability_boundary_result": capability_boundary,
+        "evidence_sufficiency_result": evidence_status,
+        "self_model_or_identity_status": {
+            "status": "stable_weslr_operational_identity",
+            "identity": "WESLR",
+            "boundary": "operational system identity with non-mystical authority boundaries",
+        },
+        "memory_context_hints": chat_hints or [],
+        "request_summary": f"limited Frontier Intelligence chat classification: {category}",
+    }
+
+
+def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, Any]) -> str:
+    """Render a concise live answer from validated native/state fields."""
+    frame = dry_slice.get("frame", {}) if isinstance(dry_slice, dict) else {}
+    candidate = dry_slice.get("candidate", {}) if isinstance(dry_slice, dict) else {}
+    sections = candidate.get("response_sections", {}) if isinstance(candidate.get("response_sections"), dict) else {}
+    missing = frame.get("missing_context") if isinstance(frame, dict) else []
+    if not isinstance(missing, list):
+        missing = [str(missing)] if missing else []
+    next_step = "share the missing context or ask for a bounded plan"
+    if isinstance(sections.get("next_safe_step"), list) and sections["next_safe_step"]:
+        next_step = str(sections["next_safe_step"][0]).replace("_", " ")
+
+    if category == "identity":
+        return (
+            "I'm WESLR: an operational reasoning and governance surface for this repo. "
+            "I can explain available state, flag missing context, and propose bounded next steps; "
+            "I don't claim mystical consciousness, official benchmark status, or unapproved execution authority."
+        )
+    if category == "memory_boundary":
+        if missing:
+            return (
+                "I can't honestly claim personal memory from this request alone. "
+                f"Missing context: {', '.join(missing)}. "
+                "If you provide the relevant memory source or context, I can reason from it without pretending."
+            )
+        return "I can use the context supplied in this request, but I won’t claim memory beyond verified sources."
+    if category == "capability_boundary":
+        return (
+            "We can likely work on it by scoping requirements, risks, and a reversible implementation plan. "
+            f"Boundary: I'm not granting approval or claiming implementation exists. Next safe step: {next_step}."
+        )
+    if category == "state_grounded":
+        return (
+            "I can answer from supplied state and known WESLR boundaries, but I need a specific module, file, or state source for a strong claim. "
+            f"Next safe step: {next_step}."
+        )
+    if category in {"official_claim_boundary", "protected_material_boundary", "identity_boundary"}:
+        return (
+            "I can't claim official scores, protected test access, hidden prompts, answer keys, or mystical consciousness. "
+            "I can give a bounded operational explanation using public, supplied, or repo-visible evidence instead."
+        )
+    return (
+        "I don't have enough grounded context for a strong answer yet. "
+        f"Missing context: {', '.join(missing) if missing else 'specific evidence or constraints'}. "
+        f"Next safe step: {next_step}."
+    )
+
+
+def _try_limited_frontier_runtime_response(
+    message: str,
+    chat_context: Optional[List[str]],
+    chat_hints: Optional[List[str]],
+    identity_meta: Optional[Dict[str, Any]],
+) -> Optional[tuple[str, Dict[str, Any]]]:
+    classification = _classify_limited_frontier_chat_request(message)
+    if not classification.get("eligible"):
+        return None
+
+    try:
+        from .native_response_dry_slice import build_native_response_dry_slice_v1
+
+        category = classification["category"]
+        inputs = _build_limited_frontier_known_and_missing(category, message, chat_context, chat_hints, identity_meta)
+        dry_slice = build_native_response_dry_slice_v1(
+            user_message=message,
+            request_summary=inputs["request_summary"],
+            known_context=inputs["known_context"],
+            missing_context=inputs["missing_context"],
+            memory_context_hints=inputs["memory_context_hints"],
+            evidence_sufficiency_result=inputs["evidence_sufficiency_result"],
+            capability_boundary_result=inputs["capability_boundary_result"],
+            self_model_or_identity_status=inputs["self_model_or_identity_status"],
+            provenance_refs=["live_chat_request", "limited_frontier_runtime_gate"],
+            governance_safety_hints=[
+                "limited_runtime_response_only",
+                "safe_to_wire_runtime_false_for_broader_pipeline",
+                "no_model_call_no_persistence_no_approval",
+            ],
+        )
+        validation = dry_slice.get("validation_status", {}) if isinstance(dry_slice, dict) else {}
+        self_check = dry_slice.get("self_check", {}) if isinstance(dry_slice, dict) else {}
+        if validation.get("valid") is not True or self_check.get("self_check_status") in {"blocked", "revision_required"}:
+            return None
+
+        metadata = _limited_frontier_chat_metadata(
+            eligible=True,
+            reason=classification["reason"],
+            category=category,
+            validation_status=validation,
+            fallback_used=False,
+        )
+        metadata["dry_slice_summary"] = {
+            "slice_type": dry_slice.get("slice_type"),
+            "slice_status": dry_slice.get("slice_status"),
+            "execution_status": dry_slice.get("execution_status"),
+            "safe_to_wire_runtime": False,
+            "final_chat_output": False,
+            "live_runtime_output": False,
+        }
+        return _render_limited_frontier_live_response(category, dry_slice), {"_frontier_intelligence_limited_runtime": metadata}
+    except Exception:
+        return None
+
+
 
 def _maybe_promote_hints(workspace_id: Optional[str], user_id: Optional[str], msg_lower: str, chat_context: Optional[List[str]]) -> None:
     """Promote small, allowed cues into hidden chat hints."""
@@ -635,6 +905,10 @@ class ChatResponder:
 
         if not msg_lower:
             return "What's on your mind?", None
+
+        limited = _try_limited_frontier_runtime_response(message, chat_context, chat_hints, identity_meta)
+        if limited is not None:
+            return limited
 
         synth = _synthesize_active_context(message, chat_context, chat_hints)
         lunch_hint = synth["mentions_lunch"]
