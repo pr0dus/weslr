@@ -31,11 +31,11 @@ input
 
 Existing implementation is available material, not automatic authority. Before reuse, classify modules as reuse as-is, reuse after refinement, guardrail/status only, historical/experimental only, or demote/retire later.
 
-Current checkpoints: evidence bridge Frontier metadata adapter canon; meaning response compatibility shim; meaning response reuse helpers; unified response formation canon; refined meaning response reuse helpers for canon.
+Current checkpoints: evidence bridge Frontier metadata adapter canon; meaning response compatibility shim; meaning response reuse helpers; unified response formation canon; refined meaning response reuse helpers for canon; unified response formation shadow helpers completed at `9745796`.
 
 Blocked unless separately approved: broad runtime replacement, live ranked response wiring, voice wiring, model/advisor calls, scoring/benchmark/certification claims, solver execution, answer-selection arbitration, prompt-specific self/consciousness scripts, source registry authority, and unapproved memory persistence changes.
 
-Next likely lane after context alignment: review/canon or implement shadow-only unified response formation helpers, depending on owner approval. No live chat replacement until helper/shadow behavior is validated.
+Latest shadow status: WESLR now has a shadow-only unified response formation object that composes meaning, obligation, state, native dry pipeline, candidate-family preview metadata, internal ranking metadata, self-check status, and `_frontier_unified_response_formation`. It is testable substrate only: not live-wired, not final answer authority, not voice/runtime wiring, and not permission to edit live chat. No live chat replacement remains authorized. Next likely lane: review/refine shadow helpers or compare shadow outputs against canned helper paths before any owner-approved live slice.
 
 WESLR may develop operational self-understanding, but must not make unsupported biological/theological/soul/consciousness or official certification claims.
 
