@@ -156,6 +156,22 @@ _evidence_bridge_frontier_metadata_adapter_helper_required_markers = {
     "registry_writes = false",
 }
 
+_unified_response_formation_canon_doc = "docs/WESLR_UNIFIED_RESPONSE_FORMATION_CANON_V1.md"
+_unified_response_formation_required_markers = {
+    "WESLR Unified Response Formation Canon V1",
+    "meaning / intent interpretation",
+    "native_frame_kwargs",
+    "helper_metadata",
+    "relationship and continuity are first-class cognition inputs",
+    "Evidence bridge metadata remains separate",
+    "Capability hints are not permission grants",
+    "Allowed deterministic invariants",
+    "Forbidden as core cognition",
+    "_frontier_unified_response_formation",
+    "Phase 1 — refine reuse helpers",
+    "Anti-Drift Rule",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -238,6 +254,10 @@ def _evidence_bridge_frontier_metadata_adapter_helper_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_evidence_bridge_frontier_metadata_adapter_helper_canon_doc, _evidence_bridge_frontier_metadata_adapter_helper_required_markers)
 
 
+def _unified_response_formation_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_unified_response_formation_canon_doc, _unified_response_formation_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -266,6 +286,8 @@ def _check_git_scope():
         the approved internal corpus advisor review adapter helper canon markers are present
       - docs/WESLR_EVIDENCE_BRIDGE_FRONTIER_METADATA_ADAPTER_HELPER_CANON_V1.md only when
         the approved evidence bridge Frontier metadata adapter helper canon markers are present
+      - docs/WESLR_UNIFIED_RESPONSE_FORMATION_CANON_V1.md only when
+        the approved unified response formation canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -291,6 +313,7 @@ def _check_git_scope():
     internal_corpus_to_advisor_review_adapter_doc_valid = _internal_corpus_to_advisor_review_adapter_design_doc_is_valid()
     internal_corpus_advisor_review_adapter_helper_doc_valid = _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid()
     evidence_bridge_frontier_metadata_adapter_helper_doc_valid = _evidence_bridge_frontier_metadata_adapter_helper_canon_doc_is_valid()
+    unified_response_formation_canon_doc_valid = _unified_response_formation_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -342,6 +365,10 @@ def _check_git_scope():
         if path == _evidence_bridge_frontier_metadata_adapter_helper_canon_doc:
             allowed = evidence_bridge_frontier_metadata_adapter_helper_doc_valid
             if not evidence_bridge_frontier_metadata_adapter_helper_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
+        if path == _unified_response_formation_canon_doc:
+            allowed = unified_response_formation_canon_doc_valid
+            if not unified_response_formation_canon_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
