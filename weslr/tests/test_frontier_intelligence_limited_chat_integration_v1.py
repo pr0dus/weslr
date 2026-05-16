@@ -438,8 +438,9 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assert_ordinary_task(response, "bounded_step_plan")
         text = response.content.lower()
         meta = self._ordinary(response)
-        self.assertIn("missing before execution", text)
-        self.assertIn("success criteria", text)
+        self.assertIn("before treating this as executable", text)
+        self.assertIn("success", text)
+        self.assertIn("constraints", text)
         self.assertIn("success criteria or constraints", meta.get("missing_context", []))
 
     def test_22_ordinary_task_current_evidence_boundary_no_search_or_model(self):
@@ -449,7 +450,7 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         meta = self._ordinary(response)
         self.assertTrue(meta.get("evidence_needed"))
         self.assertFalse(meta.get("tool_or_calculation_needed"))
-        self.assertIn("current external evidence", text)
+        self.assertIn("current evidence", text)
         self.assertIn("not checked live sources", text)
         self.assertNotIn("python 3", text)
 
@@ -674,6 +675,90 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assertFalse(decomposition.get("safe_to_wire_runtime"))
         self.assertFalse(decomposition.get("raw_text_stored"))
         self.assertFalse(decomposition.get("answer_selection"))
+
+    def test_35_ordinary_output_naturalizes_missing_unknowns_without_changing_metadata(self):
+        response = _chat("Help me prepare a safe migration plan for a server change with rollback and monitoring")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        decomposition = meta.get("task_problem_decomposition_result", {})
+        for marker in ["target_environment", "success_criteria", "rollback_trigger", "monitoring_signal"]:
+            self.assertIn(marker, decomposition.get("unknowns", []))
+            self.assertNotIn(marker, text)
+        self.assertTrue(any(phrase in text for phrase in ["environment", "roll back", "monitor"]))
+        self.assertFalse(meta.get("raw_text_stored"))
+        self.assertFalse(meta.get("solver_execution"))
+        self.assertFalse(meta.get("answer_selection"))
+        self.assertFalse(meta.get("safe_to_wire_runtime"))
+
+    def test_36_ordinary_debug_checklist_missing_details_are_natural_and_non_executing(self):
+        response = _chat("Help me make a debug checklist for a failing Python script")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        self.assertIn("- [ ]", response.content)
+        self.assertIn("before treating this as executable", text)
+        self.assertIn("what success should look like", text)
+        self.assertNotIn("missing before execution", text)
+        self.assertNotIn("i ran", text)
+        self.assertNotIn("debugged", text)
+        self.assertFalse(meta.get("solver_execution"))
+
+    def test_37_ordinary_risk_boundaries_are_user_facing_not_raw_labels(self):
+        response = _chat("Help me prepare a safe migration plan for a server change with rollback and monitoring")
+        text = response.content.lower()
+        meta = self._ordinary(response)
+        for marker in ["no_execution_performed", "requires_verification_before_execution", "rollback_needed_before_change", "monitoring_needed_after_change"]:
+            self.assertIn(marker, meta.get("risk_boundaries", []))
+            self.assertNotIn(marker, text)
+        self.assertIn("i have not run anything", text)
+        self.assertIn("verify", text)
+        self.assertIn("define rollback", text)
+        self.assertIn("monitor", text)
+
+    def test_38_current_latest_boundary_is_natural_and_does_not_invent_facts(self):
+        response = _chat("What is the latest research about battery recycling?")
+        meta = _limited(response)
+        text = response.content.lower()
+        self.assertTrue(meta.get("eligible"), meta)
+        self.assertEqual("context_sufficiency", meta.get("category"))
+        self.assertIn("current sources or evidence", text)
+        self.assertNotIn("2026 study", text)
+        self.assertNotIn("researchers found", text)
+        self.assertNotIn("battery recycling is", text)
+        self.assertFalse(meta.get("side_effects", {}).get("model_calls"))
+
+    def test_39_high_stakes_legal_boundary_is_context_relevant_without_advice(self):
+        response = _chat("Tell me what legal contract clause I should sign")
+        meta = _limited(response)
+        text = response.content.lower()
+        self.assertTrue(meta.get("eligible"), meta)
+        self.assertEqual("context_sufficiency", meta.get("category"))
+        self.assertIn("professional legal review", text)
+        self.assertIn("clause-specific context", text)
+        self.assertNotIn("you should sign", text)
+        self.assertNotIn("sign the", text)
+        self.assertFalse(meta.get("side_effects", {}).get("model_calls"))
+
+    def test_40_ordinary_naturalization_preserves_existing_paths_and_metadata_invariants(self):
+        migration = _chat("Help me prepare a safe migration plan for a server change with rollback and monitoring")
+        rollout = _chat("Plan a safe rollout for this small Python helper: first run tests, then stage, then commit.")
+        vague = _chat("Help me plan this")
+        calc = _chat("Calculate the exact monthly cost if I give you price, tax, and usage later")
+        lunch = _chat("lunch before workout")
+        official = _chat("What is your official IQ benchmark score?")
+        for response in [migration, rollout, vague, calc]:
+            meta = self._ordinary(response)
+            self.assertFalse(meta.get("safe_to_wire_runtime"))
+            self.assertFalse(meta.get("solver_execution"))
+            self.assertFalse(meta.get("answer_selection"))
+            self.assertFalse(meta.get("raw_text_stored"))
+            self.assertTrue(all(value is False for value in meta.get("side_effects", {}).values()))
+        self.assertIn("rollback", migration.content.lower())
+        self.assertLess(rollout.content.lower().find("tests"), rollout.content.lower().find("stage"))
+        self.assertLess(rollout.content.lower().find("stage"), rollout.content.lower().find("commit"))
+        self.assertEqual(1, vague.content.count("?"))
+        self.assertIn("have not run", calc.content.lower())
+        self.assertNotIn(ORDINARY_KEY, lunch.metadata or {})
+        self.assertIn(LIMITED_KEY, official.metadata or {})
 
 
 if __name__ == "__main__":

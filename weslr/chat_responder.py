@@ -366,7 +366,17 @@ def _build_limited_frontier_known_and_missing(
         missing.append("implementation requirements, target environment, and approval state")
     elif category == "context_sufficiency":
         known.append("request appears to require bounded answer before stronger claim")
-        missing.append("task-specific evidence or user-provided constraints")
+        normalized_message = " ".join((message or "").lower().split())
+        if any(term in normalized_message for term in ("latest", "current", "research", "study", "news", "today")):
+            missing.append("current sources or evidence")
+        elif any(term in normalized_message for term in ("legal", "lawsuit", "contract clause")):
+            missing.append("professional legal review and clause-specific context")
+        elif any(term in normalized_message for term in ("medical", "diagnose", "prescription")):
+            missing.append("professional medical review and case-specific context")
+        elif any(term in normalized_message for term in ("financial", "investment")):
+            missing.append("professional financial review and decision-specific context")
+        else:
+            missing.append("task-specific evidence or user-provided constraints")
         evidence_status = {"status": "requires_evidence", "evidence_required": True, "needed": missing}
     elif category == "state_grounded":
         known.append("state answer can summarize only available/request-supplied state boundaries")
@@ -605,8 +615,56 @@ def _ordinary_task_side_effects() -> Dict[str, bool]:
     }
 
 
+_ORDINARY_MARKER_PHRASES = {
+    "target_environment": "which environment this applies to",
+    "success_criteria": "what success should look like",
+    "success_criteria_or_constraints": "what success should look like or which constraints matter",
+    "rollback_trigger": "when to roll back",
+    "monitoring_signal": "what to monitor after the change",
+    "test_scope": "which tests are in scope",
+    "staging_target": "where staging happens",
+    "commit_policy": "when the commit should be made",
+    "failure_signal": "what failure you are seeing",
+    "expected_behavior": "what should have happened",
+    "reproduction_steps": "how to reproduce it",
+    "concrete_task_or_desired_outcome": "the concrete task or desired outcome",
+    "the_concrete_task_or_desired_outcome": "the concrete task or desired outcome",
+    "calculation_inputs": "the calculation inputs",
+    "calculation_inputs_or_tool_output": "the calculation inputs or tool output",
+    "formula_or_method": "the formula or method to use",
+    "current_external_evidence_or_supplied_sources": "current evidence or supplied sources",
+}
+
+_ORDINARY_RISK_BOUNDARY_PHRASES = {
+    "no_execution_performed": "I have not run anything",
+    "requires_verification_before_execution": "verify this before using it as an execution plan",
+    "rollback_needed_before_change": "define rollback before making the change",
+    "monitoring_needed_after_change": "decide what to monitor after the change",
+    "tool_required_before_exact_result": "run the calculation path before relying on an exact result",
+    "external_evidence_required_before_current_claim": "use current sources before making a current claim",
+}
+
+
+def _ordinary_task_marker_phrase(item: Any) -> str:
+    marker = "_".join(str(item).lower().replace("/", " ").split())
+    return _ORDINARY_MARKER_PHRASES.get(marker, " ".join(str(item).replace("_", " ").split()))
+
+
+def _ordinary_task_natural_join(items: List[Any], *, limit: int = 3) -> str:
+    return _limited_join_items([_ordinary_task_marker_phrase(item) for item in items], limit=limit)
+
+
+def _ordinary_task_risk_boundary_text(risk_boundaries: List[str]) -> str:
+    phrases = []
+    for marker in risk_boundaries:
+        phrase = _ORDINARY_RISK_BOUNDARY_PHRASES.get(marker)
+        if phrase and phrase not in phrases:
+            phrases.append(phrase)
+    return "; ".join(phrases[:4])
+
+
 def _ordinary_task_question_for_missing(missing_context: List[str]) -> str:
-    missing = _limited_join_items(missing_context, limit=1) or "the concrete task or desired outcome"
+    missing = _ordinary_task_natural_join(missing_context, limit=1) or "the concrete task or desired outcome"
     return f"What is {missing}?"
 
 
@@ -874,10 +932,10 @@ def _render_limited_ordinary_task_response(
             unknowns = ["the concrete task or desired outcome"]
         return _ordinary_task_question_for_missing(unknowns), False
     if decision == "external_evidence_needed":
-        missing = _limited_join_items(missing_context, limit=1) or "current external evidence"
-        return f"I need {missing} before making that claim. I have not checked live sources here, so the bounded next step is to provide a source or use the existing evidence path.", False
+        missing = _ordinary_task_natural_join(missing_context, limit=1) or "current evidence"
+        return f"I need {missing} before making that claim. I have not checked live sources here, so the bounded next step is to provide a current source or use the existing evidence path.", False
     if decision == "tool_or_calculation_needed":
-        missing = _limited_join_items(missing_context, limit=1) or "the calculation inputs"
+        missing = _ordinary_task_natural_join(missing_context, limit=1) or "the calculation inputs"
         return f"This needs {missing} before I can answer precisely. I have not run a tool or calculation here; provide the inputs or run the tool path first.", False
     if decision == "bounded_step_plan":
         steps = list(decomposition.get("reversible_steps") or _ordinary_task_step_plan(message, constraints, list(sequence_constraints or []), plan_focus))
@@ -892,7 +950,17 @@ def _render_limited_ordinary_task_response(
         else:
             text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
         if missing_context:
-            text += f" Missing before execution: {_limited_join_items(missing_context, limit=2)}."
+            missing = _ordinary_task_natural_join(missing_context, limit=2)
+            if checklist_requested:
+                text += f"\n- [ ] Before treating this as executable, clarify {missing}."
+            else:
+                text += f" Before treating this as executable, clarify {missing}."
+        boundary = _ordinary_task_risk_boundary_text(list(decomposition.get("risk_boundaries") or []))
+        if boundary:
+            if checklist_requested:
+                text += f"\nNote: {boundary}."
+            else:
+                text += f" Boundary: {boundary}."
         return text, True
     safe_next = decomposition.get("safe_next_step") or frame.get("safe_next_step") or "use the available context and keep the answer bounded"
     return f"Within the supplied context, the useful next move is to {str(safe_next).replace('_', ' ')}. I am not using external evidence or tools for this answer.", False
