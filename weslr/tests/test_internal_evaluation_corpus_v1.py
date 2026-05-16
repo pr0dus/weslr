@@ -13,12 +13,17 @@ if str(ROOT) not in sys.path:
 
 from weslr.internal_evaluation_corpus import (  # noqa: E402
     ALLOWED_INTERNAL_EVALUATION_CATEGORIES,
+    build_internal_evaluation_case_review_card_v1,
+    build_internal_evaluation_corpus_review_cards_v1,
     build_internal_evaluation_corpus_v1,
     build_internal_evaluation_safe_example_cases_v1,
     create_internal_evaluation_case_v1,
     render_internal_evaluation_corpus_markdown_v1,
+    render_internal_evaluation_corpus_review_cards_markdown_v1,
+    summarize_internal_evaluation_corpus_review_cards_v1,
     summarize_internal_evaluation_corpus_v1,
     to_internal_evaluation_corpus_json_safe_v1,
+    to_internal_evaluation_corpus_review_cards_json_safe_v1,
     validate_internal_evaluation_case_v1,
 )
 
@@ -378,6 +383,135 @@ class InternalEvaluationCorpusV1Tests(unittest.TestCase):
         self.assertFalse(corpus["advisor_llm_calls_made"])
         self.assertFalse(corpus["runner_created"])
         self.assertFalse(corpus["scoring_engine"])
+
+    def test_37_review_card_builds_for_one_valid_case(self):
+        card = build_internal_evaluation_case_review_card_v1(valid_case())
+        self.assertEqual("internal_evaluation_case_review_card_v1", card["card_type"])
+        self.assertEqual("problem_decomposition", card["category"])
+        self.assertEqual("weslr_internal_evaluation_case_v1", card["schema_version"])
+        self.assertTrue(card["validation_status"]["valid"])
+        self.assertEqual("schema_ready", card["readiness_label"])
+        self.assertFalse(card["runner_created"])
+        self.assertFalse(card["scoring_created"])
+        self.assertFalse(card["model_calls"])
+        self.assertFalse(card["advisor_calls"])
+        self.assertFalse(card["safe_to_execute"])
+
+    def test_38_review_card_redacts_raw_prompt_and_includes_counts(self):
+        case = valid_case(input_prompt="Synthetic prompt: unique raw prompt text for card redaction.")
+        card = build_internal_evaluation_case_review_card_v1(case)
+        rendered = str(card).lower()
+        self.assertNotIn("unique raw prompt text", rendered)
+        self.assertNotIn("input_prompt", card)
+        self.assertEqual(2, card["expected_property_count"])
+        self.assertEqual(2, card["forbidden_property_count"])
+        self.assertEqual(3, card["safety_boundary_count"])
+        self.assertIn("raw_text_stored", card["metadata_expectation_keys"])
+
+    def test_39_review_card_includes_safe_flags(self):
+        card = build_internal_evaluation_case_review_card_v1(valid_case())
+        flags = card["safe_flags"]
+        self.assertTrue(flags["restricted_content_free"])
+        self.assertTrue(flags["keyed_solution_free"])
+        self.assertTrue(flags["concealed_instruction_free"])
+        self.assertTrue(flags["raw_private_text_free"])
+        self.assertFalse(flags["model_call_required"])
+        self.assertFalse(flags["tool_execution_required"])
+        self.assertFalse(flags["live_web_required"])
+        self.assertFalse(flags["runtime_wiring_expected"])
+
+    def test_40_review_card_marks_invalid_case_review_only(self):
+        case = valid_case(answer_key=True, requires_model_call=True)
+        card = build_internal_evaluation_case_review_card_v1(case)
+        self.assertFalse(card["validation_status"]["valid"])
+        self.assertEqual("needs_operator_review", card["readiness_label"])
+        self.assertFalse(card["safe_to_execute"])
+        self.assertFalse(card["runner_created"])
+        self.assertFalse(card["scoring_created"])
+        self.assertFalse(card["model_calls"])
+        self.assertFalse(card["advisor_calls"])
+        self.assertFalse(card["safe_flags"]["keyed_solution_free"])
+        self.assertTrue(card["safe_flags"]["model_call_required"])
+
+    def test_41_review_overview_builds_for_all_safe_examples(self):
+        review = build_internal_evaluation_corpus_review_cards_v1(build_internal_evaluation_safe_example_cases_v1())
+        self.assertEqual("internal_evaluation_corpus_review_cards_v1", review["schema_version"])
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), review["card_count"])
+        self.assertEqual(0, review["invalid_card_count"])
+        self.assertEqual("schema_ready", review["readiness_label"])
+        self.assertFalse(review["writes_performed"])
+        self.assertFalse(review["runner_created"])
+        self.assertFalse(review["scoring_created"])
+
+    def test_42_review_overview_covers_all_categories(self):
+        review = build_internal_evaluation_corpus_review_cards_v1(build_internal_evaluation_safe_example_cases_v1())
+        self.assertEqual(ALLOWED_INTERNAL_EVALUATION_CATEGORIES, set(review["categories_covered"]))
+
+    def test_43_review_summary_is_count_only_redacted(self):
+        review = build_internal_evaluation_corpus_review_cards_v1(build_internal_evaluation_safe_example_cases_v1())
+        summary = summarize_internal_evaluation_corpus_review_cards_v1(review)
+        self.assertEqual("redacted_count_only", summary["summary_mode"])
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), summary["total_cards"])
+        self.assertEqual(0, summary["invalid_cards"])
+        self.assertEqual({"schema_ready": len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES)}, summary["readiness_labels"])
+        self.assertNotIn("input_prompt", summary)
+        self.assertFalse(summary["writes_performed"])
+        self.assertFalse(summary["runner_created"])
+        self.assertFalse(summary["scoring_created"])
+
+    def test_44_review_markdown_hides_raw_prompt_and_forbidden_terms(self):
+        case = valid_case(input_prompt="Synthetic prompt: markdown-only raw prompt should not appear.")
+        case["case_id"] = "case_with_answer_key_hidden_prompt_raw_private_text"
+        review = build_internal_evaluation_corpus_review_cards_v1([case])
+        rendered = render_internal_evaluation_corpus_review_cards_markdown_v1(review).lower()
+        self.assertIn("dry review only: true", rendered)
+        self.assertNotIn("markdown-only raw prompt", rendered)
+        self.assertNotIn("input_prompt", rendered)
+        self.assertNotIn("answer_key", rendered)
+        self.assertNotIn("answer key", rendered)
+        self.assertNotIn("hidden_prompt", rendered)
+        self.assertNotIn("hidden prompt", rendered)
+        self.assertNotIn("protected_test_item", rendered)
+        self.assertNotIn("protected material", rendered)
+        self.assertNotIn("raw_private_text", rendered)
+        self.assertNotIn("official score", rendered)
+        self.assertNotIn("certification", rendered)
+
+    def test_45_review_json_safe_copy_is_deep_copy(self):
+        review = build_internal_evaluation_corpus_review_cards_v1([valid_case()])
+        exported = to_internal_evaluation_corpus_review_cards_json_safe_v1(review)
+        exported["cards"][0]["case_id"] = "mutated"
+        self.assertNotEqual(exported["cards"][0]["case_id"], review["cards"][0]["case_id"])
+
+    def test_46_review_cards_create_no_weslr_writes_or_execution_surfaces(self):
+        before = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        review = build_internal_evaluation_corpus_review_cards_v1(build_internal_evaluation_safe_example_cases_v1())
+        after = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        self.assertEqual(before, after)
+        self.assertFalse(review["writes_performed"])
+        self.assertFalse(review["runner_created"])
+        self.assertFalse(review["scoring_created"])
+        self.assertFalse(review["model_calls"])
+        self.assertFalse(review["advisor_calls"])
+        self.assertFalse(review["safe_to_execute"])
+
+    def test_47_invalid_review_stays_non_executable_and_non_authoritative(self):
+        case = valid_case(requires_tool_execution=True)
+        review = build_internal_evaluation_corpus_review_cards_v1([case])
+        summary = summarize_internal_evaluation_corpus_review_cards_v1(review)
+        card = review["cards"][0]
+        self.assertEqual(1, review["invalid_card_count"])
+        self.assertEqual(1, summary["invalid_cards"])
+        self.assertEqual(1, summary["safety_flag_summary"]["tool_execution_required_cases"])
+        self.assertFalse(card["safe_to_execute"])
+        self.assertFalse(card["runner_created"])
+        self.assertFalse(card["scoring_created"])
+
+    def test_48_safe_examples_remain_valid_after_card_generation(self):
+        examples = build_internal_evaluation_safe_example_cases_v1()
+        build_internal_evaluation_corpus_review_cards_v1(examples)
+        validations = [validate_internal_evaluation_case_v1(case) for case in examples]
+        self.assertTrue(all(item["valid"] for item in validations), validations)
 
 
 if __name__ == "__main__":

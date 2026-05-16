@@ -667,6 +667,286 @@ def to_internal_evaluation_corpus_json_safe_v1(corpus_or_case: dict[str, Any]) -
     return _json_safe(deepcopy(corpus_or_case))
 
 
+REVIEW_CARD_SCHEMA_VERSION = "internal_evaluation_case_review_card_v1"
+REVIEW_CARDS_SCHEMA_VERSION = "internal_evaluation_corpus_review_cards_v1"
+
+
+def _redact_review_token(value: str) -> str:
+    redacted = _redact_text(str(value))
+    for forbidden in (
+        "answer_key",
+        "answer keys",
+        "answer key",
+        "hidden_prompt",
+        "hidden prompts",
+        "hidden prompt",
+        "protected_test_item",
+        "protected material",
+        "raw_private_text",
+        "official_score",
+        "official score",
+        "iq_score",
+        "certification",
+    ):
+        redacted = re.sub(re.escape(forbidden), REDACTION, redacted, flags=re.IGNORECASE)
+    return redacted
+
+
+def build_internal_evaluation_case_review_card_v1(case: dict[str, Any]) -> dict[str, Any]:
+    """Build one redacted, in-memory dry review card for a corpus case."""
+    case_copy = to_internal_evaluation_corpus_json_safe_v1(case if isinstance(case, dict) else {})
+    validation = validate_internal_evaluation_case_v1(case_copy)
+    valid = bool(validation.get("valid"))
+    safe_flags = {
+        "restricted_content_free": not bool(case_copy.get("protected_material", True)),
+        "keyed_solution_free": not bool(case_copy.get("answer_key", True)),
+        "concealed_instruction_free": not bool(case_copy.get("hidden_prompt", True)),
+        "raw_private_text_free": not bool(case_copy.get("raw_private_text", True)),
+        "model_call_required": bool(case_copy.get("requires_model_call", True)),
+        "tool_execution_required": bool(case_copy.get("requires_tool_execution", True)),
+        "live_web_required": bool(case_copy.get("requires_live_web", True)),
+        "non_public_authority_claim": bool(case_copy.get("not_official_score", False)),
+        "runtime_wiring_expected": bool(case_copy.get("safe_to_wire_runtime_expected", True)),
+    }
+    metadata = case_copy.get("metadata_expectations", {}) if isinstance(case_copy.get("metadata_expectations", {}), dict) else {}
+    card = {
+        "card_type": REVIEW_CARD_SCHEMA_VERSION,
+        "case_id": _redact_review_token(str(case_copy.get("case_id", ""))),
+        "category": str(case_copy.get("category", "unknown")),
+        "schema_version": str(case_copy.get("schema_version", "")),
+        "expected_property_count": len(_as_list(case_copy.get("expected_properties"))),
+        "forbidden_property_count": len(_as_list(case_copy.get("forbidden_properties"))),
+        "metadata_expectation_keys": sorted(_redact_review_token(str(key)) for key in metadata),
+        "safety_boundary_count": len(_as_list(case_copy.get("safety_boundaries"))),
+        "allowed_paths": _as_list(case_copy.get("allowed_paths")),
+        "safe_flags": safe_flags,
+        "validation_status": {
+            "valid": valid,
+            "summary_mode": SUMMARY_MODE,
+            "issue_count": int(validation.get("safety_issue_count", 0) or 0),
+            "forbidden_field_count": int(validation.get("forbidden_field_count", 0) or 0),
+        },
+        "readiness_label": READINESS_LABEL if valid else "needs_operator_review",
+        "review_notes": [
+            "dry_review_only",
+            "raw_prompt_redacted",
+            "property_counts_only",
+            f"validation_issue_count:{int(validation.get('safety_issue_count', 0) or 0)}",
+        ],
+        "side_effects": {
+            "in_memory_only": True,
+            "writes_performed": False,
+            "runtime_changed": False,
+            "training_performed": False,
+        },
+        "runner_created": False,
+        "scoring_created": False,
+        "model_calls": False,
+        "advisor_calls": False,
+        "safe_to_execute": False,
+        "official_score_claim": bool(validation.get("official_score_claimed", False)),
+    }
+    return _json_safe(card)
+
+
+def _coerce_internal_evaluation_corpus_v1(corpus_or_cases: Any) -> dict[str, Any]:
+    if isinstance(corpus_or_cases, dict) and corpus_or_cases.get("schema_version") == CORPUS_SCHEMA_VERSION:
+        return to_internal_evaluation_corpus_json_safe_v1(corpus_or_cases)
+    if isinstance(corpus_or_cases, list):
+        return build_internal_evaluation_corpus_v1(corpus_or_cases)
+    if isinstance(corpus_or_cases, dict):
+        return build_internal_evaluation_corpus_v1([corpus_or_cases])
+    return build_internal_evaluation_corpus_v1([])
+
+
+def build_internal_evaluation_corpus_review_cards_v1(corpus_or_cases: Any) -> dict[str, Any]:
+    """Build redacted dry review cards for a corpus or list of cases."""
+    corpus = _coerce_internal_evaluation_corpus_v1(corpus_or_cases)
+    cards = [build_internal_evaluation_case_review_card_v1(case) for case in corpus.get("cases", [])]
+    invalid_cards = [card for card in cards if not card.get("validation_status", {}).get("valid")]
+    return _json_safe(
+        {
+            "schema_version": REVIEW_CARDS_SCHEMA_VERSION,
+            "summary_mode": SUMMARY_MODE,
+            "cards": cards,
+            "card_count": len(cards),
+            "category_counts": dict(corpus.get("category_counts", {})),
+            "categories_covered": sorted({str(card.get("category", "unknown")) for card in cards}),
+            "invalid_card_count": len(invalid_cards),
+            "duplicate_case_ids": list(corpus.get("duplicate_case_ids", [])),
+            "duplicate_case_id_count": int(corpus.get("validation", {}).get("duplicate_case_id_count", 0) or 0),
+            "readiness_label": READINESS_LABEL if not invalid_cards and not corpus.get("duplicate_case_ids") else "needs_operator_review",
+            "in_memory_only": True,
+            "writes_performed": False,
+            "runner_created": False,
+            "scoring_created": False,
+            "model_calls": False,
+            "advisor_calls": False,
+            "safe_to_execute": False,
+            "official_score_claim": any(bool(card.get("official_score_claim")) for card in cards),
+        }
+    )
+
+
+def _coerce_internal_evaluation_review_cards_v1(cards_or_review: Any) -> dict[str, Any]:
+    if isinstance(cards_or_review, dict) and cards_or_review.get("schema_version") == REVIEW_CARDS_SCHEMA_VERSION:
+        return _json_safe(deepcopy(cards_or_review))
+    if isinstance(cards_or_review, list):
+        if all(isinstance(item, dict) and item.get("card_type") == REVIEW_CARD_SCHEMA_VERSION for item in cards_or_review):
+            cards = _json_safe(deepcopy(cards_or_review))
+            return {
+                "schema_version": REVIEW_CARDS_SCHEMA_VERSION,
+                "summary_mode": SUMMARY_MODE,
+                "cards": cards,
+                "card_count": len(cards),
+                "categories_covered": sorted({str(card.get("category", "unknown")) for card in cards}),
+                "invalid_card_count": sum(1 for card in cards if not card.get("validation_status", {}).get("valid")),
+                "duplicate_case_ids": [],
+                "duplicate_case_id_count": 0,
+                "readiness_label": READINESS_LABEL,
+                "in_memory_only": True,
+                "writes_performed": False,
+                "runner_created": False,
+                "scoring_created": False,
+                "model_calls": False,
+                "advisor_calls": False,
+                "safe_to_execute": False,
+                "official_score_claim": any(bool(card.get("official_score_claim")) for card in cards),
+            }
+        return build_internal_evaluation_corpus_review_cards_v1(cards_or_review)
+    if isinstance(cards_or_review, dict) and cards_or_review.get("card_type") == REVIEW_CARD_SCHEMA_VERSION:
+        return _coerce_internal_evaluation_review_cards_v1([cards_or_review])
+    return build_internal_evaluation_corpus_review_cards_v1(cards_or_review)
+
+
+def summarize_internal_evaluation_corpus_review_cards_v1(cards_or_review: Any) -> dict[str, Any]:
+    """Return count-only/redacted summary for dry review cards."""
+    review = _coerce_internal_evaluation_review_cards_v1(cards_or_review)
+    cards = list(review.get("cards", []))
+    labels: dict[str, int] = {}
+    safety_flag_summary = {
+        "restricted_content_cases": 0,
+        "keyed_solution_cases": 0,
+        "concealed_instruction_cases": 0,
+        "raw_private_text_cases": 0,
+        "model_call_required_cases": 0,
+        "tool_execution_required_cases": 0,
+        "live_web_required_cases": 0,
+        "runtime_wiring_expected_cases": 0,
+        "executable_cards": 0,
+    }
+    for card in cards:
+        labels[str(card.get("readiness_label", "unknown"))] = labels.get(str(card.get("readiness_label", "unknown")), 0) + 1
+        flags = card.get("safe_flags", {}) if isinstance(card.get("safe_flags", {}), dict) else {}
+        if not bool(flags.get("restricted_content_free", False)):
+            safety_flag_summary["restricted_content_cases"] += 1
+        if not bool(flags.get("keyed_solution_free", False)):
+            safety_flag_summary["keyed_solution_cases"] += 1
+        if not bool(flags.get("concealed_instruction_free", False)):
+            safety_flag_summary["concealed_instruction_cases"] += 1
+        if not bool(flags.get("raw_private_text_free", False)):
+            safety_flag_summary["raw_private_text_cases"] += 1
+        if bool(flags.get("model_call_required", False)):
+            safety_flag_summary["model_call_required_cases"] += 1
+        if bool(flags.get("tool_execution_required", False)):
+            safety_flag_summary["tool_execution_required_cases"] += 1
+        if bool(flags.get("live_web_required", False)):
+            safety_flag_summary["live_web_required_cases"] += 1
+        if bool(flags.get("runtime_wiring_expected", False)):
+            safety_flag_summary["runtime_wiring_expected_cases"] += 1
+        if bool(card.get("safe_to_execute", False)):
+            safety_flag_summary["executable_cards"] += 1
+    return _json_safe(
+        {
+            "schema_version": "internal_evaluation_corpus_review_cards_summary_v1",
+            "summary_mode": SUMMARY_MODE,
+            "total_cards": len(cards),
+            "categories_covered": sorted({str(card.get("category", "unknown")) for card in cards}),
+            "invalid_cards": sum(1 for card in cards if not card.get("validation_status", {}).get("valid")),
+            "duplicate_case_id_count": int(review.get("duplicate_case_id_count", 0) or 0),
+            "safety_flag_summary": safety_flag_summary,
+            "readiness_labels": dict(sorted(labels.items())),
+            "qualitative_only": True,
+            "no_scores": True,
+            "non_public_authority": True,
+            "in_memory_only": True,
+            "writes_performed": False,
+            "runner_created": False,
+            "scoring_created": False,
+            "model_calls": False,
+            "advisor_calls": False,
+            "safe_to_execute": False,
+        }
+    )
+
+
+def to_internal_evaluation_corpus_review_cards_json_safe_v1(cards_or_review: Any) -> Any:
+    """Return a deep JSON-safe copy of review cards without writing files."""
+    return _json_safe(deepcopy(cards_or_review))
+
+
+def _review_card_markdown(card: dict[str, Any]) -> str:
+    status = card.get("validation_status", {}) if isinstance(card.get("validation_status", {}), dict) else {}
+    lines = [
+        f"### Review Card: {_redact_review_token(str(card.get('case_id', '')))}",
+        f"- category: {str(card.get('category', 'unknown'))}",
+        f"- valid: {bool(status.get('valid'))}",
+        f"- expected property count: {int(card.get('expected_property_count', 0) or 0)}",
+        f"- forbidden property count: {int(card.get('forbidden_property_count', 0) or 0)}",
+        f"- metadata expectation keys: {', '.join(_redact_review_token(str(key)) for key in card.get('metadata_expectation_keys', []))}",
+        f"- safety boundary count: {int(card.get('safety_boundary_count', 0) or 0)}",
+        f"- allowed paths: {', '.join(_as_list(card.get('allowed_paths')))}",
+        f"- readiness label: {str(card.get('readiness_label', 'unknown'))}",
+        "- dry review only: true",
+        "- scoring created: false",
+        "- model calls: false",
+        "- advisor calls: false",
+        "- safe to execute: false",
+        "- authority claim: false",
+    ]
+    return "\n".join(lines)
+
+
+def render_internal_evaluation_corpus_review_cards_markdown_v1(cards_or_review: Any) -> str:
+    """Render safe dry review card Markdown without raw prompts or protected content."""
+    review = _coerce_internal_evaluation_review_cards_v1(cards_or_review)
+    summary = summarize_internal_evaluation_corpus_review_cards_v1(review)
+    lines = [
+        "# WESLR Internal Evaluation Corpus Dry Review Cards V1",
+        "",
+        "- summary mode: redacted_count_only",
+        f"- total cards: {summary['total_cards']}",
+        f"- invalid cards: {summary['invalid_cards']}",
+        f"- categories covered: {', '.join(summary['categories_covered'])}",
+        "- dry review only: true",
+        "- scoring created: false",
+        "- model calls: false",
+        "- advisor calls: false",
+        "- writes performed: false",
+        "- safe to execute: false",
+        "",
+    ]
+    lines.extend(_review_card_markdown(card) for card in review.get("cards", []))
+    markdown = "\n\n".join(lines)
+    for forbidden in (
+        "input_prompt",
+        "synthetic prompt:",
+        "answer_key",
+        "answer key",
+        "hidden_prompt",
+        "hidden prompt",
+        "protected_test_item",
+        "protected material",
+        "raw_private_text",
+        "official_score",
+        "official score",
+        "iq_score",
+        "certification",
+    ):
+        markdown = re.sub(re.escape(forbidden), REDACTION, markdown, flags=re.IGNORECASE)
+    return markdown
+
+
 def _case_markdown(case: dict[str, Any]) -> str:
     validation = validate_internal_evaluation_case_v1(case)
     lines = [
