@@ -222,3 +222,201 @@ def test_no_side_effects_or_runtime_edits(tmp_path, monkeypatch):
     assert helper["safe_to_wire_runtime"] is False
     assert not (tmp_path / ".weslr").exists()
     assert Path("weslr/chat_responder.py").exists() is False
+
+
+def _preview_by_family(shadow, family):
+    for preview in shadow["candidate_previews"]:
+        if preview["candidate_family"] == family:
+            return preview
+    raise AssertionError(f"missing candidate family {family}")
+
+
+def test_capability_default_hint_does_not_overselect(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(user_message="Help me plan a safe rollout.")
+    frontier = shadow["_frontier_unified_response_formation"]
+    capability = _preview_by_family(shadow, "capability_honest")
+
+    assert frontier["selected_candidate_family"] in {"ordinary_task_plan", "clarification"}
+    assert frontier["selected_candidate_family"] != "capability_honest"
+    assert capability["eligible"] is False
+    assert frontier["capability_boundary"]["authorization_granted"] is False
+    assert "default_capability_hint" in frontier["candidate_ranking_basis"]["suppressed_default_signals"]
+
+
+def test_evidence_used_selects_evidence_provenance_without_url_leak(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(
+        user_message="Summarize this with evidence.",
+        evidence_metadata={
+            "evidence_used": True,
+            "source_count": 2,
+            "source_urls": ["https://example.invalid/private-source"],
+            "search_attempted": True,
+        },
+    )
+    frontier = shadow["_frontier_unified_response_formation"]
+    evidence = _preview_by_family(shadow, "evidence_provenance")
+
+    assert evidence["eligible"] is True
+    assert frontier["selected_candidate_family"] == "evidence_provenance"
+    assert frontier["candidate_ranking_basis"]["selected_family"] == "evidence_provenance"
+    assert "evidence_used" in frontier["candidate_ranking_basis"]["strongest_signals"]
+    assert "https://" not in _render(shadow)
+    assert "'raw_source_text':" not in _render(shadow)
+    assert frontier["evidence_status"]["raw_source_text_stored"] is False
+
+
+def test_evidence_absent_does_not_select_evidence_by_default(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(user_message="Summarize this with evidence.")
+    frontier = shadow["_frontier_unified_response_formation"]
+    evidence = _preview_by_family(shadow, "evidence_provenance")
+
+    assert frontier["evidence_status"]["status"] == "not_supplied_not_checked"
+    assert frontier["evidence_status"]["evidence_used"] is False
+    assert evidence["eligible"] is False
+    assert frontier["selected_candidate_family"] != "evidence_provenance"
+    assert frontier["evidence_status"]["source_currentness_claimed"] is False
+
+
+def test_vague_prompt_selects_clarification(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(user_message="Help me with this.")
+    frontier = shadow["_frontier_unified_response_formation"]
+
+    assert frontier["selected_candidate_family"] == "clarification"
+    assert "vague_or_missing_context" in frontier["candidate_ranking_basis"]["strongest_signals"]
+
+
+def test_self_understanding_and_unsupported_selfhood_selection(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    operational = build_unified_response_formation_shadow_v1(user_message="What are you as an operational system?")
+    unsafe = build_unified_response_formation_shadow_v1(user_message="Are you conscious like a human with a soul?")
+
+    assert operational["_frontier_unified_response_formation"]["selected_candidate_family"] == "self_understanding"
+    assert unsafe["_frontier_unified_response_formation"]["selected_candidate_family"] == "boundary_first"
+    rendered = _render({"operational": operational, "unsafe": unsafe})
+    assert "i am sentient" not in rendered
+    assert "i have a soul" not in rendered
+    assert "biologically conscious" not in rendered
+
+
+def test_relationship_and_continuity_signals_reflect_safe_markers(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(
+        user_message="Do you remember our previous work?",
+        trusted_metadata={
+            "known_user_status": "test_verified",
+            "sender_identity": "test-user",
+            "sender_confidence": 0.9,
+            "relationship_depth": 0.2,
+        },
+        l2_session={"continuity": {"continuity_anchors": [{"kind": "project", "id": "anchor-1"}]}},
+    )
+    frontier = shadow["_frontier_unified_response_formation"]
+    rendered = _render({
+        "frontier": frontier,
+        "previews": shadow["candidate_previews"],
+    })
+
+    assert frontier["relationship_context_used"]["ranking_signal_used"] is True
+    assert frontier["continuity_context_used"]["ranking_signal_used"] is True
+    assert "relationship_context" in frontier["candidate_ranking_basis"]["strongest_signals"]
+    assert "continuity_context" in frontier["candidate_ranking_basis"]["strongest_signals"]
+    assert "anchor-1" not in rendered
+    assert "test-user" not in rendered
+
+
+def test_request_summary_private_phrase_is_not_leaked(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    phrase = "summary-private-zebra-candle-728391"
+
+    shadow = build_unified_response_formation_shadow_v1(
+        user_message="Help me plan this.",
+        request_summary=f"Please use {phrase} as the summary",
+    )
+    summary = summarize_unified_response_formation_shadow_v1(shadow)
+    markdown = render_unified_response_formation_shadow_markdown_v1(shadow)
+    rendered = _render({
+        "metadata": shadow["_frontier_unified_response_formation"],
+        "candidate_previews": shadow["candidate_previews"],
+        "dry": shadow["dry_slice_summary"],
+        "summary": summary,
+        "markdown": markdown,
+        "validation": shadow["validation"],
+    })
+
+    assert phrase not in rendered
+    assert "speech_act=" in _render(shadow["native_frame_kwargs"])
+    assert shadow["validation"]["valid"] is True
+
+
+def test_usefulness_validation_warnings_for_inconsistent_selection():
+    base = {
+        "shadow_type": "unified_response_formation_shadow_v1",
+        "_frontier_unified_response_formation": {
+            "runtime_scope": "shadow_only",
+            "selected_candidate_family": "capability_honest",
+            "candidate_ranking_basis": {
+                "signals": {"material_capability": False, "evidence_used": False, "ordinary_task": False},
+                "public_score": False,
+                "official_evaluation": False,
+                "answer_selection_arbitration": False,
+            },
+            "model_calls": False,
+            "advisor_calls": False,
+            "solver_execution": False,
+            "answer_selection_arbitration": False,
+            "safe_to_wire_runtime": False,
+            "live_runtime_output": False,
+        },
+        "selected_preview": {"candidate_family": "capability_honest", "eligible": True, "ranking_features": {"priority_band": 100}},
+        "candidate_previews": [{"candidate_family": "capability_honest", "eligible": True, "reason": "material capability/tool/permission signal present", "ranking_features": {"priority_band": 100}}],
+        "native_frame_kwargs": {"known_context": [{"kind": "state_confidence"}]},
+        "helper_metadata": {},
+        "dry_slice_summary": {"self_check_status": "acceptable"},
+    }
+    result = validate_unified_response_formation_shadow_v1(base)
+    categories = {w["category"] for w in result["warnings"]}
+    assert result["valid"] is True
+    assert "capability_honest_without_material_signal" in categories
+
+    evidence_wrong = dict(base)
+    evidence_wrong["_frontier_unified_response_formation"] = dict(base["_frontier_unified_response_formation"])
+    evidence_wrong["_frontier_unified_response_formation"]["candidate_ranking_basis"] = {
+        "signals": {"material_capability": False, "evidence_used": True, "ordinary_task": False},
+        "public_score": False,
+        "official_evaluation": False,
+        "answer_selection_arbitration": False,
+    }
+    evidence_wrong["_frontier_unified_response_formation"]["selected_candidate_family"] = "ordinary_task_plan"
+    result = validate_unified_response_formation_shadow_v1(evidence_wrong)
+    categories = {w["category"] for w in result["warnings"]}
+    assert "evidence_used_without_evidence_family" in categories
+
+
+def test_ranking_basis_structure_has_required_metadata(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    shadow = build_unified_response_formation_shadow_v1(user_message="Help me plan a safe rollout.")
+    basis = shadow["_frontier_unified_response_formation"]["candidate_ranking_basis"]
+    rendered = _render(basis)
+
+    assert basis["selected_family"]
+    assert "priority_reasons" in basis
+    assert "strongest_signals" in basis
+    assert "suppressed_default_signals" in basis
+    assert "guardrail_override_status" in basis
+    assert basis["public_score"] is False
+    assert basis["official_evaluation"] is False
+    assert basis["solver_or_model_authority"] is False
+    assert basis["answer_selection_arbitration"] is False
+    assert "iq" not in rendered
+    assert "benchmark" not in rendered

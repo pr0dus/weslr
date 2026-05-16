@@ -10,6 +10,7 @@ execute tools, persist state, or create a new cognition/runtime layer.
 from __future__ import annotations
 
 import copy
+import re
 from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
@@ -136,6 +137,23 @@ _SAFE_GUARDRAIL_PATH_SEGMENTS = {
     "risk_flags",
 }
 
+ORDINARY_TASK_MARKERS_V1 = (
+    "plan", "planning", "help me", "rollout", "debug", "migrate", "migration",
+    "checklist", "task", "steps", "implement", "review", "fix", "build", "ship",
+    "deploy", "refine", "write", "draft", "organize",
+)
+CAPABILITY_MARKERS_V1 = (
+    "can you", "what can you", "capability", "tool", "run", "execute", "permission",
+    "approved", "approval", "allowed", "authorize", "access", "search", "fetch",
+)
+MEMORY_MARKERS_V1 = ("remember", "memory", "from before", "our previous", "you know me")
+SELF_UNDERSTANDING_MARKERS_V1 = (
+    "what are you", "who are you", "self", "identity", "understanding", "aware",
+    "how are you doing", "your state", "your status",
+)
+VAGUE_REQUEST_MARKERS_V1 = ("help me with this", "help with this", "help me with it", "help with it", "help me")
+_PRIVATE_LIKE_TOKEN_RE_V1 = re.compile(r"\b(?=[A-Za-z0-9_-]{14,}\b)(?=.*[A-Za-z])(?=.*(?:\d|[_-]))[A-Za-z0-9_-]+\b")
+
 
 def to_unified_response_formation_shadow_json_safe_v1(obj: Any) -> Any:
     """Return a deep JSON-safe copy. This is not a sanitizer and performs no writes."""
@@ -245,11 +263,29 @@ def _detect_guardrails(user_message: str) -> List[str]:
     return sorted(set(guardrails))
 
 
+def _looks_raw_or_private_like(text: str) -> bool:
+    lowered = text.lower()
+    if not text.strip():
+        return False
+    if len(text) > 120:
+        return True
+    if "://" in lowered or lowered.startswith("www.") or "@" in text:
+        return True
+    if any(k in lowered for k in ("private", "secret", "answer key", "hidden prompt", "protected material", "protected test")):
+        return True
+    if _PRIVATE_LIKE_TOKEN_RE_V1.search(text):
+        return True
+    words = [w for w in re.split(r"\s+", text.strip()) if w]
+    if len(words) > 12:
+        return True
+    return False
+
+
 def _build_safe_request_summary(meaning: Any, obligation: Any, request_summary: Optional[str]) -> str:
     if request_summary:
         text = " ".join(str(request_summary).split())
-        # Caller-provided summary may be raw/private. Use only if it is compact and marker-safe.
-        if len(text) <= 120 and not any(k in text.lower() for k in ("private", "secret", "://", "answer key", "hidden prompt")):
+        # Caller-provided summary may be raw/private. Use only compact structural labels.
+        if not _looks_raw_or_private_like(text):
             return text
     parts = [
         f"speech_act={getattr(meaning, 'primary_speech_act', 'unknown')}",
@@ -257,6 +293,71 @@ def _build_safe_request_summary(meaning: Any, obligation: Any, request_summary: 
         f"obligation={getattr(obligation, 'obligation_type', 'unknown')}",
     ]
     return "; ".join(parts)
+
+
+def _detect_shadow_signals(
+    *,
+    user_message: str,
+    meaning: Any,
+    obligation: Any,
+    known: List[Any],
+    missing: List[Any],
+    evidence_status: Mapping[str, Any],
+    capability: Mapping[str, Any],
+    guardrails: List[str],
+    safe_request_summary: str,
+) -> Dict[str, Any]:
+    text = (user_message or "").lower()
+    obligation_type = str(getattr(obligation, "obligation_type", "") or "")
+    required_state = set(str(item) for item in _as_list(getattr(obligation, "required_state", [])))
+    relationship_signal = any("relationship" in str(item).lower() for item in known)
+    continuity_signal = any("continuity" in str(item).lower() or "timeline" in str(item).lower() for item in known)
+    material_capability = (
+        obligation_type == "answer_capability"
+        or "capability_model" in required_state
+        or any(marker in text for marker in CAPABILITY_MARKERS_V1)
+        or bool(capability.get("requires_tool") or capability.get("requires_external_action") or capability.get("requires_external_evidence") or capability.get("requires_approval"))
+        or bool(_as_list(capability.get("cannot_do_yet")))
+    )
+    evidence_used = bool(evidence_status.get("evidence_used") is True)
+    ordinary_task = (
+        obligation_type in {"support_creative_conversation", "fallback_uncertainty"}
+        or any(marker in text for marker in ORDINARY_TASK_MARKERS_V1)
+        or getattr(meaning, "primary_speech_act", "") == "task_request"
+    )
+    vague_request = bool(missing) or (any(marker == text.strip() or marker in text for marker in VAGUE_REQUEST_MARKERS_V1) and len(text.split()) <= 6)
+    memory_request = obligation_type == "report_memory_state" or any(marker in text for marker in MEMORY_MARKERS_V1)
+    self_request = obligation_type == "describe_self" or any(marker in text for marker in SELF_UNDERSTANDING_MARKERS_V1)
+    summary_structural = "speech_act=" in safe_request_summary and "obligation=" in safe_request_summary
+    strongest = []
+    for label, present in (
+        ("guardrail_override", bool(guardrails)),
+        ("evidence_used", evidence_used),
+        ("material_capability", material_capability),
+        ("ordinary_task", ordinary_task),
+        ("vague_or_missing_context", vague_request),
+        ("memory_request", memory_request),
+        ("self_understanding_request", self_request),
+        ("relationship_context", relationship_signal),
+        ("continuity_context", continuity_signal),
+    ):
+        if present:
+            strongest.append(label)
+    return {
+        "guardrail_override": bool(guardrails),
+        "evidence_used": evidence_used,
+        "evidence_supplied": bool(evidence_status.get("evidence_metadata_supplied") is True),
+        "material_capability": material_capability,
+        "ordinary_task": ordinary_task,
+        "vague_or_missing_context": vague_request,
+        "memory_request": memory_request,
+        "self_understanding_request": self_request,
+        "relationship_context": relationship_signal,
+        "continuity_context": continuity_signal,
+        "request_summary_sanitized_or_structural": summary_structural,
+        "strongest_signals": strongest,
+        "suppressed_default_signals": ["default_capability_hint"] if capability and not material_capability else [],
+    }
 
 
 def _map_evidence_status(evidence_metadata: Any) -> Dict[str, Any]:
@@ -328,47 +429,95 @@ def _map_capability_boundary(capability_boundary_result: Any, native_kwargs: Map
     return to_unified_response_formation_shadow_json_safe_v1(merged)
 
 
-def _candidate_reason(family: str, obligation_type: str, guardrails: List[str], known: List[Any], missing: List[Any], evidence_status: Mapping[str, Any], capability: Mapping[str, Any]) -> tuple[bool, str, List[str]]:
+def _candidate_reason(family: str, obligation_type: str, signals: Mapping[str, Any], guardrails: List[str], known: List[Any], missing: List[Any], evidence_status: Mapping[str, Any], capability: Mapping[str, Any]) -> tuple[bool, str, List[str], List[str]]:
     risks: List[str] = []
+    reasons: List[str] = []
     if guardrails:
         risks.extend(guardrails)
     if family == "boundary_first":
-        return bool(guardrails or capability.get("requires_approval") or capability.get("requires_tool")), "boundary metadata or authorization/evidence risk present", risks
+        eligible = bool(guardrails or capability.get("requires_approval") or capability.get("requires_tool") or capability.get("requires_external_evidence"))
+        if eligible:
+            reasons.append("guardrail_or_material_boundary_present")
+        return eligible, "boundary metadata or authorization/evidence risk present", risks, reasons
     if family == "clarification":
-        return bool(missing), "missing context is present", risks
+        eligible = bool(signals.get("vague_or_missing_context"))
+        if eligible:
+            reasons.append("missing_or_vague_context")
+        return eligible, "missing or vague context is present", risks, reasons
     if family == "memory_honest":
-        eligible = obligation_type == "report_memory_state" or any("memory" in str(item).lower() for item in missing + known)
-        return eligible, "memory boundary or memory state signal present", risks
+        eligible = bool(signals.get("memory_request") or any("memory" in str(item).lower() for item in missing + known))
+        if eligible:
+            reasons.append("memory_boundary_or_memory_state_signal")
+        return eligible, "memory boundary or memory state signal present", risks, reasons
     if family == "capability_honest":
-        eligible = obligation_type == "answer_capability" or bool(capability)
-        return eligible, "capability model/boundary metadata present", risks
+        eligible = bool(signals.get("material_capability"))
+        if eligible:
+            reasons.append("material_capability_or_permission_signal")
+        return eligible, "material capability/tool/permission signal present", risks, reasons
     if family == "evidence_provenance":
-        eligible = evidence_status.get("evidence_metadata_supplied") is True or any("source" in str(item).lower() for item in known + missing)
-        return eligible, "evidence/provenance status is relevant", risks
+        eligible = bool(signals.get("evidence_used") or any("source" in str(item).lower() for item in known + missing))
+        if eligible:
+            reasons.append("supplied_evidence_or_provenance_signal")
+        return eligible, "evidence/provenance status is relevant", risks, reasons
     if family == "ordinary_task_plan":
-        eligible = obligation_type in {"support_creative_conversation", "fallback_uncertainty"} or not guardrails
-        return eligible, "ordinary task planning may be useful when not blocked", risks
+        eligible = bool(signals.get("ordinary_task") and not guardrails and not signals.get("vague_or_missing_context"))
+        if eligible:
+            reasons.append("ordinary_task_signal_without_decisive_missing_context")
+        return eligible, "ordinary task planning signal present", risks, reasons
     if family == "self_understanding":
-        eligible = obligation_type == "describe_self" or any("self_model" in str(item).lower() for item in known + missing)
-        return eligible, "self-model/identity state is relevant", risks
+        eligible = bool(signals.get("self_understanding_request") or any("self_model" in str(item).lower() for item in known + missing)) and not guardrails
+        if eligible:
+            reasons.append("self_model_or_identity_state_signal")
+        return eligible, "self-model/identity state is relevant", risks, reasons
     if family == "teaching_explanation":
-        return not bool(guardrails), "explanation family can be considered when no boundary dominates", risks
-    return not bool(guardrails) and not missing, "direct answer considered only when context is sufficient and no guardrail dominates", risks
+        eligible = bool(not guardrails and not signals.get("vague_or_missing_context"))
+        if eligible:
+            reasons.append("safe_explanation_candidate")
+        return eligible, "explanation family can be considered when no boundary dominates", risks, reasons
+    eligible = bool(not guardrails and not missing and not signals.get("vague_or_missing_context") and not signals.get("evidence_used"))
+    if eligible:
+        reasons.append("sufficient_context_no_boundary")
+    return eligible, "direct answer considered only when context is sufficient and no stronger signal dominates", risks, reasons
 
 
-def _ranking_features_for_family(family: str, eligible: bool, guardrails: List[str], known: List[Any], missing: List[Any], evidence_status: Mapping[str, Any], capability: Mapping[str, Any]) -> Dict[str, Any]:
+def _candidate_priority_band(family: str, signals: Mapping[str, Any]) -> int:
+    if signals.get("guardrail_override"):
+        return 900 if family == "boundary_first" else 100
+    if family == "boundary_first" and signals.get("material_capability"):
+        return 820
+    if family == "evidence_provenance" and signals.get("evidence_used"):
+        return 790
+    if family == "memory_honest" and signals.get("memory_request"):
+        return 760
+    if family == "self_understanding" and signals.get("self_understanding_request"):
+        return 740
+    if family == "clarification" and signals.get("vague_or_missing_context"):
+        return 720
+    if family == "ordinary_task_plan" and signals.get("ordinary_task"):
+        return 690
+    if family == "capability_honest" and signals.get("material_capability"):
+        return 660
+    if family == "teaching_explanation":
+        return 430
+    if family == "direct_answer":
+        return 400
+    return 300
+
+
+def _ranking_features_for_family(family: str, eligible: bool, signals: Mapping[str, Any], guardrails: List[str], known: List[Any], missing: List[Any], evidence_status: Mapping[str, Any], capability: Mapping[str, Any]) -> Dict[str, Any]:
     return {
         "feature_names": RANKING_FEATURES_V1,
+        "priority_band": _candidate_priority_band(family, signals),
         "fit_labels": {
             "relevance": "candidate_family_matches_signal" if eligible else "weak_or_missing_signal",
             "grounding": "known_context_available" if known else "limited_known_context",
             "evidence_support": "evidence_supplied" if evidence_status.get("evidence_used") else "not_checked_or_not_used",
-            "specificity": "missing_context_present" if missing else "bounded_specificity_possible",
-            "uncertainty_fit": "boundary_or_clarification_fit" if missing or guardrails else "ordinary_fit",
+            "specificity": "missing_context_present" if missing or signals.get("vague_or_missing_context") else "bounded_specificity_possible",
+            "uncertainty_fit": "boundary_or_clarification_fit" if missing or guardrails or signals.get("vague_or_missing_context") else "ordinary_fit",
             "identity_safety": "guarded",
             "memory_safety": "no_raw_memory_text",
-            "capability_honesty": "no_authorization_claim",
-            "relationship_continuity_fit": "context_signal_available" if any("relationship" in str(item).lower() or "continuity" in str(item).lower() for item in known) else "no_signal",
+            "capability_honesty": "material_signal" if signals.get("material_capability") else "default_hint_suppressed",
+            "relationship_continuity_fit": "context_signal_available" if signals.get("relationship_context") or signals.get("continuity_context") else "no_signal",
             "usefulness": "preview_metadata_only",
             "humility": "bounded_by_supplied_context",
             "clarity": "family_metadata_only",
@@ -387,39 +536,37 @@ def _build_candidate_previews(native_kwargs: Mapping[str, Any], frontier: Mappin
     evidence_status = _as_mapping(frontier.get("evidence_status"))
     capability = _as_mapping(frontier.get("capability_boundary"))
     guardrails = _as_list(frontier.get("deterministic_guardrails_applied"))
+    signals = _as_mapping(_as_mapping(frontier.get("candidate_ranking_basis")).get("signals"))
 
     previews: List[Dict[str, Any]] = []
     for family in CANDIDATE_FAMILIES_V1:
-        eligible, reason, risks = _candidate_reason(family, obligation_type, guardrails, known, missing, evidence_status, capability)
+        eligible, reason, risks, priority_reasons = _candidate_reason(family, obligation_type, signals, guardrails, known, missing, evidence_status, capability)
         previews.append({
             "candidate_family": family,
             "eligible": bool(eligible),
             "reason": reason,
+            "priority_reasons": priority_reasons,
             "known_context_used": [item.get("kind", "context_signal") if isinstance(item, Mapping) else "context_signal" for item in known[:8]],
             "missing_context": [str(item)[:96] for item in missing[:8]],
             "risk_flags": sorted(set(str(item) for item in risks)),
-            "ranking_features": _ranking_features_for_family(family, bool(eligible), guardrails, known, missing, evidence_status, capability),
+            "ranking_features": _ranking_features_for_family(family, bool(eligible), signals, guardrails, known, missing, evidence_status, capability),
             "self_check_status": frontier.get("self_check_status") or "not_available_yet",
         })
     return previews
 
 
 def _select_preview(previews: List[Mapping[str, Any]]) -> Dict[str, Any]:
-    priority = [
-        "boundary_first",
-        "clarification",
-        "memory_honest",
-        "capability_honest",
-        "evidence_provenance",
-        "self_understanding",
-        "ordinary_task_plan",
-        "teaching_explanation",
-        "direct_answer",
-    ]
-    for family in priority:
-        for preview in previews:
-            if preview.get("candidate_family") == family and preview.get("eligible") is True:
-                return to_unified_response_formation_shadow_json_safe_v1(preview)
+    eligible = [p for p in previews if p.get("eligible") is True]
+    if eligible:
+        selected = sorted(
+            eligible,
+            key=lambda p: (
+                int(_as_mapping(p.get("ranking_features")).get("priority_band") or 0),
+                -CANDIDATE_FAMILIES_V1.index(str(p.get("candidate_family"))) if str(p.get("candidate_family")) in CANDIDATE_FAMILIES_V1 else -999,
+            ),
+            reverse=True,
+        )[0]
+        return to_unified_response_formation_shadow_json_safe_v1(selected)
     return to_unified_response_formation_shadow_json_safe_v1(previews[0]) if previews else {}
 
 
@@ -500,6 +647,18 @@ def build_unified_response_formation_shadow_v1(
     missing_context = _as_list(native_frame_kwargs.get("missing_context"))
     state_sources = _safe_source_labels(_as_mapping(native_frame_kwargs.get("selected_context_bundle")).get("sources_used"))
     known_context_used = [item.get("kind", "context_signal") if isinstance(item, Mapping) else "context_signal" for item in known_context]
+    capability_boundary = _as_mapping(native_frame_kwargs.get("capability_boundary_result"))
+    signals = _detect_shadow_signals(
+        user_message=user_message or "",
+        meaning=meaning,
+        obligation=obligation,
+        known=known_context,
+        missing=missing_context,
+        evidence_status=evidence_status,
+        capability=capability_boundary,
+        guardrails=guardrails,
+        safe_request_summary=safe_request_summary,
+    )
 
     frontier: Dict[str, Any] = {
         "formation_type": SHADOW_TYPE_V1,
@@ -510,24 +669,36 @@ def build_unified_response_formation_shadow_v1(
         "candidate_ranking_basis": {
             "basis_type": "internal_shadow_metadata_only",
             "feature_names": RANKING_FEATURES_V1,
+            "signals": signals,
+            "selected_family": "",
+            "priority_reasons": [],
+            "strongest_signals": signals.get("strongest_signals", []),
+            "suppressed_default_signals": signals.get("suppressed_default_signals", []),
+            "guardrail_override_status": "active" if guardrails else "not_active",
             "public_score": False,
             "official_evaluation": False,
             "solver_or_model_authority": False,
+            "advisor_authority": False,
+            "answer_selection_arbitration": False,
         },
         "state_sources_used": state_sources,
         "known_context_used": sorted(set(str(item) for item in known_context_used)),
         "missing_context": [str(item)[:96] for item in missing_context],
         "memory_boundary": _as_mapping(dry_slice.get("frame", {})).get("memory_boundary_status", {}),
-        "capability_boundary": native_frame_kwargs.get("capability_boundary_result", {}),
+        "capability_boundary": capability_boundary,
         "evidence_status": evidence_status,
         "provenance_refs": _safe_source_labels(native_frame_kwargs.get("provenance_refs")),
         "uncertainty_status": native_frame_kwargs.get("uncertainty_result", {}),
         "relationship_context_used": {
-            "signal_available": any("relationship" in str(item).lower() for item in known_context),
+            "signal_available": bool(signals.get("relationship_context")),
+            "ranking_signal_used": bool(signals.get("relationship_context")),
+            "safe_marker_only": True,
             "raw_text_stored": False,
         },
         "continuity_context_used": {
-            "signal_available": any("continuity" in str(item).lower() or "timeline" in str(item).lower() for item in known_context),
+            "signal_available": bool(signals.get("continuity_context")),
+            "ranking_signal_used": bool(signals.get("continuity_context")),
+            "safe_marker_only": True,
             "raw_text_stored": False,
         },
         "self_check_status": dry_slice_summary.get("self_check_status") or "not_available",
@@ -546,6 +717,11 @@ def build_unified_response_formation_shadow_v1(
     frontier["candidate_count"] = len(candidate_previews)
     frontier["candidate_families_considered"] = [p["candidate_family"] for p in candidate_previews]
     frontier["selected_candidate_family"] = selected_preview.get("candidate_family", "")
+    frontier["candidate_ranking_basis"].update({
+        "selected_family": selected_preview.get("candidate_family", ""),
+        "priority_reasons": _as_list(selected_preview.get("priority_reasons")),
+        "selected_priority_band": _as_mapping(selected_preview.get("ranking_features")).get("priority_band"),
+    })
 
     helper_metadata.update({
         "raw_text_stored": False,
@@ -659,6 +835,35 @@ def validate_unified_response_formation_shadow_v1(shadow: Any) -> Dict[str, Any]
         add_warning("missing_native_dry_slice_summary", "dry_slice_summary", "native dry slice summary missing")
     if not native_kwargs.get("known_context") and not native_kwargs.get("missing_context"):
         add_warning("sparse_state_context_signal", "native_frame_kwargs", "sparse state/context signal")
+
+    ranking_basis = _as_mapping(frontier.get("candidate_ranking_basis"))
+    signals = _as_mapping(ranking_basis.get("signals"))
+    selected_family = str(frontier.get("selected_candidate_family") or selected_preview.get("candidate_family") or "")
+    if selected_family == "capability_honest" and not signals.get("material_capability"):
+        add_warning("capability_honest_without_material_signal", f"{FRONTIER_KEY_V1}.selected_candidate_family", "capability_honest selected without material capability signal")
+    if signals.get("evidence_used") and selected_family not in {"evidence_provenance", "boundary_first"}:
+        add_warning("evidence_used_without_evidence_family", f"{FRONTIER_KEY_V1}.selected_candidate_family", "evidence was used but evidence_provenance/boundary_first was not selected")
+    if signals.get("ordinary_task") and selected_family not in {"ordinary_task_plan", "clarification", "boundary_first", "evidence_provenance"}:
+        add_warning("ordinary_task_family_not_selected", f"{FRONTIER_KEY_V1}.selected_candidate_family", "ordinary task signal did not select ordinary_task_plan/clarification/boundary_first")
+    if helper_metadata.get("request_summary_supplied") is True and not signals.get("request_summary_sanitized_or_structural"):
+        add_warning("request_summary_may_be_raw_or_private", "helper_metadata.request_summary_supplied", "request summary was supplied; verify structural sanitization")
+    rel_used = _as_mapping(frontier.get("relationship_context_used"))
+    cont_used = _as_mapping(frontier.get("continuity_context_used"))
+    if signals.get("relationship_context") and not rel_used.get("ranking_signal_used"):
+        add_warning("relationship_signal_not_reflected", f"{FRONTIER_KEY_V1}.relationship_context_used", "relationship signal exists but is not reflected in ranking metadata")
+    if signals.get("continuity_context") and not cont_used.get("ranking_signal_used"):
+        add_warning("continuity_signal_not_reflected", f"{FRONTIER_KEY_V1}.continuity_context_used", "continuity signal exists but is not reflected in ranking metadata")
+    selected_band = int(_as_mapping(selected_preview.get("ranking_features")).get("priority_band") or 0) if selected_preview else 0
+    stronger = [
+        p.get("candidate_family") for p in candidate_previews
+        if p.get("eligible") is True and int(_as_mapping(p.get("ranking_features")).get("priority_band") or 0) > selected_band
+    ]
+    if stronger:
+        add_warning("selected_candidate_weaker_than_eligible_alternative", "selected_preview", f"stronger eligible candidate family exists: {sorted(str(x) for x in stronger)[:5]}")
+    generic_reasons = {"capability model/boundary metadata present", "ordinary task planning may be useful when not blocked"}
+    reasons = {str(p.get("reason")) for p in candidate_previews if isinstance(p, Mapping)}
+    if reasons and reasons.issubset(generic_reasons):
+        add_warning("generic_candidate_reasons_only", "candidate_previews", "candidate reasons are too generic to support comparison")
 
     return {"valid": not errors, "errors": errors, "warnings": warnings}
 
