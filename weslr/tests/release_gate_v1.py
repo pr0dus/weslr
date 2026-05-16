@@ -133,6 +133,29 @@ _internal_corpus_advisor_review_adapter_helper_required_markers = {
     "not_certification_ready",
 }
 
+_evidence_bridge_frontier_metadata_adapter_helper_canon_doc = "docs/WESLR_EVIDENCE_BRIDGE_FRONTIER_METADATA_ADAPTER_HELPER_CANON_V1.md"
+_evidence_bridge_frontier_metadata_adapter_helper_required_markers = {
+    "APPROVE_WESLR_EVIDENCE_BRIDGE_FRONTIER_METADATA_ADAPTER_HELPER_CANON_V1_ONLY",
+    "evidence_bridge_frontier_metadata_adapter_helpers",
+    "helper_ready",
+    "metadata_alignment_ready",
+    "provenance_metadata_ready",
+    "non_executing",
+    "non_runtime_wired",
+    "non_searching",
+    "non_authoritative",
+    "redacted_count_only",
+    "not_runtime_wired",
+    "not_search_ready",
+    "not_answer_authority_ready",
+    "not_source_registry_ready",
+    "not_certification_ready",
+    "model_calls = false",
+    "advisor_call_allowed = false",
+    "safe_to_wire_runtime = false",
+    "registry_writes = false",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -211,6 +234,10 @@ def _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_internal_corpus_advisor_review_adapter_helper_canon_doc, _internal_corpus_advisor_review_adapter_helper_required_markers)
 
 
+def _evidence_bridge_frontier_metadata_adapter_helper_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_evidence_bridge_frontier_metadata_adapter_helper_canon_doc, _evidence_bridge_frontier_metadata_adapter_helper_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -237,6 +264,8 @@ def _check_git_scope():
         the approved internal corpus to advisor review adapter design markers are present
       - docs/WESLR_INTERNAL_CORPUS_ADVISOR_REVIEW_ADAPTER_HELPER_CANON_V1.md only when
         the approved internal corpus advisor review adapter helper canon markers are present
+      - docs/WESLR_EVIDENCE_BRIDGE_FRONTIER_METADATA_ADAPTER_HELPER_CANON_V1.md only when
+        the approved evidence bridge Frontier metadata adapter helper canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -261,6 +290,7 @@ def _check_git_scope():
     internal_evaluation_corpus_helper_doc_valid = _internal_evaluation_corpus_helper_canon_doc_is_valid()
     internal_corpus_to_advisor_review_adapter_doc_valid = _internal_corpus_to_advisor_review_adapter_design_doc_is_valid()
     internal_corpus_advisor_review_adapter_helper_doc_valid = _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid()
+    evidence_bridge_frontier_metadata_adapter_helper_doc_valid = _evidence_bridge_frontier_metadata_adapter_helper_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -308,6 +338,10 @@ def _check_git_scope():
         if path == _internal_corpus_advisor_review_adapter_helper_canon_doc:
             allowed = internal_corpus_advisor_review_adapter_helper_doc_valid
             if not internal_corpus_advisor_review_adapter_helper_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
+        if path == _evidence_bridge_frontier_metadata_adapter_helper_canon_doc:
+            allowed = evidence_bridge_frontier_metadata_adapter_helper_doc_valid
+            if not evidence_bridge_frontier_metadata_adapter_helper_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
