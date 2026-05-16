@@ -136,3 +136,39 @@ def test_direct_interpretation_responder_passes_materials_suite():
     assert result.suite_id == "weslr_materials_claim_boundaries"
     assert result.passed is True
     assert len(result.turn_scores) == 5
+
+
+def test_interpretation_import_does_not_require_pubmed_requests():
+    import weslr.search_adapters.pubmed_adapter
+    import weslr.deterministic_handlers
+    from weslr.evals.conversation_eval import interpretation_responder as imported_responder
+
+    assert weslr.search_adapters.pubmed_adapter.search_pubmed
+    assert weslr.deterministic_handlers.HANDLER_REGISTRY
+    assert imported_responder is interpretation_responder
+
+
+def test_pubmed_search_without_requests_has_clear_optional_dependency_error(monkeypatch):
+    import builtins
+    import weslr.search_adapters.pubmed_adapter as pubmed_adapter
+
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "requests":
+            raise ModuleNotFoundError("No module named 'requests'")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(pubmed_adapter, "_rate_limit_sleep", lambda: None)
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    try:
+        pubmed_adapter.esearch("synthetic query", retmax=1)
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected RuntimeError when optional requests dependency is absent")
+
+    assert "optional 'search' dependencies" in message
+    assert "pip install -e .[search]" in message
+

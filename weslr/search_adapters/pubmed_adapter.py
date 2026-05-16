@@ -5,7 +5,6 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
-import requests
 
 # Rate limit: 3 req/s → sleep 0.34s between requests
 _RATE_LIMIT_DELAY = 0.34
@@ -15,9 +14,22 @@ def _rate_limit_sleep():
     time.sleep(_RATE_LIMIT_DELAY)
 
 
+def _get_requests():
+    """Return requests when optional search dependencies are installed."""
+    try:
+        import requests
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "PubMed search requires the optional 'search' dependencies. "
+            "Install with: pip install -e .[search]"
+        ) from exc
+    return requests
+
+
 def esearch(query: str, retmax: int = 20) -> List[str]:
     """Return list of PubMed IDs (PMIDs) for the query."""
     _rate_limit_sleep()
+    requests = _get_requests()
     base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
         "db": "pubmed",
@@ -41,6 +53,7 @@ def efetch(pmids: List[str]) -> List[Dict[str, Any]]:
     if not pmids:
         return []
     _rate_limit_sleep()
+    requests = _get_requests()
     import xml.etree.ElementTree as ET
     base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
