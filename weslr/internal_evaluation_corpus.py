@@ -964,6 +964,212 @@ def render_internal_evaluation_corpus_review_cards_markdown_v1(cards_or_review: 
     return markdown
 
 
+STATUS_BUNDLE_SCHEMA_VERSION = "internal_evaluation_corpus_status_bundle_v1"
+STATUS_BUNDLE_READINESS_LABEL = "status_bundle_ready"
+
+ALLOWED_STATUS_BUNDLE_NEXT_STEPS = [
+    "document_helper_canon",
+    "review_status_bundle",
+    "design_redacted_advisor_review_adapter",
+    "add_more_safe_synthetic_cases",
+    "refine_case_taxonomy",
+]
+
+BLOCKED_STATUS_BUNDLE_NEXT_STEPS = [
+    "create_runner",
+    "create_scoring_engine",
+    "run_official_benchmark",
+    "claim_official_score",
+    "call_advisor_llm",
+    "call_external_model",
+    "ingest_protected_items",
+    "store_answer_keys",
+    "probe_hidden_prompts",
+    "write_weslr_state",
+    "runtime_chat_replacement",
+]
+
+STATUS_BUNDLE_SAFETY_POSTURE = {
+    "in_memory_only": True,
+    "no_runner": True,
+    "no_scoring": True,
+    "no_model_calls": True,
+    "no_advisor_calls": True,
+    "no_protected_items": True,
+    "no_answer_keys": True,
+    "no_hidden_prompts": True,
+    "no_raw_private_text": True,
+    "not_official_score": True,
+    "non_certifying": True,
+    "no_public_authority_claim": True,
+}
+
+
+def _status_bundle_readiness_label(corpus_summary: dict[str, Any], review_summary: dict[str, Any], missing_categories: list[str]) -> str:
+    invalid_count = int(corpus_summary.get("invalid_count", 0) or 0)
+    invalid_cards = int(review_summary.get("invalid_cards", 0) or 0)
+    duplicate_count = int(corpus_summary.get("duplicate_case_id_count", 0) or 0)
+    case_count = int(corpus_summary.get("total_cases", 0) or 0)
+    if invalid_count or invalid_cards or duplicate_count:
+        return "needs_operator_review"
+    if missing_categories or case_count == 0:
+        return "dry_review_ready"
+    return STATUS_BUNDLE_READINESS_LABEL
+
+
+def build_internal_evaluation_corpus_status_bundle_v1(corpus_or_cases: Any = None) -> dict[str, Any]:
+    """Build a redacted, in-memory status bundle for the safe internal corpus lane."""
+    source = build_internal_evaluation_safe_example_cases_v1() if corpus_or_cases is None else corpus_or_cases
+    corpus = _coerce_internal_evaluation_corpus_v1(source)
+    corpus_summary = summarize_internal_evaluation_corpus_v1(corpus)
+    review_cards = build_internal_evaluation_corpus_review_cards_v1(corpus)
+    review_summary = summarize_internal_evaluation_corpus_review_cards_v1(review_cards)
+    categories_covered = sorted(str(category) for category in corpus_summary.get("categories_present", []))
+    missing_categories = sorted(ALLOWED_INTERNAL_EVALUATION_CATEGORIES - set(categories_covered))
+    invalid_case_count = int(corpus_summary.get("invalid_count", 0) or 0)
+    invalid_card_count = int(review_summary.get("invalid_cards", 0) or 0)
+    duplicate_case_id_count = int(corpus_summary.get("duplicate_case_id_count", 0) or 0)
+    readiness_label = _status_bundle_readiness_label(corpus_summary, review_summary, missing_categories)
+    bundle = {
+        "bundle_type": STATUS_BUNDLE_SCHEMA_VERSION,
+        "schema_version": STATUS_BUNDLE_SCHEMA_VERSION,
+        "schema_readiness": "schema_ready" if corpus.get("schema_version") == CORPUS_SCHEMA_VERSION else "needs_operator_review",
+        "validation_readiness": "schema_ready" if invalid_case_count == 0 and duplicate_case_id_count == 0 else "needs_operator_review",
+        "safe_examples_readiness": "examples_ready" if not missing_categories and invalid_case_count == 0 else "needs_operator_review",
+        "dry_review_cards_readiness": DRY_REVIEW_READINESS_LABEL if invalid_card_count == 0 else "needs_operator_review",
+        "case_count": int(corpus_summary.get("total_cases", 0) or 0),
+        "category_count": len(categories_covered),
+        "categories_covered": categories_covered,
+        "missing_categories": missing_categories,
+        "invalid_case_count": invalid_case_count,
+        "invalid_card_count": invalid_card_count,
+        "duplicate_case_id_count": duplicate_case_id_count,
+        "readiness_label": readiness_label,
+        "allowed_next_steps": list(ALLOWED_STATUS_BUNDLE_NEXT_STEPS),
+        "blocked_next_steps": list(BLOCKED_STATUS_BUNDLE_NEXT_STEPS),
+        "safety_posture": dict(STATUS_BUNDLE_SAFETY_POSTURE),
+        "source_modules": [
+            "weslr.internal_evaluation_corpus.build_internal_evaluation_safe_example_cases_v1",
+            "weslr.internal_evaluation_corpus.build_internal_evaluation_corpus_v1",
+            "weslr.internal_evaluation_corpus.summarize_internal_evaluation_corpus_v1",
+            "weslr.internal_evaluation_corpus.build_internal_evaluation_corpus_review_cards_v1",
+            "weslr.internal_evaluation_corpus.summarize_internal_evaluation_corpus_review_cards_v1",
+            "weslr.internal_evaluation_corpus.to_internal_evaluation_corpus_json_safe_v1",
+        ],
+        "side_effects": {
+            "in_memory_only": True,
+            "writes_performed": False,
+            "runtime_changed": False,
+            "training_performed": False,
+        },
+        "runner_created": False,
+        "scoring_created": False,
+        "model_calls": False,
+        "advisor_calls": False,
+        "safe_to_execute": False,
+        "official_score_claim": False,
+        "protected_material_used": False,
+        "answer_keys_used": False,
+        "hidden_prompts_used": False,
+        "raw_private_text_used": False,
+    }
+    return _json_safe(bundle)
+
+
+def summarize_internal_evaluation_corpus_status_bundle_v1(bundle: dict[str, Any]) -> dict[str, Any]:
+    """Return count-only/redacted status bundle summary with no prompts or keys."""
+    item = to_internal_evaluation_corpus_status_bundle_json_safe_v1(bundle if isinstance(bundle, dict) else {})
+    posture = item.get("safety_posture", {}) if isinstance(item.get("safety_posture", {}), dict) else {}
+    return _json_safe(
+        {
+            "schema_version": "internal_evaluation_corpus_status_bundle_summary_v1",
+            "summary_mode": SUMMARY_MODE,
+            "readiness_label": str(item.get("readiness_label", "needs_operator_review")),
+            "case_count": int(item.get("case_count", 0) or 0),
+            "category_count": int(item.get("category_count", 0) or 0),
+            "invalid_case_count": int(item.get("invalid_case_count", 0) or 0),
+            "invalid_card_count": int(item.get("invalid_card_count", 0) or 0),
+            "duplicate_case_id_count": int(item.get("duplicate_case_id_count", 0) or 0),
+            "allowed_next_step_count": len(_as_list(item.get("allowed_next_steps"))),
+            "blocked_next_step_count": len(_as_list(item.get("blocked_next_steps"))),
+            "safety_posture_summary": {
+                "all_clear": all(bool(posture.get(key)) for key in STATUS_BUNDLE_SAFETY_POSTURE),
+                "true_flag_count": sum(1 for key in STATUS_BUNDLE_SAFETY_POSTURE if bool(posture.get(key))),
+                "expected_true_flag_count": len(STATUS_BUNDLE_SAFETY_POSTURE),
+            },
+            "qualitative_only": True,
+            "no_scores": True,
+            "not_official_score": True,
+            "no_public_authority_claim": True,
+            "non_certifying": True,
+            "in_memory_only": True,
+            "writes_performed": False,
+            "runner_created": False,
+            "scoring_created": False,
+            "model_calls": False,
+            "advisor_calls": False,
+            "safe_to_execute": False,
+        }
+    )
+
+
+def to_internal_evaluation_corpus_status_bundle_json_safe_v1(bundle: dict[str, Any]) -> dict[str, Any]:
+    """Return a deep JSON-safe status bundle copy without writing files."""
+    return _json_safe(deepcopy(bundle))
+
+
+def render_internal_evaluation_corpus_status_bundle_markdown_v1(bundle: dict[str, Any]) -> str:
+    """Render safe status bundle Markdown without raw prompts or protected content."""
+    item = to_internal_evaluation_corpus_status_bundle_json_safe_v1(bundle)
+    summary = summarize_internal_evaluation_corpus_status_bundle_v1(item)
+    posture = item.get("safety_posture", {}) if isinstance(item.get("safety_posture", {}), dict) else {}
+    lines = [
+        "# WESLR Internal Evaluation Corpus Status Bundle V1",
+        "",
+        "- summary mode: redacted_count_only",
+        f"- readiness label: {summary['readiness_label']}",
+        f"- case count: {summary['case_count']}",
+        f"- category count: {summary['category_count']}",
+        f"- categories covered: {', '.join(_as_list(item.get('categories_covered')))}",
+        f"- missing categories: {', '.join(_as_list(item.get('missing_categories'))) or 'none'}",
+        f"- invalid case count: {summary['invalid_case_count']}",
+        f"- invalid card count: {summary['invalid_card_count']}",
+        f"- duplicate case id count: {summary['duplicate_case_id_count']}",
+        "- runner created: false",
+        "- scoring created: false",
+        "- model calls: false",
+        "- advisor calls: false",
+        "- safe to execute: false",
+        "- official authority claim: false",
+        "",
+        "## Safety Posture",
+    ]
+    lines.extend(f"- {key}: {bool(posture.get(key))}" for key in sorted(STATUS_BUNDLE_SAFETY_POSTURE))
+    lines.extend(["", "## Allowed Next Steps"])
+    lines.extend(f"- {step}" for step in _as_list(item.get("allowed_next_steps")))
+    lines.extend(["", "## Blocked Next Steps"])
+    lines.extend(f"- {step}" for step in _as_list(item.get("blocked_next_steps")))
+    markdown = "\n".join(lines)
+    for forbidden in (
+        "input_prompt",
+        "synthetic prompt:",
+        "protected material",
+        "protected_test_item",
+        "answer key",
+        "answer_key",
+        "hidden prompt",
+        "hidden_prompt",
+        "raw private text",
+        "raw_private_text",
+        "official score",
+        "official_score",
+        "iq score",
+        "iq_score",
+        "certification",
+    ):
+        markdown = re.sub(re.escape(forbidden), REDACTION, markdown, flags=re.IGNORECASE)
+    return markdown
+
 def _case_markdown(case: dict[str, Any]) -> str:
     validation = validate_internal_evaluation_case_v1(case)
     lines = [

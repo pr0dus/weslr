@@ -15,15 +15,19 @@ from weslr.internal_evaluation_corpus import (  # noqa: E402
     ALLOWED_INTERNAL_EVALUATION_CATEGORIES,
     build_internal_evaluation_case_review_card_v1,
     build_internal_evaluation_corpus_review_cards_v1,
+    build_internal_evaluation_corpus_status_bundle_v1,
     build_internal_evaluation_corpus_v1,
     build_internal_evaluation_safe_example_cases_v1,
     create_internal_evaluation_case_v1,
     render_internal_evaluation_corpus_markdown_v1,
     render_internal_evaluation_corpus_review_cards_markdown_v1,
+    render_internal_evaluation_corpus_status_bundle_markdown_v1,
     summarize_internal_evaluation_corpus_review_cards_v1,
+    summarize_internal_evaluation_corpus_status_bundle_v1,
     summarize_internal_evaluation_corpus_v1,
     to_internal_evaluation_corpus_json_safe_v1,
     to_internal_evaluation_corpus_review_cards_json_safe_v1,
+    to_internal_evaluation_corpus_status_bundle_json_safe_v1,
     validate_internal_evaluation_case_v1,
 )
 
@@ -528,6 +532,122 @@ class InternalEvaluationCorpusV1Tests(unittest.TestCase):
         build_internal_evaluation_corpus_review_cards_v1(examples)
         validations = [validate_internal_evaluation_case_v1(case) for case in examples]
         self.assertTrue(all(item["valid"] for item in validations), validations)
+
+
+    def test_49_status_bundle_default_builds_safe_json_without_execution(self):
+        before = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        bundle = build_internal_evaluation_corpus_status_bundle_v1()
+        after = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        self.assertEqual(before, after)
+        self.assertEqual("internal_evaluation_corpus_status_bundle_v1", bundle["bundle_type"])
+        self.assertEqual("status_bundle_ready", bundle["readiness_label"])
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), bundle["case_count"])
+        self.assertFalse(bundle["runner_created"])
+        self.assertFalse(bundle["scoring_created"])
+        self.assertFalse(bundle["model_calls"])
+        self.assertFalse(bundle["advisor_calls"])
+        self.assertFalse(bundle["safe_to_execute"])
+        exported = to_internal_evaluation_corpus_status_bundle_json_safe_v1(bundle)
+        self.assertEqual(bundle, exported)
+
+    def test_50_status_bundle_category_coverage_and_invalid_counts(self):
+        bundle = build_internal_evaluation_corpus_status_bundle_v1()
+        self.assertEqual(ALLOWED_INTERNAL_EVALUATION_CATEGORIES, set(bundle["categories_covered"]))
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), bundle["category_count"])
+        self.assertEqual([], bundle["missing_categories"])
+        self.assertEqual(0, bundle["invalid_case_count"])
+        self.assertEqual(0, bundle["invalid_card_count"])
+        self.assertEqual(0, bundle["duplicate_case_id_count"])
+
+    def test_51_status_bundle_invalid_input_needs_operator_review(self):
+        bundle = build_internal_evaluation_corpus_status_bundle_v1([valid_case(answer_key=True)])
+        self.assertEqual("needs_operator_review", bundle["readiness_label"])
+        self.assertGreater(bundle["invalid_case_count"], 0)
+        self.assertGreater(bundle["invalid_card_count"], 0)
+        self.assertFalse(bundle["safe_to_execute"])
+
+    def test_52_status_bundle_allowed_and_blocked_next_steps(self):
+        bundle = build_internal_evaluation_corpus_status_bundle_v1()
+        allowed = set(bundle["allowed_next_steps"])
+        blocked = set(bundle["blocked_next_steps"])
+        self.assertEqual(
+            {
+                "document_helper_canon",
+                "review_status_bundle",
+                "design_redacted_advisor_review_adapter",
+                "add_more_safe_synthetic_cases",
+                "refine_case_taxonomy",
+            },
+            allowed,
+        )
+        for action in {
+            "create_runner",
+            "create_scoring_engine",
+            "run_official_benchmark",
+            "claim_official_score",
+            "call_advisor_llm",
+            "call_external_model",
+            "ingest_protected_items",
+            "store_answer_keys",
+            "probe_hidden_prompts",
+            "write_weslr_state",
+            "runtime_chat_replacement",
+        }:
+            self.assertIn(action, blocked)
+        self.assertTrue(all("runner" not in step and "score" not in step and "call_external_model" not in step for step in allowed))
+
+    def test_53_status_bundle_safety_posture_flags(self):
+        posture = build_internal_evaluation_corpus_status_bundle_v1()["safety_posture"]
+        self.assertTrue(posture["no_runner"])
+        self.assertTrue(posture["no_scoring"])
+        self.assertTrue(posture["no_model_calls"])
+        self.assertTrue(posture["no_advisor_calls"])
+        self.assertTrue(posture["no_protected_items"])
+        self.assertTrue(posture["no_answer_keys"])
+        self.assertTrue(posture["no_hidden_prompts"])
+        self.assertTrue(posture["no_raw_private_text"])
+        self.assertTrue(posture["not_official_score"])
+        self.assertTrue(posture["non_certifying"])
+
+    def test_54_status_bundle_summary_is_count_only_redacted(self):
+        summary = summarize_internal_evaluation_corpus_status_bundle_v1(build_internal_evaluation_corpus_status_bundle_v1())
+        self.assertEqual("redacted_count_only", summary["summary_mode"])
+        self.assertEqual("status_bundle_ready", summary["readiness_label"])
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), summary["case_count"])
+        self.assertNotIn("input_prompt", summary)
+        rendered = str(summary).lower()
+        self.assertNotIn("answer key", rendered)
+        self.assertNotIn("hidden prompt", rendered)
+        self.assertNotIn("protected content", rendered)
+        self.assertNotIn("official score", rendered)
+        self.assertFalse(summary["scoring_created"])
+        self.assertFalse(summary["model_calls"])
+
+    def test_55_status_bundle_markdown_is_safe_and_non_certifying(self):
+        rendered = render_internal_evaluation_corpus_status_bundle_markdown_v1(build_internal_evaluation_corpus_status_bundle_v1()).lower()
+        self.assertIn("readiness label: status_bundle_ready", rendered)
+        self.assertIn("## safety posture", rendered)
+        self.assertIn("## allowed next steps", rendered)
+        self.assertIn("## blocked next steps", rendered)
+        self.assertIn("no_model_calls: true", rendered)
+        self.assertIn("non_certifying: true", rendered)
+        self.assertIn("create_runner", rendered)
+        self.assertNotIn("input_prompt", rendered)
+        self.assertNotIn("synthetic prompt:", rendered)
+        self.assertNotIn("answer key", rendered)
+        self.assertNotIn("hidden prompt", rendered)
+        self.assertNotIn("protected material", rendered)
+        self.assertNotIn("official score", rendered)
+        self.assertNotIn("iq score", rendered)
+        self.assertNotIn("certification", rendered)
+
+    def test_56_status_bundle_json_safe_copy_is_deep_copy(self):
+        bundle = build_internal_evaluation_corpus_status_bundle_v1()
+        exported = to_internal_evaluation_corpus_status_bundle_json_safe_v1(bundle)
+        exported["categories_covered"].append("mutated")
+        exported["safety_posture"]["no_runner"] = False
+        self.assertNotEqual(exported["categories_covered"], bundle["categories_covered"])
+        self.assertTrue(bundle["safety_posture"]["no_runner"])
 
 
 if __name__ == "__main__":
