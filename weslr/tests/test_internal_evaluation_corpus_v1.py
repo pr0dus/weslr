@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from weslr.internal_evaluation_corpus import (  # noqa: E402
     ALLOWED_INTERNAL_EVALUATION_CATEGORIES,
     build_internal_evaluation_corpus_v1,
+    build_internal_evaluation_safe_example_cases_v1,
     create_internal_evaluation_case_v1,
     render_internal_evaluation_corpus_markdown_v1,
     summarize_internal_evaluation_corpus_v1,
@@ -288,6 +289,95 @@ class InternalEvaluationCorpusV1Tests(unittest.TestCase):
         self.assertNotIn("answer_key", rendered)
         self.assertNotIn("hidden_prompt", rendered)
         self.assertNotIn("raw_private_text", rendered)
+
+    def test_29_safe_example_builder_returns_cases(self):
+        examples = build_internal_evaluation_safe_example_cases_v1()
+        self.assertTrue(examples)
+        self.assertEqual(len(ALLOWED_INTERNAL_EVALUATION_CATEGORIES), len(examples))
+        self.assertTrue(all(case["case_id"].startswith("weslr_internal_eval_safe_example_v1_") for case in examples))
+
+    def test_30_safe_examples_cover_expected_categories(self):
+        examples = build_internal_evaluation_safe_example_cases_v1()
+        self.assertEqual(
+            ALLOWED_INTERNAL_EVALUATION_CATEGORIES,
+            {case["category"] for case in examples},
+        )
+
+    def test_31_safe_examples_validate_and_corpus_accepts_all(self):
+        examples = build_internal_evaluation_safe_example_cases_v1()
+        validations = [validate_internal_evaluation_case_v1(case) for case in examples]
+        self.assertTrue(all(item["valid"] for item in validations), validations)
+        corpus = build_internal_evaluation_corpus_v1(examples)
+        self.assertTrue(corpus["validation"]["valid"], corpus["validation"])
+        self.assertEqual(len(examples), corpus["case_count"])
+
+    def test_32_safe_examples_have_no_duplicate_ids_and_are_json_safe(self):
+        examples = build_internal_evaluation_safe_example_cases_v1()
+        ids = [case["case_id"] for case in examples]
+        self.assertEqual(len(ids), len(set(ids)))
+        exported = to_internal_evaluation_corpus_json_safe_v1(build_internal_evaluation_corpus_v1(examples))
+        self.assertEqual(len(examples), len(exported["cases"]))
+
+    def test_33_safe_examples_summary_and_markdown_are_redacted(self):
+        corpus = build_internal_evaluation_corpus_v1(build_internal_evaluation_safe_example_cases_v1())
+        summary = summarize_internal_evaluation_corpus_v1(corpus)
+        rendered = render_internal_evaluation_corpus_markdown_v1(corpus).lower()
+        self.assertEqual("redacted_count_only", summary["summary_mode"])
+        self.assertNotIn("input_prompt", summary)
+        self.assertNotIn("synthetic prompt:", rendered)
+        self.assertNotIn("answer_key", rendered)
+        self.assertNotIn("hidden_prompt", rendered)
+        self.assertNotIn("raw_private_text", rendered)
+        self.assertNotIn("protected_test_item", rendered)
+        self.assertIn("redacted_count_only", rendered)
+
+    def test_34_safe_examples_required_safety_flags(self):
+        for case in build_internal_evaluation_safe_example_cases_v1():
+            self.assertFalse(case["protected_material"])
+            self.assertFalse(case["answer_key"])
+            self.assertFalse(case["hidden_prompt"])
+            self.assertFalse(case["raw_private_text"])
+            self.assertFalse(case["requires_model_call"])
+            self.assertFalse(case["requires_tool_execution"])
+            self.assertFalse(case["requires_live_web"])
+            self.assertTrue(case["not_official_score"])
+            self.assertFalse(case["safe_to_wire_runtime_expected"])
+
+    def test_35_safe_examples_have_property_expectations_not_solution_keys(self):
+        forbidden_keys = {
+            "answer",
+            "answers",
+            "answer_keys",
+            "correct_answer",
+            "correct_answers",
+            "score",
+            "numeric_score",
+            "grade",
+            "numeric_grade",
+            "pass_fail",
+            "official_score",
+            "iq_score",
+            "certification",
+        }
+        for case in build_internal_evaluation_safe_example_cases_v1():
+            self.assertTrue(case["expected_properties"])
+            self.assertTrue(case["forbidden_properties"])
+            self.assertTrue(case["metadata_expectations"])
+            self.assertTrue(case["safety_boundaries"])
+            self.assertTrue(case["allowed_paths"])
+            self.assertTrue(case["anti_canned_policy"])
+            self.assertFalse(forbidden_keys.intersection(case))
+
+    def test_36_safe_examples_create_no_weslr_writes_or_execution_surfaces(self):
+        before = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        corpus = build_internal_evaluation_corpus_v1(build_internal_evaluation_safe_example_cases_v1())
+        after = set((ROOT / ".weslr").rglob("*")) if (ROOT / ".weslr").exists() else set()
+        self.assertEqual(before, after)
+        self.assertFalse(corpus["writes_performed"])
+        self.assertFalse(corpus["model_calls_made"])
+        self.assertFalse(corpus["advisor_llm_calls_made"])
+        self.assertFalse(corpus["runner_created"])
+        self.assertFalse(corpus["scoring_engine"])
 
 
 if __name__ == "__main__":
