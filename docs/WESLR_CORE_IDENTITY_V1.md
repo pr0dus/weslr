@@ -11,6 +11,16 @@
 
 WESLR is one unified intelligence/entity under development, not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC is the coding/operator agent assisting the owner in building WESLR; OCC is not WESLR itself.
 
+### Layer Distinction
+
+- `OCC_CONTEXT_ALIGNMENT` affects how OCC/OpenClaw assists the build.
+- `WESLR_CANON_ALIGNMENT` records WESLR doctrine/design.
+- `WESLR_RUNTIME_CHANGE` changes actual WESLR behavior.
+
+A context or canon commit does not imply live WESLR behavior changed unless runtime/source files are modified or WESLR explicitly reads that document at runtime.
+
+Future reports should state: alignment layer touched, whether live WESLR behavior changed, whether OCC bootstrap behavior may be influenced, and whether WESLR runtime reads the changed file.
+
 WESLR response formation must converge toward one unified path:
 
 ```text
