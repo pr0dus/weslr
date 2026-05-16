@@ -21,6 +21,7 @@ import re
 CASE_SCHEMA_VERSION = "weslr_internal_evaluation_case_v1"
 CORPUS_SCHEMA_VERSION = "weslr_internal_evaluation_corpus_v1"
 READINESS_LABEL = "schema_ready"
+DRY_REVIEW_READINESS_LABEL = "dry_review_ready"
 SUMMARY_MODE = "redacted_count_only"
 
 ALLOWED_INTERNAL_EVALUATION_CATEGORIES = {
@@ -705,7 +706,9 @@ def build_internal_evaluation_case_review_card_v1(case: dict[str, Any]) -> dict[
         "model_call_required": bool(case_copy.get("requires_model_call", True)),
         "tool_execution_required": bool(case_copy.get("requires_tool_execution", True)),
         "live_web_required": bool(case_copy.get("requires_live_web", True)),
-        "non_public_authority_claim": bool(case_copy.get("not_official_score", False)),
+        "not_official_score": bool(case_copy.get("not_official_score", False)),
+        "no_public_authority_claim": not bool(validation.get("official_score_claimed", False)),
+        "non_certifying": not bool(validation.get("official_score_claimed", False)),
         "runtime_wiring_expected": bool(case_copy.get("safe_to_wire_runtime_expected", True)),
     }
     metadata = case_copy.get("metadata_expectations", {}) if isinstance(case_copy.get("metadata_expectations", {}), dict) else {}
@@ -726,11 +729,13 @@ def build_internal_evaluation_case_review_card_v1(case: dict[str, Any]) -> dict[
             "issue_count": int(validation.get("safety_issue_count", 0) or 0),
             "forbidden_field_count": int(validation.get("forbidden_field_count", 0) or 0),
         },
-        "readiness_label": READINESS_LABEL if valid else "needs_operator_review",
+        "readiness_label": DRY_REVIEW_READINESS_LABEL if valid else "needs_operator_review",
         "review_notes": [
-            "dry_review_only",
-            "raw_prompt_redacted",
-            "property_counts_only",
+            "Dry review only; no runner, scoring, model call, or advisor call was created.",
+            "Raw prompt is redacted; review uses structural counts and metadata keys only.",
+            "Safe synthetic case; property expectations are reviewable without execution."
+            if valid
+            else "Case requires review because validation found unsafe or unsupported fields.",
             f"validation_issue_count:{int(validation.get('safety_issue_count', 0) or 0)}",
         ],
         "side_effects": {
@@ -775,7 +780,13 @@ def build_internal_evaluation_corpus_review_cards_v1(corpus_or_cases: Any) -> di
             "invalid_card_count": len(invalid_cards),
             "duplicate_case_ids": list(corpus.get("duplicate_case_ids", [])),
             "duplicate_case_id_count": int(corpus.get("validation", {}).get("duplicate_case_id_count", 0) or 0),
-            "readiness_label": READINESS_LABEL if not invalid_cards and not corpus.get("duplicate_case_ids") else "needs_operator_review",
+            "readiness_label": DRY_REVIEW_READINESS_LABEL if not invalid_cards and not corpus.get("duplicate_case_ids") else "needs_operator_review",
+            "review_notes": [
+                "All cards are dry review surfaces; no runner, scoring, model call, or advisor call was created."
+                if not invalid_cards and not corpus.get("duplicate_case_ids")
+                else "One or more cards require operator review before any later status bundle use.",
+                "Overview is in-memory and redacted/count-only.",
+            ],
             "in_memory_only": True,
             "writes_performed": False,
             "runner_created": False,
@@ -803,7 +814,8 @@ def _coerce_internal_evaluation_review_cards_v1(cards_or_review: Any) -> dict[st
                 "invalid_card_count": sum(1 for card in cards if not card.get("validation_status", {}).get("valid")),
                 "duplicate_case_ids": [],
                 "duplicate_case_id_count": 0,
-                "readiness_label": READINESS_LABEL,
+                "readiness_label": DRY_REVIEW_READINESS_LABEL if not any(not card.get("validation_status", {}).get("valid") for card in cards) else "needs_operator_review",
+                "review_notes": ["Coerced review cards remain dry review surfaces only."],
                 "in_memory_only": True,
                 "writes_performed": False,
                 "runner_created": False,
@@ -868,7 +880,9 @@ def summarize_internal_evaluation_corpus_review_cards_v1(cards_or_review: Any) -
             "readiness_labels": dict(sorted(labels.items())),
             "qualitative_only": True,
             "no_scores": True,
-            "non_public_authority": True,
+            "not_official_score": True,
+            "no_public_authority_claim": True,
+            "non_certifying": True,
             "in_memory_only": True,
             "writes_performed": False,
             "runner_created": False,
@@ -897,6 +911,8 @@ def _review_card_markdown(card: dict[str, Any]) -> str:
         f"- safety boundary count: {int(card.get('safety_boundary_count', 0) or 0)}",
         f"- allowed paths: {', '.join(_as_list(card.get('allowed_paths')))}",
         f"- readiness label: {str(card.get('readiness_label', 'unknown'))}",
+        f"- safe flags: {', '.join(f'{key}={value}' for key, value in sorted((card.get('safe_flags', {}) if isinstance(card.get('safe_flags', {}), dict) else {}).items()))}",
+        f"- review note count: {len(_as_list(card.get('review_notes')))}",
         "- dry review only: true",
         "- scoring created: false",
         "- model calls: false",
@@ -918,6 +934,7 @@ def render_internal_evaluation_corpus_review_cards_markdown_v1(cards_or_review: 
         f"- total cards: {summary['total_cards']}",
         f"- invalid cards: {summary['invalid_cards']}",
         f"- categories covered: {', '.join(summary['categories_covered'])}",
+        f"- readiness labels: {summary['readiness_labels']}",
         "- dry review only: true",
         "- scoring created: false",
         "- model calls: false",
