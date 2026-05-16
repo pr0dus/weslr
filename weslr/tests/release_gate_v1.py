@@ -172,6 +172,24 @@ _unified_response_formation_required_markers = {
     "Anti-Drift Rule",
 }
 
+_first_canned_helper_demotion_design_doc = "docs/WESLR_FIRST_CANNED_HELPER_DEMOTION_SLICE_DESIGN_V1.md"
+_first_canned_helper_demotion_design_required_markers = {
+    "WESLR_FIRST_CANNED_HELPER_DEMOTION_SLICE_DESIGN_V1",
+    "Design only",
+    "No live chat replacement",
+    "No chat_responder.py edits",
+    "Owner approval required before live demotion",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+    "Allowed first-slice candidates",
+    "Do-not-touch branches",
+    "Shadow-only first",
+    "safe_to_replace_live=false",
+    "runtime_wiring=false",
+    "live_runtime_output=false",
+    "Anti-drift rule",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -275,6 +293,10 @@ def _unified_response_formation_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_unified_response_formation_canon_doc, _unified_response_formation_required_markers)
 
 
+def _first_canned_helper_demotion_design_doc_is_valid():
+    return _doc_with_markers_is_valid(_first_canned_helper_demotion_design_doc, _first_canned_helper_demotion_design_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -309,6 +331,8 @@ def _check_git_scope():
         the approved evidence bridge Frontier metadata adapter helper canon markers are present
       - docs/WESLR_UNIFIED_RESPONSE_FORMATION_CANON_V1.md only when
         the approved unified response formation canon markers are present
+      - docs/WESLR_FIRST_CANNED_HELPER_DEMOTION_SLICE_DESIGN_V1.md only when
+        the approved first canned-helper demotion design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -337,6 +361,7 @@ def _check_git_scope():
     internal_corpus_advisor_review_adapter_helper_doc_valid = _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid()
     evidence_bridge_frontier_metadata_adapter_helper_doc_valid = _evidence_bridge_frontier_metadata_adapter_helper_canon_doc_is_valid()
     unified_response_formation_canon_doc_valid = _unified_response_formation_canon_doc_is_valid()
+    first_canned_helper_demotion_design_doc_valid = _first_canned_helper_demotion_design_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -393,6 +418,10 @@ def _check_git_scope():
             allowed = unified_response_formation_canon_doc_valid
             if not unified_response_formation_canon_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
+        if path == _first_canned_helper_demotion_design_doc:
+            allowed = first_canned_helper_demotion_design_doc_valid
+            if not first_canned_helper_demotion_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
