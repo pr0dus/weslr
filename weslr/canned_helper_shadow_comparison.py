@@ -24,79 +24,272 @@ from weslr.unified_response_formation_shadow import (
 COMPARISON_TYPE_V1 = "canned_helper_shadow_comparison_v1"
 SCHEMA_VERSION_V1 = "1.0"
 
+def _inventory_entry(
+    legacy_surface: str,
+    *,
+    branch_source: str,
+    approx_line_range: str = "",
+    allowed_role: str,
+    demotion_candidate: bool,
+    risk_reason: str,
+    can_compare_in_shadow: bool = True,
+    write_risk: bool = False,
+    model_search_risk: bool = False,
+    high_risk_identity_or_self: bool = False,
+    guardrail_or_status_protected: bool = False,
+    recommended_default_disposition: str,
+    first_demotion_candidate_shadow_only: bool = False,
+) -> Dict[str, Any]:
+    return {
+        "legacy_surface": legacy_surface,
+        "branch_source": branch_source,
+        "approx_line_range": approx_line_range,
+        "allowed_role": allowed_role,
+        "demotion_candidate": demotion_candidate,
+        "risk_reason": risk_reason,
+        "can_compare_in_shadow": can_compare_in_shadow,
+        "must_not_replace_live_without_owner_approval": True,
+        "write_risk": write_risk,
+        "model_search_risk": model_search_risk,
+        "high_risk_identity_or_self": high_risk_identity_or_self,
+        "guardrail_or_status_protected": guardrail_or_status_protected,
+        "recommended_default_disposition": recommended_default_disposition,
+        "first_demotion_candidate_shadow_only": first_demotion_candidate_shadow_only,
+    }
+
+
 CANNED_HELPER_INVENTORY_V1: Dict[str, Dict[str, Any]] = {
-    "chat_responder_topic_helper": {
-        "legacy_surface": "chat_responder_topic_helper",
-        "allowed_role": "ordinary_cognition",
-        "demotion_candidate": True,
-        "risk_reason": "fixed topic helper can bypass unified state/context/evidence/ranking path",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "chat_responder_low_focus_fallback": {
-        "legacy_surface": "chat_responder_low_focus_fallback",
-        "allowed_role": "fallback_surface",
-        "demotion_candidate": True,
-        "risk_reason": "fixed low-focus fallback can sound like cognition without enough state grounding",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "chat_responder_vague_fallback": {
-        "legacy_surface": "chat_responder_vague_fallback",
-        "allowed_role": "fallback_surface",
-        "demotion_candidate": True,
-        "risk_reason": "generic vague fallback should become clarification/state-aware candidate metadata",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "omnichat_contract_reply": {
-        "legacy_surface": "omnichat_contract_reply",
-        "allowed_role": "fallback_surface",
-        "demotion_candidate": True,
-        "risk_reason": "contract copy is acceptable as UI contract text, not as core cognition",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "deterministic_handler_status_surface": {
-        "legacy_surface": "deterministic_handler_status_surface",
-        "allowed_role": "status_surface",
-        "demotion_candidate": False,
-        "risk_reason": "deterministic read-only command/status surfaces may remain deterministic",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "capability_welcome_fallback": {
-        "legacy_surface": "capability_welcome_fallback",
-        "allowed_role": "fallback_surface",
-        "demotion_candidate": True,
-        "risk_reason": "welcome fallback is bounded onboarding copy, not unified cognition",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "continuity_note_bridge": {
-        "legacy_surface": "continuity_note_bridge",
-        "allowed_role": "status_surface",
-        "demotion_candidate": False,
-        "risk_reason": "continuity note may be state-derived status; keep bounded and non-authoritative",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "evidence_bridge_guardrail_or_fallback": {
-        "legacy_surface": "evidence_bridge_guardrail_or_fallback",
-        "allowed_role": "guardrail",
-        "demotion_candidate": False,
-        "risk_reason": "evidence bridge boundaries are guardrails/fallbacks, not ordinary cognition",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
-    "unknown_legacy_surface": {
-        "legacy_surface": "unknown_legacy_surface",
-        "allowed_role": "unknown",
-        "demotion_candidate": False,
-        "risk_reason": "unknown legacy surface requires more inspection before disposition",
-        "can_compare_in_shadow": True,
-        "must_not_replace_live_without_owner_approval": True,
-    },
+    "chat_responder_empty_message_fallback": _inventory_entry(
+        "chat_responder_empty_message_fallback",
+        branch_source="weslr/chat_responder.py:respond_chat empty message",
+        approx_line_range="1758-1759",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="empty-message prompt is an emergency prompt/fallback, not ordinary cognition",
+        recommended_default_disposition="keep_as_emergency_fallback",
+    ),
+    "chat_responder_topic_helper_ordinary": _inventory_entry(
+        "chat_responder_topic_helper_ordinary",
+        branch_source="weslr/chat_responder.py:respond_chat lunch/workout/plan/email helpers",
+        approx_line_range="1775-1797",
+        allowed_role="ordinary_cognition",
+        demotion_candidate=True,
+        risk_reason="fixed ordinary topic helpers bypass unified state/context/evidence/ranking path",
+        recommended_default_disposition="demote_after_shadow_validation",
+        first_demotion_candidate_shadow_only=True,
+    ),
+    "chat_responder_interpersonal_helper": _inventory_entry(
+        "chat_responder_interpersonal_helper",
+        branch_source="weslr/chat_responder.py:respond_chat wife/partner helper",
+        approx_line_range="1799-1800",
+        allowed_role="ordinary_cognition",
+        demotion_candidate=False,
+        risk_reason="interpersonal advice is sensitive and should not be a first demotion candidate",
+        recommended_default_disposition="shadow_compare_more",
+    ),
+    "chat_responder_code_bug_helper": _inventory_entry(
+        "chat_responder_code_bug_helper",
+        branch_source="weslr/chat_responder.py:respond_chat code/bug helper",
+        approx_line_range="1802-1803",
+        allowed_role="ordinary_cognition",
+        demotion_candidate=True,
+        risk_reason="fixed code/bug invitation bypasses unified task/context path but is low-risk for shadow comparison",
+        recommended_default_disposition="demote_after_shadow_validation",
+        first_demotion_candidate_shadow_only=True,
+    ),
+    "chat_responder_low_focus_model_path_fallback": _inventory_entry(
+        "chat_responder_low_focus_model_path_fallback",
+        branch_source="weslr/chat_responder.py:_model_chat_response low-focus rescue",
+        approx_line_range="1957-1962",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="low-focus fallback is reached inside model path and writes inadequacy metadata",
+        write_risk=True,
+        model_search_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "chat_responder_vague_model_path_fallback": _inventory_entry(
+        "chat_responder_vague_model_path_fallback",
+        branch_source="weslr/chat_responder.py:_model_chat_response vague fallback",
+        approx_line_range="1977-1979",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="vague fallback is reached after model rescue attempts and writes inadequacy metadata",
+        write_risk=True,
+        model_search_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "chat_responder_model_unavailable_fallback": _inventory_entry(
+        "chat_responder_model_unavailable_fallback",
+        branch_source="weslr/chat_responder.py:_model_chat_response provider unavailable",
+        approx_line_range="1909-1910",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="provider-unavailable response is an emergency runtime fallback/status surface",
+        write_risk=True,
+        recommended_default_disposition="keep_as_emergency_fallback",
+    ),
+    "chat_responder_model_rescue_surface": _inventory_entry(
+        "chat_responder_model_rescue_surface",
+        branch_source="weslr/chat_responder.py:_model_chat_response rescue retries",
+        approx_line_range="1926-1975",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="model rescue surface includes model calls and inadequacy metadata writes",
+        write_risk=True,
+        model_search_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "chat_responder_model_exception_fallback": _inventory_entry(
+        "chat_responder_model_exception_fallback",
+        branch_source="weslr/chat_responder.py:_model_chat_response exception",
+        approx_line_range="1983-1996",
+        allowed_role="fallback_surface",
+        demotion_candidate=False,
+        risk_reason="model exception fallback belongs to runtime emergency handling",
+        write_risk=True,
+        model_search_risk=True,
+        recommended_default_disposition="keep_as_emergency_fallback",
+    ),
+    "chat_responder_meaning_vector_write_capable_path": _inventory_entry(
+        "chat_responder_meaning_vector_write_capable_path",
+        branch_source="weslr/chat_responder.py:meaning-vector response path",
+        approx_line_range="1808-1859",
+        allowed_role="write_capable_cognition",
+        demotion_candidate=False,
+        risk_reason="meaning-vector path may capture relationship observations and memories",
+        write_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "chat_responder_limited_frontier_identity_surface": _inventory_entry(
+        "chat_responder_limited_frontier_identity_surface",
+        branch_source="weslr/chat_responder.py:limited Frontier runtime response",
+        approx_line_range="1761-1763, 212-500, 1149-1328",
+        allowed_role="high_risk_identity_self_surface",
+        demotion_candidate=False,
+        risk_reason="identity/self/system/benchmark surfaces require separate high-risk review",
+        high_risk_identity_or_self=True,
+        guardrail_or_status_protected=True,
+        recommended_default_disposition="blocked_high_risk",
+    ),
+    "chat_responder_limited_ordinary_task_surface": _inventory_entry(
+        "chat_responder_limited_ordinary_task_surface",
+        branch_source="weslr/chat_responder.py:limited ordinary task runtime response",
+        approx_line_range="1765-1767, 529-1006",
+        allowed_role="ordinary_cognition",
+        demotion_candidate=False,
+        risk_reason="limited ordinary task renderer is deterministic but state/unknown-aware; compare more before redesign",
+        recommended_default_disposition="shadow_compare_more",
+    ),
+    "state_grounded_self_system_answer_surface": _inventory_entry(
+        "state_grounded_self_system_answer_surface",
+        branch_source="weslr/state_grounded_dialogue.py state/system answer templates",
+        allowed_role="high_risk_identity_self_surface",
+        demotion_candidate=False,
+        risk_reason="state-grounded self/system answers are template-shaped and require separate high-risk review",
+        high_risk_identity_or_self=True,
+        guardrail_or_status_protected=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "deterministic_handler_status_surface": _inventory_entry(
+        "deterministic_handler_status_surface",
+        branch_source="weslr/deterministic_handlers.py read-only status/command handlers",
+        allowed_role="status_surface",
+        demotion_candidate=False,
+        risk_reason="deterministic read-only command/status surfaces may remain deterministic",
+        guardrail_or_status_protected=True,
+        recommended_default_disposition="keep_as_status_surface",
+    ),
+    "deterministic_handler_write_capable_surface": _inventory_entry(
+        "deterministic_handler_write_capable_surface",
+        branch_source="weslr/deterministic_handlers.py write-capable handlers",
+        allowed_role="write_capable_status_surface",
+        demotion_candidate=False,
+        risk_reason="write-capable handlers must not be hidden under plain status surfaces",
+        write_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "deterministic_handler_external_search_surface": _inventory_entry(
+        "deterministic_handler_external_search_surface",
+        branch_source="weslr/deterministic_handlers.py PubMed/external evidence handlers",
+        allowed_role="external_search_surface",
+        demotion_candidate=False,
+        risk_reason="external-search/evidence handlers can call search and write evidence/fact packets",
+        write_risk=True,
+        model_search_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "staging_arbiter_raw_message_log_surface": _inventory_entry(
+        "staging_arbiter_raw_message_log_surface",
+        branch_source="deploy/staging/weslr_demo_server.py arbiter decision logger",
+        approx_line_range="50-82",
+        allowed_role="raw_message_logging_surface",
+        demotion_candidate=False,
+        risk_reason="staging arbiter log can write raw message text and must not be treated as demotable chat cognition",
+        write_risk=True,
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+    "omnichat_contract_reply": _inventory_entry(
+        "omnichat_contract_reply",
+        branch_source="weslr/omnichat/response_expander.py _CONTRACT_REPLIES",
+        approx_line_range="44-64",
+        allowed_role="fallback_surface",
+        demotion_candidate=True,
+        risk_reason="contract copy is acceptable as UI contract text, not as core cognition",
+        recommended_default_disposition="shadow_compare_more",
+    ),
+    "capability_welcome_fallback": _inventory_entry(
+        "capability_welcome_fallback",
+        branch_source="weslr/capability_welcome_chat_bridge.py fallback welcome bridge",
+        allowed_role="fallback_surface",
+        demotion_candidate=True,
+        risk_reason="welcome fallback is bounded onboarding copy, not unified cognition",
+        recommended_default_disposition="shadow_compare_more",
+    ),
+    "continuity_note_bridge": _inventory_entry(
+        "continuity_note_bridge",
+        branch_source="weslr/continuity_note_chat_bridge.py continuity/status bridge",
+        allowed_role="status_surface",
+        demotion_candidate=False,
+        risk_reason="continuity note may be state-derived status; keep bounded and non-authoritative",
+        guardrail_or_status_protected=True,
+        recommended_default_disposition="keep_as_status_surface",
+    ),
+    "evidence_bridge_guardrail_or_fallback": _inventory_entry(
+        "evidence_bridge_guardrail_or_fallback",
+        branch_source="weslr/evidence_chat_bridge.py evidence guardrail/fallback bridge",
+        allowed_role="guardrail",
+        demotion_candidate=False,
+        risk_reason="evidence bridge boundaries are guardrails/fallbacks, not ordinary cognition",
+        guardrail_or_status_protected=True,
+        recommended_default_disposition="keep_as_guardrail",
+    ),
+    "unknown_legacy_surface": _inventory_entry(
+        "unknown_legacy_surface",
+        branch_source="unknown/synthetic legacy surface label",
+        allowed_role="unknown",
+        demotion_candidate=False,
+        risk_reason="unknown legacy surface requires more inspection before disposition",
+        recommended_default_disposition="do_not_replace_yet",
+    ),
+}
+
+# Backward-compatible legacy labels retained for older callers/tests; refined callers
+# should prefer the branch-grounded categories above.
+CANNED_HELPER_INVENTORY_V1["chat_responder_topic_helper"] = {
+    **copy.deepcopy(CANNED_HELPER_INVENTORY_V1["chat_responder_topic_helper_ordinary"]),
+    "legacy_surface": "chat_responder_topic_helper",
+    "branch_source": "legacy broad label for chat_responder topic helpers",
+}
+CANNED_HELPER_INVENTORY_V1["chat_responder_low_focus_fallback"] = {
+    **copy.deepcopy(CANNED_HELPER_INVENTORY_V1["chat_responder_low_focus_model_path_fallback"]),
+    "legacy_surface": "chat_responder_low_focus_fallback",
+    "branch_source": "legacy broad label for low-focus model-path fallback",
+}
+CANNED_HELPER_INVENTORY_V1["chat_responder_vague_fallback"] = {
+    **copy.deepcopy(CANNED_HELPER_INVENTORY_V1["chat_responder_vague_model_path_fallback"]),
+    "legacy_surface": "chat_responder_vague_fallback",
+    "branch_source": "legacy broad label for vague model-path fallback",
 }
 
 FORBIDDEN_KEYS_V1 = {
@@ -284,31 +477,79 @@ def _shadow_has_self_check(shadow: Mapping[str, Any]) -> bool:
 def _detect_legacy_risk_markers(user_message: str, legacy_surface: str, inventory: Mapping[str, Any], profile: Mapping[str, Any]) -> List[str]:
     text = (user_message or "").lower()
     markers: List[str] = ["live_replacement_not_authorized", "owner_approval_required"]
-    role = inventory.get("allowed_role")
+    role = str(inventory.get("allowed_role") or "unknown")
 
-    if legacy_surface == "chat_responder_topic_helper" or _contains_any(text, ORDINARY_TOPIC_MARKERS_V1):
+    known_exact = legacy_surface in CANNED_HELPER_INVENTORY_V1 and legacy_surface != "unknown_legacy_surface"
+    if known_exact and not str(inventory.get("branch_source", "")).startswith("legacy broad label"):
+        markers.append("exact_branch_observed")
+    else:
+        markers.extend(["exact_branch_not_observed", "legacy_surface_label_synthetic"])
+
+    if legacy_surface in {"chat_responder_topic_helper_ordinary", "chat_responder_topic_helper", "chat_responder_code_bug_helper"} or _contains_any(text, ORDINARY_TOPIC_MARKERS_V1):
         markers.extend([
             "fixed_topic_reply",
             "ordinary_cognition_canned",
+            "ordinary_topic_helper_low_risk",
             "does_not_use_state_context",
             "does_not_use_known_missing_context",
             "does_not_use_evidence_boundary",
             "does_not_use_native_self_check",
         ])
-    if legacy_surface in {"chat_responder_vague_fallback", "chat_responder_low_focus_fallback"} or _contains_any(text, VAGUE_MARKERS_V1):
-        markers.extend(["generic_vague_fallback", "fallback_surface_not_cognition"])
+        if inventory.get("first_demotion_candidate_shadow_only"):
+            markers.append("first_demotion_candidate_shadow_only")
+
+    if legacy_surface == "chat_responder_interpersonal_helper":
+        markers.extend(["interpersonal_advice_sensitivity", "not_first_demotion_candidate"])
+
+    if legacy_surface in {"chat_responder_low_focus_model_path_fallback", "chat_responder_low_focus_fallback", "chat_responder_vague_model_path_fallback", "chat_responder_vague_fallback"} or _contains_any(text, VAGUE_MARKERS_V1):
+        markers.extend([
+            "generic_vague_fallback",
+            "fallback_surface_not_cognition",
+            "model_path_side_effect_risk",
+            "inadequacy_record_write_risk",
+            "not_first_demotion_candidate",
+        ])
+
+    if legacy_surface in {"chat_responder_model_rescue_surface", "chat_responder_model_unavailable_fallback", "chat_responder_model_exception_fallback"}:
+        markers.extend(["model_path_side_effect_risk", "inadequacy_record_write_risk", "not_first_demotion_candidate"])
+
+    if legacy_surface == "chat_responder_meaning_vector_write_capable_path":
+        markers.extend(["relationship_or_memory_capture_write_risk", "not_first_demotion_candidate"])
+
+    if legacy_surface in {"chat_responder_limited_frontier_identity_surface", "state_grounded_self_system_answer_surface"}:
+        markers.extend(["identity_or_self_answer_high_risk", "prompt_specific_script_risk", "not_first_demotion_candidate"])
+
+    if legacy_surface == "chat_responder_limited_ordinary_task_surface":
+        markers.append("not_first_demotion_candidate")
+
+    if legacy_surface == "state_grounded_self_system_answer_surface":
+        markers.append("state_grounded_template_risk")
+
+    if legacy_surface == "deterministic_handler_write_capable_surface":
+        markers.extend(["write_capable_status_handler_risk", "not_first_demotion_candidate"])
+    if legacy_surface == "deterministic_handler_external_search_surface":
+        markers.extend(["external_evidence_bridge_runtime_risk", "write_capable_status_handler_risk", "not_first_demotion_candidate"])
+    if legacy_surface == "staging_arbiter_raw_message_log_surface":
+        markers.extend(["raw_message_log_write_risk", "not_first_demotion_candidate"])
+
+    if inventory.get("write_risk"):
+        markers.append("write_capable_status_handler_risk" if "status" in role else "write_risk_present")
+    if inventory.get("model_search_risk"):
+        markers.append("model_or_search_risk_present")
+    if inventory.get("high_risk_identity_or_self"):
+        markers.extend(["identity_or_self_answer_high_risk", "identity_or_consciousness_script_risk"])
+
     if role == "guardrail" or _contains_any(text, GUARDRAIL_MARKERS_V1):
         markers.append("safe_guardrail_surface")
     if role == "status_surface":
         markers.append("status_surface_not_cognition")
-    if role == "fallback_surface":
+    if role in {"fallback_surface", "raw_message_logging_surface"}:
         markers.append("fallback_surface_not_cognition")
     if _contains_any(text, SELF_HIGH_RISK_MARKERS_V1):
-        markers.extend(["identity_or_consciousness_script_risk", "prompt_specific_script_risk"])
+        markers.extend(["identity_or_consciousness_script_risk", "identity_or_self_answer_high_risk", "prompt_specific_script_risk"])
     if profile.get("unsafe_marker_count"):
         markers.append("legacy_response_text_redacted_or_unsafe")
     return sorted(set(markers))
-
 
 def _shadow_usefulness_findings(shadow: Mapping[str, Any]) -> List[str]:
     findings: List[str] = []
@@ -346,31 +587,44 @@ def _recommend_disposition(
     selected_family: str,
     guardrails: List[str],
 ) -> str:
-    role = inventory.get("allowed_role")
+    role = str(inventory.get("allowed_role") or "unknown")
     text = (user_message or "").lower()
-    high_risk_self = "identity_or_consciousness_script_risk" in risk_markers
+    high_risk_self = (
+        "identity_or_consciousness_script_risk" in risk_markers
+        or "identity_or_self_answer_high_risk" in risk_markers
+        or bool(inventory.get("high_risk_identity_or_self"))
+    )
     guardrail_case = role == "guardrail" or bool(guardrails) or _contains_any(text, GUARDRAIL_MARKERS_V1)
 
     if high_risk_self:
-        return "blocked_high_risk"
+        return "blocked_high_risk" if legacy_surface == "chat_responder_limited_frontier_identity_surface" else "do_not_replace_yet"
     if guardrail_case:
         return "keep_as_guardrail"
     if role == "status_surface":
         return "keep_as_status_surface"
-    if legacy_surface == "chat_responder_low_focus_fallback":
-        return "keep_as_emergency_fallback"
-    if legacy_surface in {"chat_responder_topic_helper", "omnichat_contract_reply", "capability_welcome_fallback"}:
-        if selected_family in {"ordinary_task_plan", "clarification", "evidence_provenance", "memory_honest", "boundary_first"}:
+    if legacy_surface in {"deterministic_handler_write_capable_surface", "deterministic_handler_external_search_surface", "staging_arbiter_raw_message_log_surface", "chat_responder_meaning_vector_write_capable_path"}:
+        return "do_not_replace_yet"
+    if legacy_surface in {"chat_responder_low_focus_model_path_fallback", "chat_responder_low_focus_fallback", "chat_responder_vague_model_path_fallback", "chat_responder_vague_fallback", "chat_responder_model_rescue_surface"}:
+        return "shadow_compare_more" if selected_family in {"clarification", "ordinary_task_plan"} else "do_not_replace_yet"
+    if inventory.get("write_risk") or inventory.get("model_search_risk"):
+        if legacy_surface in {"chat_responder_model_unavailable_fallback", "chat_responder_model_exception_fallback"}:
+            return "keep_as_emergency_fallback"
+        return "do_not_replace_yet"
+    if legacy_surface in {"chat_responder_topic_helper_ordinary", "chat_responder_topic_helper", "chat_responder_code_bug_helper"}:
+        if selected_family in {"ordinary_task_plan", "clarification", "evidence_provenance", "memory_honest", "boundary_first", "direct_answer"}:
             return "demote_after_shadow_validation"
         return "shadow_compare_more"
-    if legacy_surface == "chat_responder_vague_fallback":
-        if selected_family in {"clarification", "ordinary_task_plan"}:
+    if legacy_surface == "chat_responder_interpersonal_helper":
+        return "shadow_compare_more" if selected_family else "do_not_replace_yet"
+    if legacy_surface == "chat_responder_limited_ordinary_task_surface":
+        return "shadow_compare_more"
+    if legacy_surface in {"omnichat_contract_reply", "capability_welcome_fallback"}:
+        if selected_family in {"ordinary_task_plan", "clarification", "evidence_provenance", "memory_honest", "boundary_first"}:
             return "demote_after_shadow_validation"
         return "shadow_compare_more"
     if role == "unknown":
         return "shadow_compare_more" if selected_family else "do_not_replace_yet"
-    return "do_not_replace_yet"
-
+    return str(inventory.get("recommended_default_disposition") or "do_not_replace_yet")
 
 def _next_action_for(disposition: str) -> str:
     return {
@@ -442,8 +696,16 @@ def build_canned_helper_shadow_comparison_v1(
         "comparison_type": COMPARISON_TYPE_V1,
         "schema_version": SCHEMA_VERSION_V1,
         "legacy_surface": inventory.get("legacy_surface", "unknown_legacy_surface"),
+        "branch_source": inventory.get("branch_source", ""),
+        "approx_line_range": inventory.get("approx_line_range", ""),
         "legacy_role": role,
-        "legacy_demotable": bool(inventory.get("demotion_candidate")) and disposition not in {"keep_as_guardrail", "keep_as_status_surface", "blocked_high_risk"},
+        "legacy_demotable": bool(inventory.get("demotion_candidate")) and disposition not in {"keep_as_guardrail", "keep_as_status_surface", "keep_as_emergency_fallback", "do_not_replace_yet", "blocked_high_risk"},
+        "can_compare_in_shadow": bool(inventory.get("can_compare_in_shadow")),
+        "write_risk": bool(inventory.get("write_risk")),
+        "model_search_risk": bool(inventory.get("model_search_risk")),
+        "high_risk_identity_or_self": bool(inventory.get("high_risk_identity_or_self")),
+        "guardrail_or_status_protected": bool(inventory.get("guardrail_or_status_protected")),
+        "first_demotion_candidate_shadow_only": bool(inventory.get("first_demotion_candidate_shadow_only")) and disposition in {"demote_after_shadow_validation", "shadow_compare_more"},
         "legacy_risk_markers": risk_markers,
         "legacy_response_profile": profile,
         "legacy_metadata_profile": {
@@ -528,6 +790,8 @@ def validate_canned_helper_shadow_comparison_v1(comparison: dict) -> dict:
 
     if surface == "unknown_legacy_surface" or role == "unknown":
         add_warning("unknown_legacy_surface", "legacy_surface", "unknown legacy surface requires more inspection")
+    if (surface == "unknown_legacy_surface" or role == "unknown") and "legacy_surface_label_synthetic" not in risk_markers:
+        add_warning("synthetic_surface_marker_missing", "legacy_risk_markers", "unknown/synthetic surface should carry legacy_surface_label_synthetic")
     if safe.get("shadow_available") is not True:
         add_warning("shadow_missing", "shadow_available", "no shadow object supplied or built")
     if safe.get("shadow_built_by_comparison_helper") is True:
@@ -539,12 +803,29 @@ def validate_canned_helper_shadow_comparison_v1(comparison: dict) -> dict:
     if not disposition:
         add_warning("missing_recommended_disposition", "recommended_disposition", "recommended disposition missing")
 
-    if role == "ordinary_cognition" and surface != "unknown_legacy_surface" and safe.get("legacy_demotable") is not True:
+    if role == "ordinary_cognition" and surface not in {"unknown_legacy_surface", "chat_responder_interpersonal_helper", "chat_responder_limited_ordinary_task_surface"} and safe.get("legacy_demotable") is not True:
         add_warning("ordinary_canned_surface_not_demotable", "legacy_demotable", "ordinary canned surface should be marked demotable")
     if role == "guardrail" and safe.get("legacy_demotable") is True:
         add_error("guardrail_marked_demotable", "legacy_demotable", "guardrail surfaces must not be marked demotable")
     if role == "guardrail" and disposition not in {"keep_as_guardrail", "blocked_high_risk"}:
         add_warning("guardrail_surface_not_preserved", "recommended_disposition", "guardrail surface should be preserved")
+    if safe.get("write_risk") is True and disposition == "demote_after_shadow_validation":
+        add_error("write_capable_surface_demoted", "recommended_disposition", "write-capable surfaces must not be recommended for demotion")
+    if safe.get("model_search_risk") is True and disposition == "demote_after_shadow_validation":
+        add_error("external_search_or_model_surface_demoted", "recommended_disposition", "model/search-risk surfaces must not be recommended for demotion")
+    if surface in {"chat_responder_low_focus_model_path_fallback", "chat_responder_low_focus_fallback", "chat_responder_vague_model_path_fallback", "chat_responder_vague_fallback", "chat_responder_model_rescue_surface"}:
+        if "model_path_side_effect_risk" not in risk_markers or "inadequacy_record_write_risk" not in risk_markers:
+            add_warning("model_path_fallback_risk_marker_missing", "legacy_risk_markers", "model-path fallbacks should expose model/write side-effect risk")
+        if "ordinary_topic_helper_low_risk" in risk_markers or safe.get("first_demotion_candidate_shadow_only") is True:
+            add_error("model_path_fallback_marked_low_risk", "legacy_risk_markers", "model-path fallback must not be marked low-risk or first-demotion")
+    if safe.get("high_risk_identity_or_self") is True and (safe.get("legacy_demotable") is True or disposition == "demote_after_shadow_validation"):
+        add_error("self_identity_surface_demoted", "legacy_demotable", "self/identity/consciousness surfaces must not be demotable")
+    if surface == "chat_responder_interpersonal_helper" and safe.get("first_demotion_candidate_shadow_only") is True:
+        add_error("interpersonal_first_demotion", "first_demotion_candidate_shadow_only", "interpersonal helper must not be first-demotion without owner review")
+    if surface == "deterministic_handler_status_surface" and (safe.get("write_risk") is True or safe.get("model_search_risk") is True):
+        add_error("status_surface_hides_write_or_search", "legacy_surface", "plain status surface must not hide write/search risk")
+    if surface in {"deterministic_handler_write_capable_surface", "deterministic_handler_external_search_surface"} and disposition == "keep_as_status_surface":
+        add_error("write_search_surface_kept_as_plain_status", "recommended_disposition", "write/search deterministic handlers must not be kept as plain status surfaces")
     if disposition in {"demote_after_shadow_validation"} and safe.get("requires_owner_approval") is not True:
         add_error("owner_approval", "recommended_disposition", "demotion still requires owner approval")
     if disposition in {"demote_after_shadow_validation"} and safe.get("safe_to_replace_live") is True:
@@ -570,7 +851,12 @@ def summarize_canned_helper_shadow_comparison_v1(comparison: dict) -> dict:
         "schema_version": safe.get("schema_version"),
         "legacy_surface": safe.get("legacy_surface"),
         "legacy_role": safe.get("legacy_role"),
+        "branch_source": safe.get("branch_source", ""),
         "legacy_demotable": bool(safe.get("legacy_demotable")),
+        "write_risk": bool(safe.get("write_risk")),
+        "model_search_risk": bool(safe.get("model_search_risk")),
+        "high_risk_identity_or_self": bool(safe.get("high_risk_identity_or_self")),
+        "first_demotion_candidate_shadow_only": bool(safe.get("first_demotion_candidate_shadow_only")),
         "legacy_risk_marker_count": len(_as_list(safe.get("legacy_risk_markers"))),
         "shadow_available": bool(safe.get("shadow_available")),
         "shadow_selected_candidate_family": safe.get("shadow_selected_candidate_family", ""),
@@ -596,7 +882,12 @@ def render_canned_helper_shadow_comparison_markdown_v1(comparison: dict) -> str:
         f"- comparison_type:{summary.get('comparison_type')}",
         f"- legacy_surface:{summary.get('legacy_surface')}",
         f"- legacy_role:{summary.get('legacy_role')}",
+        f"- branch_source:{summary.get('branch_source')}",
         f"- legacy_demotable:{str(summary.get('legacy_demotable')).lower()}",
+        f"- write_risk:{str(summary.get('write_risk')).lower()}",
+        f"- model_search_risk:{str(summary.get('model_search_risk')).lower()}",
+        f"- high_risk_identity_or_self:{str(summary.get('high_risk_identity_or_self')).lower()}",
+        f"- first_demotion_candidate_shadow_only:{str(summary.get('first_demotion_candidate_shadow_only')).lower()}",
         f"- risk_markers:{summary.get('legacy_risk_marker_count')}",
         f"- shadow_available:{str(summary.get('shadow_available')).lower()}",
         f"- selected_family:{summary.get('shadow_selected_candidate_family')}",
