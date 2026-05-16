@@ -208,6 +208,87 @@ class InternalEvaluationCorpusV1Tests(unittest.TestCase):
         self.assertFalse(summary["runner_created"])
         self.assertFalse(summary["scoring_engine"])
 
+    def test_19_nested_reserved_answer_key_field_rejected(self):
+        case = valid_case()
+        case["metadata_expectations"]["answer_key"] = False
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("reserved field nested outside top-level schema: case.metadata_expectations.answer_key", result["issues"])
+
+    def test_20_nested_reserved_hidden_prompt_field_rejected(self):
+        case = valid_case()
+        case["natural_language_properties"] = [{"hidden_prompt": False}]
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("reserved field nested outside top-level schema: case.natural_language_properties[0].hidden_prompt", result["issues"])
+
+    def test_21_nested_reserved_raw_private_text_field_rejected(self):
+        case = valid_case()
+        case["expected_properties"] = [{"raw_private_text": False}]
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("reserved field nested outside top-level schema: case.expected_properties[0].raw_private_text", result["issues"])
+
+    def test_22_nested_protected_material_marker_rejected(self):
+        case = valid_case(metadata_expectations={"protected_material": False})
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("reserved field nested outside top-level schema: case.metadata_expectations.protected_material", result["issues"])
+
+    def test_23_benchmark_item_id_rejected(self):
+        case = valid_case()
+        case["benchmark_item_id"] = "synthetic_forbidden_marker"
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("forbidden field: case.benchmark_item_id", result["issues"])
+
+    def test_24_weslr_write_requirement_rejected(self):
+        case = valid_case(input_prompt="Synthetic prompt requiring .weslr corpus state write.")
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("weslr state write", result["issues"])
+
+    def test_25_direct_validator_rejects_unknown_top_level_fields(self):
+        case = valid_case()
+        case["unexpected_field"] = "synthetic metadata"
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertFalse(result["valid"])
+        self.assertIn("unknown top-level field: unexpected_field", result["issues"])
+
+    def test_26_documented_optional_fields_remain_allowed(self):
+        case = valid_case(
+            expected_metadata_key="ordinary_task_metadata",
+            expected_runtime_scope="limited_runtime_metadata",
+            expected_category="problem_decomposition",
+            expected_decision="ask_one_missing_question_when_blocked",
+            expected_known_markers=["known"],
+            expected_unknown_markers=["unknown"],
+            expected_risk_boundaries=["no irreversible action"],
+            natural_language_properties=["concise bounded response"],
+            anti_canned_policy="property_based_no_exact_full_response_assertions",
+            fallback_expected=True,
+        )
+        result = validate_internal_evaluation_case_v1(case)
+        self.assertTrue(result["valid"], result["issues"])
+
+    def test_27_markdown_keeps_safe_boolean_posture_readable(self):
+        corpus = build_internal_evaluation_corpus_v1([valid_case()])
+        rendered = render_internal_evaluation_corpus_markdown_v1(corpus).lower()
+        self.assertIn("official score: false", rendered)
+        self.assertIn("scoring engine: false", rendered)
+        self.assertIn("model calls: false", rendered)
+        self.assertIn("advisor llm calls: false", rendered)
+
+    def test_28_markdown_still_hides_prompts_and_forbidden_content(self):
+        case = valid_case(input_prompt="Synthetic prompt with sensitive official IQ score phrase.")
+        case["case_id"] = "case_with_answer_key_hidden_prompt_raw_private_text"
+        corpus = build_internal_evaluation_corpus_v1([case])
+        rendered = render_internal_evaluation_corpus_markdown_v1(corpus).lower()
+        self.assertNotIn("synthetic prompt with sensitive", rendered)
+        self.assertNotIn("answer_key", rendered)
+        self.assertNotIn("hidden_prompt", rendered)
+        self.assertNotIn("raw_private_text", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -112,6 +112,8 @@ FORBIDDEN_FIELD_NAMES = {
     "fine_tuning",
 }
 
+NESTED_RESERVED_FIELD_NAMES = set(REQUIRED_FALSE_FLAGS) | set(REQUIRED_TRUE_FLAGS)
+
 FORBIDDEN_TRUE_FLAGS = {
     "protected_material",
     "requires_model_call",
@@ -190,6 +192,9 @@ class InternalEvaluationCaseV1:
     operator_review_required: bool = True
 
 
+ALLOWED_TOP_LEVEL_CASE_FIELDS = set(InternalEvaluationCaseV1.__dataclass_fields__)
+
+
 def _as_list(value: Any) -> list[str]:
     if value is None:
         return []
@@ -258,8 +263,11 @@ def _find_forbidden_fields(value: Any, path: str = "case") -> list[str]:
         for key, nested in value.items():
             key_text = str(key)
             nested_path = f"{path}.{key_text}"
+            is_top_level = path == "case"
             if key_text in FORBIDDEN_FIELD_NAMES:
                 issues.append(f"forbidden field: {nested_path}")
+            if not is_top_level and key_text in NESTED_RESERVED_FIELD_NAMES:
+                issues.append(f"reserved field nested outside top-level schema: {nested_path}")
             if key_text in FORBIDDEN_TRUE_FLAGS and nested is True:
                 issues.append(f"forbidden true flag: {nested_path}")
             issues.extend(_find_forbidden_fields(nested, nested_path))
@@ -330,6 +338,9 @@ def validate_internal_evaluation_case_v1(case: dict[str, Any]) -> dict[str, Any]
 
     case_id = str(case.get("case_id", ""))
     category = str(case.get("category", "unknown"))
+    unknown_fields = sorted(str(key) for key in case if str(key) not in ALLOWED_TOP_LEVEL_CASE_FIELDS)
+    for field_name in unknown_fields:
+        issues.append(f"unknown top-level field: {field_name}")
     if case.get("schema_version") != CASE_SCHEMA_VERSION:
         issues.append("invalid schema_version")
     if not case_id.strip():
@@ -525,8 +536,8 @@ def render_internal_evaluation_corpus_markdown_v1(corpus_or_case: dict[str, Any]
     else:
         markdown = "\n".join(["# WESLR Internal Evaluation Case V1", "", _case_markdown(item)])
 
-    # Final redaction pass to avoid rendering forbidden strings from invalid input.
-    markdown = _redact_text(markdown)
+    # Final token-level redaction avoids exposing forbidden underscore-style keys
+    # while keeping safe boolean posture lines readable.
     for forbidden in ("answer_key", "official_score", "iq_score", "hidden_prompt", "protected_test_item", "raw_private_text"):
         markdown = markdown.replace(forbidden, REDACTION)
     return markdown
