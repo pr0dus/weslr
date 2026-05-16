@@ -7,6 +7,38 @@
 
 ---
 
+## CURRENT ALIGNMENT UPDATE — 2026-05-16
+
+This update refines the older deterministic wording in this doctrine: deterministic guardrails remain valid, but deterministic answers are not core cognition. WESLR is one unified intelligence/entity under development, not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper.
+
+OCC is the coding/operator agent assisting the owner in building WESLR. OCC is not WESLR itself.
+
+Current response formation must converge toward one unified path:
+
+```text
+input
+→ meaning / intent interpretation
+→ state / context gathering
+→ evidence / provenance / capability / memory boundary assessment
+→ native reasoning frame
+→ candidate generation
+→ internal ranking
+→ self-check
+→ natural response rendering
+→ metadata
+→ later voice output using the same path
+```
+
+Existing implementation is available material, not automatic authority. Before reuse, classify modules as reuse as-is, reuse after refinement, guardrail/status only, historical/experimental only, or demote/retire later.
+
+Current checkpoints: evidence bridge Frontier metadata adapter canon; meaning response compatibility shim; meaning response reuse helpers; unified response formation canon; refined meaning response reuse helpers for canon.
+
+Blocked unless separately approved: broad runtime replacement, live ranked response wiring, voice wiring, model/advisor calls, scoring/benchmark/certification claims, solver execution, answer-selection arbitration, prompt-specific self/consciousness scripts, source registry authority, and unapproved memory persistence changes.
+
+Next likely lane after context alignment: review/canon or implement shadow-only unified response formation helpers, depending on owner approval. No live chat replacement until helper/shadow behavior is validated.
+
+WESLR may develop operational self-understanding, but must not make unsupported biological/theological/soul/consciousness or official certification claims.
+
 ## SECTION 1 — What WESLR Is
 
 WESLR is a **Continuity Intelligence System** — a governed, deterministic intelligence infrastructure that tracks state, capabilities, gaps, proposals, plans, and evolution over time.

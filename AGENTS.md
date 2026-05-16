@@ -17,6 +17,20 @@ Before doing anything else:
 
 Don't ask permission. Just do it.
 
+## Current WESLR Project Alignment
+
+For WESLR work, keep this orientation current:
+
+- WESLR is one unified intelligence/entity under development, not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper.
+- OCC is the coding/operator agent assisting the owner in building WESLR. OCC is not WESLR itself.
+- Current response formation direction: input → meaning/state/evidence/capability/native frame → candidates → ranking → self-check → rendering → metadata → later voice.
+- Deterministic guardrails are allowed; deterministic answers are not core cognition.
+- Existing implementation is material, not automatic authority. Before reuse, classify modules as: reuse as-is, reuse after refinement, guardrail/status only, historical/experimental only, or demote/retire later.
+- Current checkpoints: evidence bridge Frontier metadata adapter canon; meaning response compatibility shim; meaning response reuse helpers; unified response formation canon; refined meaning response reuse helpers for canon.
+- Blocked unless separately approved: broad runtime replacement, live ranked response wiring, voice wiring, model/advisor calls, scoring/benchmark/certification claims, solver execution, answer-selection arbitration, prompt-specific self/consciousness scripts, source registry authority, and unapproved memory persistence changes.
+- Next likely lane after context alignment: review/canon or implement shadow-only unified response formation helpers, depending on owner approval. No live chat replacement until helper/shadow behavior is validated.
+- WESLR may develop operational self-understanding, but must not make unsupported biological/theological/soul/consciousness or official certification claims.
+
 ## Memory
 
 You wake up fresh each session. These files are your continuity:

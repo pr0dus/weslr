@@ -172,6 +172,23 @@ _unified_response_formation_required_markers = {
     "Anti-Drift Rule",
 }
 
+_occ_weslr_bootstrap_context_docs = {
+    "AGENTS.md",
+    "CORE-IDENTITY.md",
+    "IDENTITY.md",
+    "docs/WESLR_CORE_IDENTITY_V1.md",
+}
+_occ_weslr_bootstrap_context_required_markers = {
+    "one unified intelligence/entity",
+    "OCC is",
+    "Deterministic guardrails are allowed",
+    "answers are not core cognition",
+    "Existing implementation",
+    "Blocked unless separately approved",
+    "No live chat replacement",
+    "unsupported biological/theological/soul/consciousness",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -258,6 +275,10 @@ def _unified_response_formation_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_unified_response_formation_canon_doc, _unified_response_formation_required_markers)
 
 
+def _occ_weslr_bootstrap_context_doc_is_valid(path):
+    return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -288,6 +309,8 @@ def _check_git_scope():
         the approved evidence bridge Frontier metadata adapter helper canon markers are present
       - docs/WESLR_UNIFIED_RESPONSE_FORMATION_CANON_V1.md only when
         the approved unified response formation canon markers are present
+      - exact OCC/WESLR bootstrap context docs only when the approved
+        OCC/WESLR context alignment markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -370,6 +393,10 @@ def _check_git_scope():
             allowed = unified_response_formation_canon_doc_valid
             if not unified_response_formation_canon_doc_valid:
                 violations.append(f"  canon doc missing required markers: {path}")
+        if path in _occ_weslr_bootstrap_context_docs:
+            allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
+            if not allowed:
+                violations.append(f"  OCC/WESLR bootstrap context doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
