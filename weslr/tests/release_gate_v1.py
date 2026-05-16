@@ -112,6 +112,27 @@ _internal_corpus_to_advisor_review_adapter_required_markers = {
     "no_parallel_advisor_audit_execution_layer",
 }
 
+_internal_corpus_advisor_review_adapter_helper_canon_doc = "docs/WESLR_INTERNAL_CORPUS_ADVISOR_REVIEW_ADAPTER_HELPER_CANON_V1.md"
+_internal_corpus_advisor_review_adapter_helper_required_markers = {
+    "APPROVE_WESLR_INTERNAL_CORPUS_ADVISOR_REVIEW_ADAPTER_HELPER_CANON_V1_ONLY",
+    "internal_corpus_advisor_review_adapter_helpers",
+    "helper_ready",
+    "redacted_review_ready",
+    "non_executing",
+    "non_scoring",
+    "non_authoritative",
+    "local_scan_advisor_review_compatible_only",
+    "advisor_call_allowed = false",
+    "model_calls = false",
+    "safe_to_execute = false",
+    "queue_persistence_performed = false",
+    "not_advisor_call_ready",
+    "not_model_call_ready",
+    "not_queue_persistence_ready",
+    "not_scoring_ready",
+    "not_certification_ready",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -186,6 +207,10 @@ def _internal_corpus_to_advisor_review_adapter_design_doc_is_valid():
     return _doc_with_markers_is_valid(_internal_corpus_to_advisor_review_adapter_design_doc, _internal_corpus_to_advisor_review_adapter_required_markers)
 
 
+def _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_internal_corpus_advisor_review_adapter_helper_canon_doc, _internal_corpus_advisor_review_adapter_helper_required_markers)
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -210,6 +235,8 @@ def _check_git_scope():
         the approved internal evaluation corpus helper canon markers are present
       - docs/WESLR_INTERNAL_CORPUS_TO_ADVISOR_REVIEW_ADAPTER_DESIGN_V1.md only when
         the approved internal corpus to advisor review adapter design markers are present
+      - docs/WESLR_INTERNAL_CORPUS_ADVISOR_REVIEW_ADAPTER_HELPER_CANON_V1.md only when
+        the approved internal corpus advisor review adapter helper canon markers are present
     
     Forbidden:
       - openclaw/, plugins/, memory/, continuity/
@@ -233,6 +260,7 @@ def _check_git_scope():
     frontier_intelligence_shadow_review_doc_valid = _frontier_intelligence_shadow_review_canon_doc_is_valid()
     internal_evaluation_corpus_helper_doc_valid = _internal_evaluation_corpus_helper_canon_doc_is_valid()
     internal_corpus_to_advisor_review_adapter_doc_valid = _internal_corpus_to_advisor_review_adapter_design_doc_is_valid()
+    internal_corpus_advisor_review_adapter_helper_doc_valid = _internal_corpus_advisor_review_adapter_helper_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -277,6 +305,10 @@ def _check_git_scope():
             allowed = internal_corpus_to_advisor_review_adapter_doc_valid
             if not internal_corpus_to_advisor_review_adapter_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _internal_corpus_advisor_review_adapter_helper_canon_doc:
+            allowed = internal_corpus_advisor_review_adapter_helper_doc_valid
+            if not internal_corpus_advisor_review_adapter_helper_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
