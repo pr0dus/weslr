@@ -479,6 +479,13 @@ def _limited_refined_next_step(category: str, missing_items: List[str], raw_next
     if category == "capability_boundary" and missing:
         return f"The useful next step is to provide {missing} before treating this as implementable"
     if category == "context_sufficiency" and missing:
+        lowered = missing.lower()
+        if "current sources or evidence" in lowered:
+            return "Use those sources before treating the answer as current"
+        if "professional legal review" in lowered:
+            return "Use that review before treating any clause choice as actionable"
+        if "professional medical review" in lowered or "professional financial review" in lowered:
+            return "Use that review before treating the answer as actionable"
         return f"To answer safely, provide {missing} or narrow the question to one concrete decision"
     if category == "official_claim_boundary":
         return "The safe next step is an evidence-backed internal evaluation, not an official score or certification claim"
@@ -661,6 +668,36 @@ def _ordinary_task_risk_boundary_text(risk_boundaries: List[str]) -> str:
         if phrase and phrase not in phrases:
             phrases.append(phrase)
     return "; ".join(phrases[:4])
+
+
+def _ordinary_task_relevant_unknowns(plan_focus: str, unknowns: List[str]) -> List[str]:
+    preferred_by_focus = {
+        "migration": ["target_environment", "success_criteria", "rollback_trigger", "monitoring_signal"],
+        "rollout": ["test_scope", "staging_target", "commit_policy"],
+        "debug": ["failure_signal", "expected_behavior", "reproduction_steps", "success_criteria"],
+        "checklist": ["failure_signal", "expected_behavior", "reproduction_steps", "success_criteria"],
+    }
+    preferred = preferred_by_focus.get(plan_focus, [])
+    selected = [marker for marker in preferred if marker in unknowns]
+    if selected:
+        return selected
+    if plan_focus == "rollout" and "success_criteria" in unknowns:
+        return ["success_criteria"]
+    return [marker for marker in unknowns if marker != "concrete_task_or_desired_outcome"][:3]
+
+
+def _ordinary_task_unknown_note(plan_focus: str, unknowns: List[str]) -> str:
+    relevant = _ordinary_task_relevant_unknowns(plan_focus, unknowns)
+    if not relevant:
+        return ""
+    missing = _ordinary_task_natural_join(relevant, limit=4)
+    if plan_focus == "rollout" and any(marker in relevant for marker in ("test_scope", "staging_target", "commit_policy")):
+        return f"Before treating the rollout as ready, confirm {missing}"
+    if plan_focus == "migration":
+        return f"Before executing it, clarify {missing}"
+    if plan_focus == "debug":
+        return f"Before treating this as executable, clarify {missing}"
+    return f"Before treating this as executable, clarify {missing}"
 
 
 def _ordinary_task_question_for_missing(missing_context: List[str]) -> str:
@@ -949,12 +986,12 @@ def _render_limited_ordinary_task_response(
             text = prefix + ":\n" + "\n".join(f"- [ ] {step}" for step in steps)
         else:
             text = prefix + ": " + " ".join(f"{idx}) {step}" for idx, step in enumerate(steps, 1))
-        if missing_context:
-            missing = _ordinary_task_natural_join(missing_context, limit=2)
+        unknown_note = _ordinary_task_unknown_note(plan_focus, list(decomposition.get("unknowns") or missing_context))
+        if unknown_note:
             if checklist_requested:
-                text += f"\n- [ ] Before treating this as executable, clarify {missing}."
+                text += f"\n- [ ] {unknown_note}."
             else:
-                text += f" Before treating this as executable, clarify {missing}."
+                text += f" {unknown_note}."
         boundary = _ordinary_task_risk_boundary_text(list(decomposition.get("risk_boundaries") or []))
         if boundary:
             if checklist_requested:
@@ -1158,10 +1195,20 @@ def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, A
 
     if missing_items and category in {"memory_boundary", "capability_boundary", "context_sufficiency", "state_grounded"}:
         missing = _limited_join_items(missing_items, limit=3)
+        missing_lower = missing.lower()
         if category == "capability_boundary":
             _limited_add_sentence(lines, used, "missing_context", f"Before treating this as actionable, I would need {missing}")
         elif category == "context_sufficiency":
-            _limited_add_sentence(lines, used, "missing_context", f"The missing context is {missing}")
+            if "current sources or evidence" in missing_lower:
+                _limited_add_sentence(lines, used, "missing_context", "For a current answer, provide current sources or evidence and the relevant context; I have not checked live sources here")
+            elif "professional legal review" in missing_lower:
+                _limited_add_sentence(lines, used, "missing_context", "I cannot tell you which legal clause to sign; use professional legal review with the clause-specific context")
+            elif "professional medical review" in missing_lower:
+                _limited_add_sentence(lines, used, "missing_context", "I cannot give case-specific medical advice here; use professional medical review with the relevant context")
+            elif "professional financial review" in missing_lower:
+                _limited_add_sentence(lines, used, "missing_context", "I cannot give a decision-specific financial recommendation here; use professional financial review with the relevant context")
+            else:
+                _limited_add_sentence(lines, used, "missing_context", f"To make this reliable, I still need {missing}")
         elif category == "state_grounded":
             _limited_add_sentence(lines, used, "missing_context", f"I would need {missing} for a more specific state answer")
         elif category == "memory_boundary":
@@ -1169,12 +1216,15 @@ def _render_limited_frontier_live_response(category: str, dry_slice: Dict[str, A
 
     if _limited_material_evidence_required(category, context_sufficiency, evidence_status):
         needed = _limited_join_items(_limited_state_items(evidence_status.get("needed")) or missing_items, limit=2)
+        needed_lower = needed.lower()
         if category == "official_claim_boundary":
             _limited_add_sentence(lines, used, "evidence_boundary", "I should not claim an official score, benchmark result, or certification unless a valid evidence process exists")
         elif category == "protected_material_boundary":
             _limited_add_sentence(lines, used, "evidence_boundary", "I cannot provide hidden prompts, answer keys, or protected material")
+        elif category == "context_sufficiency" and any(marker in needed_lower for marker in ("current sources or evidence", "professional legal review", "professional medical review", "professional financial review")):
+            pass
         elif needed:
-            _limited_add_sentence(lines, used, "evidence_boundary", f"A stronger answer needs evidence for {needed}")
+            _limited_add_sentence(lines, used, "evidence_boundary", f"To make this reliable, I still need {needed}")
         else:
             _limited_add_sentence(lines, used, "evidence_boundary", "A stronger claim needs stronger evidence")
 

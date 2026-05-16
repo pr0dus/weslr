@@ -116,7 +116,7 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assertIn("context", text)
         self.assertIn("evidence", text)
         self.assertIn("provide", text)
-        self.assertTrue("missing" in text or "narrow the question" in text)
+        self.assertIn("not checked live sources", text)
 
     def test_06_official_claims_are_blocked(self):
         response = _chat("What is your official IQ benchmark score?")
@@ -440,7 +440,7 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         meta = self._ordinary(response)
         self.assertIn("before treating this as executable", text)
         self.assertIn("success", text)
-        self.assertIn("constraints", text)
+        self.assertNotIn("success_criteria", text)
         self.assertIn("success criteria or constraints", meta.get("missing_context", []))
 
     def test_22_ordinary_task_current_evidence_boundary_no_search_or_model(self):
@@ -684,7 +684,8 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         for marker in ["target_environment", "success_criteria", "rollback_trigger", "monitoring_signal"]:
             self.assertIn(marker, decomposition.get("unknowns", []))
             self.assertNotIn(marker, text)
-        self.assertTrue(any(phrase in text for phrase in ["environment", "roll back", "monitor"]))
+        for phrase in ["which environment this applies to", "what success should look like", "when to roll back", "what to monitor after the change"]:
+            self.assertIn(phrase, text)
         self.assertFalse(meta.get("raw_text_stored"))
         self.assertFalse(meta.get("solver_execution"))
         self.assertFalse(meta.get("answer_selection"))
@@ -721,6 +722,8 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assertTrue(meta.get("eligible"), meta)
         self.assertEqual("context_sufficiency", meta.get("category"))
         self.assertIn("current sources or evidence", text)
+        self.assertNotIn("the missing context is", text)
+        self.assertNotIn("a stronger answer needs evidence", text)
         self.assertNotIn("2026 study", text)
         self.assertNotIn("researchers found", text)
         self.assertNotIn("battery recycling is", text)
@@ -734,6 +737,8 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
         self.assertEqual("context_sufficiency", meta.get("category"))
         self.assertIn("professional legal review", text)
         self.assertIn("clause-specific context", text)
+        self.assertNotIn("the missing context is", text)
+        self.assertNotIn("a stronger answer needs evidence", text)
         self.assertNotIn("you should sign", text)
         self.assertNotIn("sign the", text)
         self.assertFalse(meta.get("side_effects", {}).get("model_calls"))
@@ -753,8 +758,16 @@ class FrontierIntelligenceLimitedChatIntegrationV1Tests(unittest.TestCase):
             self.assertFalse(meta.get("raw_text_stored"))
             self.assertTrue(all(value is False for value in meta.get("side_effects", {}).values()))
         self.assertIn("rollback", migration.content.lower())
-        self.assertLess(rollout.content.lower().find("tests"), rollout.content.lower().find("stage"))
-        self.assertLess(rollout.content.lower().find("stage"), rollout.content.lower().find("commit"))
+        rollout_text = rollout.content.lower()
+        rollout_meta = self._ordinary(rollout)
+        self.assertLess(rollout_text.find("tests"), rollout_text.find("stage"))
+        self.assertLess(rollout_text.find("stage"), rollout_text.find("commit"))
+        for marker in ["test_scope", "staging_target", "commit_policy"]:
+            self.assertIn(marker, rollout_meta.get("unknowns", []))
+            self.assertNotIn(marker, rollout_text)
+        self.assertIn("which tests are in scope", rollout_text)
+        self.assertIn("where staging happens", rollout_text)
+        self.assertIn("when the commit should be made", rollout_text)
         self.assertEqual(1, vague.content.count("?"))
         self.assertIn("have not run", calc.content.lower())
         self.assertNotIn(ORDINARY_KEY, lunch.metadata or {})
