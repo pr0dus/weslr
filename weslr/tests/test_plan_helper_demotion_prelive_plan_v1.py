@@ -232,7 +232,7 @@ def test_validation_warns_for_missing_plan_sections(tmp_path, monkeypatch):
     validation = validate_plan_helper_demotion_prelive_plan_v1(drifted)
     warning_categories = {warning["category"] for warning in validation["warnings"]}
 
-    assert validation["valid"] is True
+    assert validation["valid"] is False
     assert "future_diff_plan_missing" in warning_categories
     assert "future_tests_missing" in warning_categories
     assert "rollback_plan_missing" in warning_categories
@@ -315,3 +315,176 @@ def test_validation_rejects_private_like_url_and_claim_markers(tmp_path, monkeyp
     claim = copy.deepcopy(plan)
     claim["unsafe_note"] = "I have a soul"
     assert validate_plan_helper_demotion_prelive_plan_v1(claim)["valid"] is False
+
+def test_approval_marker_schema_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+
+    assert plan["required_owner_approval_marker"] == "APPROVE_WESLR_PLAN_HELPER_LIVE_DEMOTION_SLICE_V1"
+    assert plan["required_live_task_name"] == "IMPLEMENT_WESLR_PLAN_HELPER_LIVE_DEMOTION_SLICE_V1"
+    assert plan["live_task_must_declare"] == "WESLR_RUNTIME_CHANGE live behavior"
+    assert plan["metadata_is_owner_approval"] is False
+    assert plan["owner_approval_granted"] is False
+
+    for field, value in [
+        ("metadata_is_owner_approval", True),
+        ("owner_approval_granted", True),
+        ("required_owner_approval_marker", "WRONG"),
+        ("required_live_task_name", "WRONG"),
+        ("live_task_must_declare", "WRONG"),
+    ]:
+        drifted = copy.deepcopy(plan)
+        drifted[field] = value
+        assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_owner_approval_gate_completeness_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    gate = "\n".join(plan["owner_approval_gate"]).lower()
+
+    for clause in [
+        "approve_weslr_plan_helper_live_demotion_slice_v1",
+        "implement_weslr_plan_helper_live_demotion_slice_v1",
+        "no unrelated files changed",
+        "no model calls",
+        "no advisor calls",
+        "no web search calls",
+        "no memory writes",
+        "no .weslr runtime state",
+        "no raw private text storage",
+        "no solver execution",
+        "no answer-selection arbitration",
+        "release gate required",
+        "release check required",
+    ]:
+        assert clause in gate
+
+    drifted = copy.deepcopy(plan)
+    drifted["owner_approval_gate"] = [item for item in drifted["owner_approval_gate"] if "no unrelated files" not in item]
+    assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_rollback_command_completeness_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    rollback = "\n".join(plan["rollback_plan"]).lower()
+
+    for clause in [
+        "git rev-parse head",
+        "git diff --stat",
+        "git diff",
+        "disable weslr_enable_plan_helper_demotion_v1",
+        "git revert <live-slice-commit>",
+        "python -m pytest -q weslr/tests/test_plan_helper_live_demotion_slice_v1.py",
+        "python3 weslr/tests/release_gate_v1.py",
+        "bash scripts/weslr_release_check.sh",
+    ]:
+        assert clause in rollback
+
+    drifted = copy.deepcopy(plan)
+    drifted["rollback_plan"] = [item for item in drifted["rollback_plan"] if "git diff --stat" not in item]
+    assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_future_diff_boundaries_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    diff_text = _render(plan["future_diff_plan"])
+
+    assert "weslr/chat_responder.py" in diff_text
+    assert "chat_responder_plan_helper" in diff_text
+    assert "1787-1792" in diff_text
+    assert "weslr/tests/test_plan_helper_live_demotion_slice_v1.py" in diff_text
+    assert "no_main_py" in diff_text
+    assert "no_staging_server" in diff_text
+    assert "no_voice_ui_persistence_files" in diff_text
+    assert "chat_responder_lunch_helper" not in diff_text
+    assert "main.py" not in diff_text
+    assert "deploy/staging" not in diff_text
+
+    drifted = copy.deepcopy(plan)
+    drifted["future_diff_plan"].append({"label": "broad router", "target": "all chat_responder branches"})
+    assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+    drifted = copy.deepcopy(plan)
+    drifted["future_diff_plan"].append({"label": "non_plan_branch", "target": "chat_responder_lunch_helper"})
+    assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_future_tests_required_strengthened_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    tests = "\n".join(plan["future_tests_required"]).lower()
+
+    for clause in [
+        "feature flag default false",
+        "exact plan trigger only",
+        "no broad route replacement",
+        "no unrelated files changed",
+        "no solver execution",
+        "no answer selection arbitration",
+        "fallback path used if formation fails",
+        "old canned behavior still available by direct fallback assertion",
+    ]:
+        assert clause in tests
+
+    drifted = copy.deepcopy(plan)
+    drifted["future_tests_required"] = [item for item in drifted["future_tests_required"] if "exact plan trigger only" not in item]
+    assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_implementation_approval_packet_and_validation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    packet = plan["implementation_approval_packet"]
+
+    assert packet["approval_status"] == "not_requested"
+    assert packet["owner_approval_granted"] is False
+    assert packet["metadata_is_approval"] is False
+    assert packet["approved_target_branch"] == TARGET_BRANCH_V1
+    assert packet["approved_target_file"] == TARGET_FILE_V1
+    assert packet["approved_scope"] == "one_branch_only"
+
+    for field, value in [
+        ("approval_status", "approved"),
+        ("owner_approval_granted", True),
+        ("metadata_is_approval", True),
+        ("approved_target_branch", "chat_responder_lunch_helper"),
+        ("approved_target_file", "main.py"),
+        ("approved_scope", "all_branches"),
+    ]:
+        drifted = copy.deepcopy(plan)
+        drifted["implementation_approval_packet"][field] = value
+        assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False
+
+
+def test_summary_markdown_refined_approval_fields(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    summary = summarize_plan_helper_demotion_prelive_plan_v1(plan)
+    markdown = render_plan_helper_demotion_prelive_plan_markdown_v1(plan).lower()
+
+    assert summary["owner_approval_granted"] is False
+    assert summary["metadata_is_owner_approval"] is False
+    assert summary["required_owner_approval_marker_present"] is True
+    assert summary["rollback_command_count"] == len(plan["rollback_plan"])
+    assert summary["exact_diff_boundary_present"] is True
+    assert "owner_approval_granted: false" in markdown
+    assert "metadata_is_owner_approval: false" in markdown
+    assert "required_owner_approval_marker_present: true" in markdown
+    assert "rollback_command_count" in markdown
+    assert "exact_diff_boundary_present: true" in markdown
+    assert "raw_prompt" not in markdown
+    assert "final_answer" not in markdown
+    assert "response_text" not in markdown
+    assert "https://" not in markdown
+
+
+def test_validation_rejects_solver_and_arbitration_drift(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan_helper_demotion_prelive_plan_v1()
+    for field in ["solver_execution", "answer_selection_arbitration"]:
+        drifted = copy.deepcopy(plan)
+        drifted[field] = True
+        assert validate_plan_helper_demotion_prelive_plan_v1(drifted)["valid"] is False

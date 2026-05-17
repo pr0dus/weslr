@@ -22,6 +22,11 @@ SCHEMA_VERSION_V1 = "1.0"
 TARGET_BRANCH_V1 = "chat_responder_plan_helper"
 TARGET_FILE_V1 = "weslr/chat_responder.py"
 FEATURE_FLAG_V1 = "WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1"
+REQUIRED_OWNER_APPROVAL_MARKER_V1 = "APPROVE_WESLR_PLAN_HELPER_LIVE_DEMOTION_SLICE_V1"
+REQUIRED_LIVE_TASK_NAME_V1 = "IMPLEMENT_WESLR_PLAN_HELPER_LIVE_DEMOTION_SLICE_V1"
+LIVE_TASK_MUST_DECLARE_V1 = "WESLR_RUNTIME_CHANGE live behavior"
+FUTURE_LIVE_TEST_FILE_V1 = "weslr/tests/test_plan_helper_live_demotion_slice_v1.py"
+OPTIONAL_FUTURE_HELPER_FILE_V1 = "weslr/plan_helper_live_demotion_slice.py"
 ALIGNMENT_LAYER_V1 = "WESLR_RUNTIME_CHANGE_prelive_helper_test_source_only"
 
 EXCLUDED_BRANCHES_V1 = (
@@ -115,6 +120,7 @@ FORBIDDEN_TEXT_MARKERS_V1 = {
     "solver_or_arbitration": ("solver_execution: true", "answer_selection_arbitration: true", "answer-selection arbitration"),
     "live_chat_responder_call": ("respond_chat(", "chatresponder.respond_chat", "live chat responder called"),
     "live_ready_label": ("live_ready", "live-ready", "ready_for_live", "safe to replace live"),
+    "broad_route_drift": ("broad router", "all chat_responder branches", "replace all helpers"),
 }
 
 _PRIVATE_LIKE_TOKEN_RE_V1 = re.compile(r"\b(?=[A-Za-z0-9_-]{14,}\b)(?=.*[A-Za-z])(?=.*\d)(?=.*-)[A-Za-z0-9_-]+\b")
@@ -126,6 +132,7 @@ _SAFE_MARKER_PATH_SEGMENTS_V1 = frozenset({
     "target_scope",
     "owner_approval_gate",
     "blocked_surfaces",
+    "future_live_implementation_prompt_must_include",
 })
 
 
@@ -177,40 +184,45 @@ def _future_diff_plan_v1() -> List[Dict[str, Any]]:
     return [
         {
             "step": 1,
-            "label": "locate_plan_branch",
-            "future_file": TARGET_FILE_V1,
-            "future_branch": TARGET_BRANCH_V1,
-            "description": "Locate the existing plan helper branch only, around lines 1787-1792.",
+            "label": "allowed_runtime_boundary",
+            "only_allowed_runtime_file": TARGET_FILE_V1,
+            "only_allowed_branch": TARGET_BRANCH_V1,
+            "approx_allowed_line_range": "1787-1792",
+            "allowed_test_file_pattern": FUTURE_LIVE_TEST_FILE_V1,
+            "allowed_optional_helper_file_if_needed": OPTIONAL_FUTURE_HELPER_FILE_V1,
             "implementation_allowed_now": False,
         },
         {
             "step": 2,
-            "label": "add_disabled_feature_flag",
-            "description": f"Introduce {FEATURE_FLAG_V1} with a false default before any behavior switch.",
+            "label": "add_disabled_feature_flag_inside_plan_branch_boundary",
             "feature_flag": FEATURE_FLAG_V1,
             "feature_flag_default": False,
+            "feature_flag_default_may_change_only_with_explicit_owner_approval": True,
             "implementation_allowed_now": False,
         },
         {
             "step": 3,
-            "label": "add_narrow_adapter_call_inside_plan_branch_only",
-            "description": "Future implementation may add a narrow adapter call only inside the plan helper branch.",
+            "label": "exact_plan_trigger_only",
             "target_branch": TARGET_BRANCH_V1,
             "one_branch_only": True,
+            "allowed_trigger_scope": "existing plan branch trigger only",
             "implementation_allowed_now": False,
         },
         {
             "step": 4,
-            "label": "build_unified_response_formation_output_through_existing_helper_path",
-            "description": "Use existing unified response formation helper substrate; do not create a new helper pile or router.",
+            "label": "call_existing_unified_response_formation_substrate_only",
             "selected_candidate_family": "ordinary_task_plan",
+            "no_new_router": True,
+            "no_model_search_advisor_code": True,
             "implementation_allowed_now": False,
         },
         {
             "step": 5,
-            "label": "preserve_old_canned_fallback",
-            "description": "Keep the current canned plan helper path as fallback if formation fails or the feature flag is disabled.",
+            "label": "preserve_old_canned_plan_fallback",
+            "old_canned_path_shadowed": TARGET_BRANCH_V1,
             "fallback_required": True,
+            "fallback_when_feature_flag_disabled": True,
+            "fallback_when_formation_fails": True,
             "implementation_allowed_now": False,
         },
         {
@@ -220,54 +232,70 @@ def _future_diff_plan_v1() -> List[Dict[str, Any]]:
                 "old_canned_path_shadowed": TARGET_BRANCH_V1,
                 "selected_candidate_family": "ordinary_task_plan",
                 "fallback_available": True,
-                "owner_approved": "true only in a separately approved implementation task",
+                "owner_approval_granted": False,
+                "metadata_is_owner_approval": False,
                 "canned_response_replaced": False,
             },
             "implementation_allowed_now": False,
         },
         {
             "step": 7,
-            "label": "keep_all_non_plan_surfaces_unchanged",
-            "description": "Do not touch lunch, workout, email, code/bug, guardrails, status, self, model, search, write, or interpersonal paths.",
+            "label": "blocked_future_diff_surfaces",
+            "no_other_chat_responder_branches": True,
+            "no_main_py": True,
+            "no_staging_server": True,
+            "no_voice_ui_persistence_files": True,
+            "no_model_search_advisor_code": True,
+            "no_memory_truth_provenance_registry_writes": True,
+            "no_status_guardrail_self_identity_evidence_branches": True,
             "implementation_allowed_now": False,
         },
         {
             "step": 8,
             "label": "add_tests_before_or_alongside_future_code",
-            "description": "Future implementation must add focused tests before or alongside any runtime edit.",
+            "allowed_test_file_pattern": FUTURE_LIVE_TEST_FILE_V1,
             "implementation_allowed_now": False,
         },
         {
             "step": 9,
-            "label": "keep_rollback_path_ready",
-            "description": "Rollback commands must be documented before a future implementation edit.",
+            "label": "document_exact_rollback_before_edit",
             "rollback_required": True,
             "implementation_allowed_now": False,
         },
     ]
 
-
 def _future_tests_required_v1() -> List[str]:
     return [
-        "feature flag disabled keeps old plan fallback available",
+        "feature flag default false",
+        "feature flag disabled keeps old canned plan fallback",
         "feature flag enabled affects plan branch only",
+        "exact plan trigger only",
         "non-plan lunch helper unchanged",
         "non-plan workout helper unchanged",
         "non-plan email helper unchanged",
         "non-plan code bug helper unchanged",
-        "guardrail status self write model search interpersonal paths unchanged",
+        "guardrails unchanged",
         "self identity protected official boundary surfaces unchanged",
-        "no model advisor search calls",
+        "evidence search unchanged",
+        "memory write paths unchanged",
         "no memory writes",
+        "no model advisor search calls",
+        "no model calls",
+        "no advisor calls",
+        "no web search calls",
+        "no solver execution",
+        "no answer selection arbitration",
         "no .weslr state creation",
         "no raw private text storage",
+        "no broad route replacement",
+        "no unrelated files changed",
+        "fallback path used if formation fails",
+        "old canned behavior still available by direct fallback assertion",
         "metadata includes old_canned_path_shadowed",
         "metadata includes selected_candidate_family ordinary_task_plan or clarification",
-        "fallback path used if formation fails",
         "rollback path documented",
         "release gate and release check pass",
     ]
-
 
 def build_plan_helper_demotion_prelive_plan_v1() -> Dict[str, Any]:
     """Build an in-memory pre-live plan object for future plan-helper demotion review."""
@@ -285,9 +313,13 @@ def build_plan_helper_demotion_prelive_plan_v1() -> Dict[str, Any]:
         "blocked_surfaces": list(EXCLUDED_BRANCHES_V1),
     }
     rollback_plan = [
-        "git status --short",
-        "git diff -- weslr/chat_responder.py weslr/tests",
-        "git restore -- weslr/chat_responder.py",
+        "git rev-parse HEAD",
+        "git diff --stat",
+        "git diff",
+        f"disable {FEATURE_FLAG_V1}",
+        "git revert <live-slice-commit>",
+        "restore old chat_responder_plan_helper branch from previous commit",
+        f"python -m pytest -q {FUTURE_LIVE_TEST_FILE_V1}",
         "python3 weslr/tests/release_gate_v1.py",
         "bash scripts/weslr_release_check.sh",
     ]
@@ -298,13 +330,56 @@ def build_plan_helper_demotion_prelive_plan_v1() -> Dict[str, Any]:
         "manual metadata smoke: no model/search/advisor/write/.weslr flags set",
     ]
     owner_gate = [
-        "owner explicitly approves future live slice by task name",
-        "future task declares WESLR_RUNTIME_CHANGE live behavior",
-        "target branch remains exactly chat_responder_plan_helper",
-        "fallback and rollback plan are present before edit",
-        "focused tests pass before release",
+        f"exact owner approval marker required: {REQUIRED_OWNER_APPROVAL_MARKER_V1}",
+        f"exact live implementation task name required: {REQUIRED_LIVE_TASK_NAME_V1}",
+        f"future task declares {LIVE_TASK_MUST_DECLARE_V1}",
+        f"target branch remains exactly {TARGET_BRANCH_V1}",
+        f"target file remains exactly {TARGET_FILE_V1}",
+        "no unrelated files changed",
+        "rollback commands included before edit",
+        "tests before or alongside implementation",
+        "fallback preserved",
+        "feature flag default false unless owner explicitly approves enabling",
+        "no model advisor search calls",
+        "no model calls",
+        "no advisor calls",
+        "no web search calls",
+        "no memory writes",
+        "no .weslr runtime state",
+        "no raw private text storage",
+        "no solver execution",
+        "no answer-selection arbitration",
+        "no broad runtime replacement",
         "release gate and release check pass",
+        "release gate required",
+        "release check required",
         "manual smoke tests are defined and run",
+        "manual smoke tests required",
+    ]
+    implementation_approval_packet = {
+        "approval_packet_type": "plan_helper_live_demotion_approval_packet_v1",
+        "approval_status": "not_requested",
+        "owner_approval_granted": False,
+        "required_owner_phrase": REQUIRED_OWNER_APPROVAL_MARKER_V1,
+        "approved_target_branch": TARGET_BRANCH_V1,
+        "approved_target_file": TARGET_FILE_V1,
+        "approved_scope": "one_branch_only",
+        "feature_flag_default": False,
+        "fallback_required": True,
+        "rollback_required": True,
+        "metadata_is_approval": False,
+    }
+    future_live_implementation_prompt_must_include = [
+        "exact owner approval phrase",
+        LIVE_TASK_MUST_DECLARE_V1,
+        f"target branch {TARGET_BRANCH_V1}",
+        "feature flag default false unless explicitly approved",
+        "fallback preserved",
+        "rollback commands",
+        "tests before/alongside implementation",
+        "no unrelated files",
+        "no broad runtime replacement",
+        "no model/search/advisor/memory/.weslr/raw-text paths",
     ]
     plan: Dict[str, Any] = {
         "plan_type": PLAN_TYPE_V1,
@@ -317,7 +392,12 @@ def build_plan_helper_demotion_prelive_plan_v1() -> Dict[str, Any]:
         "quality_label": "strongest_first_design_candidate",
         "alignment_layer": ALIGNMENT_LAYER_V1,
         "live_weslr_behavior_changed": False,
+        "metadata_is_owner_approval": False,
+        "owner_approval_granted": False,
         "owner_approval_required_before_implementation": True,
+        "required_owner_approval_marker": REQUIRED_OWNER_APPROVAL_MARKER_V1,
+        "required_live_task_name": REQUIRED_LIVE_TASK_NAME_V1,
+        "live_task_must_declare": LIVE_TASK_MUST_DECLARE_V1,
         "implementation_allowed_now": False,
         "chat_responder_edit_allowed_now": False,
         "feature_flag": FEATURE_FLAG_V1,
@@ -343,6 +423,8 @@ def build_plan_helper_demotion_prelive_plan_v1() -> Dict[str, Any]:
         "rollback_plan": rollback_plan,
         "smoke_tests": smoke_tests,
         "owner_approval_gate": owner_gate,
+        "implementation_approval_packet": implementation_approval_packet,
+        "future_live_implementation_prompt_must_include": future_live_implementation_prompt_must_include,
     }
     plan["validation"] = validate_plan_helper_demotion_prelive_plan_v1(plan)
     return plan
@@ -365,6 +447,9 @@ def validate_plan_helper_demotion_prelive_plan_v1(plan: Mapping[str, Any]) -> Di
         "quality_label": "strongest_first_design_candidate",
         "alignment_layer": ALIGNMENT_LAYER_V1,
         "feature_flag": FEATURE_FLAG_V1,
+        "required_owner_approval_marker": REQUIRED_OWNER_APPROVAL_MARKER_V1,
+        "required_live_task_name": REQUIRED_LIVE_TASK_NAME_V1,
+        "live_task_must_declare": LIVE_TASK_MUST_DECLARE_V1,
     }
     for key, expected in required_equals.items():
         if plan.get(key) != expected:
@@ -374,6 +459,8 @@ def validate_plan_helper_demotion_prelive_plan_v1(plan: Mapping[str, Any]) -> Di
         "implementation_allowed_now",
         "chat_responder_edit_allowed_now",
         "live_weslr_behavior_changed",
+        "metadata_is_owner_approval",
+        "owner_approval_granted",
         "safe_to_replace_live",
         "runtime_wiring",
         "live_runtime_output",
@@ -401,6 +488,141 @@ def validate_plan_helper_demotion_prelive_plan_v1(plan: Mapping[str, Any]) -> Di
 
     if plan.get("feature_flag_default") is not False:
         errors.append(_error("feature_flag_default_must_be_false", "feature_flag_default", "feature flag must default false"))
+
+    owner_gate_text = "\n".join(str(item).lower() for item in plan.get("owner_approval_gate", []))
+    required_gate_clauses = {
+        "owner_approval_marker": REQUIRED_OWNER_APPROVAL_MARKER_V1.lower(),
+        "live_task_name": REQUIRED_LIVE_TASK_NAME_V1.lower(),
+        "live_task_declaration": LIVE_TASK_MUST_DECLARE_V1.lower(),
+        "target_branch": TARGET_BRANCH_V1.lower(),
+        "target_file": TARGET_FILE_V1.lower(),
+        "no_unrelated_files": "no unrelated files changed",
+        "rollback_before_edit": "rollback commands included before edit",
+        "tests_before_or_alongside": "tests before or alongside implementation",
+        "fallback_preserved": "fallback preserved",
+        "feature_flag_default_false": "feature flag default false",
+        "no_model_calls": "no model calls",
+        "no_advisor_calls": "no advisor calls",
+        "no_web_search_calls": "no web search calls",
+        "no_memory_writes": "no memory writes",
+        "no_weslr_state": "no .weslr runtime state",
+        "no_raw_private_text": "no raw private text storage",
+        "no_solver_execution": "no solver execution",
+        "no_answer_selection_arbitration": "no answer-selection arbitration",
+        "no_broad_runtime_replacement": "no broad runtime replacement",
+        "release_gate_required": "release gate required",
+        "release_check_required": "release check required",
+        "manual_smoke_tests_required": "manual smoke tests required",
+    }
+    for category, clause in required_gate_clauses.items():
+        if clause not in owner_gate_text:
+            errors.append(_error("owner_approval_gate_clause_missing", f"owner_approval_gate.{category}", clause))
+
+    rollback_items = [str(item).lower() for item in plan.get("rollback_plan", [])]
+    rollback_text = "\n".join(rollback_items)
+    required_rollback_clauses = {
+        "save_current_commit": "git rev-parse head",
+        "diff_stat": "git diff --stat",
+        "diff_full": "git diff",
+        "feature_flag_off": f"disable {FEATURE_FLAG_V1}".lower(),
+        "git_revert": "git revert <live-slice-commit>",
+        "focused_tests": "python -m pytest -q",
+        "release_gate": "python3 weslr/tests/release_gate_v1.py",
+        "release_check": "bash scripts/weslr_release_check.sh",
+    }
+    for category, clause in required_rollback_clauses.items():
+        if category == "diff_full":
+            present = clause in rollback_items
+        else:
+            present = clause in rollback_text
+        if not present:
+            errors.append(_error("rollback_clause_missing", f"rollback_plan.{category}", clause))
+
+    future_diff = plan.get("future_diff_plan")
+    future_diff_text = repr(future_diff).lower()
+    required_future_diff_clauses = {
+        "target_file": TARGET_FILE_V1.lower(),
+        "target_branch": TARGET_BRANCH_V1.lower(),
+        "line_range": "1787-1792",
+        "test_file": FUTURE_LIVE_TEST_FILE_V1.lower(),
+        "optional_helper": OPTIONAL_FUTURE_HELPER_FILE_V1.lower(),
+        "no_main_py": "no_main_py",
+        "no_staging_server": "no_staging_server",
+        "no_voice_ui_persistence": "no_voice_ui_persistence_files",
+        "no_model_search_advisor": "no_model_search_advisor_code",
+        "no_memory_registry": "no_memory_truth_provenance_registry_writes",
+        "no_status_guardrail_self_identity_evidence": "no_status_guardrail_self_identity_evidence_branches",
+    }
+    for category, clause in required_future_diff_clauses.items():
+        if clause not in future_diff_text:
+            errors.append(_error("future_diff_boundary_missing", f"future_diff_plan.{category}", clause))
+    forbidden_future_diff_markers = (
+        "lunch", "workout", "email", "code bug", "code/bug", "wife", "partner",
+        "low-focus", "low_focus", "vague fallback", "model path", "identity/self",
+        "evidence/search", "deterministic write", "staging raw log", "main.py",
+        "deploy/staging", "voice file", "ui/frontend", "persistence file", "memory write",
+        "source registry write", "broad router", "all chat_responder branches",
+    )
+    for marker in forbidden_future_diff_markers:
+        if marker in future_diff_text:
+            errors.append(_error("future_diff_forbidden_surface", "future_diff_plan", marker))
+
+    tests_text = "\n".join(str(item).lower() for item in plan.get("future_tests_required", []))
+    required_future_tests = {
+        "feature_flag_default_false": "feature flag default false",
+        "flag_disabled_old_fallback": "feature flag disabled keeps old canned plan fallback",
+        "flag_enabled_plan_only": "feature flag enabled affects plan branch only",
+        "exact_plan_trigger_only": "exact plan trigger only",
+        "no_broad_route_replacement": "no broad route replacement",
+        "no_unrelated_files": "no unrelated files changed",
+        "no_solver_execution": "no solver execution",
+        "no_answer_selection_arbitration": "no answer selection arbitration",
+        "fallback_when_fails": "fallback path used if formation fails",
+        "old_canned_direct_fallback": "old canned behavior still available by direct fallback assertion",
+    }
+    for category, clause in required_future_tests.items():
+        if clause not in tests_text:
+            errors.append(_error("future_test_requirement_missing", f"future_tests_required.{category}", clause))
+
+    packet = plan.get("implementation_approval_packet")
+    if not isinstance(packet, Mapping):
+        errors.append(_error("implementation_approval_packet_missing", "implementation_approval_packet", "approval packet must be present"))
+    else:
+        packet_required_equals = {
+            "approval_packet_type": "plan_helper_live_demotion_approval_packet_v1",
+            "approval_status": "not_requested",
+            "required_owner_phrase": REQUIRED_OWNER_APPROVAL_MARKER_V1,
+            "approved_target_branch": TARGET_BRANCH_V1,
+            "approved_target_file": TARGET_FILE_V1,
+            "approved_scope": "one_branch_only",
+        }
+        for key, expected in packet_required_equals.items():
+            if packet.get(key) != expected:
+                errors.append(_error("approval_packet_value_drift", f"implementation_approval_packet.{key}", f"expected {expected!r}"))
+        packet_false_required = ["owner_approval_granted", "metadata_is_approval", "feature_flag_default"]
+        for key in packet_false_required:
+            if packet.get(key) is not False:
+                errors.append(_error("approval_packet_flag_must_be_false", f"implementation_approval_packet.{key}", f"{key} must be false"))
+        for key in ["fallback_required", "rollback_required"]:
+            if packet.get(key) is not True:
+                errors.append(_error("approval_packet_flag_must_be_true", f"implementation_approval_packet.{key}", f"{key} must be true"))
+
+    prompt_text = "\n".join(str(item).lower() for item in plan.get("future_live_implementation_prompt_must_include", []))
+    required_prompt_clauses = [
+        "exact owner approval phrase",
+        LIVE_TASK_MUST_DECLARE_V1.lower(),
+        TARGET_BRANCH_V1.lower(),
+        "feature flag default false",
+        "fallback preserved",
+        "rollback commands",
+        "tests before/alongside implementation",
+        "no unrelated files",
+        "no broad runtime replacement",
+        "no model/search/advisor/memory/.weslr/raw-text paths",
+    ]
+    for clause in required_prompt_clauses:
+        if clause not in prompt_text:
+            errors.append(_error("future_prompt_requirement_missing", "future_live_implementation_prompt_must_include", clause))
 
     target_scope = plan.get("target_scope")
     if not isinstance(target_scope, Mapping):
@@ -482,13 +704,24 @@ def summarize_plan_helper_demotion_prelive_plan_v1(plan: Mapping[str, Any]) -> D
         "chat_responder_edit_allowed_now": bool(plan.get("chat_responder_edit_allowed_now")),
         "live_weslr_behavior_changed": bool(plan.get("live_weslr_behavior_changed")),
         "owner_approval_required": bool(plan.get("owner_approval_required_before_implementation")),
+        "owner_approval_granted": bool(plan.get("owner_approval_granted")),
+        "metadata_is_owner_approval": bool(plan.get("metadata_is_owner_approval")),
+        "required_owner_approval_marker_present": plan.get("required_owner_approval_marker") == REQUIRED_OWNER_APPROVAL_MARKER_V1,
         "feature_flag": plan.get("feature_flag"),
         "feature_flag_default": bool(plan.get("feature_flag_default")),
         "fallback_required": bool(plan.get("fallback_required")),
         "rollback_required": bool(plan.get("rollback_required")),
+        "rollback_command_count": len(plan.get("rollback_plan") or []),
         "future_diff_step_count": len(plan.get("future_diff_plan") or []),
         "future_test_count": len(plan.get("future_tests_required") or []),
         "excluded_branch_count": len(plan.get("excluded_branches") or []),
+        "exact_diff_boundary_present": any(
+            isinstance(item, Mapping)
+            and item.get("only_allowed_runtime_file") == TARGET_FILE_V1
+            and item.get("only_allowed_branch") == TARGET_BRANCH_V1
+            and item.get("approx_allowed_line_range") == "1787-1792"
+            for item in (plan.get("future_diff_plan") or [])
+        ),
         "safe_to_replace_live": bool(plan.get("safe_to_replace_live")),
         "runtime_wiring": bool(plan.get("runtime_wiring")),
         "live_runtime_output": bool(plan.get("live_runtime_output")),
@@ -509,13 +742,18 @@ def render_plan_helper_demotion_prelive_plan_markdown_v1(plan: Mapping[str, Any]
         f"- chat_responder_edit_allowed_now: {summary['chat_responder_edit_allowed_now']}",
         f"- live_weslr_behavior_changed: {summary['live_weslr_behavior_changed']}",
         f"- owner_approval_required: {summary['owner_approval_required']}",
+        f"- owner_approval_granted: {summary['owner_approval_granted']}",
+        f"- metadata_is_owner_approval: {summary['metadata_is_owner_approval']}",
+        f"- required_owner_approval_marker_present: {summary['required_owner_approval_marker_present']}",
         f"- feature_flag: {summary['feature_flag']}",
         f"- feature_flag_default: {summary['feature_flag_default']}",
         f"- fallback_required: {summary['fallback_required']}",
         f"- rollback_required: {summary['rollback_required']}",
+        f"- rollback_command_count: {summary['rollback_command_count']}",
         f"- future_diff_step_count: {summary['future_diff_step_count']}",
         f"- future_test_count: {summary['future_test_count']}",
         f"- excluded_branch_count: {summary['excluded_branch_count']}",
+        f"- exact_diff_boundary_present: {summary['exact_diff_boundary_present']}",
         f"- safe_to_replace_live: {summary['safe_to_replace_live']}",
         f"- runtime_wiring: {summary['runtime_wiring']}",
         f"- live_runtime_output: {summary['live_runtime_output']}",
