@@ -247,6 +247,28 @@ _plan_helper_flag_on_local_observation_design_required_markers = {
     "Anti-drift rule",
 }
 
+_plan_helper_observation_reporting_design_doc = "docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md"
+_plan_helper_observation_reporting_design_required_markers = {
+    "WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1",
+    "Observation reporting design only",
+    "No runtime change in this task",
+    "No default enablement",
+    "Feature flag default false",
+    "HOLD_AND_OBSERVE_PLAN_HELPER_DISABLED_BY_DEFAULT",
+    "KEEP_AS_DISABLED_BY_DEFAULT_CAPABILITY",
+    "Plan helper only",
+    "One branch only",
+    "No expansion without new approval",
+    "No raw private text",
+    "No benchmark claims",
+    "No Turing-test claims",
+    "Fallback preserved",
+    "Rollback available",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+    "Anti-drift rule",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -366,6 +388,10 @@ def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
 
+def _plan_helper_observation_reporting_design_doc_is_valid():
+    return _doc_with_markers_is_valid(_plan_helper_observation_reporting_design_doc, _plan_helper_observation_reporting_design_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -408,6 +434,8 @@ def _check_git_scope():
         the approved first live slice process canon markers are present
       - docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md only when
         the approved plan helper flag-on local observation design markers are present
+      - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
+        the approved plan helper observation reporting design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -440,6 +468,7 @@ def _check_git_scope():
     first_owner_approved_live_demotion_slice_design_doc_valid = _first_owner_approved_live_demotion_slice_design_doc_is_valid()
     first_live_slice_process_canon_doc_valid = _first_live_slice_process_canon_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
+    plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -511,6 +540,10 @@ def _check_git_scope():
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _plan_helper_observation_reporting_design_doc:
+            allowed = plan_helper_observation_reporting_design_doc_valid
+            if not plan_helper_observation_reporting_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
