@@ -1006,6 +1006,43 @@ def _build_ordinary_problem_decomposition_v1(
     }
 
 
+def _plan_helper_refined_missing_context_question_v1(decision: str, unknowns: List[str]) -> tuple[str, bool]:
+    """Return one bounded missing-context question for the approved plan slice."""
+    normalized = {"_".join(str(item).lower().replace("/", " ").split()) for item in unknowns or []}
+    if decision == "ask_clarifying_question" or "concrete_task_or_desired_outcome" in normalized:
+        return "What concrete outcome should this plan move toward?", True
+    if "success_criteria" in normalized or "success_criteria_or_constraints" in normalized:
+        return "What would count as success for this plan?", True
+    return "What context matters most before making this plan specific?", True
+
+
+def _render_plan_helper_quality_refinement_v1(
+    decision: str,
+    *,
+    missing_context: List[str],
+    decomposition: Dict[str, Any],
+) -> tuple[str, Dict[str, bool]]:
+    """Render a more useful local planning shape for the approved flag-on plan slice.
+
+    This is not a broad prompt table. It uses only normalized classification and
+    decomposition markers, asks for missing context, and offers a bounded starter
+    shape without inventing goals, timelines, priorities, or project details.
+    """
+    unknowns = list(decomposition.get("unknowns") or missing_context or [])
+    question, question_used = _plan_helper_refined_missing_context_question_v1(decision, unknowns)
+    lines = [
+        "I do not have the concrete objective yet, so I will keep this bounded and avoid inventing details.",
+        f"Question: {question}",
+        "Starter shape: Goal — name the outcome; Constraints — note the real limits; Next step — choose the smallest reversible move; Success signal — decide what would prove progress.",
+    ]
+    return " ".join(lines), {
+        "plan_quality_refinement_v1": True,
+        "missing_context_question_used": bool(question_used),
+        "starter_plan_shape_used": True,
+        "invented_context": False,
+    }
+
+
 def _render_limited_ordinary_task_response(
     decision: str,
     *,
@@ -1113,6 +1150,19 @@ def _try_plan_helper_live_demotion_slice_v1(
             plan_focus=plan_focus,
             decomposition=decomposition,
         )
+        quality_metadata: Dict[str, bool] = {
+            "plan_quality_refinement_v1": False,
+            "missing_context_question_used": bool(decision == "ask_clarifying_question"),
+            "starter_plan_shape_used": bool(step_plan_used),
+            "invented_context": False,
+        }
+        if decision in {"ask_clarifying_question", "answer_with_available_context"}:
+            content, quality_metadata = _render_plan_helper_quality_refinement_v1(
+                decision,
+                missing_context=missing_context,
+                decomposition=decomposition,
+            )
+            step_plan_used = bool(quality_metadata.get("starter_plan_shape_used"))
         if not _limited_composed_response_is_safe(content) or content.strip() == fallback_text.strip():
             return fallback_text, fallback_metadata
         metadata = _plan_helper_live_demotion_metadata_v1(
@@ -1123,6 +1173,7 @@ def _try_plan_helper_live_demotion_slice_v1(
         metadata.update({
             "decision": decision,
             "step_plan_used": bool(step_plan_used),
+            **quality_metadata,
             "plan_focus": plan_focus,
             "missing_context": missing_context,
             "risk_boundaries": decomposition.get("risk_boundaries", []),

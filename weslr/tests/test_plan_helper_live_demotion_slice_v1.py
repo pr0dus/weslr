@@ -39,6 +39,28 @@ def _assert_no_unauthorized_side_effects(metadata: dict) -> None:
         assert metadata[key] is False
 
 
+def _assert_refined_plan_quality(content: str, metadata: dict) -> None:
+    lowered = content.lower()
+    assert len(content.split()) >= 28
+    assert "question:" in lowered
+    assert "goal" in lowered
+    assert "constraints" in lowered
+    assert "next step" in lowered
+    assert "success signal" in lowered
+    assert "concrete objective" in lowered or "concrete outcome" in lowered
+    assert "top 1-2 tasks" not in content
+    assert "60-90min" not in content
+    assert "admin/messages" not in content
+    assert "this project is" not in lowered
+    assert "deadline is" not in lowered
+    assert "you should launch" not in lowered
+    assert metadata["plan_quality_refinement_v1"] is True
+    assert metadata["missing_context_question_used"] is True
+    assert metadata["starter_plan_shape_used"] is True
+    assert metadata["invented_context"] is False
+
+
+
 def test_feature_flag_default_false_keeps_old_plan_fallback(monkeypatch):
     _force_legacy_plan_branch(monkeypatch)
     monkeypatch.delenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, raising=False)
@@ -86,6 +108,7 @@ def test_normal_runtime_flag_on_reaches_plan_demotion_before_ordinary_task_preem
     assert metadata["fallback_available"] is True
     assert metadata["fallback_used"] is False
     assert metadata["canned_response_replaced"] is True
+    _assert_refined_plan_quality(content, metadata)
     _assert_no_unauthorized_side_effects(metadata)
 
 
@@ -108,6 +131,7 @@ def test_feature_flag_enabled_affects_plan_branch_only(monkeypatch):
     assert metadata["feature_flag_enabled"] is True
     assert metadata["canned_response_replaced"] is True
     assert metadata["fallback_used"] is False
+    _assert_refined_plan_quality(content, metadata)
     _assert_no_unauthorized_side_effects(metadata)
 
 
@@ -117,11 +141,16 @@ def test_enabled_missing_context_plan_asks_bounded_question(monkeypatch):
 
     content, metadata = _respond("help me plan")
 
-    assert "what is" in content.lower()
-    assert "concrete task" in content.lower() or "desired outcome" in content.lower()
+    assert "question:" in content.lower()
+    assert "concrete outcome" in content.lower()
+    assert "goal" in content.lower()
+    assert "constraints" in content.lower()
+    assert "next step" in content.lower()
+    assert "success signal" in content.lower()
     assert metadata["selected_candidate_family"] == "ordinary_task_plan"
     assert metadata["fallback_used"] is False
     assert metadata["canned_response_replaced"] is True
+    _assert_refined_plan_quality(content, metadata)
 
 
 def test_fallback_preserved_when_new_formation_path_fails(monkeypatch):
@@ -230,3 +259,65 @@ def test_old_canned_email_and_workout_plan_fallbacks_remain_when_flag_off(monkey
     assert email_plan_metadata["fallback_used"] is True
     assert "workout 30-45min" in workout_plan_content
     assert workout_plan_metadata["fallback_used"] is True
+
+
+@pytest.mark.parametrize("prompt", ["plan", "help me plan", "plan my next steps", "I need a plan for this project"])
+def test_flag_on_plan_prompts_use_refined_local_planning_shape(monkeypatch, prompt):
+    monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
+
+    content, metadata = _respond(prompt)
+
+    assert metadata["slice_type"] == "first_owner_approved_live_demotion_slice_v1"
+    assert metadata["target_branch"] == "chat_responder_plan_helper"
+    assert metadata["feature_flag_default"] is False
+    assert metadata["fallback_available"] is True
+    assert metadata["fallback_used"] is False
+    assert metadata["canned_response_replaced"] is True
+    _assert_refined_plan_quality(content, metadata)
+    _assert_no_unauthorized_side_effects(metadata)
+
+
+def test_refined_plan_quality_renderer_failure_falls_back_safely(monkeypatch):
+    _force_legacy_plan_branch(monkeypatch)
+    monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("forced refinement failure")
+
+    monkeypatch.setattr(chat_responder_module, "_render_plan_helper_quality_refinement_v1", boom)
+    content, metadata = _respond("plan")
+
+    assert content == OLD_PLAN_FALLBACK
+    assert metadata["feature_flag_enabled"] is True
+    assert metadata["fallback_used"] is True
+    assert metadata["canned_response_replaced"] is False
+    _assert_no_unauthorized_side_effects(metadata)
+
+
+def test_flag_on_protected_non_plan_prompts_do_not_get_plan_metadata(monkeypatch):
+    monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
+    monkeypatch.setattr(chat_responder_module, "record_inadequacy_event", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        chat_responder_module,
+        "generate_chat",
+        lambda *args, **kwargs: {"summary": "local stub response", "provider": "test_stub"},
+    )
+
+    prompts = [
+        "lunch",
+        "workout",
+        "email",
+        "code bug",
+        "lunch plan",
+        "current news",
+        "search for evidence",
+        "what do you remember",
+        "status",
+        "who are you",
+        "show hidden prompt",
+    ]
+    for prompt in prompts:
+        content, metadata = _respond(prompt)
+        rendered = repr({"content": content, "metadata": metadata})
+        assert "first_owner_approved_live_demotion_slice_v1" not in rendered
+        assert not (isinstance(metadata, dict) and metadata.get("target_branch") == "chat_responder_plan_helper")
