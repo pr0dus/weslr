@@ -285,6 +285,24 @@ _behavior_evaluation_turing_style_readiness_required_markers = {
     "Anti-drift rule",
 }
 
+_controlled_behavior_evaluation_prompt_set_doc = "docs/WESLR_CONTROLLED_BEHAVIOR_EVALUATION_PROMPT_SET_V1.md"
+_controlled_behavior_evaluation_prompt_set_required_markers = {
+    "WESLR_CONTROLLED_BEHAVIOR_EVALUATION_PROMPT_SET_V1",
+    "Controlled internal prompt set only",
+    "No runtime change in this task",
+    "No official benchmark claims",
+    "No Turing-test claims",
+    "No IQ claims",
+    "No certification claims",
+    "No numeric scoring",
+    "No raw private text",
+    "Synthetic prompts only",
+    "Internal behavior evaluation only",
+    "Anti-drift rule",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -412,6 +430,10 @@ def _behavior_evaluation_turing_style_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(_behavior_evaluation_turing_style_readiness_doc, _behavior_evaluation_turing_style_readiness_required_markers)
 
 
+def _controlled_behavior_evaluation_prompt_set_doc_is_valid():
+    return _doc_with_markers_is_valid(_controlled_behavior_evaluation_prompt_set_doc, _controlled_behavior_evaluation_prompt_set_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -458,6 +480,8 @@ def _check_git_scope():
         the approved plan helper observation reporting design markers are present
       - docs/WESLR_BEHAVIOR_EVALUATION_AND_TURING_STYLE_READINESS_V1.md only when
         the approved behavior evaluation and Turing-style readiness design markers are present
+      - docs/WESLR_CONTROLLED_BEHAVIOR_EVALUATION_PROMPT_SET_V1.md only when
+        the approved controlled behavior evaluation prompt-set design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -492,6 +516,7 @@ def _check_git_scope():
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
+    controlled_behavior_evaluation_prompt_set_doc_valid = _controlled_behavior_evaluation_prompt_set_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -571,6 +596,10 @@ def _check_git_scope():
         if path == _behavior_evaluation_turing_style_readiness_doc:
             allowed = behavior_evaluation_turing_style_readiness_doc_valid
             if not behavior_evaluation_turing_style_readiness_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _controlled_behavior_evaluation_prompt_set_doc:
+            allowed = controlled_behavior_evaluation_prompt_set_doc_valid
+            if not controlled_behavior_evaluation_prompt_set_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
