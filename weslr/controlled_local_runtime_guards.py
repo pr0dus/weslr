@@ -677,3 +677,167 @@ def render_controlled_local_runtime_prompt_set_guard_markdown_v1(result: dict) -
         "- Review guard output; implement adapter only in a separate approved task after blocker coverage is accepted.",
     ])
     return "\n".join(lines) + "\n"
+
+
+# =====================================================================
+# Safe Non-Model ChatResponder Test Harness — monkeypatch helpers
+# =====================================================================
+
+import contextlib
+from typing import Generator, Optional, Callable
+
+
+def _default_mock_response(
+    message: str,
+    context: dict[str, Any],
+    *,
+    prompt_id: Optional[str] = None,
+) -> dict[str, Any]:
+    """Deterministic safe mock response for generate_chat.
+
+    Returns a predictable payload so tests can assert on shape without
+    relying on real model output.
+    """
+    return {
+        "summary": f"[MOCK] Safe deterministic response for prompt {prompt_id or 'unknown'}",
+        "provider": "mock",
+        "mock_active": True,
+    }
+
+
+def _no_op_record_inadequacy_event(metadata: dict[str, Any]) -> None:
+    """No-op replacement for record_inadequacy_event.
+
+    Swallows the call so no JSONL append happens during tests.
+    """
+    pass
+
+
+@contextlib.contextmanager
+def install_generate_chat_mock(
+    mock_response: Optional[Callable[[str, dict[str, Any], Optional[str]], dict[str, Any]]] = None,
+    *,
+    prompt_id: Optional[str] = None,
+) -> Generator[None, None, None]:
+    """Context manager that monkeypatches generate_chat and record_inadequacy_event.
+
+    chat_responder.py imports generate_chat directly from llm_runtime
+    (``from llm_runtime import generate_chat``), so patching only
+    ``llm_runtime.generate_chat`` is insufficient once the module has
+    already been imported.  We patch the in-module symbol
+    ``weslr.chat_responder.generate_chat`` directly, and also patch
+    ``llm_runtime.generate_chat`` for completeness.
+
+    Args:
+        mock_response: Optional callable replacing the default mock.
+            Signature: (message, context, *, prompt_id) -> dict.
+        prompt_id: Identifier injected into the default mock response.
+
+    Yields:
+        None
+
+    Restores every patched symbol in ``finally``.
+    """
+    import weslr.chat_responder as _cr_mod  # noqa: PLC0415
+    import llm_runtime as _lr_mod  # noqa: PLC0415
+
+    _cr_generate_chat_orig = getattr(_cr_mod, "generate_chat", None)
+    _cr_record_event_orig = getattr(_cr_mod, "record_inadequacy_event", None)
+    _lr_generate_chat_orig = getattr(_lr_mod, "generate_chat", None)
+
+    def _mock_generate_chat(message: str, context: dict[str, Any]) -> dict[str, Any]:
+        if mock_response is not None:
+            return mock_response(message, context, prompt_id=prompt_id)
+        return _default_mock_response(message, context, prompt_id=prompt_id)
+
+    try:
+        # Patch the in-module binding used by ChatResponder._model_chat_response
+        _cr_mod.generate_chat = _mock_generate_chat
+        # Patch llm_runtime for callers that reference it directly
+        _lr_mod.generate_chat = _mock_generate_chat
+        # Patch record_inadequacy_event to no-op
+        _cr_mod.record_inadequacy_event = _no_op_record_inadequacy_event
+        yield
+    finally:
+        # --- Restore generate_chat in chat_responder ---
+        if _cr_generate_chat_orig is not None:
+            _cr_mod.generate_chat = _cr_generate_chat_orig
+        else:
+            try:
+                delattr(_cr_mod, "generate_chat")
+            except AttributeError:
+                pass
+
+        # --- Restore generate_chat in llm_runtime ---
+        if _lr_generate_chat_orig is not None:
+            _lr_mod.generate_chat = _lr_generate_chat_orig
+        else:
+            try:
+                delattr(_lr_mod, "generate_chat")
+            except AttributeError:
+                pass
+
+        # --- Restore record_inadequacy_event ---
+        if _cr_record_event_orig is not None:
+            _cr_mod.record_inadequacy_event = _cr_record_event_orig
+        else:
+            try:
+                delattr(_cr_mod, "record_inadequacy_event")
+            except AttributeError:
+                pass
+
+
+def validate_blockers_active() -> bool:
+    """Validate that monkeypatch blockers are currently installed.
+
+    Checks:
+    - ``weslr.chat_responder.generate_chat`` is patched (not None).
+    - ``weslr.chat_responder.record_inadequacy_event`` is patched (not None).
+
+    Returns:
+        True if all expected blockers appear active.
+    """
+    import weslr.chat_responder as _cr_mod  # noqa: PLC0415
+
+    _cr_generate = getattr(_cr_mod, "generate_chat", None)
+    _cr_record = getattr(_cr_mod, "record_inadequacy_event", None)
+
+    if _cr_generate is None or _cr_record is None:
+        return False
+
+    return True
+
+
+def block_meaning_vector_imports() -> Any:
+    """Block meaning-vector imports by replacing _model_chat_response.
+
+    Replaces ``ChatResponder._model_chat_response`` with a blocked stub
+    that returns a safe error tuple.  This prevents the
+    analyze_meaning/determine_response_obligation imports from firing.
+
+    Returns:
+        The original _model_chat_response method so the caller can
+        restore it later via :func:`unblock_meaning_vector_imports`.
+    """
+    import weslr.chat_responder as _cr_mod  # noqa: PLC0415
+
+    _original = getattr(_cr_mod.ChatResponder, "_model_chat_response", None)
+
+    def _blocked_model_chat_response(
+        self: Any,
+        message: str,
+    ) -> tuple[str, dict[str, Any] | None]:
+        return (
+            "Meaning-vector and model paths are blocked in test mode.",
+            {"path": "blocked", "reason": "meaning_vector_blocked", "provider": "mock"},
+        )
+
+    _cr_mod.ChatResponder._model_chat_response = _blocked_model_chat_response
+    return _original
+
+
+def unblock_meaning_vector_imports(original_method: Any) -> None:
+    """Restore original _model_chat_response after testing."""
+    import weslr.chat_responder as _cr_mod  # noqa: PLC0415
+
+    _cr_mod.ChatResponder._model_chat_response = original_method

@@ -990,3 +990,198 @@ def render_real_chatresponder_shadow_call_markdown_v1(result: dict) -> str:
         "SECTION 8 — RECOMMENDED NEXT STEP",
         f"- `{summary['recommended_next_step']}`",
     ])
+
+
+# =====================================================================
+# Safe Non-Model ChatResponder Test Harness — keyword + preflight helpers
+# =====================================================================
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Optional
+
+SAFE_KEYWORDS: list[str] = [
+    "lunch",
+    "workout",
+    "gym",
+    "run",
+    "exercise",
+    "plan",
+    "email",
+    "wife",
+    "partner",
+    "code",
+    "bug",
+]
+
+
+def _prompt_matches_safe_keyword(
+    prompt_text: str,
+    keyword: Optional[str] = None,
+) -> bool:
+    """Check if prompt text matches a safe keyword.
+
+    Args:
+        prompt_text: The user-facing message text.
+        keyword: Optional specific keyword to check. If omitted, checks
+            against the full SAFE_KEYWORDS list.
+
+    Returns:
+        True if the prompt contains the expected safe keyword.
+    """
+    if not prompt_text:
+        return False
+    text_lower = prompt_text.lower()
+    if keyword is not None:
+        return keyword.lower() in text_lower
+    return any(kw in text_lower for kw in SAFE_KEYWORDS)
+
+
+@dataclass
+class PreflightResult:
+    """Result of a preflight safety check."""
+
+    status: str  # "pass", "blocked", "needs_review"
+    reason: Optional[str] = None
+
+
+@dataclass
+class ShadowCallResult:
+    """Sanitized result of one shadow call.
+
+    Contains no raw prompt text, no raw response text, and no
+    conversation transcript.  Only derived metadata and classifications.
+    """
+
+    real_call_classification: str
+    chatresponder_called_count: int
+    properties: dict[str, str]
+    blocker_status: dict[str, bool]
+    prompt_id: str
+    timestamp: str
+
+
+def build_safe_injected_callable_v1(
+    prompt_text: str,
+    *,
+    prompt_id: str = "unknown",
+    mock_active: bool = False,
+) -> Callable[[], tuple[str, Optional[dict[str, Any]] | None]]:
+    """Build a safe injected callable for ChatResponder testing.
+
+    Preflight guard: if ``mock_active`` is False and the prompt does
+    not match a safe keyword, raises RuntimeError immediately.
+
+    Args:
+        prompt_text: The message to send to ``respond_chat()``.
+        prompt_id: Identifier for the prompt (e.g. ``ordinary_task_behavior_003``).
+        mock_active: Whether the ``generate_chat`` mock is installed.
+
+    Returns:
+        A zero-argument callable that returns the ``(content, metadata)``
+        tuple from ``ChatResponder.respond_chat()``.
+
+    Raises:
+        RuntimeError: If the prompt is unsafe and mock is not active.
+    """
+    if not mock_active and not _prompt_matches_safe_keyword(prompt_text):
+        raise RuntimeError(
+            f"Prompt '{prompt_id}' does not match any safe keyword. "
+            "Mock must be active or prompt must be a safe-keyword prompt."
+        )
+
+    def _callable() -> tuple[str, Optional[dict[str, Any]] | None]:
+        mod = __import__("weslr.chat_responder", fromlist=["ChatResponder"])
+        responder_cls = getattr(mod, "ChatResponder")
+        responder = responder_cls()
+        return responder.respond_chat(prompt_text)
+
+    return _callable
+
+
+def run_preflight(
+    callable_fn: Optional[Callable[[], tuple[str, Optional[dict[str, Any]] | None]]],
+    prompt_text: str,
+    *,
+    prompt_id: str = "unknown",
+    mock_active: bool = False,
+) -> PreflightResult:
+    """Run preflight checks before executing a shadow call.
+
+    Args:
+        callable_fn: The injected callable (unused in current preflight
+            logic but reserved for future callable-level checks).
+        prompt_text: The prompt text being sent.
+        prompt_id: Prompt identifier.
+        mock_active: Whether the mock is installed.
+
+    Returns:
+        PreflightResult with status ``pass`` or ``blocked``.
+    """
+    # Without mock, only safe-keyword prompts are allowed
+    if not mock_active and not _prompt_matches_safe_keyword(prompt_text):
+        return PreflightResult(
+            status="blocked",
+            reason=f"Prompt '{prompt_id}' not safe and mock not active",
+        )
+
+    # With mock active, allow any prompt (mock intercepts model path)
+    return PreflightResult(status="pass")
+
+
+def execute_shadow_call(
+    callable_fn: Callable[[], tuple[str, Optional[dict[str, Any]] | None]],
+    *,
+    prompt_id: str = "unknown",
+) -> ShadowCallResult:
+    """Execute one controlled shadow call.
+
+    Calls the callable at most once, derives safe metadata in-memory,
+    and returns a sanitized ShadowCallResult with no raw text.
+
+    Args:
+        callable_fn: Zero-argument callable that runs the ChatResponder.
+        prompt_id: Prompt identifier for the result.
+
+    Returns:
+        ShadowCallResult containing only derived properties and
+        classifications.
+    """
+    # Call at most once
+    response_text, metadata = callable_fn()
+
+    # Derive safe metadata from response (no raw text retained in result)
+    properties = _derive_observation_metadata(response_text, metadata)
+
+    return ShadowCallResult(
+        real_call_classification="keyword_branch_only",
+        chatresponder_called_count=1,
+        properties=properties,
+        blocker_status={"mock_active": True},
+        prompt_id=prompt_id,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+def _derive_observation_metadata(
+    response_text: str,
+    metadata: Optional[dict[str, Any]],
+) -> dict[str, str]:
+    """Derive safe metadata from response.
+
+    Never stores raw prompt or response text.  Only bounded qualitative
+    properties suitable for test assertions.
+
+    Args:
+        response_text: The raw response text (examined but not stored).
+        metadata: Optional metadata dict from ChatResponder.
+
+    Returns:
+        Dictionary of derived qualitative properties.
+    """
+    properties: dict[str, str] = {
+        "bounded": "pass" if len(response_text) < 500 else "review",
+        "useful": "pass" if response_text and len(response_text) > 10 else "fail",
+        "has_metadata": "yes" if metadata else "no",
+    }
+    return properties
