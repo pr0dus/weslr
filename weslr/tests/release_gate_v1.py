@@ -323,6 +323,32 @@ _controlled_behavior_stubbed_runtime_evaluation_required_markers = {
     "Deterministic answers are not core cognition",
 }
 
+_controlled_local_runtime_evaluation_design_doc = "docs/WESLR_CONTROLLED_LOCAL_RUNTIME_EVALUATION_V1.md"
+_controlled_local_runtime_evaluation_required_markers = {
+    "WESLR_CONTROLLED_LOCAL_RUNTIME_EVALUATION_V1",
+    "Controlled local runtime evaluation design only",
+    "No runtime change in this task",
+    "No prompt execution in this task",
+    "No ChatResponder calls in this task",
+    "No broad live ChatResponder testing",
+    "No external model calls",
+    "No advisor calls",
+    "No web/search execution",
+    "No write paths",
+    "No .weslr state",
+    "No raw private text",
+    "No official benchmark claims",
+    "No Turing-test claims",
+    "No IQ claims",
+    "No certification claims",
+    "No numeric scoring",
+    "Safe synthetic prompts only",
+    "Internal behavior evaluation only",
+    "Anti-drift rule",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -458,6 +484,10 @@ def _controlled_behavior_stubbed_runtime_evaluation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_controlled_behavior_stubbed_runtime_evaluation_design_doc, _controlled_behavior_stubbed_runtime_evaluation_required_markers)
 
 
+def _controlled_local_runtime_evaluation_design_doc_is_valid():
+    return _doc_with_markers_is_valid(_controlled_local_runtime_evaluation_design_doc, _controlled_local_runtime_evaluation_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -508,6 +538,8 @@ def _check_git_scope():
         the approved controlled behavior evaluation prompt-set design markers are present
       - docs/WESLR_CONTROLLED_BEHAVIOR_STUBBED_RUNTIME_EVALUATION_V1.md only when
         the approved controlled behavior stubbed runtime evaluation design markers are present
+      - docs/WESLR_CONTROLLED_LOCAL_RUNTIME_EVALUATION_V1.md only when
+        the approved controlled local runtime evaluation design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -544,6 +576,7 @@ def _check_git_scope():
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
     controlled_behavior_evaluation_prompt_set_doc_valid = _controlled_behavior_evaluation_prompt_set_doc_is_valid()
     controlled_behavior_stubbed_runtime_evaluation_design_doc_valid = _controlled_behavior_stubbed_runtime_evaluation_design_doc_is_valid()
+    controlled_local_runtime_evaluation_design_doc_valid = _controlled_local_runtime_evaluation_design_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -631,6 +664,10 @@ def _check_git_scope():
         if path == _controlled_behavior_stubbed_runtime_evaluation_design_doc:
             allowed = controlled_behavior_stubbed_runtime_evaluation_design_doc_valid
             if not controlled_behavior_stubbed_runtime_evaluation_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _controlled_local_runtime_evaluation_design_doc:
+            allowed = controlled_local_runtime_evaluation_design_doc_valid
+            if not controlled_local_runtime_evaluation_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
