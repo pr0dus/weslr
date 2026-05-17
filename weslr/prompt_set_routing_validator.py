@@ -457,9 +457,13 @@ def summarize_prompt_route_alignment_v1(
     if not isinstance(prompt_set, dict):
         return {
             "total_prompts": 0,
+            "safe_total": 0,
             "safe_without_mock": 0,
+            "safe_with_mock_only": 0,
+            "route_class_requires_generate_chat_mock": 0,
             "requires_mock": 0,
             "blocked": 0,
+            "blocked_requires_mock": 0,
             "ambiguous": 0,
             "metadata_mismatches": [],
             "recommended_actions": ["invalid_prompt_set"],
@@ -474,9 +478,12 @@ def summarize_prompt_route_alignment_v1(
         prompts = []
 
     total_prompts = len(prompts)
+    safe_total = 0
     safe_without_mock = 0
-    requires_mock_count = 0
+    safe_with_mock_only = 0
+    route_class_requires_generate_chat_mock = 0
     blocked_count = 0
+    blocked_requires_mock = 0
     ambiguous_count = 0
     metadata_mismatches: list[dict[str, Any]] = []
     per_family_counts: dict[str, int] = {}
@@ -493,6 +500,8 @@ def summarize_prompt_route_alignment_v1(
         status = validation["alignment_status"]
         prompt_id = validation["prompt_id"]
         family = validation["family"]
+        safe = bool(validation["safe_to_call"])
+        req_mock = bool(validation["requires_mock"])
 
         # Counts
         route_class_counts[route_class] = route_class_counts.get(route_class, 0) + 1
@@ -500,12 +509,18 @@ def summarize_prompt_route_alignment_v1(
         per_family_counts[family] = per_family_counts.get(family, 0) + 1
         prompt_ids_by_status.setdefault(status, []).append(prompt_id)
 
-        if validation["safe_to_call"] and not validation["requires_mock"]:
+        if safe:
+            safe_total += 1
+        if safe and not req_mock:
             safe_without_mock += 1
-        if validation["requires_mock"]:
-            requires_mock_count += 1
+        if safe and req_mock:
+            safe_with_mock_only += 1
+        if req_mock:
+            route_class_requires_generate_chat_mock += 1
         if status in ("blocked_by_boundary",):
             blocked_count += 1
+            if req_mock:
+                blocked_requires_mock += 1
         if route_class == "ambiguous_needs_review":
             ambiguous_count += 1
         if status == "mismatch":
@@ -526,9 +541,13 @@ def summarize_prompt_route_alignment_v1(
 
     return {
         "total_prompts": total_prompts,
+        "safe_total": safe_total,
         "safe_without_mock": safe_without_mock,
-        "requires_mock": requires_mock_count,
+        "safe_with_mock_only": safe_with_mock_only,
+        "requires_mock": route_class_requires_generate_chat_mock,
+        "route_class_requires_generate_chat_mock": route_class_requires_generate_chat_mock,
         "blocked": blocked_count,
+        "blocked_requires_mock": blocked_requires_mock,
         "ambiguous": ambiguous_count,
         "metadata_mismatches": metadata_mismatches,
         "recommended_actions": recommended_actions,
@@ -553,9 +572,12 @@ def render_prompt_route_alignment_markdown_v1(
         "",
         "## SECTION 1 — STATUS",
         f"- total_prompts: {summary.get('total_prompts', 0)}",
+        f"- safe_total: {summary.get('safe_total', 0)}",
         f"- safe_without_mock: {summary.get('safe_without_mock', 0)}",
-        f"- requires_mock: {summary.get('requires_mock', 0)}",
+        f"- safe_with_mock_only: {summary.get('safe_with_mock_only', 0)}",
+        f"- route_class_requires_generate_chat_mock: {summary.get('route_class_requires_generate_chat_mock', 0)}",
         f"- blocked: {summary.get('blocked', 0)}",
+        f"- blocked_requires_mock: {summary.get('blocked_requires_mock', 0)}",
         f"- ambiguous: {summary.get('ambiguous', 0)}",
         "",
         "## SECTION 2 — ROUTE CLASS COUNTS",

@@ -368,7 +368,7 @@ class TestBlockedFamilies:
 class TestPromptSetSummary:
     """Full prompt set summary and markdown rendering."""
 
-    def test_summary_counts_correct(self) -> None:
+    def test_summary_counts_mock_active(self) -> None:
         from weslr.controlled_behavior_prompt_set import build_default_controlled_behavior_prompt_set_v1
 
         prompt_set = build_default_controlled_behavior_prompt_set_v1()
@@ -377,12 +377,19 @@ class TestPromptSetSummary:
             config={"generate_chat_mock_active": True},
         )
         assert summary["total_prompts"] == 29
-        assert summary["requires_mock"] >= 1  # ordinary_task_behavior_003 at minimum
+        assert summary["safe_total"] == 9
+        assert summary["safe_without_mock"] == 4
+        assert summary["safe_with_mock_only"] == 5
+        assert summary["route_class_requires_generate_chat_mock"] == 12
+        assert summary["blocked"] == 20
+        assert summary["blocked_requires_mock"] == 7
+        assert summary["requires_mock"] == 12  # legacy alias
+        assert summary["ambiguous"] == 0
         assert "route_class_counts" in summary
         assert "alignment_status_counts" in summary
         assert "per_family_counts" in summary
 
-    def test_summary_without_mock_shows_mismatches(self) -> None:
+    def test_summary_counts_no_mock(self) -> None:
         from weslr.controlled_behavior_prompt_set import build_default_controlled_behavior_prompt_set_v1
 
         prompt_set = build_default_controlled_behavior_prompt_set_v1()
@@ -391,9 +398,15 @@ class TestPromptSetSummary:
             config={"generate_chat_mock_active": False},
         )
         assert summary["total_prompts"] == 29
-        # With mock off, some prompts will be forbidden/mismatched
-        assert summary["blocked"] >= 0
-        assert summary["ambiguous"] >= 0
+        assert summary["safe_total"] == 4
+        assert summary["safe_without_mock"] == 4
+        assert summary["safe_with_mock_only"] == 0
+        assert summary["blocked"] == 20
+        assert summary["blocked_requires_mock"] == 0
+        assert summary["route_class_requires_generate_chat_mock"] == 0
+        # mismatch count includes ordinary_task_behavior_003 + non_canned_cognition_002 + conduct_alignment 1/2/3
+        assert len(summary["metadata_mismatches"]) == 5
+        assert summary["ambiguous"] == 0
 
     def test_summary_no_raw_text(self) -> None:
         from weslr.controlled_behavior_prompt_set import build_default_controlled_behavior_prompt_set_v1
@@ -413,7 +426,10 @@ class TestPromptSetSummary:
         md = render_prompt_route_alignment_markdown_v1(summary)
         assert "# Prompt Set Route Alignment Report" in md
         assert "total_prompts:" in md
-        assert "route_class_counts" not in md or "safe_keyword_branch" in md
+        assert "safe_total:" in md
+        assert "safe_with_mock_only:" in md
+        assert "route_class_requires_generate_chat_mock:" in md
+        assert "blocked_requires_mock:" in md
         assert "raw_prompt_text_included: False" in md
         assert "ChatResponder_called: False" in md
 
