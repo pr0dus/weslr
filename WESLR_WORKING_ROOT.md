@@ -9,7 +9,7 @@ in the wrong repository.
 
 - **Correct repo path:** `/data/data/com.termux/files/home/weslr-pr47-clean`
 - **Correct branch for current work:** `master`
-- **Current HEAD:** `086bfb3` — *WESLR: design prompt set routing validator*
+- **Current HEAD:** `1bd1568` — *WESLR: add prompt set routing validator*
 
 ## NOT the WESLR Repo
 
