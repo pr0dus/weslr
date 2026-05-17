@@ -9,7 +9,7 @@ in the wrong repository.
 
 - **Correct repo path:** `/data/data/com.termux/files/home/weslr-pr47-clean`
 - **Correct branch for current work:** `master`
-- **Current HEAD:** `754592a` — *WESLR: align OCC context after safe non-model harness design*
+- **Current HEAD:** `801a634` — *WESLR: add safe non-model ChatResponder harness*
 
 ## NOT the WESLR Repo
 
