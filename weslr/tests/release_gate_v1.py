@@ -269,6 +269,22 @@ _plan_helper_observation_reporting_design_required_markers = {
     "Anti-drift rule",
 }
 
+_behavior_evaluation_turing_style_readiness_doc = "docs/WESLR_BEHAVIOR_EVALUATION_AND_TURING_STYLE_READINESS_V1.md"
+_behavior_evaluation_turing_style_readiness_required_markers = {
+    "WESLR_BEHAVIOR_EVALUATION_AND_TURING_STYLE_READINESS_V1",
+    "Internal behavior evaluation only",
+    "Turing-style readiness, not official Turing-test claim",
+    "No official benchmark claims",
+    "No IQ claims",
+    "No certification claims",
+    "No runtime change in this task",
+    "No default enablement",
+    "No branch expansion",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+    "Anti-drift rule",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -392,6 +408,10 @@ def _plan_helper_observation_reporting_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_observation_reporting_design_doc, _plan_helper_observation_reporting_design_required_markers)
 
 
+def _behavior_evaluation_turing_style_readiness_doc_is_valid():
+    return _doc_with_markers_is_valid(_behavior_evaluation_turing_style_readiness_doc, _behavior_evaluation_turing_style_readiness_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -436,6 +456,8 @@ def _check_git_scope():
         the approved plan helper flag-on local observation design markers are present
       - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
         the approved plan helper observation reporting design markers are present
+      - docs/WESLR_BEHAVIOR_EVALUATION_AND_TURING_STYLE_READINESS_V1.md only when
+        the approved behavior evaluation and Turing-style readiness design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -469,6 +491,7 @@ def _check_git_scope():
     first_live_slice_process_canon_doc_valid = _first_live_slice_process_canon_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
+    behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -544,6 +567,10 @@ def _check_git_scope():
         if path == _plan_helper_observation_reporting_design_doc:
             allowed = plan_helper_observation_reporting_design_doc_valid
             if not plan_helper_observation_reporting_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _behavior_evaluation_turing_style_readiness_doc:
+            allowed = behavior_evaluation_turing_style_readiness_doc_valid
+            if not behavior_evaluation_turing_style_readiness_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
