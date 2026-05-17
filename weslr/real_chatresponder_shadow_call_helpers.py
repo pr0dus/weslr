@@ -20,6 +20,7 @@ from weslr.controlled_behavior_prompt_set import (
     validate_controlled_behavior_prompt_set_v1,
 )
 from weslr.controlled_local_runtime_guards import guard_controlled_local_runtime_prompt_item_v1
+from weslr.prompt_set_routing_validator import validate_prompt_route_alignment_v1
 
 OBSERVATION_MODE_V1 = "real_chatresponder_shadow_call"
 CONFIG_TYPE_V1 = "weslr_real_chatresponder_shadow_call_config_v1"
@@ -84,6 +85,13 @@ ALLOWED_BLOCKER_REASON_LABELS_V1 = {
     "real_call_not_authorized",
     "blocker_contract_missing",
     "blocker_contract_failed",
+    "routing_validator_mismatch",
+    "routing_validator_blocked_by_boundary",
+    "routing_validator_unsafe_route",
+    "routing_validator_ambiguous",
+    "routing_validator_mock_required",
+    "routing_validator_preflight_blocked",
+    "routing_validator_unaligned",
 }
 DEFAULT_REQUIRED_BLOCKERS_V1 = [
     "model_generation",
@@ -383,6 +391,87 @@ def _validate_blocker_contract(contract: dict | None, *, prompt_id: str, family:
         reasons.append("blocker_contract_failed")
     reasons = _normalize_reason_labels(reasons)
     return not reasons, reasons
+
+
+def routing_validator_preflight_v1(
+    prompt_item: dict,
+    *,
+    config: dict | None = None,
+) -> dict[str, Any]:
+    """Route prediction + alignment validation before any callable construction.
+
+    Returns metadata-only preflight result. No raw prompt text. No response text.
+    """
+    cfg = config if config else {}
+    validation = validate_prompt_route_alignment_v1(prompt_item, config=cfg)
+    route_class = validation["route_class"]
+    alignment_status = validation["alignment_status"]
+    safe_to_call = bool(validation["safe_to_call"])
+    requires_mock = bool(validation["requires_mock"])
+    mock_authorized = bool(cfg.get("generate_chat_mock_active", False))
+    family = str(validation["family"])
+    blocked = False
+    reason_labels: list[str] = list(validation.get("reason_labels", []))
+
+    # Block rules
+    if alignment_status != "aligned":
+        blocked = True
+        if alignment_status == "mismatch":
+            reason_labels.append("routing_validator_mismatch")
+        elif alignment_status == "blocked_by_boundary":
+            reason_labels.append("routing_validator_blocked_by_boundary")
+        else:
+            reason_labels.append(f"routing_validator_{alignment_status}")
+    if not safe_to_call:
+        blocked = True
+        if "routing_validator_unsafe_route" not in reason_labels:
+            reason_labels.append("routing_validator_unsafe_route")
+    if route_class == "forbidden_model_path":
+        blocked = True
+        if "model_path_blocked" not in reason_labels:
+            reason_labels.append("model_path_blocked")
+    if route_class == "forbidden_search_or_advisor_path":
+        blocked = True
+        if "search_path_blocked" not in reason_labels:
+            reason_labels.append("search_path_blocked")
+    if route_class == "ambiguous_needs_review":
+        blocked = True
+        if "routing_validator_ambiguous" not in reason_labels:
+            reason_labels.append("routing_validator_ambiguous")
+    if family in BLOCKED_REFINEMENT_FAMILIES_V1:
+        blocked = True
+        if "unsupported_family_blocked" not in reason_labels:
+            reason_labels.append("unsupported_family_blocked")
+    if requires_mock and not mock_authorized:
+        blocked = True
+        if "routing_validator_mock_required" not in reason_labels:
+            reason_labels.append("routing_validator_mock_required")
+
+    reason_labels = _normalize_reason_labels(reason_labels)
+    allowed = not blocked
+
+    return {
+        "preflight_type": "weslr_routing_validator_preflight_v1",
+        "prompt_id": str(validation["prompt_id"]),
+        "family": family,
+        "route_class": route_class,
+        "alignment_status": alignment_status,
+        "safe_to_call": safe_to_call,
+        "requires_mock": requires_mock,
+        "mock_authorized": mock_authorized,
+        "blocked_by_boundary": blocked,
+        "reason_labels": reason_labels,
+        "matched_terms": list(validation.get("matched_terms", [])),
+        "routing_validator_applied": True,
+        "raw_text_retained": False,
+        "model_calls": False,
+        "search_calls": False,
+        "advisor_calls": False,
+        "writes": False,
+        "preflight_allowed": allowed,
+        "side_effects": _empty_side_effects(),
+        "safe_summary": "Routing validator passed." if allowed else "Routing validator blocked: " + ", ".join(reason_labels[:4]),
+    }
 
 
 def preflight_for_real_chatresponder_shadow_call_v1(
@@ -691,6 +780,21 @@ def evaluate_prompt_with_real_chatresponder_shadow_call_v1(
     blocker_contract: dict | None = None,
 ) -> dict[str, Any]:
     cfg = build_real_chatresponder_shadow_call_config_v1() if config is None else to_real_chatresponder_shadow_call_json_safe_v1(config)
+    # Step C: routing validator prediction — FIRST gate before any callable construction
+    rv_preflight = routing_validator_preflight_v1(prompt_item, config=cfg)
+    if not rv_preflight.get("preflight_allowed"):
+        return build_real_chatresponder_shadow_call_observation_v1(
+            prompt_id=rv_preflight["prompt_id"],
+            family=rv_preflight["family"],
+            preflight_allowed=False,
+            call_attempted=False,
+            chatresponder_called=False,
+            blocked_by_boundary=True,
+            property_label="blocked_by_boundary",
+            reason_labels=list(rv_preflight.get("reason_labels") or ["routing_validator_preflight_blocked"]),
+            safe_summary="Routing validator blocked before callable construction: " + ", ".join(list(rv_preflight.get("reason_labels") or ["routing_validator_preflight_blocked"])[:4]),
+        )
+    # Step E-G: existing family/blocker/contract preflight
     preflight = preflight_for_real_chatresponder_shadow_call_v1(prompt_item, config=cfg, blocker_contract=blocker_contract)
     if not preflight.get("preflight_allowed"):
         return _observation_from_preflight(preflight)
