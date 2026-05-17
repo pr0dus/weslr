@@ -408,6 +408,39 @@ _controlled_local_chatresponder_shadow_execution_required_markers = {
     "Deterministic answers are not core cognition",
 }
 
+_controlled_real_chatresponder_shadow_call_design_doc = "docs/WESLR_CONTROLLED_REAL_CHATRESPONDER_SHADOW_CALL_V1.md"
+_controlled_real_chatresponder_shadow_call_required_markers = {
+    "WESLR_CONTROLLED_REAL_CHATRESPONDER_SHADOW_CALL_V1",
+    "Controlled real ChatResponder shadow call design only",
+    "No runtime change in this task",
+    "No prompt execution in this task",
+    "No ChatResponder calls in this task",
+    "Real ChatResponder call requires separate implementation approval",
+    "Shadow-only",
+    "No user-facing runtime change",
+    "No broad live ChatResponder testing",
+    "Safe synthetic prompts only",
+    "One or very few low-risk prompt IDs only",
+    "Preflight before every possible ChatResponder call",
+    "Monkeypatch/stub/blocker contracts required",
+    "Metadata-only capture",
+    "No raw prompt storage",
+    "No raw response storage",
+    "No .weslr state",
+    "No write paths",
+    "No external model calls",
+    "No advisor calls",
+    "No web/search execution",
+    "No numeric scoring",
+    "No official benchmark claims",
+    "No Turing-test claims",
+    "No IQ claims",
+    "No certification claims",
+    "Anti-drift rule",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -561,6 +594,13 @@ def _controlled_local_chatresponder_shadow_execution_design_doc_is_valid():
     )
 
 
+def _controlled_real_chatresponder_shadow_call_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_real_chatresponder_shadow_call_design_doc,
+        _controlled_real_chatresponder_shadow_call_required_markers,
+    )
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -656,6 +696,7 @@ def _check_git_scope():
     controlled_local_runtime_evaluation_design_doc_valid = _controlled_local_runtime_evaluation_design_doc_is_valid()
     controlled_local_chatresponder_shadow_observation_design_doc_valid = _controlled_local_chatresponder_shadow_observation_design_doc_is_valid()
     controlled_local_chatresponder_shadow_execution_design_doc_valid = _controlled_local_chatresponder_shadow_execution_design_doc_is_valid()
+    controlled_real_chatresponder_shadow_call_design_doc_valid = _controlled_real_chatresponder_shadow_call_design_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -755,6 +796,10 @@ def _check_git_scope():
         if path == _controlled_local_chatresponder_shadow_execution_design_doc:
             allowed = controlled_local_chatresponder_shadow_execution_design_doc_valid
             if not controlled_local_chatresponder_shadow_execution_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _controlled_real_chatresponder_shadow_call_design_doc:
+            allowed = controlled_real_chatresponder_shadow_call_design_doc_valid
+            if not controlled_real_chatresponder_shadow_call_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
