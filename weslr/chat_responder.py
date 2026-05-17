@@ -11,11 +11,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from dataclasses import dataclass
+import os
 from typing import Any, Dict, List, Optional
 
 from .chat_hints import get_hints, add_hint
 from .inadequacy_persistence import record_inadequacy_event
 from llm_runtime import generate_inner_thought, generate_chat, provider_state, status as llm_status
+
+
+WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1 = "WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1"
+WESLR_PLAN_HELPER_LIVE_DEMOTION_OWNER_APPROVAL_MARKER_V1 = "APPROVE_WESLR_PLAN_HELPER_LIVE_DEMOTION_SLICE_V1"
 
 
 def _synthesize_active_context(message: str, chat_context: Optional[List[str]], chat_hints: Optional[List[str]]) -> Dict[str, bool]:
@@ -31,6 +36,39 @@ def _synthesize_active_context(message: str, chat_context: Optional[List[str]], 
         "prefers_concise": has_any(["concise", "brief"]) or "prefers concise" in (" ".join(chat_hints or [])).lower(),
     }
 
+
+def _plan_helper_live_demotion_enabled_v1() -> bool:
+    """Feature flag for the owner-approved plan-helper-only live slice; default off."""
+    return os.environ.get(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _plan_helper_live_demotion_metadata_v1(*, feature_flag_enabled: bool, fallback_used: bool, canned_response_replaced: bool) -> Dict[str, Any]:
+    """Safe metadata for the owner-approved plan-helper-only demotion slice."""
+    return {
+        "slice_type": "first_owner_approved_live_demotion_slice_v1",
+        "target_branch": "chat_responder_plan_helper",
+        "old_canned_path_shadowed": "chat_responder_plan_helper",
+        "selected_candidate_family": "ordinary_task_plan",
+        "fallback_available": True,
+        "owner_approved": True,
+        "owner_approval_marker": WESLR_PLAN_HELPER_LIVE_DEMOTION_OWNER_APPROVAL_MARKER_V1,
+        "feature_flag": WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1,
+        "feature_flag_default": False,
+        "feature_flag_enabled": bool(feature_flag_enabled),
+        "canned_response_replaced": bool(canned_response_replaced),
+        "safe_to_replace_live": bool(canned_response_replaced),
+        "runtime_wiring": bool(canned_response_replaced),
+        "live_runtime_output": bool(canned_response_replaced),
+        "model_calls": False,
+        "advisor_calls": False,
+        "web_search": False,
+        "solver_execution": False,
+        "answer_selection_arbitration": False,
+        "raw_text_stored": False,
+        "memory_writes": False,
+        "weslr_runtime_state_created": False,
+        "fallback_used": bool(fallback_used),
+    }
 
 
 def _frontier_intelligence_shadow_requested(request: Dict[str, Any]) -> bool:
@@ -1003,6 +1041,86 @@ def _render_limited_ordinary_task_response(
     return f"Within the supplied context, the useful next move is to {str(safe_next).replace('_', ' ')}. I am not using external evidence or tools for this answer.", False
 
 
+def _try_plan_helper_live_demotion_slice_v1(
+    message: str,
+    chat_context: Optional[List[str]],
+    chat_hints: Optional[List[str]],
+    identity_meta: Optional[Dict[str, Any]],
+    fallback_text: str,
+) -> tuple[str, Dict[str, Any]]:
+    """Try the owner-approved plan-helper-only live demotion path.
+
+    This is deliberately narrower than the ordinary-task runtime gate: it is
+    called only from the legacy plan helper branch, never from the router or
+    neighboring canned helpers, and falls back to the old canned text on any
+    invalid/unsafe state.
+    """
+    flag_enabled = _plan_helper_live_demotion_enabled_v1()
+    fallback_metadata = _plan_helper_live_demotion_metadata_v1(
+        feature_flag_enabled=flag_enabled,
+        fallback_used=True,
+        canned_response_replaced=False,
+    )
+    if not flag_enabled:
+        return fallback_text, fallback_metadata
+
+    try:
+        classification = _classify_limited_ordinary_task_request(message)
+        decision = str(classification.get("decision") or "fallback_existing_path")
+        if classification.get("eligible") is not True or decision in {"external_evidence_needed", "tool_or_calculation_needed"}:
+            return fallback_text, fallback_metadata
+
+        missing_context = list(classification.get("missing_context") or [])
+        constraints = list(classification.get("constraints") or [])
+        sequence_constraints = list(classification.get("sequence_constraints") or [])
+        plan_focus = str(classification.get("plan_focus") or "planning")
+        if plan_focus != "planning":
+            plan_focus = "planning"
+        decomposition = _build_ordinary_problem_decomposition_v1(
+            decision=decision,
+            message=message,
+            missing_context=missing_context,
+            constraints=constraints,
+            sequence_constraints=sequence_constraints,
+            plan_focus=plan_focus,
+            evidence_needed=False,
+            tool_needed=False,
+        )
+        content, step_plan_used = _render_limited_ordinary_task_response(
+            decision,
+            message=message,
+            missing_context=missing_context,
+            constraints=constraints,
+            frame={"safe_next_step": decomposition.get("safe_next_step")},
+            sequence_constraints=sequence_constraints,
+            plan_focus=plan_focus,
+            decomposition=decomposition,
+        )
+        if not _limited_composed_response_is_safe(content) or content.strip() == fallback_text.strip():
+            return fallback_text, fallback_metadata
+        metadata = _plan_helper_live_demotion_metadata_v1(
+            feature_flag_enabled=True,
+            fallback_used=False,
+            canned_response_replaced=True,
+        )
+        metadata.update({
+            "decision": decision,
+            "step_plan_used": bool(step_plan_used),
+            "plan_focus": plan_focus,
+            "missing_context": missing_context,
+            "risk_boundaries": decomposition.get("risk_boundaries", []),
+            "knowns": decomposition.get("knowns", []),
+            "unknowns": decomposition.get("unknowns", []),
+            "source_modules": [
+                "chat_responder_plan_helper_live_demotion_slice_v1",
+                "chat_responder_limited_ordinary_task_slice",
+            ],
+        })
+        return content, metadata
+    except Exception:
+        return fallback_text, fallback_metadata
+
+
 def _try_limited_ordinary_task_runtime_response(
     message: str,
     chat_context: Optional[List[str]],
@@ -1786,10 +1904,12 @@ class ChatResponder:
 
         if "plan" in msg_lower:
             if email_hint:
-                return "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) 15-20min to clear the important email, 4) short break, 5) wrap-up.", None
-            if workout_hint:
-                return "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) workout 30-45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up.", None
-            return "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up.", None
+                fallback_text = "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) 15-20min to clear the important email, 4) short break, 5) wrap-up."
+            elif workout_hint:
+                fallback_text = "Plan: 1) top 1-2 tasks, 2) 60-90min focus, 3) workout 30-45min with warm-up/cool-down, 4) admin/messages, 5) wrap-up."
+            else:
+                fallback_text = "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up."
+            return _try_plan_helper_live_demotion_slice_v1(message, chat_context, chat_hints, identity_meta, fallback_text)
 
         if "email" in msg_lower:
             if plan_hint:
