@@ -58,6 +58,37 @@ def test_feature_flag_default_false_keeps_old_plan_fallback(monkeypatch):
     _assert_no_unauthorized_side_effects(metadata)
 
 
+def test_normal_runtime_flag_off_keeps_existing_ordinary_task_preemption_without_plan_demotion(monkeypatch):
+    monkeypatch.delenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, raising=False)
+
+    content, metadata = _respond("plan")
+
+    assert _plan_helper_live_demotion_enabled_v1() is False
+    assert "_frontier_intelligence_ordinary_task" in metadata
+    assert metadata.get("target_branch") is None
+    assert "first_owner_approved_live_demotion_slice_v1" not in repr(metadata)
+    assert "top 1-2 tasks" not in content
+
+
+def test_normal_runtime_flag_on_reaches_plan_demotion_before_ordinary_task_preemption(monkeypatch):
+    monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
+
+    content, metadata = _respond("plan")
+
+    assert content != OLD_PLAN_FALLBACK
+    assert "top 1-2 tasks" not in content
+    assert "_frontier_intelligence_ordinary_task" not in metadata
+    assert metadata["slice_type"] == "first_owner_approved_live_demotion_slice_v1"
+    assert metadata["target_branch"] == "chat_responder_plan_helper"
+    assert metadata["selected_candidate_family"] == "ordinary_task_plan"
+    assert metadata["owner_approval_marker"] == WESLR_PLAN_HELPER_LIVE_DEMOTION_OWNER_APPROVAL_MARKER_V1
+    assert metadata["feature_flag"] == WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1
+    assert metadata["fallback_available"] is True
+    assert metadata["fallback_used"] is False
+    assert metadata["canned_response_replaced"] is True
+    _assert_no_unauthorized_side_effects(metadata)
+
+
 def test_feature_flag_enabled_affects_plan_branch_only(monkeypatch):
     _force_legacy_plan_branch(monkeypatch)
     monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
@@ -139,6 +170,16 @@ def test_exact_plan_trigger_only_non_plan_helpers_unchanged(monkeypatch):
     assert email_metadata is None
     assert "code issue" in code_content
     assert code_metadata is None
+
+
+def test_normal_runtime_non_plan_ordinary_prompts_do_not_receive_plan_demotion_metadata(monkeypatch):
+    monkeypatch.setenv(WESLR_ENABLE_PLAN_HELPER_DEMOTION_V1, "1")
+
+    for prompt in ["lunch", "workout", "email", "code bug", "debug this failure", "make a checklist"]:
+        content, metadata = _respond(prompt)
+        rendered = repr({"content": content, "metadata": metadata})
+        assert "first_owner_approved_live_demotion_slice_v1" not in rendered
+        assert not (isinstance(metadata, dict) and metadata.get("target_branch") == "chat_responder_plan_helper")
 
 
 def test_non_plan_prompt_containing_lunch_does_not_trigger_plan_demotion(monkeypatch):

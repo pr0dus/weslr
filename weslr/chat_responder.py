@@ -71,6 +71,23 @@ def _plan_helper_live_demotion_metadata_v1(*, feature_flag_enabled: bool, fallba
     }
 
 
+def _is_plan_helper_live_demotion_early_candidate_v1(message: str) -> bool:
+    """Allow only plain plan-helper prompts to bypass ordinary-task preemption when flag is enabled."""
+    if not _plan_helper_live_demotion_enabled_v1():
+        return False
+    text = " ".join((message or "").lower().split())
+    if "plan" not in text:
+        return False
+    excluded_markers = (
+        "lunch", "eat", "food", "workout", "gym", "run", "exercise",
+        "email", "inbox", "reply", "send", "wife", "partner", "code", "bug",
+        "hidden prompt", "answer key", "protected", "official iq", "benchmark",
+        "search", "source", "sources", "current", "latest", "look up",
+        "remember", "memory", "status",
+    )
+    return not any(marker in text for marker in excluded_markers)
+
+
 def _frontier_intelligence_shadow_requested(request: Dict[str, Any]) -> bool:
     """Return true only for explicit dev/test metadata-only shadow opt-in."""
     if request.get("frontier_intelligence_shadow") is True:
@@ -1879,6 +1896,10 @@ class ChatResponder:
         limited = _try_limited_frontier_runtime_response(message, chat_context, chat_hints, identity_meta)
         if limited is not None:
             return limited
+
+        if _is_plan_helper_live_demotion_early_candidate_v1(message):
+            fallback_text = "Try a simple plan: top 1-2 tasks, 60-90min focus block, short break, 15-20min for admin/messages, then a wrap-up."
+            return _try_plan_helper_live_demotion_slice_v1(message, chat_context, chat_hints, identity_meta, fallback_text)
 
         ordinary_task = _try_limited_ordinary_task_runtime_response(message, chat_context, chat_hints, identity_meta)
         if ordinary_task is not None:
