@@ -208,6 +208,26 @@ _first_owner_approved_live_demotion_slice_design_required_markers = {
     "Deterministic answers are not core cognition",
 }
 
+_first_live_slice_process_canon_doc = "docs/WESLR_FIRST_LIVE_SLICE_PROCESS_CANON_V1.md"
+_first_live_slice_process_canon_required_markers = {
+    "WESLR_FIRST_LIVE_SLICE_PROCESS_CANON_V1",
+    "First verified owner-approved live behavior slice",
+    "Design to live slice process",
+    "KEEP_AS_DISABLED_BY_DEFAULT_CAPABILITY",
+    "Feature flag default false",
+    "No default enablement",
+    "No expansion without new approval",
+    "One branch only",
+    "Plan helper only",
+    "Fallback preserved",
+    "Rollback available",
+    "Deterministic guardrails are allowed",
+    "Deterministic answers are not core cognition",
+    "Anti-drift rule",
+    "Process canon only",
+    "No runtime change in this task",
+}
+
 _occ_weslr_bootstrap_context_docs = {
     "AGENTS.md",
     "CORE-IDENTITY.md",
@@ -319,6 +339,10 @@ def _first_owner_approved_live_demotion_slice_design_doc_is_valid():
     return _doc_with_markers_is_valid(_first_owner_approved_live_demotion_slice_design_doc, _first_owner_approved_live_demotion_slice_design_required_markers)
 
 
+def _first_live_slice_process_canon_doc_is_valid():
+    return _doc_with_markers_is_valid(_first_live_slice_process_canon_doc, _first_live_slice_process_canon_required_markers)
+
+
 def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
@@ -357,6 +381,8 @@ def _check_git_scope():
         the approved first canned-helper demotion design markers are present
       - docs/WESLR_FIRST_OWNER_APPROVED_LIVE_DEMOTION_SLICE_DESIGN_V1.md only when
         the approved first owner-approved live demotion slice design markers are present
+      - docs/WESLR_FIRST_LIVE_SLICE_PROCESS_CANON_V1.md only when
+        the approved first live slice process canon markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -387,6 +413,7 @@ def _check_git_scope():
     unified_response_formation_canon_doc_valid = _unified_response_formation_canon_doc_is_valid()
     first_canned_helper_demotion_design_doc_valid = _first_canned_helper_demotion_design_doc_is_valid()
     first_owner_approved_live_demotion_slice_design_doc_valid = _first_owner_approved_live_demotion_slice_design_doc_is_valid()
+    first_live_slice_process_canon_doc_valid = _first_live_slice_process_canon_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -451,6 +478,10 @@ def _check_git_scope():
             allowed = first_owner_approved_live_demotion_slice_design_doc_valid
             if not first_owner_approved_live_demotion_slice_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _first_live_slice_process_canon_doc:
+            allowed = first_live_slice_process_canon_doc_valid
+            if not first_live_slice_process_canon_doc_valid:
+                violations.append(f"  canon doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
