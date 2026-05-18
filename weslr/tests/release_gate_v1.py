@@ -473,6 +473,20 @@ _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "RUN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2_REPORT",
 }
 
+_mocked_observation_to_live_slice_governance_design_doc = "docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md"
+_mocked_observation_to_live_slice_governance_required_markers = {
+    "DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1",
+    "WESLR_CANON_ALIGNMENT",
+    "design only",
+    "mocked_observation_clean_but_limited",
+    "live_slice_governance_design_ready",
+    "deterministic_live_slice_candidate_only",
+    "live_model_slice_not_authorized",
+    "DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_PREIMPLEMENTATION_PLAN_V1",
+    "disabled by default",
+    "No benchmark, Turing, IQ, certification, or product-readiness claim",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -627,6 +641,13 @@ def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     )
 
 
+def _mocked_observation_to_live_slice_governance_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _mocked_observation_to_live_slice_governance_design_doc,
+        _mocked_observation_to_live_slice_governance_required_markers,
+    )
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -681,6 +702,8 @@ def _check_git_scope():
         the approved controlled local ChatResponder shadow execution design markers are present
       - docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md only when
         the approved controlled safe non-model observation lane V2 design markers are present
+      - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
+        the approved mocked-observation-to-live-slice governance design markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -722,6 +745,7 @@ def _check_git_scope():
     controlled_local_chatresponder_shadow_execution_design_doc_valid = _controlled_local_chatresponder_shadow_execution_design_doc_is_valid()
     controlled_real_chatresponder_shadow_call_design_doc_valid = _controlled_real_chatresponder_shadow_call_design_doc_is_valid()
     controlled_safe_non_model_observation_lane_v2_design_doc_valid = _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid()
+    mocked_observation_to_live_slice_governance_design_doc_valid = _mocked_observation_to_live_slice_governance_design_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -829,6 +853,10 @@ def _check_git_scope():
         if path == _controlled_safe_non_model_observation_lane_v2_design_doc:
             allowed = controlled_safe_non_model_observation_lane_v2_design_doc_valid
             if not controlled_safe_non_model_observation_lane_v2_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _mocked_observation_to_live_slice_governance_design_doc:
+            allowed = mocked_observation_to_live_slice_governance_design_doc_valid
+            if not mocked_observation_to_live_slice_governance_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
