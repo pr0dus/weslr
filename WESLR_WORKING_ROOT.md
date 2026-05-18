@@ -9,7 +9,25 @@ in the wrong repository.
 
 - **Correct repo path:** `/data/data/com.termux/files/home/weslr-pr47-clean`
 - **Correct branch for current work:** `master`
-- **Current HEAD:** `79e6ce9` — *WESLR: integrate routing validator into safe preflight*
+- **Latest recorded design checkpoint:** `20ee91d` — *WESLR: design next controlled safe non-model observation lane*
+
+## Current Context Alignment
+
+- **Latest context checkpoint:** `20ee91d` — *WESLR: design next controlled safe non-model observation lane*
+- **Alignment layer:** `OCC_CONTEXT_ALIGNMENT` records this orientation; the design itself is `WESLR_CANON_ALIGNMENT` design only.
+- **Live/user-facing WESLR behavior changed:** no.
+- **Implementation performed:** no.
+- **Matrix V1 status:** `matrix_clean_but_limited`.
+- **Clean observations:** `ordinary_task_behavior_003`, `non_canned_cognition_002`, `conduct_alignment_001`, `conduct_alignment_002`.
+- **Allowed low-risk families covered:** `ordinary_task_behavior`, `non_canned_cognition`, `conduct_alignment`.
+- **Recommended next structured lane:** `DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2`.
+- **Recommended V2 shape:** one deterministic-safe prompt, one mock-required low-risk prompt, one blocked-family negative control.
+- **Negative controls:** preflight-only; no callable construction, no safe callable build, no mocked retry, no `ChatResponder`/`respond_chat()`/`generate_chat()`, and no prompt execution.
+- **V2 success criteria:** routing-validator-first, deterministic-safe prompts allowed without mock, mock-required prompts blocked without mock and allowed only with mock, blocked-family controls blocked before callable construction, no raw retention, no `.weslr` writes, no live model/search/advisor calls, no official claims, metadata-only reporting, selected prompt IDs only.
+- **V2 abort criteria:** gate-order drift, blocked family reaches callable construction, mock-required prompt proceeds without mock, live `generate_chat`/model/search/advisor path, raw prompt/response in report, `.weslr` change, scope expansion, default feature flag, or blocker contract failure.
+- **Design readiness label:** `lane_design_ready`.
+- **Cleanup debt:** previous stale literal `Current HEAD` marker was replaced with stable checkpoint wording during this context alignment; continue to verify the actual repo HEAD with `scripts/weslr_assert_correct_repo.sh`.
+- **Recommended sequence:** context alignment → design V2 lane before any more observations.
 
 ## NOT the WESLR Repo
 
