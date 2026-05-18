@@ -21,6 +21,25 @@ Don't ask permission. Just do it.
 
 For WESLR work, keep this orientation current:
 
+
+### Latest Context Alignment — First Deterministic-Safe Dry-Run Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not live-slice authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system. `Core`, `Industrial`, `hospital`, `school`, `elder care`, `family`, and similar labels are deployment contexts, not separate WESLR identities.
+- Future domain/context onboarding should tune scope, legal boundaries, moral boundaries, capability boundaries, response style, evidence thresholds, memory boundaries, and later voice behavior.
+- Current priority remains reasoning, cognition, human-understanding, continuity, non-canned response formation, and governed evaluation readiness. Voice/prosody/natural speech remains later-priority.
+- Implementation inventory completed in `docs/WESLR_IMPLEMENTATION_INVENTORY_AND_ARCHITECTURE_MAP_V1.md`: runtime response behavior is centered in `weslr/chat_responder.py`; cognition/response formation exists but is fragmented; governance/safety/evidence scaffolding is strong; memory/continuity is partly runtime-linked through the meaning-vector branch; the voice layer is large but later-priority.
+- First deterministic-safe live slice status: guard implemented, guard report clean, dry-run plan designed, dry-run report completed, dry-run report review completed. Review judgment: `dry_run_report_valid_ready_for_context_alignment`.
+- The first deterministic-safe live slice is still not live. No runtime wiring is authorized yet. Do not jump directly to runtime wiring.
+- Only current deterministic-safe candidate: `prompt_id=ordinary_task_behavior_001`, `family=ordinary_task_behavior`, `route_class=safe_keyword_branch`.
+- Feature flag: `WESLR_ENABLE_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_V1=1`. Absent, empty, false-like, and non-exact values block; only exact string `"1"` allows the exact candidate guard path in scoped synthetic tests/evaluation only. Do not export globally, persist, or enable runtime.
+- Dry-run review case results: Case A flag absent blocks; Case B exact candidate with scoped flag `"1"` allows; Case C blocked-family/boundary negative control blocks; Case D mock-required negative control blocks. Validation passed: py_compile, guard tests, routing safe preflight integration, prompt-set routing validator, safe non-model harness, release gate, and release check.
+- Safety confirmed for the dry-run/review lane: no runtime wiring, no prompt execution, no `ChatResponder`/`respond_chat()`/`generate_chat()` calls, no model/search/advisor calls, no `.weslr` writes, no raw retention, no feature flag enablement.
+- Next lane after this context alignment: `DESIGN_WESLR_COGNITION_TARGET_MODEL_V1`.
+- Longer sequence: finish context alignment → design `WESLR_COGNITION_TARGET_MODEL_V1` → design `RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` → only later consider broader runtime expansion or first deterministic safe runtime wiring governance.
+- Do not make official claims: no official Turing-test pass, IQ claim, benchmark certification, product-readiness claim, or consciousness/sentience claim.
+
 ### Layer Distinction
 
 - `OCC_CONTEXT_ALIGNMENT` affects how OCC/OpenClaw assists the build.
