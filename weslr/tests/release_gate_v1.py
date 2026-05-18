@@ -371,6 +371,16 @@ _ranked_response_shadow_evaluation_report_run_design_required_markers = {
     "no `.weslr` writes",
 }
 
+_ranked_response_shadow_evaluation_report_run_result_doc = "docs/WESLR_RANKED_RESPONSE_SHADOW_EVALUATION_REPORT_RUN_RESULT_V1.md"
+_ranked_response_shadow_evaluation_report_run_result_required_markers = {
+    "WESLR Ranked Response Shadow Evaluation Report Run Result V1",
+    "internal_shadow_evaluation_only",
+    "runtime_integration_not_authorized",
+    "official_evaluation_not_claimed",
+    "final_answer_not_generated",
+    "minor_followup_carried_forward",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -845,6 +855,13 @@ def _ranked_response_shadow_evaluation_report_run_design_doc_is_valid():
     )
 
 
+def _ranked_response_shadow_evaluation_report_run_result_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _ranked_response_shadow_evaluation_report_run_result_doc,
+        _ranked_response_shadow_evaluation_report_run_result_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1048,6 +1065,7 @@ def _check_git_scope():
     ranked_response_shadow_evaluation_report_design_doc_valid = _ranked_response_shadow_evaluation_report_design_doc_is_valid()
     ranked_response_shadow_evaluation_report_helpers_review_doc_valid = _ranked_response_shadow_evaluation_report_helpers_review_doc_is_valid()
     ranked_response_shadow_evaluation_report_run_design_doc_valid = _ranked_response_shadow_evaluation_report_run_design_doc_is_valid()
+    ranked_response_shadow_evaluation_report_run_result_doc_valid = _ranked_response_shadow_evaluation_report_run_result_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -1163,6 +1181,10 @@ def _check_git_scope():
             allowed = ranked_response_shadow_evaluation_report_run_design_doc_valid
             if not ranked_response_shadow_evaluation_report_run_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _ranked_response_shadow_evaluation_report_run_result_doc:
+            allowed = ranked_response_shadow_evaluation_report_run_result_doc_valid
+            if not ranked_response_shadow_evaluation_report_run_result_doc_valid:
+                violations.append(f"  result doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
