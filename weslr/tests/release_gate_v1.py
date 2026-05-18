@@ -521,6 +521,25 @@ _first_deterministic_safe_live_slice_implementation_guards_required_markers = {
     "REVIEW_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_IMPLEMENTATION_GUARDS_DESIGN_NO_IMPLEMENTATION",
 }
 
+_first_deterministic_safe_live_slice_dry_run_plan_doc = "docs/WESLR_DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_DRY_RUN_PLAN_V1.md"
+_first_deterministic_safe_live_slice_dry_run_plan_required_markers = {
+    "DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_DRY_RUN_PLAN_V1",
+    "WESLR_CANON_ALIGNMENT",
+    "design only",
+    "ordinary_task_behavior_001",
+    "safe_keyword_branch",
+    "WESLR_ENABLE_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_V1=1",
+    "guard_report_clean_but_not_live",
+    "dry_run_plan_ready",
+    "dry_run_clean_but_not_live",
+    "no runtime wiring",
+    "no live slice execution",
+    "no feature flag enablement",
+    "metadata-only",
+    "REVIEW_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_DRY_RUN_PLAN_NO_IMPLEMENTATION",
+    "RUN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_DRY_RUN_REPORT_V1",
+}
+
 _weslr_working_root_context_doc = "WESLR_WORKING_ROOT.md"
 _weslr_working_root_context_required_markers = {
     "Correct WESLR Repository",
@@ -707,6 +726,13 @@ def _first_deterministic_safe_live_slice_implementation_guards_design_doc_is_val
     )
 
 
+def _first_deterministic_safe_live_slice_dry_run_plan_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _first_deterministic_safe_live_slice_dry_run_plan_doc,
+        _first_deterministic_safe_live_slice_dry_run_plan_required_markers,
+    )
+
+
 def _weslr_working_root_context_doc_is_valid():
     return _doc_with_markers_is_valid(
         _weslr_working_root_context_doc,
@@ -774,6 +800,8 @@ def _check_git_scope():
         the approved first deterministic-safe live-slice preimplementation plan markers are present
       - docs/WESLR_DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_IMPLEMENTATION_GUARDS_V1.md only when
         the approved first deterministic-safe live-slice implementation guards design markers are present
+      - docs/WESLR_DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_DRY_RUN_PLAN_V1.md only when
+        the approved first deterministic-safe live-slice dry-run plan markers are present
       - WESLR_WORKING_ROOT.md only when the approved working-root context markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
@@ -819,6 +847,7 @@ def _check_git_scope():
     mocked_observation_to_live_slice_governance_design_doc_valid = _mocked_observation_to_live_slice_governance_design_doc_is_valid()
     first_deterministic_safe_live_slice_preimplementation_plan_doc_valid = _first_deterministic_safe_live_slice_preimplementation_plan_doc_is_valid()
     first_deterministic_safe_live_slice_implementation_guards_design_doc_valid = _first_deterministic_safe_live_slice_implementation_guards_design_doc_is_valid()
+    first_deterministic_safe_live_slice_dry_run_plan_doc_valid = _first_deterministic_safe_live_slice_dry_run_plan_doc_is_valid()
     weslr_working_root_context_doc_valid = _weslr_working_root_context_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
@@ -939,6 +968,10 @@ def _check_git_scope():
         if path == _first_deterministic_safe_live_slice_implementation_guards_design_doc:
             allowed = first_deterministic_safe_live_slice_implementation_guards_design_doc_valid
             if not first_deterministic_safe_live_slice_implementation_guards_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _first_deterministic_safe_live_slice_dry_run_plan_doc:
+            allowed = first_deterministic_safe_live_slice_dry_run_plan_doc_valid
+            if not first_deterministic_safe_live_slice_dry_run_plan_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path == _weslr_working_root_context_doc:
             allowed = weslr_working_root_context_doc_valid
