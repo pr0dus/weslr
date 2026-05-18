@@ -9,25 +9,24 @@ in the wrong repository.
 
 - **Correct repo path:** `/data/data/com.termux/files/home/weslr-pr47-clean`
 - **Correct branch for current work:** `master`
-- **Latest recorded design checkpoint:** `20ee91d` — *WESLR: design next controlled safe non-model observation lane*
+- **Latest recorded design checkpoint:** `6548cda` — *WESLR: design mocked observation to live slice governance*
 
 ## Current Context Alignment
 
-- **Latest context checkpoint:** `20ee91d` — *WESLR: design next controlled safe non-model observation lane*
-- **Alignment layer:** `OCC_CONTEXT_ALIGNMENT` records this orientation; the design itself is `WESLR_CANON_ALIGNMENT` design only.
+- **Latest context checkpoint:** `6548cda` — *WESLR: design mocked observation to live slice governance*.
+- **Alignment layer:** `OCC_CONTEXT_ALIGNMENT` records this orientation; the completed governance document is `WESLR_CANON_ALIGNMENT` design only.
 - **Live/user-facing WESLR behavior changed:** no.
 - **Implementation performed:** no.
-- **Matrix V1 status:** `matrix_clean_but_limited`.
-- **Clean observations:** `ordinary_task_behavior_003`, `non_canned_cognition_002`, `conduct_alignment_001`, `conduct_alignment_002`.
-- **Allowed low-risk families covered:** `ordinary_task_behavior`, `non_canned_cognition`, `conduct_alignment`.
-- **Recommended next structured lane:** `DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2`.
-- **Recommended V2 shape:** one deterministic-safe prompt, one mock-required low-risk prompt, one blocked-family negative control.
-- **Negative controls:** preflight-only; no callable construction, no safe callable build, no mocked retry, no `ChatResponder`/`respond_chat()`/`generate_chat()`, and no prompt execution.
-- **V2 success criteria:** routing-validator-first, deterministic-safe prompts allowed without mock, mock-required prompts blocked without mock and allowed only with mock, blocked-family controls blocked before callable construction, no raw retention, no `.weslr` writes, no live model/search/advisor calls, no official claims, metadata-only reporting, selected prompt IDs only.
-- **V2 abort criteria:** gate-order drift, blocked family reaches callable construction, mock-required prompt proceeds without mock, live `generate_chat`/model/search/advisor path, raw prompt/response in report, `.weslr` change, scope expansion, default feature flag, or blocker contract failure.
-- **Design readiness label:** `lane_design_ready`.
-- **Cleanup debt:** previous stale literal `Current HEAD` marker was replaced with stable checkpoint wording during this context alignment; continue to verify the actual repo HEAD with `scripts/weslr_assert_correct_repo.sh`.
-- **Recommended sequence:** context alignment → design V2 lane before any more observations.
+- **Live slice executed:** no.
+- **Feature flag enabled:** no.
+- **Latest clean mocked-observation evidence:** Lane V2 reviewed clean with readiness label `lane_v2_clean_but_limited`.
+- **Lane V2 rows:** `ordinary_task_behavior_001` deterministic-safe route; `conduct_alignment_003` mock-required low-risk route; `memory_honesty_001` blocked-family negative control.
+- **Governance conclusion:** mocked observation evidence is clean but limited; live model-backed slices remain unauthorized.
+- **Possible future live-slice candidate type:** deterministic-safe ordinary-task route only, disabled by default, no model call, no `generate_chat()`, no raw retention, rollback required.
+- **Explicit non-candidates:** mock-required routes, blocked families, currentness/search/source/status paths, model-backed paths, write paths, raw-retention paths, protected/hidden/answer-key paths.
+- **Required next context step:** `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MOCKED_TO_LIVE_SLICE_GOVERNANCE_DESIGN_V1`.
+- **Recommended next design lane after context alignment:** `DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_PREIMPLEMENTATION_PLAN_V1`.
+- **Cleanup debt:** previous stale literal `Current HEAD` marker was replaced with stable checkpoint wording during context alignment; continue to verify the actual repo HEAD with `scripts/weslr_assert_correct_repo.sh`.
 
 ## NOT the WESLR Repo
 

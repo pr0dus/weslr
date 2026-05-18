@@ -487,6 +487,17 @@ _mocked_observation_to_live_slice_governance_required_markers = {
     "No benchmark, Turing, IQ, certification, or product-readiness claim",
 }
 
+_weslr_working_root_context_doc = "WESLR_WORKING_ROOT.md"
+_weslr_working_root_context_required_markers = {
+    "Correct WESLR Repository",
+    "Latest recorded design checkpoint",
+    "6548cda",
+    "WESLR: design mocked observation to live slice governance",
+    "lane_v2_clean_but_limited",
+    "live model-backed slices remain unauthorized",
+    "DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_PREIMPLEMENTATION_PLAN_V1",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -648,6 +659,13 @@ def _mocked_observation_to_live_slice_governance_design_doc_is_valid():
     )
 
 
+def _weslr_working_root_context_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _weslr_working_root_context_doc,
+        _weslr_working_root_context_required_markers,
+    )
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -704,6 +722,7 @@ def _check_git_scope():
         the approved controlled safe non-model observation lane V2 design markers are present
       - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
         the approved mocked-observation-to-live-slice governance design markers are present
+      - WESLR_WORKING_ROOT.md only when the approved working-root context markers are present
       - exact OCC/WESLR bootstrap context docs only when the approved
         OCC/WESLR context alignment markers are present
     
@@ -746,6 +765,7 @@ def _check_git_scope():
     controlled_real_chatresponder_shadow_call_design_doc_valid = _controlled_real_chatresponder_shadow_call_design_doc_is_valid()
     controlled_safe_non_model_observation_lane_v2_design_doc_valid = _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid()
     mocked_observation_to_live_slice_governance_design_doc_valid = _mocked_observation_to_live_slice_governance_design_doc_is_valid()
+    weslr_working_root_context_doc_valid = _weslr_working_root_context_doc_is_valid()
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -858,6 +878,10 @@ def _check_git_scope():
             allowed = mocked_observation_to_live_slice_governance_design_doc_valid
             if not mocked_observation_to_live_slice_governance_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _weslr_working_root_context_doc:
+            allowed = weslr_working_root_context_doc_valid
+            if not weslr_working_root_context_doc_valid:
+                violations.append(f"  working-root context doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
