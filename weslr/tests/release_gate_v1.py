@@ -247,6 +247,25 @@ _cognition_target_model_required_markers = {
     "official_evaluation_not_claimed",
 }
 
+_ranked_state_grounded_response_formation_doc = "docs/WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1.md"
+_ranked_state_grounded_response_formation_required_markers = {
+    "WESLR Ranked State-Grounded Response Formation V1",
+    "design-only",
+    "ranked state-grounded response formation",
+    "RESPONSE STATE FRAME",
+    "Candidate responses should be formed from interpreted state",
+    "Ranking should use qualitative labels",
+    "NON-CANNEDNESS GUARANTEE",
+    "LLM / ADVISOR BOUNDARY",
+    "IMPLEMENT_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_SHADOW_HELPERS_V1",
+    "ranked_response_formation_design_defined",
+    "design_only_not_runtime_wired",
+    "shadow_helpers_not_implemented",
+    "runtime_integration_not_authorized",
+    "non_canned_response_principle_defined",
+    "official_evaluation_not_claimed",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -672,6 +691,13 @@ def _cognition_target_model_doc_is_valid():
     return _doc_with_markers_is_valid(_cognition_target_model_doc, _cognition_target_model_required_markers)
 
 
+def _ranked_state_grounded_response_formation_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _ranked_state_grounded_response_formation_doc,
+        _ranked_state_grounded_response_formation_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -801,6 +827,8 @@ def _check_git_scope():
         the approved first live slice process canon markers are present
       - docs/WESLR_COGNITION_TARGET_MODEL_V1.md only when
         the approved cognition target model design markers are present
+      - docs/WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1.md only when
+        the approved ranked state-grounded response formation design markers are present
       - docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md only when
         the approved plan helper flag-on local observation design markers are present
       - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
@@ -860,6 +888,7 @@ def _check_git_scope():
     first_owner_approved_live_demotion_slice_design_doc_valid = _first_owner_approved_live_demotion_slice_design_doc_is_valid()
     first_live_slice_process_canon_doc_valid = _first_live_slice_process_canon_doc_is_valid()
     cognition_target_model_doc_valid = _cognition_target_model_doc_is_valid()
+    ranked_state_grounded_response_formation_doc_valid = _ranked_state_grounded_response_formation_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -946,6 +975,10 @@ def _check_git_scope():
         if path == _cognition_target_model_doc:
             allowed = cognition_target_model_doc_valid
             if not cognition_target_model_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
+        if path == _ranked_state_grounded_response_formation_doc:
+            allowed = ranked_state_grounded_response_formation_doc_valid
+            if not ranked_state_grounded_response_formation_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
