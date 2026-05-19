@@ -22,6 +22,21 @@ Don't ask permission. Just do it.
 For WESLR work, keep this orientation current:
 
 
+### Latest Context Alignment — Ranked Response Shadow / Native Dry-Slice Interop Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Current cognition/ranked-native path status: `WESLR_COGNITION_TARGET_MODEL_V1` is defined; `WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` is defined; ranked response shadow helpers/scenarios/report helpers/report run are implemented and reviewed; ranked response shadow helper interop boundary is designed, reviewed, and context-aligned; ranked response shadow / native dry-slice interop is designed and reviewed.
+- Latest ranked/native interop review: `docs/WESLR_RANKED_RESPONSE_SHADOW_NATIVE_DRY_SLICE_INTEROP_REVIEW_V1.md`; judgment `ranked_native_interop_valid_ready_for_context_alignment`; no blockers; validation passed; optional pytest set passed with 222 tests observed complete.
+- Interop meaning: ranked helpers own state/candidate/ranking/rejection/final-answer-contract metadata only; native dry-slice helpers own reasoning frame/draft/self-check/assembly/dry preview metadata only. Ranked selected candidate metadata is not a live response. Native dry-slice preview is not a final answer. Neither helper family owns final-answer authority, authorizes runtime wiring, or authorizes `weslr/chat_responder.py` edits.
+- Conceptual artifact status: `ranked_native_interop_shadow_artifact_v1` remains design-only and not implemented. If later approved, it must be metadata-only with no raw prompt/response/final answer retention.
+- Runtime boundary remains unchanged: runtime integration is not authorized; `weslr/chat_responder.py` edits are not authorized from this lane; feature flags are not authorized; global routing replacement is not authorized; final answer generation is not authorized from helper/evaluation lanes.
+- Minor followups remain visible and must not be erased or hidden: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for context alignment.
+- Do not make official claims: no official benchmark, Turing-test pass, IQ claim, certification claim, product-readiness claim, or consciousness/sentience claim.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Recommended next lane after this context alignment: `DESIGN_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_HELPERS_V1`. This must be design/review first, helper-only, metadata-only, and must not implement the artifact, wire runtime, generate final answers, or touch `weslr/chat_responder.py`.
+
 ### Latest Context Alignment — Ranked Response Shadow Helper Interop Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
