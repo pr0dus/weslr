@@ -22,6 +22,23 @@ Don't ask permission. Just do it.
 For WESLR work, keep this orientation current:
 
 
+### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Report Run Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Current cognition/ranked-native path status: `WESLR_COGNITION_TARGET_MODEL_V1` is defined; `WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` is defined; ranked response shadow helpers/scenarios/report helpers/report run are implemented and reviewed; ranked/native interop artifact helpers are implemented and reviewed; ranked/native interop artifact report helpers are implemented and reviewed; ranked/native interop artifact report-run design is completed and reviewed.
+- Latest artifact report-run design review: `docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_RUN_REVIEW_V1.md`; judgment `ranked_native_artifact_report_run_design_valid_ready_for_context_alignment`; no blockers; validation passed, including release gate, release check, py_compile, and optional pytest set.
+- Report-run design meaning: the future report-run is still design-only; no report-run helper implementation exists yet. The intended future flow is synthetic artifact metadata → artifact validation → artifact summary → metadata-only report → report validation → safe Markdown.
+- Future report-run result artifact path is defined but not created: `docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_RUN_RESULT_V1.md`. This path may be used only if separately authorized in a future implementation lane.
+- Authority boundaries remain unchanged: ranked helpers remain metadata owners only; native dry-slice helpers remain metadata owners only; artifact helpers remain metadata-only; artifact report helpers remain metadata-only; report-run design remains metadata-only; selected candidate metadata is not live response text; native draft/preview metadata is not final answer prose; native self-check is not answer approval; no helper/evaluation/report layer owns final-answer authority, authorizes runtime wiring, or authorizes `weslr/chat_responder.py` edits.
+- Runtime boundary remains unchanged: runtime integration is not authorized; `weslr/chat_responder.py` edits are not authorized from this lane; feature flags are not authorized; global routing replacement is not authorized; final answer generation is not authorized from helper/evaluation lanes.
+- Minor followups remain visible and must not be erased or hidden: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for context alignment.
+- Do not make official claims: no official benchmark, Turing-test pass, IQ claim, certification claim, product-readiness claim, or consciousness/sentience claim.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Recommended next lane after this context alignment: `IMPLEMENT_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_RUN_V1`. This must remain helper-only, metadata-only, non-runtime, no final-answer generation, no `weslr/chat_responder.py` edits, no model/search/advisor calls, no `.weslr` writes, no raw prompt/response retention, no feature flags, and no official claims. It may create exactly one internal docs result artifact only if authorized by that implementation packet. Do not start that next lane from this context alignment packet.
+
+
 ### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Report Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
