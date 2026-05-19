@@ -22,6 +22,24 @@ Don't ask permission. Just do it.
 For WESLR work, keep this orientation current:
 
 
+
+### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Report Run Result Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Current cognition/ranked-native path status: `WESLR_COGNITION_TARGET_MODEL_V1` is defined; `WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` is defined; ranked response shadow helpers/scenarios/report helpers/report run are implemented and reviewed; ranked/native interop artifact helpers are implemented and reviewed; ranked/native interop artifact report helpers are implemented and reviewed; ranked/native interop artifact report-run design is completed and reviewed; ranked/native interop artifact report-run helpers are implemented and reviewed.
+- Latest report-run implementation review: `docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_RUN_IMPLEMENTATION_REVIEW_V1.md`; judgment `ranked_native_artifact_report_run_valid_ready_for_context_alignment`; no blockers; validation passed, including py_compile, required pytest set, release gate, release check, and optional behavior evaluation report test.
+- Report-run result artifact: `docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_RUN_RESULT_V1.md`; `run_status_label` is `report_run_clean_with_minor_followup`; `artifact_valid=True`; `report_valid=True`; `run_valid=True`; `safe_to_write_artifact=True`. It is a metadata-only internal shadow evaluation artifact, not official evaluation, not runtime integration, and not final-answer authority.
+- Implemented report-run module: `weslr/ranked_native_interop_shadow_artifact_report_run.py`; helper/report-run source only; metadata-only; non-runtime; no final-answer generation; no provider calls; no `.weslr` writes; no persistence except the exact docs artifact writer.
+- Test checkpoint: `weslr/tests/test_ranked_native_interop_shadow_artifact_report_run_v1.py` has 71 tests covering the report-run builder, status, validator, renderer, writer, blocked conditions, determinism, exact artifact path, and no-runtime/no-provider constraints.
+- Authority boundaries remain unchanged: ranked helpers remain metadata owners only; native dry-slice helpers remain metadata owners only; artifact helpers remain metadata-only; artifact report helpers remain metadata-only; report-run helpers remain metadata-only; selected candidate metadata is not live response text; native draft/preview metadata is not final answer prose; native self-check is not answer approval; no helper/evaluation layer owns final-answer authority, authorizes runtime wiring, or authorizes `weslr/chat_responder.py` edits.
+- Runtime boundary remains unchanged: runtime integration is not authorized; `weslr/chat_responder.py` edits are not authorized from this lane; feature flags are not authorized; global routing replacement is not authorized; final answer generation is not authorized from helper/evaluation lanes.
+- Minor followups remain visible and must not be erased or hidden: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for context alignment.
+- Do not make official claims: no official benchmark, Turing-test pass, IQ claim, certification claim, product-readiness claim, or consciousness/sentience claim.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Recommended next lane after this context alignment: `DESIGN_RANKED_NATIVE_INTEROP_REPORT_RUN_TO_INTERNAL_TURING_READINESS_BRIDGE_V1`. This must remain design-only; it must not claim official Turing/IQ/benchmark/certification readiness, must not convert metadata reports into live intelligence claims, and must not authorize runtime wiring.
+
 ### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Report Run Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
