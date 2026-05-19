@@ -32,6 +32,25 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Internal Turing Readiness Bridge Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Ranked/native-to-internal-Turing path status: ranked/native interop artifact report-run result is implemented and reviewed; internal Turing readiness bridge is designed and reviewed; latest bridge review report is `docs/WESLR_RANKED_NATIVE_INTEROP_REPORT_RUN_TO_INTERNAL_TURING_READINESS_BRIDGE_REVIEW_V1.md`; judgment `ranked_native_to_internal_turing_bridge_valid_ready_for_context_alignment`.
+- Current evidence inventory: artifact/report/run valid; metadata-only internal shadow evidence; no runtime wiring; no final-answer generation; no provider calls; no `.weslr` writes; no official claims.
+- What current evidence proves: safe metadata-only internal evidence pipeline; ranked/native metadata can be combined and reported safely; helper/report-run boundaries are enforced; unsafe official/runtime/final-answer claims remain blocked.
+- What current evidence does not prove: not live cognition; not Turing readiness; not official Turing pass; not IQ/certification/product-readiness; not consciousness/sentience; not production readiness; not open-dialogue human understanding; not runtime response quality; not voice/prosody readiness.
+- Future internal readiness dimensions to design before any harness: human-understanding fit; contextual coherence; ambiguity handling; continuity handling; correction handling; emotional/social appropriateness; domain adaptation; non-canned response formation; evidence/provenance honesty; uncertainty honesty; safety/refusal appropriateness; memory boundary honesty; identity/OCC separation; no official overclaiming.
+- Evidence still needed before any internal harness: controlled dialogue scenario corpus; multi-turn synthetic evaluations; live-answer dry-slice readiness design; answer composition authority design; judge protocol design; hidden comparison design; failure taxonomy; anti-gaming rules; version freeze rules; allowed context/tool boundary rules; transcript/evidence/privacy governance; no raw private content retention rules.
+- Internal harness boundary: internal only; non-official; qualitative first; review-governed; no public pass/fail claim; no official benchmark claim; no IQ/certification claim; no consciousness/sentience claim.
+- External/official-style evaluation boundary: requires frozen version; frozen protocol; evaluator/judge criteria; transcript/evidence governance; privacy policy; failure reporting; exact claim wording; no universal “official intelligence” claim unless a recognized protocol supports that exact claim.
+- Minor followups remain visible and must not be erased, hidden, or converted into readiness evidence: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for this context alignment.
+- Runtime integration remains not authorized; `weslr/chat_responder.py` edits remain not authorized; final-answer generation remains not authorized from helper/evaluation lanes.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Recommended next lane after this context alignment: `DESIGN_INTERNAL_TURING_STYLE_READINESS_DIMENSIONS_AND_CORPUS_V1`. This must remain design-only, internal, non-official, qualitative first, no runtime wiring, no final-answer generation, no prompts executed, no model/search/advisor calls, and no official Turing/IQ/benchmark/certification claims. Do not start that next lane from this context alignment packet.
+
+
 
 ### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Report Run Result Review
 
