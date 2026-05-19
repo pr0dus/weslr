@@ -420,6 +420,22 @@ _ranked_response_shadow_helper_interop_boundary_required_markers = {
     "no final answer generation",
 }
 
+_ranked_response_shadow_helper_interop_boundary_review_doc = "docs/WESLR_RANKED_RESPONSE_SHADOW_HELPER_INTEROP_BOUNDARY_REVIEW_V1.md"
+_ranked_response_shadow_helper_interop_boundary_review_required_markers = {
+    "WESLR Ranked Response Shadow Helper Interop Boundary Review V1",
+    "review-only",
+    "interop_boundary_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_RANKED_RESPONSE_SHADOW_HELPER_INTEROP_BOUNDARY_V1",
+    "no `weslr/chat_responder.py` edits",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no raw prompt/response retention",
+    "no final answer generation",
+    "no official benchmark/Turing/IQ/certification/product-readiness/consciousness/sentience claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -915,6 +931,13 @@ def _ranked_response_shadow_helper_interop_boundary_doc_is_valid():
     )
 
 
+def _ranked_response_shadow_helper_interop_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _ranked_response_shadow_helper_interop_boundary_review_doc,
+        _ranked_response_shadow_helper_interop_boundary_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1056,6 +1079,8 @@ def _check_git_scope():
         the approved ranked response shadow-evaluation report-run review markers are present
       - docs/WESLR_RANKED_RESPONSE_SHADOW_HELPER_INTEROP_BOUNDARY_V1.md only when
         the approved ranked response shadow-helper interop boundary design markers are present
+      - docs/WESLR_RANKED_RESPONSE_SHADOW_HELPER_INTEROP_BOUNDARY_REVIEW_V1.md only when
+        the approved ranked response shadow-helper interop boundary review markers are present
       - docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md only when
         the approved plan helper flag-on local observation design markers are present
       - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
@@ -1125,6 +1150,7 @@ def _check_git_scope():
     ranked_response_shadow_evaluation_report_run_result_doc_valid = _ranked_response_shadow_evaluation_report_run_result_doc_is_valid()
     ranked_response_shadow_evaluation_report_run_review_doc_valid = _ranked_response_shadow_evaluation_report_run_review_doc_is_valid()
     ranked_response_shadow_helper_interop_boundary_doc_valid = _ranked_response_shadow_helper_interop_boundary_doc_is_valid()
+    ranked_response_shadow_helper_interop_boundary_review_doc_valid = _ranked_response_shadow_helper_interop_boundary_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -1252,6 +1278,10 @@ def _check_git_scope():
             allowed = ranked_response_shadow_helper_interop_boundary_doc_valid
             if not ranked_response_shadow_helper_interop_boundary_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _ranked_response_shadow_helper_interop_boundary_review_doc:
+            allowed = ranked_response_shadow_helper_interop_boundary_review_doc_valid
+            if not ranked_response_shadow_helper_interop_boundary_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
