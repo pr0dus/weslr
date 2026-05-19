@@ -829,6 +829,30 @@ _internal_turing_scenario_corpus_helpers_review_required_markers = {
     "no official claims",
 }
 
+_internal_turing_scenario_corpus_helpers_implementation_review_doc = "docs/WESLR_INTERNAL_TURING_SCENARIO_CORPUS_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_internal_turing_scenario_corpus_helpers_implementation_review_required_markers = {
+    "WESLR Internal Turing Scenario Corpus Helpers Implementation Review V1",
+    "review-only",
+    "internal_turing_scenario_corpus_helpers_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_INTERNAL_TURING_SCENARIO_CORPUS_HELPERS_IMPLEMENTATION_V1",
+    "no official Turing test claim",
+    "no Turing pass claim",
+    "no IQ/certification/product-readiness claim",
+    "no consciousness/sentience claim",
+    "no runtime readiness claim",
+    "no deployment/production readiness claim",
+    "no voice/prosody readiness claim",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no raw prompt/response retention",
+    "no final answer generation",
+    "no feature flags",
+    "no official claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1455,6 +1479,13 @@ def _internal_turing_scenario_corpus_helpers_review_doc_is_valid():
     )
 
 
+def _internal_turing_scenario_corpus_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _internal_turing_scenario_corpus_helpers_implementation_review_doc,
+        _internal_turing_scenario_corpus_helpers_implementation_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1622,6 +1653,8 @@ def _check_git_scope():
         the approved internal Turing scenario corpus helper design markers are present
       - docs/WESLR_INTERNAL_TURING_SCENARIO_CORPUS_HELPERS_REVIEW_V1.md only when
         the approved internal Turing scenario corpus helper review markers are present
+      - docs/WESLR_INTERNAL_TURING_SCENARIO_CORPUS_HELPERS_IMPLEMENTATION_REVIEW_V1.md only when
+        the approved internal Turing scenario corpus helper implementation review markers are present
       - docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md only when
         the approved plan helper flag-on local observation design markers are present
       - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
@@ -1710,6 +1743,7 @@ def _check_git_scope():
     internal_turing_style_readiness_dimensions_and_corpus_review_doc_valid = _internal_turing_style_readiness_dimensions_and_corpus_review_doc_is_valid()
     internal_turing_scenario_corpus_helpers_doc_valid = _internal_turing_scenario_corpus_helpers_doc_is_valid()
     internal_turing_scenario_corpus_helpers_review_doc_valid = _internal_turing_scenario_corpus_helpers_review_doc_is_valid()
+    internal_turing_scenario_corpus_helpers_implementation_review_doc_valid = _internal_turing_scenario_corpus_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -1912,6 +1946,10 @@ def _check_git_scope():
         if path == _internal_turing_scenario_corpus_helpers_review_doc:
             allowed = internal_turing_scenario_corpus_helpers_review_doc_valid
             if not internal_turing_scenario_corpus_helpers_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
+        if path == _internal_turing_scenario_corpus_helpers_implementation_review_doc:
+            allowed = internal_turing_scenario_corpus_helpers_implementation_review_doc_valid
+            if not internal_turing_scenario_corpus_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
