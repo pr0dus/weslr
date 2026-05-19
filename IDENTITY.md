@@ -32,6 +32,22 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Ranked Response Shadow Report Run Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Current cognition path status: `WESLR_COGNITION_TARGET_MODEL_V1` is defined; `WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` is defined; ranked response shadow helpers are implemented/reviewed; ranked response shadow evaluation scenarios are implemented/reviewed; ranked response shadow evaluation report helpers are implemented/reviewed; ranked response shadow evaluation report run is designed, implemented, and reviewed.
+- Latest reviewed report-run result: artifact `docs/WESLR_RANKED_RESPONSE_SHADOW_EVALUATION_REPORT_RUN_RESULT_V1.md`; review `docs/WESLR_RANKED_RESPONSE_SHADOW_EVALUATION_REPORT_RUN_REVIEW_V1.md`; judgment `report_run_valid_ready_for_context_alignment`; status `report_run_clean_with_minor_followup`; scenario/category count `20/20`; passed/failed/blocked `20/0/0`.
+- Aggregate labels: `evidence_boundary_exercised`, `needs_governance_review`, `non_cannedness_boundary_exercised`, `provenance_boundary_exercised`, `runtime_integration_not_authorized`, `shadow_report_clean_with_minor_gaps`.
+- Minor followups remain visible and must not be erased or hidden: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for context alignment.
+- Current status remains internal shadow evaluation only, metadata-only, non-runtime, non-official, no final answer generation, and no raw prompt/response retention.
+- Runtime integration remains not authorized. No `weslr/chat_responder.py` changes are authorized from this lane.
+- No `ChatResponder`/`respond_chat()`/`generate_chat()` calls, prompt execution, model/search/advisor calls, `.weslr` writes, raw retention, final answer generation, feature flags, default changes, voice/prosody/TTS work, prompt-family broadening, global routing replacement, or numeric official scoring are authorized from this lane.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Do not make official claims: no official benchmark, Turing-test pass, IQ claim, certification claim, product-readiness claim, or consciousness/sentience claim.
+- Recommended next lane after this context alignment: `DESIGN_RANKED_RESPONSE_SHADOW_HELPER_INTEROP_BOUNDARY_V1`. This should clarify boundaries and future interop between ranked response shadow helpers, native response dry-slice helpers, behavior evaluation reports, internal evaluation corpus, and future cognition/runtime lanes. It is design/review, not runtime wiring.
+
 ### Latest Context Alignment — First Deterministic-Safe Dry-Run Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not live-slice authorization.
