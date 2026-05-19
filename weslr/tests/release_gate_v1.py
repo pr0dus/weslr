@@ -530,6 +530,30 @@ _ranked_native_interop_shadow_artifact_helpers_implementation_review_required_ma
     "no official claims",
 }
 
+_ranked_native_interop_shadow_artifact_report_doc = "docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_V1.md"
+_ranked_native_interop_shadow_artifact_report_required_markers = {
+    "WESLR Ranked/Native Interop Shadow Artifact Report V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "ranked_native_artifact_report_design_defined",
+    "design_only_not_implemented",
+    "metadata_only_report_surface",
+    "helper_authority_boundaries_preserved",
+    "runtime_integration_not_authorized",
+    "final_answer_authority_not_granted",
+    "raw_prompt_response_not_retained",
+    "official_evaluation_not_claimed",
+    "minor_followup_carried_forward",
+    "voice_downstream_not_current_priority",
+    "REVIEW_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_V1",
+    "no `weslr/chat_responder.py` edits",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no final answer generation",
+    "no official benchmark/Turing/IQ/certification/product-readiness/consciousness/sentience claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1067,6 +1091,13 @@ def _ranked_native_interop_shadow_artifact_helpers_implementation_review_doc_is_
     )
 
 
+def _ranked_native_interop_shadow_artifact_report_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _ranked_native_interop_shadow_artifact_report_doc,
+        _ranked_native_interop_shadow_artifact_report_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1220,6 +1251,8 @@ def _check_git_scope():
         the approved ranked/native interop shadow artifact helper review markers are present
       - docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_HELPERS_IMPLEMENTATION_REVIEW_V1.md only when
         the approved ranked/native interop shadow artifact helper implementation review markers are present
+      - docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_REPORT_V1.md only when
+        the approved ranked/native interop shadow artifact report design markers are present
       - docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md only when
         the approved plan helper flag-on local observation design markers are present
       - docs/WESLR_PLAN_HELPER_OBSERVATION_REPORTING_V1.md only when
@@ -1295,6 +1328,7 @@ def _check_git_scope():
     ranked_native_interop_shadow_artifact_helpers_doc_valid = _ranked_native_interop_shadow_artifact_helpers_doc_is_valid()
     ranked_native_interop_shadow_artifact_helpers_review_doc_valid = _ranked_native_interop_shadow_artifact_helpers_review_doc_is_valid()
     ranked_native_interop_shadow_artifact_helpers_implementation_review_doc_valid = _ranked_native_interop_shadow_artifact_helpers_implementation_review_doc_is_valid()
+    ranked_native_interop_shadow_artifact_report_doc_valid = _ranked_native_interop_shadow_artifact_report_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -1446,6 +1480,10 @@ def _check_git_scope():
             allowed = ranked_native_interop_shadow_artifact_helpers_implementation_review_doc_valid
             if not ranked_native_interop_shadow_artifact_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _ranked_native_interop_shadow_artifact_report_doc:
+            allowed = ranked_native_interop_shadow_artifact_report_doc_valid
+            if not ranked_native_interop_shadow_artifact_report_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
