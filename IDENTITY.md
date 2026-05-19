@@ -32,6 +32,22 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Ranked/Native Interop Shadow Artifact Helper Design Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is the construction/execution tool used to inspect and modify WESLR when instructed. OCC/OpenClaw is not deployed WESLR.
+- WESLR is one adaptable governed intelligence system; deployment labels are contexts, not separate WESLR identities.
+- Current cognition/ranked-native path status: `WESLR_COGNITION_TARGET_MODEL_V1` is defined; `WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1` is defined; ranked response shadow helpers/scenarios/report helpers/report run are implemented and reviewed; ranked response shadow helper interop boundary is designed, reviewed, and context-aligned; ranked response shadow / native dry-slice interop is designed, reviewed, and context-aligned; ranked/native interop shadow artifact helper design is completed and reviewed.
+- Latest artifact helper design review: `docs/WESLR_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_HELPERS_REVIEW_V1.md`; judgment `ranked_native_artifact_helper_design_valid_ready_for_context_alignment`; no blockers; validation passed; optional pytest set passed with 222 tests observed complete.
+- Artifact helper meaning: conceptual artifact `ranked_native_interop_shadow_artifact_v1`; future helper API is design-only; no helper implementation exists yet from this lane. If later implemented, artifact helpers must be metadata-only and may combine ranked metadata and native dry-slice metadata only.
+- Artifact content boundary: must not contain raw prompts, raw responses, final answers, hidden prompts, answer keys, private content, provider outputs, official scores, or runtime outputs treated as authority.
+- Authority boundaries: ranked helpers remain metadata owners only; native dry-slice helpers remain metadata owners only; selected candidate metadata is not live response text; native draft/preview metadata is not final answer prose; native self-check is not answer approval; no helper/evaluation layer owns final-answer authority, authorizes runtime wiring, or authorizes `weslr/chat_responder.py` edits.
+- Runtime boundary remains unchanged: runtime integration is not authorized; `weslr/chat_responder.py` edits are not authorized from this lane; feature flags are not authorized; global routing replacement is not authorized; final answer generation is not authorized from helper/evaluation lanes.
+- Minor followups remain visible and must not be erased or hidden: `renderer_next_lane_wording_drift`, `validator_phrase_key_limitation`. They are not blockers for context alignment.
+- Do not make official claims: no official benchmark, Turing-test pass, IQ claim, certification claim, product-readiness claim, or consciousness/sentience claim.
+- Voice/prosody/TTS remains downstream and not current priority.
+- Recommended next lane after this context alignment: `IMPLEMENT_RANKED_NATIVE_INTEROP_SHADOW_ARTIFACT_HELPERS_V1`. This must remain helper-only, metadata-only, non-runtime, with no final-answer generation, no `weslr/chat_responder.py` edits, no model/search/advisor calls, no `.weslr` writes, no raw prompt/response retention, no feature flags, and no official claims. Do not start implementation from context alignment alone.
+
 ### Latest Context Alignment — Ranked Response Shadow / Native Dry-Slice Interop Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
