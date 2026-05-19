@@ -706,6 +706,39 @@ _ranked_native_to_internal_turing_readiness_bridge_review_required_markers = {
     "no official claims",
 }
 
+_internal_turing_style_readiness_dimensions_and_corpus_doc = "docs/WESLR_INTERNAL_TURING_STYLE_READINESS_DIMENSIONS_AND_CORPUS_V1.md"
+_internal_turing_style_readiness_dimensions_and_corpus_required_markers = {
+    "WESLR Internal Turing-Style Readiness Dimensions and Corpus V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "internal_turing_readiness_dimensions_defined",
+    "controlled_dialogue_corpus_design_defined",
+    "design_only_not_implemented",
+    "internal_only_non_official",
+    "qualitative_first",
+    "live_dialogue_readiness_not_established",
+    "runtime_integration_not_authorized",
+    "final_answer_authority_not_granted",
+    "official_evaluation_not_claimed",
+    "further_cognition_evidence_required",
+    "minor_followup_carried_forward",
+    "voice_downstream_not_current_priority",
+    "REVIEW_INTERNAL_TURING_STYLE_READINESS_DIMENSIONS_AND_CORPUS_V1",
+    "scenario_id",
+    "raw_content_allowed: false",
+    "final_answer_required: false",
+    "runtime_execution_allowed: false",
+    "official_score_allowed: false",
+    "renderer_next_lane_wording_drift",
+    "validator_phrase_key_limitation",
+    "no `weslr/chat_responder.py` edits",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no final-answer generation",
+    "no official benchmark/Turing/IQ/certification/product-readiness claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1304,6 +1337,12 @@ def _ranked_native_to_internal_turing_readiness_bridge_review_doc_is_valid():
         _ranked_native_to_internal_turing_readiness_bridge_review_required_markers,
     )
 
+def _internal_turing_style_readiness_dimensions_and_corpus_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _internal_turing_style_readiness_dimensions_and_corpus_doc,
+        _internal_turing_style_readiness_dimensions_and_corpus_required_markers,
+    )
+
 
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
@@ -1550,6 +1589,7 @@ def _check_git_scope():
     ranked_native_interop_shadow_artifact_report_run_implementation_review_doc_valid = _ranked_native_interop_shadow_artifact_report_run_implementation_review_doc_is_valid()
     ranked_native_to_internal_turing_readiness_bridge_doc_valid = _ranked_native_to_internal_turing_readiness_bridge_doc_is_valid()
     ranked_native_to_internal_turing_readiness_bridge_review_doc_valid = _ranked_native_to_internal_turing_readiness_bridge_review_doc_is_valid()
+    internal_turing_style_readiness_dimensions_and_corpus_doc_valid = _internal_turing_style_readiness_dimensions_and_corpus_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -1737,6 +1777,10 @@ def _check_git_scope():
             allowed = ranked_native_to_internal_turing_readiness_bridge_review_doc_valid
             if not ranked_native_to_internal_turing_readiness_bridge_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _internal_turing_style_readiness_dimensions_and_corpus_doc:
+            allowed = internal_turing_style_readiness_dimensions_and_corpus_doc_valid
+            if not internal_turing_style_readiness_dimensions_and_corpus_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
