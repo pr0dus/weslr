@@ -1179,6 +1179,45 @@ _answer_authority_boundary_helpers_implementation_review_required_markers = {
     "OCC/OpenClaw is not WESLR",
 }
 
+
+_answer_composition_authority_boundary_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_BOUNDARY_V1.md"
+_answer_composition_authority_boundary_required_markers = {
+    "WESLR Answer Composition Authority Boundary V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "answer_composition_authority_boundary_design_defined",
+    "REVIEW_ANSWER_COMPOSITION_AUTHORITY_BOUNDARY_V1",
+    "metadata evidence may inform future composition review, but metadata evidence is not answer text and is not answer authority",
+    "answer authority is granted",
+    "answer composition is authorized",
+    "final-answer generation is authorized",
+    "runtime wiring is authorized",
+    "prompt execution is authorized",
+    "live dialogue is authorized",
+    "model/search/advisor calls are authorized",
+    "`.weslr` writes are authorized",
+    "feature flags are authorized",
+    "scoring is authorized",
+    "judge authority is granted",
+    "helper metadata",
+    "evaluation metadata",
+    "ranked/native metadata",
+    "answer authority boundary artifacts",
+    "no answer authority granted",
+    "no composition authority granted",
+    "no runtime behavior edited",
+    "no `weslr/chat_responder.py` edit",
+    "no final-answer generation",
+    "no prompt execution",
+    "no live dialogue",
+    "no runtime wiring",
+    "no model/search/advisor provider calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "OCC/OpenClaw is not WESLR",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1877,6 +1916,12 @@ def _answer_authority_boundary_helpers_implementation_review_doc_is_valid():
         _answer_authority_boundary_helpers_implementation_review_required_markers,
     )
 
+def _answer_composition_authority_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_composition_authority_boundary_doc,
+        _answer_composition_authority_boundary_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -2145,6 +2190,7 @@ def _check_git_scope():
     answer_authority_boundary_helpers_doc_valid = _answer_authority_boundary_helpers_doc_is_valid()
     answer_authority_boundary_helpers_review_doc_valid = _answer_authority_boundary_helpers_review_doc_is_valid()
     answer_authority_boundary_helpers_implementation_review_doc_valid = _answer_authority_boundary_helpers_implementation_review_doc_is_valid()
+    answer_composition_authority_boundary_doc_valid = _answer_composition_authority_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2392,6 +2438,10 @@ def _check_git_scope():
             allowed = answer_authority_boundary_helpers_implementation_review_doc_valid
             if not answer_authority_boundary_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_composition_authority_boundary_doc:
+            allowed = answer_composition_authority_boundary_doc_valid
+            if not answer_composition_authority_boundary_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
