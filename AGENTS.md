@@ -23,6 +23,23 @@ For WESLR work, keep this orientation current:
 
 
 
+
+### Latest Context Alignment — Answer Composition Authority Helpers Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR is one adaptable governed intelligence system and one unified intelligence/entity under development; deployment labels are contexts, not separate WESLR identities.
+- Current answer-composition authority helper path status: answer composition authority helpers design exists and is reviewed.
+- Latest review report: `docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_HELPERS_REVIEW_V1.md`; HEAD `8ac41d93fa6afb1a416b4056b4836b73beae2de9`; judgment `answer_composition_authority_helpers_design_valid_ready_for_context_alignment`.
+- Reviewed design doc: `docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_HELPERS_V1.md`.
+- Validation passed: release gate PASS; release check PASS; optional pytest PASS for answer authority boundary, internal Turing multi-turn protocol, and behavior evaluation report; post-commit release check PASS.
+- Boundary status remains design-only: no helper implementation; no answer composition; no final-answer generation; no runtime wiring; no prompt execution/live dialogue; no provider calls; no `.weslr` writes; no feature flags; no judges/scoring; no official claims; no answer authority granted; `weslr/chat_responder.py` untouched.
+- Future helpers are only planned as helper-only, metadata-only artifact builders/validators/summarizers/renderers/JSON normalizers. Helper artifacts must preserve false/no-authority fields and must not contain raw prompt text, raw response text, hidden prompts, answer keys, private content, provider output, official scores, or final-answer prose.
+- Current boundary rule remains: metadata evidence may inform future composition review, but metadata evidence is not answer text, is not answer composition authority, and is not answer authority. Helper metadata, evaluation metadata, ranked/native metadata, internal Turing metadata, answer-authority artifacts, answer-composition artifacts, validation passes, release passes, qualitative readiness labels, renderers, summaries, and JSON-safe wrappers must not authorize answer composition.
+- Non-blocking risks remain visible and must not be erased or converted into pass signals: `metadata-overread`; `helper/report-as-judge`; `helper/report-as-score`; `renderer wording drift`; `artifact-as-authority`; `OCC/WESLR identity confusion`; `validation-pass-as-authority`; `final-answer-prose-leak`.
+- Authority remains denied: helpers are not implemented; answer composition remains not implemented; final-answer generation remains not authorized; runtime integration remains not authorized; `weslr/chat_responder.py` edits remain not authorized; prompt execution/live dialogue remains not authorized; provider calls, `.weslr` writes, feature flags, judges/scoring, official claims, and answer authority remain not authorized.
+- Recommended next lane after this context alignment: `DESIGN_ANSWER_COMPOSITION_AUTHORITY_HELPERS_IMPLEMENTATION_V1`. This must not start from this context alignment packet. It must remain design-only unless separately authorized, and must not implement helpers, wire runtime, edit `weslr/chat_responder.py`, execute prompts, create live dialogue, generate final answers, call providers, write `.weslr`, enable feature flags, create judges/scores, make official claims, or grant answer authority.
+
 ### Latest Context Alignment — Answer Composition Authority Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
