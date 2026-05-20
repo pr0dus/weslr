@@ -22,6 +22,23 @@ Don't ask permission. Just do it.
 For WESLR work, keep this orientation current:
 
 
+
+### Latest Context Alignment — Answer Composition Authority Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR is one adaptable governed intelligence system and one unified intelligence/entity under development; deployment labels are contexts, not separate WESLR identities.
+- Current answer-composition authority boundary path status: answer composition authority boundary design exists and is reviewed.
+- Latest review report: `docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_BOUNDARY_REVIEW_V1.md`; HEAD `4c17bf7bb1b490bbead88030bcbd84abe62e2cb7`; judgment `answer_composition_authority_boundary_design_valid_ready_for_context_alignment`.
+- Reviewed design doc: `docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_BOUNDARY_V1.md`.
+- Validation passed: release gate PASS; release check PASS; optional pytest PASS for answer authority boundary, internal Turing multi-turn protocol, and behavior evaluation report.
+- Boundary status remains design-only: no answer composition implemented; no final-answer generation; no runtime wiring; no prompt execution/live dialogue; no provider calls; no `.weslr` writes; no feature flags; no judges/scoring; no official claims; no answer authority granted; `weslr/chat_responder.py` untouched.
+- Current boundary rule remains: metadata evidence may inform future composition review, but metadata evidence is not answer text and is not answer authority. Helper metadata, evaluation metadata, ranked/native metadata, internal Turing metadata, report artifacts, validation pass labels, release pass labels, qualitative readiness labels, renderer output, summary output, and JSON-safe wrappers must not authorize answer composition.
+- The design preserves evidence, provenance, governance, memory, domain, uncertainty, raw-content, provider, persistence, official-claim, and OCC/WESLR identity gates. Any final-answer path requires separate design, review, and owner approval.
+- Non-blocking risks remain visible and must not be erased or converted into pass signals: `metadata-overread`; `helper/report-as-judge`; `helper/report-as-score`; `renderer wording drift`; `artifact-as-authority`; `OCC/WESLR identity confusion`.
+- Authority remains denied: answer composition remains not implemented; final-answer generation remains not authorized; runtime integration remains not authorized; `weslr/chat_responder.py` edits remain not authorized; prompt execution/live dialogue remains not authorized; provider calls, `.weslr` writes, feature flags, judges/scoring, official claims, and answer authority remain not authorized.
+- Recommended next lane after this context alignment: `DESIGN_ANSWER_COMPOSITION_AUTHORITY_HELPERS_V1`. This must not start from this context alignment packet. It must remain design-only unless separately authorized, and must not wire runtime, edit `weslr/chat_responder.py`, execute prompts, create live dialogue, generate final answers, call providers, write `.weslr`, enable feature flags, create judges/scores, make official claims, or grant answer authority.
+
 ### Latest Context Alignment — Answer Authority Boundary Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
