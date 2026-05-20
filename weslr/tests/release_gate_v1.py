@@ -1037,6 +1037,41 @@ _internal_turing_to_answer_authority_boundary_required_markers = {
     "no official benchmark/Turing/IQ/certification/product-readiness/consciousness claims",
 }
 
+
+_internal_turing_to_answer_authority_boundary_review_doc = "docs/WESLR_INTERNAL_TURING_PROTOCOL_HELPERS_TO_ANSWER_AUTHORITY_BOUNDARY_REVIEW_V1.md"
+_internal_turing_to_answer_authority_boundary_review_required_markers = {
+    "WESLR Internal Turing Protocol Helpers to Answer Authority Boundary Review V1",
+    "Review-only",
+    "internal_turing_to_answer_authority_boundary_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_INTERNAL_TURING_TO_ANSWER_AUTHORITY_BOUNDARY_V1",
+    "metadata evidence is not answer authority",
+    "candidate metadata is not answer text",
+    "evaluation metadata is not response authority",
+    "answer authority remains not granted",
+    "runtime authority remains not granted",
+    "final-answer generation remains not authorized",
+    "prompt execution remains not authorized",
+    "no official Turing test claim",
+    "no Turing pass claim",
+    "no IQ/certification/product-readiness claim",
+    "no consciousness/sentience claim",
+    "no runtime readiness claim",
+    "no deployment/production readiness claim",
+    "no open-dialogue proof claim",
+    "no voice/prosody readiness claim",
+    "no public marketing evidence claim",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no live dialogue",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no raw retention",
+    "no final answer generation",
+    "no feature flags",
+    "no official claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1711,6 +1746,12 @@ def _internal_turing_to_answer_authority_boundary_doc_is_valid():
         _internal_turing_to_answer_authority_boundary_required_markers,
     )
 
+def _internal_turing_to_answer_authority_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _internal_turing_to_answer_authority_boundary_review_doc,
+        _internal_turing_to_answer_authority_boundary_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1975,6 +2016,7 @@ def _check_git_scope():
     internal_turing_multi_turn_protocol_helpers_review_doc_valid = _internal_turing_multi_turn_protocol_helpers_review_doc_is_valid()
     internal_turing_multi_turn_protocol_helpers_implementation_review_doc_valid = _internal_turing_multi_turn_protocol_helpers_implementation_review_doc_is_valid()
     internal_turing_to_answer_authority_boundary_doc_valid = _internal_turing_to_answer_authority_boundary_doc_is_valid()
+    internal_turing_to_answer_authority_boundary_review_doc_valid = _internal_turing_to_answer_authority_boundary_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2206,6 +2248,10 @@ def _check_git_scope():
             allowed = internal_turing_to_answer_authority_boundary_doc_valid
             if not internal_turing_to_answer_authority_boundary_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _internal_turing_to_answer_authority_boundary_review_doc:
+            allowed = internal_turing_to_answer_authority_boundary_review_doc_valid
+            if not internal_turing_to_answer_authority_boundary_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
