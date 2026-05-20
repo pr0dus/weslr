@@ -999,6 +999,44 @@ _internal_turing_multi_turn_protocol_helpers_implementation_review_required_mark
     "no official claims",
 }
 
+
+_internal_turing_to_answer_authority_boundary_doc = "docs/WESLR_INTERNAL_TURING_PROTOCOL_HELPERS_TO_ANSWER_AUTHORITY_BOUNDARY_V1.md"
+_internal_turing_to_answer_authority_boundary_required_markers = {
+    "WESLR Internal Turing Protocol Helpers to Answer Authority Boundary V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "internal_turing_to_answer_authority_boundary_defined",
+    "design_only_not_implemented",
+    "metadata_evidence_not_answer_authority",
+    "answer_authority_not_granted",
+    "runtime_authority_not_granted",
+    "final_answer_generation_not_authorized",
+    "prompt_execution_not_authorized",
+    "internal_only_non_official",
+    "qualitative_first",
+    "official_evaluation_not_claimed",
+    "further_cognition_evidence_required",
+    "minor_followup_carried_forward",
+    "voice_downstream_not_current_priority",
+    "REVIEW_INTERNAL_TURING_PROTOCOL_HELPERS_TO_ANSWER_AUTHORITY_BOUNDARY_V1",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "final_answer_generated=false",
+    "official_claim_allowed=false",
+    "prompt_execution_allowed=false",
+    "raw_content_allowed=false",
+    "validator_phrase_key_limitation",
+    "renderer_next_lane_wording_drift",
+    "Turing-name overclaim risk",
+    "future label non-scoring discipline",
+    "no `weslr/chat_responder.py` edits",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no model/search/advisor calls",
+    "no `.weslr` writes",
+    "no final-answer generation",
+    "no official benchmark/Turing/IQ/certification/product-readiness/consciousness claims",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -1667,6 +1705,12 @@ def _internal_turing_multi_turn_protocol_helpers_implementation_review_doc_is_va
     )
 
 
+def _internal_turing_to_answer_authority_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _internal_turing_to_answer_authority_boundary_doc,
+        _internal_turing_to_answer_authority_boundary_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -1930,6 +1974,7 @@ def _check_git_scope():
     internal_turing_multi_turn_protocol_helpers_doc_valid = _internal_turing_multi_turn_protocol_helpers_doc_is_valid()
     internal_turing_multi_turn_protocol_helpers_review_doc_valid = _internal_turing_multi_turn_protocol_helpers_review_doc_is_valid()
     internal_turing_multi_turn_protocol_helpers_implementation_review_doc_valid = _internal_turing_multi_turn_protocol_helpers_implementation_review_doc_is_valid()
+    internal_turing_to_answer_authority_boundary_doc_valid = _internal_turing_to_answer_authority_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2157,6 +2202,10 @@ def _check_git_scope():
             allowed = internal_turing_multi_turn_protocol_helpers_implementation_review_doc_valid
             if not internal_turing_multi_turn_protocol_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _internal_turing_to_answer_authority_boundary_doc:
+            allowed = internal_turing_to_answer_authority_boundary_doc_valid
+            if not internal_turing_to_answer_authority_boundary_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
