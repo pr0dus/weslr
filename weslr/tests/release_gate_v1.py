@@ -1558,6 +1558,41 @@ _answer_composition_authority_report_run_review_required_markers = {
     "OCC/OpenClaw is not WESLR",
 }
 
+_answer_composition_authority_report_run_result_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_RESULT_V1.md"
+_answer_composition_authority_report_run_result_required_markers = {
+    "WESLR Answer Composition Authority Report Run Result V1",
+    "WESLR_CANON_ALIGNMENT / metadata-only internal report-run result",
+    "answer_composition_authority_report_run_result_v1",
+    "metadata_only_report_run",
+    "internal_only_report_run",
+    "validation_pass_metadata_quality_evidence_only",
+    "occ_openclaw_separate_from_deployed_weslr",
+    "answer_composition_not_authorized",
+    "answer_authority_not_granted",
+    "composition_authority_not_granted",
+    "final_answer_generation_not_authorized",
+    "prompt_execution_not_authorized",
+    "provider_calls_not_authorized",
+    "dot_weslr_writes_not_authorized",
+    "feature_flags_not_authorized",
+    "judges_scoring_not_authorized",
+    "official_claims_not_allowed",
+    "no_answer_composition",
+    "no_final_answer_generation",
+    "no_runtime_wiring",
+    "no_prompt_execution_live_dialogue",
+    "no_provider_calls",
+    "no_dot_weslr_writes",
+    "no_feature_flags",
+    "no_judges_scoring",
+    "no_official_claims",
+    "no_answer_authority_granted",
+    "no_composition_authority_granted",
+    "chat_responder_untouched",
+    "OCC/OpenClaw remains separate from deployed WESLR",
+    "REVIEW_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_RESULT_V1",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -2329,6 +2364,12 @@ def _answer_composition_authority_report_run_review_doc_is_valid():
         _answer_composition_authority_report_run_review_required_markers,
     )
 
+def _answer_composition_authority_report_run_result_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_composition_authority_report_run_result_doc,
+        _answer_composition_authority_report_run_result_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -2609,6 +2650,7 @@ def _check_git_scope():
     answer_composition_authority_report_helpers_implementation_review_doc_valid = _answer_composition_authority_report_helpers_implementation_review_doc_is_valid()
     answer_composition_authority_report_run_design_doc_valid = _answer_composition_authority_report_run_design_doc_is_valid()
     answer_composition_authority_report_run_review_doc_valid = _answer_composition_authority_report_run_review_doc_is_valid()
+    answer_composition_authority_report_run_result_doc_valid = _answer_composition_authority_report_run_result_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2900,6 +2942,10 @@ def _check_git_scope():
             allowed = answer_composition_authority_report_run_review_doc_valid
             if not answer_composition_authority_report_run_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_composition_authority_report_run_result_doc:
+            allowed = answer_composition_authority_report_run_result_doc_valid
+            if not answer_composition_authority_report_run_result_doc_valid:
+                violations.append(f"  result doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
