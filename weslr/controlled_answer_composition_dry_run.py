@@ -344,6 +344,91 @@ def _safe_error_labels(errors: list[Any]) -> list[str]:
     return labels
 
 
+def _unsafe_detection_labels(validation_or_detections: Mapping[str, Any]) -> list[str]:
+    labels: list[str] = []
+    for label in _TEXT_MARKERS:
+        if validation_or_detections.get(label) is True:
+            _append_unique(labels, label)
+    return labels
+
+
+def _safe_blocked_markdown_v1(validation: Mapping[str, Any], summary: Mapping[str, Any]) -> str:
+    reason_labels = _safe_error_labels(_as_list(validation.get("errors")))
+    for label in _safe_error_labels(_as_list(summary.get("blocked_reasons"))):
+        _append_unique(reason_labels, label)
+    for label in _unsafe_detection_labels(validation):
+        _append_unique(reason_labels, label)
+    if not reason_labels:
+        reason_labels = ["invalid_or_blocked_artifact"]
+
+    lines = [
+        "# Controlled Answer Composition Dry Run Artifact V1 — Blocked",
+        "",
+        "## Result Status",
+        f"- valid: `{bool(validation.get('valid'))}`",
+        "- blocked: `True`",
+        "- metadata_only: `True`",
+        "- internal_only: `True`",
+        "",
+        "## Safe Reason Labels",
+    ]
+    for reason in reason_labels:
+        lines.append(f"- `{reason}`")
+
+    lines.extend(
+        [
+            "",
+            "## Safe No-Authority Fields",
+            "- `answer_composition_attempted=false`",
+            "- `answer_composition_authorized=false`",
+            "- `final_answer_generated=false`",
+            "- `answer_authority_granted=false`",
+            "- `composition_authority_granted=false`",
+            "- `runtime_authority_granted=false`",
+            "- `prompt_execution_allowed=false`",
+            "- `live_dialogue_allowed=false`",
+            "- `raw_content_allowed=false`",
+            "- `official_claim_allowed=false`",
+            "- `model_call_made=false`",
+            "- `search_call_made=false`",
+            "- `advisor_call_made=false`",
+            "- `provider_call_made=false`",
+            "- `dot_weslr_write_performed=false`",
+            "- `feature_flag_enabled=false`",
+            "- `judge_authority_granted=false`",
+            "- `scoring_authorized=false`",
+            "",
+            "## Safety Confirmation",
+            "- `unsafe_content_not_rendered`",
+            "- `helper_metadata_not_answer_text`",
+            "- `dry_run_artifact_not_final_answer`",
+            "- `validation_pass_not_answer_authority`",
+            "- `validation_pass_not_composition_authority`",
+            "- `runtime_wiring_requires_separate_approval`",
+            f"- next_lane: `{summary.get('next_lane', NEXT_LANE_V1)}`",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _invalid_json_safe_wrapper_v1(reason_labels: list[str] | tuple[str, ...]) -> dict[str, Any]:
+    labels = _safe_error_labels(list(reason_labels)) or ["invalid_or_unsafe_artifact"]
+    return {
+        "artifact_type": INVALID_ARTIFACT_TYPE_V1,
+        "blocked": True,
+        "valid": False,
+        "errors": labels,
+        "unsafe_content_not_copied": True,
+        "metadata_only": True,
+        "internal_only": True,
+        "helper_metadata_not_answer_text": True,
+        "dry_run_artifact_not_final_answer": True,
+        "validation_pass_not_answer_authority": True,
+        "validation_pass_not_composition_authority": True,
+        "next_lane": NEXT_LANE_V1,
+    }
+
+
 def _detect_unsafe_content(value: Any) -> dict[str, bool]:
     found = {label: False for label in _TEXT_MARKERS}
     for path, item in _walk(value):
@@ -596,8 +681,12 @@ def summarize_controlled_answer_composition_dry_run_artifact_v1(artifact: Mappin
 
     validation = validate_controlled_answer_composition_dry_run_artifact_v1(artifact)
     gates = artifact.get("gate_statuses") if isinstance(artifact, Mapping) else None
+    safe_error_labels = _safe_error_labels(validation["errors"])
+    for label in _unsafe_detection_labels(validation):
+        _append_unique(safe_error_labels, label)
+    summary_labels = _as_list(artifact.get("summary_labels")) if isinstance(artifact, Mapping) and validation["valid"] else []
     return {
-        "artifact_type": str(artifact.get("artifact_type", INVALID_ARTIFACT_TYPE_V1)) if isinstance(artifact, Mapping) else INVALID_ARTIFACT_TYPE_V1,
+        "artifact_type": str(artifact.get("artifact_type", INVALID_ARTIFACT_TYPE_V1)) if isinstance(artifact, Mapping) and validation["valid"] else INVALID_ARTIFACT_TYPE_V1,
         "valid": bool(validation["valid"]),
         "blocked": bool(validation["blocked"]),
         "metadata_only": bool(isinstance(artifact, Mapping) and artifact.get("metadata_only") is True),
@@ -607,11 +696,11 @@ def summarize_controlled_answer_composition_dry_run_artifact_v1(artifact: Mappin
         "all_authority_flags_false": bool(validation["safety_booleans_valid"]),
         "gate_statuses_valid": bool(validation["gate_statuses_valid"]),
         "gate_status_count": len(gates) if isinstance(gates, Mapping) else 0,
-        "blocked_reasons": _safe_error_labels(_as_list(artifact.get("blocked_reasons"))) if isinstance(artifact, Mapping) else ["artifact_not_mapping"],
-        "validation_error_labels": _safe_error_labels(validation["errors"]),
+        "blocked_reasons": safe_error_labels or (_safe_error_labels(_as_list(artifact.get("blocked_reasons"))) if isinstance(artifact, Mapping) else ["artifact_not_mapping"]),
+        "validation_error_labels": safe_error_labels,
         "visible_risk_count": len(_as_list(artifact.get("visible_risks"))) if isinstance(artifact, Mapping) else 0,
-        "summary_labels": _as_list(artifact.get("summary_labels")) if isinstance(artifact, Mapping) else [],
-        "next_lane": str(artifact.get("next_lane", NEXT_LANE_V1)) if isinstance(artifact, Mapping) else NEXT_LANE_V1,
+        "summary_labels": summary_labels,
+        "next_lane": str(artifact.get("next_lane", NEXT_LANE_V1)) if isinstance(artifact, Mapping) and artifact.get("next_lane") == NEXT_LANE_V1 else NEXT_LANE_V1,
     }
 
 
@@ -620,6 +709,9 @@ def render_controlled_answer_composition_dry_run_artifact_markdown_v1(artifact: 
 
     validation = validate_controlled_answer_composition_dry_run_artifact_v1(artifact)
     summary = summarize_controlled_answer_composition_dry_run_artifact_v1(artifact)
+    if validation["valid"] is not True or validation["safe_to_render"] is not True:
+        return _safe_blocked_markdown_v1(validation, summary)
+
     lines = [
         "# Controlled Answer Composition Dry Run Artifact V1",
         "",
@@ -677,9 +769,14 @@ def render_controlled_answer_composition_dry_run_artifact_markdown_v1(artifact: 
 def to_controlled_answer_composition_dry_run_artifact_json_safe_v1(artifact: Mapping[str, Any]) -> dict[str, Any]:
     """Return a JSON-safe deep copy of one controlled dry-run artifact."""
 
+    detections = _detect_unsafe_content(artifact)
+    detection_labels = _unsafe_detection_labels(detections)
+    if detection_labels:
+        return _invalid_json_safe_wrapper_v1(detection_labels)
+
     safe = _json_safe(artifact)
     if not isinstance(safe, dict):
-        return {"artifact_type": INVALID_ARTIFACT_TYPE_V1, "blocked": True, "errors": ["artifact_not_mapping"]}
+        return _invalid_json_safe_wrapper_v1(["artifact_not_mapping"])
     for flag in (*FALSE_AUTHORITY_FIELDS_V1, *ADDITIONAL_FALSE_FIELDS_V1):
         if flag in safe:
             safe[flag] = False if safe[flag] is False else safe[flag]

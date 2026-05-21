@@ -227,6 +227,64 @@ def test_markdown_render_blocked_uses_safe_error_labels():
     assert "raw prompt:" not in markdown.lower()
 
 
+@pytest.mark.parametrize(
+    "mutator,unsafe_marker,safe_label",
+    [
+        (lambda artifact: artifact.__setitem__("raw_prompt_text", "raw prompt: secret"), "raw prompt:", "raw_content_detected"),
+        (lambda artifact: artifact.__setitem__("raw_response_text", "raw response: secret"), "raw response:", "raw_content_detected"),
+        (lambda artifact: artifact.__setitem__("private_content", "private content: secret"), "private content:", "private_content_detected"),
+        (lambda artifact: artifact.__setitem__("provider_output", "provider output: secret"), "provider output:", "provider_output_detected"),
+        (lambda artifact: artifact.__setitem__("runtime_output", "runtime output: secret"), "runtime output:", "runtime_output_detected"),
+        (lambda artifact: artifact.__setitem__("official_score", "official score: 100"), "official score:", "judge_or_score_detected"),
+        (lambda artifact: artifact["gate_statuses"].__setitem__("evidence_gate", "raw prompt: secret"), "raw prompt:", "raw_content_detected"),
+        (lambda artifact: artifact["summary_labels"].append("final answer: secret"), "final answer:", "final_answer_detected"),
+        (lambda artifact: artifact["validation_labels"].append("provider output: secret"), "provider output:", "provider_output_detected"),
+    ],
+)
+def test_markdown_render_invalid_artifacts_never_leaks_unsafe_marker_strings(mutator, unsafe_marker, safe_label):
+    artifact = build_controlled_answer_composition_dry_run_artifact_v1()
+    mutator(artifact)
+    validation = validate_controlled_answer_composition_dry_run_artifact_v1(artifact)
+    markdown = render_controlled_answer_composition_dry_run_artifact_markdown_v1(artifact)
+    lower = markdown.lower()
+
+    assert validation[safe_label] is True
+    assert "# Controlled Answer Composition Dry Run Artifact V1 — Blocked" in markdown
+    assert safe_label in markdown
+    assert unsafe_marker not in lower
+    assert "secret" not in lower
+    assert "## Gate Statuses" not in markdown
+    assert "## Summary Labels" not in markdown
+    assert "## Validation Labels" not in markdown
+    assert "unsafe_content_not_rendered" in markdown
+    assert "validation_pass_not_answer_authority" in markdown
+    assert "validation_pass_not_composition_authority" in markdown
+
+
+def test_json_safe_invalid_wrapper_does_not_leak_offending_content():
+    artifact = build_controlled_answer_composition_dry_run_artifact_v1()
+    artifact["summary_labels"].append("final answer: secret")
+    artifact["provider_output"] = "provider output: secret"
+    safe = to_controlled_answer_composition_dry_run_artifact_json_safe_v1(artifact)
+    encoded = json.dumps(safe, sort_keys=True).lower()
+
+    assert safe["artifact_type"] != ARTIFACT_TYPE_V1
+    assert safe["blocked"] is True
+    assert safe["unsafe_content_not_copied"] is True
+    assert "final answer:" not in encoded
+    assert "provider output:" not in encoded
+    assert "secret" not in encoded
+    assert "final_answer_detected" in safe["errors"]
+    assert "provider_output_detected" in safe["errors"]
+
+
+def test_json_safe_valid_artifact_preserves_safe_content():
+    artifact = build_controlled_answer_composition_dry_run_artifact_v1()
+    safe = to_controlled_answer_composition_dry_run_artifact_json_safe_v1(artifact)
+    assert safe["artifact_type"] == ARTIFACT_TYPE_V1
+    assert safe["blocked"] is False
+
+
 def test_json_safe_is_json_serializable_and_preserves_false_flags():
     artifact = build_controlled_answer_composition_dry_run_artifact_v1()
     safe = to_controlled_answer_composition_dry_run_artifact_json_safe_v1(artifact)
