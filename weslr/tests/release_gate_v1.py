@@ -1487,6 +1487,53 @@ _answer_composition_authority_report_helpers_implementation_review_required_mark
     "OCC/OpenClaw is not WESLR",
 }
 
+_answer_composition_authority_report_run_design_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_V1.md"
+_answer_composition_authority_report_run_design_required_markers = {
+    "WESLR Answer Composition Authority Report Run V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "answer_composition_authority_report_run_design_defined",
+    "IMPLEMENT_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_V1",
+    "REVIEW_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_V1",
+    "design_only_not_implemented",
+    "metadata_only_report_run",
+    "internal_only_report_run",
+    "helper_authority_boundaries_preserved",
+    "runtime_integration_not_authorized",
+    "answer_composition_not_authorized",
+    "answer_authority_not_granted",
+    "composition_authority_not_granted",
+    "final_answer_not_generated",
+    "official_claims_not_allowed",
+    "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_REPORT_RUN_RESULT_V1.md",
+    "result artifact must not be created in this design lane",
+    "allowed inputs",
+    "forbidden inputs",
+    "report-run flow",
+    "validation gates",
+    "blocked conditions",
+    "JSON-Safe Policy",
+    "Aggregate Labels",
+    "Visible Risks and Followups",
+    "Abort Conditions",
+    "Future Implementation Sequence",
+    "no runtime behavior changes",
+    "no `weslr/chat_responder.py` edits",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no prompt execution",
+    "no live dialogue",
+    "no model/search/advisor calls",
+    "no provider calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no final answer generation",
+    "no answer composition",
+    "no official claims",
+    "no answer authority granted",
+    "no composition authority granted",
+    "OCC/OpenClaw is not WESLR",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -2246,6 +2293,12 @@ def _answer_composition_authority_report_helpers_implementation_review_doc_is_va
         _answer_composition_authority_report_helpers_implementation_review_required_markers,
     )
 
+def _answer_composition_authority_report_run_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_composition_authority_report_run_design_doc,
+        _answer_composition_authority_report_run_design_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -2524,6 +2577,7 @@ def _check_git_scope():
     answer_composition_authority_report_helpers_doc_valid = _answer_composition_authority_report_helpers_doc_is_valid()
     answer_composition_authority_report_helpers_review_doc_valid = _answer_composition_authority_report_helpers_review_doc_is_valid()
     answer_composition_authority_report_helpers_implementation_review_doc_valid = _answer_composition_authority_report_helpers_implementation_review_doc_is_valid()
+    answer_composition_authority_report_run_design_doc_valid = _answer_composition_authority_report_run_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2807,6 +2861,10 @@ def _check_git_scope():
             allowed = answer_composition_authority_report_helpers_implementation_review_doc_valid
             if not answer_composition_authority_report_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_composition_authority_report_run_design_doc:
+            allowed = answer_composition_authority_report_run_design_doc_valid
+            if not answer_composition_authority_report_run_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
