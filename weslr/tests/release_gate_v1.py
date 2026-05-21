@@ -1806,8 +1806,8 @@ _controlled_answer_composition_dry_run_helpers_review_required_markers = {
 _controlled_answer_composition_dry_run_helpers_implementation_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _controlled_answer_composition_dry_run_helpers_implementation_review_required_markers = {
     "WESLR Controlled Answer Composition Dry Run Helpers Implementation Review V1",
-    "controlled_answer_composition_dry_run_helpers_implementation_blocked_renderer_can_leak_unsafe_invalid_artifact_content",
-    "FIX_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_HELPERS_RENDERING_SAFETY_V1",
+    "controlled_answer_composition_dry_run_helpers_implementation_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_HELPERS_IMPLEMENTATION_V1",
     "helper-only",
     "synthetic metadata-only",
     "deterministic",
