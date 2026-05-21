@@ -1374,6 +1374,31 @@ _answer_composition_authority_helpers_implementation_plan_review_required_marker
     "OCC/OpenClaw is not WESLR",
 }
 
+_answer_composition_authority_helpers_implementation_review_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_answer_composition_authority_helpers_implementation_review_required_markers = {
+    "WESLR Answer Composition Authority Helpers Implementation Review V1",
+    "answer_composition_authority_helpers_implementation_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_COMPOSITION_AUTHORITY_HELPERS_IMPLEMENTATION_REVIEW_V1",
+    "helper-only",
+    "metadata-only",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "in-memory only",
+    "no answer composition implemented",
+    "no final-answer generation",
+    "no runtime wiring",
+    "no prompt execution/live dialogue",
+    "no provider calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer authority granted",
+    "`weslr/chat_responder.py` untouched",
+    "OCC/OpenClaw is not WESLR",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -2108,6 +2133,12 @@ def _answer_composition_authority_helpers_implementation_plan_review_doc_is_vali
         _answer_composition_authority_helpers_implementation_plan_review_required_markers,
     )
 
+def _answer_composition_authority_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_composition_authority_helpers_implementation_review_doc,
+        _answer_composition_authority_helpers_implementation_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -2382,6 +2413,7 @@ def _check_git_scope():
     answer_composition_authority_helpers_review_doc_valid = _answer_composition_authority_helpers_review_doc_is_valid()
     answer_composition_authority_helpers_implementation_plan_doc_valid = _answer_composition_authority_helpers_implementation_plan_doc_is_valid()
     answer_composition_authority_helpers_implementation_plan_review_doc_valid = _answer_composition_authority_helpers_implementation_plan_review_doc_is_valid()
+    answer_composition_authority_helpers_implementation_review_doc_valid = _answer_composition_authority_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -2709,6 +2741,10 @@ def _check_git_scope():
             allowed = first_deterministic_safe_live_slice_dry_run_plan_doc_valid
             if not first_deterministic_safe_live_slice_dry_run_plan_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _answer_composition_authority_helpers_implementation_review_doc:
+            allowed = answer_composition_authority_helpers_implementation_review_doc_valid
+            if not answer_composition_authority_helpers_implementation_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _weslr_working_root_context_doc:
             allowed = weslr_working_root_context_doc_valid
             if not weslr_working_root_context_doc_valid:
