@@ -2068,6 +2068,45 @@ _controlled_answer_composition_dry_run_result_artifact_required_markers = {
     "occ_openclaw_not_deployed_weslr",
 }
 
+_controlled_answer_composition_dry_run_execution_result_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_EXECUTION_RESULT_REVIEW_V1.md"
+_controlled_answer_composition_dry_run_execution_result_review_required_markers = {
+    "WESLR Controlled Answer Composition Dry Run Execution Result Review V1",
+    "controlled_answer_composition_dry_run_execution_result_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_EXECUTION_RESULT_V1",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V1.md",
+    "synthetic metadata-only",
+    "internal-only",
+    "helper-based",
+    "validation-before-rendering",
+    "safe Markdown only",
+    "result artifact path exactly approved",
+    "no real user query text",
+    "no raw prompts",
+    "no raw responses",
+    "no private content",
+    "no hidden prompts",
+    "no answer keys",
+    "no provider/model/search/advisor output",
+    "no runtime output",
+    "no final-answer prose",
+    "no answer composition",
+    "no final-answer generation",
+    "no runtime wiring",
+    "no prompt execution/live dialogue",
+    "no provider calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer authority granted",
+    "no composition authority granted",
+    "no runtime authority granted",
+    "`weslr/chat_responder.py` untouched",
+    "OCC/OpenClaw remains separate from deployed WESLR",
+    "historical helper-lane test",
+    "test-scope fix lane",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -2917,6 +2956,12 @@ def _controlled_answer_composition_dry_run_result_artifact_doc_is_valid():
         _controlled_answer_composition_dry_run_result_artifact_required_markers,
     )
 
+def _controlled_answer_composition_dry_run_execution_result_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_dry_run_execution_result_review_doc,
+        _controlled_answer_composition_dry_run_execution_result_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -3210,6 +3255,7 @@ def _check_git_scope():
     controlled_answer_composition_dry_run_execution_design_doc_valid = _controlled_answer_composition_dry_run_execution_design_doc_is_valid()
     controlled_answer_composition_dry_run_execution_review_doc_valid = _controlled_answer_composition_dry_run_execution_review_doc_is_valid()
     controlled_answer_composition_dry_run_result_artifact_doc_valid = _controlled_answer_composition_dry_run_result_artifact_doc_is_valid()
+    controlled_answer_composition_dry_run_execution_result_review_doc_valid = _controlled_answer_composition_dry_run_execution_result_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -3553,6 +3599,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_dry_run_result_artifact_doc_valid
             if not controlled_answer_composition_dry_run_result_artifact_doc_valid:
                 violations.append(f"  result artifact missing required markers: {path}")
+        if path == _controlled_answer_composition_dry_run_execution_result_review_doc:
+            allowed = controlled_answer_composition_dry_run_execution_result_review_doc_valid
+            if not controlled_answer_composition_dry_run_execution_result_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
