@@ -21,6 +21,23 @@ Don't ask permission. Just do it.
 
 For WESLR work, keep this orientation current:
 
+### Latest Context Alignment — Controlled Dry-Run To Answer Formation Bridge Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR is one adaptable governed intelligence system and one unified intelligence/entity under development; deployment labels are contexts, not separate WESLR identities.
+- Current controlled dry-run to answer formation bridge status: design reviewed and valid for context alignment.
+- Latest bridge review report: `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_TO_ANSWER_FORMATION_BRIDGE_REVIEW_V1.md`; HEAD `8c2c10bfa92c9f2d45437f3e803ffdc609d36dc8`; judgment `controlled_answer_composition_dry_run_to_answer_formation_bridge_design_valid_ready_for_context_alignment`.
+- Reviewed bridge design doc: `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_TO_ANSWER_FORMATION_BRIDGE_V1.md`.
+- Reviewed lineage includes execution-result review `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_EXECUTION_RESULT_REVIEW_V1.md`, result artifact `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V1.md`, cognition target model `docs/WESLR_COGNITION_TARGET_MODEL_V1.md`, and ranked state-grounded response formation design `docs/WESLR_RANKED_STATE_GROUNDED_RESPONSE_FORMATION_V1.md`.
+- Validation passed: release gate PASS; release check PASS; optional targeted pytest PASS; post-commit release check PASS.
+- Boundary status remains: design-only; metadata-only; bridge-only; no answer formation implementation; no answer composition implementation; no final answer; no runtime wiring; no prompt/live dialogue; no provider calls; no `.weslr` writes; no feature flags; no judges/scoring; no authority granted; `weslr/chat_responder.py` untouched.
+- No blocking gaps were found. Pre-existing untracked files remain outside this context-alignment scope.
+- Current boundary rule remains: the bridge design and review, dry-run result metadata, result artifact existence, helper metadata, validation passes, release passes, safe Markdown, JSON-safe metadata, gate labels, false/no-authority fields, and review judgment may inform future design only. They do not authorize answer formation, answer composition, final-answer generation, runtime wiring, prompt execution/live dialogue, provider/search/advisor calls, `.weslr` writes, feature flags, judges/scoring, official claims, answer authority, composition authority, or runtime authority.
+- Non-blocking risks remain visible and must not be erased, hidden, renamed into pass signals, or converted into readiness or authority evidence: `metadata-overread`; `artifact/report-as-authority`; `validation-pass-as-authority`; `helper-existence-as-authority`; `renderer wording drift`; `final-answer-prose leak`; `OCC/WESLR identity confusion`; `result-artifact-as-final-answer`; `bridge-doc-as-implementation`; `ranked-state-grounding-name-as-authority`; `cognition-target-name-as-authority`; `future-lane-compression-risk`.
+- Authority remains denied: answer formation remains not implemented; answer composition remains not implemented; final-answer generation remains not authorized; runtime integration remains not authorized; `weslr/chat_responder.py` edits remain not authorized; prompt execution/live dialogue remains not authorized; provider/model/search/advisor calls, `.weslr` writes, feature flags, judges/scoring, official claims, answer authority, composition authority, and runtime authority remain not authorized.
+- Recommended next lane after this context alignment: `DESIGN_ANSWER_FORMATION_HELPERS_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, implement answer composition, generate final answers, execute prompts, create live dialogue, wire runtime, call providers, write `.weslr`, enable feature flags, create judges/scores, make official claims, or grant answer/composition authority.
+
 ### Latest Context Alignment — Controlled Dry-Run Result Artifact Test Fix Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
