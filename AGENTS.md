@@ -21,6 +21,25 @@ Don't ask permission. Just do it.
 
 For WESLR work, keep this orientation current:
 
+### Latest Context Alignment — Answer Formation Report Helpers Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR is one adaptable governed intelligence system and one unified intelligence/entity under development; deployment labels are contexts, not separate WESLR identities.
+- Current answer formation report helpers status: answer formation report helpers design exists and is reviewed.
+- Latest answer formation report helpers review report: `docs/WESLR_ANSWER_FORMATION_REPORT_HELPERS_REVIEW_V1.md`; HEAD `b1b7471e601ea3789049e114eb130e99fbba417b`; judgment `answer_formation_report_helpers_design_valid_ready_for_context_alignment`.
+- Reviewed answer formation report helpers design doc: `docs/WESLR_ANSWER_FORMATION_REPORT_HELPERS_V1.md`.
+- Reviewed lineage includes implemented answer formation helpers `weslr/answer_formation.py`, tests `weslr/tests/test_answer_formation_v1.py`, implementation review `docs/WESLR_ANSWER_FORMATION_HELPERS_IMPLEMENTATION_REVIEW_V1.md`, and design `docs/WESLR_ANSWER_FORMATION_HELPERS_V1.md`.
+- Validation passed: release gate PASS; release check PASS; optional pytest suites PASS; `weslr/chat_responder.py` untouched.
+- Boundary status remains: design-only; report-helper-design-only; metadata-only; no report helper implementation; no answer formation execution; no answer composition; no final-answer generation; no runtime wiring; no prompt execution/live dialogue; no provider/search/advisor calls; no `.weslr` writes; no feature flags; no judges/scoring; no official claims; no answer authority granted; no composition authority granted; `weslr/chat_responder.py` untouched.
+- No blocking gaps were found. Pre-existing untracked files remain outside this context-alignment scope.
+- Current boundary rule remains: the reviewed answer formation report helpers design may inform a future separately authorized report helper implementation lane only. It does not authorize report helper implementation, answer formation execution, answer composition, final-answer generation, runtime wiring, prompt execution/live dialogue, provider/search/advisor calls, `.weslr` writes, feature flags, judges/scoring, official claims, answer authority, composition authority, or runtime authority.
+- Future report helper names remain design-only until separately authorized: `build_answer_formation_report_v1`, `validate_answer_formation_report_v1`, `summarize_answer_formation_report_v1`, `derive_answer_formation_report_labels_v1`, `render_answer_formation_report_markdown_v1`, and `to_answer_formation_report_json_safe_v1`.
+- Future report helper/test paths remain design-only until separately authorized: `weslr/answer_formation_report.py` and `weslr/tests/test_answer_formation_report_v1.py`.
+- Non-blocking risks remain visible and must not be erased, hidden, renamed into pass signals, or converted into readiness or authority evidence: `metadata-overread`; `report-as-authority`; `artifact/report-as-authority`; `validation-pass-as-authority`; `helper-existence-as-authority`; `renderer wording drift`; `final-answer-prose leak`; `candidate-metadata-as-answer-draft`; `aggregate-label-as-readiness`; `state-frame-as-runtime-authority`; `OCC/WESLR identity confusion`; `implementation-as-runtime-authority`; `future-lane-compression-risk`.
+- Authority remains denied: report helpers remain not implemented; answer formation execution remains not authorized; answer composition remains not implemented; final-answer generation remains not authorized; runtime integration remains not authorized; `weslr/chat_responder.py` edits remain not authorized; prompt execution/live dialogue remains not authorized; provider/model/search/advisor calls, `.weslr` writes, feature flags, judges/scoring, official claims, answer authority, composition authority, and runtime authority remain not authorized.
+- Recommended next lane after this context alignment: `IMPLEMENT_ANSWER_FORMATION_REPORT_HELPERS_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, execute answer formation, implement answer composition, generate final answers, execute prompts, create live dialogue, wire runtime, call providers/search/advisors, write `.weslr`, enable feature flags, create judges/scores, make official claims, or grant answer/composition authority.
+
 ### Latest Context Alignment — Answer Formation Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is documentation-context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
