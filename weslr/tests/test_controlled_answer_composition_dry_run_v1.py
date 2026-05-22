@@ -336,9 +336,12 @@ def test_chat_responder_file_not_modified_in_diff():
     assert Path("weslr/chat_responder.py").exists()
 
 
-def test_no_dry_run_result_artifact_created_by_helpers_lane():
+def test_no_future_dry_run_result_artifact_created_by_helpers_lane():
+    approved_design_path = Path("docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_V1.md")
+    assert approved_design_path.exists()
+
     forbidden_paths = [
-        Path("docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_V1.md"),
+        Path("docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V1.md"),
         Path("docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_ARTIFACT_V1.md"),
     ]
     for path in forbidden_paths:
