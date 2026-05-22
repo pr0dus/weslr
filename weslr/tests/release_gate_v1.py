@@ -2845,6 +2845,44 @@ _answer_formation_dry_run_helpers_implementation_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_FORMATION_DRY_RUN_HELPERS_IMPLEMENTATION_V1",
 }
 
+_answer_formation_dry_run_execution_design_doc = "docs/WESLR_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1.md"
+_answer_formation_dry_run_execution_design_required_markers = {
+    "WESLR Answer Formation Dry Run Execution V1",
+    "answer_formation_dry_run_execution_design_defined",
+    "design document only",
+    "weslr/answer_formation_dry_run_execution.py",
+    "weslr/tests/test_answer_formation_dry_run_execution_v1.py",
+    "docs/WESLR_ANSWER_FORMATION_DRY_RUN_RESULT_V1.md",
+    "build_answer_formation_dry_run_artifact_v1",
+    "validate_answer_formation_dry_run_artifact_v1",
+    "summarize_answer_formation_dry_run_artifact_v1",
+    "render_answer_formation_dry_run_artifact_markdown_v1",
+    "to_answer_formation_dry_run_artifact_json_safe_v1",
+    "Allowed Synthetic Metadata Inputs",
+    "Forbidden Inputs / Content",
+    "Validation-Before-Rendering Policy",
+    "Safe Markdown Result Policy",
+    "JSON-Safe Policy",
+    "Blocked Execution Behavior",
+    "answer_formation_executed=false",
+    "answer_composition_attempted=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "no_dry_run_execution",
+    "no_dry_run_result_artifact_created",
+    "no_final_answer_generation",
+    "no_runtime_wiring",
+    "no_provider_search_advisor_calls",
+    "validation_pass_metadata_quality_evidence_only",
+    "metadata_must_not_become_authority",
+    "REVIEW_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -3814,6 +3852,12 @@ def _answer_formation_dry_run_helpers_implementation_review_doc_is_valid():
         _answer_formation_dry_run_helpers_implementation_review_required_markers,
     )
 
+def _answer_formation_dry_run_execution_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_formation_dry_run_execution_design_doc,
+        _answer_formation_dry_run_execution_design_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4127,6 +4171,7 @@ def _check_git_scope():
     answer_formation_dry_run_helpers_design_doc_valid = _answer_formation_dry_run_helpers_design_doc_is_valid()
     answer_formation_dry_run_helpers_review_doc_valid = _answer_formation_dry_run_helpers_review_doc_is_valid()
     answer_formation_dry_run_helpers_implementation_review_doc_valid = _answer_formation_dry_run_helpers_implementation_review_doc_is_valid()
+    answer_formation_dry_run_execution_design_doc_valid = _answer_formation_dry_run_execution_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4550,6 +4595,10 @@ def _check_git_scope():
             allowed = answer_formation_dry_run_helpers_implementation_review_doc_valid
             if not answer_formation_dry_run_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_formation_dry_run_execution_design_doc:
+            allowed = answer_formation_dry_run_execution_design_doc_valid
+            if not answer_formation_dry_run_execution_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
