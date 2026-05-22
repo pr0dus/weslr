@@ -348,5 +348,7 @@ def test_no_unapproved_dry_run_result_artifacts_created_by_helpers_lane():
     for path in forbidden_paths:
         assert not path.exists()
 
-    discovered_result_artifacts = set(Path("docs").glob("WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN*ARTIFACT*.md"))
+    discovered_result_artifacts = set(
+        Path("docs").glob("WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V*.md")
+    )
     assert discovered_result_artifacts == {approved_result_artifact_path}
