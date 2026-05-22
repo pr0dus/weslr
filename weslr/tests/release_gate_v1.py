@@ -2883,6 +2883,52 @@ _answer_formation_dry_run_execution_design_required_markers = {
     "REVIEW_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1",
 }
 
+_answer_formation_dry_run_execution_review_doc = "docs/WESLR_ANSWER_FORMATION_DRY_RUN_EXECUTION_REVIEW_V1.md"
+_answer_formation_dry_run_execution_review_required_markers = {
+    "WESLR Answer Formation Dry Run Execution Review V1",
+    "answer_formation_dry_run_execution_design_valid_ready_for_context_alignment",
+    "review report only",
+    "docs/WESLR_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1.md",
+    "design-only",
+    "metadata-only",
+    "execution-design-only",
+    "no dry-run implementation",
+    "no dry-run execution",
+    "no dry-run result artifact",
+    "no real answer formation execution",
+    "no answer composition",
+    "no final-answer generation",
+    "no runtime wiring",
+    "no prompt/live dialogue",
+    "no `ChatResponder` calls",
+    "no `respond_chat()` calls",
+    "no `generate_chat()` calls",
+    "no provider/search/advisor calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer/composition/runtime authority granted",
+    "`weslr/chat_responder.py` untouched",
+    "dry-run execution purpose",
+    "future execution module path",
+    "future test module path",
+    "future result artifact path",
+    "allowed synthetic metadata inputs",
+    "forbidden inputs/content",
+    "required helper calls",
+    "validation-before-rendering policy",
+    "safe Markdown result policy",
+    "JSON-safe policy",
+    "denied authority fields",
+    "blocked execution behavior",
+    "visible risks/followups",
+    "abort conditions",
+    "validation commands",
+    "future review sequence",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -3858,6 +3904,12 @@ def _answer_formation_dry_run_execution_design_doc_is_valid():
         _answer_formation_dry_run_execution_design_required_markers,
     )
 
+def _answer_formation_dry_run_execution_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_formation_dry_run_execution_review_doc,
+        _answer_formation_dry_run_execution_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4172,6 +4224,7 @@ def _check_git_scope():
     answer_formation_dry_run_helpers_review_doc_valid = _answer_formation_dry_run_helpers_review_doc_is_valid()
     answer_formation_dry_run_helpers_implementation_review_doc_valid = _answer_formation_dry_run_helpers_implementation_review_doc_is_valid()
     answer_formation_dry_run_execution_design_doc_valid = _answer_formation_dry_run_execution_design_doc_is_valid()
+    answer_formation_dry_run_execution_review_doc_valid = _answer_formation_dry_run_execution_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4599,6 +4652,10 @@ def _check_git_scope():
             allowed = answer_formation_dry_run_execution_design_doc_valid
             if not answer_formation_dry_run_execution_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _answer_formation_dry_run_execution_review_doc:
+            allowed = answer_formation_dry_run_execution_review_doc_valid
+            if not answer_formation_dry_run_execution_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
