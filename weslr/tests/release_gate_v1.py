@@ -1914,6 +1914,35 @@ _controlled_answer_composition_dry_run_result_review_required_markers = {
     "OCC/OpenClaw is not WESLR",
 }
 
+_controlled_answer_composition_dry_run_result_test_fix_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_TEST_FIX_REVIEW_V1.md"
+_controlled_answer_composition_dry_run_result_test_fix_review_required_markers = {
+    "WESLR Controlled Answer Composition Dry Run Result Test Fix Review V1",
+    "WESLR_CANON_ALIGNMENT",
+    "controlled_dry_run_result_design_existence_test_fix_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_DRY_RUN_RESULT_TEST_FIX_V1",
+    "dd1e6eea5f1b56e4db40697b3eb734fd00901036",
+    "weslr/tests/test_controlled_answer_composition_dry_run_v1.py",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_V1.md",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V1.md",
+    "test-only correction",
+    "no runtime edits",
+    "no `weslr/chat_responder.py` edits",
+    "no helper/source edits",
+    "no dry run",
+    "no future result artifact",
+    "no answer composition",
+    "no final answers",
+    "no prompt/live dialogue",
+    "no provider calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no answer authority granted",
+    "no composition authority granted",
+    "OCC/OpenClaw is not WESLR",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -2739,6 +2768,12 @@ def _controlled_answer_composition_dry_run_result_review_doc_is_valid():
         _controlled_answer_composition_dry_run_result_review_required_markers,
     )
 
+def _controlled_answer_composition_dry_run_result_test_fix_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_dry_run_result_test_fix_review_doc,
+        _controlled_answer_composition_dry_run_result_test_fix_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -3028,6 +3063,7 @@ def _check_git_scope():
     controlled_answer_composition_dry_run_helpers_implementation_review_doc_valid = _controlled_answer_composition_dry_run_helpers_implementation_review_doc_is_valid()
     controlled_answer_composition_dry_run_result_design_doc_valid = _controlled_answer_composition_dry_run_result_design_doc_is_valid()
     controlled_answer_composition_dry_run_result_review_doc_valid = _controlled_answer_composition_dry_run_result_review_doc_is_valid()
+    controlled_answer_composition_dry_run_result_test_fix_review_doc_valid = _controlled_answer_composition_dry_run_result_test_fix_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -3354,6 +3390,10 @@ def _check_git_scope():
         if path == _controlled_answer_composition_dry_run_result_review_doc:
             allowed = controlled_answer_composition_dry_run_result_review_doc_valid
             if not controlled_answer_composition_dry_run_result_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
+        if path == _controlled_answer_composition_dry_run_result_test_fix_review_doc:
+            allowed = controlled_answer_composition_dry_run_result_test_fix_review_doc_valid
+            if not controlled_answer_composition_dry_run_result_test_fix_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
