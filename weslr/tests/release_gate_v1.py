@@ -2642,6 +2642,44 @@ _answer_formation_report_run_result_review_required_markers = {
     "OCC/OpenClaw is not deployed WESLR and is not WESLR",
 }
 
+_answer_formation_dry_run_boundary_doc = "docs/WESLR_ANSWER_FORMATION_DRY_RUN_BOUNDARY_V1.md"
+_answer_formation_dry_run_boundary_required_markers = {
+    "WESLR Answer Formation Dry Run Boundary V1",
+    "answer_formation_dry_run_boundary_design_defined",
+    "design document only",
+    "dry run may inspect explicitly supplied safe metadata",
+    "internal dry-run artifacts only",
+    "Allowed Synthetic Metadata Inputs",
+    "Forbidden Inputs / Content",
+    "weslr/answer_formation.py",
+    "docs/WESLR_ANSWER_FORMATION_REPORT_RUN_RESULT_V1.md",
+    "No-Final-Answer Boundary",
+    "No-Runtime Boundary",
+    "Validation-Before-Rendering Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "answer_formation_executed=false",
+    "answer_composition_attempted=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "prompt_execution_allowed=false",
+    "live_dialogue_allowed=false",
+    "provider_call_made=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judge_authority_granted=false",
+    "scoring_authorized=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "dry_run_result_artifact_created=false",
+    "must not call providers/models/search/advisors",
+    "must not produce final answer prose",
+    "REVIEW_ANSWER_FORMATION_DRY_RUN_BOUNDARY_V1",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -3581,6 +3619,12 @@ def _answer_formation_report_run_result_review_doc_is_valid():
         _answer_formation_report_run_result_review_required_markers,
     )
 
+def _answer_formation_dry_run_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_formation_dry_run_boundary_doc,
+        _answer_formation_dry_run_boundary_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -3889,6 +3933,7 @@ def _check_git_scope():
     answer_formation_report_run_review_doc_valid = _answer_formation_report_run_review_doc_is_valid()
     answer_formation_report_run_result_doc_valid = _answer_formation_report_run_result_doc_is_valid()
     answer_formation_report_run_result_review_doc_valid = _answer_formation_report_run_result_review_doc_is_valid()
+    answer_formation_dry_run_boundary_doc_valid = _answer_formation_dry_run_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4292,6 +4337,10 @@ def _check_git_scope():
             allowed = answer_formation_report_run_result_review_doc_valid
             if not answer_formation_report_run_result_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_formation_dry_run_boundary_doc:
+            allowed = answer_formation_dry_run_boundary_doc_valid
+            if not answer_formation_dry_run_boundary_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
