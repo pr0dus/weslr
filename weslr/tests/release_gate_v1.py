@@ -1943,6 +1943,61 @@ _controlled_answer_composition_dry_run_result_test_fix_review_required_markers =
     "OCC/OpenClaw is not WESLR",
 }
 
+_controlled_answer_composition_dry_run_execution_design_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_EXECUTION_V1.md"
+_controlled_answer_composition_dry_run_execution_design_required_markers = {
+    "WESLR Controlled Answer Composition Dry Run Execution V1",
+    "WESLR_CANON_ALIGNMENT / design-only",
+    "controlled_answer_composition_dry_run_execution_design_defined",
+    "REVIEW_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_EXECUTION_V1",
+    "design_only_not_executed",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_DRY_RUN_RESULT_ARTIFACT_V1.md",
+    "Allowed Synthetic Metadata Inputs",
+    "Forbidden Inputs",
+    "Required Helper Calls",
+    "Validation-Before-Rendering Requirements",
+    "Result Artifact Writing Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Blocked Execution Behavior",
+    "Required False / No-Authority Fields",
+    "Abort Conditions",
+    "Future Review Sequence",
+    "answer_composition_attempted=false",
+    "answer_composition_authorized=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "prompt_execution_allowed=false",
+    "live_dialogue_allowed=false",
+    "raw_content_allowed=false",
+    "official_claim_allowed=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "provider_call_made=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judge_authority_granted=false",
+    "scoring_authorized=false",
+    "no dry-run execution",
+    "no result artifact creation",
+    "no runtime behavior changes",
+    "no `weslr/chat_responder.py` edits",
+    "no answer composition",
+    "no final-answer generation",
+    "no prompt execution",
+    "no live dialogue",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer authority granted",
+    "no composition authority granted",
+    "OCC/OpenClaw is not WESLR",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -2774,6 +2829,12 @@ def _controlled_answer_composition_dry_run_result_test_fix_review_doc_is_valid()
         _controlled_answer_composition_dry_run_result_test_fix_review_required_markers,
     )
 
+def _controlled_answer_composition_dry_run_execution_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_dry_run_execution_design_doc,
+        _controlled_answer_composition_dry_run_execution_design_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -3064,6 +3125,7 @@ def _check_git_scope():
     controlled_answer_composition_dry_run_result_design_doc_valid = _controlled_answer_composition_dry_run_result_design_doc_is_valid()
     controlled_answer_composition_dry_run_result_review_doc_valid = _controlled_answer_composition_dry_run_result_review_doc_is_valid()
     controlled_answer_composition_dry_run_result_test_fix_review_doc_valid = _controlled_answer_composition_dry_run_result_test_fix_review_doc_is_valid()
+    controlled_answer_composition_dry_run_execution_design_doc_valid = _controlled_answer_composition_dry_run_execution_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -3395,6 +3457,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_dry_run_result_test_fix_review_doc_valid
             if not controlled_answer_composition_dry_run_result_test_fix_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _controlled_answer_composition_dry_run_execution_design_doc:
+            allowed = controlled_answer_composition_dry_run_execution_design_doc_valid
+            if not controlled_answer_composition_dry_run_execution_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
