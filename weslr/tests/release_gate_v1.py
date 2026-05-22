@@ -2435,6 +2435,52 @@ _answer_formation_report_helpers_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_FORMATION_REPORT_HELPERS_V1",
 }
 
+_answer_formation_report_helpers_implementation_review_doc = "docs/WESLR_ANSWER_FORMATION_REPORT_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_answer_formation_report_helpers_implementation_review_required_markers = {
+    "WESLR Answer Formation Report Helpers Implementation Review V1",
+    "answer_formation_report_helpers_implementation_valid_ready_for_context_alignment",
+    "weslr/answer_formation_report.py",
+    "weslr/tests/test_answer_formation_report_v1.py",
+    "build_answer_formation_report_v1",
+    "validate_answer_formation_report_v1",
+    "summarize_answer_formation_report_v1",
+    "derive_answer_formation_report_labels_v1",
+    "render_answer_formation_report_markdown_v1",
+    "to_answer_formation_report_json_safe_v1",
+    "helper-only",
+    "metadata-only",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "in-memory only",
+    "internal-only",
+    "qualitative-only",
+    "answer_formation_attempted=false",
+    "answer_formation_authorized=false",
+    "answer_composition_attempted=false",
+    "answer_composition_authorized=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "prompt_execution_allowed=false",
+    "live_dialogue_allowed=false",
+    "raw_content_allowed=false",
+    "official_claim_allowed=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "provider_call_made=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judge_authority_granted=false",
+    "scoring_authorized=false",
+    "validation pass remains metadata quality evidence only",
+    "metadata quality evidence only",
+    "does not generate final-answer prose",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_FORMATION_REPORT_HELPERS_IMPLEMENTATION_V1",
+}
+
 
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
@@ -3344,6 +3390,12 @@ def _answer_formation_report_helpers_review_doc_is_valid():
         _answer_formation_report_helpers_review_required_markers,
     )
 
+def _answer_formation_report_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _answer_formation_report_helpers_implementation_review_doc,
+        _answer_formation_report_helpers_implementation_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -3647,6 +3699,7 @@ def _check_git_scope():
     answer_formation_helpers_implementation_review_doc_valid = _answer_formation_helpers_implementation_review_doc_is_valid()
     answer_formation_report_helpers_design_doc_valid = _answer_formation_report_helpers_design_doc_is_valid()
     answer_formation_report_helpers_review_doc_valid = _answer_formation_report_helpers_review_doc_is_valid()
+    answer_formation_report_helpers_implementation_review_doc_valid = _answer_formation_report_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4029,6 +4082,10 @@ def _check_git_scope():
         if path == _answer_formation_report_helpers_review_doc:
             allowed = answer_formation_report_helpers_review_doc_valid
             if not answer_formation_report_helpers_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
+        if path == _answer_formation_report_helpers_implementation_review_doc:
+            allowed = answer_formation_report_helpers_implementation_review_doc_valid
+            if not answer_formation_report_helpers_implementation_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
