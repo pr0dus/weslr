@@ -3843,6 +3843,46 @@ _controlled_answer_composition_chain_next_step_review_required_markers = {
     "No blocking gaps were found",
 }
 
+_controlled_final_answer_generation_boundary_doc = "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1.md"
+_controlled_final_answer_generation_boundary_required_markers = {
+    "WESLR Controlled Final Answer Generation Boundary V1",
+    "controlled final-answer generation boundary",
+    "DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1",
+    "REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1",
+    "controlled answer formation metadata",
+    "controlled answer composition metadata",
+    "controlled final-answer generation",
+    "answer drafts",
+    "user-facing output",
+    "runtime/live chat integration",
+    "provider/model/search/advisor calls",
+    "official evaluation claims",
+    "authority grants",
+    "Allowed Future Final-Answer Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Exact No-User-Facing-Output Boundary",
+    "Exact No-Runtime Boundary",
+    "Exact No-Provider / Search / Advisor Boundary",
+    "Exact No-Official-Claims Boundary",
+    "Validation-Before-Final-Answer-Generation Policy",
+    "Controlled Final-Answer Artifact Shape For Future Lane",
+    "Denied Authority Fields",
+    "Blocked Final-Answer-Generation Behavior",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "final_answer_generation_implemented: false",
+    "final_answer_generation_executed: false",
+    "answer_draft_created: false",
+    "user_facing_output_created: false",
+    "runtime_wired: false",
+    "provider_call_made: false",
+    "official_claim_made: false",
+    "answer_authority_granted: false",
+    "composition_authority_granted: false",
+    "runtime_authority_granted: false",
+    "official_evaluation_authority_granted: false",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4962,6 +5002,13 @@ def _controlled_answer_composition_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_final_answer_generation_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_final_answer_generation_boundary_doc,
+        _controlled_final_answer_generation_boundary_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5299,6 +5346,7 @@ def _check_git_scope():
     controlled_answer_composition_result_artifact_doc_valid = _controlled_answer_composition_result_artifact_doc_is_valid()
     controlled_answer_composition_result_artifact_review_doc_valid = _controlled_answer_composition_result_artifact_review_doc_is_valid()
     controlled_answer_composition_chain_next_step_review_doc_valid = _controlled_answer_composition_chain_next_step_review_doc_is_valid()
+    controlled_final_answer_generation_boundary_doc_valid = _controlled_final_answer_generation_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5818,6 +5866,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_chain_next_step_review_doc_valid
             if not controlled_answer_composition_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled answer composition chain next step review missing required markers: {path}")
+        if path == _controlled_final_answer_generation_boundary_doc:
+            allowed = controlled_final_answer_generation_boundary_doc_valid
+            if not controlled_final_answer_generation_boundary_doc_valid:
+                violations.append(f"  controlled final answer generation boundary doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
