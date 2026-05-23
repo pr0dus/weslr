@@ -3446,6 +3446,49 @@ _controlled_answer_formation_execution_result_artifact_required_markers = {
     "REVIEW_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_V1",
 }
 
+_controlled_answer_formation_execution_result_artifact_review_doc = "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_REVIEW_V1.md"
+_controlled_answer_formation_execution_result_artifact_review_required_markers = {
+    "WESLR Controlled Answer Formation Execution Result Artifact Review V1",
+    "controlled_answer_formation_execution_result_artifact_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_REVIEW_V1.md",
+    "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_V1.md",
+    "metadata_only_result_artifact_review",
+    "exact_approved_artifact_path_confirmed",
+    "internal_only: `True`",
+    "metadata_only: `True`",
+    "safe_markdown: `True`",
+    "json_safe_eligible: `True`",
+    "validation_backed: `True`",
+    "controlled_synthetic_metadata_only: `True`",
+    "helper_based: `True`",
+    "no_raw_prompt_text: `True`",
+    "no_raw_response_text: `True`",
+    "no_private_content: `True`",
+    "no_provider_output: `True`",
+    "no_runtime_output: `True`",
+    "no_answer_draft: `True`",
+    "no_composed_reply: `True`",
+    "no_final_answer_prose: `True`",
+    "no_final_answer_generation: `True`",
+    "no_answer_composition: `True`",
+    "no_real_answer_formation_execution: `True`",
+    "no_runtime_wiring: `True`",
+    "no_prompt_live_dialogue: `True`",
+    "no_chat_responder_respond_chat_generate_chat_calls: `True`",
+    "no_provider_search_advisor_calls: `True`",
+    "no_dot_weslr_writes: `True`",
+    "no_feature_flags: `True`",
+    "no_judges_scores: `True`",
+    "no_official_benchmark_iq_turing_certification_claims: `True`",
+    "no_answer_composition_runtime_official_evaluation_authority_granted: `True`",
+    "weslr_chat_responder_py_untouched: `True`",
+    "No gaps found",
+    "review_report_only: `True`",
+    "not_authority_grant: `True`",
+    "`weslr/chat_responder.py` untouched",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_REVIEW_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4486,6 +4529,12 @@ def _controlled_answer_formation_execution_result_artifact_doc_is_valid():
         _controlled_answer_formation_execution_result_artifact_required_markers,
     )
 
+def _controlled_answer_formation_execution_result_artifact_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_formation_execution_result_artifact_review_doc,
+        _controlled_answer_formation_execution_result_artifact_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4811,6 +4860,7 @@ def _check_git_scope():
     controlled_answer_formation_execution_result_design_doc_valid = _controlled_answer_formation_execution_result_design_doc_is_valid()
     controlled_answer_formation_execution_result_design_review_doc_valid = _controlled_answer_formation_execution_result_design_review_doc_is_valid()
     controlled_answer_formation_execution_result_artifact_doc_valid = _controlled_answer_formation_execution_result_artifact_doc_is_valid()
+    controlled_answer_formation_execution_result_artifact_review_doc_valid = _controlled_answer_formation_execution_result_artifact_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5282,6 +5332,10 @@ def _check_git_scope():
             allowed = controlled_answer_formation_execution_result_artifact_doc_valid
             if not controlled_answer_formation_execution_result_artifact_doc_valid:
                 violations.append(f"  result artifact missing required markers: {path}")
+        if path == _controlled_answer_formation_execution_result_artifact_review_doc:
+            allowed = controlled_answer_formation_execution_result_artifact_review_doc_valid
+            if not controlled_answer_formation_execution_result_artifact_review_doc_valid:
+                violations.append(f"  result artifact review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
