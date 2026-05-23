@@ -3812,6 +3812,37 @@ _controlled_answer_composition_result_artifact_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_REVIEW_V1",
 }
 
+_controlled_answer_composition_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_CHAIN_NEXT_STEP_REVIEW_V1.md"
+_controlled_answer_composition_chain_next_step_review_required_markers = {
+    "WESLR Controlled Answer Composition Chain Next Step Review V1",
+    "controlled_answer_composition_chain_reviewed_next_step_design_controlled_final_answer_generation_boundary_v1",
+    "DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1",
+    "metadata-only controlled answer composition structures exist",
+    "helper implementation exists for safe internal composition metadata",
+    "controlled composition result artifact exists",
+    "denied authority fields stayed false",
+    "validation/release checks passed",
+    "weslr/chat_responder.py` stayed untouched",
+    "no runtime/provider/search/advisor/.weslr paths were activated",
+    "answer composition execution",
+    "answer formation execution",
+    "final-answer generation",
+    "answer correctness",
+    "user-facing output",
+    "live chat behavior",
+    "runtime readiness",
+    "official Turing-test claim",
+    "IQ claim",
+    "certification claim",
+    "product readiness",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "result-artifact-as-execution risk",
+    "safe-Markdown-as-user-output risk",
+    "No blocking gaps were found",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4924,6 +4955,13 @@ def _controlled_answer_composition_result_artifact_review_doc_is_valid():
     )
 
 
+def _controlled_answer_composition_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_chain_next_step_review_doc,
+        _controlled_answer_composition_chain_next_step_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5260,6 +5298,7 @@ def _check_git_scope():
     controlled_answer_composition_result_design_review_doc_valid = _controlled_answer_composition_result_design_review_doc_is_valid()
     controlled_answer_composition_result_artifact_doc_valid = _controlled_answer_composition_result_artifact_doc_is_valid()
     controlled_answer_composition_result_artifact_review_doc_valid = _controlled_answer_composition_result_artifact_review_doc_is_valid()
+    controlled_answer_composition_chain_next_step_review_doc_valid = _controlled_answer_composition_chain_next_step_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5775,6 +5814,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_result_artifact_review_doc_valid
             if not controlled_answer_composition_result_artifact_review_doc_valid:
                 violations.append(f"  controlled answer composition result artifact review missing required markers: {path}")
+        if path == _controlled_answer_composition_chain_next_step_review_doc:
+            allowed = controlled_answer_composition_chain_next_step_review_doc_valid
+            if not controlled_answer_composition_chain_next_step_review_doc_valid:
+                violations.append(f"  controlled answer composition chain next step review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
