@@ -3782,6 +3782,36 @@ _controlled_answer_composition_result_artifact_required_markers = {
     "official_claim_made=false",
 }
 
+_controlled_answer_composition_result_artifact_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_REVIEW_V1.md"
+_controlled_answer_composition_result_artifact_review_required_markers = {
+    "WESLR Controlled Answer Composition Result Artifact Review V1",
+    "controlled_answer_composition_result_artifact_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_V1.md",
+    "exactly the approved artifact path",
+    "internal-only",
+    "metadata-only",
+    "helper-output based",
+    "validation-backed",
+    "safe Markdown",
+    "JSON-safe eligible",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "controlled/synthetic metadata only",
+    "created using only approved helper API",
+    "not composition execution",
+    "not answer formation execution",
+    "not final-answer generation",
+    "not answer draft creation",
+    "not user-facing output",
+    "not live chat behavior",
+    "not runtime readiness",
+    "not provider/search/advisor output",
+    "not official benchmark/IQ/Turing/certification/product-readiness evidence",
+    "No blocking artifact gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_REVIEW_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4887,6 +4917,13 @@ def _controlled_answer_composition_result_artifact_doc_is_valid():
     )
 
 
+def _controlled_answer_composition_result_artifact_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_result_artifact_review_doc,
+        _controlled_answer_composition_result_artifact_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5222,6 +5259,7 @@ def _check_git_scope():
     controlled_answer_composition_result_design_doc_valid = _controlled_answer_composition_result_design_doc_is_valid()
     controlled_answer_composition_result_design_review_doc_valid = _controlled_answer_composition_result_design_review_doc_is_valid()
     controlled_answer_composition_result_artifact_doc_valid = _controlled_answer_composition_result_artifact_doc_is_valid()
+    controlled_answer_composition_result_artifact_review_doc_valid = _controlled_answer_composition_result_artifact_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5733,6 +5771,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_result_artifact_doc_valid
             if not controlled_answer_composition_result_artifact_doc_valid:
                 violations.append(f"  controlled answer composition result artifact missing required markers: {path}")
+        if path == _controlled_answer_composition_result_artifact_review_doc:
+            allowed = controlled_answer_composition_result_artifact_review_doc_valid
+            if not controlled_answer_composition_result_artifact_review_doc_valid:
+                violations.append(f"  controlled answer composition result artifact review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
