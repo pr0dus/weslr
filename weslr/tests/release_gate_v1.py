@@ -3489,6 +3489,28 @@ _controlled_answer_formation_execution_result_artifact_review_required_markers =
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_REVIEW_V1",
 }
 
+_controlled_answer_formation_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_ANSWER_FORMATION_CHAIN_NEXT_STEP_REVIEW_V1.md"
+_controlled_answer_formation_chain_next_step_review_required_markers = {
+    "WESLR Controlled Answer Formation Chain Next Step Review V1",
+    "controlled_answer_formation_chain_valid_for_design_controlled_answer_composition_boundary_v1",
+    "DESIGN_CONTROLLED_ANSWER_COMPOSITION_BOUNDARY_V1",
+    "Metadata-only helper/report/dry-run/control-result structure exists",
+    "real answer formation execution",
+    "answer composition",
+    "final-answer generation",
+    "runtime readiness",
+    "official Turing-test claim",
+    "authority to wire runtime",
+    "`weslr/chat_responder.py` stayed untouched",
+    "No runtime/provider/search/advisor/.weslr paths were activated",
+    "review/decision report",
+    "answer_formation_authorized=false",
+    "answer_composition_authorized=false",
+    "runtime_authority_granted=false",
+    "chat_responder_called=false",
+    "runtime_wired=false",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4535,6 +4557,12 @@ def _controlled_answer_formation_execution_result_artifact_review_doc_is_valid()
         _controlled_answer_formation_execution_result_artifact_review_required_markers,
     )
 
+def _controlled_answer_formation_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_formation_chain_next_step_review_doc,
+        _controlled_answer_formation_chain_next_step_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4861,6 +4889,7 @@ def _check_git_scope():
     controlled_answer_formation_execution_result_design_review_doc_valid = _controlled_answer_formation_execution_result_design_review_doc_is_valid()
     controlled_answer_formation_execution_result_artifact_doc_valid = _controlled_answer_formation_execution_result_artifact_doc_is_valid()
     controlled_answer_formation_execution_result_artifact_review_doc_valid = _controlled_answer_formation_execution_result_artifact_review_doc_is_valid()
+    controlled_answer_formation_chain_next_step_review_doc_valid = _controlled_answer_formation_chain_next_step_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5336,6 +5365,10 @@ def _check_git_scope():
             allowed = controlled_answer_formation_execution_result_artifact_review_doc_valid
             if not controlled_answer_formation_execution_result_artifact_review_doc_valid:
                 violations.append(f"  result artifact review missing required markers: {path}")
+        if path == _controlled_answer_formation_chain_next_step_review_doc:
+            allowed = controlled_answer_formation_chain_next_step_review_doc_valid
+            if not controlled_answer_formation_chain_next_step_review_doc_valid:
+                violations.append(f"  chain next-step review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
