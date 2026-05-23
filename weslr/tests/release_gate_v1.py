@@ -3754,6 +3754,34 @@ _controlled_answer_composition_result_design_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_RESULT_DESIGN_V1",
 }
 
+_controlled_answer_composition_result_artifact_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_V1.md"
+_controlled_answer_composition_result_artifact_required_markers = {
+    "WESLR Controlled Answer Composition Result Artifact V1",
+    "controlled_answer_composition_result_artifact_v1",
+    "REVIEW_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_V1",
+    "build_controlled_answer_composition_artifact_v1",
+    "validate_controlled_answer_composition_artifact_v1",
+    "summarize_controlled_answer_composition_artifact_v1",
+    "render_controlled_answer_composition_artifact_markdown_v1",
+    "to_controlled_answer_composition_artifact_json_safe_v1",
+    "internal-only",
+    "metadata-only",
+    "helper-output based",
+    "validation-backed",
+    "JSON-safe eligible",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "final_answer_generated=false",
+    "answer_draft_created=false",
+    "user_facing_output_created=false",
+    "runtime_wired=false",
+    "provider_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "official_claim_made=false",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4852,6 +4880,13 @@ def _controlled_answer_composition_result_design_review_doc_is_valid():
     )
 
 
+def _controlled_answer_composition_result_artifact_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_result_artifact_doc,
+        _controlled_answer_composition_result_artifact_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5186,6 +5221,7 @@ def _check_git_scope():
     controlled_answer_composition_helpers_implementation_review_doc_valid = _controlled_answer_composition_helpers_implementation_review_doc_is_valid()
     controlled_answer_composition_result_design_doc_valid = _controlled_answer_composition_result_design_doc_is_valid()
     controlled_answer_composition_result_design_review_doc_valid = _controlled_answer_composition_result_design_review_doc_is_valid()
+    controlled_answer_composition_result_artifact_doc_valid = _controlled_answer_composition_result_artifact_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5693,6 +5729,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_result_design_review_doc_valid
             if not controlled_answer_composition_result_design_review_doc_valid:
                 violations.append(f"  controlled answer composition result design review doc missing required markers: {path}")
+        if path == _controlled_answer_composition_result_artifact_doc:
+            allowed = controlled_answer_composition_result_artifact_doc_valid
+            if not controlled_answer_composition_result_artifact_doc_valid:
+                violations.append(f"  controlled answer composition result artifact missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
