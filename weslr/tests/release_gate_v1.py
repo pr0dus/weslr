@@ -3094,6 +3094,60 @@ _controlled_answer_formation_execution_boundary_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_FORMATION_EXECUTION_BOUNDARY_V1",
 }
 
+_controlled_answer_formation_execution_helpers_design_doc = "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_HELPERS_V1.md"
+_controlled_answer_formation_execution_helpers_design_required_markers = {
+    "WESLR Controlled Answer Formation Execution Helpers V1",
+    "controlled_answer_formation_execution_helpers_design_defined",
+    "design document only",
+    "helper-only, metadata-controlled answer formation execution helper layer",
+    "weslr/controlled_answer_formation_execution.py",
+    "weslr/tests/test_controlled_answer_formation_execution_v1.py",
+    "build_controlled_answer_formation_execution_artifact_v1",
+    "validate_controlled_answer_formation_execution_artifact_v1",
+    "summarize_controlled_answer_formation_execution_artifact_v1",
+    "render_controlled_answer_formation_execution_artifact_markdown_v1",
+    "to_controlled_answer_formation_execution_artifact_json_safe_v1",
+    "controlled_answer_formation_execution_artifact_v1",
+    "controlled_answer_formation_execution_artifact_schema_v1",
+    "Allowed Controlled / Synthetic Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Relationship to Existing Answer Formation Helpers",
+    "Relationship to Dry-Run Result Artifact",
+    "Validation-Before-Controlled-Execution Policy",
+    "No-Final-Answer Policy",
+    "No-Answer-Composition Policy",
+    "No-Runtime Policy",
+    "No-Provider / Search / Advisor Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Blocked Artifact Behavior",
+    "Denied Authority Fields",
+    "Visible Risks",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "answer_formation_executed=false",
+    "answer_composition_attempted=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "model_call_made=false",
+    "provider_call_made=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judge_authority_granted=false",
+    "scoring_authorized=false",
+    "controlled_execution_result_artifact_created=false",
+    "dry-run-result-as-controlled-execution-authority",
+    "validation-pass-as-answer-authority",
+    "metadata-as-authority",
+    "REVIEW_CONTROLLED_ANSWER_FORMATION_EXECUTION_HELPERS_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4098,6 +4152,12 @@ def _controlled_answer_formation_execution_boundary_review_doc_is_valid():
         _controlled_answer_formation_execution_boundary_review_required_markers,
     )
 
+def _controlled_answer_formation_execution_helpers_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_formation_execution_helpers_design_doc,
+        _controlled_answer_formation_execution_helpers_design_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4417,6 +4477,7 @@ def _check_git_scope():
     answer_formation_dry_run_execution_result_review_doc_valid = _answer_formation_dry_run_execution_result_review_doc_is_valid()
     controlled_answer_formation_execution_boundary_doc_valid = _controlled_answer_formation_execution_boundary_doc_is_valid()
     controlled_answer_formation_execution_boundary_review_doc_valid = _controlled_answer_formation_execution_boundary_review_doc_is_valid()
+    controlled_answer_formation_execution_helpers_design_doc_valid = _controlled_answer_formation_execution_helpers_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4864,6 +4925,10 @@ def _check_git_scope():
             allowed = controlled_answer_formation_execution_boundary_review_doc_valid
             if not controlled_answer_formation_execution_boundary_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _controlled_answer_formation_execution_helpers_design_doc:
+            allowed = controlled_answer_formation_execution_helpers_design_doc_valid
+            if not controlled_answer_formation_execution_helpers_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
