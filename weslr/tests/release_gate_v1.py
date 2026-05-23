@@ -3626,6 +3626,48 @@ _controlled_answer_composition_helpers_design_required_markers = {
     "REVIEW_CONTROLLED_ANSWER_COMPOSITION_HELPERS_V1",
 }
 
+_controlled_answer_composition_helpers_review_doc = "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_HELPERS_REVIEW_V1.md"
+_controlled_answer_composition_helpers_review_required_markers = {
+    "WESLR Controlled Answer Composition Helpers Review V1",
+    "controlled_answer_composition_helpers_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_HELPERS_REVIEW_V1.md",
+    "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_HELPERS_V1.md",
+    "design-only",
+    "helper-design-only",
+    "metadata-only",
+    "controlled answer composition helper implementation present: `False`",
+    "composition execution authorized: `False`",
+    "answer formation execution authorized: `False`",
+    "final-answer generation authorized: `False`",
+    "user-facing output authorized: `False`",
+    "runtime wiring authorized: `False`",
+    "provider/search/advisor calls authorized: `False`",
+    "composition result artifact created: `False`",
+    "`weslr/chat_responder.py` touched: `False`",
+    "Future helper module path",
+    "Future test module path",
+    "Future public API names",
+    "Controlled composition artifact shape",
+    "Allowed composition metadata inputs",
+    "Forbidden real-user/live/raw/provider/runtime inputs",
+    "Relationship to controlled answer formation result artifact",
+    "Relationship to controlled answer composition boundary",
+    "Validation-before-composition policy",
+    "Validation-before-rendering policy",
+    "No-final-answer policy",
+    "No-user-facing-output policy",
+    "No-runtime policy",
+    "Safe Markdown policy",
+    "JSON-safe policy",
+    "Blocked artifact behavior",
+    "Denied authority fields",
+    "Visible risks/followups",
+    "Abort conditions",
+    "Future implementation/review sequence",
+    "No blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_COMPOSITION_HELPERS_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4696,6 +4738,12 @@ def _controlled_answer_composition_helpers_design_doc_is_valid():
         _controlled_answer_composition_helpers_design_required_markers,
     )
 
+def _controlled_answer_composition_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_composition_helpers_review_doc,
+        _controlled_answer_composition_helpers_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5026,6 +5074,7 @@ def _check_git_scope():
     controlled_answer_composition_boundary_doc_valid = _controlled_answer_composition_boundary_doc_is_valid()
     controlled_answer_composition_boundary_review_doc_valid = _controlled_answer_composition_boundary_review_doc_is_valid()
     controlled_answer_composition_helpers_design_doc_valid = _controlled_answer_composition_helpers_design_doc_is_valid()
+    controlled_answer_composition_helpers_review_doc_valid = _controlled_answer_composition_helpers_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5517,6 +5566,10 @@ def _check_git_scope():
             allowed = controlled_answer_composition_helpers_design_doc_valid
             if not controlled_answer_composition_helpers_design_doc_valid:
                 violations.append(f"  controlled answer composition helpers design doc missing required markers: {path}")
+        if path == _controlled_answer_composition_helpers_review_doc:
+            allowed = controlled_answer_composition_helpers_review_doc_valid
+            if not controlled_answer_composition_helpers_review_doc_valid:
+                violations.append(f"  controlled answer composition helpers review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
