@@ -3148,6 +3148,81 @@ _controlled_answer_formation_execution_helpers_design_required_markers = {
     "REVIEW_CONTROLLED_ANSWER_FORMATION_EXECUTION_HELPERS_V1",
 }
 
+_controlled_answer_formation_execution_helpers_review_doc = "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_HELPERS_REVIEW_V1.md"
+_controlled_answer_formation_execution_helpers_review_required_markers = {
+    "WESLR Controlled Answer Formation Execution Helpers Review V1",
+    "controlled_answer_formation_execution_helpers_design_valid_ready_for_context_alignment",
+    "review report only",
+    "design-only",
+    "helper-design-only",
+    "metadata-controlled",
+    "no helper implementation",
+    "no controlled execution",
+    "no answer formation execution",
+    "no answer composition",
+    "no final-answer generation",
+    "no runtime wiring",
+    "no prompt/live dialogue",
+    "no `ChatResponder` calls",
+    "no `respond_chat()` calls",
+    "no `generate_chat()` calls",
+    "no provider/search/advisor calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer authority granted",
+    "no composition authority granted",
+    "no runtime authority granted",
+    "no official evaluation authority granted",
+    "no execution result artifact created",
+    "weslr/controlled_answer_formation_execution.py",
+    "weslr/tests/test_controlled_answer_formation_execution_v1.py",
+    "build_controlled_answer_formation_execution_artifact_v1",
+    "validate_controlled_answer_formation_execution_artifact_v1",
+    "summarize_controlled_answer_formation_execution_artifact_v1",
+    "render_controlled_answer_formation_execution_artifact_markdown_v1",
+    "to_controlled_answer_formation_execution_artifact_json_safe_v1",
+    "controlled execution artifact shape",
+    "allowed controlled/synthetic metadata inputs",
+    "forbidden real-user/live/raw/provider/runtime inputs",
+    "relationship to existing answer formation helpers",
+    "relationship to dry-run result artifact",
+    "validation-before-controlled-execution policy",
+    "no-final-answer policy",
+    "no-answer-composition policy",
+    "no-runtime policy",
+    "safe Markdown policy",
+    "JSON-safe policy",
+    "blocked artifact behavior",
+    "denied authority fields",
+    "visible risks/followups",
+    "abort conditions",
+    "future implementation/review sequence",
+    "answer_formation_executed=false",
+    "answer_composition_attempted=false",
+    "final_answer_generated=false",
+    "answer_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "model_call_made=false",
+    "provider_call_made=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judge_authority_granted=false",
+    "scoring_authorized=false",
+    "controlled_execution_result_artifact_created=false",
+    "dry-run-result-as-controlled-execution-authority",
+    "validation-pass-as-answer-authority",
+    "metadata-as-authority",
+    "No gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_ANSWER_FORMATION_EXECUTION_HELPERS_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -4158,6 +4233,12 @@ def _controlled_answer_formation_execution_helpers_design_doc_is_valid():
         _controlled_answer_formation_execution_helpers_design_required_markers,
     )
 
+def _controlled_answer_formation_execution_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_answer_formation_execution_helpers_review_doc,
+        _controlled_answer_formation_execution_helpers_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -4478,6 +4559,7 @@ def _check_git_scope():
     controlled_answer_formation_execution_boundary_doc_valid = _controlled_answer_formation_execution_boundary_doc_is_valid()
     controlled_answer_formation_execution_boundary_review_doc_valid = _controlled_answer_formation_execution_boundary_review_doc_is_valid()
     controlled_answer_formation_execution_helpers_design_doc_valid = _controlled_answer_formation_execution_helpers_design_doc_is_valid()
+    controlled_answer_formation_execution_helpers_review_doc_valid = _controlled_answer_formation_execution_helpers_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -4929,6 +5011,10 @@ def _check_git_scope():
             allowed = controlled_answer_formation_execution_helpers_design_doc_valid
             if not controlled_answer_formation_execution_helpers_design_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _controlled_answer_formation_execution_helpers_review_doc:
+            allowed = controlled_answer_formation_execution_helpers_review_doc_valid
+            if not controlled_answer_formation_execution_helpers_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
