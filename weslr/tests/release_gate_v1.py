@@ -4859,6 +4859,7 @@ _controlled_reply_preview_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_RE
 _controlled_reply_output_precondition_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1.md"
 _controlled_reply_output_precondition_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_output_precondition_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_CHAIN_NEXT_STEP_REVIEW_V1.md"
+_unknown_engine_boundary_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5208,6 +5209,66 @@ _controlled_reply_output_precondition_chain_next_step_review_required_markers = 
     "DESIGN_CONTROLLED_REPLY_TEXT_EXECUTION_BOUNDARY_V1",
     "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
     "DESIGN_TURING_TEST_EXECUTION_V1",
+}
+
+_unknown_engine_boundary_required_markers = {
+    "WESLR UNKNOWN ENGINE Boundary V1",
+    "DESIGN_UNKNOWN_ENGINE_BOUNDARY_V1",
+    "controlled_reply_output_precondition_chain_reviewed_next_step_design_unknown_engine_boundary_v1",
+    "Boundary Purpose",
+    "Non-Goals",
+    "Architecture Placement",
+    "Allowed Future Metadata Inputs",
+    "Forbidden Inputs",
+    "Future Metadata Output Shape",
+    "Knowns Representation",
+    "Unknowns Representation",
+    "Uncertainty Map",
+    "Possible Future Branch Labels",
+    "Branch Likelihood Labels",
+    "Missing Evidence Labels",
+    "Falsification-Test Labels",
+    "Safe Next Observation Labels",
+    "Risk Boundary Labels",
+    "Assumption Labels",
+    "Evidence-Change Labels",
+    "Confidence / Uncertainty Wording Rules",
+    "No Prediction Authority Policy",
+    "No Future-Certainty Policy",
+    "No Answer Authority Policy",
+    "No Reply-Output Policy",
+    "No Runtime Policy",
+    "No ChatResponder / respond_chat / generate_chat Policy",
+    "No Provider / Search / Advisor / Model Policy",
+    "No `.weslr` IO Policy",
+    "No Feature-Flag Policy",
+    "No Judges / Scores Policy",
+    "No Official-Claims Policy",
+    "No Turing-Test Execution Policy",
+    "No Real Conversation Sandbox Policy",
+    "Denied Authority Fields",
+    "Blocked Behavior",
+    "Visible Risks",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "future_certainty_claim_created=false",
+    "reply_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "IMPLEMENT_UNKNOWN_ENGINE_V1",
+    "EXECUTE_UNKNOWN_ENGINE_V1",
+    "CREATE_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1",
+    "REVIEW_UNKNOWN_ENGINE_BOUNDARY_V1",
 }
 
 
@@ -7112,6 +7173,13 @@ def _controlled_reply_output_precondition_chain_next_step_review_doc_is_valid():
     )
 
 
+def _unknown_engine_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_boundary_doc,
+        _unknown_engine_boundary_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7574,6 +7642,7 @@ def _check_git_scope():
     controlled_reply_output_precondition_boundary_doc_valid = _controlled_reply_output_precondition_boundary_doc_is_valid()
     controlled_reply_output_precondition_boundary_review_doc_valid = _controlled_reply_output_precondition_boundary_review_doc_is_valid()
     controlled_reply_output_precondition_chain_next_step_review_doc_valid = _controlled_reply_output_precondition_chain_next_step_review_doc_is_valid()
+    unknown_engine_boundary_doc_valid = _unknown_engine_boundary_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8259,6 +8328,10 @@ def _check_git_scope():
             allowed = controlled_reply_output_precondition_chain_next_step_review_doc_valid
             if not controlled_reply_output_precondition_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled reply output precondition chain next step review missing required markers: {path}")
+        if path == _unknown_engine_boundary_doc:
+            allowed = unknown_engine_boundary_doc_valid
+            if not unknown_engine_boundary_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE boundary doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
