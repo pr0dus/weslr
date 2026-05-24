@@ -4858,6 +4858,7 @@ _controlled_reply_preview_result_artifact_review_doc = "docs/WESLR_CONTROLLED_RE
 _controlled_reply_preview_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _controlled_reply_output_precondition_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1.md"
 _controlled_reply_output_precondition_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_REVIEW_V1.md"
+_controlled_reply_output_precondition_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5165,6 +5166,48 @@ _controlled_reply_output_precondition_boundary_review_required_markers = {
     "runtime readiness/wiring",
     "No blocking boundary design gaps were found.",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1",
+}
+
+_controlled_reply_output_precondition_chain_next_step_review_required_markers = {
+    "WESLR Controlled Reply Output Precondition Chain Next Step Review V1",
+    "controlled_reply_output_precondition_chain_reviewed_next_step_design_unknown_engine_boundary_v1",
+    "SECTION 1 — REVIEW SCOPE",
+    "SECTION 2 — CHAIN INVENTORY",
+    "SECTION 3 — VERIFIED ASSETS",
+    "SECTION 4 — VALIDATION EVIDENCE SUMMARY",
+    "SECTION 5 — WHAT IS PROVEN",
+    "SECTION 6 — WHAT IS NOT PROVEN",
+    "SECTION 7 — PRESERVED BOUNDARIES",
+    "SECTION 8 — DENIED AUTHORITY SUMMARY",
+    "SECTION 9 — VISIBLE RISKS",
+    "SECTION 10 — GAP ANALYSIS",
+    "SECTION 11 — RECOMMENDED NEXT LANE",
+    "SECTION 12 — EXPLICIT BLOCKED LANES",
+    "SECTION 13 — VALIDATION EVIDENCE FOR THIS REVIEW LANE",
+    "SECTION 14 — CHAIN JUDGMENT",
+    "SECTION 15 — SAFETY CONFIRMATION",
+    "controlled reply output precondition boundary exists",
+    "boundary review passed",
+    "context alignment is current",
+    "no output-producing implementation exists",
+    "no runtime/provider/search/advisor/model/.weslr paths were activated",
+    "no authority was granted",
+    "precondition boundary is not output authority",
+    "precondition boundary is not runtime authority",
+    "precondition boundary is not answer authority",
+    "precondition boundary is not official evaluation authority",
+    "metadata must not become reply output",
+    "safe Markdown must not become a user answer",
+    "validation pass is not answer/runtime/product authority",
+    "OCC/OpenClaw is not deployed WESLR",
+    "DESIGN_UNKNOWN_ENGINE_BOUNDARY_V1",
+    "no prediction authority",
+    "no future-certainty claims",
+    "IMPLEMENT_CONTROLLED_REPLY_OUTPUT_V1",
+    "IMPLEMENT_CONTROLLED_REPLY_PREVIEW_OUTPUT_V1",
+    "DESIGN_CONTROLLED_REPLY_TEXT_EXECUTION_BOUNDARY_V1",
+    "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
+    "DESIGN_TURING_TEST_EXECUTION_V1",
 }
 
 
@@ -7062,6 +7105,13 @@ def _controlled_reply_output_precondition_boundary_review_doc_is_valid():
     )
 
 
+def _controlled_reply_output_precondition_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_output_precondition_chain_next_step_review_doc,
+        _controlled_reply_output_precondition_chain_next_step_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7523,6 +7573,7 @@ def _check_git_scope():
     controlled_reply_preview_chain_next_step_review_doc_valid = _controlled_reply_preview_chain_next_step_review_doc_is_valid()
     controlled_reply_output_precondition_boundary_doc_valid = _controlled_reply_output_precondition_boundary_doc_is_valid()
     controlled_reply_output_precondition_boundary_review_doc_valid = _controlled_reply_output_precondition_boundary_review_doc_is_valid()
+    controlled_reply_output_precondition_chain_next_step_review_doc_valid = _controlled_reply_output_precondition_chain_next_step_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8204,6 +8255,10 @@ def _check_git_scope():
             allowed = controlled_reply_output_precondition_boundary_review_doc_valid
             if not controlled_reply_output_precondition_boundary_review_doc_valid:
                 violations.append(f"  controlled reply output precondition boundary review missing required markers: {path}")
+        if path == _controlled_reply_output_precondition_chain_next_step_review_doc:
+            allowed = controlled_reply_output_precondition_chain_next_step_review_doc_valid
+            if not controlled_reply_output_precondition_chain_next_step_review_doc_valid:
+                violations.append(f"  controlled reply output precondition chain next step review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
