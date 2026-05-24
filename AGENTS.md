@@ -1157,3 +1157,20 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
+
+### Latest Context Alignment — Controlled Reply Text Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- Controlled reply text helpers are implemented and reviewed.
+- Implementation files: `weslr/controlled_reply_text.py`, `weslr/tests/test_controlled_reply_text_v1.py`.
+- Review report: `docs/WESLR_CONTROLLED_REPLY_TEXT_HELPERS_IMPLEMENTATION_REVIEW_V1.md`.
+- Judgment: `controlled_reply_text_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs: `build_controlled_reply_text_artifact_v1`, `validate_controlled_reply_text_artifact_v1`, `summarize_controlled_reply_text_artifact_v1`, `render_controlled_reply_text_artifact_markdown_v1`, `to_controlled_reply_text_artifact_json_safe_v1`.
+- Validation passed: py_compile PASS; required pytest suites PASS; release gate PASS; release check PASS; `weslr/chat_responder.py` untouched PASS.
+- Gaps: no blocking gaps. Nonblocking notes: duplicate blocked-reason rendering is cosmetic; `.weslr` read-signal input is blocked via unsupported-input reduction.
+- Boundary status: helper-only, metadata-only, internal-only, deterministic, pure in-memory, validation-before-rendering, safe Markdown capable only after validation, JSON-safe, no-authority, no-runtime, non-user-facing, no side effects.
+- Explicitly not authorized and not implemented: runtime/user-facing behavior, reply execution, sendable reply text, actual reply body, final-answer prose, answer drafts, prompt/live dialogue execution, user-facing output execution, runtime wiring, `ChatResponder`/`respond_chat`/`generate_chat` imports or calls, provider/search/advisor/model calls, `.weslr` IO, feature flags, judges/scores, official claims, or authority grants.
+- Preserve visible risk: helper implementation is not reply text execution; helper metadata is not sendable reply text; safe Markdown is not a user answer; JSON-safe metadata is not a reply payload; validation pass is not answer/runtime/product authority; helper review is not runtime authorization; OCC/OpenClaw is not deployed WESLR.
+- Next lane after this context alignment: `DESIGN_CONTROLLED_REPLY_TEXT_RESULT_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, execute reply text, create sendable reply text, create actual reply body text, create final-answer prose, generate final answers, create answer drafts, execute prompts/live dialogue, wire runtime, call providers/search/advisors/models, read/write `.weslr`, enable feature flags, create judges/scores, make official claims, grant authority, or create unauthorized result artifacts.
+
