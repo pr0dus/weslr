@@ -3953,6 +3953,55 @@ _controlled_final_answer_generation_helpers_required_markers = {
     "official_evaluation_authority_granted: false",
 }
 
+_controlled_final_answer_generation_helpers_review_doc = "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_REVIEW_V1.md"
+_controlled_final_answer_generation_helpers_review_required_markers = {
+    "WESLR Controlled Final-Answer Generation Helpers Review V1",
+    "controlled_final_answer_generation_helpers_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1.md",
+    "design-only",
+    "helper-design-only",
+    "metadata-only",
+    "internal-only",
+    "no controlled final-answer generation helper implementation",
+    "no final-answer generation execution",
+    "no answer drafts",
+    "no user-facing output",
+    "no answer composition execution",
+    "no answer formation execution",
+    "no runtime wiring",
+    "no prompt/live dialogue",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no provider/search/advisor calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer/composition/runtime/official evaluation authority granted",
+    "no final-answer result artifact created",
+    "`weslr/chat_responder.py` untouched",
+    "Future helper module path",
+    "Future test module path",
+    "Future public API names",
+    "Controlled final-answer metadata artifact shape",
+    "Allowed final-answer metadata inputs",
+    "Forbidden real-user/live/raw/provider/runtime inputs",
+    "Relationship to controlled answer composition result artifact",
+    "Relationship to controlled final-answer generation boundary",
+    "Validation-before-final-answer-generation metadata policy",
+    "Validation-before-rendering policy",
+    "No-user-facing-output policy",
+    "No-runtime policy",
+    "Safe Markdown policy",
+    "JSON-safe policy",
+    "Blocked artifact behavior",
+    "Denied authority fields",
+    "Visible risks/followups",
+    "Abort conditions",
+    "Future implementation/review sequence",
+    "No blocking gaps found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5093,6 +5142,13 @@ def _controlled_final_answer_generation_helpers_doc_is_valid():
     )
 
 
+def _controlled_final_answer_generation_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_final_answer_generation_helpers_review_doc,
+        _controlled_final_answer_generation_helpers_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5433,6 +5489,7 @@ def _check_git_scope():
     controlled_final_answer_generation_boundary_doc_valid = _controlled_final_answer_generation_boundary_doc_is_valid()
     controlled_final_answer_generation_boundary_review_doc_valid = _controlled_final_answer_generation_boundary_review_doc_is_valid()
     controlled_final_answer_generation_helpers_doc_valid = _controlled_final_answer_generation_helpers_doc_is_valid()
+    controlled_final_answer_generation_helpers_review_doc_valid = _controlled_final_answer_generation_helpers_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -5964,6 +6021,10 @@ def _check_git_scope():
             allowed = controlled_final_answer_generation_helpers_doc_valid
             if not controlled_final_answer_generation_helpers_doc_valid:
                 violations.append(f"  controlled final answer generation helpers design missing required markers: {path}")
+        if path == _controlled_final_answer_generation_helpers_review_doc:
+            allowed = controlled_final_answer_generation_helpers_review_doc_valid
+            if not controlled_final_answer_generation_helpers_review_doc_valid:
+                violations.append(f"  controlled final answer generation helpers review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
