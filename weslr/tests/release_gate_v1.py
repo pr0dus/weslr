@@ -4865,6 +4865,7 @@ _cognitive_gym_suite_boundary_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_V1.
 _cognitive_gym_suite_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_run_protocol_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_V1.md"
 _cognitive_gym_run_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_REVIEW_V1.md"
+_cognitive_gym_run_protocol_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5405,6 +5406,57 @@ _cognitive_gym_run_protocol_review_required_markers = {
     "DESIGN_TURING_TEST_EXECUTION_V1",
     "No blocking protocol design gaps were found",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_RUN_PROTOCOL_V1",
+}
+
+_cognitive_gym_run_protocol_helpers_implementation_review_required_markers = {
+    "WESLR CognitiveGymRun Protocol Helpers Implementation Review V1",
+    "cognitive_gym_run_protocol_helpers_implementation_valid_ready_for_context_alignment",
+    "weslr/cognitive_gym_run_protocol.py",
+    "weslr/tests/test_cognitive_gym_run_protocol_v1.py",
+    "build_cognitive_gym_run_v1",
+    "validate_cognitive_gym_run_v1",
+    "summarize_cognitive_gym_run_v1",
+    "render_cognitive_gym_run_markdown_v1",
+    "to_cognitive_gym_run_json_safe_v1",
+    "helper-only",
+    "metadata-only",
+    "internal-only",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "pure in-memory",
+    "JSON-safe",
+    "safe-Markdown bounded",
+    "validation-before-rendering",
+    "no Cognitive Gym implementation",
+    "no UNKNOWN ENGINE implementation",
+    "no individual engine implementation",
+    "no CognitiveGymRun execution",
+    "no result artifact",
+    "no prediction output",
+    "no future-certainty claims",
+    "no open-problem solution claims",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat imports or calls",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` IO",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no authority grants",
+    "`weslr/chat_responder.py` untouched",
+    "UNKNOWN_ENGINE",
+    "SIGNAL_VS_NOISE_ENGINE",
+    "ERDŐS / open mathematical structure",
+    "cognitive_gym_authority_granted=false",
+    "prediction_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "No blocking implementation gaps found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_RUN_PROTOCOL_HELPERS_IMPLEMENTATION_V1",
 }
 
 _cognitive_gym_run_protocol_required_markers = {
@@ -7567,6 +7619,13 @@ def _cognitive_gym_run_protocol_review_doc_is_valid():
     )
 
 
+def _cognitive_gym_run_protocol_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_run_protocol_helpers_implementation_review_doc,
+        _cognitive_gym_run_protocol_helpers_implementation_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8035,6 +8094,7 @@ def _check_git_scope():
     cognitive_gym_suite_boundary_review_doc_valid = _cognitive_gym_suite_boundary_review_doc_is_valid()
     cognitive_gym_run_protocol_doc_valid = _cognitive_gym_run_protocol_doc_is_valid()
     cognitive_gym_run_protocol_review_doc_valid = _cognitive_gym_run_protocol_review_doc_is_valid()
+    cognitive_gym_run_protocol_helpers_implementation_review_doc_valid = _cognitive_gym_run_protocol_helpers_implementation_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8744,6 +8804,10 @@ def _check_git_scope():
             allowed = cognitive_gym_run_protocol_review_doc_valid
             if not cognitive_gym_run_protocol_review_doc_valid:
                 violations.append(f"  CognitiveGymRun protocol review missing required markers: {path}")
+        if path == _cognitive_gym_run_protocol_helpers_implementation_review_doc:
+            allowed = cognitive_gym_run_protocol_helpers_implementation_review_doc_valid
+            if not cognitive_gym_run_protocol_helpers_implementation_review_doc_valid:
+                violations.append(f"  CognitiveGymRun protocol helpers implementation review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
