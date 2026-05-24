@@ -4857,6 +4857,7 @@ _controlled_reply_preview_result_artifact_doc = "docs/WESLR_CONTROLLED_REPLY_PRE
 _controlled_reply_preview_result_artifact_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_ARTIFACT_REVIEW_V1.md"
 _controlled_reply_preview_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _controlled_reply_output_precondition_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1.md"
+_controlled_reply_output_precondition_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5092,6 +5093,78 @@ _controlled_reply_output_precondition_boundary_required_markers = {
     "reply-text execution",
     "user-facing reply execution",
     "REVIEW_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1",
+}
+
+_controlled_reply_output_precondition_boundary_review_required_markers = {
+    "WESLR Controlled Reply Output Precondition Boundary Review V1",
+    "controlled_reply_output_precondition_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1.md",
+    "design-only",
+    "precondition-boundary-only",
+    "metadata-only",
+    "no output created",
+    "no output-producing implementation",
+    "no preview output",
+    "no sendable reply text",
+    "no actual reply body",
+    "no reply text execution",
+    "no final-answer prose",
+    "no final answers",
+    "no answer drafts",
+    "no answer correctness claim",
+    "no live dialogue",
+    "no user-facing output execution",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no .weslr IO",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no authority grants",
+    "source metadata preconditions",
+    "validation preconditions",
+    "evidence/provenance preconditions",
+    "safety preconditions",
+    "raw/private content exclusion preconditions",
+    "output-producing work remains blocked",
+    "preview output remains blocked",
+    "sendable reply text remains blocked",
+    "actual reply body remains blocked",
+    "runtime remains blocked",
+    "authority remains blocked",
+    "official evaluation remains blocked",
+    "answer_authority_granted=false",
+    "preview_authority_granted=false",
+    "reply_output_authority_granted=false",
+    "reply_text_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "reply_preview_executed=false",
+    "preview_output_created=false",
+    "reply_output_created=false",
+    "reply_text_executed=false",
+    "sendable_reply_text_created=false",
+    "actual_reply_body_created=false",
+    "user_facing_output_executed=false",
+    "final_answer_generation_executed=false",
+    "final_answer_generated=false",
+    "final_answer_prose_created=false",
+    "answer_draft_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "preview-output implementation",
+    "reply-text execution",
+    "sendable reply text creation",
+    "actual reply body creation",
+    "user-facing reply execution",
+    "runtime readiness/wiring",
+    "No blocking boundary design gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1",
 }
 
 
@@ -6982,6 +7055,13 @@ def _controlled_reply_output_precondition_boundary_doc_is_valid():
     )
 
 
+def _controlled_reply_output_precondition_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_output_precondition_boundary_review_doc,
+        _controlled_reply_output_precondition_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7442,6 +7522,7 @@ def _check_git_scope():
     controlled_reply_preview_result_artifact_review_doc_valid = _controlled_reply_preview_result_artifact_review_doc_is_valid()
     controlled_reply_preview_chain_next_step_review_doc_valid = _controlled_reply_preview_chain_next_step_review_doc_is_valid()
     controlled_reply_output_precondition_boundary_doc_valid = _controlled_reply_output_precondition_boundary_doc_is_valid()
+    controlled_reply_output_precondition_boundary_review_doc_valid = _controlled_reply_output_precondition_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8119,6 +8200,10 @@ def _check_git_scope():
             allowed = controlled_reply_output_precondition_boundary_doc_valid
             if not controlled_reply_output_precondition_boundary_doc_valid:
                 violations.append(f"  controlled reply output precondition boundary missing required markers: {path}")
+        if path == _controlled_reply_output_precondition_boundary_review_doc:
+            allowed = controlled_reply_output_precondition_boundary_review_doc_valid
+            if not controlled_reply_output_precondition_boundary_review_doc_valid:
+                violations.append(f"  controlled reply output precondition boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
