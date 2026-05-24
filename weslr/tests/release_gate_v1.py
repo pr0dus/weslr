@@ -4525,6 +4525,46 @@ _controlled_user_facing_output_result_design_required_markers = {
     "Safety Confirmation",
 }
 
+_controlled_user_facing_output_result_design_review_doc = "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_RESULT_DESIGN_REVIEW_V1.md"
+_controlled_user_facing_output_result_design_review_required_markers = {
+    "WESLR Controlled User-Facing Output Result Design Review V1",
+    "controlled_user_facing_output_result_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_RESULT_V1.md",
+    "design-only",
+    "result-design-only",
+    "metadata-only",
+    "internal-only",
+    "helper-output based",
+    "validation-before-result-writing",
+    "safe-Markdown bounded",
+    "JSON-safe bounded",
+    "no result artifact created",
+    "no user-facing output execution",
+    "no reply text",
+    "no final-answer prose",
+    "no final answers",
+    "no answer drafts",
+    "no live dialogue",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls or imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` reads/writes",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no answer/user-facing-output/composition/runtime/official evaluation authority granted",
+    "weslr/chat_responder.py` untouched",
+    "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_RESULT_ARTIFACT_V1.md",
+    "Allowed Source Helper Output",
+    "Validation-Before-Result-Writing Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Blocked / Invalid Result Behavior",
+    "No blocking design gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_USER_FACING_OUTPUT_RESULT_DESIGN_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5755,6 +5795,12 @@ def _controlled_user_facing_output_result_design_doc_is_valid():
         _controlled_user_facing_output_result_design_required_markers,
     )
 
+def _controlled_user_facing_output_result_design_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_user_facing_output_result_design_review_doc,
+        _controlled_user_facing_output_result_design_review_required_markers,
+    )
+
 
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
@@ -6109,6 +6155,7 @@ def _check_git_scope():
     controlled_user_facing_output_helpers_review_doc_valid = _controlled_user_facing_output_helpers_review_doc_is_valid()
     controlled_user_facing_output_helpers_implementation_review_doc_valid = _controlled_user_facing_output_helpers_implementation_review_doc_is_valid()
     controlled_user_facing_output_result_design_doc_valid = _controlled_user_facing_output_result_design_doc_is_valid()
+    controlled_user_facing_output_result_design_review_doc_valid = _controlled_user_facing_output_result_design_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6692,6 +6739,10 @@ def _check_git_scope():
             allowed = controlled_user_facing_output_result_design_doc_valid
             if not controlled_user_facing_output_result_design_doc_valid:
                 violations.append(f"  controlled user-facing output result design missing required markers: {path}")
+        if path == _controlled_user_facing_output_result_design_review_doc:
+            allowed = controlled_user_facing_output_result_design_review_doc_valid
+            if not controlled_user_facing_output_result_design_review_doc_valid:
+                violations.append(f"  controlled user-facing output result design review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
