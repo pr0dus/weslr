@@ -4759,6 +4759,59 @@ _controlled_reply_text_boundary_required_markers = {
 }
 
 
+_controlled_reply_text_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_BOUNDARY_REVIEW_V1.md"
+_controlled_reply_text_boundary_review_required_markers = {
+    "WESLR Controlled Reply Text Boundary Review V1",
+    "controlled_reply_text_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_BOUNDARY_V1.md",
+    "design-only",
+    "boundary-only",
+    "reply-text-boundary-only",
+    "metadata-only",
+    "no reply text implementation",
+    "no reply text execution",
+    "no actual sendable reply text",
+    "no final-answer prose intended for users",
+    "no answer drafts",
+    "no user-facing output execution",
+    "no live dialogue",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` access",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no answer/reply-text/user-facing-output/composition/runtime/official evaluation authority granted",
+    "no reply-text result artifact created",
+    "weslr/chat_responder.py` untouched",
+    "controlled reply text purpose",
+    "why controlled user-facing-output result metadata does not grant reply-text authority",
+    "allowed future reply-text metadata inputs",
+    "forbidden real-user/live/raw/provider/runtime inputs",
+    "exact no-user-facing-output-execution boundary",
+    "exact no-live-dialogue boundary",
+    "exact no-runtime boundary",
+    "exact no-ChatResponder/respond_chat/generate_chat boundary",
+    "exact no-provider/search/advisor/model boundary",
+    "exact no-official-claims boundary",
+    "validation-before-reply-text policy",
+    "controlled reply-text artifact shape for a future lane",
+    "denied authority fields",
+    "blocked reply-text behavior",
+    "visible risks/followups",
+    "abort conditions",
+    "future implementation/review sequence",
+    "actual sendable reply text",
+    "answer draft prose",
+    "final-answer prose intended for users",
+    "live-dialogue output",
+    "user-facing response body",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_TEXT_BOUNDARY_V1",
+    "controlled_reply_text_boundary_review_safe_for_context_alignment_only",
+}
+
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -6022,6 +6075,13 @@ def _controlled_reply_text_boundary_doc_is_valid():
     )
 
 
+def _controlled_reply_text_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_boundary_review_doc,
+        _controlled_reply_text_boundary_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -6380,6 +6440,7 @@ def _check_git_scope():
     controlled_user_facing_output_result_artifact_review_doc_valid = _controlled_user_facing_output_result_artifact_review_doc_is_valid()
     controlled_user_facing_output_chain_next_step_review_doc_valid = _controlled_user_facing_output_chain_next_step_review_doc_is_valid()
     controlled_reply_text_boundary_doc_valid = _controlled_reply_text_boundary_doc_is_valid()
+    controlled_reply_text_boundary_review_doc_valid = _controlled_reply_text_boundary_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6983,6 +7044,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_boundary_doc_valid
             if not controlled_reply_text_boundary_doc_valid:
                 violations.append(f"  controlled reply text boundary doc missing required markers: {path}")
+        if path == _controlled_reply_text_boundary_review_doc:
+            allowed = controlled_reply_text_boundary_review_doc_valid
+            if not controlled_reply_text_boundary_review_doc_valid:
+                violations.append(f"  controlled reply text boundary review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
