@@ -4934,6 +4934,50 @@ _controlled_reply_text_helpers_review_required_markers = {
 }
 
 
+_controlled_reply_text_result_design_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_V1.md"
+_controlled_reply_text_result_design_required_markers = {
+    "WESLR Controlled Reply Text Result Design V1",
+    "DESIGN_CONTROLLED_REPLY_TEXT_RESULT_V1",
+    "REVIEW_CONTROLLED_REPLY_TEXT_RESULT_DESIGN_V1",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md",
+    "weslr/controlled_reply_text.py",
+    "build_controlled_reply_text_artifact_v1",
+    "validate_controlled_reply_text_artifact_v1",
+    "summarize_controlled_reply_text_artifact_v1",
+    "render_controlled_reply_text_artifact_markdown_v1",
+    "to_controlled_reply_text_artifact_json_safe_v1",
+    "design-only",
+    "internal result artifact design",
+    "controlled reply-text metadata",
+    "validation-before-result-writing",
+    "Safe Markdown",
+    "JSON-safe",
+    "denied authority fields",
+    "Blocked / Invalid Result Behavior",
+    "No-Reply-Text-Execution Boundary",
+    "No-Sendable-Reply-Text Boundary",
+    "No-Actual-Reply-Body Boundary",
+    "No-Final-Answer-Prose Boundary",
+    "No-Answer-Draft Boundary",
+    "No-User-Facing-Output-Execution Boundary",
+    "No-Live-Dialogue Boundary",
+    "No-Runtime Boundary",
+    "No-ChatResponder / respond_chat / generate_chat Boundary",
+    "No-Provider / Search / Advisor / Model Boundary",
+    "No-.weslr / No-Feature-Flag Boundary",
+    "No-Judges / Scores Boundary",
+    "No-Official-Claims Boundary",
+    "Visible Risks",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "no_result_artifact_created",
+    "no_reply_text_execution",
+    "no_sendable_reply_text_created",
+    "no_actual_reply_body_created",
+    "no_authority_granted",
+}
+
+
 _controlled_reply_text_helpers_implementation_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _controlled_reply_text_helpers_implementation_review_required_markers = {
     "WESLR Controlled Reply Text Helpers Implementation Review V1",
@@ -6257,6 +6301,13 @@ def _controlled_reply_text_helpers_review_doc_is_valid():
         _controlled_reply_text_helpers_review_required_markers,
     )
 
+def _controlled_reply_text_result_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_result_design_doc,
+        _controlled_reply_text_result_design_required_markers,
+    )
+
+
 def _controlled_reply_text_helpers_implementation_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_helpers_implementation_review_doc,
@@ -6625,6 +6676,7 @@ def _check_git_scope():
     controlled_reply_text_boundary_review_doc_valid = _controlled_reply_text_boundary_review_doc_is_valid()
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
     controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
+    controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
@@ -7241,6 +7293,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_helpers_review_doc_valid
             if not controlled_reply_text_helpers_review_doc_valid:
                 violations.append(f"  controlled reply text helpers review missing required markers: {path}")
+        if path == _controlled_reply_text_result_design_doc:
+            allowed = controlled_reply_text_result_design_doc_valid
+            if not controlled_reply_text_result_design_doc_valid:
+                violations.append(f"  controlled reply text result design missing required markers: {path}")
         if path == _controlled_reply_text_helpers_implementation_review_doc:
             allowed = controlled_reply_text_helpers_implementation_review_doc_valid
             if not controlled_reply_text_helpers_implementation_review_doc_valid:
