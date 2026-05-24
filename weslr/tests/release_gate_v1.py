@@ -4969,6 +4969,47 @@ _controlled_reply_text_result_design_review_required_markers = {
 }
 
 
+_controlled_reply_text_result_artifact_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_REVIEW_V1.md"
+_controlled_reply_text_result_artifact_review_required_markers = {
+    "WESLR Controlled Reply Text Result Artifact Review V1",
+    "controlled_reply_text_result_artifact_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md",
+    "exactly the approved artifact path",
+    "internal-only",
+    "metadata-only",
+    "helper-output based",
+    "validation-backed",
+    "safe Markdown",
+    "JSON-safe eligible",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "controlled/synthetic metadata only",
+    "created using only approved helper API",
+    "not reply text execution",
+    "not sendable reply text",
+    "not actual reply body",
+    "not final-answer prose",
+    "not answer draft creation",
+    "not live dialogue",
+    "not user-facing output execution",
+    "not answer composition execution",
+    "not answer formation execution",
+    "not live chat behavior",
+    "not runtime readiness",
+    "not ChatResponder/respond_chat/generate_chat output",
+    "not provider/search/advisor/model output",
+    "not official benchmark/IQ/Turing/certification/product-readiness evidence",
+    "not answer authority",
+    "not reply-text authority",
+    "not user-facing-output authority",
+    "not composition authority",
+    "not runtime authority",
+    "not official evaluation authority",
+    "No blocking artifact gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_REVIEW_V1",
+}
+
 _controlled_reply_text_result_artifact_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md"
 _controlled_reply_text_result_artifact_required_markers = {
     "WESLR Controlled Reply Text Result Artifact V1",
@@ -6409,6 +6450,13 @@ def _controlled_reply_text_result_design_review_doc_is_valid():
     )
 
 
+def _controlled_reply_text_result_artifact_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_result_artifact_review_doc,
+        _controlled_reply_text_result_artifact_review_required_markers,
+    )
+
+
 def _controlled_reply_text_result_artifact_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_result_artifact_doc,
@@ -6792,6 +6840,7 @@ def _check_git_scope():
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
     controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
     controlled_reply_text_result_design_review_doc_valid = _controlled_reply_text_result_design_review_doc_is_valid()
+    controlled_reply_text_result_artifact_review_doc_valid = _controlled_reply_text_result_artifact_review_doc_is_valid()
     controlled_reply_text_result_artifact_doc_valid = _controlled_reply_text_result_artifact_doc_is_valid()
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
@@ -7422,6 +7471,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_result_artifact_doc_valid
             if not controlled_reply_text_result_artifact_doc_valid:
                 violations.append(f"  controlled reply text result artifact missing required markers: {path}")
+        if path == _controlled_reply_text_result_artifact_review_doc:
+            allowed = controlled_reply_text_result_artifact_review_doc_valid
+            if not controlled_reply_text_result_artifact_review_doc_valid:
+                violations.append(f"  controlled reply text result artifact review missing required markers: {path}")
         if path == _controlled_reply_text_helpers_implementation_review_doc:
             allowed = controlled_reply_text_helpers_implementation_review_doc_valid
             if not controlled_reply_text_helpers_implementation_review_doc_valid:
