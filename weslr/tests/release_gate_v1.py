@@ -4468,6 +4468,63 @@ _controlled_user_facing_output_helpers_implementation_review_required_markers = 
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_USER_FACING_OUTPUT_HELPERS_IMPLEMENTATION_V1",
 }
 
+_controlled_user_facing_output_result_design_doc = "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_RESULT_V1.md"
+_controlled_user_facing_output_result_design_required_markers = {
+    "WESLR Controlled User-Facing Output Result V1",
+    "DESIGN_CONTROLLED_USER_FACING_OUTPUT_RESULT_V1",
+    "REVIEW_CONTROLLED_USER_FACING_OUTPUT_RESULT_DESIGN_V1",
+    "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_RESULT_ARTIFACT_V1.md",
+    "build_controlled_user_facing_output_artifact_v1",
+    "validate_controlled_user_facing_output_artifact_v1",
+    "summarize_controlled_user_facing_output_artifact_v1",
+    "render_controlled_user_facing_output_artifact_markdown_v1",
+    "to_controlled_user_facing_output_artifact_json_safe_v1",
+    "design-only",
+    "result_artifact_created: false",
+    "user_facing_output_executed: false",
+    "reply_text_created: false",
+    "final_answer_prose_created: false",
+    "answer_draft_created: false",
+    "runtime_wired: false",
+    "chat_responder_called: false",
+    "respond_chat_called: false",
+    "generate_chat_called: false",
+    "provider_call_made: false",
+    "model_call_made: false",
+    "search_call_made: false",
+    "advisor_call_made: false",
+    "dot_weslr_write_performed: false",
+    "feature_flag_enabled: false",
+    "judges_created: false",
+    "scores_created: false",
+    "official_claim_made: false",
+    "answer_authority_granted: false",
+    "user_facing_output_authority_granted: false",
+    "runtime_authority_granted: false",
+    "official_evaluation_authority_granted: false",
+    "Allowed Source Helper Output",
+    "Forbidden Source Content",
+    "Validation-Before-Result-Writing Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Blocked / Invalid Result Behavior",
+    "No-User-Facing-Output-Execution Boundary",
+    "No-Reply-Text Boundary",
+    "No-Live-Dialogue Boundary",
+    "No-Final-Answer-Prose Boundary",
+    "No-Runtime Boundary",
+    "No-ChatResponder / respond_chat / generate_chat Boundary",
+    "No-Provider / Search / Advisor / Model Boundary",
+    "No-.weslr / No-Feature-Flag Boundary",
+    "No-Judges / Scores Boundary",
+    "No-Official-Claims Boundary",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "Safety Confirmation",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5692,6 +5749,13 @@ def _controlled_user_facing_output_helpers_implementation_review_doc_is_valid():
     )
 
 
+def _controlled_user_facing_output_result_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_user_facing_output_result_design_doc,
+        _controlled_user_facing_output_result_design_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -6044,6 +6108,7 @@ def _check_git_scope():
     controlled_user_facing_output_helpers_doc_valid = _controlled_user_facing_output_helpers_doc_is_valid()
     controlled_user_facing_output_helpers_review_doc_valid = _controlled_user_facing_output_helpers_review_doc_is_valid()
     controlled_user_facing_output_helpers_implementation_review_doc_valid = _controlled_user_facing_output_helpers_implementation_review_doc_is_valid()
+    controlled_user_facing_output_result_design_doc_valid = _controlled_user_facing_output_result_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6623,6 +6688,10 @@ def _check_git_scope():
             allowed = controlled_user_facing_output_helpers_implementation_review_doc_valid
             if not controlled_user_facing_output_helpers_implementation_review_doc_valid:
                 violations.append(f"  controlled user-facing output helpers implementation review missing required markers: {path}")
+        if path == _controlled_user_facing_output_result_design_doc:
+            allowed = controlled_user_facing_output_result_design_doc_valid
+            if not controlled_user_facing_output_result_design_doc_valid:
+                violations.append(f"  controlled user-facing output result design missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
