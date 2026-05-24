@@ -4934,6 +4934,45 @@ _controlled_reply_text_helpers_review_required_markers = {
 }
 
 
+_controlled_reply_text_helpers_implementation_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_controlled_reply_text_helpers_implementation_review_required_markers = {
+    "WESLR Controlled Reply Text Helpers Implementation Review V1",
+    "controlled_reply_text_helpers_implementation_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_TEXT_HELPERS_IMPLEMENTATION_V1",
+    "weslr/controlled_reply_text.py",
+    "weslr/tests/test_controlled_reply_text_v1.py",
+    "build_controlled_reply_text_artifact_v1",
+    "validate_controlled_reply_text_artifact_v1",
+    "summarize_controlled_reply_text_artifact_v1",
+    "render_controlled_reply_text_artifact_markdown_v1",
+    "to_controlled_reply_text_artifact_json_safe_v1",
+    "controlled_reply_text_artifact_v1",
+    "controlled_reply_text_artifact_schema_v1",
+    "helper-only",
+    "metadata-only",
+    "internal-only",
+    "deterministic",
+    "pure in-memory",
+    "validation-before-rendering",
+    "JSON-safe",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "no side effects",
+    "no sendable reply text",
+    "no actual reply body",
+    "no final-answer prose",
+    "no answer drafts",
+    "no live dialogue",
+    "no runtime wiring",
+    "No writer/save API is exposed",
+    "All required denied authority fields are present",
+    "Invalid or unsafe input is blocked safely",
+    "weslr/chat_responder.py` remains untouched",
+    "Validation status: PASS",
+}
+
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -6218,6 +6257,13 @@ def _controlled_reply_text_helpers_review_doc_is_valid():
         _controlled_reply_text_helpers_review_required_markers,
     )
 
+def _controlled_reply_text_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_helpers_implementation_review_doc,
+        _controlled_reply_text_helpers_implementation_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -6579,6 +6625,7 @@ def _check_git_scope():
     controlled_reply_text_boundary_review_doc_valid = _controlled_reply_text_boundary_review_doc_is_valid()
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
     controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
+    controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -7194,6 +7241,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_helpers_review_doc_valid
             if not controlled_reply_text_helpers_review_doc_valid:
                 violations.append(f"  controlled reply text helpers review missing required markers: {path}")
+        if path == _controlled_reply_text_helpers_implementation_review_doc:
+            allowed = controlled_reply_text_helpers_implementation_review_doc_valid
+            if not controlled_reply_text_helpers_implementation_review_doc_valid:
+                violations.append(f"  controlled reply text helpers implementation review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
