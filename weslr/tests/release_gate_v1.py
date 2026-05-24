@@ -4969,6 +4969,72 @@ _controlled_reply_text_result_design_review_required_markers = {
 }
 
 
+_controlled_reply_text_result_artifact_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md"
+_controlled_reply_text_result_artifact_required_markers = {
+    "WESLR Controlled Reply Text Result Artifact V1",
+    "controlled_reply_text_result_artifact_v1",
+    "REVIEW_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1",
+    "build_controlled_reply_text_artifact_v1",
+    "validate_controlled_reply_text_artifact_v1",
+    "summarize_controlled_reply_text_artifact_v1",
+    "render_controlled_reply_text_artifact_markdown_v1",
+    "to_controlled_reply_text_artifact_json_safe_v1",
+    "internal-only",
+    "metadata-only",
+    "helper-output based",
+    "validation-backed",
+    "safe Markdown",
+    "JSON-safe eligible",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "controlled/synthetic metadata only",
+    "reply_text_executed=false",
+    "sendable_reply_text_created=false",
+    "actual_reply_body_created=false",
+    "user_facing_output_executed=false",
+    "live_dialogue_output_created=false",
+    "final_answer_generation_executed=false",
+    "final_answer_generated=false",
+    "final_answer_prose_created=false",
+    "answer_draft_created=false",
+    "answer_composition_executed=false",
+    "answer_formation_executed=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "dot_weslr_read_performed=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judges_created=false",
+    "scores_created=false",
+    "official_claim_made=false",
+    "answer_authority_granted=false",
+    "reply_text_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "No-Reply-Text-Execution Boundary",
+    "No-Sendable-Reply-Text Boundary",
+    "No-Actual-Reply-Body Boundary",
+    "No-Final-Answer-Prose Boundary",
+    "No-Answer-Draft Boundary",
+    "No-User-Facing-Output-Execution Boundary",
+    "No-Live-Dialogue Boundary",
+    "No-Runtime Boundary",
+    "No-ChatResponder / respond_chat / generate_chat Boundary",
+    "No-Provider / Search / Advisor / Model Boundary",
+    "No-.weslr / No-Feature-Flag Boundary",
+    "No-Judges / Scores Boundary",
+    "No-Official-Claims Boundary",
+}
+
 _controlled_reply_text_result_design_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_V1.md"
 _controlled_reply_text_result_design_required_markers = {
     "WESLR Controlled Reply Text Result Design V1",
@@ -6343,6 +6409,13 @@ def _controlled_reply_text_result_design_review_doc_is_valid():
     )
 
 
+def _controlled_reply_text_result_artifact_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_result_artifact_doc,
+        _controlled_reply_text_result_artifact_required_markers,
+    )
+
+
 def _controlled_reply_text_result_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_result_design_doc,
@@ -6719,6 +6792,7 @@ def _check_git_scope():
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
     controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
     controlled_reply_text_result_design_review_doc_valid = _controlled_reply_text_result_design_review_doc_is_valid()
+    controlled_reply_text_result_artifact_doc_valid = _controlled_reply_text_result_artifact_doc_is_valid()
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -7344,6 +7418,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_result_design_review_doc_valid
             if not controlled_reply_text_result_design_review_doc_valid:
                 violations.append(f"  controlled reply text result design review missing required markers: {path}")
+        if path == _controlled_reply_text_result_artifact_doc:
+            allowed = controlled_reply_text_result_artifact_doc_valid
+            if not controlled_reply_text_result_artifact_doc_valid:
+                violations.append(f"  controlled reply text result artifact missing required markers: {path}")
         if path == _controlled_reply_text_helpers_implementation_review_doc:
             allowed = controlled_reply_text_helpers_implementation_review_doc_valid
             if not controlled_reply_text_helpers_implementation_review_doc_valid:
