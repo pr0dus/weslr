@@ -1154,6 +1154,22 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
+
+### Latest Context Alignment — Controlled Reply Text Result Design Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- Controlled reply text result design exists and is reviewed.
+- Design: `docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_V1.md`.
+- Review: `docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_DESIGN_REVIEW_V1.md`.
+- Judgment: `controlled_reply_text_result_design_valid_ready_for_context_alignment`.
+- Future artifact path remains uncreated: `docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md`.
+- Validation passed: release gate PASS; release check PASS; `weslr/chat_responder.py` untouched PASS; py_compile PASS; optional pytest suites PASS.
+- Gaps: no blocking gaps. Deferred intentional gaps remain: no result artifact creation, no result writer implementation, no reply execution, no sendable reply text, no actual reply body, no final-answer prose, no answer drafts, no live dialogue, no user-facing output execution, and no runtime wiring.
+- Boundary status: design review only; result artifact not created; no reply execution; no sendable reply text; no actual reply body; no final-answer prose; no final answers; no answer drafts; no live dialogue; no user-facing output execution; no runtime wiring; no `ChatResponder`/`respond_chat`/`generate_chat` calls or imports; no provider/search/advisor/model calls; no `.weslr` IO; no feature flags; no judges/scores; no official claims; no answer/reply-text/user-facing-output/composition/runtime/official evaluation authority granted.
+- Preserve visible risk: result design does not create result artifact authority; reply text metadata is not sendable reply text; safe Markdown is not a user answer; JSON-safe metadata is not a reply payload; validation pass is not answer/runtime/product authority; design review is not runtime authorization; OCC/OpenClaw is not deployed WESLR.
+- Next lane after this context alignment: `CREATE_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, edit helper/source/test implementation files, execute reply text, create sendable reply text, create actual reply body text, create final-answer prose, generate final answers, create answer drafts, execute final-answer generation, execute answer composition, execute answer formation, execute prompts/live dialogue, implement user-facing output execution, wire runtime, call/import `ChatResponder`/`respond_chat`/`generate_chat`, call providers/search/advisors/models, read/write `.weslr`, enable feature flags, create judges/scores, make official claims, grant authority, or start unauthorized next-lane work.
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
