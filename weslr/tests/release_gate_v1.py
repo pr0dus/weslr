@@ -4195,6 +4195,42 @@ _controlled_final_answer_generation_result_artifact_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_ARTIFACT_REVIEW_V1",
 }
 
+_controlled_final_answer_generation_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_CHAIN_NEXT_STEP_REVIEW_V1.md"
+_controlled_final_answer_generation_chain_next_step_review_required_markers = {
+    "WESLR Controlled Final-Answer Generation Chain Next Step Review V1",
+    "controlled_final_answer_generation_chain_reviewed_next_step_design_controlled_user_facing_output_boundary_v1",
+    "DESIGN_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1",
+    "metadata-only controlled final-answer-generation structures exist",
+    "helper implementation exists for safe internal final-answer-generation metadata",
+    "controlled final-answer generation result artifact exists",
+    "denied authority fields stayed false",
+    "validation/release checks passed",
+    "weslr/chat_responder.py` stayed untouched",
+    "no runtime/provider/search/advisor/.weslr paths were activated",
+    "actual final-answer generation",
+    "final-answer prose",
+    "answer draft creation",
+    "user-facing output",
+    "answer correctness",
+    "answer composition execution",
+    "answer formation execution",
+    "live chat behavior",
+    "runtime readiness",
+    "provider/search/advisor integration",
+    "official Turing-test claim",
+    "IQ claim",
+    "certification claim",
+    "product readiness",
+    "authority to answer users",
+    "authority to wire runtime",
+    "no-authority",
+    "no-runtime",
+    "non-user-facing",
+    "result-artifact-as-execution risk",
+    "safe-Markdown-as-user-output risk",
+    "No blocking gaps were found",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5377,6 +5413,13 @@ def _controlled_final_answer_generation_result_artifact_review_doc_is_valid():
     )
 
 
+def _controlled_final_answer_generation_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_final_answer_generation_chain_next_step_review_doc,
+        _controlled_final_answer_generation_chain_next_step_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5723,6 +5766,7 @@ def _check_git_scope():
     controlled_final_answer_generation_result_design_review_doc_valid = _controlled_final_answer_generation_result_design_review_doc_is_valid()
     controlled_final_answer_generation_result_artifact_doc_valid = _controlled_final_answer_generation_result_artifact_doc_is_valid()
     controlled_final_answer_generation_result_artifact_review_doc_valid = _controlled_final_answer_generation_result_artifact_review_doc_is_valid()
+    controlled_final_answer_generation_chain_next_step_review_doc_valid = _controlled_final_answer_generation_chain_next_step_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6278,6 +6322,10 @@ def _check_git_scope():
             allowed = controlled_final_answer_generation_result_artifact_review_doc_valid
             if not controlled_final_answer_generation_result_artifact_review_doc_valid:
                 violations.append(f"  controlled final answer generation result artifact review missing required markers: {path}")
+        if path == _controlled_final_answer_generation_chain_next_step_review_doc:
+            allowed = controlled_final_answer_generation_chain_next_step_review_doc_valid
+            if not controlled_final_answer_generation_chain_next_step_review_doc_valid:
+                violations.append(f"  controlled final answer generation chain next step review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
