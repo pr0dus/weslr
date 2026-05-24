@@ -4875,6 +4875,65 @@ _controlled_reply_text_helpers_required_markers = {
 }
 
 
+_controlled_reply_text_helpers_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_HELPERS_REVIEW_V1.md"
+_controlled_reply_text_helpers_review_required_markers = {
+    "WESLR Controlled Reply Text Helpers Review V1",
+    "REVIEW_CONTROLLED_REPLY_TEXT_HELPERS_V1",
+    "controlled_reply_text_helpers_design_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_TEXT_HELPERS_V1",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_HELPERS_V1.md",
+    "design-only",
+    "helper-design-only",
+    "metadata-only",
+    "internal-only",
+    "no controlled reply text helper implementation",
+    "no reply text execution",
+    "no actual sendable reply text",
+    "no final-answer prose",
+    "no answer drafts",
+    "no live dialogue",
+    "no user-facing output execution",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` reads/writes",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no answer/reply-text/user-facing-output/composition/runtime/official evaluation authority granted",
+    "no reply-text result artifact created",
+    "weslr/chat_responder.py` untouched",
+    "weslr/controlled_reply_text.py",
+    "weslr/tests/test_controlled_reply_text_v1.py",
+    "build_controlled_reply_text_artifact_v1",
+    "validate_controlled_reply_text_artifact_v1",
+    "summarize_controlled_reply_text_artifact_v1",
+    "render_controlled_reply_text_artifact_markdown_v1",
+    "to_controlled_reply_text_artifact_json_safe_v1",
+    "controlled reply-text artifact shape",
+    "allowed reply-text metadata inputs",
+    "forbidden real-user/live/raw/provider/runtime inputs",
+    "relationship to controlled user-facing output result artifact",
+    "relationship to controlled reply text boundary",
+    "validation-before-reply-text policy",
+    "validation-before-rendering policy",
+    "no-sendable-reply-text policy",
+    "no-user-facing-output-execution policy",
+    "no-live-dialogue policy",
+    "no-runtime policy",
+    "no-ChatResponder/respond_chat/generate_chat policy",
+    "no-provider/search/advisor/model policy",
+    "safe Markdown policy",
+    "JSON-safe policy",
+    "blocked artifact behavior",
+    "denied authority fields",
+    "visible risks/followups",
+    "abort conditions",
+    "future implementation/review sequence",
+    "controlled_reply_text_helpers_design_review_safe_for_context_alignment_only",
+}
+
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -6152,6 +6211,13 @@ def _controlled_reply_text_helpers_doc_is_valid():
         _controlled_reply_text_helpers_required_markers,
     )
 
+
+def _controlled_reply_text_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_helpers_review_doc,
+        _controlled_reply_text_helpers_review_required_markers,
+    )
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -6512,6 +6578,7 @@ def _check_git_scope():
     controlled_reply_text_boundary_doc_valid = _controlled_reply_text_boundary_doc_is_valid()
     controlled_reply_text_boundary_review_doc_valid = _controlled_reply_text_boundary_review_doc_is_valid()
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
+    controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -7123,6 +7190,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_helpers_doc_valid
             if not controlled_reply_text_helpers_doc_valid:
                 violations.append(f"  controlled reply text helpers doc missing required markers: {path}")
+        if path == _controlled_reply_text_helpers_review_doc:
+            allowed = controlled_reply_text_helpers_review_doc_valid
+            if not controlled_reply_text_helpers_review_doc_valid:
+                violations.append(f"  controlled reply text helpers review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
