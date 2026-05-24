@@ -4285,6 +4285,51 @@ _controlled_user_facing_output_boundary_required_markers = {
     "official_evaluation_authority_granted: false",
 }
 
+_controlled_user_facing_output_boundary_review_doc = "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_REVIEW_V1.md"
+_controlled_user_facing_output_boundary_review_required_markers = {
+    "WESLR Controlled User-Facing Output Boundary Review V1",
+    "controlled_user_facing_output_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1.md",
+    "design-only",
+    "boundary-only",
+    "user-facing-output-boundary-only",
+    "metadata-only",
+    "no user-facing output implementation",
+    "no user-facing output execution",
+    "no final-answer generation execution",
+    "no answer drafts",
+    "no final-answer prose intended for users",
+    "no live chat behavior",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls",
+    "no provider/search/advisor calls",
+    "no `.weslr` writes",
+    "no feature flags",
+    "no judges/scoring",
+    "no official claims",
+    "no answer/user-facing-output/composition/runtime/official evaluation authority granted",
+    "no user-facing-output result artifact created",
+    "weslr/chat_responder.py` untouched",
+    "controlled user-facing output purpose",
+    "why controlled final-answer-generation result does not grant user-facing-output authority",
+    "allowed future user-facing-output metadata inputs",
+    "forbidden real-user/live/raw/provider/runtime inputs",
+    "exact no-live-chat boundary",
+    "exact no-runtime boundary",
+    "exact no-ChatResponder/respond_chat/generate_chat boundary",
+    "exact no-provider/search/advisor boundary",
+    "exact no-official-claims boundary",
+    "validation-before-user-facing-output policy",
+    "controlled user-facing-output artifact shape for a future lane",
+    "denied authority fields",
+    "blocked user-facing-output behavior",
+    "visible risks/followups",
+    "abort conditions",
+    "future implementation/review sequence",
+    "No blocking design gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5481,6 +5526,13 @@ def _controlled_user_facing_output_boundary_doc_is_valid():
     )
 
 
+def _controlled_user_facing_output_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_user_facing_output_boundary_review_doc,
+        _controlled_user_facing_output_boundary_review_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5829,6 +5881,7 @@ def _check_git_scope():
     controlled_final_answer_generation_result_artifact_review_doc_valid = _controlled_final_answer_generation_result_artifact_review_doc_is_valid()
     controlled_final_answer_generation_chain_next_step_review_doc_valid = _controlled_final_answer_generation_chain_next_step_review_doc_is_valid()
     controlled_user_facing_output_boundary_doc_valid = _controlled_user_facing_output_boundary_doc_is_valid()
+    controlled_user_facing_output_boundary_review_doc_valid = _controlled_user_facing_output_boundary_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6392,6 +6445,10 @@ def _check_git_scope():
             allowed = controlled_user_facing_output_boundary_doc_valid
             if not controlled_user_facing_output_boundary_doc_valid:
                 violations.append(f"  controlled user-facing output boundary doc missing required markers: {path}")
+        if path == _controlled_user_facing_output_boundary_review_doc:
+            allowed = controlled_user_facing_output_boundary_review_doc_valid
+            if not controlled_user_facing_output_boundary_review_doc_valid:
+                violations.append(f"  controlled user-facing output boundary review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
