@@ -1,26 +1,57 @@
 # WESLR Controlled Final-Answer Generation Helpers V1
 
-## 1. Design Scope
+## 1. Design Status
 
 - document_path: `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1.md`
-- lane_label: `DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
-- source_context_alignment: after `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_REVIEW_V1.md`
-- design_type: design-only helper specification
-- future_helper_module_path: `weslr/controlled_final_answer_generation.py`
-- future_test_module_path: `weslr/tests/test_controlled_final_answer_generation_v1.py`
-- runtime_behavior_changed: false
-- `weslr/chat_responder.py` edited: false
-- helper_source_or_test_implementation_created: false
-- controlled_final_answer_generation_execution_performed: false
+- document_type: design-only helper specification
+- lane: `DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
+- checkpoint_source: `bdbfb19`
+- context_aligned_after: `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_REVIEW_V1.md`
+- boundary_design: `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1.md`
+- boundary_review_judgment: `controlled_final_answer_generation_boundary_design_valid_ready_for_context_alignment`
+- role_boundary: OCC/OpenClaw is the coding/execution tool and is not WESLR.
+- implementation_authorized: false
+- helper_implementation_created: false
+- final_answer_generation_implementation_authorized: false
+- controlled_final_answer_generation_executed: false
+- final_answer_generated: false
 - answer_draft_created: false
 - user_facing_output_created: false
-- final_answer_result_artifact_created: false
+- runtime_wiring_authorized: false
+- runtime_wired: false
+- chat_responder_called: false
+- provider_call_made: false
+- official_claim_made: false
+- answer_authority_granted: false
+- composition_authority_granted: false
+- runtime_authority_granted: false
+- official_evaluation_authority_granted: false
 
-This is a design-only document for future helper-only, metadata-only controlled final-answer generation helpers. It prepares a possible future helper layer while preserving strict separation from execution, drafts, user-facing output, runtime/live chat, prompt/live dialogue, provider/model/search/advisor calls, official evaluation claims, and authority grants.
+This document designs future helper-only, metadata-only controlled final-answer generation metadata helpers. It does not implement helpers, execute controlled final-answer generation, create answer drafts, create user-facing output, wire runtime, execute prompt/live dialogue, call `ChatResponder`/`respond_chat`/`generate_chat`, call providers/models/search/advisors, write `.weslr`, enable feature flags, create judges/scores, make official claims, grant authority, or create a final-answer result artifact.
 
-## 2. Future Public API Names
+## 2. Purpose
 
-A future separately authorized implementation may define exactly these public helper APIs:
+Future controlled final-answer generation helpers may arrange safe controlled final-answer generation metadata into an internal metadata artifact only.
+
+The helper layer is intended to prepare an internal representation of source artifact labels, source review labels, final-answer-generation precondition labels, validation labels, blocked reason labels, denied authority fields, safe Markdown eligibility, JSON-safe eligibility, visible risks, and followups.
+
+The helper layer is not final-answer execution, not answer draft creation, not answer composition execution, not user-facing output, not runtime/live chat integration, not prompt/live dialogue execution, not provider/model/search/advisor behavior, and not official evaluation.
+
+## 3. Proposed Future Files
+
+Future helper module path:
+
+- `weslr/controlled_final_answer_generation.py`
+
+Future test module path:
+
+- `weslr/tests/test_controlled_final_answer_generation_v1.py`
+
+These paths are proposed only. This design does not create or edit either file.
+
+## 4. Proposed Future Public API
+
+Future public API names:
 
 - `build_controlled_final_answer_generation_artifact_v1`
 - `validate_controlled_final_answer_generation_artifact_v1`
@@ -28,336 +59,282 @@ A future separately authorized implementation may define exactly these public he
 - `render_controlled_final_answer_generation_artifact_markdown_v1`
 - `to_controlled_final_answer_generation_artifact_json_safe_v1`
 
-These names describe helper metadata functions only. They must not become runtime entry points, answer-producing APIs, provider/model adapters, ChatResponder hooks, `.weslr` writers, or official evaluation tools.
+The APIs are design targets only. They must not be treated as implemented, executable, authorized, runtime-ready, answer-ready, user-output-ready, or official-evaluation-ready until a separate implementation lane is reviewed and context-aligned.
 
-## 3. Helper Purpose
+## 5. Relationship To Controlled Answer Composition Result Artifact
 
-Future helpers may arrange safe controlled final-answer generation metadata into an internal metadata artifact only.
-
-Helper purpose is limited to:
-
-- accepting bounded metadata from reviewed controlled answer formation and controlled answer composition artifacts
-- checking that source paths, review paths, and boundary labels are present
-- recording future precondition labels for controlled final-answer generation metadata
-- preserving denied authority fields as false
-- blocking unsafe raw/live/provider/runtime/user-facing content without copying unsafe values
-- producing safe summaries, safe Markdown, and JSON-safe metadata only after validation
-
-The helper purpose does not include execution, creating prose for users, creating drafts, answering real user queries, wiring runtime, calling ChatResponder, calling providers/models/search/advisors, creating judges/scores, making official claims, or granting authority.
-
-## 4. Relationship To Controlled Answer Composition Result Artifact
-
-The source composition artifact is:
+The future helpers may consume safe metadata derived from:
 
 - `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_V1.md`
+- `docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_REVIEW_V1.md`
+- `weslr/controlled_answer_composition.py`
 
-The source composition artifact is internal-only, metadata-only, helper-output based, validation-backed, safe Markdown, JSON-safe eligible, no-authority, no-runtime, and non-user-facing.
+The controlled answer composition result artifact is metadata quality evidence only. It does not grant controlled final-answer generation implementation authority, controlled final-answer generation execution authority, answer authority, user-facing output authority, runtime authority, provider/model/search/advisor authority, official evaluation authority, or permission to create a final-answer result artifact.
 
-A future controlled final-answer generation helper may reference the composition artifact only as bounded source metadata. The composition artifact does not grant execution authority, does not create drafts, does not create user-facing output, does not establish runtime readiness, does not establish answer correctness, and does not grant answer/composition/runtime/official evaluation authority.
+Future helpers must treat source composition metadata as bounded input labels/summaries only, never as answer text, answer draft text, live dialogue, provider output, or runtime output.
 
-## 5. Relationship To Controlled Final-Answer Generation Boundary
+## 6. Relationship To Controlled Final-Answer Generation Boundary
 
-The controlling boundary is:
+This helper design is subordinate to:
 
 - `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1.md`
-
-The boundary review is:
-
 - `docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_REVIEW_V1.md`
 
-Future helpers must implement the reviewed boundary only if separately authorized. The reviewed boundary remains the source of limits for no user-facing output, no runtime, no provider/search/advisor, no official claims, validation-before-final-answer-generation metadata, blocked behavior, denied authority fields, abort conditions, and future review sequence.
+The boundary review confirms the boundary design is valid for context alignment only. Future helpers may be implemented only after a separately authorized implementation lane. This design does not relax any boundary: no final-answer generation execution, no answer drafts, no user-facing output, no runtime, no prompt/live dialogue execution, no `ChatResponder`/`respond_chat`/`generate_chat` calls, no provider/model/search/advisor calls, no `.weslr`, no feature flags, no judges/scores, no official claims, no final-answer result artifact, and no authority grants.
 
-## 6. Controlled Final-Answer Artifact Shape
+## 7. Controlled Final-Answer Artifact Shape
 
-A future helper may build an internal metadata artifact with this intended shape:
+A future helper may build an in-memory artifact shaped like:
 
-```json
-{
-  "artifact_type": "controlled_final_answer_generation_artifact_v1",
-  "schema_version": "controlled_final_answer_generation_artifact_schema_v1",
-  "valid": false,
-  "blocked": true,
-  "internal_only": true,
-  "metadata_only": true,
-  "helper_only": true,
-  "non_runtime": true,
-  "non_user_facing": true,
-  "deterministic": true,
-  "source_controlled_answer_formation_artifact_path": "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_V1.md",
-  "source_controlled_answer_formation_review_path": "docs/WESLR_CONTROLLED_ANSWER_FORMATION_EXECUTION_RESULT_ARTIFACT_REVIEW_V1.md",
-  "source_controlled_answer_composition_artifact_path": "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_V1.md",
-  "source_controlled_answer_composition_review_path": "docs/WESLR_CONTROLLED_ANSWER_COMPOSITION_RESULT_ARTIFACT_REVIEW_V1.md",
-  "source_final_answer_boundary_doc": "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_V1.md",
-  "source_final_answer_boundary_review_doc": "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_BOUNDARY_REVIEW_V1.md",
-  "allowed_final_answer_metadata_inputs": [],
-  "forbidden_inputs_checked": [],
-  "final_answer_generation_metadata_policy_labels": [],
-  "source_metadata_summary": {},
-  "precondition_summary": {},
-  "validation_summary": {},
-  "blocked_reason_labels": [],
-  "denied_authority_fields": {},
-  "no_user_facing_output_policy": {},
-  "no_runtime_policy": {},
-  "no_provider_search_advisor_policy": {},
-  "safe_markdown_eligible": false,
-  "json_safe_eligible": false,
-  "visible_risks": [],
-  "followups": []
-}
+```text
+artifact_type: controlled_final_answer_generation_artifact_v1
+schema_version: 1
+internal_only: true
+metadata_only: true
+helper_only: true
+non_runtime: true
+non_user_facing: true
+deterministic: true
+source_controlled_answer_composition_result_artifact_path: <safe path label>
+source_controlled_answer_composition_result_review_path: <safe path label>
+source_final_answer_generation_boundary_doc: <safe path label>
+source_final_answer_generation_boundary_review_doc: <safe path label>
+allowed_final_answer_metadata_inputs: <safe labels only>
+forbidden_inputs_checked: <safe labels only>
+final_answer_generation_precondition_labels: <safe labels only>
+controlled_final_answer_generation_metadata_labels: <safe labels only>
+source_metadata_summary: <safe bounded summary>
+validation_summary: <safe bounded summary>
+blocked: <boolean>
+blocked_reason_labels: <safe labels only>
+denied_authority_fields: <all false>
+no_answer_draft_policy: <safety booleans>
+no_user_facing_output_policy: <safety booleans>
+no_runtime_policy: <safety booleans>
+no_provider_model_search_advisor_policy: <safety booleans>
+no_official_claim_policy: <safety booleans>
+safe_markdown_eligible: <boolean>
+json_safe_eligible: <boolean>
+visible_risks: <safe labels only>
+followups: <safe labels only>
+next_lane: REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1
 ```
 
-Artifact shape constraints:
+The artifact is not a result artifact and must not be written to disk unless a later result-artifact lane explicitly authorizes a result artifact. A future implementation lane may keep artifacts in memory for validation/tests only.
 
-- internal metadata only
-- no prose for users
-- no draft text
-- no raw prompt text
-- no real-user/live conversation text
-- no private user content
-- no provider/model/search/advisor output
-- no runtime output
-- no ChatResponder/respond_chat/generate_chat call handles
-- no `.weslr` write handles
-- no feature flag activation
-- no judges/scores
-- no official claims
-- all authority fields false
+## 8. Allowed Final-Answer Metadata Inputs
 
-## 7. Allowed Final-Answer Metadata Inputs
+Allowed future metadata inputs are limited to bounded, JSON-safe, non-user-facing labels and summaries:
 
-Allowed future metadata inputs are limited to controlled, internal, bounded metadata:
+- `controlled_answer_composition_result_artifact_summary`
+- `controlled_answer_composition_result_validation_summary`
+- `controlled_answer_composition_denied_authority_fields`
+- `controlled_answer_composition_blocked_reason_labels`
+- `controlled_answer_composition_safe_markdown_eligibility_label`
+- `controlled_answer_composition_json_safe_eligibility_label`
+- `controlled_answer_composition_visible_risks`
+- `source_artifact_path_label`
+- `source_review_path_label`
+- `source_helper_module_path_label`
+- `final_answer_generation_boundary_version`
+- `final_answer_generation_precondition_labels`
+- `controlled_final_answer_generation_metadata_labels`
+- `no_answer_draft_policy_labels`
+- `no_user_facing_output_policy_labels`
+- `no_runtime_policy_labels`
+- `no_provider_model_search_advisor_policy_labels`
+- `no_official_claim_policy_labels`
+- `safe_markdown_eligibility_label`
+- `json_safe_eligibility_label`
 
-- `controlled_answer_formation_artifact_path`
-- `controlled_answer_formation_review_path`
-- `controlled_answer_formation_validation_summary`
-- `controlled_answer_formation_denied_authority_summary`
-- `controlled_answer_composition_artifact_path`
-- `controlled_answer_composition_review_path`
-- `controlled_answer_composition_validation_summary`
-- `controlled_answer_composition_denied_authority_summary`
-- `controlled_answer_composition_source_metadata_summary`
-- `controlled_final_answer_generation_boundary_doc`
-- `controlled_final_answer_generation_boundary_review_doc`
-- `boundary_status_labels`
-- `precondition_labels`
-- `visible_risk_labels`
-- `followup_labels`
-- `no_user_facing_output_policy_label`
-- `no_runtime_policy_label`
-- `no_provider_search_advisor_policy_label`
-- `no_official_claims_policy_label`
-- `safe_markdown_policy_label`
-- `json_safe_policy_label`
+Allowed inputs must not contain raw prompt text, raw response text, real-user content, provider output, model output, search output, advisor output, runtime output, answer drafts, composed replies, final-answer prose, or user-facing answer text.
 
-Allowed inputs must be metadata-only, controlled/synthetic, JSON-safe, and safe-Markdown eligible. They must not include raw user content, live dialogue, provider/model output, search/advisor output, runtime output, answer draft text, user-facing response text, or call handles.
+## 9. Forbidden Real-User / Live / Raw / Provider / Runtime Inputs
 
-## 8. Forbidden Real-User / Live / Raw / Provider / Runtime Inputs
+Future helpers must reject and must not copy:
 
-Future helpers must reject and block inputs resembling:
+- real-user prompt text
+- live conversation text
+- raw private content
+- raw prompt text
+- raw response text
+- provider output
+- model output
+- search output
+- advisor output
+- runtime output
+- `.weslr` state payloads
+- runtime wiring payloads
+- `ChatResponder` handles or outputs
+- `respond_chat` handles or outputs
+- `generate_chat` handles or outputs
+- provider/model/search/advisor call handles
+- answer drafts
+- composed replies
+- final-answer prose
+- user-facing answer text
+- final-answer result artifacts
+- judge decisions
+- scores
+- official benchmark labels
+- IQ labels
+- Turing-test labels
+- certification labels
+- product-readiness labels
+- feature flag payloads
+- authority grants
 
-- `real_user_query_text`
-- `raw_prompt_text`
-- `live_dialogue_text`
-- `conversation_history_text`
-- `private_user_content`
-- `provider_output`
-- `model_output`
-- `search_result_text`
-- `advisor_output`
-- `runtime_output`
-- `chat_responder_call`
-- `respond_chat_call`
-- `generate_chat_call`
-- `provider_model_search_advisor_call_handle`
-- `final_answer_prose`
-- `answer_draft_text`
-- `user_facing_output_text`
-- `.weslr` state-write handle
-- feature-flag enablement instruction
-- judge/scoring request
-- official benchmark/IQ/Turing/certification/product-readiness claim
-- authority grant request
+Forbidden input detection must produce safe labels only, such as `raw_user_content_detected`, `provider_output_detected`, `runtime_output_detected`, `answer_draft_detected`, `final_answer_prose_detected`, `result_artifact_detected`, or `authority_grant_detected`.
 
-Blocked artifacts must record safe labels and booleans only. Unsafe input values must not be copied into artifacts, summaries, safe Markdown, JSON-safe output, review reports, logs, or errors.
+## 10. Validation-Before-Final-Answer-Generation Metadata Policy
 
-## 9. Validation-Before-Final-Answer-Generation Metadata Policy
+Future `build_controlled_final_answer_generation_artifact_v1` must validate before arranging controlled final-answer generation metadata.
 
-Future helpers must validate before any controlled final-answer generation metadata is treated as valid.
+Required checks:
 
-Validation must require:
+1. Input is a mapping or safe bounded metadata object.
+2. Source controlled answer composition result artifact summary is present and safe.
+3. Source controlled answer composition result review label is present and safe.
+4. Source controlled final-answer generation boundary and review labels are present and safe.
+5. Denied authority fields are present and false.
+6. No forbidden raw/user/provider/model/search/advisor/runtime content is present.
+7. No answer draft text is present.
+8. No final-answer prose is present.
+9. No user-facing output is present.
+10. No prompt/live dialogue execution signal is present.
+11. No runtime wiring signal is present.
+12. No `ChatResponder`/`respond_chat`/`generate_chat` call or output signal is present.
+13. No provider/model/search/advisor call or output signal is present.
+14. No `.weslr` write or feature flag enablement signal is present.
+15. No official claim, judge, or score signal is present.
+16. Safe Markdown and JSON-safe eligibility can be derived without copying unsafe values.
+17. Any validation failure blocks controlled final-answer generation metadata arrangement.
 
-- known artifact type and schema version
-- source formation artifact path present
-- source formation review path present
-- source composition artifact path present
-- source composition review path present
-- source boundary doc and review doc present
-- allowed metadata inputs only
-- forbidden inputs absent
-- no raw/live/private/provider/search/advisor/runtime text
-- no answer draft text
-- no user-facing output text
-- no ChatResponder/respond_chat/generate_chat handles
-- no provider/model/search/advisor handles
-- no `.weslr` write handles
-- no feature flag enablement
-- no judges/scores
-- no official claims
-- all denied authority fields false
-- safe Markdown eligibility only after validation
-- JSON-safe eligibility only after validation
+## 11. Validation-Before-Rendering Policy
 
-If validation fails, the artifact must be blocked and must remain internal metadata only.
+Future `render_controlled_final_answer_generation_artifact_markdown_v1` must validate before rendering.
 
-## 10. Validation-Before-Rendering Policy
+If validation fails, rendering must return only a safe blocked Markdown summary containing:
 
-Future `render_controlled_final_answer_generation_artifact_markdown_v1` must validate the artifact before rendering.
+- artifact type
+- `valid=false`
+- `blocked=true`
+- safe blocked reason labels
+- denied authority fields false
+- no-answer-draft/no-user-facing/no-runtime/no-provider/no-official-claim labels
 
-Rendering policy:
+Renderer output must never include raw inputs, answer drafts, composed replies, final-answer prose, provider/model/search/advisor output, runtime output, live dialogue, or user-facing answer text.
 
-- render only internal review Markdown
-- render only safe labels, paths, booleans, counts, and summaries
-- never render raw user content
-- never render live dialogue
-- never render provider/model/search/advisor output
-- never render runtime output
-- never render answer draft text
-- never render user-facing response text
-- never render call handles
-- return blocked safe Markdown if validation fails
-
-Safe Markdown is internal review output only. It is not answer prose and not user-facing output.
-
-## 11. No-User-Facing-Output Policy
+## 12. No-User-Facing-Output Policy
 
 Future helpers must preserve:
 
-- `non_user_facing=true`
 - `user_facing_output_created=false`
-- `answer_draft_created=false`
+- `chat_reply_created=false`
+- `message_text_created=false`
+- `public_answer_created=false`
+- `live_dialogue_created=false`
+- `reply_payload_created=false`
+- `rendered_markdown_is_user_output=false`
 
-No-user-facing-output means:
+All helper output must be internal reviewer/developer metadata only. Safe Markdown is for internal inspection only and must not be interpreted as a message to a user.
 
-- no response sent to a user
-- no display draft
-- no chat reply
-- no message payload
-- no live conversation turn
-- no prompt response text
-- no helper Markdown treated as answer prose
-- no internal artifact treated as publishable content
-
-## 12. No-Runtime Policy
+## 13. No-Runtime Policy
 
 Future helpers must preserve:
 
-- `non_runtime=true`
 - `runtime_wired=false`
+- `runtime_called=false`
+- `runtime_output_used=false`
 - `chat_responder_called=false`
 - `respond_chat_called=false`
 - `generate_chat_called=false`
+- `chat_responder_modified=false`
+- `routing_modified=false`
+- `feature_flag_enabled=false`
+- `dot_weslr_write_performed=false`
 
-No-runtime means:
+Future helpers must not import, call, or modify `weslr/chat_responder.py`.
 
-- no runtime wiring
-- no live chat integration
-- no `weslr/chat_responder.py` edit
-- no ChatResponder import or call
-- no route registration
-- no daemon/service integration
-- no CLI user-answering path
-- no `.weslr` runtime state write
-- no feature flag enablement
-- no production behavior change
+## 14. Safe Markdown Policy
 
-## 13. Safe Markdown Policy
+Safe Markdown may include only:
 
-Safe Markdown may be produced only for internal review.
-
-Safe Markdown may include:
-
-- artifact type
-- schema version
-- validation status
-- blocked status
-- source paths
-- policy labels
-- denied authority booleans
-- safe summaries
+- headings
+- safe path labels
+- boolean status fields
+- safe validation labels
+- safe blocked reason labels
+- safe denied authority field names and false values
+- bounded source metadata summaries that are already validated as safe
 - visible risk labels
 - followup labels
 
-Safe Markdown must exclude:
+Safe Markdown must not include:
 
-- answer prose for users
-- draft text
-- raw prompts
-- real-user/live/private content
-- provider/model/search/advisor output
-- runtime output
-- call handles
-- `.weslr` payloads
-- feature flag activation payloads
-- judges/scores as evaluation results
-- official claims
-
-## 14. JSON-Safe Policy
-
-Future `to_controlled_final_answer_generation_artifact_json_safe_v1` must return a deterministic JSON-safe structure.
-
-JSON-safe output may contain:
-
-- strings from controlled labels and paths
-- booleans
-- numbers/counts
-- lists of safe labels
-- dictionaries of safe metadata
-
-JSON-safe output must not contain:
-
-- raw user or private text
-- prompt/live dialogue text
-- provider/model/search/advisor output
-- runtime output
+- raw prompt text
+- private user text
 - answer draft text
-- user-facing response text
-- call handles
-- non-serializable objects
+- final-answer prose
+- user-facing answer text
+- live dialogue text
+- provider/model/search/advisor output
+- runtime output
+- official evaluation conclusions
+- scores or judge decisions
 - authority grants
+
+Safe Markdown is an internal reviewer artifact only.
+
+## 15. JSON-Safe Policy
+
+Future `to_controlled_final_answer_generation_artifact_json_safe_v1` must return only JSON-serializable data containing safe labels, booleans, bounded numbers, safe path labels, and bounded metadata summaries.
+
+JSON-safe output must not contain objects or values that expose:
+
+- raw prompt text
+- private user text
+- answer draft text
+- final-answer prose
+- user-facing answer text
+- provider/model/search/advisor output
+- runtime output
+- call handles
+- file handles
+- `.weslr` payloads
+- feature flag payloads
+- judges/scores
 - official claims
 
-## 15. Blocked Artifact Behavior
+If the artifact is invalid or blocked, JSON-safe output must return a blocked wrapper with safe labels only and must not echo unsafe values.
 
-Future helpers must create a blocked artifact when:
+## 16. Blocked Artifact Behavior
 
-- forbidden inputs are present
-- unsafe raw values are detected
-- required source paths are missing
-- source metadata is not controlled/synthetic
-- any denied authority field is true
-- rendering is attempted before validation
-- JSON-safe conversion would expose unsafe content
-- runtime/provider/search/advisor/ChatResponder handles are present
-- `.weslr` writes or feature flags are requested
-- judges/scores or official claims are requested
-- user-facing output or draft text is present
+Future helpers must produce a blocked artifact when:
 
-Blocked artifact requirements:
+- required source metadata is missing
+- any authority field is true
+- raw real-user/live/private content is detected
+- provider/model/search/advisor content is detected
+- runtime output or runtime wiring is detected
+- prompt/live dialogue execution is detected
+- `ChatResponder`/`respond_chat`/`generate_chat` usage is detected
+- `.weslr` writes or feature flag enablement are detected
+- answer draft text is detected
+- final-answer prose is detected
+- user-facing answer text is detected
+- judges/scores are detected
+- official benchmark/IQ/Turing/certification/product-readiness claims are detected
+- validation-before-rendering is missing
+- safe Markdown would copy unsafe values
+- JSON-safe conversion would copy unsafe values
+- a future lane attempts to treat internal helper metadata as runtime output
 
-- `valid=false`
-- `blocked=true`
-- `internal_only=true`
-- `metadata_only=true`
-- `non_runtime=true`
-- `non_user_facing=true`
-- all authority fields false
-- safe blocked reason labels only
-- unsafe values not copied
+Blocked artifacts must use safe blocked reason labels only. Unsafe input values must not be copied into the artifact, Markdown, summaries, or JSON-safe output.
 
-## 16. Denied Authority Fields
+## 17. Denied Authority Fields
 
-Future artifacts must preserve these denied authority fields:
+Future controlled final-answer generation metadata helpers must preserve denied authority fields including:
 
 - `answer_authority_granted=false`
 - `composition_authority_granted=false`
@@ -365,6 +342,7 @@ Future artifacts must preserve these denied authority fields:
 - `official_evaluation_authority_granted=false`
 - `answer_formation_executed=false`
 - `answer_composition_executed=false`
+- `helper_implementation_created=false` for this design lane
 - `controlled_final_answer_generation_executed=false`
 - `final_answer_generated=false`
 - `answer_draft_created=false`
@@ -382,73 +360,72 @@ Future artifacts must preserve these denied authority fields:
 - `judges_created=false`
 - `scores_created=false`
 - `official_claim_made=false`
+- `final_answer_result_artifact_created=false`
 
-## 17. Visible Risks And Followups
+Any true value for these fields must block the artifact.
+
+## 18. Visible Risks And Followups
 
 Visible risks:
 
-- terminology-overread risk: “final-answer generation metadata” may be misread as user-facing answer production
-- helper-output-as-draft risk: helper metadata could be mistaken for an answer draft
-- safe-Markdown-as-answer risk: internal Markdown could be mistaken for user-facing prose
-- composition-result-overread risk: composition metadata could be treated as final-answer authority
-- validation-pass-as-authority risk: tests/release checks could be treated as answer/runtime/product authority
-- provider-scope-creep risk: model/search/advisor calls could be introduced before a boundary permits them
-- runtime-scope-creep risk: helpers could be wired into ChatResponder or live chat prematurely
-- official-claim-overread risk: metadata artifacts could be treated as benchmark, IQ, Turing-test, certification, or product-readiness evidence
-- OCC/WESLR identity confusion risk: OCC/OpenClaw could be confused with deployed WESLR
+- final-answer terminology could be mistaken for authorization to create answer prose
+- safe Markdown could be mistaken for user-facing output
+- a metadata artifact could be mistaken for a result artifact
+- source composition result metadata could be mistaken for answer authority
+- future implementation could accidentally echo unsafe raw inputs in validation failures
+- future tests could overfit to marker strings instead of enforcing boundary behavior
 
-Followups:
+Required followups:
 
-- Review this helper design in `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`.
-- Align OCC-facing context after review if valid.
-- Only after review/context alignment, consider a separately authorized implementation lane.
-- Keep execution, drafts, user-facing output, runtime, ChatResponder, provider/search/advisor calls, `.weslr` writes, feature flags, judges/scores, official claims, result artifacts, and authority grants blocked.
+- review this helper design before implementation
+- implement helpers only in a separately authorized lane
+- keep implementation pure, deterministic, in-memory, metadata-only, and JSON-safe
+- add tests for blocked unsafe inputs and denied authority fields
+- add tests proving no runtime/provider/model/search/advisor imports or calls
+- add tests proving invalid rendering and JSON-safe wrappers do not echo unsafe values
+- review implementation before any result-artifact design lane
 
-## 18. Abort Conditions
+## 19. Abort Conditions
 
-Abort any future helper implementation or artifact lane if it:
+Abort any future implementation/review lane if:
 
-- edits runtime behavior
-- edits `weslr/chat_responder.py`
-- calls ChatResponder/respond_chat/generate_chat
-- calls providers/models/search/advisors
-- writes `.weslr`
-- enables feature flags
-- creates judges/scores
-- makes official benchmark/IQ/Turing/certification/product-readiness claims
-- creates answer drafts
-- creates user-facing output
-- executes answer composition
-- executes answer formation
-- executes prompts or live dialogue
-- wires runtime
-- treats safe Markdown as answer prose
-- treats helper metadata as draft text
-- grants answer/composition/runtime/official evaluation authority
-- copies unsafe raw user/provider/runtime text into artifacts or summaries
-- skips validation-before-rendering
+- the lane asks for final-answer execution
+- the lane asks for answer draft creation
+- the lane asks for user-facing answer creation
+- the lane asks for runtime/live chat integration
+- the lane asks for prompt/live dialogue execution
+- the lane asks to call `ChatResponder`, `respond_chat`, or `generate_chat`
+- the lane asks for provider/model/search/advisor calls
+- the lane asks to write `.weslr`
+- the lane asks to enable feature flags
+- the lane asks to create judges/scores
+- the lane asks to make official benchmark/IQ/Turing/certification/product-readiness claims
+- the lane asks to grant answer/composition/runtime/official evaluation authority
+- the lane asks to create a final-answer result artifact in the helper implementation lane
+- validation-before-controlled-final-answer-generation metadata is removed
+- validation-before-rendering is removed
+- blocked artifacts echo unsafe input values
+- `weslr/chat_responder.py` must be edited
 
-## 19. Future Implementation / Review Sequence
+## 20. Future Implementation And Review Sequence
 
-Recommended future sequence:
+Required sequence:
 
-1. `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
-2. `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_REVIEW_V1`
-3. `IMPLEMENT_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
-4. `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_IMPLEMENTATION_V1`
-5. `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_IMPLEMENTATION_REVIEW_V1`
-6. `DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_V1`
-7. `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_DESIGN_V1`
+1. Review this design in `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`.
+2. If valid, run context alignment for this helper design.
+3. Separately authorize implementation of `weslr/controlled_final_answer_generation.py` and `weslr/tests/test_controlled_final_answer_generation_v1.py`.
+4. Implement helper-only, metadata-only, deterministic, pure in-memory functions.
+5. Validate helper implementation with unit tests and release checks.
+6. Review implementation before any controlled final-answer generation result-artifact design.
+7. Only after a separate result-artifact design/review lane, consider an internal result artifact lane.
+8. Only after further separate reviewed lanes, consider any non-runtime execution boundary.
 
-This sequence does not authorize execution, draft creation, user-facing output, runtime wiring, provider/search/advisor calls, `.weslr` writes, feature flags, judges/scores, official claims, result artifact creation, or authority grants.
+This sequence does not authorize final-answer execution, answer drafts, user-facing output, runtime wiring, provider/model/search/advisor calls, official claims, or authority grants.
 
-## 20. Design Status Summary
+## 21. Current Lane Safety Summary
 
-- design_only: true
-- helper_design_only: true
-- future_helper_module_path: `weslr/controlled_final_answer_generation.py`
-- future_test_module_path: `weslr/tests/test_controlled_final_answer_generation_v1.py`
-- helper_implementation_created: false
+- design document created: true
+- helper implementation created: false
 - controlled_final_answer_generation_executed: false
 - final_answer_generated: false
 - answer_draft_created: false
@@ -456,20 +433,10 @@ This sequence does not authorize execution, draft creation, user-facing output, 
 - runtime_wired: false
 - chat_responder_called: false
 - provider_call_made: false
-- search_call_made: false
-- advisor_call_made: false
-- dot_weslr_write_performed: false
-- feature_flag_enabled: false
-- judges_created: false
-- scores_created: false
 - official_claim_made: false
+- final_answer_result_artifact_created: false
 - answer_authority_granted: false
 - composition_authority_granted: false
 - runtime_authority_granted: false
 - official_evaluation_authority_granted: false
-
-## 21. Next Lane
-
-`REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
-
-Do not start it from this design lane. It must be separately authorized.
+- next_lane: `REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_V1`
