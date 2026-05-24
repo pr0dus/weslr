@@ -4934,6 +4934,41 @@ _controlled_reply_text_helpers_review_required_markers = {
 }
 
 
+_controlled_reply_text_result_design_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_DESIGN_REVIEW_V1.md"
+_controlled_reply_text_result_design_review_required_markers = {
+    "WESLR Controlled Reply Text Result Design Review V1",
+    "controlled_reply_text_result_design_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_TEXT_RESULT_DESIGN_V1",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_V1.md",
+    "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_ARTIFACT_V1.md",
+    "design-only",
+    "result-design-only",
+    "metadata-only",
+    "internal-only",
+    "helper-output based",
+    "validation-before-result-writing",
+    "safe-Markdown bounded",
+    "JSON-safe bounded",
+    "no result artifact created",
+    "no reply execution",
+    "no sendable reply text",
+    "no actual reply body",
+    "no final-answer prose",
+    "no answer drafts",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` IO",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no answer/reply-text/user-facing-output/composition/runtime/official evaluation authority granted",
+    "weslr/chat_responder.py` untouched",
+    "Future artifact creation requires separate authorization",
+    "Validation status: PASS",
+}
+
+
 _controlled_reply_text_result_design_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_RESULT_V1.md"
 _controlled_reply_text_result_design_required_markers = {
     "WESLR Controlled Reply Text Result Design V1",
@@ -6301,6 +6336,13 @@ def _controlled_reply_text_helpers_review_doc_is_valid():
         _controlled_reply_text_helpers_review_required_markers,
     )
 
+def _controlled_reply_text_result_design_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_result_design_review_doc,
+        _controlled_reply_text_result_design_review_required_markers,
+    )
+
+
 def _controlled_reply_text_result_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_result_design_doc,
@@ -6676,6 +6718,7 @@ def _check_git_scope():
     controlled_reply_text_boundary_review_doc_valid = _controlled_reply_text_boundary_review_doc_is_valid()
     controlled_reply_text_helpers_doc_valid = _controlled_reply_text_helpers_doc_is_valid()
     controlled_reply_text_helpers_review_doc_valid = _controlled_reply_text_helpers_review_doc_is_valid()
+    controlled_reply_text_result_design_review_doc_valid = _controlled_reply_text_result_design_review_doc_is_valid()
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -7297,6 +7340,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_result_design_doc_valid
             if not controlled_reply_text_result_design_doc_valid:
                 violations.append(f"  controlled reply text result design missing required markers: {path}")
+        if path == _controlled_reply_text_result_design_review_doc:
+            allowed = controlled_reply_text_result_design_review_doc_valid
+            if not controlled_reply_text_result_design_review_doc_valid:
+                violations.append(f"  controlled reply text result design review missing required markers: {path}")
         if path == _controlled_reply_text_helpers_implementation_review_doc:
             allowed = controlled_reply_text_helpers_implementation_review_doc_valid
             if not controlled_reply_text_helpers_implementation_review_doc_valid:
