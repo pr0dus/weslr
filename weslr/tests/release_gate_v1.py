@@ -4860,6 +4860,7 @@ _controlled_reply_output_precondition_boundary_doc = "docs/WESLR_CONTROLLED_REPL
 _controlled_reply_output_precondition_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_output_precondition_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _unknown_engine_boundary_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_V1.md"
+_unknown_engine_boundary_review_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5269,6 +5270,72 @@ _unknown_engine_boundary_required_markers = {
     "EXECUTE_UNKNOWN_ENGINE_V1",
     "CREATE_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1",
     "REVIEW_UNKNOWN_ENGINE_BOUNDARY_V1",
+}
+
+_unknown_engine_boundary_review_required_markers = {
+    "WESLR UNKNOWN ENGINE Boundary Review V1",
+    "unknown_engine_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_V1.md",
+    "design-only",
+    "metadata-only",
+    "internal-only",
+    "uncertainty/frontier cognition boundary only",
+    "positioned after state/context/evidence interpretation",
+    "positioned before answer formation or future conversation sandbox planning",
+    "no UNKNOWN ENGINE implementation",
+    "no UNKNOWN ENGINE helpers",
+    "no UNKNOWN ENGINE execution",
+    "no prediction output",
+    "no future-certainty claims",
+    "no possible-future output for users",
+    "no reply output",
+    "no preview output",
+    "no sendable reply text",
+    "no actual reply body",
+    "no final-answer prose",
+    "no final answers",
+    "no answer drafts",
+    "no live dialogue",
+    "no user-facing output execution",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` IO",
+    "no feature flags",
+    "no judges/scores",
+    "no official claims",
+    "no authority grants",
+    "Cognitive Gym Compatibility Check",
+    "UNKNOWN ENGINE may be first Cognitive Gym engine candidate.",
+    "shared CognitiveGymRun-style protocol",
+    "engine_name",
+    "input_state",
+    "observations",
+    "knowns",
+    "unknowns",
+    "hypotheses",
+    "predictions_or_branch_labels",
+    "denied_authority_fields",
+    "validation_status",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "future_certainty_claim_created=false",
+    "reply_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "IMPLEMENT_UNKNOWN_ENGINE_V1",
+    "EXECUTE_UNKNOWN_ENGINE_V1",
+    "CREATE_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1",
+    "No blocking boundary design gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_UNKNOWN_ENGINE_BOUNDARY_V1",
 }
 
 
@@ -7180,6 +7247,13 @@ def _unknown_engine_boundary_doc_is_valid():
     )
 
 
+def _unknown_engine_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_boundary_review_doc,
+        _unknown_engine_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7643,6 +7717,7 @@ def _check_git_scope():
     controlled_reply_output_precondition_boundary_review_doc_valid = _controlled_reply_output_precondition_boundary_review_doc_is_valid()
     controlled_reply_output_precondition_chain_next_step_review_doc_valid = _controlled_reply_output_precondition_chain_next_step_review_doc_is_valid()
     unknown_engine_boundary_doc_valid = _unknown_engine_boundary_doc_is_valid()
+    unknown_engine_boundary_review_doc_valid = _unknown_engine_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8332,6 +8407,10 @@ def _check_git_scope():
             allowed = unknown_engine_boundary_doc_valid
             if not unknown_engine_boundary_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE boundary doc missing required markers: {path}")
+        if path == _unknown_engine_boundary_review_doc:
+            allowed = unknown_engine_boundary_review_doc_valid
+            if not unknown_engine_boundary_review_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
