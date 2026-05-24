@@ -4712,6 +4712,48 @@ _controlled_user_facing_output_chain_next_step_review_required_markers = {
 }
 
 
+_controlled_reply_text_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_CHAIN_NEXT_STEP_REVIEW_V1.md"
+_controlled_reply_text_chain_next_step_review_required_markers = {
+    "WESLR Controlled Reply Text Chain Next Step Review V1",
+    "controlled_reply_text_chain_reviewed_next_step_design_controlled_reply_preview_boundary_v1",
+    "DESIGN_CONTROLLED_REPLY_PREVIEW_BOUNDARY_V1",
+    "metadata-only controlled reply-text structures exist",
+    "helper implementation exists for safe internal reply-text metadata",
+    "controlled reply text result artifact exists",
+    "result artifact is internal-only, metadata-only, helper-output based, validation-backed, safe Markdown, JSON-safe eligible, no-authority, no-runtime, and non-user-facing",
+    "denied authority fields stayed false",
+    "validation/release checks passed",
+    "weslr/chat_responder.py` stayed untouched",
+    "no runtime/provider/search/advisor/model/.weslr paths were activated",
+    "actual reply execution",
+    "sendable reply text",
+    "actual reply body",
+    "final-answer prose",
+    "final answers",
+    "answer drafts",
+    "answer correctness",
+    "user-facing output execution",
+    "prompt/live dialogue execution",
+    "live chat behavior",
+    "runtime readiness",
+    "ChatResponder/respond_chat/generate_chat activation",
+    "provider/search/advisor/model integration",
+    "official Turing-test claim",
+    "IQ claim",
+    "certification claim",
+    "product readiness",
+    "authority to answer users",
+    "authority to wire runtime",
+    "preview authority",
+    "reply-text authority",
+    "user-facing-output authority",
+    "runtime authority",
+    "official evaluation authority",
+    "No blocking chain gaps were found",
+    "Recommended next lane",
+    "Explicit Blocked Lanes",
+}
+
 _controlled_reply_text_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_BOUNDARY_V1.md"
 _controlled_reply_text_boundary_required_markers = {
     "WESLR Controlled Reply Text Boundary V1",
@@ -6415,6 +6457,13 @@ def _controlled_user_facing_output_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_reply_text_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_chain_next_step_review_doc,
+        _controlled_reply_text_chain_next_step_review_required_markers,
+    )
+
+
 def _controlled_reply_text_boundary_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_boundary_doc,
@@ -6844,6 +6893,7 @@ def _check_git_scope():
     controlled_reply_text_result_artifact_doc_valid = _controlled_reply_text_result_artifact_doc_is_valid()
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
+    controlled_reply_text_chain_next_step_review_doc_valid = _controlled_reply_text_chain_next_step_review_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -7479,6 +7529,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_helpers_implementation_review_doc_valid
             if not controlled_reply_text_helpers_implementation_review_doc_valid:
                 violations.append(f"  controlled reply text helpers implementation review missing required markers: {path}")
+        if path == _controlled_reply_text_chain_next_step_review_doc:
+            allowed = controlled_reply_text_chain_next_step_review_doc_valid
+            if not controlled_reply_text_chain_next_step_review_doc_valid:
+                violations.append(f"  controlled reply text chain next step review missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
