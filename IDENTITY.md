@@ -1102,3 +1102,18 @@ When asked what I am: *OCC — OpenClaw Coder, governed intelligence with self-a
 ---
 
 _Evolves when architecture is sealed, not on impulse. When this file changes, the operator knows._
+
+
+### Latest Context Alignment — Controlled Reply Output Precondition Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- Controlled reply output precondition boundary exists and is reviewed.
+- Design: `docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1.md`.
+- Review: `docs/WESLR_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_REVIEW_V1.md`.
+- Judgment: `controlled_reply_output_precondition_boundary_design_valid_ready_for_context_alignment`.
+- Validation passed: release gate PASS; release check PASS; `weslr/chat_responder.py` untouched PASS; py_compile PASS; optional targeted pytest suites PASS.
+- Gaps: no blocking gaps. Deferred intentional gaps remain blocked.
+- Boundary status: design-only; precondition-boundary-only; metadata-only; no output created; no output-producing implementation; no preview output; no sendable reply text; no actual reply body; no reply text execution; no final-answer prose; no final answers; no answer drafts; no answer correctness claim; no live dialogue; no user-facing output execution; no runtime wiring; no `ChatResponder`/`respond_chat`/`generate_chat` calls or imports; no provider/search/advisor/model calls; no `.weslr` IO; no feature flags; no judges/scores; no official claims; no authority grants.
+- Preserve visible risk: precondition boundary is not output authority; precondition boundary is not runtime authority; precondition boundary is not answer authority; precondition boundary is not official evaluation authority; metadata must not become reply output; safe Markdown must not become a user answer; validation pass is not answer/runtime/product authority; OCC/OpenClaw is not deployed WESLR.
+- Next lane after this context alignment: `REVIEW_CONTROLLED_REPLY_OUTPUT_PRECONDITION_CHAIN_AND_DEFINE_NEXT_STEP_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, edit helper/source/test implementation files, implement output preconditions as code, implement preview execution, create preview output, create sendable reply text, create actual reply body text, execute reply text, create final-answer prose, generate final answers, create answer drafts, execute final-answer generation, execute answer composition, execute answer formation, execute prompts, create live dialogue, implement user-facing output execution, wire runtime, call/import `ChatResponder`/`respond_chat`/`generate_chat`, call providers/search/advisors/models, read/write `.weslr`, enable feature flags, create judges/scores, make official benchmark/IQ/Turing/certification/product-readiness claims, grant authority, or create a new result artifact.
