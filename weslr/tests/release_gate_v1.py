@@ -2920,10 +2920,10 @@ _answer_formation_dry_run_execution_review_required_markers = {
     "validation-before-rendering policy",
     "safe Markdown result policy",
     "JSON-safe policy",
-    "denied authority fields",
+    "Denied Authority Fields",
     "blocked execution behavior",
-    "visible risks/followups",
-    "abort conditions",
+    "Visible Risks And Followups",
+    "Abort Conditions",
     "validation commands",
     "future review sequence",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_ANSWER_FORMATION_DRY_RUN_EXECUTION_V1",
@@ -3069,11 +3069,11 @@ _controlled_answer_formation_execution_boundary_review_required_markers = {
     "forbidden real-user/live inputs",
     "validation-before-execution policy",
     "future controlled execution artifact shape",
-    "denied authority fields",
+    "Denied Authority Fields",
     "blocked execution behavior",
-    "visible risks/followups",
-    "abort conditions",
-    "future implementation/review sequence",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
     "answer_formation_executed=false",
     "answer_composition_attempted=false",
     "final_answer_generated=false",
@@ -3185,7 +3185,7 @@ _controlled_answer_formation_execution_helpers_review_required_markers = {
     "to_controlled_answer_formation_execution_artifact_json_safe_v1",
     "controlled execution artifact shape",
     "allowed controlled/synthetic metadata inputs",
-    "forbidden real-user/live/raw/provider/runtime inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
     "relationship to existing answer formation helpers",
     "relationship to dry-run result artifact",
     "validation-before-controlled-execution policy",
@@ -3195,10 +3195,10 @@ _controlled_answer_formation_execution_helpers_review_required_markers = {
     "safe Markdown policy",
     "JSON-safe policy",
     "blocked artifact behavior",
-    "denied authority fields",
-    "visible risks/followups",
-    "abort conditions",
-    "future implementation/review sequence",
+    "Denied Authority Fields",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
     "answer_formation_executed=false",
     "answer_composition_attempted=false",
     "final_answer_generated=false",
@@ -3368,14 +3368,14 @@ _controlled_answer_formation_execution_result_design_review_required_markers = {
     "relationship to controlled helper implementation",
     "relationship to dry-run result artifact",
     "allowed controlled/synthetic metadata inputs",
-    "forbidden real-user/live/raw/provider/runtime inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
     "validation-before-result-writing policy",
     "safe Markdown result policy",
     "JSON-safe result policy",
     "blocked result behavior",
     "exact no-final-answer boundary",
     "exact no-answer-composition boundary",
-    "exact no-runtime boundary",
+    "Exact No-Runtime Boundary",
     "exact no-provider/search/advisor boundary",
     "answer_formation_executed=false",
     "answer_composition_attempted=false",
@@ -4313,19 +4313,19 @@ _controlled_user_facing_output_boundary_review_required_markers = {
     "controlled user-facing output purpose",
     "why controlled final-answer-generation result does not grant user-facing-output authority",
     "allowed future user-facing-output metadata inputs",
-    "forbidden real-user/live/raw/provider/runtime inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
     "exact no-live-chat boundary",
-    "exact no-runtime boundary",
-    "exact no-ChatResponder/respond_chat/generate_chat boundary",
+    "Exact No-Runtime Boundary",
+    "Exact No-ChatResponder / respond_chat / generate_chat Boundary",
     "exact no-provider/search/advisor boundary",
-    "exact no-official-claims boundary",
+    "Exact No-Official-Claims Boundary",
     "validation-before-user-facing-output policy",
     "controlled user-facing-output artifact shape for a future lane",
-    "denied authority fields",
+    "Denied Authority Fields",
     "blocked user-facing-output behavior",
-    "visible risks/followups",
-    "abort conditions",
-    "future implementation/review sequence",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
     "No blocking design gaps were found.",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1",
 }
@@ -4415,7 +4415,7 @@ _controlled_user_facing_output_helpers_review_required_markers = {
     "future public API names",
     "controlled user-facing-output artifact shape",
     "allowed user-facing-output metadata inputs",
-    "forbidden real-user/live/raw/provider/runtime inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
     "relationship to controlled final-answer-generation result artifact",
     "relationship to controlled user-facing output boundary",
     "validation-before-user-facing-output policy",
@@ -4427,10 +4427,10 @@ _controlled_user_facing_output_helpers_review_required_markers = {
     "safe Markdown policy",
     "JSON-safe policy",
     "blocked artifact behavior",
-    "denied authority fields",
-    "visible risks/followups",
-    "abort conditions",
-    "future implementation/review sequence",
+    "Denied Authority Fields",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
     "No blocking design gaps were found.",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_USER_FACING_OUTPUT_HELPERS_V1",
 }
@@ -4709,6 +4709,53 @@ _controlled_user_facing_output_chain_next_step_review_required_markers = {
     "validation-pass-as-answer-runtime-product-authority risk",
     "No blocking chain gaps were found",
     "Allowed future lane from this report is exactly one",
+}
+
+
+_controlled_reply_text_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_BOUNDARY_V1.md"
+_controlled_reply_text_boundary_required_markers = {
+    "WESLR Controlled Reply Text Boundary V1",
+    "DESIGN_CONTROLLED_REPLY_TEXT_BOUNDARY_V1",
+    "REVIEW_CONTROLLED_REPLY_TEXT_BOUNDARY_V1",
+    "Controlled Reply Text Purpose",
+    "Why Controlled User-Facing-Output Result Metadata Does Not Grant Reply-Text Authority",
+    "Allowed Future Reply-Text Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Exact No-User-Facing-Output-Execution Boundary",
+    "Exact No-Live-Dialogue Boundary",
+    "Exact No-Runtime Boundary",
+    "Exact No-ChatResponder / respond_chat / generate_chat Boundary",
+    "Exact No-Provider / Search / Advisor / Model Boundary",
+    "Exact No-Official-Claims Boundary",
+    "Validation-Before-Reply-Text Policy",
+    "Controlled Reply-Text Artifact Shape For A Future Lane",
+    "Denied Authority Fields",
+    "Blocked Reply-Text Behavior",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "reply_text_implementation_authorized: false",
+    "reply_text_execution_authorized: false",
+    "user_facing_output_execution_authorized: false",
+    "live_chat_behavior_authorized: false",
+    "runtime_wiring_authorized: false",
+    "chat_responder_use_authorized: false",
+    "provider_model_search_advisor_calls_authorized: false",
+    "official_evaluation_claims_authorized: false",
+    "answer_authority_granted: false",
+    "reply_text_authority_granted: false",
+    "user_facing_output_authority_granted: false",
+    "runtime_authority_granted: false",
+    "official_evaluation_authority_granted: false",
+    "actual sendable reply text",
+    "answer draft prose",
+    "final-answer prose intended for users",
+    "live-dialogue output",
+    "user-facing response body",
+    "ChatResponder/respond_chat/generate_chat use",
+    "provider/model/search/advisor calls",
+    "official benchmark/IQ/Turing/certification/product-readiness claims",
+    "controlled_reply_text_boundary_design_only_no_reply_text_authority",
 }
 
 
@@ -5968,6 +6015,13 @@ def _controlled_user_facing_output_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_reply_text_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_text_boundary_doc,
+        _controlled_reply_text_boundary_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -6325,6 +6379,7 @@ def _check_git_scope():
     controlled_user_facing_output_result_artifact_doc_valid = _controlled_user_facing_output_result_artifact_doc_is_valid()
     controlled_user_facing_output_result_artifact_review_doc_valid = _controlled_user_facing_output_result_artifact_review_doc_is_valid()
     controlled_user_facing_output_chain_next_step_review_doc_valid = _controlled_user_facing_output_chain_next_step_review_doc_is_valid()
+    controlled_reply_text_boundary_doc_valid = _controlled_reply_text_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6924,6 +6979,10 @@ def _check_git_scope():
             allowed = controlled_user_facing_output_chain_next_step_review_doc_valid
             if not controlled_user_facing_output_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled user-facing output chain next step review missing required markers: {path}")
+        if path == _controlled_reply_text_boundary_doc:
+            allowed = controlled_reply_text_boundary_doc_valid
+            if not controlled_reply_text_boundary_doc_valid:
+                violations.append(f"  controlled reply text boundary doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
