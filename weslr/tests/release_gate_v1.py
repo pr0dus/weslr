@@ -4231,6 +4231,60 @@ _controlled_final_answer_generation_chain_next_step_review_required_markers = {
     "No blocking gaps were found",
 }
 
+_controlled_user_facing_output_boundary_doc = "docs/WESLR_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1.md"
+_controlled_user_facing_output_boundary_required_markers = {
+    "WESLR Controlled User-Facing Output Boundary V1",
+    "DESIGN_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1",
+    "REVIEW_CONTROLLED_USER_FACING_OUTPUT_BOUNDARY_V1",
+    "controlled answer formation metadata",
+    "controlled answer composition metadata",
+    "controlled final-answer-generation metadata",
+    "controlled user-facing output",
+    "live chat behavior",
+    "runtime wiring",
+    "ChatResponder/respond_chat/generate_chat activation",
+    "provider/model/search/advisor calls",
+    "official evaluation claims",
+    "answer authority / runtime authority / product-readiness authority",
+    "Controlled User-Facing Output Purpose",
+    "Why Controlled Final-Answer Generation Result Does Not Grant User-Facing-Output Authority",
+    "Allowed Future User-Facing-Output Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Exact No-Live-Chat Boundary",
+    "Exact No-Runtime Boundary",
+    "Exact No-ChatResponder / respond_chat / generate_chat Boundary",
+    "Exact No-Provider / Search / Advisor Boundary",
+    "Exact No-Official-Claims Boundary",
+    "Validation-Before-User-Facing-Output Policy",
+    "Controlled User-Facing-Output Artifact Shape For A Future Lane",
+    "Denied Authority Fields",
+    "Blocked User-Facing-Output Behavior",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "user_facing_output_implementation_authorized: false",
+    "user_facing_output_execution_authorized: false",
+    "live_chat_behavior_authorized: false",
+    "runtime_wiring_authorized: false",
+    "chat_responder_called: false",
+    "respond_chat_called: false",
+    "generate_chat_called: false",
+    "provider_call_made: false",
+    "model_call_made: false",
+    "search_call_made: false",
+    "advisor_call_made: false",
+    "dot_weslr_write_performed: false",
+    "feature_flag_enabled: false",
+    "judges_created: false",
+    "scores_created: false",
+    "official_claim_made: false",
+    "answer_authority_granted: false",
+    "user_facing_output_authority_granted: false",
+    "composition_authority_granted: false",
+    "runtime_authority_granted: false",
+    "official_evaluation_authority_granted: false",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5420,6 +5474,13 @@ def _controlled_final_answer_generation_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_user_facing_output_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_user_facing_output_boundary_doc,
+        _controlled_user_facing_output_boundary_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5767,6 +5828,7 @@ def _check_git_scope():
     controlled_final_answer_generation_result_artifact_doc_valid = _controlled_final_answer_generation_result_artifact_doc_is_valid()
     controlled_final_answer_generation_result_artifact_review_doc_valid = _controlled_final_answer_generation_result_artifact_review_doc_is_valid()
     controlled_final_answer_generation_chain_next_step_review_doc_valid = _controlled_final_answer_generation_chain_next_step_review_doc_is_valid()
+    controlled_user_facing_output_boundary_doc_valid = _controlled_user_facing_output_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6326,6 +6388,10 @@ def _check_git_scope():
             allowed = controlled_final_answer_generation_chain_next_step_review_doc_valid
             if not controlled_final_answer_generation_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled final answer generation chain next step review missing required markers: {path}")
+        if path == _controlled_user_facing_output_boundary_doc:
+            allowed = controlled_user_facing_output_boundary_doc_valid
+            if not controlled_user_facing_output_boundary_doc_valid:
+                violations.append(f"  controlled user-facing output boundary doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
