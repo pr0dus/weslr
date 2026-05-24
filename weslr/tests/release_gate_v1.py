@@ -4712,6 +4712,54 @@ _controlled_user_facing_output_chain_next_step_review_required_markers = {
 }
 
 
+_controlled_reply_preview_boundary_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_BOUNDARY_V1.md"
+_controlled_reply_preview_boundary_required_markers = {
+    "WESLR Controlled Reply Preview Boundary V1",
+    "DESIGN_CONTROLLED_REPLY_PREVIEW_BOUNDARY_V1",
+    "REVIEW_CONTROLLED_REPLY_PREVIEW_BOUNDARY_V1",
+    "Controlled Reply Preview Purpose",
+    "Why Controlled Reply-Text Result Metadata Does Not Grant Preview Authority",
+    "Allowed Future Reply-Preview Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Exact No-Sendable-Reply-Text Boundary",
+    "Exact No-Actual-Reply-Body Boundary",
+    "Exact No-Reply-Execution Boundary",
+    "Exact No-User-Facing-Output-Execution Boundary",
+    "Exact No-Live-Dialogue Boundary",
+    "Exact No-Runtime Boundary",
+    "Exact No-ChatResponder / respond_chat / generate_chat Boundary",
+    "Exact No-Provider / Search / Advisor / Model Boundary",
+    "Exact No-Official-Claims Boundary",
+    "Validation-Before-Preview Policy",
+    "Controlled Reply-Preview Artifact Shape For A Future Lane",
+    "Denied Authority Fields",
+    "Blocked Reply-Preview Behavior",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "reply_preview_implemented=false",
+    "reply_preview_executed=false",
+    "sendable_reply_text_created=false",
+    "actual_reply_body_created=false",
+    "reply_text_executed=false",
+    "user_facing_output_executed=false",
+    "live_dialogue_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "official_claim_made=false",
+    "answer_authority_granted=false",
+    "preview_authority_granted=false",
+    "reply_text_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+}
+
 _controlled_reply_text_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_TEXT_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _controlled_reply_text_chain_next_step_review_required_markers = {
     "WESLR Controlled Reply Text Chain Next Step Review V1",
@@ -6457,6 +6505,13 @@ def _controlled_user_facing_output_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_reply_preview_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_preview_boundary_doc,
+        _controlled_reply_preview_boundary_required_markers,
+    )
+
+
 def _controlled_reply_text_chain_next_step_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_text_chain_next_step_review_doc,
@@ -6894,6 +6949,7 @@ def _check_git_scope():
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     controlled_reply_text_chain_next_step_review_doc_valid = _controlled_reply_text_chain_next_step_review_doc_is_valid()
+    controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -7533,6 +7589,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_chain_next_step_review_doc_valid
             if not controlled_reply_text_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled reply text chain next step review missing required markers: {path}")
+        if path == _controlled_reply_preview_boundary_doc:
+            allowed = controlled_reply_preview_boundary_doc_valid
+            if not controlled_reply_preview_boundary_doc_valid:
+                violations.append(f"  controlled reply preview boundary doc missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
