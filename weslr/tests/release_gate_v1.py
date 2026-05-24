@@ -4855,6 +4855,7 @@ _controlled_reply_preview_result_design_doc = "docs/WESLR_CONTROLLED_REPLY_PREVI
 _controlled_reply_preview_result_design_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_DESIGN_REVIEW_V1.md"
 _controlled_reply_preview_result_artifact_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_ARTIFACT_V1.md"
 _controlled_reply_preview_result_artifact_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_ARTIFACT_REVIEW_V1.md"
+_controlled_reply_preview_chain_next_step_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_CHAIN_NEXT_STEP_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5020,6 +5021,40 @@ _controlled_reply_preview_result_artifact_review_required_markers = {
     "no authority grants",
     "No blocking artifact gaps were found.",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_REPLY_PREVIEW_RESULT_ARTIFACT_REVIEW_V1",
+}
+
+_controlled_reply_preview_chain_next_step_review_required_markers = {
+    "WESLR Controlled Reply Preview Chain Next Step Review V1",
+    "controlled_reply_preview_chain_reviewed_next_step_design_controlled_reply_output_precondition_boundary_v1",
+    "DESIGN_CONTROLLED_REPLY_OUTPUT_PRECONDITION_BOUNDARY_V1",
+    "SECTION 1 — REVIEW SCOPE",
+    "SECTION 2 — CHAIN INVENTORY",
+    "SECTION 3 — VERIFIED ASSETS",
+    "SECTION 4 — VALIDATION EVIDENCE SUMMARY",
+    "SECTION 5 — WHAT IS PROVEN",
+    "SECTION 6 — WHAT IS NOT PROVEN",
+    "SECTION 7 — PRESERVED BOUNDARIES",
+    "SECTION 8 — DENIED AUTHORITY SUMMARY",
+    "SECTION 9 — VISIBLE RISKS",
+    "SECTION 10 — GAP ANALYSIS",
+    "SECTION 11 — RECOMMENDED NEXT LANE",
+    "SECTION 12 — EXPLICIT BLOCKED LANES",
+    "SECTION 13 — VALIDATION EVIDENCE FOR THIS REVIEW LANE",
+    "SECTION 14 — CHAIN JUDGMENT",
+    "SECTION 15 — SAFETY CONFIRMATION",
+    "metadata is not preview output",
+    "preview metadata is not sendable reply text",
+    "safe Markdown is not a user answer",
+    "JSON-safe metadata is not a reply payload",
+    "validation pass is not answer/runtime/product authority",
+    "artifact review is not runtime authorization",
+    "OCC/OpenClaw is not deployed WESLR",
+    "IMPLEMENT_CONTROLLED_REPLY_PREVIEW_OUTPUT_V1",
+    "DESIGN_CONTROLLED_REPLY_TEXT_EXECUTION_BOUNDARY_V1",
+    "DESIGN_CONTROLLED_REPLY_DRAFT_GENERATION_BOUNDARY_V1",
+    "DESIGN_USER_FACING_REPLY_EXECUTION_BOUNDARY_V1",
+    "AUDIT_CHAIN_FOR_RUNTIME_WIRING_READINESS_WITHOUT_IMPLEMENTATION_V1",
+    "DESIGN_OFFICIAL_EVALUATION_PRECONDITIONS_BOUNDARY_V1",
 }
 
 
@@ -6896,6 +6931,13 @@ def _controlled_reply_preview_result_artifact_review_doc_is_valid():
     )
 
 
+def _controlled_reply_preview_chain_next_step_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_preview_chain_next_step_review_doc,
+        _controlled_reply_preview_chain_next_step_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7354,6 +7396,7 @@ def _check_git_scope():
     controlled_reply_preview_result_design_review_doc_valid = _controlled_reply_preview_result_design_review_doc_is_valid()
     controlled_reply_preview_result_artifact_doc_valid = _controlled_reply_preview_result_artifact_doc_is_valid()
     controlled_reply_preview_result_artifact_review_doc_valid = _controlled_reply_preview_result_artifact_review_doc_is_valid()
+    controlled_reply_preview_chain_next_step_review_doc_valid = _controlled_reply_preview_chain_next_step_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8023,6 +8066,10 @@ def _check_git_scope():
             allowed = controlled_reply_preview_result_artifact_review_doc_valid
             if not controlled_reply_preview_result_artifact_review_doc_valid:
                 violations.append(f"  controlled reply preview result artifact review missing required markers: {path}")
+        if path == _controlled_reply_preview_chain_next_step_review_doc:
+            allowed = controlled_reply_preview_chain_next_step_review_doc_valid
+            if not controlled_reply_preview_chain_next_step_review_doc_valid:
+                violations.append(f"  controlled reply preview chain next step review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
