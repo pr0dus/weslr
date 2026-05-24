@@ -4864,6 +4864,7 @@ _unknown_engine_boundary_review_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_REVIEW
 _cognitive_gym_suite_boundary_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_V1.md"
 _cognitive_gym_suite_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_run_protocol_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_V1.md"
+_cognitive_gym_run_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5327,6 +5328,83 @@ _cognitive_gym_suite_boundary_required_markers = {
     "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
     "DESIGN_TURING_TEST_EXECUTION_V1",
     "REVIEW_COGNITIVE_GYM_SUITE_BOUNDARY_V1",
+}
+
+_cognitive_gym_run_protocol_review_required_markers = {
+    "WESLR CognitiveGymRun Protocol Review V1",
+    "cognitive_gym_run_protocol_design_valid_ready_for_context_alignment",
+    "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_V1.md",
+    "design-only",
+    "protocol-design-only",
+    "shared protocol/report-shape only",
+    "internal-only",
+    "metadata-only",
+    "no CognitiveGymRun implementation",
+    "no Cognitive Gym implementation",
+    "no UNKNOWN ENGINE implementation",
+    "no engine helpers",
+    "no engine execution",
+    "no dry cognition runs",
+    "no result artifact",
+    "no prediction output",
+    "no future-certainty claims",
+    "no open-problem solution claims",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` IO",
+    "no authority grants",
+    "Shared CognitiveGymRun protocol first",
+    "Individual engines second",
+    "Runtime integration much later",
+    "disconnected private report shapes",
+    "protocol_name",
+    "schema_version",
+    "engine_name",
+    "predictions_or_branch_labels",
+    "compressed_lesson",
+    "blocked_reason_labels",
+    "UNKNOWN_ENGINE",
+    "CALIBRATION_LEDGER",
+    "CONTRADICTION_FURNACE",
+    "GOVERNANCE_BOUNDARY_ENGINE",
+    "COUNTERFACTUAL_ENGINE",
+    "BLINDSPOT_ENGINE",
+    "INVARIANT_MINER",
+    "INTENT_RECONSTRUCTION_ENGINE",
+    "MEMORY_TRUST_ENGINE",
+    "CAUSAL_TRACE_ENGINE",
+    "FAILURE_MODE_SIMULATOR",
+    "ABSTRACTION_LADDER",
+    "SIGNAL_VS_NOISE_ENGINE",
+    "UNKNOWN / uncertainty",
+    "ERDŐS / open mathematical structure",
+    "MATERIALS / scientific discovery",
+    "UNKNOWN ENGINE boundary exists and is reviewed",
+    "UNKNOWN ENGINE is first Cognitive Gym engine candidate",
+    "UNKNOWN ENGINE future helpers must use or migrate into CognitiveGymRun",
+    "No open-problem solution claim is authorized",
+    "cognitive_gym_authority_granted=false",
+    "cognitive_gym_run_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "cognitive_gym_run_executed=false",
+    "prediction_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "IMPLEMENT_COGNITIVE_GYM_RUN_PROTOCOL_V1",
+    "EXECUTE_COGNITIVE_GYM_RUN_V1",
+    "CREATE_COGNITIVE_GYM_RUN_RESULT_ARTIFACT_V1",
+    "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
+    "DESIGN_TURING_TEST_EXECUTION_V1",
+    "No blocking protocol design gaps were found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_RUN_PROTOCOL_V1",
 }
 
 _cognitive_gym_run_protocol_required_markers = {
@@ -7482,6 +7560,13 @@ def _cognitive_gym_run_protocol_doc_is_valid():
     )
 
 
+def _cognitive_gym_run_protocol_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_run_protocol_review_doc,
+        _cognitive_gym_run_protocol_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7949,6 +8034,7 @@ def _check_git_scope():
     cognitive_gym_suite_boundary_doc_valid = _cognitive_gym_suite_boundary_doc_is_valid()
     cognitive_gym_suite_boundary_review_doc_valid = _cognitive_gym_suite_boundary_review_doc_is_valid()
     cognitive_gym_run_protocol_doc_valid = _cognitive_gym_run_protocol_doc_is_valid()
+    cognitive_gym_run_protocol_review_doc_valid = _cognitive_gym_run_protocol_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8654,6 +8740,10 @@ def _check_git_scope():
             allowed = cognitive_gym_run_protocol_doc_valid
             if not cognitive_gym_run_protocol_doc_valid:
                 violations.append(f"  CognitiveGymRun protocol doc missing required markers: {path}")
+        if path == _cognitive_gym_run_protocol_review_doc:
+            allowed = cognitive_gym_run_protocol_review_doc_valid
+            if not cognitive_gym_run_protocol_review_doc_valid:
+                violations.append(f"  CognitiveGymRun protocol review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
