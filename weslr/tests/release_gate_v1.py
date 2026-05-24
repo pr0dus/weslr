@@ -4712,6 +4712,69 @@ _controlled_user_facing_output_chain_next_step_review_required_markers = {
 }
 
 
+_controlled_reply_preview_helpers_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_HELPERS_V1.md"
+_controlled_reply_preview_helpers_required_markers = {
+    "WESLR Controlled Reply Preview Helpers V1",
+    "DESIGN_CONTROLLED_REPLY_PREVIEW_HELPERS_V1",
+    "REVIEW_CONTROLLED_REPLY_PREVIEW_HELPERS_V1",
+    "weslr/controlled_reply_preview.py",
+    "weslr/tests/test_controlled_reply_preview_v1.py",
+    "build_controlled_reply_preview_artifact_v1",
+    "validate_controlled_reply_preview_artifact_v1",
+    "summarize_controlled_reply_preview_artifact_v1",
+    "render_controlled_reply_preview_artifact_markdown_v1",
+    "to_controlled_reply_preview_artifact_json_safe_v1",
+    "controlled_reply_preview_artifact_v1",
+    "controlled_reply_preview_artifact_schema_v1",
+    "Allowed Reply-Preview Metadata Inputs",
+    "Forbidden Real-User / Live / Raw / Provider / Runtime Inputs",
+    "Validation-Before-Preview Policy",
+    "Validation-Before-Rendering Policy",
+    "No-Sendable-Reply-Text Policy",
+    "No-Actual-Reply-Body Policy",
+    "No-Reply-Execution Policy",
+    "No-User-Facing-Output-Execution Policy",
+    "No-Live-Dialogue Policy",
+    "No-Runtime Policy",
+    "No-ChatResponder / respond_chat / generate_chat Policy",
+    "No-Provider / Search / Advisor / Model Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Blocked Artifact Behavior",
+    "Denied Authority Fields",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "sendable_reply_text_created=false",
+    "actual_reply_body_created=false",
+    "reply_preview_executed=false",
+    "reply_text_executed=false",
+    "user_facing_output_executed=false",
+    "live_dialogue_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "respond_chat_called=false",
+    "generate_chat_called=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "dot_weslr_read_performed=false",
+    "dot_weslr_write_performed=false",
+    "feature_flag_enabled=false",
+    "judges_created=false",
+    "scores_created=false",
+    "official_claim_made=false",
+    "answer_authority_granted=false",
+    "preview_authority_granted=false",
+    "reply_text_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "composition_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+}
+
+
 _controlled_reply_preview_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_boundary_review_required_markers = {
     "WESLR Controlled Reply Preview Boundary Review V1",
@@ -6536,6 +6599,13 @@ def _controlled_user_facing_output_chain_next_step_review_doc_is_valid():
     )
 
 
+def _controlled_reply_preview_helpers_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_preview_helpers_doc,
+        _controlled_reply_preview_helpers_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -6987,6 +7057,7 @@ def _check_git_scope():
     controlled_reply_text_result_design_doc_valid = _controlled_reply_text_result_design_doc_is_valid()
     controlled_reply_text_helpers_implementation_review_doc_valid = _controlled_reply_text_helpers_implementation_review_doc_is_valid()
     controlled_reply_text_chain_next_step_review_doc_valid = _controlled_reply_text_chain_next_step_review_doc_is_valid()
+    controlled_reply_preview_helpers_doc_valid = _controlled_reply_preview_helpers_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -7628,6 +7699,10 @@ def _check_git_scope():
             allowed = controlled_reply_text_chain_next_step_review_doc_valid
             if not controlled_reply_text_chain_next_step_review_doc_valid:
                 violations.append(f"  controlled reply text chain next step review missing required markers: {path}")
+        if path == _controlled_reply_preview_helpers_doc:
+            allowed = controlled_reply_preview_helpers_doc_valid
+            if not controlled_reply_preview_helpers_doc_valid:
+                violations.append(f"  controlled reply preview helpers design missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
