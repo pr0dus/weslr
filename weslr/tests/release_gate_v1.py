@@ -4851,6 +4851,50 @@ _controlled_reply_preview_helpers_implementation_review_required_markers = {
 }
 
 
+_controlled_reply_preview_result_design_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_V1.md"
+_controlled_reply_preview_result_design_required_markers = {
+    "WESLR Controlled Reply Preview Result V1",
+    "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
+    "docs/WESLR_CONTROLLED_REPLY_PREVIEW_RESULT_ARTIFACT_V1.md",
+    "Allowed Source Helper Output",
+    "Validation-Before-Result-Writing Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Blocked / Invalid Result Behavior",
+    "No-Preview-Execution Boundary",
+    "No-Preview-Output Boundary",
+    "No-Sendable-Reply-Text Boundary",
+    "No-Actual-Reply-Body Boundary",
+    "No-Reply-Text-Execution Boundary",
+    "No-Final-Answer-Prose Boundary",
+    "No-Answer-Draft Boundary",
+    "No-User-Facing-Output-Execution Boundary",
+    "No-Live-Dialogue Boundary",
+    "No-Runtime Boundary",
+    "No-ChatResponder / respond_chat / generate_chat Boundary",
+    "No-Provider / Search / Advisor / Model Boundary",
+    "No `.weslr` / Feature Flag Boundary",
+    "No-Judges / Scores Boundary",
+    "No-Official-Claims Boundary",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "answer_authority_granted=false",
+    "preview_authority_granted=false",
+    "reply_preview_executed=false",
+    "preview_output_created=false",
+    "sendable_reply_text_created=false",
+    "actual_reply_body_created=false",
+    "reply_text_executed=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "REVIEW_CONTROLLED_REPLY_PREVIEW_RESULT_DESIGN_V1",
+}
+
+
 _controlled_reply_preview_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_boundary_review_required_markers = {
     "WESLR Controlled Reply Preview Boundary Review V1",
@@ -6696,6 +6740,13 @@ def _controlled_reply_preview_helpers_implementation_review_doc_is_valid():
     )
 
 
+def _controlled_reply_preview_result_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_reply_preview_result_design_doc,
+        _controlled_reply_preview_result_design_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7150,6 +7201,7 @@ def _check_git_scope():
     controlled_reply_preview_helpers_doc_valid = _controlled_reply_preview_helpers_doc_is_valid()
     controlled_reply_preview_helpers_review_doc_valid = _controlled_reply_preview_helpers_review_doc_is_valid()
     controlled_reply_preview_helpers_implementation_review_doc_valid = _controlled_reply_preview_helpers_implementation_review_doc_is_valid()
+    controlled_reply_preview_result_design_doc_valid = _controlled_reply_preview_result_design_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -7803,6 +7855,10 @@ def _check_git_scope():
             allowed = controlled_reply_preview_helpers_implementation_review_doc_valid
             if not controlled_reply_preview_helpers_implementation_review_doc_valid:
                 violations.append(f"  controlled reply preview helpers implementation review missing required markers: {path}")
+        if path == _controlled_reply_preview_result_design_doc:
+            allowed = controlled_reply_preview_result_design_doc_valid
+            if not controlled_reply_preview_result_design_doc_valid:
+                violations.append(f"  controlled reply preview result design missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
