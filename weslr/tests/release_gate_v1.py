@@ -4862,6 +4862,7 @@ _controlled_reply_output_precondition_chain_next_step_review_doc = "docs/WESLR_C
 _unknown_engine_boundary_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_V1.md"
 _unknown_engine_boundary_review_doc = "docs/WESLR_UNKNOWN_ENGINE_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_suite_boundary_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_V1.md"
+_cognitive_gym_suite_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5325,6 +5326,83 @@ _cognitive_gym_suite_boundary_required_markers = {
     "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
     "DESIGN_TURING_TEST_EXECUTION_V1",
     "REVIEW_COGNITIVE_GYM_SUITE_BOUNDARY_V1",
+}
+
+_cognitive_gym_suite_boundary_review_required_markers = {
+    "WESLR Cognitive Gym Suite Boundary Review V1",
+    "cognitive_gym_suite_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_COGNITIVE_GYM_SUITE_BOUNDARY_V1.md",
+    "design-only",
+    "suite-boundary-only",
+    "internal-only",
+    "metadata-only",
+    "no Cognitive Gym implementation",
+    "no `CognitiveGymRun` implementation",
+    "no UNKNOWN ENGINE implementation",
+    "no engine helpers",
+    "no engine execution",
+    "no dry cognition runs",
+    "no prediction output",
+    "no future-certainty claims",
+    "no open-problem solution claims",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no provider/search/advisor/model calls",
+    "no `.weslr` IO",
+    "no judges/scores",
+    "no authority grants",
+    "Do not implement Cognitive Gym engines as disconnected modules",
+    "one common CognitiveGymRun-style protocol/report shape",
+    "Shared protocol first",
+    "Individual engines second",
+    "UNKNOWN_ENGINE",
+    "CALIBRATION_LEDGER",
+    "CONTRADICTION_FURNACE",
+    "GOVERNANCE_BOUNDARY_ENGINE",
+    "COUNTERFACTUAL_ENGINE",
+    "BLINDSPOT_ENGINE",
+    "INVARIANT_MINER",
+    "INTENT_RECONSTRUCTION_ENGINE",
+    "MEMORY_TRUST_ENGINE",
+    "CAUSAL_TRACE_ENGINE",
+    "FAILURE_MODE_SIMULATOR",
+    "ABSTRACTION_LADDER",
+    "SIGNAL_VS_NOISE_ENGINE",
+    "UNKNOWN ENGINE boundary exists and is reviewed",
+    "UNKNOWN ENGINE is the first Cognitive Gym engine candidate",
+    "UNKNOWN ENGINE is not implemented",
+    "UNKNOWN ENGINE helpers do not exist yet",
+    "DESIGN_COGNITIVE_GYM_RUN_PROTOCOL_V1",
+    "engine_name",
+    "input_state",
+    "predictions_or_branch_labels",
+    "compressed_lesson",
+    "UNKNOWN / uncertainty",
+    "ERDŐS / open mathematical structure",
+    "COUNTEREXAMPLE / falsification",
+    "MATERIALS / scientific discovery",
+    "WESLR must not claim to solve open problems",
+    "cognitive_gym_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "cognitive_gym_executed=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "IMPLEMENT_COGNITIVE_GYM_SUITE_V1",
+    "IMPLEMENT_UNKNOWN_ENGINE_V1",
+    "EXECUTE_COGNITIVE_GYM_V1",
+    "DESIGN_REAL_CONVERSATION_SANDBOX_V1",
+    "DESIGN_TURING_TEST_EXECUTION_V1",
+    "No blocking boundary design gaps were found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_SUITE_BOUNDARY_V1",
 }
 
 _unknown_engine_boundary_review_required_markers = {
@@ -7316,6 +7394,13 @@ def _cognitive_gym_suite_boundary_doc_is_valid():
     )
 
 
+def _cognitive_gym_suite_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_suite_boundary_review_doc,
+        _cognitive_gym_suite_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -7781,6 +7866,7 @@ def _check_git_scope():
     unknown_engine_boundary_doc_valid = _unknown_engine_boundary_doc_is_valid()
     unknown_engine_boundary_review_doc_valid = _unknown_engine_boundary_review_doc_is_valid()
     cognitive_gym_suite_boundary_doc_valid = _cognitive_gym_suite_boundary_doc_is_valid()
+    cognitive_gym_suite_boundary_review_doc_valid = _cognitive_gym_suite_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8478,6 +8564,10 @@ def _check_git_scope():
             allowed = cognitive_gym_suite_boundary_doc_valid
             if not cognitive_gym_suite_boundary_doc_valid:
                 violations.append(f"  Cognitive Gym suite boundary doc missing required markers: {path}")
+        if path == _cognitive_gym_suite_boundary_review_doc:
+            allowed = cognitive_gym_suite_boundary_review_doc_valid
+            if not cognitive_gym_suite_boundary_review_doc_valid:
+                violations.append(f"  Cognitive Gym suite boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
