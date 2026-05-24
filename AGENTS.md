@@ -1201,6 +1201,23 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 - Preserve visible risk: reply text result artifact is not reply execution; helper metadata is not sendable reply text; safe Markdown is not a user answer; JSON-safe metadata is not a reply payload; validation pass is not answer/runtime/product authority; artifact review is not runtime authorization; OCC/OpenClaw is not deployed WESLR.
 - Next lane after this context alignment: `REVIEW_CONTROLLED_REPLY_TEXT_CHAIN_AND_DEFINE_NEXT_STEP_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, edit helper/source/test implementation files, create new result artifacts, execute reply text, create sendable reply text, create actual reply body text, create final-answer prose, generate final answers, create answer drafts, execute final-answer generation, execute answer composition, execute answer formation, execute prompts/live dialogue, implement user-facing output execution, wire runtime, call/import `ChatResponder`/`respond_chat`/`generate_chat`, call providers/search/advisors/models, read/write `.weslr`, enable feature flags, create judges/scores, make official claims, grant authority, or start unauthorized next-lane work.
 
+
+### Latest Context Alignment — Controlled Reply Preview Helpers Design Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- Controlled reply preview helpers design exists and is reviewed.
+- Design: `docs/WESLR_CONTROLLED_REPLY_PREVIEW_HELPERS_V1.md`.
+- Review: `docs/WESLR_CONTROLLED_REPLY_PREVIEW_HELPERS_REVIEW_V1.md`.
+- Judgment: `controlled_reply_preview_helpers_design_valid_ready_for_context_alignment`.
+- Proposed future implementation files: `weslr/controlled_reply_preview.py`, `weslr/tests/test_controlled_reply_preview_v1.py`.
+- Proposed future APIs: `build_controlled_reply_preview_artifact_v1`, `validate_controlled_reply_preview_artifact_v1`, `summarize_controlled_reply_preview_artifact_v1`, `render_controlled_reply_preview_artifact_markdown_v1`, `to_controlled_reply_preview_artifact_json_safe_v1`.
+- Validation passed: release gate PASS; release check PASS; `weslr/chat_responder.py` untouched PASS; optional py_compile PASS; requested pytest suites PASS.
+- Gaps: no blocking design gaps. Deferred gaps remain: no preview implementation/execution, no reply text execution, no sendable reply text, no runtime, and no authority grants.
+- Boundary status: design review only; no helper implementation yet; no reply preview execution; no reply text execution; no sendable reply text; no actual reply body; no final-answer prose; no answer drafts; no live dialogue; no user-facing output execution; no runtime wiring; no `ChatResponder`/`respond_chat`/`generate_chat` calls or imports; no provider/search/advisor/model calls; no `.weslr` IO; no feature flags; no judges/scores; no official claims; no answer/preview/reply-text/user-facing-output/composition/runtime/official evaluation authority granted; no reply-preview result artifact created.
+- Preserve visible risk: helper design does not grant implementation authority; helper design does not grant preview authority; helper design does not grant sendable reply authority; helper design does not grant runtime authority; metadata must not become reply preview output; safe Markdown must not become a user answer; JSON-safe metadata must not become a reply payload; validation pass is not answer/runtime/product authority; OCC/OpenClaw is not deployed WESLR.
+- Next lane after this context alignment: `IMPLEMENT_CONTROLLED_REPLY_PREVIEW_HELPERS_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, create sendable reply text, create actual reply body, execute reply preview, execute reply text, create final-answer prose, generate final answers, create answer drafts, implement user-facing output execution, execute prompts, create live dialogue, wire runtime, call/import `ChatResponder`/`respond_chat`/`generate_chat`, call providers/search/advisors/models, read/write `.weslr`, enable feature flags, create judges/scores, make official claims, grant authority, or create a reply-preview result artifact.
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
