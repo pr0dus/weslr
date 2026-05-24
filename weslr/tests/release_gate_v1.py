@@ -4038,6 +4038,54 @@ _controlled_final_answer_generation_helpers_implementation_review_required_marke
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_FINAL_ANSWER_GENERATION_HELPERS_IMPLEMENTATION_V1",
 }
 
+_controlled_final_answer_generation_result_design_doc = "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_V1.md"
+_controlled_final_answer_generation_result_design_required_markers = {
+    "WESLR Controlled Final-Answer Generation Result V1",
+    "DESIGN_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_V1",
+    "REVIEW_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_DESIGN_V1",
+    "docs/WESLR_CONTROLLED_FINAL_ANSWER_GENERATION_RESULT_ARTIFACT_V1.md",
+    "Allowed Source Helper Output",
+    "Validation-Before-Result-Writing Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Blocked / Invalid Result Behavior",
+    "No-Final-Answer-Execution Boundary",
+    "No-Answer-Draft Boundary",
+    "No-User-Facing-Output Boundary",
+    "No-Runtime Boundary",
+    "No-Provider / Search / Advisor Boundary",
+    "No-Official-Claims Boundary",
+    "Visible Risks And Followups",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "result_artifact_created: false",
+    "final_answer_generation_executed: false",
+    "final_answer_generated: false",
+    "final_answer_prose_created: false",
+    "answer_draft_created: false",
+    "user_facing_output_created: false",
+    "answer_composition_executed: false",
+    "answer_formation_executed: false",
+    "runtime_wired: false",
+    "chat_responder_called: false",
+    "respond_chat_called: false",
+    "generate_chat_called: false",
+    "provider_call_made: false",
+    "model_call_made: false",
+    "search_call_made: false",
+    "advisor_call_made: false",
+    "dot_weslr_write_performed: false",
+    "feature_flag_enabled: false",
+    "judges_created: false",
+    "scores_created: false",
+    "official_claim_made: false",
+    "answer_authority_granted: false",
+    "composition_authority_granted: false",
+    "runtime_authority_granted: false",
+    "official_evaluation_authority_granted: false",
+}
+
 _plan_helper_flag_on_local_observation_design_doc = "docs/WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1.md"
 _plan_helper_flag_on_local_observation_design_required_markers = {
     "WESLR_PLAN_HELPER_FLAG_ON_LOCAL_OBSERVATION_DESIGN_V1",
@@ -5192,6 +5240,13 @@ def _controlled_final_answer_generation_helpers_implementation_review_doc_is_val
     )
 
 
+def _controlled_final_answer_generation_result_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_final_answer_generation_result_design_doc,
+        _controlled_final_answer_generation_result_design_required_markers,
+    )
+
+
 def _plan_helper_flag_on_local_observation_design_doc_is_valid():
     return _doc_with_markers_is_valid(_plan_helper_flag_on_local_observation_design_doc, _plan_helper_flag_on_local_observation_design_required_markers)
 
@@ -5534,6 +5589,7 @@ def _check_git_scope():
     controlled_final_answer_generation_helpers_doc_valid = _controlled_final_answer_generation_helpers_doc_is_valid()
     controlled_final_answer_generation_helpers_review_doc_valid = _controlled_final_answer_generation_helpers_review_doc_is_valid()
     controlled_final_answer_generation_helpers_implementation_review_doc_valid = _controlled_final_answer_generation_helpers_implementation_review_doc_is_valid()
+    controlled_final_answer_generation_result_design_doc_valid = _controlled_final_answer_generation_result_design_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
     plan_helper_observation_reporting_design_doc_valid = _plan_helper_observation_reporting_design_doc_is_valid()
     behavior_evaluation_turing_style_readiness_doc_valid = _behavior_evaluation_turing_style_readiness_doc_is_valid()
@@ -6073,6 +6129,10 @@ def _check_git_scope():
             allowed = controlled_final_answer_generation_helpers_implementation_review_doc_valid
             if not controlled_final_answer_generation_helpers_implementation_review_doc_valid:
                 violations.append(f"  controlled final answer generation helpers implementation review missing required markers: {path}")
+        if path == _controlled_final_answer_generation_result_design_doc:
+            allowed = controlled_final_answer_generation_result_design_doc_valid
+            if not controlled_final_answer_generation_result_design_doc_valid:
+                violations.append(f"  controlled final answer generation result design missing required markers: {path}")
         if path == _plan_helper_flag_on_local_observation_design_doc:
             allowed = plan_helper_flag_on_local_observation_design_doc_valid
             if not plan_helper_flag_on_local_observation_design_doc_valid:
