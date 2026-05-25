@@ -31,6 +31,21 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Reasoning Substrate Map Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR reasoning substrate map design is reviewed and valid for context alignment.
+- Design path: `docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md`.
+- Review path: `docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md`; review commit `7933f37`; judgment `reasoning_substrate_map_design_valid_ready_for_context_alignment`.
+- Substrate map covers: input interpretation; context and memory trust; evidence/provenance boundary; uncertainty and calibration; contradiction detection; blindspot detection; invariant/pattern mining; intent reconstruction; causal trace / failure mode analysis; candidate response formation; authority and claim ladder checks; safe final response assembly.
+- `CALIBRATION_LEDGER` position is confirmed: uncertainty-feedback metadata only, not answer authority, scoring authority, judging authority, official evaluation authority, runtime authority, or conversation authority.
+- Confirmed architecture gaps before more implementation or real-text conversation testing: context/memory trust + evidence boundary; candidate response formation substrate; response-facing authority/claim checkpoint.
+- Direction check after review: **A — continue next narrow helper lane** is viable but not preferred because it risks helper sprawl without response integration; **B — pause/review direction** is viable; **C — design/update architecture further before implementation** is recommended.
+- Current recommended next lane: `DESIGN_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1`. Do not start it from this context alignment packet; it must be separately authorized and should remain design-only unless a later implementation lane is explicitly approved.
+- Still blocked / not authorized: runtime/chat wiring, user-facing output, live dialogue, provider/model/search/advisor calls, `.weslr` IO, challenge/engine/conversation execution, scoring/judging, final answers, public/final/proof/open-problem/scientific/official claims, public release text, authority grants, edits to `weslr/chat_responder.py`, and automatic engine-specific helper expansion.
+- Current boundary rule remains: the reviewed reasoning substrate map may inform a future separately authorized context/memory trust plus evidence/provenance boundary design lane only. It does not authorize implementation, execution, runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, final answers, official claims, or authority grants.
+
 ### Latest Context Alignment — CALIBRATION_LEDGER Exploratory Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
