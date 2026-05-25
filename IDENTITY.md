@@ -31,6 +31,24 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Safe Final Response Assembly Shadow Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR safe final response assembly shadow boundary design is reviewed and valid for context alignment.
+- Design path: `docs/WESLR_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_REVIEW_V1.md`; review commit `41ea579`; judgment `safe_final_response_assembly_shadow_boundary_design_valid_ready_for_context_alignment`.
+- Duplicate-risk alignment: PASS. The boundary is a thin alignment layer joining candidate-response and response-facing authority checkpoint work to the existing controlled answer/final-answer/user-facing-output/reply-text/reply-preview/output-precondition lineage; it is not a new parallel final-answer lifecycle.
+- Assembly boundary coverage: PASS. Future shadow assembly input must carry approved candidate metadata, authority checkpoint outcome, source-scope validation, grounding/evidence/provenance status, uncertainty/clarification/refusal requirements, forbidden claims, missing-source warnings, locale/language constraints, privacy/redaction status, denied authority summary, and safe next step.
+- Multi-user source-scope rule: missing tenant/account/session/conversation/source scope is a hard block for any memory, context, evidence, artifact, upload, cache, log, trace, queue, daemon, background, transcript, profile, timeline, or runtime dependency.
+- Allowed response modes are metadata-only constraints: `concise_answer_allowed`, `partial_answer_with_uncertainty`, `clarification_only`, `evidence_request_only`, `refusal_or_boundary_only`, `safer_reframing_only`, and `blocked_no_output`.
+- Blocked conditions include rejected candidates; missing tenant/account/session/conversation/source scope; missing provenance for risky claims; raw/private leakage; stale memory as current fact; memory as verified evidence; official/product/certification claims; scientific/open-problem claims without validation; runtime/browser/provider/`.weslr` authority implication; cross-user influence; and duplicate lifecycle bypass.
+- Output/runtime/authority blocked: PASS. Still blocked and not authorized: final-answer generation, real user-facing output, runtime/chat/browser wiring, provider/model/search/advisor calls, `.weslr` public runtime state, execution, scoring/judging, official/public/product/certification claims, and authority grants.
+- Gaps: no revision-required gaps found. Future work still requires a direction review before implementation, not direct assembly helper implementation.
+- Direction check: **A — context alignment now** is viable and completed by this packet. **B — pause/review architecture before implementation** is recommended before any assembly helper implementation. **C — implement namespace/read-authorization helpers before assembly helpers** is recommended before public/browser/runtime use.
+- Current recommended next lane: a direction review before implementation, not direct assembly helper implementation. Do not start helper implementation from this context alignment packet; any future lane must be separately authorized and must preserve no-output/no-runtime/no-authority boundaries.
+- Current boundary rule remains: the reviewed safe final response assembly shadow boundary may inform future separately authorized direction review or architecture/namespace/read-authorization work only. It does not authorize final-answer generation, real user-facing output, runtime/chat/browser behavior, provider/model/search/advisor calls, `.weslr` public runtime state, execution, scoring/judging, official claims, or authority grants.
+
 ### Latest Context Alignment — Multi-User Session Tenant Isolation Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
