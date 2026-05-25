@@ -1645,3 +1645,20 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 - Still blocked: runtime/chat/browser wiring; provider/model/search/advisor calls; `.weslr` public state; execution; scoring/judging; final answers; public/final/proof/open-problem/scientific/official claims; authority grants.
 - Next lane after this context alignment: `DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1`. Do not start it from this context alignment packet. It must be separately authorized and must carry the multi-user retrofit constraints, especially mandatory namespace/source scope and authorization-before-read preconditions.
 
+### Latest Context Alignment — Response-Facing Authority Claim Checkpoint Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR.
+- Response-facing authority/claim checkpoint design is reviewed and valid for context alignment.
+- Design: `docs/WESLR_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1.md`.
+- Review: `docs/WESLR_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_REVIEW_V1.md`.
+- Judgment: `response_facing_authority_claim_checkpoint_design_valid_ready_for_context_alignment`.
+- Review commit: `9f543bf`.
+- Source-scope rule: candidates depending on memory/context/evidence/artifact/upload/cache/log/trace input without explicit owner/session/tenant/source scope must be rejected.
+- Claim ladder: `conversational_low_risk`; `personal_context_dependent`; `factual_claim_needs_evidence`; `current_or_external_claim_needs_source`; `professional_high_stakes_claim_needs_boundary`; `scientific_open_problem_claim_needs_validation`; `official_public_product_certification_claim_forbidden_without_separate_authorization`.
+- Checkpoint outcomes: allow; allow with uncertainty; require clarification; require evidence; transform safer; refuse/boundary; reject; block public runtime; escalate design review.
+- Gaps: no revision-required gaps. Future work remains: implementation; namespace schema; central read authorization; scoped adapters; cache/log scoping; async context; leakage tests; guest/session/account/auth boundaries; deletion/export/retention controls; safe final assembly boundary.
+- Still blocked: final-answer generation; runtime/chat/browser wiring; provider/model/search/advisor calls; `.weslr` public state; execution; scoring/judging; official/product/certification claims; authority grants.
+- Direction check: A — proceed to safe final response assembly shadow boundary design, recommended; B — pause/review architecture before safe final assembly; C — implement namespace/read-authorization helpers before safe final assembly.
+- Next lane after this context alignment: `DESIGN_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1`. Do not start it from this context alignment packet. It must be separately authorized and must still preserve no runtime, no output, no final-answer authority, no unscoped reads, no provider/model/search/advisor calls, no `.weslr` public state, no scoring/judging, no official/product/certification claims, and no authority grants.
+
