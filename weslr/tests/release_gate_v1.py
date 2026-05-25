@@ -4871,6 +4871,7 @@ _unknown_engine_helpers_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_REVIEW_V
 _unknown_engine_helpers_implementation_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _unknown_engine_helpers_validation_fix_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_VALIDATION_FIX_REVIEW_V1.md"
 _unknown_engine_result_artifact_boundary_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1.md"
+_unknown_engine_result_artifact_boundary_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5588,6 +5589,44 @@ _unknown_engine_result_artifact_boundary_required_markers = {
     "provider_call_made=false",
     "official_claim_made=false",
     "REVIEW_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1",
+}
+
+
+_unknown_engine_result_artifact_boundary_review_required_markers = {
+    "WESLR UNKNOWN ENGINE Result Artifact Boundary Review V1",
+    "unknown_engine_result_artifact_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1.md",
+    "design-only",
+    "boundary-only",
+    "internal-only",
+    "metadata-only",
+    "no implementation",
+    "no artifact implementation",
+    "no artifact created",
+    "no UNKNOWN ENGINE execution",
+    "no CognitiveGymRun execution",
+    "no Cognitive Gym execution",
+    "no runtime wiring",
+    "no prediction output",
+    "no future-certainty claims",
+    "no open-problem solution claims",
+    "no reply output",
+    "no preview output",
+    "no final-answer prose",
+    "no answer drafts",
+    "no user-facing output",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` IO",
+    "no judges/scores",
+    "no official claims",
+    "no authority grants",
+    "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1.md",
+    "weslr/unknown_engine_result_artifact.py",
+    "weslr/tests/test_unknown_engine_result_artifact_v1.py",
+    "Validation-Before-Artifact Findings",
+    "Frontier / Open Problem Findings",
+    "Blocked Behavior Findings",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1",
 }
 
 
@@ -7894,6 +7933,13 @@ def _unknown_engine_result_artifact_boundary_doc_is_valid():
     )
 
 
+def _unknown_engine_result_artifact_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_result_artifact_boundary_review_doc,
+        _unknown_engine_result_artifact_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8368,6 +8414,7 @@ def _check_git_scope():
     unknown_engine_helpers_implementation_review_doc_valid = _unknown_engine_helpers_implementation_review_doc_is_valid()
     unknown_engine_helpers_validation_fix_review_doc_valid = _unknown_engine_helpers_validation_fix_review_doc_is_valid()
     unknown_engine_result_artifact_boundary_doc_valid = _unknown_engine_result_artifact_boundary_doc_is_valid()
+    unknown_engine_result_artifact_boundary_review_doc_valid = _unknown_engine_result_artifact_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9101,6 +9148,10 @@ def _check_git_scope():
             allowed = unknown_engine_result_artifact_boundary_doc_valid
             if not unknown_engine_result_artifact_boundary_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE result artifact boundary doc missing required markers: {path}")
+        if path == _unknown_engine_result_artifact_boundary_review_doc:
+            allowed = unknown_engine_result_artifact_boundary_review_doc_valid
+            if not unknown_engine_result_artifact_boundary_review_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE result artifact boundary review doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
