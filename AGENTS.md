@@ -19,21 +19,23 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
-### Latest Context Alignment — CALIBRATION_LEDGER Exploratory Helpers Review
+### Latest Context Alignment — CALIBRATION_LEDGER Exploratory Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
 - OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
-- `CALIBRATION_LEDGER` exploratory helpers design is reviewed and valid for context alignment.
-- Design path: `docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_V1.md`.
-- Review path: `docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_REVIEW_V1.md`; review commit `414787d`; judgment `calibration_ledger_exploratory_helpers_design_valid_ready_for_context_alignment`.
-- `CALIBRATION_LEDGER` remains the first one-family-only engine-specific exploratory helper target.
-- The design inherits the reviewed shared Cognitive Gym exploratory case helper discipline and must preserve the shared APIs/metadata shape: `build_cognitive_gym_exploratory_case_v1`, `validate_cognitive_gym_exploratory_case_v1`, `summarize_cognitive_gym_exploratory_case_v1`, `render_cognitive_gym_exploratory_case_markdown_v1`, and `to_cognitive_gym_exploratory_case_json_safe_v1`.
-- Future paths/APIs remain target-only: `weslr/calibration_ledger_exploratory_helpers.py`, `weslr/tests/test_calibration_ledger_exploratory_helpers_v1.py`, and proposed `build_`, `validate_`, `summarize_`, `render_`, and `to_json_safe` CALIBRATION_LEDGER helper APIs. No CALIBRATION_LEDGER helper implementation is authorized yet.
-- Reviewed design coverage includes bounded calibration metadata (`calibration_case_id`, `predicted_branch_label`, `confidence_label`, `uncertainty_label`, `observed_outcome_label`, `mismatch_label`, `correction_label`, `lesson_label`, `calibration_status`), mapping to shared exploratory case fields, validation rules, safe Markdown rules, JSON-safe conversion, blocked metadata behavior, false denied authority fields, claim-ladder preservation, and external-validation requirements.
-- Still blocked / not authorized: runtime/chat wiring, user-facing output, live dialogue, challenge/engine execution, scoring/judging, provider/model/search/advisor calls, `.weslr` IO, final answers, proof/open-problem/scientific/official claims, public release text, authority grants, edits to `weslr/chat_responder.py`, edits to shared helper implementation/test files, and engine-specific helper/source/test implementation.
+- `CALIBRATION_LEDGER` exploratory helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/calibration_ledger_exploratory_helpers.py`.
+- Test path: `weslr/tests/test_calibration_ledger_exploratory_helpers_v1.py`.
+- Review path: `docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `02be3c8`; judgment `calibration_ledger_exploratory_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs implemented and reviewed: `build_calibration_ledger_exploratory_case_v1`, `validate_calibration_ledger_exploratory_case_v1`, `summarize_calibration_ledger_exploratory_case_v1`, `render_calibration_ledger_exploratory_case_markdown_v1`, and `to_calibration_ledger_exploratory_case_json_safe_v1`.
+- Current status: helper-only, metadata-only, `CALIBRATION_LEDGER`-only, deterministic, import-safe, side-effect-free, pure in-memory, validation-before-rendering, JSON-safe, blocked-metadata preserving, and shared Cognitive Gym exploratory case helper inheritance preserved.
+- Confirmed mapping: bounded calibration metadata (`calibration_case_id`, `predicted_branch_label`, `confidence_label`, `uncertainty_label`, `observed_outcome_label`, `mismatch_label`, `correction_label`, `lesson_label`, `calibration_status`) maps into the reviewed shared exploratory case shape while retaining `engine_specific_metadata.calibration_ledger` containment.
+- Validation behavior blocks unsupported engine family/status, missing required calibration metadata, missing or true denied authority fields, unsafe content, runtime/output/final-answer/proof/official/scoring/provider/`.weslr` indicators, and non-JSON-safe values.
+- Tests passed in the implementation/review chain: `python3 -m pytest -q weslr/tests/test_calibration_ledger_exploratory_helpers_v1.py` passed, 16 passed; `python3 -m pytest -q weslr/tests/test_cognitive_gym_exploratory_case_v1.py` passed, 20 passed.
+- Still blocked / not authorized: runtime/chat wiring, user-facing output, live dialogue, provider/model/search/advisor calls, `.weslr` IO, scoring/judging, challenge/engine execution, final answers, proof/open-problem/scientific/official claims, public release text, authority grants, edits to `weslr/chat_responder.py`, and automatic expansion to another engine-specific helper family.
 - Public/final/official claim promotion still requires external validation and separate reviewed authorization. Validation pass is not proof, scoring, product readiness, official evaluation, runtime authorization, chat authority, or public-claim permission.
-- Current boundary rule remains: the reviewed CALIBRATION_LEDGER helper design may inform a future separately authorized implementation lane only. It does not authorize implementation, execution, runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, final answers, official claims, or authority grants.
-- Next lane: `IMPLEMENT_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_V1` only if owner approves; otherwise pause and review direction.
+- Direction check after context alignment: do not automatically implement another engine-specific helper. Operator should choose explicitly: **A — continue with next narrow helper lane**, **B — pause/review direction**, or **C — design/update broader reasoning substrate map**.
+- Current boundary rule remains: the reviewed `CALIBRATION_LEDGER` helper implementation may inform a future separately authorized lane only. It does not authorize runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, scoring/judging, execution, final answers, official claims, or authority grants.
 
 ### Latest Context Alignment — First Engine-Specific Exploratory Helper Boundary Review
 
