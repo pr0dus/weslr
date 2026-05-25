@@ -4900,6 +4900,7 @@ _candidate_response_formation_substrate_review_doc = "docs/WESLR_CANDIDATE_RESPO
 _existing_multi_user_session_tenant_isolation_audit_doc = "docs/WESLR_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_AUDIT_V1.md"
 _multi_user_session_tenant_isolation_boundary_doc = "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1.md"
 _multi_user_session_tenant_isolation_boundary_review_doc = "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_REVIEW_V1.md"
+_existing_implementations_multi_user_boundary_audit_doc = "docs/WESLR_EXISTING_IMPLEMENTATIONS_MULTI_USER_BOUNDARY_AUDIT_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -7370,6 +7371,45 @@ _unknown_engine_boundary_review_required_markers = {
 
 
 _controlled_reply_preview_boundary_review_doc = "docs/WESLR_CONTROLLED_REPLY_PREVIEW_BOUNDARY_REVIEW_V1.md"
+_existing_implementations_multi_user_boundary_audit_required_markers = {
+    "WESLR Existing Implementations Multi-User Boundary Audit V1",
+    "AUDIT_EXISTING_IMPLEMENTATIONS_MULTI_USER_BOUNDARY_V1",
+    "audit-only / inventory-review",
+    "docs/WESLR_EXISTING_IMPLEMENTATIONS_MULTI_USER_BOUNDARY_AUDIT_V1.md",
+    "existing_implementations_need_multi_user_retrofit_before_public_browser_runtime",
+    "Inventory Table",
+    "safe_metadata_only_not_runtime_wired",
+    "safe_if_kept_helper_only",
+    "needs_namespace_guard_before_runtime_use",
+    "needs_authorization_guard_before_read",
+    "needs_upload_or_artifact_owner_scope",
+    "needs_cache_or_log_scoping",
+    "blocked_for_public_browser_runtime",
+    "Prior Implementation Impact",
+    "Shared Cognitive Gym exploratory case helpers",
+    "CALIBRATION_LEDGER exploratory helpers",
+    "Reasoning substrate map",
+    "Context/memory trust and evidence boundary",
+    "Candidate response formation substrate",
+    "Multi-User Retrofit Requirements",
+    "Namespace schema helper",
+    "Central read authorization helper",
+    "Scoped memory/context read adapter",
+    "Scoped artifact/upload registry",
+    "Cache/log/trace scoping",
+    "Leakage negative tests",
+    "Guest/session boundary",
+    "Account/auth boundary",
+    "Deletion/export/retention controls",
+    "Safe Status",
+    "Must not be wired yet",
+    "C — design multi-user retrofit plan before response-facing authority checkpoint",
+    "DESIGN_MULTI_USER_RETROFIT_PLAN_BEFORE_RESPONSE_FACING_AUTHORITY_CHECKPOINT_V1",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "did not change `weslr/chat_responder.py`",
+}
+
 _controlled_reply_preview_boundary_review_required_markers = {
     "WESLR Controlled Reply Preview Boundary Review V1",
     "controlled_reply_preview_boundary_design_valid_ready_for_context_alignment",
@@ -9554,6 +9594,13 @@ def _multi_user_session_tenant_isolation_boundary_review_doc_is_valid():
     )
 
 
+def _existing_implementations_multi_user_boundary_audit_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _existing_implementations_multi_user_boundary_audit_doc,
+        _existing_implementations_multi_user_boundary_audit_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -10057,6 +10104,7 @@ def _check_git_scope():
     existing_multi_user_session_tenant_isolation_audit_doc_valid = _existing_multi_user_session_tenant_isolation_audit_doc_is_valid()
     multi_user_session_tenant_isolation_boundary_doc_valid = _multi_user_session_tenant_isolation_boundary_doc_is_valid()
     multi_user_session_tenant_isolation_boundary_review_doc_valid = _multi_user_session_tenant_isolation_boundary_review_doc_is_valid()
+    existing_implementations_multi_user_boundary_audit_doc_valid = _existing_implementations_multi_user_boundary_audit_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10906,6 +10954,10 @@ def _check_git_scope():
             allowed = multi_user_session_tenant_isolation_boundary_review_doc_valid
             if not multi_user_session_tenant_isolation_boundary_review_doc_valid:
                 violations.append(f"  multi-user session tenant isolation boundary review missing required markers: {path}")
+        if path == _existing_implementations_multi_user_boundary_audit_doc:
+            allowed = existing_implementations_multi_user_boundary_audit_doc_valid
+            if not existing_implementations_multi_user_boundary_audit_doc_valid:
+                violations.append(f"  existing implementations multi-user boundary audit missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
