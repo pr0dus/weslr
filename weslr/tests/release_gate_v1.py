@@ -8290,6 +8290,25 @@ _occ_weslr_bootstrap_context_required_markers = {
     "unsupported biological/theological/soul/consciousness",
 }
 
+_response_facing_authority_claim_checkpoint_doc = "docs/WESLR_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1.md"
+_response_facing_authority_claim_checkpoint_required_markers = {
+    "DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "design-only",
+    "no runtime wiring",
+    "no public/browser runtime permission",
+    "Reject any candidate that uses or depends on memory",
+    "without explicit owner/session/tenant/source scope",
+    "conversational_low_risk",
+    "official_public_product_certification_claim_forbidden_without_separate_authorization",
+    "allow_as_candidate_for_final_assembly",
+    "reject_candidate",
+    "grants_final_answer_authority: false",
+    "permits_unscoped_memory_reads: false",
+    "permits_cross_user_context: false",
+    "REVIEW_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "DESIGN_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -9831,6 +9850,13 @@ def _occ_weslr_bootstrap_context_doc_is_valid(path):
     return path in _occ_weslr_bootstrap_context_docs and _doc_with_markers_is_valid(path, _occ_weslr_bootstrap_context_required_markers)
 
 
+def _response_facing_authority_claim_checkpoint_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _response_facing_authority_claim_checkpoint_doc,
+        _response_facing_authority_claim_checkpoint_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10078,6 +10104,7 @@ def _check_git_scope():
     controlled_answer_composition_dry_run_execution_result_review_doc_valid = _controlled_answer_composition_dry_run_execution_result_review_doc_is_valid()
     controlled_answer_composition_dry_run_to_answer_formation_bridge_doc_valid = _controlled_answer_composition_dry_run_to_answer_formation_bridge_doc_is_valid()
     controlled_answer_composition_dry_run_to_answer_formation_bridge_review_doc_valid = _controlled_answer_composition_dry_run_to_answer_formation_bridge_review_doc_is_valid()
+    response_facing_authority_claim_checkpoint_doc_valid = _response_facing_authority_claim_checkpoint_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11141,6 +11168,10 @@ def _check_git_scope():
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
                 violations.append(f"  OCC/WESLR bootstrap context doc missing required markers: {path}")
+        if path == _response_facing_authority_claim_checkpoint_doc:
+            allowed = response_facing_authority_claim_checkpoint_doc_valid
+            if not response_facing_authority_claim_checkpoint_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
