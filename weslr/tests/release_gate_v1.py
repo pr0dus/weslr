@@ -8366,6 +8366,24 @@ _safe_final_response_assembly_shadow_boundary_review_required_markers = {
     "direction check B/C before implementation is present and justified",
 }
 
+_direction_review_after_safe_final_response_assembly_shadow_boundary_doc = "docs/WESLR_DIRECTION_REVIEW_AFTER_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1.md"
+_direction_review_after_safe_final_response_assembly_shadow_boundary_required_markers = {
+    "REVIEW_DIRECTION_AFTER_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1",
+    "direction_ready_for_namespace_schema_design_before_assembly_helpers",
+    "DESIGN_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1",
+    "Reasoning substrate map",
+    "Context/memory trust and evidence boundary",
+    "Candidate response formation substrate",
+    "Response-facing authority/claim checkpoint",
+    "Safe final response assembly shadow boundary",
+    "Multi-user/session/tenant isolation boundary",
+    "final-answer generation",
+    "unscoped memory/context/evidence reads",
+    "Risk of implementing assembly helpers before namespace/read guards",
+    "No runtime step is authorized",
+    "No public/browser step is authorized",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -9935,6 +9953,13 @@ def _safe_final_response_assembly_shadow_boundary_review_doc_is_valid():
     )
 
 
+def _direction_review_after_safe_final_response_assembly_shadow_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _direction_review_after_safe_final_response_assembly_shadow_boundary_doc,
+        _direction_review_after_safe_final_response_assembly_shadow_boundary_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10186,6 +10211,7 @@ def _check_git_scope():
     response_facing_authority_claim_checkpoint_review_doc_valid = _response_facing_authority_claim_checkpoint_review_doc_is_valid()
     safe_final_response_assembly_shadow_boundary_doc_valid = _safe_final_response_assembly_shadow_boundary_doc_is_valid()
     safe_final_response_assembly_shadow_boundary_review_doc_valid = _safe_final_response_assembly_shadow_boundary_review_doc_is_valid()
+    direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid = _direction_review_after_safe_final_response_assembly_shadow_boundary_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11265,6 +11291,10 @@ def _check_git_scope():
             allowed = safe_final_response_assembly_shadow_boundary_review_doc_valid
             if not safe_final_response_assembly_shadow_boundary_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _direction_review_after_safe_final_response_assembly_shadow_boundary_doc:
+            allowed = direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid
+            if not direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid:
+                violations.append(f"  direction review doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
