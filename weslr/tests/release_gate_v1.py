@@ -8384,6 +8384,27 @@ _direction_review_after_safe_final_response_assembly_shadow_boundary_required_ma
     "No public/browser step is authorized",
 }
 
+_namespace_schema_and_source_scope_helpers_design_doc = "docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1.md"
+_namespace_schema_and_source_scope_helpers_design_required_markers = {
+    "DESIGN_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1",
+    "design-only",
+    "tenant_id",
+    "account_id",
+    "conversation_id",
+    "source_scope_id",
+    "source_owner_kind",
+    "build_source_scope_v1",
+    "validate_source_scope_v1",
+    "require_source_scope_for_candidate_v1",
+    "Query-string `user_id` is not identity authority",
+    "Global `.weslr` is invalid as public multi-user scope",
+    "`tl_default` is invalid as shared user scope",
+    "permits_public_browser_runtime: false",
+    "permits_unscoped_memory_reads: false",
+    "permits_final_answer_generation: false",
+    "Recommendation: A",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -9960,6 +9981,13 @@ def _direction_review_after_safe_final_response_assembly_shadow_boundary_doc_is_
     )
 
 
+def _namespace_schema_and_source_scope_helpers_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _namespace_schema_and_source_scope_helpers_design_doc,
+        _namespace_schema_and_source_scope_helpers_design_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10212,6 +10240,7 @@ def _check_git_scope():
     safe_final_response_assembly_shadow_boundary_doc_valid = _safe_final_response_assembly_shadow_boundary_doc_is_valid()
     safe_final_response_assembly_shadow_boundary_review_doc_valid = _safe_final_response_assembly_shadow_boundary_review_doc_is_valid()
     direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid = _direction_review_after_safe_final_response_assembly_shadow_boundary_doc_is_valid()
+    namespace_schema_and_source_scope_helpers_design_doc_valid = _namespace_schema_and_source_scope_helpers_design_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11295,6 +11324,10 @@ def _check_git_scope():
             allowed = direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid
             if not direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid:
                 violations.append(f"  direction review doc missing required markers: {path}")
+        if path == _namespace_schema_and_source_scope_helpers_design_doc:
+            allowed = namespace_schema_and_source_scope_helpers_design_doc_valid
+            if not namespace_schema_and_source_scope_helpers_design_doc_valid:
+                violations.append(f"  design doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
