@@ -8348,6 +8348,24 @@ _safe_final_response_assembly_shadow_boundary_required_markers = {
     "Recommendation: B or C before any assembly helper implementation",
 }
 
+_safe_final_response_assembly_shadow_boundary_review_doc = "docs/WESLR_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_REVIEW_V1.md"
+_safe_final_response_assembly_shadow_boundary_review_required_markers = {
+    "REVIEW_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1",
+    "safe_final_response_assembly_shadow_boundary_design_valid_ready_for_context_alignment",
+    "review-only",
+    "no runtime changes",
+    "Duplicate-Risk Alignment Review",
+    "thin alignment",
+    "No assembly may proceed if candidate metadata lacks valid tenant/account/session/conversation/source scope",
+    "safe_final_response_assembly_shadow_v1",
+    "concise_answer_allowed",
+    "blocked_no_output",
+    "generates_user_facing_text: false",
+    "permits_cross_user_context: false",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1",
+    "direction check B/C before implementation is present and justified",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -9910,6 +9928,13 @@ def _safe_final_response_assembly_shadow_boundary_doc_is_valid():
     )
 
 
+def _safe_final_response_assembly_shadow_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _safe_final_response_assembly_shadow_boundary_review_doc,
+        _safe_final_response_assembly_shadow_boundary_review_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10160,6 +10185,7 @@ def _check_git_scope():
     response_facing_authority_claim_checkpoint_doc_valid = _response_facing_authority_claim_checkpoint_doc_is_valid()
     response_facing_authority_claim_checkpoint_review_doc_valid = _response_facing_authority_claim_checkpoint_review_doc_is_valid()
     safe_final_response_assembly_shadow_boundary_doc_valid = _safe_final_response_assembly_shadow_boundary_doc_is_valid()
+    safe_final_response_assembly_shadow_boundary_review_doc_valid = _safe_final_response_assembly_shadow_boundary_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11235,6 +11261,10 @@ def _check_git_scope():
             allowed = safe_final_response_assembly_shadow_boundary_doc_valid
             if not safe_final_response_assembly_shadow_boundary_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _safe_final_response_assembly_shadow_boundary_review_doc:
+            allowed = safe_final_response_assembly_shadow_boundary_review_doc_valid
+            if not safe_final_response_assembly_shadow_boundary_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
