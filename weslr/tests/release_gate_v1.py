@@ -4897,6 +4897,7 @@ _context_memory_trust_and_evidence_boundary_doc = "docs/WESLR_CONTEXT_MEMORY_TRU
 _context_memory_trust_and_evidence_boundary_review_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_REVIEW_V1.md"
 _candidate_response_formation_substrate_doc = "docs/WESLR_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1.md"
 _candidate_response_formation_substrate_review_doc = "docs/WESLR_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_REVIEW_V1.md"
+_existing_multi_user_session_tenant_isolation_audit_doc = "docs/WESLR_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_AUDIT_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5924,6 +5925,32 @@ _candidate_response_formation_substrate_review_required_markers = {
     "no authority grants",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1",
     "DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+}
+
+_existing_multi_user_session_tenant_isolation_audit_required_markers = {
+    "WESLR Existing Multi-User Session Tenant Isolation Audit V1",
+    "AUDIT_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_IMPLEMENTATION_V1",
+    "audit-only / inventory-review",
+    "docs/WESLR_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_AUDIT_V1.md",
+    "Existing Implementation Inventory",
+    "Tenant context implementation",
+    "Bootstrap and timeline identity foundation",
+    "Channel identity and profile implementation",
+    "Entity memory and memory capture implementation",
+    "Session/artifact continuity implementation",
+    "Voice/browser gateway implementation",
+    "Multi-User / Session / Tenant Isolation Assessment",
+    "Memory / Context Leakage Risks",
+    "Browser / Public / International Readiness",
+    "existing_multi_user_isolation_partial_needs_boundary_design_before_public_runtime",
+    "Cross-user memory/context leakage risk exists",
+    "C — design MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1 before response-facing authority or public/browser runtime",
+    "DESIGN_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "no `.weslr` reads/writes performed by this audit",
+    "no provider/model/search/advisor calls",
+    "did not edit `weslr/chat_responder.py`",
 }
 
 _controlled_reply_preview_result_design_required_markers = {
@@ -9406,6 +9433,12 @@ def _candidate_response_formation_substrate_review_doc_is_valid():
         _candidate_response_formation_substrate_review_required_markers,
     )
 
+def _existing_multi_user_session_tenant_isolation_audit_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _existing_multi_user_session_tenant_isolation_audit_doc,
+        _existing_multi_user_session_tenant_isolation_audit_required_markers,
+    )
+
 
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -9907,6 +9940,7 @@ def _check_git_scope():
     context_memory_trust_and_evidence_boundary_review_doc_valid = _context_memory_trust_and_evidence_boundary_review_doc_is_valid()
     candidate_response_formation_substrate_doc_valid = _candidate_response_formation_substrate_doc_is_valid()
     candidate_response_formation_substrate_review_doc_valid = _candidate_response_formation_substrate_review_doc_is_valid()
+    existing_multi_user_session_tenant_isolation_audit_doc_valid = _existing_multi_user_session_tenant_isolation_audit_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10744,6 +10778,10 @@ def _check_git_scope():
             allowed = candidate_response_formation_substrate_review_doc_valid
             if not candidate_response_formation_substrate_review_doc_valid:
                 violations.append(f"  candidate response formation substrate review missing required markers: {path}")
+        if path == _existing_multi_user_session_tenant_isolation_audit_doc:
+            allowed = existing_multi_user_session_tenant_isolation_audit_doc_valid
+            if not existing_multi_user_session_tenant_isolation_audit_doc_valid:
+                violations.append(f"  existing multi-user session tenant isolation audit missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
