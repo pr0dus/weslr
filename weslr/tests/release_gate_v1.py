@@ -4872,6 +4872,7 @@ _unknown_engine_helpers_implementation_review_doc = "docs/WESLR_UNKNOWN_ENGINE_H
 _unknown_engine_helpers_validation_fix_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_VALIDATION_FIX_REVIEW_V1.md"
 _unknown_engine_result_artifact_boundary_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1.md"
 _unknown_engine_result_artifact_boundary_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_REVIEW_V1.md"
+_unknown_engine_result_artifact_helpers_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5627,6 +5628,56 @@ _unknown_engine_result_artifact_boundary_review_required_markers = {
     "Frontier / Open Problem Findings",
     "Blocked Behavior Findings",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_UNKNOWN_ENGINE_RESULT_ARTIFACT_BOUNDARY_V1",
+}
+
+
+_unknown_engine_result_artifact_helpers_required_markers = {
+    "WESLR UNKNOWN ENGINE Result Artifact Helpers V1",
+    "DESIGN_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_V1",
+    "Helper Purpose",
+    "Non-Goals",
+    "Relationship To UNKNOWN ENGINE Helpers",
+    "Relationship To CognitiveGymRun Metadata",
+    "Relationship To Result Artifact Boundary",
+    "Future Target Paths",
+    "Future Public APIs",
+    "Input Contract",
+    "Artifact Shape",
+    "Allowed Artifact Fields",
+    "Forbidden Artifact Fields / Content",
+    "Validation-Before-Artifact Policy",
+    "Blocked Artifact Behavior",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Frontier / Open Problem Boundary",
+    "Visible Risks",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "weslr/unknown_engine_result_artifact.py",
+    "weslr/tests/test_unknown_engine_result_artifact_v1.py",
+    "build_unknown_engine_result_artifact_v1",
+    "validate_unknown_engine_result_artifact_v1",
+    "summarize_unknown_engine_result_artifact_v1",
+    "render_unknown_engine_result_artifact_markdown_v1",
+    "to_unknown_engine_result_artifact_json_safe_v1",
+    "cognitive_gym_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "reply_output_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "future_certainty_claim_created=false",
+    "reply_output_created=false",
+    "final_answer_generated=false",
+    "runtime_wired=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "REVIEW_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_V1",
 }
 
 
@@ -7940,6 +7991,13 @@ def _unknown_engine_result_artifact_boundary_review_doc_is_valid():
     )
 
 
+def _unknown_engine_result_artifact_helpers_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_result_artifact_helpers_doc,
+        _unknown_engine_result_artifact_helpers_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8415,6 +8473,7 @@ def _check_git_scope():
     unknown_engine_helpers_validation_fix_review_doc_valid = _unknown_engine_helpers_validation_fix_review_doc_is_valid()
     unknown_engine_result_artifact_boundary_doc_valid = _unknown_engine_result_artifact_boundary_doc_is_valid()
     unknown_engine_result_artifact_boundary_review_doc_valid = _unknown_engine_result_artifact_boundary_review_doc_is_valid()
+    unknown_engine_result_artifact_helpers_doc_valid = _unknown_engine_result_artifact_helpers_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9152,6 +9211,10 @@ def _check_git_scope():
             allowed = unknown_engine_result_artifact_boundary_review_doc_valid
             if not unknown_engine_result_artifact_boundary_review_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE result artifact boundary review doc missing required markers: {path}")
+        if path == _unknown_engine_result_artifact_helpers_doc:
+            allowed = unknown_engine_result_artifact_helpers_doc_valid
+            if not unknown_engine_result_artifact_helpers_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE result artifact helpers design doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
