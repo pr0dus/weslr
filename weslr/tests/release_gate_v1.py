@@ -4892,6 +4892,7 @@ _calibration_ledger_exploratory_helpers_doc = "docs/WESLR_CALIBRATION_LEDGER_EXP
 _calibration_ledger_exploratory_helpers_review_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_REVIEW_V1.md"
 _calibration_ledger_exploratory_helpers_implementation_review_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _reasoning_substrate_map_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md"
+_reasoning_substrate_map_review_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5656,6 +5657,40 @@ _reasoning_substrate_map_required_markers = {
     "no `.weslr` IO",
     "no scoring/judging",
     "no authority grants",
+}
+_reasoning_substrate_map_review_required_markers = {
+    "WESLR Reasoning Substrate Map Review V1",
+    "docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md",
+    "review-only",
+    "design-only posture",
+    "Input interpretation",
+    "Context and memory trust",
+    "Evidence/provenance boundary",
+    "Uncertainty and calibration",
+    "Contradiction detection",
+    "Blindspot detection",
+    "Invariant/pattern mining",
+    "Intent reconstruction",
+    "Causal trace / failure mode analysis",
+    "Candidate response formation",
+    "Authority and claim ladder checks",
+    "Safe final response assembly",
+    "CALIBRATION_LEDGER` as uncertainty-feedback metadata",
+    "context/memory trust + evidence boundary",
+    "candidate response formation substrate",
+    "response-facing authority/claim checkpoint",
+    "A — continue next narrow helper lane",
+    "B — pause/review direction",
+    "C — design/update architecture further before implementation",
+    "reasoning_substrate_map_design_valid_ready_for_context_alignment",
+    "Blockers: none.",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "no `.weslr` reads/writes",
+    "no provider/model/search/advisor calls",
+    "no scoring/judging",
+    "no authority grants",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_REASONING_SUBSTRATE_MAP_REVIEW_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -9103,6 +9138,13 @@ def _reasoning_substrate_map_doc_is_valid():
     )
 
 
+def _reasoning_substrate_map_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _reasoning_substrate_map_review_doc,
+        _reasoning_substrate_map_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9598,6 +9640,7 @@ def _check_git_scope():
     calibration_ledger_exploratory_helpers_review_doc_valid = _calibration_ledger_exploratory_helpers_review_doc_is_valid()
     calibration_ledger_exploratory_helpers_implementation_review_doc_valid = _calibration_ledger_exploratory_helpers_implementation_review_doc_is_valid()
     reasoning_substrate_map_doc_valid = _reasoning_substrate_map_doc_is_valid()
+    reasoning_substrate_map_review_doc_valid = _reasoning_substrate_map_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10415,6 +10458,10 @@ def _check_git_scope():
             allowed = reasoning_substrate_map_doc_valid
             if not reasoning_substrate_map_doc_valid:
                 violations.append(f"  reasoning substrate map doc missing required markers: {path}")
+        if path == _reasoning_substrate_map_review_doc:
+            allowed = reasoning_substrate_map_review_doc_valid
+            if not reasoning_substrate_map_review_doc_valid:
+                violations.append(f"  reasoning substrate map review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
