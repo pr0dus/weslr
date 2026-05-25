@@ -4884,6 +4884,7 @@ _cognitive_gym_erdos_case_corpus_boundary_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_
 _cognitive_gym_erdos_case_corpus_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_exploratory_case_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_REVIEW_V1.md"
 _cognitive_gym_exploratory_case_helpers_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1.md"
+_cognitive_gym_exploratory_case_helpers_review_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5326,6 +5327,43 @@ _cognitive_gym_exploratory_case_helpers_required_markers = {
     "REVIEW_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1",
     "IMPLEMENT_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1",
     "No helpers are implemented in this lane.",
+}
+_cognitive_gym_exploratory_case_helpers_review_required_markers = {
+    "WESLR Cognitive Gym Exploratory Case Helpers Review V1",
+    "cognitive_gym_exploratory_case_helpers_design_valid_ready_for_context_alignment",
+    "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1.md",
+    "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_V1.md",
+    "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_REVIEW_V1.md",
+    "review-only",
+    "no helper implementation",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "no `.weslr` reads/writes",
+    "no provider/model/search/advisor calls",
+    "Purpose",
+    "Non-goals",
+    "Relationship to reviewed exploratory case protocol",
+    "Future helper module path only",
+    "build_cognitive_gym_exploratory_case_v1",
+    "validate_cognitive_gym_exploratory_case_v1",
+    "summarize_cognitive_gym_exploratory_case_v1",
+    "render_cognitive_gym_exploratory_case_markdown_v1",
+    "to_cognitive_gym_exploratory_case_json_safe_v1",
+    "Metadata-only case shape",
+    "Lifecycle labels",
+    "Input/output boundaries",
+    "Denied authority fields required false",
+    "Validation rules for unsafe content and unsupported claims",
+    "Blocked metadata behavior",
+    "Safe Markdown behavior",
+    "JSON-safe behavior",
+    "Claim ladder and external validation",
+    "Import-safe, deterministic, side-effect-free, in-memory expectations",
+    "Future implementation/review sequence",
+    "Abort conditions",
+    "Explicit no-helper-implementation posture",
+    "Blockers: none.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -8717,6 +8755,13 @@ def _cognitive_gym_exploratory_case_helpers_doc_is_valid():
     )
 
 
+def _cognitive_gym_exploratory_case_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_exploratory_case_helpers_review_doc,
+        _cognitive_gym_exploratory_case_helpers_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9204,6 +9249,7 @@ def _check_git_scope():
     cognitive_gym_erdos_case_corpus_boundary_review_doc_valid = _cognitive_gym_erdos_case_corpus_boundary_review_doc_is_valid()
     cognitive_gym_exploratory_case_protocol_review_doc_valid = _cognitive_gym_exploratory_case_protocol_review_doc_is_valid()
     cognitive_gym_exploratory_case_helpers_doc_valid = _cognitive_gym_exploratory_case_helpers_doc_is_valid()
+    cognitive_gym_exploratory_case_helpers_review_doc_valid = _cognitive_gym_exploratory_case_helpers_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9989,6 +10035,10 @@ def _check_git_scope():
             allowed = cognitive_gym_exploratory_case_helpers_doc_valid
             if not cognitive_gym_exploratory_case_helpers_doc_valid:
                 violations.append(f"  Cognitive Gym exploratory case helpers design missing required markers: {path}")
+        if path == _cognitive_gym_exploratory_case_helpers_review_doc:
+            allowed = cognitive_gym_exploratory_case_helpers_review_doc_valid
+            if not cognitive_gym_exploratory_case_helpers_review_doc_valid:
+                violations.append(f"  Cognitive Gym exploratory case helpers review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
