@@ -4893,6 +4893,7 @@ _calibration_ledger_exploratory_helpers_review_doc = "docs/WESLR_CALIBRATION_LED
 _calibration_ledger_exploratory_helpers_implementation_review_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _reasoning_substrate_map_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md"
 _reasoning_substrate_map_review_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md"
+_context_memory_trust_and_evidence_boundary_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5691,6 +5692,51 @@ _reasoning_substrate_map_review_required_markers = {
     "no scoring/judging",
     "no authority grants",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_REASONING_SUBSTRATE_MAP_REVIEW_V1",
+}
+_context_memory_trust_and_evidence_boundary_required_markers = {
+    "WESLR Context Memory Trust And Evidence Boundary V1",
+    "DESIGN_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1",
+    "design-only",
+    "Purpose",
+    "Non-Goals",
+    "Relationship To Reasoning Substrate Map",
+    "Why Separation Is Required Before Real-Text Conversation Testing",
+    "Context Source Categories",
+    "Current User Turn",
+    "Conversation History",
+    "Uploaded / User-Provided Material",
+    "Explicit Memory",
+    "Inferred Memory",
+    "Repo / Context Docs",
+    "External Evidence",
+    "Model-Generated Assumptions",
+    "Trust Levels",
+    "Evidence / Provenance Rules",
+    "Memory Use Rules",
+    "Memory Is Relevance Input, Not Automatic Truth",
+    "Stale Memory Needs Uncertainty",
+    "Sensitive / Private Memory Requires Boundary Handling",
+    "Inferred Memory Has Lower Authority",
+    "Context Conflict Handling",
+    "When To Ask For Clarification",
+    "When To Search Or Require External Evidence",
+    "When To Refuse To Claim Certainty",
+    "Boundary Between Internal Context And Public Answer Claims",
+    "How This Feeds Candidate Response Formation Later",
+    "Safe Metadata Shape For Future Helpers",
+    "Blocked Behavior",
+    "Denied Authority Fields",
+    "Future Implementation / Review Sequence",
+    "A — continue next narrow helper lane",
+    "B — pause/review direction",
+    "C — design candidate response formation substrate next",
+    "no runtime/chat wiring",
+    "no `weslr/chat_responder.py` edits",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` IO",
+    "no scoring/judging",
+    "no authority grants",
+    "REVIEW_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -9145,6 +9191,13 @@ def _reasoning_substrate_map_review_doc_is_valid():
     )
 
 
+def _context_memory_trust_and_evidence_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _context_memory_trust_and_evidence_boundary_doc,
+        _context_memory_trust_and_evidence_boundary_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9641,6 +9694,7 @@ def _check_git_scope():
     calibration_ledger_exploratory_helpers_implementation_review_doc_valid = _calibration_ledger_exploratory_helpers_implementation_review_doc_is_valid()
     reasoning_substrate_map_doc_valid = _reasoning_substrate_map_doc_is_valid()
     reasoning_substrate_map_review_doc_valid = _reasoning_substrate_map_review_doc_is_valid()
+    context_memory_trust_and_evidence_boundary_doc_valid = _context_memory_trust_and_evidence_boundary_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10462,6 +10516,10 @@ def _check_git_scope():
             allowed = reasoning_substrate_map_review_doc_valid
             if not reasoning_substrate_map_review_doc_valid:
                 violations.append(f"  reasoning substrate map review missing required markers: {path}")
+        if path == _context_memory_trust_and_evidence_boundary_doc:
+            allowed = context_memory_trust_and_evidence_boundary_doc_valid
+            if not context_memory_trust_and_evidence_boundary_doc_valid:
+                violations.append(f"  context memory trust and evidence boundary missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
