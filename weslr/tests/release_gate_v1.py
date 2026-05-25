@@ -4894,6 +4894,7 @@ _calibration_ledger_exploratory_helpers_implementation_review_doc = "docs/WESLR_
 _reasoning_substrate_map_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md"
 _reasoning_substrate_map_review_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md"
 _context_memory_trust_and_evidence_boundary_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1.md"
+_context_memory_trust_and_evidence_boundary_review_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5738,6 +5739,42 @@ _context_memory_trust_and_evidence_boundary_required_markers = {
     "no authority grants",
     "REVIEW_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1",
 }
+
+_context_memory_trust_and_evidence_boundary_review_required_markers = {
+    "WESLR Context Memory Trust And Evidence Boundary Review V1",
+    "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_REVIEW_V1.md",
+    "review-only",
+    "design-only posture",
+    "relationship to reasoning substrate map",
+    "Context source categories are covered",
+    "Trust levels are clear",
+    "Memory is relevance input, not automatic truth",
+    "Stale/inferred/private context gets lower authority or boundary handling",
+    "Evidence/provenance rules are clear",
+    "Factual claim candidates require provenance",
+    "Context conflicts are preserved instead of erased",
+    "Uncertainty/certainty rules are clear",
+    "Clarification/search/external-evidence boundaries are defined",
+    "Internal context is separated from public answer claims",
+    "Future candidate response formation handoff is clear",
+    "Blocked behavior coverage",
+    "Safe future metadata shape is present",
+    "Denied authority fields remain false",
+    "No implementation/runtime authority granted",
+    "context_memory_trust_and_evidence_boundary_design_valid_ready_for_context_alignment",
+    "Blockers: none.",
+    "A — continue next narrow helper lane",
+    "B — pause/review direction",
+    "C — design candidate response formation substrate next",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "no `.weslr` reads/writes",
+    "no provider/model/search/advisor calls",
+    "no scoring/judging",
+    "no authority grants",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1",
+}
+
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -9198,6 +9235,13 @@ def _context_memory_trust_and_evidence_boundary_doc_is_valid():
     )
 
 
+def _context_memory_trust_and_evidence_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _context_memory_trust_and_evidence_boundary_review_doc,
+        _context_memory_trust_and_evidence_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9695,6 +9739,7 @@ def _check_git_scope():
     reasoning_substrate_map_doc_valid = _reasoning_substrate_map_doc_is_valid()
     reasoning_substrate_map_review_doc_valid = _reasoning_substrate_map_review_doc_is_valid()
     context_memory_trust_and_evidence_boundary_doc_valid = _context_memory_trust_and_evidence_boundary_doc_is_valid()
+    context_memory_trust_and_evidence_boundary_review_doc_valid = _context_memory_trust_and_evidence_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10520,6 +10565,10 @@ def _check_git_scope():
             allowed = context_memory_trust_and_evidence_boundary_doc_valid
             if not context_memory_trust_and_evidence_boundary_doc_valid:
                 violations.append(f"  context memory trust and evidence boundary missing required markers: {path}")
+        if path == _context_memory_trust_and_evidence_boundary_review_doc:
+            allowed = context_memory_trust_and_evidence_boundary_review_doc_valid
+            if not context_memory_trust_and_evidence_boundary_review_doc_valid:
+                violations.append(f"  context memory trust and evidence boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
