@@ -19,6 +19,23 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
+### Latest Context Alignment — Cognitive Gym Exploratory Case Protocol Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Cognitive Gym exploratory case protocol design is reviewed and valid for context alignment.
+- Design doc: `docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_V1.md`.
+- Review report: `docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_REVIEW_V1.md`; review commit `3870d20`; judgment `cognitive_gym_exploratory_case_protocol_design_valid_ready_for_context_alignment`.
+- Confirmed posture: design-only shared metadata/report protocol; no helpers, engines, runner, scoring, judging, protocol implementation, result artifacts, challenge execution, runtime/chat wiring, provider/model/search/advisor calls, `.weslr` IO, final answers, proof/open-problem/scientific discovery claims, official benchmark/Turing/intelligence/certification/consciousness claims, or authority grants.
+- Protocol purpose: all future Cognitive Gym engines and engine families must share one governed exploratory case structure before engine-specific helpers are designed, preventing disconnected chaotic modules.
+- Lifecycle discipline: safe metadata labels include `case_defined`, `intake_validated`, `exploratory_not_started`, `exploratory_candidate`, `partial_structure_found`, `failed_attempt_recorded`, `invalidated`, `correction_recorded`, `needs_external_review`, `externally_validated`, `claim_forbidden_without_validation`, and `blocked_by_boundary`; these are not scores or public claims.
+- Record-shape discipline: future exploratory case records remain metadata-only and follow CognitiveGymRun-style reporting: protocol/case/engine/domain metadata, input state, assumptions, constraints, observations, hypotheses, candidate structures, attempts, failed paths, invalidation signals, predictions/branch labels, confidence, uncertainty, reveal/outcome, correction, compressed lesson, boundary status, denied authority fields, validation status, review requirements, and next allowed steps.
+- Claim ladder remains non-skippable: internal observation → internal hypothesis → candidate structure → reviewed candidate → externally checked candidate → validated result → public claim. WESLR may not skip levels.
+- Doctrine preserved: stage protections block unsupported claims, uncontrolled authority, runtime/chat overreach, fake achievements, and public/final/official claims without external validation; they are not permanent bans on future authorized internal exploratory cognition.
+- Public/final/official claims require external validation and separate authorization. Validation pass is not scoring, proof, product readiness, official evaluation, runtime authorization, chat authority, or public-claim permission.
+- Current boundary rule remains: the reviewed protocol may inform a future separately authorized shared exploratory case helpers design lane only. It does not authorize helpers, implementation, engine-specific helpers, execution, result artifacts, runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, scoring/judging, public/final/official claims, or authority grants.
+- Recommended next lane after this context alignment: `DESIGN_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1`. Do not start it from this context alignment packet; it must be separately authorized and must preserve shared protocol/helper discipline before engine-specific helpers.
+
 ### Latest Context Alignment — Exploratory Problem Work Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
