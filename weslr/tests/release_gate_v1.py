@@ -4877,6 +4877,71 @@ _unknown_engine_result_artifact_helpers_review_doc = "docs/WESLR_UNKNOWN_ENGINE_
 _unknown_engine_result_artifact_helpers_implementation_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _unknown_engine_result_artifact_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1.md"
 _unknown_engine_result_artifact_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_REVIEW_V1.md"
+_cognitive_gym_erdos_challenge_track_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1.md"
+_cognitive_gym_erdos_challenge_track_required_markers = {
+    "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
+    "challenge-track-design-only",
+    "ERDŐS / open mathematical structure",
+    "Frontier-math discipline first",
+    "Track Purpose",
+    "Non-Goals",
+    "Relationship To CognitiveGymRun",
+    "Relationship To UNKNOWN ENGINE",
+    "Relationship To Frontier / Open-Problem Boundary",
+    "Allowed Challenge Categories",
+    "Forbidden Challenge Categories And Content",
+    "Tier 0 — prerequisite reconstruction",
+    "Tier 1 — solved Erdős-style problems",
+    "Tier 2 — bounded / toy variants",
+    "Tier 3 — partially solved / known frontier variants",
+    "Tier 4 — open-problem boundary mapping",
+    "Tier 5 — counterexample and falsification planning",
+    "Tier 6 — subproblem generation",
+    "Tier 7 — proof-audit discipline",
+    "Input Schema Design",
+    "Expected Metadata Output Shape",
+    "Validation Policy",
+    "Safe Markdown Policy",
+    "JSON-Safe Policy",
+    "Denied Authority Fields",
+    "Blocked Behavior",
+    "Visible Risks",
+    "Abort Conditions",
+    "Future Implementation / Review Sequence",
+    "cognitive_gym_authority_granted=false",
+    "cognitive_gym_run_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "challenge_solution_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "preview_authority_granted=false",
+    "reply_output_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "turing_test_authority_granted=false",
+    "cognitive_gym_executed=false",
+    "cognitive_gym_run_executed=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "future_certainty_claim_created=false",
+    "challenge_solution_claim_created=false",
+    "final_answer_generated=false",
+    "final_answer_prose_created=false",
+    "runtime_wired=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "dot_weslr_read_performed=false",
+    "dot_weslr_write_performed=false",
+    "judges_created=false",
+    "scores_created=false",
+    "official_claim_made=false",
+    "REVIEW_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
+}
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -8218,6 +8283,13 @@ def _unknown_engine_result_artifact_review_doc_is_valid():
     )
 
 
+def _cognitive_gym_erdos_challenge_track_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_erdos_challenge_track_doc,
+        _cognitive_gym_erdos_challenge_track_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8698,6 +8770,7 @@ def _check_git_scope():
     unknown_engine_result_artifact_helpers_implementation_review_doc_valid = _unknown_engine_result_artifact_helpers_implementation_review_doc_is_valid()
     unknown_engine_result_artifact_doc_valid = _unknown_engine_result_artifact_doc_is_valid()
     unknown_engine_result_artifact_review_doc_valid = _unknown_engine_result_artifact_review_doc_is_valid()
+    cognitive_gym_erdos_challenge_track_doc_valid = _cognitive_gym_erdos_challenge_track_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9455,6 +9528,10 @@ def _check_git_scope():
             allowed = unknown_engine_result_artifact_review_doc_valid
             if not unknown_engine_result_artifact_review_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE result artifact review doc missing required markers: {path}")
+        if path == _cognitive_gym_erdos_challenge_track_doc:
+            allowed = cognitive_gym_erdos_challenge_track_doc_valid
+            if not cognitive_gym_erdos_challenge_track_doc_valid:
+                violations.append(f"  Cognitive Gym Erdős challenge track doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
