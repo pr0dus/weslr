@@ -4868,6 +4868,7 @@ _cognitive_gym_run_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_
 _cognitive_gym_run_protocol_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _unknown_engine_helpers_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_V1.md"
 _unknown_engine_helpers_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_REVIEW_V1.md"
+_unknown_engine_helpers_implementation_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5525,6 +5526,28 @@ _unknown_engine_helpers_required_markers = {
     "frontier/open-problem mapping is not a solution claim",
     "Erdős/Millennium-style challenge language is not proof of solving ability",
     "REVIEW_UNKNOWN_ENGINE_HELPERS_V1",
+}
+
+
+_unknown_engine_helpers_implementation_review_required_markers = {
+    "WESLR UNKNOWN ENGINE Helpers Implementation Review V1",
+    "unknown_engine_helpers_implementation_blocked_do_not_use",
+    "weslr/unknown_engine.py",
+    "weslr/tests/test_unknown_engine_v1.py",
+    "build_unknown_engine_run_v1",
+    "validate_unknown_engine_run_v1",
+    "summarize_unknown_engine_run_v1",
+    "render_unknown_engine_run_markdown_v1",
+    "to_unknown_engine_run_json_safe_v1",
+    "CognitiveGymRun-backed",
+    "engine_specific_metadata[\"unknown_engine_metadata\"]",
+    "validation coverage is incomplete",
+    "reply output: ...",
+    "user-facing output: ...",
+    "preview output: ...",
+    "final-answer prose",
+    "answer draft: ...",
+    "FIX_UNKNOWN_ENGINE_HELPERS_VALIDATION_BLOCKS_V1",
 }
 
 
@@ -7788,6 +7811,13 @@ def _unknown_engine_helpers_review_doc_is_valid():
     )
 
 
+def _unknown_engine_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_helpers_implementation_review_doc,
+        _unknown_engine_helpers_implementation_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8259,6 +8289,7 @@ def _check_git_scope():
     cognitive_gym_run_protocol_helpers_implementation_review_doc_valid = _cognitive_gym_run_protocol_helpers_implementation_review_doc_is_valid()
     unknown_engine_helpers_doc_valid = _unknown_engine_helpers_doc_is_valid()
     unknown_engine_helpers_review_doc_valid = _unknown_engine_helpers_review_doc_is_valid()
+    unknown_engine_helpers_implementation_review_doc_valid = _unknown_engine_helpers_implementation_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8980,6 +9011,10 @@ def _check_git_scope():
             allowed = unknown_engine_helpers_review_doc_valid
             if not unknown_engine_helpers_review_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE helpers review missing required markers: {path}")
+        if path == _unknown_engine_helpers_implementation_review_doc:
+            allowed = unknown_engine_helpers_implementation_review_doc_valid
+            if not unknown_engine_helpers_implementation_review_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE helpers implementation review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
