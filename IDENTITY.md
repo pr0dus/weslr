@@ -31,6 +31,26 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Multi-User Session Tenant Isolation Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR multi-user/session/tenant isolation boundary is reviewed and valid for context alignment.
+- Audit path: `docs/WESLR_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_AUDIT_V1.md`.
+- Design path: `docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_REVIEW_V1.md`; review commit `9d3a1a8`; judgment `multi_user_session_tenant_isolation_boundary_design_valid_ready_for_context_alignment`.
+- Audit coverage: Existing implementation has partial foundations, but missing public/browser boundaries are carried forward. Partial foundations include tenant path utilities, bootstrap/timeline identity, channel/profile evidence, entity-scoped memory, session-keyed artifacts, voice timeline routing, and some tenant-aware stores. Missing boundaries include authenticated browser account boundary, universal namespace, central read authorization, guest isolation, public upload isolation, async-safe request scoping, deletion/export controls, and leakage negative tests.
+- Public/browser readiness: current WESLR remains blocked for public/international multi-user runtime until helpers, guards, and leakage tests exist.
+- Required namespace model: tenant; account/user; session; conversation; workspace/project; artifact; upload; memory scope; locale/language.
+- Core rule: no memory/context/artifact/upload/cache/log/trace/candidate input read without explicit owner/session/tenant scope.
+- Leakage risks confirmed: global `.weslr`; `tl_default`; query-string `user_id` as sufficient identity; global artifacts; mutable globals; optional namespace keys; incomplete read authorization; session-only artifact registry; unscoped caches; raw private logs/traces.
+- Public/browser prerequisites: authenticated account boundary; guest session boundary; central authorization before reads; upload ownership/deletion; export/delete/retention policy; locale/language handling; rate/load/concurrency boundaries; private-safe audit logging; leakage negative tests; admin/operator boundary; no cross-user learning without explicit anonymized policy.
+- Relationship to cognition: candidate response formation must know whose context, memory, evidence, session, and tenant it is using before ranking, composing, or handing off to any response-facing authority/claim checkpoint.
+- Still blocked / not authorized: runtime/chat/browser wiring, provider/model/search/advisor calls, `.weslr` public state, execution, scoring/judging, final answers, public/final/proof/open-problem/scientific/official claims, authority grants, edits to `weslr/chat_responder.py`, and automatic implementation expansion.
+- Direction check remains **C — review this multi-user boundary first, then context alignment, then continue architecture**. This context alignment completes that review/context step; continue architecture before implementation.
+- Current recommended next lane: `DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1`. Do not start it from this context alignment packet; it must be separately authorized and should remain design-only unless a later implementation lane is explicitly approved.
+- Current boundary rule remains: the reviewed multi-user/session/tenant isolation boundary may inform future separately authorized response-facing authority/claim checkpoint design only. It does not authorize implementation, execution, runtime/chat/browser behavior, provider/model/search/advisor calls, `.weslr` IO/public state, final answers, official claims, or authority grants.
+
 ### Latest Context Alignment — Context Memory Trust And Evidence Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
