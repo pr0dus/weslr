@@ -19,6 +19,24 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
+### Latest Context Alignment — First Engine-Specific Exploratory Helper Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- First engine-specific exploratory helper boundary is designed and reviewed as valid for context alignment.
+- Boundary design path: `docs/WESLR_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_V1.md`.
+- Boundary review path: `docs/WESLR_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_REVIEW_V1.md`; review commit `0c43d5e`; judgment `first_engine_specific_exploratory_helper_boundary_valid_ready_for_context_alignment`.
+- Selected first engine-specific target: `CALIBRATION_LEDGER`.
+- Suitability: `CALIBRATION_LEDGER` is low-authority calibration metadata only; it can focus on confidence labels, uncertainty labels, reveal/outcome notes, correction notes, invalidation signals, and compressed lessons without execution, proof, scoring, provider/model/search/advisor calls, runtime dependency, or `.weslr` persistence.
+- One-family-only rule: the next engine-specific lane must cover exactly one engine-specific helper family. The selected/recommended family is `CALIBRATION_LEDGER`; do not mix it with UNKNOWN_ENGINE, CONTRADICTION_FURNACE, COUNTERFACTUAL_ENGINE, BLINDSPOT_ENGINE, INVARIANT_MINER, INTENT_RECONSTRUCTION_ENGINE, GOVERNANCE_BOUNDARY_ENGINE, CAUSAL_TRACE_ENGINE, FAILURE_MODE_SIMULATOR, MEMORY_TRUST_ENGINE, ABSTRACTION_LADDER, SIGNAL_VS_NOISE_ENGINE, Erdős/open-structure work, or any other engine family in the same lane.
+- Future `CALIBRATION_LEDGER` helper design must inherit the reviewed shared Cognitive Gym exploratory case helper APIs and metadata shape: `build_cognitive_gym_exploratory_case_v1`, `validate_cognitive_gym_exploratory_case_v1`, `summarize_cognitive_gym_exploratory_case_v1`, `render_cognitive_gym_exploratory_case_markdown_v1`, and `to_cognitive_gym_exploratory_case_json_safe_v1`.
+- Allowed future behavior is limited to bounded metadata mapping, calibration labels, validation extensions, blocked reason labels, safe summaries, JSON-safe metadata conversion, safe Markdown after validation, invalidation/correction metadata, and next safe lane recommendations.
+- Still blocked / not authorized: engine-specific helper implementation, runtime/chat wiring, user-facing output, live dialogue, challenge/engine execution, scoring/judging, provider/model/search/advisor calls, `.weslr` IO, final answers, proof/open-problem/scientific/official claims, public release text, authority grants, and edits to `weslr/chat_responder.py` or shared helper implementation/test files.
+- Denied authority fields must remain present and false. Validation-before-rendering, blocked metadata behavior, JSON-safe conversion, safe Markdown constraints, and external-validation requirements remain preserved.
+- Public/final/official claim promotion still requires external validation and separate reviewed authorization; validation pass is not proof, scoring, product readiness, official evaluation, runtime authorization, chat authority, or public-claim permission.
+- Current boundary rule remains: the reviewed boundary may inform a future separately authorized `CALIBRATION_LEDGER` design lane only. It does not authorize implementation, execution, runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, final answers, official claims, or authority grants.
+- Recommended next lane after this context alignment: `DESIGN_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_V1`. Do not start it from this context alignment packet; it must be separately authorized and must remain design-only unless a later implementation lane is explicitly approved.
+
 ### Latest Context Alignment — Cognitive Gym Exploratory Case Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
