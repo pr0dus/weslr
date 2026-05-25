@@ -4882,6 +4882,7 @@ _cognitive_gym_erdos_challenge_track_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDO
 _cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _cognitive_gym_erdos_case_corpus_boundary_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1.md"
 _cognitive_gym_erdos_case_corpus_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_REVIEW_V1.md"
+_cognitive_gym_exploratory_case_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5228,6 +5229,56 @@ _cognitive_gym_erdos_case_corpus_boundary_review_required_markers = {
     "official_claim_made=false",
     "No blocking design gaps found.",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1",
+}
+
+_cognitive_gym_exploratory_case_protocol_review_required_markers = {
+    "WESLR Cognitive Gym Exploratory Case Protocol Review V1",
+    "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_V1.md",
+    "docs/WESLR_EXPLORATORY_PROBLEM_WORK_BOUNDARY_V1.md",
+    "docs/WESLR_EXPLORATORY_PROBLEM_WORK_BOUNDARY_REVIEW_V1.md",
+    "cognitive_gym_exploratory_case_protocol_design_valid_ready_for_context_alignment",
+    "review-only",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "governed exploratory problem work",
+    "isolated chaotic modules",
+    "UNKNOWN_ENGINE",
+    "CALIBRATION_LEDGER",
+    "CONTRADICTION_FURNACE",
+    "GOVERNANCE_BOUNDARY_ENGINE",
+    "COUNTERFACTUAL_ENGINE",
+    "BLINDSPOT_ENGINE",
+    "INVARIANT_MINER",
+    "INTENT_RECONSTRUCTION_ENGINE",
+    "CAUSAL_TRACE_ENGINE",
+    "FAILURE_MODE_SIMULATOR",
+    "MEMORY_TRUST_ENGINE",
+    "ABSTRACTION_LADDER",
+    "SIGNAL_VS_NOISE_ENGINE",
+    "case_defined",
+    "intake_validated",
+    "exploratory_not_started",
+    "exploratory_candidate",
+    "partial_structure_found",
+    "failed_attempt_recorded",
+    "invalidated",
+    "correction_recorded",
+    "needs_external_review",
+    "externally_validated",
+    "claim_forbidden_without_validation",
+    "blocked_by_boundary",
+    "protocol_version",
+    "case_id",
+    "problem_statement_metadata",
+    "predictions_or_branch_labels",
+    "denied_authority_fields",
+    "validation_status",
+    "next_allowed_steps",
+    "CognitiveGymRun-style reporting philosophy",
+    "claim ladder is non-skippable",
+    "Public claims require external validation and separate authorization.",
+    "Validation pass is not scoring, proof, product readiness, official evaluation, runtime authorization, or chat authority.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_EXPLORATORY_CASE_PROTOCOL_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -8605,6 +8656,13 @@ def _cognitive_gym_erdos_case_corpus_boundary_review_doc_is_valid():
     )
 
 
+def _cognitive_gym_exploratory_case_protocol_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_exploratory_case_protocol_review_doc,
+        _cognitive_gym_exploratory_case_protocol_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9090,6 +9148,7 @@ def _check_git_scope():
     cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc_valid = _cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc_is_valid()
     cognitive_gym_erdos_case_corpus_boundary_doc_valid = _cognitive_gym_erdos_case_corpus_boundary_doc_is_valid()
     cognitive_gym_erdos_case_corpus_boundary_review_doc_valid = _cognitive_gym_erdos_case_corpus_boundary_review_doc_is_valid()
+    cognitive_gym_exploratory_case_protocol_review_doc_valid = _cognitive_gym_exploratory_case_protocol_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9867,6 +9926,10 @@ def _check_git_scope():
             allowed = cognitive_gym_erdos_case_corpus_boundary_review_doc_valid
             if not cognitive_gym_erdos_case_corpus_boundary_review_doc_valid:
                 violations.append(f"  Cognitive Gym Erdős case corpus boundary review doc missing required markers: {path}")
+        if path == _cognitive_gym_exploratory_case_protocol_review_doc:
+            allowed = cognitive_gym_exploratory_case_protocol_review_doc_valid
+            if not cognitive_gym_exploratory_case_protocol_review_doc_valid:
+                violations.append(f"  Cognitive Gym exploratory case protocol review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
