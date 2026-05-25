@@ -4867,6 +4867,7 @@ _cognitive_gym_run_protocol_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_V1.md"
 _cognitive_gym_run_protocol_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_REVIEW_V1.md"
 _cognitive_gym_run_protocol_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_RUN_PROTOCOL_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _unknown_engine_helpers_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_V1.md"
+_unknown_engine_helpers_review_doc = "docs/WESLR_UNKNOWN_ENGINE_HELPERS_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5524,6 +5525,86 @@ _unknown_engine_helpers_required_markers = {
     "frontier/open-problem mapping is not a solution claim",
     "Erdős/Millennium-style challenge language is not proof of solving ability",
     "REVIEW_UNKNOWN_ENGINE_HELPERS_V1",
+}
+
+
+_unknown_engine_helpers_review_required_markers = {
+    "WESLR UNKNOWN ENGINE Helpers Review V1",
+    "unknown_engine_helpers_design_valid_ready_for_context_alignment",
+    "docs/WESLR_UNKNOWN_ENGINE_HELPERS_V1.md",
+    "design-only",
+    "helper-design-only",
+    "CognitiveGymRun-first",
+    "internal-only",
+    "metadata-only",
+    "no UNKNOWN ENGINE implementation",
+    "no UNKNOWN ENGINE helpers created",
+    "no Cognitive Gym implementation",
+    "no individual engine implementation",
+    "no execution",
+    "no result artifact",
+    "no prediction output",
+    "no future-certainty claims",
+    "no open-problem solution claims",
+    "no reply output",
+    "no final answers",
+    "no runtime wiring",
+    "no ChatResponder/respond_chat/generate_chat calls/imports",
+    "no providers/search/advisors/models",
+    "no `.weslr` IO",
+    "no judges/scores",
+    "no official claims",
+    "no authority grants",
+    "weslr/chat_responder.py` untouched",
+    "helper purpose",
+    "non-goals",
+    "relationship to UNKNOWN ENGINE boundary",
+    "relationship to CognitiveGymRun protocol helpers",
+    "future helper module path",
+    "future test module path",
+    "future public APIs",
+    "CognitiveGymRun mapping",
+    "UNKNOWN ENGINE-specific metadata containment",
+    "validation policy",
+    "safe Markdown policy",
+    "JSON-safe policy",
+    "blocked behavior",
+    "denied authority fields",
+    "visible risks",
+    "abort conditions",
+    "future implementation/review sequence",
+    "weslr/unknown_engine.py",
+    "weslr/tests/test_unknown_engine_v1.py",
+    "build_unknown_engine_run_v1",
+    "validate_unknown_engine_run_v1",
+    "summarize_unknown_engine_run_v1",
+    "render_unknown_engine_run_markdown_v1",
+    "to_unknown_engine_run_json_safe_v1",
+    "engine_name = UNKNOWN_ENGINE",
+    "challenge_track = UNKNOWN / uncertainty",
+    "all required CognitiveGymRun fields",
+    "all denied authority fields present and false",
+    "validation-before-rendering",
+    "engine_specific_metadata",
+    "frontier/open-problem mapping is metadata only",
+    "Erdős/Millennium-style challenge language is not proof of solving ability",
+    "cognitive_gym_authority_granted=false",
+    "cognitive_gym_run_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "unknown_engine_executed=false",
+    "prediction_output_created=false",
+    "runtime_wired=false",
+    "chat_responder_called=false",
+    "provider_call_made=false",
+    "official_claim_made=false",
+    "No blocking design gaps were found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_UNKNOWN_ENGINE_HELPERS_V1",
 }
 
 _cognitive_gym_run_protocol_required_markers = {
@@ -7700,6 +7781,13 @@ def _unknown_engine_helpers_doc_is_valid():
     )
 
 
+def _unknown_engine_helpers_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_helpers_review_doc,
+        _unknown_engine_helpers_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8170,6 +8258,7 @@ def _check_git_scope():
     cognitive_gym_run_protocol_review_doc_valid = _cognitive_gym_run_protocol_review_doc_is_valid()
     cognitive_gym_run_protocol_helpers_implementation_review_doc_valid = _cognitive_gym_run_protocol_helpers_implementation_review_doc_is_valid()
     unknown_engine_helpers_doc_valid = _unknown_engine_helpers_doc_is_valid()
+    unknown_engine_helpers_review_doc_valid = _unknown_engine_helpers_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -8887,6 +8976,10 @@ def _check_git_scope():
             allowed = unknown_engine_helpers_doc_valid
             if not unknown_engine_helpers_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE helpers design missing required markers: {path}")
+        if path == _unknown_engine_helpers_review_doc:
+            allowed = unknown_engine_helpers_review_doc_valid
+            if not unknown_engine_helpers_review_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE helpers review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
