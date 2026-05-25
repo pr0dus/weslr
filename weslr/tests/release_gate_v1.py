@@ -4881,6 +4881,7 @@ _cognitive_gym_erdos_challenge_track_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CHALL
 _cognitive_gym_erdos_challenge_track_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _cognitive_gym_erdos_case_corpus_boundary_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1.md"
+_cognitive_gym_erdos_case_corpus_boundary_review_doc = "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5162,6 +5163,71 @@ _cognitive_gym_erdos_case_corpus_boundary_required_markers = {
     "Corpus is not official benchmark evidence.",
     "OCC/OpenClaw is not deployed WESLR.",
     "REVIEW_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1",
+}
+_cognitive_gym_erdos_case_corpus_boundary_review_required_markers = {
+    "WESLR Cognitive Gym Erdős Case Corpus Boundary Review V1",
+    "cognitive_gym_erdos_case_corpus_boundary_design_valid_ready_for_context_alignment",
+    "docs/WESLR_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1.md",
+    "design-only",
+    "boundary-only",
+    "internal-only",
+    "metadata-only",
+    "no corpus file",
+    "no corpus implementation",
+    "no runner",
+    "no scoring",
+    "no judges",
+    "no challenge execution",
+    "no result artifacts",
+    "no final answers",
+    "no proof claims",
+    "no open-problem solution claims",
+    "no official claims",
+    "no authority",
+    "Required Design Coverage Confirmed",
+    "Allowed Case Types Confirmed",
+    "Forbidden Content Confirmed",
+    "Safe Case Metadata Shape Confirmed",
+    "Validation Policy Confirmed",
+    "Denied Authority Confirmed",
+    "Visible Risks Confirmed",
+    "Corpus boundary is not corpus implementation.",
+    "Corpus metadata is not challenge execution.",
+    "Case inclusion is not proof of solving ability.",
+    "Open-problem mapping is not solution evidence.",
+    "Proof-audit cases are not proof validation.",
+    "Validation pass is not scoring.",
+    "Corpus is not official benchmark evidence.",
+    "OCC/OpenClaw is not deployed WESLR.",
+    "cognitive_gym_authority_granted=false",
+    "cognitive_gym_run_authority_granted=false",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "challenge_solution_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "reply_output_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "cognitive_gym_executed=false",
+    "cognitive_gym_run_executed=false",
+    "unknown_engine_executed=false",
+    "final_answer_generated=false",
+    "final_answer_prose_created=false",
+    "runtime_wired=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "dot_weslr_read_performed=false",
+    "dot_weslr_write_performed=false",
+    "judges_created=false",
+    "scores_created=false",
+    "official_claim_made=false",
+    "No blocking design gaps found.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_COGNITIVE_GYM_ERDOS_CASE_CORPUS_BOUNDARY_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -8532,6 +8598,13 @@ def _cognitive_gym_erdos_case_corpus_boundary_doc_is_valid():
     )
 
 
+def _cognitive_gym_erdos_case_corpus_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cognitive_gym_erdos_case_corpus_boundary_review_doc,
+        _cognitive_gym_erdos_case_corpus_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9016,6 +9089,7 @@ def _check_git_scope():
     cognitive_gym_erdos_challenge_track_review_doc_valid = _cognitive_gym_erdos_challenge_track_review_doc_is_valid()
     cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc_valid = _cognitive_gym_erdos_challenge_track_helpers_implementation_review_doc_is_valid()
     cognitive_gym_erdos_case_corpus_boundary_doc_valid = _cognitive_gym_erdos_case_corpus_boundary_doc_is_valid()
+    cognitive_gym_erdos_case_corpus_boundary_review_doc_valid = _cognitive_gym_erdos_case_corpus_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9789,6 +9863,10 @@ def _check_git_scope():
             allowed = cognitive_gym_erdos_case_corpus_boundary_doc_valid
             if not cognitive_gym_erdos_case_corpus_boundary_doc_valid:
                 violations.append(f"  Cognitive Gym Erdős case corpus boundary doc missing required markers: {path}")
+        if path == _cognitive_gym_erdos_case_corpus_boundary_review_doc:
+            allowed = cognitive_gym_erdos_case_corpus_boundary_review_doc_valid
+            if not cognitive_gym_erdos_case_corpus_boundary_review_doc_valid:
+                violations.append(f"  Cognitive Gym Erdős case corpus boundary review doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
