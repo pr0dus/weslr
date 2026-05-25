@@ -8309,6 +8309,27 @@ _response_facing_authority_claim_checkpoint_required_markers = {
     "DESIGN_SAFE_FINAL_RESPONSE_ASSEMBLY_SHADOW_BOUNDARY_V1",
 }
 
+_response_facing_authority_claim_checkpoint_review_doc = "docs/WESLR_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_REVIEW_V1.md"
+_response_facing_authority_claim_checkpoint_review_required_markers = {
+    "REVIEW_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "response_facing_authority_claim_checkpoint_design_valid_ready_for_context_alignment",
+    "review-only",
+    "no runtime changes",
+    "no final-answer generation",
+    "source-scope",
+    "Reject any candidate that uses or depends on memory",
+    "global `.weslr` public state",
+    "tl_default",
+    "query-string `user_id`",
+    "conversational_low_risk",
+    "official_public_product_certification_claim_forbidden_without_separate_authorization",
+    "allow_as_candidate_for_final_assembly",
+    "reject_candidate",
+    "metadata-only",
+    "denied authority fields remain false",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -9857,6 +9878,13 @@ def _response_facing_authority_claim_checkpoint_doc_is_valid():
     )
 
 
+def _response_facing_authority_claim_checkpoint_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _response_facing_authority_claim_checkpoint_review_doc,
+        _response_facing_authority_claim_checkpoint_review_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10105,6 +10133,7 @@ def _check_git_scope():
     controlled_answer_composition_dry_run_to_answer_formation_bridge_doc_valid = _controlled_answer_composition_dry_run_to_answer_formation_bridge_doc_is_valid()
     controlled_answer_composition_dry_run_to_answer_formation_bridge_review_doc_valid = _controlled_answer_composition_dry_run_to_answer_formation_bridge_review_doc_is_valid()
     response_facing_authority_claim_checkpoint_doc_valid = _response_facing_authority_claim_checkpoint_doc_is_valid()
+    response_facing_authority_claim_checkpoint_review_doc_valid = _response_facing_authority_claim_checkpoint_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11172,6 +11201,10 @@ def _check_git_scope():
             allowed = response_facing_authority_claim_checkpoint_doc_valid
             if not response_facing_authority_claim_checkpoint_doc_valid:
                 violations.append(f"  design doc missing required markers: {path}")
+        if path == _response_facing_authority_claim_checkpoint_review_doc:
+            allowed = response_facing_authority_claim_checkpoint_review_doc_valid
+            if not response_facing_authority_claim_checkpoint_review_doc_valid:
+                violations.append(f"  review doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
