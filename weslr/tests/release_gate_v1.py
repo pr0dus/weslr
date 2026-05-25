@@ -4899,6 +4899,7 @@ _candidate_response_formation_substrate_doc = "docs/WESLR_CANDIDATE_RESPONSE_FOR
 _candidate_response_formation_substrate_review_doc = "docs/WESLR_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_REVIEW_V1.md"
 _existing_multi_user_session_tenant_isolation_audit_doc = "docs/WESLR_EXISTING_MULTI_USER_SESSION_TENANT_ISOLATION_AUDIT_V1.md"
 _multi_user_session_tenant_isolation_boundary_doc = "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1.md"
+_multi_user_session_tenant_isolation_boundary_review_doc = "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -6005,6 +6006,53 @@ _multi_user_session_tenant_isolation_boundary_required_markers = {
     "does not inspect or modify live `.weslr` runtime state",
     "does not call providers/models/search/advisors",
     "does not edit `weslr/chat_responder.py`",
+}
+
+_multi_user_session_tenant_isolation_boundary_review_required_markers = {
+    "WESLR Multi-User Session Tenant Isolation Boundary Review V1",
+    "REVIEW_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1",
+    "review-only",
+    "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_REVIEW_V1.md",
+    "multi_user_session_tenant_isolation_boundary_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Check",
+    "Audit Findings Coverage",
+    "Required Namespace Model Review",
+    "tenant_id",
+    "account_id / user_id",
+    "session_id",
+    "conversation_id",
+    "workspace_id / project_id",
+    "artifact_id",
+    "upload_id",
+    "memory_scope_id",
+    "locale / language context",
+    "No memory, context, artifact, upload, cache, trace, log, or candidate response input may be read without explicit owner/session/tenant scope",
+    "Isolation Rules Review",
+    "Leakage Risks Review",
+    "global `.weslr` defaults for public runtime",
+    "`tl_default` as shared user state",
+    "query-string `user_id` as sufficient identity",
+    "Public / Browser / International Readiness Review",
+    "Current WESLR remains blocked for public/international multi-user runtime",
+    "Relationship To Cognition Substrate Review",
+    "candidate response formation must know whose context/memory/evidence it is using before ranking or composing anything",
+    "Denied Authority Fields Review",
+    "grants_runtime_authority: false",
+    "permits_public_browser_runtime: false",
+    "permits_cross_user_memory: false",
+    "permits_unscoped_memory_reads: false",
+    "permits_unscoped_artifact_reads: false",
+    "permits_provider_calls: false",
+    "permits_dot_weslr_public_state: false",
+    "permits_final_answer_generation: false",
+    "C — review this multi-user boundary first, then context alignment, then continue architecture",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_V1",
+    "DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "did not inspect or modify live `.weslr` runtime state",
+    "did not call providers/models/search/advisors",
+    "did not edit `weslr/chat_responder.py`",
 }
 
 _controlled_reply_preview_result_design_required_markers = {
@@ -9499,6 +9547,12 @@ def _multi_user_session_tenant_isolation_boundary_doc_is_valid():
         _multi_user_session_tenant_isolation_boundary_required_markers,
     )
 
+def _multi_user_session_tenant_isolation_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _multi_user_session_tenant_isolation_boundary_review_doc,
+        _multi_user_session_tenant_isolation_boundary_review_required_markers,
+    )
+
 
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -10002,6 +10056,7 @@ def _check_git_scope():
     candidate_response_formation_substrate_review_doc_valid = _candidate_response_formation_substrate_review_doc_is_valid()
     existing_multi_user_session_tenant_isolation_audit_doc_valid = _existing_multi_user_session_tenant_isolation_audit_doc_is_valid()
     multi_user_session_tenant_isolation_boundary_doc_valid = _multi_user_session_tenant_isolation_boundary_doc_is_valid()
+    multi_user_session_tenant_isolation_boundary_review_doc_valid = _multi_user_session_tenant_isolation_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10847,6 +10902,10 @@ def _check_git_scope():
             allowed = multi_user_session_tenant_isolation_boundary_doc_valid
             if not multi_user_session_tenant_isolation_boundary_doc_valid:
                 violations.append(f"  multi-user session tenant isolation boundary missing required markers: {path}")
+        if path == _multi_user_session_tenant_isolation_boundary_review_doc:
+            allowed = multi_user_session_tenant_isolation_boundary_review_doc_valid
+            if not multi_user_session_tenant_isolation_boundary_review_doc_valid:
+                violations.append(f"  multi-user session tenant isolation boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
