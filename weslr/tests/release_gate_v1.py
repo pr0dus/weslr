@@ -4895,6 +4895,7 @@ _reasoning_substrate_map_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md"
 _reasoning_substrate_map_review_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_REVIEW_V1.md"
 _context_memory_trust_and_evidence_boundary_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1.md"
 _context_memory_trust_and_evidence_boundary_review_doc = "docs/WESLR_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_REVIEW_V1.md"
+_candidate_response_formation_substrate_doc = "docs/WESLR_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5773,6 +5774,98 @@ _context_memory_trust_and_evidence_boundary_review_required_markers = {
     "no scoring/judging",
     "no authority grants",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTEXT_MEMORY_TRUST_AND_EVIDENCE_BOUNDARY_V1",
+}
+
+_candidate_response_formation_substrate_required_markers = {
+    "WESLR Candidate Response Formation Substrate V1",
+    "DESIGN_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1",
+    "design-only",
+    "Purpose",
+    "Non-Goals",
+    "Relationship To Reasoning Substrate Map",
+    "Relationship To Context / Memory Trust And Evidence Boundary",
+    "Why Candidate Formation Must Exist Before Safe Final Response Assembly Or Real-Text Testing",
+    "Candidate Inputs",
+    "Current User Turn Interpretation",
+    "Task / Intent Frame",
+    "Context Trust Frame",
+    "Memory Relevance Frame",
+    "Evidence / Provenance Frame",
+    "Uncertainty / Calibration Frame",
+    "Contradiction / Blindspot / Invariant Signals If Available",
+    "Authority / Claim Constraints",
+    "Candidate Response Record Shape",
+    "candidate_id",
+    "candidate_type",
+    "intended_answer_scope",
+    "grounding_sources",
+    "memory_use_summary",
+    "evidence_need",
+    "uncertainty_label",
+    "claim_risk_label",
+    "authority_boundary",
+    "user_value_fit",
+    "task_fit",
+    "missing_context",
+    "rejection_reason_labels",
+    "safe_next_step",
+    "direct_answer_candidate",
+    "clarification_candidate",
+    "evidence_needed_candidate",
+    "refusal_or_boundary_candidate",
+    "partial_answer_candidate",
+    "planning_candidate",
+    "correction_candidate",
+    "uncertainty_disclosure_candidate",
+    "Ranking Principles",
+    "groundedness",
+    "relevance",
+    "usefulness",
+    "humility / uncertainty",
+    "safety / authority fit",
+    "non-cannedness",
+    "user intent fit",
+    "evidence sufficiency",
+    "Rejection Rules",
+    "unsupported factual claim",
+    "stale memory used as truth",
+    "invented provenance",
+    "hidden/private leakage",
+    "public/final/official claim without validation",
+    "over-broad refusal",
+    "canned template with poor grounding",
+    "runtime/provider/`.weslr`/scoring authority implied",
+    "Interaction With `CALIBRATION_LEDGER`",
+    "How Candidates Feed Later Safe Final Response Assembly",
+    "Safe Metadata Shape For Future Helpers",
+    "Denied Authority Fields",
+    "answer_authority_granted=false",
+    "reply_output_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "runtime_authority_granted=false",
+    "provider_call_authority_granted=false",
+    "model_call_authority_granted=false",
+    "search_call_authority_granted=false",
+    "advisor_call_authority_granted=false",
+    "dot_weslr_io_authority_granted=false",
+    "scoring_authority_granted=false",
+    "judging_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "Blocked Behavior",
+    "A — continue next narrow helper lane",
+    "B — pause/review direction",
+    "C — design response-facing authority/claim checkpoint next",
+    "Future Implementation / Review Sequence",
+    "REVIEW_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CANDIDATE_RESPONSE_FORMATION_SUBSTRATE_V1",
+    "DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "Abort Conditions",
+    "no runtime/chat wiring",
+    "no `weslr/chat_responder.py` edits",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` IO",
+    "no scoring/judging",
+    "no authority grants",
 }
 
 _controlled_reply_preview_result_design_required_markers = {
@@ -9242,6 +9335,13 @@ def _context_memory_trust_and_evidence_boundary_review_doc_is_valid():
     )
 
 
+def _candidate_response_formation_substrate_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _candidate_response_formation_substrate_doc,
+        _candidate_response_formation_substrate_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9740,6 +9840,7 @@ def _check_git_scope():
     reasoning_substrate_map_review_doc_valid = _reasoning_substrate_map_review_doc_is_valid()
     context_memory_trust_and_evidence_boundary_doc_valid = _context_memory_trust_and_evidence_boundary_doc_is_valid()
     context_memory_trust_and_evidence_boundary_review_doc_valid = _context_memory_trust_and_evidence_boundary_review_doc_is_valid()
+    candidate_response_formation_substrate_doc_valid = _candidate_response_formation_substrate_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10569,6 +10670,10 @@ def _check_git_scope():
             allowed = context_memory_trust_and_evidence_boundary_review_doc_valid
             if not context_memory_trust_and_evidence_boundary_review_doc_valid:
                 violations.append(f"  context memory trust and evidence boundary review missing required markers: {path}")
+        if path == _candidate_response_formation_substrate_doc:
+            allowed = candidate_response_formation_substrate_doc_valid
+            if not candidate_response_formation_substrate_doc_valid:
+                violations.append(f"  candidate response formation substrate doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
