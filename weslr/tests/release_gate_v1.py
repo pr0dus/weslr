@@ -4887,6 +4887,7 @@ _cognitive_gym_exploratory_case_helpers_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORAT
 _cognitive_gym_exploratory_case_helpers_review_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_REVIEW_V1.md"
 _cognitive_gym_exploratory_case_helpers_implementation_review_doc = "docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _first_engine_specific_exploratory_helper_boundary_doc = "docs/WESLR_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_V1.md"
+_first_engine_specific_exploratory_helper_boundary_review_doc = "docs/WESLR_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5465,6 +5466,35 @@ _first_engine_specific_exploratory_helper_boundary_required_markers = {
     "validation_before_rendering_preserved=true",
     "blocked_metadata_behavior_preserved=true",
     "external_validation_required_before_public_final_official_claim=true",
+}
+_first_engine_specific_exploratory_helper_boundary_review_required_markers = {
+    "WESLR First Engine-Specific Exploratory Helper Boundary Review V1",
+    "first_engine_specific_exploratory_helper_boundary_valid_ready_for_context_alignment",
+    "docs/WESLR_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_V1.md",
+    "review-only",
+    "boundary-only",
+    "design-only",
+    "CALIBRATION_LEDGER is suitable as the safest first engine-specific exploratory helper target.",
+    "Candidate families considered",
+    "One engine-specific family only",
+    "Shared helper inheritance",
+    "Allowed future behavior bounded",
+    "Forbidden behavior complete",
+    "Denied authority fields",
+    "Validation-before-rendering",
+    "Blocked metadata behavior",
+    "Public/final/official claim promotion",
+    "No engine-specific helper implementation",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "no `.weslr` reads/writes",
+    "no provider/model/search/advisor calls",
+    "no challenge execution",
+    "no scoring/judging",
+    "no final-answer/proof/open-problem/scientific/official claims",
+    "no authority grants",
+    "Blockers: none.",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_FIRST_ENGINE_SPECIFIC_EXPLORATORY_HELPER_BOUNDARY_V1",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -8877,6 +8907,13 @@ def _first_engine_specific_exploratory_helper_boundary_doc_is_valid():
     )
 
 
+def _first_engine_specific_exploratory_helper_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _first_engine_specific_exploratory_helper_boundary_review_doc,
+        _first_engine_specific_exploratory_helper_boundary_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9367,6 +9404,7 @@ def _check_git_scope():
     cognitive_gym_exploratory_case_helpers_review_doc_valid = _cognitive_gym_exploratory_case_helpers_review_doc_is_valid()
     cognitive_gym_exploratory_case_helpers_implementation_review_doc_valid = _cognitive_gym_exploratory_case_helpers_implementation_review_doc_is_valid()
     first_engine_specific_exploratory_helper_boundary_doc_valid = _first_engine_specific_exploratory_helper_boundary_doc_is_valid()
+    first_engine_specific_exploratory_helper_boundary_review_doc_valid = _first_engine_specific_exploratory_helper_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10164,6 +10202,10 @@ def _check_git_scope():
             allowed = first_engine_specific_exploratory_helper_boundary_doc_valid
             if not first_engine_specific_exploratory_helper_boundary_doc_valid:
                 violations.append(f"  first engine-specific exploratory helper boundary missing required markers: {path}")
+        if path == _first_engine_specific_exploratory_helper_boundary_review_doc:
+            allowed = first_engine_specific_exploratory_helper_boundary_review_doc_valid
+            if not first_engine_specific_exploratory_helper_boundary_review_doc_valid:
+                violations.append(f"  first engine-specific exploratory helper boundary review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
