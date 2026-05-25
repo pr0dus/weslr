@@ -268,6 +268,46 @@ def test_prediction_future_certainty_and_open_problem_solution_claims_block():
     assert "open_problem_solution" in labels
 
 
+def test_output_final_answer_and_answer_draft_indicators_block():
+    cases = [
+        ({"some_label": "reply output: unsafe text"}, "reply_output"),
+        ({"some_label": "user-facing output: unsafe text"}, "user_facing_output"),
+        ({"some_label": "preview output: unsafe text"}, "preview_output"),
+        ({"some_label": "final-answer prose"}, "final_answer_prose"),
+        ({"some_label": "answer draft: unsafe text"}, "answer_draft"),
+    ]
+    for kwargs, expected_label_fragment in cases:
+        run = _module().build_unknown_engine_run_v1(**kwargs)
+        validation = _module().validate_unknown_engine_run_v1(run)
+        assert run["blocked"] is True
+        assert validation["valid"] is False
+        labels = " ".join(run["blocked_reason_labels"] + validation["blocked_reason_labels"])
+        assert expected_label_fragment in labels
+        markdown = _module().render_unknown_engine_run_markdown_v1(run)
+        assert "valid: `False`" in markdown
+        assert "unsafe text" not in markdown
+        safe = _module().to_unknown_engine_run_json_safe_v1(run)
+        assert safe["blocked"] is True
+        assert safe["validation_status"] == "blocked_invalid_or_unsafe_metadata_labels_only"
+        flattened = "\n".join(_flatten_strings(safe)).lower()
+        assert "unsafe text" not in flattened
+
+
+def test_extra_wrapper_metadata_with_output_indicators_is_not_ignored():
+    run = _module().build_unknown_engine_run_v1(
+        harmless_unknown_wrapper={
+            "nested_extra": ["safe label", {"deeper": "reply output: unsafe text"}],
+        }
+    )
+    validation = _module().validate_unknown_engine_run_v1(run)
+    assert run["blocked"] is True
+    assert validation["valid"] is False
+    assert any("reply_output" in label for label in run["blocked_reason_labels"])
+    safe = _module().to_unknown_engine_run_json_safe_v1(run)
+    flattened = "\n".join(_flatten_strings(safe)).lower()
+    assert "reply output: unsafe text" not in flattened
+
+
 def test_chatresponder_provider_dot_weslr_feature_flag_judges_scores_official_indicators_block():
     cases = [
         {"chat_responder_signal": "respond_chat"},

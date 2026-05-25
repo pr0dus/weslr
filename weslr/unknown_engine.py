@@ -81,6 +81,11 @@ _TEXT_MARKERS = {
     "raw_response_indicator_blocked": ("raw response:", "raw_response:", "assistant raw:"),
     "private_indicator_blocked": ("private content:", "confidential:", "secret:", "api key", "password:"),
     "runtime_output_indicator_blocked": ("runtime output:", "runtime trace:", "live runtime output:"),
+    "user_facing_output_indicator_blocked": ("user-facing output:", "user facing output:", "user-facing answer:", "user facing answer:"),
+    "reply_output_indicator_blocked": ("reply output:", "reply_output:", "sendable reply text:", "actual reply body:"),
+    "preview_output_indicator_blocked": ("preview output:", "preview_output:", "reply preview:"),
+    "final_answer_prose_indicator_blocked": ("final-answer prose", "final answer prose", "final answer:", "final_answer:"),
+    "answer_draft_indicator_blocked": ("answer draft:", "answer_draft:", "draft answer:"),
     "chat_responder_indicator_blocked": ("chatresponder", "chat responder", "respond_chat", "generate_chat"),
     "provider_model_search_advisor_indicator_blocked": (
         "provider output:",
