@@ -4876,6 +4876,7 @@ _unknown_engine_result_artifact_helpers_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_
 _unknown_engine_result_artifact_helpers_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_REVIEW_V1.md"
 _unknown_engine_result_artifact_helpers_implementation_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _unknown_engine_result_artifact_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1.md"
+_unknown_engine_result_artifact_review_doc = "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_REVIEW_V1.md"
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
     "DESIGN_CONTROLLED_REPLY_PREVIEW_RESULT_V1",
@@ -5807,6 +5808,69 @@ _unknown_engine_result_artifact_required_markers = {
     "not official evaluation",
     "not product/intelligence/Turing/IQ/certification readiness",
     "not authority",
+}
+
+
+_unknown_engine_result_artifact_review_required_markers = {
+    "WESLR UNKNOWN ENGINE Result Artifact Review V1",
+    "unknown_engine_result_artifact_valid_ready_for_context_alignment",
+    "docs/WESLR_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1.md",
+    "internal metadata artifact only",
+    "created through reviewed helper path",
+    "not runtime",
+    "not UNKNOWN ENGINE execution",
+    "not CognitiveGymRun execution",
+    "not Cognitive Gym execution",
+    "not prediction output",
+    "not future certainty",
+    "not open-problem solution evidence",
+    "not reply output",
+    "not preview output",
+    "not final-answer prose",
+    "not user-facing output",
+    "not official evaluation",
+    "not product/intelligence/Turing/IQ/certification readiness",
+    "not authority",
+    "build_unknown_engine_run_v1",
+    "validate_unknown_engine_run_v1",
+    "build_unknown_engine_result_artifact_v1",
+    "validate_unknown_engine_result_artifact_v1",
+    "summarize_unknown_engine_result_artifact_v1",
+    "render_unknown_engine_result_artifact_markdown_v1",
+    "to_unknown_engine_result_artifact_json_safe_v1",
+    "source_validation_status: validation_pass_metadata_quality_only",
+    "artifact_validation_valid: True",
+    "unknown_engine_authority_granted=false",
+    "prediction_authority_granted=false",
+    "future_certainty_authority_granted=false",
+    "open_problem_solution_claim_authorized=false",
+    "answer_authority_granted=false",
+    "reply_output_authority_granted=false",
+    "user_facing_output_authority_granted=false",
+    "runtime_authority_granted=false",
+    "official_evaluation_authority_granted=false",
+    "unknown_engine_executed=false",
+    "cognitive_gym_run_executed=false",
+    "cognitive_gym_executed=false",
+    "prediction_output_created=false",
+    "future_certainty_claim_created=false",
+    "final_answer_generated=false",
+    "final_answer_prose_created=false",
+    "runtime_wired=false",
+    "provider_call_made=false",
+    "model_call_made=false",
+    "search_call_made=false",
+    "advisor_call_made=false",
+    "dot_weslr_read_performed=false",
+    "dot_weslr_write_performed=false",
+    "judges_created=false",
+    "scores_created=false",
+    "official_claim_made=false",
+    "safe Markdown remains internal review material only",
+    "JSON-safe metadata is not a reply payload",
+    "artifact is not execution evidence",
+    "frontier/open-problem metadata is not solution evidence",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_UNKNOWN_ENGINE_RESULT_ARTIFACT_V1",
 }
 
 _unknown_engine_helpers_implementation_review_required_markers = {
@@ -8147,6 +8211,13 @@ def _unknown_engine_result_artifact_doc_is_valid():
     )
 
 
+def _unknown_engine_result_artifact_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_result_artifact_review_doc,
+        _unknown_engine_result_artifact_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -8626,6 +8697,7 @@ def _check_git_scope():
     unknown_engine_result_artifact_helpers_review_doc_valid = _unknown_engine_result_artifact_helpers_review_doc_is_valid()
     unknown_engine_result_artifact_helpers_implementation_review_doc_valid = _unknown_engine_result_artifact_helpers_implementation_review_doc_is_valid()
     unknown_engine_result_artifact_doc_valid = _unknown_engine_result_artifact_doc_is_valid()
+    unknown_engine_result_artifact_review_doc_valid = _unknown_engine_result_artifact_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -9379,6 +9451,10 @@ def _check_git_scope():
             allowed = unknown_engine_result_artifact_doc_valid
             if not unknown_engine_result_artifact_doc_valid:
                 violations.append(f"  UNKNOWN ENGINE result artifact doc missing required markers: {path}")
+        if path == _unknown_engine_result_artifact_review_doc:
+            allowed = unknown_engine_result_artifact_review_doc_valid
+            if not unknown_engine_result_artifact_review_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE result artifact review doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
