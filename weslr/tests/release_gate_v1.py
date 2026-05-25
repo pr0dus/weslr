@@ -4902,6 +4902,7 @@ _multi_user_session_tenant_isolation_boundary_doc = "docs/WESLR_MULTI_USER_SESSI
 _multi_user_session_tenant_isolation_boundary_review_doc = "docs/WESLR_MULTI_USER_SESSION_TENANT_ISOLATION_BOUNDARY_REVIEW_V1.md"
 _existing_implementations_multi_user_boundary_audit_doc = "docs/WESLR_EXISTING_IMPLEMENTATIONS_MULTI_USER_BOUNDARY_AUDIT_V1.md"
 _multi_user_retrofit_plan_before_authority_checkpoint_doc = "docs/WESLR_MULTI_USER_RETROFIT_PLAN_BEFORE_RESPONSE_FACING_AUTHORITY_CHECKPOINT_V1.md"
+_multi_user_retrofit_plan_before_authority_checkpoint_review_doc = "docs/WESLR_MULTI_USER_RETROFIT_PLAN_BEFORE_RESPONSE_FACING_AUTHORITY_CHECKPOINT_REVIEW_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -7458,6 +7459,40 @@ _multi_user_retrofit_plan_before_authority_checkpoint_required_markers = {
     "does not edit `weslr/chat_responder.py`",
 }
 
+_multi_user_retrofit_plan_before_authority_checkpoint_review_required_markers = {
+    "WESLR Multi-User Retrofit Plan Before Response-Facing Authority Checkpoint Review V1",
+    "REVIEW_MULTI_USER_RETROFIT_PLAN_BEFORE_RESPONSE_FACING_AUTHORITY_CHECKPOINT_V1",
+    "review-only",
+    "docs/WESLR_MULTI_USER_RETROFIT_PLAN_BEFORE_RESPONSE_FACING_AUTHORITY_CHECKPOINT_REVIEW_V1.md",
+    "multi_user_retrofit_plan_valid_ready_for_context_alignment",
+    "Design-Only / Retrofit-Plan Posture Check",
+    "Authority And Runtime Boundary Review",
+    "Audit Baseline Coverage",
+    "Retrofit Sequence Review",
+    "Module Impact Review",
+    "Response-Facing Authority Implications Review",
+    "Gaps Confirmed Or Revised",
+    "namespace schema helper",
+    "central read authorization",
+    "scoped memory/context read adapter",
+    "scoped artifact/upload registry",
+    "cache/log/trace scoping",
+    "async-safe request context",
+    "leakage negative tests",
+    "guest/session boundary",
+    "account/auth boundary",
+    "deletion/export/retention controls",
+    "timeline/default-reader and voice/browser paths as blocked until retrofitted",
+    "candidate response formation remains blocked from unscoped reads",
+    "authority checkpoint must reject candidates whose source scope is missing",
+    "A — after this plan review/context alignment, continue response-facing authority checkpoint design carrying retrofit constraints",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MULTI_USER_RETROFIT_PLAN_REVIEW_V1",
+    "DESIGN_RESPONSE_FACING_AUTHORITY_CLAIM_CHECKPOINT_V1",
+    "no runtime wiring",
+    "no chat/user-facing behavior changes",
+    "did not edit `weslr/chat_responder.py`",
+}
+
 _controlled_reply_preview_boundary_review_required_markers = {
     "WESLR Controlled Reply Preview Boundary Review V1",
     "controlled_reply_preview_boundary_design_valid_ready_for_context_alignment",
@@ -9656,6 +9691,13 @@ def _multi_user_retrofit_plan_before_authority_checkpoint_doc_is_valid():
     )
 
 
+def _multi_user_retrofit_plan_before_authority_checkpoint_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _multi_user_retrofit_plan_before_authority_checkpoint_review_doc,
+        _multi_user_retrofit_plan_before_authority_checkpoint_review_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -10161,6 +10203,7 @@ def _check_git_scope():
     multi_user_session_tenant_isolation_boundary_review_doc_valid = _multi_user_session_tenant_isolation_boundary_review_doc_is_valid()
     existing_implementations_multi_user_boundary_audit_doc_valid = _existing_implementations_multi_user_boundary_audit_doc_is_valid()
     multi_user_retrofit_plan_before_authority_checkpoint_doc_valid = _multi_user_retrofit_plan_before_authority_checkpoint_doc_is_valid()
+    multi_user_retrofit_plan_before_authority_checkpoint_review_doc_valid = _multi_user_retrofit_plan_before_authority_checkpoint_review_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -11018,6 +11061,10 @@ def _check_git_scope():
             allowed = multi_user_retrofit_plan_before_authority_checkpoint_doc_valid
             if not multi_user_retrofit_plan_before_authority_checkpoint_doc_valid:
                 violations.append(f"  multi-user retrofit plan before authority checkpoint missing required markers: {path}")
+        if path == _multi_user_retrofit_plan_before_authority_checkpoint_review_doc:
+            allowed = multi_user_retrofit_plan_before_authority_checkpoint_review_doc_valid
+            if not multi_user_retrofit_plan_before_authority_checkpoint_review_doc_valid:
+                violations.append(f"  multi-user retrofit plan before authority checkpoint review missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
