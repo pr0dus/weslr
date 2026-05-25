@@ -31,6 +31,23 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Cognitive Gym Exploratory Case Helpers Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Cognitive Gym exploratory case helpers design is reviewed and valid for context alignment.
+- Design doc: `docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1.md`.
+- Review report: `docs/WESLR_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_REVIEW_V1.md`; review commit `aa225e7`; judgment `cognitive_gym_exploratory_case_helpers_design_valid_ready_for_context_alignment`.
+- Future target path remains design-only: `weslr/cognitive_gym_exploratory_case.py`.
+- Future public APIs remain design-only: `build_cognitive_gym_exploratory_case_v1`, `validate_cognitive_gym_exploratory_case_v1`, `summarize_cognitive_gym_exploratory_case_v1`, `render_cognitive_gym_exploratory_case_markdown_v1`, and `to_cognitive_gym_exploratory_case_json_safe_v1`.
+- Confirmed posture: design/review only; no helpers implemented; no helper/source/test implementation files created; no engines or engine-specific helpers designed; no runtime/chat wiring; no provider/model/search/advisor calls; no `.weslr` IO; no challenge execution; no scoring/judging; no final answers; no proof/open-problem/scientific discovery claims; no official benchmark/Turing/intelligence/certification/consciousness claims; no authority grants.
+- Required future implementation posture: shared exploratory case helpers must be deterministic, import-safe, side-effect-free, pure in-memory, metadata-only, validation-before-rendering, blocked-metadata preserving, JSON-safe bounded, safe-Markdown bounded, and must keep all denied authority fields present and false.
+- Helper discipline: lifecycle labels remain metadata labels only, not scores, judge decisions, benchmark states, official readiness claims, proof states, or public claims. Future helper records remain internal metadata only and must preserve the non-skippable claim ladder and external-validation requirement before public/final/official claims.
+- Non-blocking followups from review: future implementation must preserve validation-before-rendering and blocked-metadata behavior exactly; keep helpers deterministic/import-safe/side-effect-free/in-memory/file-system silent unless separately authorized; keep lifecycle states as metadata labels only; require external validation and separate reviewed authorization for any public/final/official claim lane.
+- Engine-specific helpers must not precede reviewed shared helper implementation. Shared protocol/helper discipline must exist before UNKNOWN ENGINE, Erdős, contradiction, counterfactual, or any other engine-specific helper set proceeds.
+- Current boundary rule remains: the reviewed shared helper design may inform a future separately authorized implementation lane only. It does not authorize implementation in this context alignment lane, engine-specific helpers, execution, result artifacts, runtime/chat behavior, provider/model/search/advisor calls, `.weslr` IO, scoring/judging, public/final/official claims, or authority grants.
+- Recommended next lane after this context alignment: `IMPLEMENT_COGNITIVE_GYM_EXPLORATORY_CASE_HELPERS_V1`. Do not start it from this context alignment packet. It must be separately authorized and must not edit runtime behavior, edit `weslr/chat_responder.py`, design engine-specific helpers, execute challenges, create runners/scoring/judging, call providers/search/advisors/models, read/write `.weslr`, create final answers, create proof/open-problem/scientific/official claims, create public release text, grant authority, or bypass validation-before-rendering and blocked metadata behavior.
+
 ### Latest Context Alignment — Cognitive Gym Exploratory Case Protocol Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
