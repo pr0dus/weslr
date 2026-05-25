@@ -4891,6 +4891,7 @@ _first_engine_specific_exploratory_helper_boundary_review_doc = "docs/WESLR_FIRS
 _calibration_ledger_exploratory_helpers_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_V1.md"
 _calibration_ledger_exploratory_helpers_review_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_REVIEW_V1.md"
 _calibration_ledger_exploratory_helpers_implementation_review_doc = "docs/WESLR_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_reasoning_substrate_map_doc = "docs/WESLR_REASONING_SUBSTRATE_MAP_V1.md"
 _cognitive_gym_erdos_challenge_track_required_markers = {
     "DESIGN_COGNITIVE_GYM_ERDOS_CHALLENGE_TRACK_V1",
     "challenge-track-design-only",
@@ -5622,6 +5623,39 @@ _calibration_ledger_exploratory_helpers_implementation_review_required_markers =
     "B — pause/review direction before more engine-specific work",
     "C — design/update broader reasoning substrate map before more implementation",
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CALIBRATION_LEDGER_EXPLORATORY_HELPERS_IMPLEMENTATION_REVIEW_V1",
+}
+_reasoning_substrate_map_required_markers = {
+    "WESLR Reasoning Substrate Map V1",
+    "DESIGN_WESLR_REASONING_SUBSTRATE_MAP_V1",
+    "design-only",
+    "Current Implemented / Reviewed Substrate Pieces",
+    "Where CALIBRATION_LEDGER Fits",
+    "Input Interpretation Layer",
+    "Context And Memory Trust Layer",
+    "Evidence / Provenance Boundary Layer",
+    "Uncertainty And Calibration Layer",
+    "Contradiction Detection Layer",
+    "Blindspot Detection Layer",
+    "Invariant / Pattern Mining Layer",
+    "Intent Reconstruction Layer",
+    "Causal Trace / Failure Mode Analysis Layer",
+    "Candidate Response Formation Layer",
+    "Authority And Claim Ladder Checks",
+    "Safe Final Response Assembly Layer",
+    "What Is Missing",
+    "Which Layer Should Come Before Real-Text Conversation Testing",
+    "Risks Of Adding Too Many Helpers Without Response Integration",
+    "Risks Of Wiring Conversation Too Early",
+    "Suggested Lane Sequence After This Map",
+    "A — continue next narrow helper lane",
+    "B — pause/review direction",
+    "C — design/update architecture further before implementation",
+    "no runtime/chat wiring",
+    "no `weslr/chat_responder.py` edits",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` IO",
+    "no scoring/judging",
+    "no authority grants",
 }
 _controlled_reply_preview_result_design_required_markers = {
     "WESLR Controlled Reply Preview Result V1",
@@ -9062,6 +9096,13 @@ def _calibration_ledger_exploratory_helpers_implementation_review_doc_is_valid()
     )
 
 
+def _reasoning_substrate_map_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _reasoning_substrate_map_doc,
+        _reasoning_substrate_map_required_markers,
+    )
+
+
 def _controlled_reply_preview_boundary_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_reply_preview_boundary_review_doc,
@@ -9556,6 +9597,7 @@ def _check_git_scope():
     calibration_ledger_exploratory_helpers_doc_valid = _calibration_ledger_exploratory_helpers_doc_is_valid()
     calibration_ledger_exploratory_helpers_review_doc_valid = _calibration_ledger_exploratory_helpers_review_doc_is_valid()
     calibration_ledger_exploratory_helpers_implementation_review_doc_valid = _calibration_ledger_exploratory_helpers_implementation_review_doc_is_valid()
+    reasoning_substrate_map_doc_valid = _reasoning_substrate_map_doc_is_valid()
     controlled_reply_preview_boundary_review_doc_valid = _controlled_reply_preview_boundary_review_doc_is_valid()
     controlled_reply_preview_boundary_doc_valid = _controlled_reply_preview_boundary_doc_is_valid()
     plan_helper_flag_on_local_observation_design_doc_valid = _plan_helper_flag_on_local_observation_design_doc_is_valid()
@@ -10369,6 +10411,10 @@ def _check_git_scope():
             allowed = calibration_ledger_exploratory_helpers_implementation_review_doc_valid
             if not calibration_ledger_exploratory_helpers_implementation_review_doc_valid:
                 violations.append(f"  CALIBRATION_LEDGER exploratory helpers implementation review missing required markers: {path}")
+        if path == _reasoning_substrate_map_doc:
+            allowed = reasoning_substrate_map_doc_valid
+            if not reasoning_substrate_map_doc_valid:
+                violations.append(f"  reasoning substrate map doc missing required markers: {path}")
         if path == _controlled_reply_preview_boundary_doc:
             allowed = controlled_reply_preview_boundary_doc_valid
             if not controlled_reply_preview_boundary_doc_valid:
