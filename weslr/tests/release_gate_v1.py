@@ -8695,6 +8695,36 @@ _formal_verifier_result_envelope_required_markers = {
     "REVIEW_FORMAL_VERIFIER_RESULT_ENVELOPE_V1",
 }
 
+_formal_verifier_result_envelope_review_doc = "docs/WESLR_FORMAL_VERIFIER_RESULT_ENVELOPE_REVIEW_V1.md"
+_formal_verifier_result_envelope_review_required_markers = {
+    "REVIEW_FORMAL_VERIFIER_RESULT_ENVELOPE_V1",
+    "review-only",
+    "formal_verifier_result_envelope_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Envelope Result",
+    "Required Fields Result",
+    "Verifier Environment Result",
+    "Verifier Result Metadata Result",
+    "Theorem Statement Integrity Result",
+    "Soundness Integrity Result",
+    "Import / Dependency Integrity Result",
+    "Proof Body Integrity Result",
+    "Compiler Feedback Summary Result",
+    "Validation Caveat Result",
+    "Misformalization Signal Result",
+    "Risk Metadata Result",
+    "Validation Status Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationship To Lean Formal Problem Sketch Schema Result",
+    "Relationship To Population / Failed-Path Registry Result",
+    "Relationship To Existing WESLR Helpers Result",
+    "Future Negative Tests Result",
+    "Formal Proof Search Sequence Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_FORMAL_VERIFIER_RESULT_ENVELOPE_REVIEW_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11462,6 +11492,13 @@ def _formal_verifier_result_envelope_doc_is_valid():
     )
 
 
+def _formal_verifier_result_envelope_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _formal_verifier_result_envelope_review_doc,
+        _formal_verifier_result_envelope_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11865,6 +11902,7 @@ def _check_git_scope():
     proof_sketch_population_failed_path_registry_doc_valid = _proof_sketch_population_failed_path_registry_doc_is_valid()
     proof_sketch_population_failed_path_registry_review_doc_valid = _proof_sketch_population_failed_path_registry_review_doc_is_valid()
     formal_verifier_result_envelope_doc_valid = _formal_verifier_result_envelope_doc_is_valid()
+    formal_verifier_result_envelope_review_doc_valid = _formal_verifier_result_envelope_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13016,6 +13054,10 @@ def _check_git_scope():
             allowed = formal_verifier_result_envelope_doc_valid
             if not formal_verifier_result_envelope_doc_valid:
                 violations.append(f"  formal verifier result envelope design doc missing required markers: {path}")
+        if path == _formal_verifier_result_envelope_review_doc:
+            allowed = formal_verifier_result_envelope_review_doc_valid
+            if not formal_verifier_result_envelope_review_doc_valid:
+                violations.append(f"  formal verifier result envelope review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
