@@ -8684,6 +8684,60 @@ _controlled_unknown_engine_metadata_shadow_runner_review_required_markers = {
     "Direction check: `A",
 }
 
+_controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc = "docs/WESLR_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_IMPLEMENTATION_REVIEW_V1.md"
+_controlled_unknown_engine_metadata_shadow_runner_implementation_review_required_markers = {
+    "REVIEW_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_IMPLEMENTATION_V1",
+    "review-only",
+    "controlled_unknown_engine_metadata_shadow_runner_implementation_valid_ready_for_context_alignment",
+    "build_controlled_unknown_engine_shadow_fixture_v1",
+    "validate_controlled_unknown_engine_shadow_fixture_v1",
+    "run_controlled_unknown_engine_metadata_shadow_v1",
+    "validate_controlled_unknown_engine_shadow_report_v1",
+    "summarize_controlled_unknown_engine_shadow_report_v1",
+    "render_controlled_unknown_engine_shadow_report_markdown_v1",
+    "to_controlled_unknown_engine_shadow_report_json_safe_v1",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "metadata-only",
+    "JSON-safe",
+    "no filesystem reads/writes",
+    "no `.weslr` IO",
+    "no network calls",
+    "no provider/model/search/advisor calls",
+    "no runtime/chat/browser wiring",
+    "no theorem solver/prover execution",
+    "no scoring/judging",
+    "no final-answer/user-facing output",
+    "helper paths may be observed as metadata only",
+    "raw private material",
+    "live Erdős solving prompt",
+    "live Millennium solving prompt",
+    "theorem prover task",
+    "provider output",
+    "model output",
+    "search output",
+    "advisor output",
+    "hidden prompt",
+    "protected material",
+    "runtime chat transcript",
+    "unscoped memory",
+    "unscoped context",
+    "unscoped evidence",
+    "unscoped artifact",
+    "proof or solution claim",
+    "denied authority fields",
+    "Missing or true denied-authority/no-run fields fail validation",
+    "Unsafe next steps",
+    "internal_expert_simulation",
+    "external-validation expert label",
+    "public/proof/prize/solution claims remain blocked",
+    "Markdown renderer is explicitly internal-only and metadata-only",
+    "synthetic data only",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_IMPLEMENTATION_REVIEW_V1",
+}
+
 _tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
 _tier_0_2_math_challenge_readiness_required_markers = {
     "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
@@ -10418,6 +10472,13 @@ def _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid():
     )
 
 
+def _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc,
+        _controlled_unknown_engine_metadata_shadow_runner_implementation_review_required_markers,
+    )
+
+
 def _tier_0_2_math_challenge_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(
         _tier_0_2_math_challenge_readiness_doc,
@@ -10693,6 +10754,7 @@ def _check_git_scope():
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
+    controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_is_valid()
     tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     tier_0_2_math_challenge_readiness_review_doc_valid = _tier_0_2_math_challenge_readiness_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
@@ -11818,6 +11880,10 @@ def _check_git_scope():
             allowed = controlled_unknown_engine_metadata_shadow_runner_review_doc_valid
             if not controlled_unknown_engine_metadata_shadow_runner_review_doc_valid:
                 violations.append(f"  controlled UNKNOWN ENGINE metadata shadow runner review doc missing required markers: {path}")
+        if path == _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc:
+            allowed = controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid
+            if not controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid:
+                violations.append(f"  controlled UNKNOWN ENGINE metadata shadow runner implementation review doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
