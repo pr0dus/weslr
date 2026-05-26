@@ -34,6 +34,34 @@ WESLR is one unified intelligence/entity under development. It is not a chatbot 
 
 
 
+
+
+### Latest Context Alignment — Misformalization Detection And Adjudication Workflow Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Misformalization detection and adjudication workflow design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1.md`.
+- Review path: `docs/WESLR_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_REVIEW_V1.md`; review commit `1606127`; judgment `misformalization_detection_adjudication_workflow_design_valid_ready_for_context_alignment`.
+- Workflow result: `MisformalizationDetectionAndAdjudicationWorkflowV1` is valid, metadata-only, source-scoped, JSON-safe, versioned, freshness-labeled, linked to `LeanFormalProblemSketchV1`, optionally linked to the population registry and verifier envelope, fail-closed, raw-content-denying, and authority-denying by default.
+- Problem intent review is valid; raw intent text is excluded.
+- Formal statement review is valid; raw statement text is excluded.
+- Assumption review is valid; missing, implicit, and extra assumption signals block claims.
+- Definition/dependency review is valid.
+- Source alignment review is valid; source content is excluded.
+- Candidate alignment review is valid.
+- Verifier alignment review is valid; `compiler_success_is_not_intent_validation: true` is required.
+- Adjudication is valid and grants no proof, public, or final-answer authority.
+- Risk metadata is valid.
+- Denied-authority fields are valid and required false.
+- Fail-closed rules are valid.
+- Relationships are valid for the Lean sketch schema, population registry, formal verifier envelope, and existing WESLR helpers.
+- Future negative tests are sufficient and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future helper implementation must preserve raw-content exclusion; compiler/verifier success must not become natural-language intent validation; adjudication must not grant proof/public/final-answer authority; external review requirements must stay explicit; future rater/critic ranking boundary must not override misformalization blocks.
+- Current next lane: `DESIGN_RATER_CRITIC_RANKING_BOUNDARY_V1`.
+- Current boundary rule remains: the reviewed workflow grants no implementation, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, real verifier result capture, rater execution, critic execution, Elo scoring, provider/model/search/advisor calls, `.weslr` reads or writes, private artifact/upload/log/trace/cache reads, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+
 ### Latest Context Alignment — Proof Sketch Population And Failed Path Registry Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
