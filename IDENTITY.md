@@ -35,6 +35,25 @@ WESLR is one unified intelligence/entity under development. It is not a chatbot 
 
 
 
+### Latest Context Alignment — Scoped Artifact Upload Registry Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR scoped artifact/upload registry helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/scoped_artifact_upload_registry.py`.
+- Test path: `weslr/tests/test_scoped_artifact_upload_registry_v1.py`.
+- Implementation review path: `docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `93c02c8`; judgment `scoped_artifact_upload_registry_helpers_implementation_valid_ready_for_context_alignment`.
+- Public API coverage confirmed: `build_scoped_artifact_upload_registry_entry_v1`, `validate_scoped_artifact_upload_registry_entry_v1`, `authorize_scoped_artifact_upload_access_v1`, `build_scoped_artifact_upload_access_envelope_v1`, `validate_scoped_artifact_upload_access_envelope_v1`, `summarize_scoped_artifact_upload_registry_v1`, `to_scoped_artifact_upload_registry_json_safe_v1`, and `render_scoped_artifact_upload_registry_markdown_v1`.
+- Registry boundary result: metadata-only, deterministic, import-safe, side-effect-free, JSON-safe, no artifact/upload reads, no upload ingestion, no runtime/chat/browser behavior, no filesystem/`.weslr`/database/auth/provider/search/model/advisor behavior, no final-answer/user-facing authority, and `content_included` remains false.
+- Allowed modes implemented and bounded: `metadata_only_preview`, `redacted_summary_candidate`, `provenance_summary_metadata`, `continuity_anchor_metadata`, and `blocked_no_access`.
+- Forbidden modes fail closed: `raw_artifact_content`, `raw_upload_content`, `cross_user_artifact_access`, `global_artifact_registry`, `dot_weslr_artifact_state`, `runtime_transcript_upload`, `browser_public_upload_state`, `provider_output_ingestion`, `final_answer_artifact_injection`, and `unrestricted_artifact_dump`.
+- Fail-closed behavior reviewed: missing/invalid source scope, missing owner/requester/target scope, missing/denied authorization, ownership mismatch, requester/target mismatch, cross-user/cross-tenant, guest/authenticated mismatch, public-browser/private-artifact conflict, raw artifact/upload request, forbidden markers, stale/untrusted artifact-as-truth, final-answer/runtime/chat/provider/search authority markers, denied-authority missing/true, and non-JSON-safe metadata all block to `blocked_no_access` or equivalent denied metadata-only status.
+- Validation recorded: scoped artifact registry tests `46 passed`; source scope tests `25 passed`; read authorization tests `32 passed`; scoped memory context adapter tests `47 passed`; release gate and release check passed during the review lane.
+- Gaps: no revision-blocking gaps found in the reviewed helper implementation.
+- Still blocked before chat wiring: cache/log/trace scoping, async-safe request context, leakage negative full-chain tests, candidate/checkpoint/assembly helper implementations, and final-answer generation.
+- Current recommended next lane: `DESIGN_CACHE_LOG_TRACE_SCOPING_BOUNDARY_V1`.
+- Current boundary rule remains: these helpers may support scoped artifact/upload metadata only. They do not authorize artifact/upload reads, upload ingestion, filesystem scanning, `.weslr` IO, database/auth/session behavior, runtime/chat/browser behavior, provider/model/search/advisor calls, public output, final-answer generation, cross-user/global registry access, automatic truth from artifacts/uploads, or authority grants.
+
 ### Latest Context Alignment — Scoped Artifact Upload Registry Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
