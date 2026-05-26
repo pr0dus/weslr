@@ -20,6 +20,34 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Controlled Local Lean Dry Run Harness Synthetic-Only Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Controlled local Lean dry-run harness synthetic-only design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1.md`.
+- Review path: `docs/WESLR_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_REVIEW_V1.md`; review commit `7b01b7f`; judgment `controlled_local_lean_dry_run_harness_synthetic_only_design_valid_ready_for_context_alignment`.
+- Harness boundary result: `ControlledLocalLeanDryRunHarnessSyntheticOnlyV1` is valid, design-only, local-only, synthetic-only, toy-fixture-only, sandbox-scoped, no-network, no-provider, no-runtime, no-final-answer, raw-output-limited, source-scoped, freshness-labeled, fail-closed, and authority-denying.
+- Fixture policy is valid: synthetic toy fixtures only; real open problems blocked; private user content blocked; fixture content excluded; fixture review required.
+- Sandbox policy is valid: local-only; network/provider/download access blocked; `.weslr` access blocked; explicit filesystem scope required.
+- Execution policy is valid: execution is not authorized by this design; future execution requires separate approval; Lean execution, proof search, solver runner, and batch execution are blocked in this lane; timeout/resource limits are required for any future lane.
+- Output capture policy is valid: raw output, raw trace, raw goal state, and raw error text are blocked; bounded summaries require future review; result envelope and formal verifier result envelope are required.
+- Network policy is valid: disabled network is required; provider/model/search/advisor calls and package downloads are blocked.
+- Filesystem policy is valid: workspace-temp only; persistent writes, `.weslr` IO, source-tree writes, cache writes, and log/trace writes are blocked.
+- Claim policy is valid: no proof authority, public authority, benchmark authority, intelligence authority, Turing authority, certification authority, product-readiness authority, or final-answer authority.
+- Abort policy is valid: aborts on non-synthetic fixture, real open problem, private content, network/provider requirements, `.weslr` access, source-tree/persistent writes, raw compiler/goal/error/trace capture, claim implication, missing timeout/resource limits, or denied-authority violation.
+- Risk metadata is valid and covers synthetic boundary escape, real problem attempts, private leakage, raw trace leakage, `.weslr` access, network escape, provider calls, proof-search expansion, dry-run-as-proof, benchmark overclaim, final-answer overclaim, and runtime wiring.
+- Denied-authority fields are valid, complete, and required false.
+- Fail-closed rules are valid.
+- Relationships are valid: prior formal proof-search components remain in their limited metadata roles; the harness boundary cannot override the Lean sketch schema, population registry, verifier envelope, misformalization workflow, rater/critic boundary, or global cache boundary; a future dry run, even if successful, is not proof, public, or final-answer authority.
+- Future negative tests are valid and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future implementation, if ever authorized, must remain synthetic-only and toy-fixture-only by default; future implementation requires separate design/review/authorization; future execution requires local sandbox, no network, no providers, no `.weslr`, no persistent writes, no raw trace capture, timeouts, resource limits, and bounded outputs only; dry-run success must never become proof, public, benchmark, intelligence, Turing, certification, product-readiness, runtime, or final-answer authority; real theorem/proof attempts remain much later and separately authorized, if ever.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Possible future lane only if explicitly requested: `DESIGN_SYNTHETIC_LEAN_DRY_RUN_HELPER_IMPLEMENTATION_BOUNDARY_V1`.
+- Current boundary rule remains: the reviewed design grants no implementation, Lean install, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, real verifier result capture, cache creation, cache reads, cache writes, `.weslr` reads or writes, log/trace/cache reads or writes, private context reads, artifact content reads, cross-user reuse, provider/model/search/advisor calls, rater execution, critic execution, Elo scoring, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+
+
 
 
 
