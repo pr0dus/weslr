@@ -31,6 +31,21 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Central Read Authorization Helpers Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR central read authorization helpers design is reviewed and valid for context alignment.
+- Design path: `docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md`.
+- Review path: `docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_REVIEW_V1.md`; review commit `90765cb`; judgment `central_read_authorization_helpers_design_valid_ready_for_context_alignment`.
+- Scope-vs-authorization separation: source-scope validates metadata; central read authorization decides policy; future scoped adapters enforce authorization before reads.
+- Decision outcome coverage: PASS. The design covers metadata-only/internal-shadow allow outcomes and required denial outcomes including missing source scope, scope mismatch, cross-user/cross-tenant, public-browser context, private/raw content, stale/untrusted source, unsupported use context, missing policy, runtime authority, provider/external-call authority, final-answer/user-output authority, and design-review escalation.
+- Fail-closed coverage: PASS. The design covers missing/invalid scope, requester/target scope gaps, tenant/account/user/session/conversation mismatches, guest/authenticated mismatches, query-string identity, global `.weslr`, `tl_default`, process-global/thread-local/default inference, unscoped resources, public-browser private-state requests, missing/true denied-authority fields, unknown policy, and runtime/provider/final-answer authority implication.
+- Gaps: no revision-blocking gaps found.
+- Current recommended next lane: `IMPLEMENT_CENTRAL_READ_AUTHORIZATION_HELPERS_V1`. Do not start it from this context alignment packet; it must be separately authorized and kept narrow, metadata-only, pure, import-safe, synthetic-data-only, deterministic, and no-read.
+- Future implementation constraints: no real reads; no runtime/chat/browser wiring; no authentication decisions; no database migration or database reads; no provider/model/search/advisor calls; no `.weslr` IO; no candidate execution; no safe assembly implementation; no final-answer generation; no source-scope expansion by accident; `weslr/chat_responder.py` must remain untouched.
+- Current boundary rule remains: the reviewed central read authorization helpers design may inform a future separately authorized implementation lane only. It does not authorize memory/context/evidence/artifact/upload/cache/log/trace reads, scoped adapters, runtime/browser/public behavior, authentication, database work, provider/model/search/advisor calls, `.weslr` public state, candidate execution, safe assembly, final-answer generation, cross-user context use, or authority grants.
+
 ### Latest Context Alignment — Namespace Source-Scope Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
