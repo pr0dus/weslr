@@ -8830,6 +8830,32 @@ _rater_critic_ranking_boundary_required_markers = {
     "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
 }
 
+_rater_critic_ranking_boundary_review_doc = "docs/WESLR_RATER_CRITIC_RANKING_BOUNDARY_REVIEW_V1.md"
+_rater_critic_ranking_boundary_review_required_markers = {
+    "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
+    "review-only",
+    "rater_critic_ranking_boundary_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Boundary Object Result",
+    "Required Top-Level Fields Result",
+    "Ranking Purpose Metadata Result",
+    "Candidate Reference Metadata Result",
+    "Critic Signal Metadata Result",
+    "Comparison Metadata Result",
+    "Priority Metadata Result",
+    "Score Metadata Result",
+    "Adjudication Dependency Metadata Result",
+    "Risk Metadata Result",
+    "Validation Status Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationships Result",
+    "Future Negative Tests Result",
+    "Formal Proof Search Sequence Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_RATER_CRITIC_RANKING_BOUNDARY_REVIEW_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11625,6 +11651,13 @@ def _rater_critic_ranking_boundary_doc_is_valid():
     )
 
 
+def _rater_critic_ranking_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _rater_critic_ranking_boundary_review_doc,
+        _rater_critic_ranking_boundary_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -12032,6 +12065,7 @@ def _check_git_scope():
     misformalization_detection_adjudication_workflow_doc_valid = _misformalization_detection_adjudication_workflow_doc_is_valid()
     misformalization_detection_adjudication_workflow_review_doc_valid = _misformalization_detection_adjudication_workflow_review_doc_is_valid()
     rater_critic_ranking_boundary_doc_valid = _rater_critic_ranking_boundary_doc_is_valid()
+    rater_critic_ranking_boundary_review_doc_valid = _rater_critic_ranking_boundary_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13199,6 +13233,10 @@ def _check_git_scope():
             allowed = rater_critic_ranking_boundary_doc_valid
             if not rater_critic_ranking_boundary_doc_valid:
                 violations.append(f"  rater critic ranking boundary design doc missing required markers: {path}")
+        if path == _rater_critic_ranking_boundary_review_doc:
+            allowed = rater_critic_ranking_boundary_review_doc_valid
+            if not rater_critic_ranking_boundary_review_doc_valid:
+                violations.append(f"  rater critic ranking boundary review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
