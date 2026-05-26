@@ -9068,6 +9068,100 @@ _cache_log_trace_scoping_boundary_required_markers = {
     "A — review/context-align this design, then implement cache/log/trace scoping helpers",
 }
 
+
+_cache_log_trace_scoping_boundary_review_doc = "docs/WESLR_CACHE_LOG_TRACE_SCOPING_BOUNDARY_REVIEW_V1.md"
+_cache_log_trace_scoping_boundary_review_required_markers = {
+    "REVIEW_CACHE_LOG_TRACE_SCOPING_BOUNDARY_V1",
+    "review-only",
+    "docs/WESLR_CACHE_LOG_TRACE_SCOPING_BOUNDARY_REVIEW_V1.md",
+    "docs/WESLR_CACHE_LOG_TRACE_SCOPING_BOUNDARY_V1.md",
+    "cache_log_trace_scoping_boundary_design_valid_ready_for_context_alignment",
+    "no implementation",
+    "no cache/log/trace reads",
+    "no transcript ingestion",
+    "no filesystem scanning",
+    "no `.weslr` IO",
+    "no database/auth/session implementation",
+    "no runtime/chat/browser wiring",
+    "no provider/model/search/advisor calls",
+    "no final-answer generation",
+    "no public/user-facing output",
+    "no automatic truth from cache/log/trace",
+    "no cross-user/global diagnostic reads",
+    "cache entries",
+    "logs",
+    "traces",
+    "diagnostics",
+    "runtime transcripts",
+    "provider traces",
+    "tool traces",
+    "evaluation traces",
+    "audit traces",
+    "error reports",
+    "telemetry summaries",
+    "trace_metadata_intake",
+    "cache_metadata_intake",
+    "log_metadata_intake",
+    "source_scope_requirement",
+    "owner/requester/target scope validation",
+    "central_read_authorization_requirement",
+    "retention/privacy policy check",
+    "redaction boundary",
+    "metadata-only summary envelope",
+    "blocked_no_access result",
+    "audit trace metadata",
+    "build_cache_log_trace_scope_record_v1",
+    "validate_cache_log_trace_scope_record_v1",
+    "authorize_cache_log_trace_access_v1",
+    "build_cache_log_trace_access_envelope_v1",
+    "validate_cache_log_trace_access_envelope_v1",
+    "summarize_cache_log_trace_scope_v1",
+    "to_cache_log_trace_scope_json_safe_v1",
+    "render_cache_log_trace_scope_markdown_v1",
+    "content_included: false",
+    "raw_trace_included: false",
+    "raw_log_included: false",
+    "raw_cache_value_included: false",
+    "metadata_only_preview",
+    "redacted_diagnostic_summary",
+    "aggregate_count_summary",
+    "provenance_summary_metadata",
+    "blocked_no_access",
+    "raw_log_text",
+    "raw_trace_payload",
+    "raw_cache_value",
+    "runtime_transcript_dump",
+    "provider_trace_dump",
+    "tool_trace_dump",
+    "cross_user_trace_access",
+    "global_log_scan",
+    "dot_weslr_trace_state",
+    "final_answer_trace_injection",
+    "unrestricted_diagnostic_dump",
+    "missing/invalid scope",
+    "missing owner/requester/target scope",
+    "missing/denied authorization",
+    "cross-user/tenant/session risk",
+    "private trace in public browser context",
+    "raw content requests",
+    "forbidden modes/markers",
+    "query-string identity",
+    "truth-authority misuse",
+    "stale/untrusted diagnostics",
+    "final-answer/runtime/provider/search authority",
+    "denied-authority violations",
+    "non-JSON-safe metadata",
+    "`source_scope` validates scope metadata",
+    "`read_authorization` decides scoped metadata access",
+    "The scoped memory/context adapter remains separate",
+    "The scoped artifact/upload registry remains separate",
+    "Cache/log/trace metadata supports diagnostics/provenance only, not truth",
+    "Evidence/provenance still controls factual authority",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CACHE_LOG_TRACE_SCOPING_BOUNDARY_REVIEW_V1",
+    "A — review/context-align this design, then implement cache/log/trace scoping helpers",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -11089,6 +11183,13 @@ def _cache_log_trace_scoping_boundary_doc_is_valid():
     )
 
 
+def _cache_log_trace_scoping_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cache_log_trace_scoping_boundary_review_doc,
+        _cache_log_trace_scoping_boundary_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -11410,6 +11511,7 @@ def _check_git_scope():
     scoped_artifact_upload_registry_review_doc_valid = _scoped_artifact_upload_registry_review_doc_is_valid()
     scoped_artifact_upload_registry_helpers_implementation_review_doc_valid = _scoped_artifact_upload_registry_helpers_implementation_review_doc_is_valid()
     cache_log_trace_scoping_boundary_doc_valid = _cache_log_trace_scoping_boundary_doc_is_valid()
+    cache_log_trace_scoping_boundary_review_doc_valid = _cache_log_trace_scoping_boundary_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12557,6 +12659,10 @@ def _check_git_scope():
             allowed = cache_log_trace_scoping_boundary_doc_valid
             if not cache_log_trace_scoping_boundary_doc_valid:
                 violations.append(f"  cache/log/trace scoping boundary doc missing required markers: {path}")
+        if path == _cache_log_trace_scoping_boundary_review_doc:
+            allowed = cache_log_trace_scoping_boundary_review_doc_valid
+            if not cache_log_trace_scoping_boundary_review_doc_valid:
+                violations.append(f"  cache/log/trace scoping boundary review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
