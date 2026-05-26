@@ -19,6 +19,25 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
+
+### Latest Context Alignment — Formal Proof Search Assimilation Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Formal proof-search assimilation boundary design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_REVIEW_V1.md`; review commit `828d659`; judgment `formal_proof_search_assimilation_boundary_design_valid_ready_for_context_alignment`.
+- Preceding audit path: `docs/WESLR_FORMAL_PROOF_SEARCH_ARCHITECTURE_DEEPMIND_PAPER_AUDIT_V1.md`.
+- Review result: boundary design valid; assimilated principles complete; WESLR asset mapping accurate; authority ladder complete and non-skippable; blocked behaviors sufficient; future design sequence preserved; chat-wiring blockers explicitly remain unresolved.
+- Gaps: no revision-blocking gaps found.
+- Minor future schema notes: later schema lanes should define field-level denied-authority booleans, freshness/version fields, and source-scope keys.
+- Boundary still grants no implementation, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, rater/critic execution, Elo/ranking implementation, provider/model/search/advisor calls, `.weslr` reads or writes, private artifact/upload/log/trace/cache reads, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+- Preserved future formal proof-search design sequence: `DESIGN_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1`; `DESIGN_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_V1`; `DESIGN_FORMAL_VERIFIER_RESULT_ENVELOPE_V1`; `DESIGN_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1`; `DESIGN_RATER_CRITIC_RANKING_BOUNDARY_V1`; `DESIGN_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1`; later `DESIGN_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1`; much later separately authorized real theorem/proof attempt lanes.
+- Current chat-wiring blockers remain: async-safe request context, leakage negative full-chain tests, candidate/checkpoint/assembly helper implementations, and final-answer generation remains blocked.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Possible next lane only if explicitly requested: `DESIGN_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1`.
+- Current boundary rule remains: formal proof-search assimilation is roadmap/design context only. It must not be treated as implementation permission, proof capability, Lean/prover/solver execution authority, runtime/chat authority, provider/model/search/advisor authority, final-answer authority, or public/proof/intelligence/Turing/certification/product-readiness authority.
+
 ### Latest Context Alignment — Cache Log Trace Scoping Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
