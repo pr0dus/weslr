@@ -8725,6 +8725,45 @@ _formal_verifier_result_envelope_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_FORMAL_VERIFIER_RESULT_ENVELOPE_REVIEW_V1",
 }
 
+_misformalization_detection_adjudication_workflow_doc = "docs/WESLR_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1.md"
+_misformalization_detection_adjudication_workflow_required_markers = {
+    "DESIGN_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1",
+    "design-only",
+    "MisformalizationDetectionAndAdjudicationWorkflowV1",
+    "metadata-only",
+    "source-scoped",
+    "JSON-safe",
+    "Problem Intent Review Metadata",
+    "Formal Statement Review Metadata",
+    "Assumption Review Metadata",
+    "Definition / Dependency Review Metadata",
+    "Source Alignment Review Metadata",
+    "Candidate Alignment Review Metadata",
+    "Verifier Alignment Review Metadata",
+    "Adjudication Metadata",
+    "Risk Metadata",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Relationship To Lean Formal Problem Sketch Schema",
+    "Relationship To Population / Failed-Path Registry",
+    "Relationship To Formal Verifier Result Envelope",
+    "Relationship To Existing WESLR Helpers",
+    "Future Negative Tests Required",
+    "compiler_success_is_not_intent_validation: true",
+    "raw_intent_text_included: false",
+    "raw_statement_text_included: false",
+    "source_content_included: false",
+    "external_review_observed: false",
+    "adjudication_content_included: false",
+    "permits_lean_execution: false",
+    "permits_real_verifier_result_capture: false",
+    "permits_theorem_intent_validation_claim: false",
+    "permits_final_answer_generation: false",
+    "misformalization_detection_adjudication_workflow_design_ready_for_review",
+    "REVIEW_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11499,6 +11538,13 @@ def _formal_verifier_result_envelope_review_doc_is_valid():
     )
 
 
+def _misformalization_detection_adjudication_workflow_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _misformalization_detection_adjudication_workflow_doc,
+        _misformalization_detection_adjudication_workflow_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11903,6 +11949,7 @@ def _check_git_scope():
     proof_sketch_population_failed_path_registry_review_doc_valid = _proof_sketch_population_failed_path_registry_review_doc_is_valid()
     formal_verifier_result_envelope_doc_valid = _formal_verifier_result_envelope_doc_is_valid()
     formal_verifier_result_envelope_review_doc_valid = _formal_verifier_result_envelope_review_doc_is_valid()
+    misformalization_detection_adjudication_workflow_doc_valid = _misformalization_detection_adjudication_workflow_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13058,6 +13105,10 @@ def _check_git_scope():
             allowed = formal_verifier_result_envelope_review_doc_valid
             if not formal_verifier_result_envelope_review_doc_valid:
                 violations.append(f"  formal verifier result envelope review doc missing required markers: {path}")
+        if path == _misformalization_detection_adjudication_workflow_doc:
+            allowed = misformalization_detection_adjudication_workflow_doc_valid
+            if not misformalization_detection_adjudication_workflow_doc_valid:
+                violations.append(f"  misformalization detection adjudication workflow design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
