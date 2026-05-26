@@ -22,6 +22,34 @@ Don't ask permission. Just do it.
 
 
 
+
+
+### Latest Context Alignment — Formal Verifier Result Envelope Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Formal verifier result envelope design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_FORMAL_VERIFIER_RESULT_ENVELOPE_V1.md`.
+- Review path: `docs/WESLR_FORMAL_VERIFIER_RESULT_ENVELOPE_REVIEW_V1.md`; review commit `b071b78`; judgment `formal_verifier_result_envelope_design_valid_ready_for_context_alignment`.
+- Envelope result: `FormalVerifierResultEnvelopeV1` is valid, metadata-only, JSON-safe, source-scoped, versioned, freshness-labeled, fail-closed, raw-output-denying, and authority-denying.
+- Required fields are complete.
+- Verifier environment metadata is valid: descriptive only and no execution.
+- Verifier result metadata is valid: bounded labels only, with no raw verifier/compiler traces.
+- Theorem statement integrity metadata is valid and remains necessary but not sufficient for authority.
+- Soundness integrity metadata is valid; any soundness risk blocks claim authority.
+- Import/dependency integrity metadata is valid.
+- Proof body integrity metadata is valid: hash labels only, with raw proof body excluded.
+- Compiler feedback summary metadata is valid: bounded summaries only, with no raw error/goal/trace leakage.
+- Validation caveats are valid.
+- Misformalization signals are valid.
+- Denied-authority fields are complete and required false.
+- Fail-closed rules are sufficient.
+- Relationships are valid for the Lean formal problem sketch schema, proof sketch population/failed-path registry, and existing WESLR helpers.
+- Future negative tests are sufficient and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future helper design must preserve raw-output denial and bounded metadata summaries; compiler/verifier metadata must not become proof, benchmark, public, intelligence, Turing, certification, product-readiness, runtime, or final-answer authority; any future real verifier capture requires separate design/review/authorization; misformalization review remains separate from compiler/verifier result status; future synthetic-only Lean dry-run harness remains much later and separately reviewed.
+- Current next lane: `DESIGN_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1`.
+- Current boundary rule remains: the reviewed envelope grants no implementation, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, real verifier result capture, rater execution, critic execution, Elo scoring, provider/model/search/advisor calls, `.weslr` reads or writes, private artifact/upload/log/trace/cache reads, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
 ### Latest Context Alignment — Proof Sketch Population And Failed Path Registry Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
