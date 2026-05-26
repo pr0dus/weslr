@@ -8518,6 +8518,37 @@ _central_read_authorization_helpers_review_required_markers = {
     "No implementation step is authorized by this review",
 }
 
+_central_read_authorization_helpers_implementation_review_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_central_read_authorization_helpers_implementation_review_required_markers = {
+    "REVIEW_CENTRAL_READ_AUTHORIZATION_HELPERS_IMPLEMENTATION_V1",
+    "central_read_authorization_helpers_implementation_valid_ready_for_context_alignment",
+    "build_read_authorization_request_v1",
+    "validate_read_authorization_request_v1",
+    "authorize_scoped_read_v1",
+    "require_read_authorization_for_candidate_v1",
+    "summarize_read_authorization_v1",
+    "to_read_authorization_json_safe_v1",
+    "render_read_authorization_markdown_v1",
+    "validate_source_scope_v1",
+    "allow_metadata_only",
+    "allow_read_for_internal_shadow_use",
+    "deny_missing_source_scope",
+    "deny_invalid_source_scope",
+    "deny_missing_requester_scope",
+    "deny_missing_target_scope",
+    "deny_cross_user_or_cross_tenant",
+    "deny_scope_mismatch",
+    "deny_public_browser_context",
+    "deny_private_or_raw_content",
+    "deny_missing_policy",
+    "deny_runtime_authority",
+    "deny_provider_or_external_call",
+    "deny_final_answer_or_user_output",
+    "permits_memory_reads_without_adapter",
+    "No revision-blocking gaps were found",
+    "Central read authorization remains metadata-only",
+}
+
 _tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
 _tier_0_2_math_challenge_readiness_required_markers = {
     "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
@@ -10223,6 +10254,14 @@ def _central_read_authorization_helpers_review_doc_is_valid():
         _central_read_authorization_helpers_review_required_markers,
     )
 
+
+def _central_read_authorization_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _central_read_authorization_helpers_implementation_review_doc,
+        _central_read_authorization_helpers_implementation_review_required_markers,
+    )
+
+
 def _tier_0_2_math_challenge_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(
         _tier_0_2_math_challenge_readiness_doc,
@@ -10494,6 +10533,7 @@ def _check_git_scope():
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
+    central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
     tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     tier_0_2_math_challenge_readiness_review_doc_valid = _tier_0_2_math_challenge_readiness_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
@@ -11603,6 +11643,10 @@ def _check_git_scope():
             allowed = central_read_authorization_helpers_review_doc_valid
             if not central_read_authorization_helpers_review_doc_valid:
                 violations.append(f"  central read authorization helpers review doc missing required markers: {path}")
+        if path == _central_read_authorization_helpers_implementation_review_doc:
+            allowed = central_read_authorization_helpers_implementation_review_doc_valid
+            if not central_read_authorization_helpers_implementation_review_doc_valid:
+                violations.append(f"  central read authorization helpers implementation review doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
