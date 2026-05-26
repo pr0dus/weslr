@@ -19,6 +19,27 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
+### Latest Context Alignment — Cache Log Trace Scoping Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR cache/log/trace scoping helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/cache_log_trace_scope.py`.
+- Test path: `weslr/tests/test_cache_log_trace_scope_v1.py`.
+- Implementation review path: `docs/WESLR_CACHE_LOG_TRACE_SCOPING_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `1b61cc5`; judgment `cache_log_trace_scoping_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs implemented and reviewed: `build_cache_log_trace_scope_record_v1`, `validate_cache_log_trace_scope_record_v1`, `authorize_cache_log_trace_access_v1`, `build_cache_log_trace_access_envelope_v1`, `validate_cache_log_trace_access_envelope_v1`, `summarize_cache_log_trace_scope_v1`, `to_cache_log_trace_scope_json_safe_v1`, and `render_cache_log_trace_scope_markdown_v1`.
+- Helper boundary result: metadata-only, deterministic, import-safe, side-effect-free, JSON-safe, reuses `source_scope` validation, reuses central `read_authorization`, no cache/log/trace reads, no transcript ingestion, no filesystem scanning, no `.weslr` IO, no runtime/chat/browser/auth/database behavior, no provider/search/model/advisor calls, and no final-answer/user-facing authority.
+- Surfaces covered: `cache_entry`, `log`, `trace`, `diagnostic`, `runtime_transcript`, `provider_trace`, `tool_trace`, `evaluation_trace`, `audit_trace`, `error_report`, and `telemetry_summary`.
+- Allowed modes implemented and bounded: `metadata_only_preview`, `redacted_diagnostic_summary`, `aggregate_count_summary`, `provenance_summary_metadata`, and `blocked_no_access`.
+- Forbidden modes fail closed, including raw log/trace/cache values, runtime/provider/tool transcript dumps, cross-user/global trace access, `.weslr` trace state, final-answer trace injection, and unrestricted diagnostic dumps.
+- Fail-closed behavior reviewed: missing/invalid source scope, missing owner/requester/target scope, missing/denied authorization, cross-user/tenant/session risk, public-browser/private trace conflict, raw content request, unsafe markers, truth-authority misuse, denied-authority violations, and non-JSON-safe metadata all block to no-access metadata results.
+- Validation recorded: cache/log/trace tests `64 passed`; source scope tests `25 passed`; read authorization tests `32 passed`; scoped memory adapter tests `47 passed`; scoped artifact registry tests `46 passed`; release gate and release check passed during the review lane.
+- Gaps: no blocking implementation gaps found in the reviewed helper implementation.
+- Still blocked before chat wiring: async-safe request context, leakage negative full-chain tests, candidate/checkpoint/assembly helper implementations, and final-answer generation.
+- Current recommended next lane: `AUDIT_WESLR_FORMAL_PROOF_SEARCH_ARCHITECTURE_AGAINST_DEEPMIND_PAPER_V1`. This next lane is research assimilation / architecture audit only. It must not implement Lean, theorem provers, solver runners, model/provider calls, runtime/chat wiring, final-answer generation, or proof/public/intelligence/Turing/certification claims.
+- Current boundary rule remains: the reviewed cache/log/trace scoping helpers may support scoped diagnostic metadata only. They do not authorize cache/log/trace reads, transcript ingestion, filesystem scanning, `.weslr` IO, database/auth/session behavior, runtime/chat/browser behavior, provider/model/search/advisor calls, public output, final-answer generation, cross-user/global diagnostic access, automatic truth from diagnostics, or authority grants.
+
+
 ### Latest Context Alignment — Cache Log Trace Scoping Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
