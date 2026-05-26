@@ -20,6 +20,35 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — User Workspace Capability Surface And Scratch Instrument Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR user workspace capability surface and scratch instrument boundary design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_REVIEW_V1.md`; review commit `058cbf6`; judgment `weslr_user_workspace_capability_surface_scratch_instrument_boundary_design_valid_ready_for_context_alignment`.
+- Workspace boundary result: `WeslrUserWorkspaceCapabilitySurfaceV1` is valid, user-facing, project-scoped, source-scoped, artifact-scoped, memory/context-scoped, capability-aware, scratch-instrument-aware, promotion-gated, privacy-preserving, fail-closed, raw-content-controlled, and authority-denying by default.
+- Capability surface is valid and covers general project work, theory/hypothesis work, UNKNOWN ENGINE, Cognitive Gym, formal proof-search metadata, materials/science, industrial/TIA workflows, business/PlantDelux-style workflows, artifact/upload analysis, memory/context review, future voice/live interaction, future tool/scratch execution, and future advisor/model/provider integrations. Capability presence does not mean execution, runtime wiring, official behavior, truth authority, final-answer authority, product readiness, proof authority, benchmark authority, intelligence authority, or certification authority.
+- Artifact types are valid: intent/source/assumption/hypothesis/theory/evidence/experiment/failed-path/decision/review/promotion/formal/verifier/misformalization/scratch/report cards.
+- Scratch instrument boundary is valid: workspace-local, source-scoped, approval-gated, not WESLR core, not official behavior, no hidden execution, no provider/network access unless separately authorized, no `.weslr` access, no source-tree writes, no runtime/chat wiring, no promotion without review, and no proof/final-answer/public authority.
+- Core/workspace/scratch separation is valid: official WESLR core remains reviewed, committed, release-gated, and promotion-required; workspace holds user/project scoped artifacts and metadata; scratch instruments remain local/disposable/provisional and never promoted automatically.
+- Promotion gate is valid: review, operator approval, and release gate are required; promotion is a request, not a grant; no runtime authority or final-answer authority is granted.
+- Privacy and memory-context boundary is valid: workspace content is not global truth; memory/context requires scoped read authorization; raw private content does not leak by default; cross-user reuse is blocked by default; private artifacts remain scoped; workspace summaries are metadata unless promoted; workspace memory is not official canon by default.
+- Execution policy is valid: execution is denied by design; scratch execution requires approval; network/provider access is false by default; filesystem scope is required; persistent writes require approval; runtime wiring, source-tree writes, and final-answer generation are blocked.
+- Authority policy is valid: workspace artifacts do not grant truth; scratch outputs do not grant truth; model/advisor outputs do not grant authority; formal proof metadata does not grant proof claims; business/materials/industrial artifacts do not grant production readiness; ranking/scoring does not grant intelligence or benchmark claims; voice/live interaction does not grant runtime authority without separate wiring review; promotion is required for official behavior.
+- Relationships are valid: workspace surface coordinates but does not replace or bypass `source_scope`, `read_authorization`, scoped memory/context adapter, scoped artifact/upload registry, cache/log/trace scoping, UNKNOWN ENGINE metadata shadow runner, Cognitive Gym, formal proof-search metadata chain, safe final response assembly boundaries, reasoning-chain gap audits, or future voice layer.
+- Capability expansion is valid: future capabilities attach only through capability adapter metadata with source scope, denied-authority fields, privacy/execution boundaries, promotion gates, no automatic runtime authority, and no official claims without evidence/review.
+- Example workflows are valid and broad.
+- OCC relationship is valid: OCC builds WESLR; WESLR workspace is for humans using WESLR; OCC context alignment does not equal WESLR runtime behavior; workspace artifacts do not modify WESLR core unless promoted through reviewed lanes.
+- Future negative tests are valid, synthetic-only, and no-run.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: workspace surface is the human-facing operating layer, not runtime behavior; future workspace implementation requires separate design/review/authorization; future scratch instrument creation/execution requires separate approval and bounded scope; workspace artifacts and scratch outputs remain non-authoritative unless promoted through reviewed lanes; promotion requires review, operator approval, and release gate; workspace capability presence never means execution or authority.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_REVIEW_V1`.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Possible future lanes only if explicitly requested: `DESIGN_WESLR_WORKSPACE_SCHEMA_HELPERS_V1`, `DESIGN_WESLR_SCRATCH_INSTRUMENT_METADATA_HELPERS_V1`, `DESIGN_WESLR_WORKSPACE_PROMOTION_GATE_HELPERS_V1`.
+- Current boundary rule remains: the reviewed boundary grants no implementation, workspace creation, scratch script creation, scratch execution, source-tree writes, runtime chat wiring, voice runtime wiring, provider/model/search/advisor calls, `.weslr` reads or writes, private context reads, artifact content reads, cross-user reuse, cache/log/trace reads or writes, final-answer generation, official core promotion, or proof/public/benchmark/intelligence/Turing/certification/product-readiness claims.
+
+
 ### Latest Context Alignment — Controlled Local Lean Dry Run Harness Synthetic-Only Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
