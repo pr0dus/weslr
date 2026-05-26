@@ -8793,6 +8793,43 @@ _misformalization_detection_adjudication_workflow_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_REVIEW_V1",
 }
 
+_rater_critic_ranking_boundary_doc = "docs/WESLR_RATER_CRITIC_RANKING_BOUNDARY_V1.md"
+_rater_critic_ranking_boundary_required_markers = {
+    "DESIGN_RATER_CRITIC_RANKING_BOUNDARY_V1",
+    "design-only",
+    "RaterCriticRankingBoundaryV1",
+    "metadata-only",
+    "JSON-safe",
+    "source-scoped",
+    "Ranking Purpose Metadata",
+    "Candidate Reference Metadata",
+    "Critic Signal Metadata",
+    "Comparison Metadata",
+    "Priority Metadata",
+    "Score Metadata",
+    "Adjudication Dependency Metadata",
+    "Risk Metadata",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Relationship To Previous Formal Proof Search Components",
+    "Relationship To Existing WESLR Helpers",
+    "Future Negative Tests Required",
+    "Relationship To Formal Proof Search Sequence",
+    "ranking_for_triage_only: true",
+    "candidate_content_included: false",
+    "critic_execution_observed: false",
+    "score_is_benchmark: false",
+    "misformalization_blocks_override_ranking: true",
+    "ranking_cannot_override_denied_authority: true",
+    "permits_rater_execution: false",
+    "permits_critic_execution: false",
+    "permits_elo_scoring: false",
+    "permits_final_answer_generation: false",
+    "rater_critic_ranking_boundary_design_ready_for_review",
+    "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11581,6 +11618,13 @@ def _misformalization_detection_adjudication_workflow_review_doc_is_valid():
     )
 
 
+def _rater_critic_ranking_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _rater_critic_ranking_boundary_doc,
+        _rater_critic_ranking_boundary_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11987,6 +12031,7 @@ def _check_git_scope():
     formal_verifier_result_envelope_review_doc_valid = _formal_verifier_result_envelope_review_doc_is_valid()
     misformalization_detection_adjudication_workflow_doc_valid = _misformalization_detection_adjudication_workflow_doc_is_valid()
     misformalization_detection_adjudication_workflow_review_doc_valid = _misformalization_detection_adjudication_workflow_review_doc_is_valid()
+    rater_critic_ranking_boundary_doc_valid = _rater_critic_ranking_boundary_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13150,6 +13195,10 @@ def _check_git_scope():
             allowed = misformalization_detection_adjudication_workflow_review_doc_valid
             if not misformalization_detection_adjudication_workflow_review_doc_valid:
                 violations.append(f"  misformalization detection adjudication workflow review doc missing required markers: {path}")
+        if path == _rater_critic_ranking_boundary_doc:
+            allowed = rater_critic_ranking_boundary_doc_valid
+            if not rater_critic_ranking_boundary_doc_valid:
+                violations.append(f"  rater critic ranking boundary design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
