@@ -8491,6 +8491,32 @@ _formal_proof_search_architecture_deepmind_paper_audit_required_markers = {
     "No provider/model/search/advisor call was made",
 }
 
+_formal_proof_search_assimilation_boundary_doc = "docs/WESLR_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1.md"
+_formal_proof_search_assimilation_boundary_required_markers = {
+    "DESIGN_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1",
+    "design-only",
+    "Lean execution: none",
+    "Theorem prover / solver runner: none",
+    "Provider/model/search/advisor calls: none",
+    "Public/proof/intelligence/Turing/certification claims: none",
+    "safe assimilation layer for formal proof-search architecture",
+    "Formal verifier, not LLM prose, is proof authority",
+    "Theorem formalization must be separately validated",
+    "Bounded edit regions must prevent theorem drift",
+    "Proof sketches are candidates, not truth",
+    "Rater/critic ranking prioritizes attempts but grants no proof authority",
+    "Global goal/subgoal caches need scope and authorization",
+    "Misformalization detection is mandatory",
+    "Cognitive Gym exploratory case helpers",
+    "Erdős readiness / Tier 0-2 math challenge readiness",
+    "UNKNOWN ENGINE metadata shadow runner/report",
+    "Authority Ladder",
+    "DESIGN_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1",
+    "DESIGN_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1",
+    "REVIEW_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1",
+    "final-answer generation remains blocked",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11209,6 +11235,13 @@ def _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid():
     )
 
 
+def _formal_proof_search_assimilation_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _formal_proof_search_assimilation_boundary_doc,
+        _formal_proof_search_assimilation_boundary_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11605,6 +11638,7 @@ def _check_git_scope():
     namespace_schema_and_source_scope_helpers_implementation_review_doc_valid = _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid()
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
     formal_proof_search_architecture_deepmind_paper_audit_doc_valid = _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid()
+    formal_proof_search_assimilation_boundary_doc_valid = _formal_proof_search_assimilation_boundary_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12728,6 +12762,10 @@ def _check_git_scope():
             allowed = formal_proof_search_architecture_deepmind_paper_audit_doc_valid
             if not formal_proof_search_architecture_deepmind_paper_audit_doc_valid:
                 violations.append(f"  formal proof search architecture audit doc missing required markers: {path}")
+        if path == _formal_proof_search_assimilation_boundary_doc:
+            allowed = formal_proof_search_assimilation_boundary_doc_valid
+            if not formal_proof_search_assimilation_boundary_doc_valid:
+                violations.append(f"  formal proof search assimilation boundary doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
