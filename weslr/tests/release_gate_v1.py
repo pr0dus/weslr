@@ -8468,6 +8468,29 @@ _implemented_reasoning_chain_gaps_before_chat_wiring_audit_required_markers = {
     "No candidate execution or final-answer generation authorized",
 }
 
+_formal_proof_search_architecture_deepmind_paper_audit_doc = "docs/WESLR_FORMAL_PROOF_SEARCH_ARCHITECTURE_DEEPMIND_PAPER_AUDIT_V1.md"
+_formal_proof_search_architecture_deepmind_paper_audit_required_markers = {
+    "AUDIT_WESLR_FORMAL_PROOF_SEARCH_ARCHITECTURE_AGAINST_DEEPMIND_PAPER_V1",
+    "audit-only / research-assimilation",
+    "Lean compiler / formal verification acts as proof authority",
+    "bounded edit regions",
+    "sketch population",
+    "Rater / critic",
+    "global goal / subgoal cache",
+    "Misformalization detection",
+    "SafeVerify-style integrity checks",
+    "`sorry` laundering",
+    "Cognitive Gym exploratory cases",
+    "UNKNOWN ENGINE metadata shadow runner/report",
+    "Source/provenance/authorization boundaries",
+    "proof-sketch population",
+    "Theorem statement integrity guard",
+    "Proof validation authority ladder",
+    "DESIGN_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1",
+    "final-answer generation remains blocked",
+    "No provider/model/search/advisor call was made",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11179,6 +11202,13 @@ def _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid():
     )
 
 
+def _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _formal_proof_search_architecture_deepmind_paper_audit_doc,
+        _formal_proof_search_architecture_deepmind_paper_audit_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11574,6 +11604,7 @@ def _check_git_scope():
     namespace_schema_and_source_scope_helpers_review_doc_valid = _namespace_schema_and_source_scope_helpers_review_doc_is_valid()
     namespace_schema_and_source_scope_helpers_implementation_review_doc_valid = _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid()
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
+    formal_proof_search_architecture_deepmind_paper_audit_doc_valid = _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12693,6 +12724,10 @@ def _check_git_scope():
             allowed = implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid
             if not implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid:
                 violations.append(f"  audit doc missing required markers: {path}")
+        if path == _formal_proof_search_architecture_deepmind_paper_audit_doc:
+            allowed = formal_proof_search_architecture_deepmind_paper_audit_doc_valid
+            if not formal_proof_search_architecture_deepmind_paper_audit_doc_valid:
+                violations.append(f"  formal proof search architecture audit doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
