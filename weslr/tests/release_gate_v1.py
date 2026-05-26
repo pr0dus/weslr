@@ -8955,6 +8955,33 @@ _controlled_local_lean_dry_run_harness_synthetic_only_required_markers = {
     "REVIEW_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1",
 }
 
+_controlled_local_lean_dry_run_harness_synthetic_only_review_doc = "docs/WESLR_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_REVIEW_V1.md"
+_controlled_local_lean_dry_run_harness_synthetic_only_review_required_markers = {
+    "REVIEW_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1",
+    "review-only",
+    "controlled_local_lean_dry_run_harness_synthetic_only_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Harness Boundary Result",
+    "Required Top-Level Fields Result",
+    "Fixture Policy Result",
+    "Sandbox Policy Result",
+    "Execution Policy Result",
+    "Output Capture Policy Result",
+    "Network Policy Result",
+    "Filesystem Policy Result",
+    "Claim Policy Result",
+    "Abort Policy Result",
+    "Risk Metadata Result",
+    "Validation Status Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationships Result",
+    "Future Negative Tests Result",
+    "Formal Proof Search Sequence Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_REVIEW_V1",
+}
+
 _rater_critic_ranking_boundary_review_required_markers = {
     "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
     "review-only",
@@ -11803,6 +11830,13 @@ def _controlled_local_lean_dry_run_harness_synthetic_only_doc_is_valid():
     )
 
 
+def _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_local_lean_dry_run_harness_synthetic_only_review_doc,
+        _controlled_local_lean_dry_run_harness_synthetic_only_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -12214,6 +12248,7 @@ def _check_git_scope():
     global_goal_subgoal_cache_boundary_doc_valid = _global_goal_subgoal_cache_boundary_doc_is_valid()
     global_goal_subgoal_cache_boundary_review_doc_valid = _global_goal_subgoal_cache_boundary_review_doc_is_valid()
     controlled_local_lean_dry_run_harness_synthetic_only_doc_valid = _controlled_local_lean_dry_run_harness_synthetic_only_doc_is_valid()
+    controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid = _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13397,6 +13432,10 @@ def _check_git_scope():
             allowed = controlled_local_lean_dry_run_harness_synthetic_only_doc_valid
             if not controlled_local_lean_dry_run_harness_synthetic_only_doc_valid:
                 violations.append(f"  controlled local Lean dry run harness synthetic-only design doc missing required markers: {path}")
+        if path == _controlled_local_lean_dry_run_harness_synthetic_only_review_doc:
+            allowed = controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid
+            if not controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid:
+                violations.append(f"  controlled local Lean dry run harness synthetic-only review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
