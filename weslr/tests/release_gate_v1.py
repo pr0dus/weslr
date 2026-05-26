@@ -8628,6 +8628,62 @@ _controlled_unknown_engine_metadata_shadow_runner_required_markers = {
     "Direction check: `A",
 }
 
+_controlled_unknown_engine_metadata_shadow_runner_review_doc = "docs/WESLR_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_REVIEW_V1.md"
+_controlled_unknown_engine_metadata_shadow_runner_review_required_markers = {
+    "REVIEW_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_V1",
+    "review-only",
+    "controlled_unknown_engine_metadata_shadow_runner_design_valid_ready_for_context_alignment",
+    "design-only",
+    "no runner",
+    "no UNKNOWN ENGINE implementation",
+    "no live problem solving",
+    "no theorem solving",
+    "no proof",
+    "no solution",
+    "no open-problem",
+    "no scoring",
+    "no judging",
+    "no benchmark",
+    "no provider/model/search/advisor calls",
+    "no `.weslr` reads or writes",
+    "no runtime/chat/browser",
+    "no final-answer",
+    "user-facing output",
+    "safe_to_run_tests_only",
+    "needs_controlled_runner_design_before_run",
+    "synthetic UNKNOWN ENGINE fixtures",
+    "synthetic Cognitive Gym case metadata",
+    "synthetic Tier 0-2 math readiness cards",
+    "real unsourced user-private material",
+    "live Erdős solving prompts",
+    "live Millennium solving prompts",
+    "theorem prover tasks",
+    "provider/model/search/advisor outputs",
+    "runtime chat transcripts",
+    "unscoped memory, context, evidence, artifacts",
+    "run_id",
+    "runner_mode",
+    "input_fixture_summary",
+    "engine_helper_paths_observed",
+    "result_artifact_shape",
+    "produced_metadata_kinds",
+    "blocked_claims",
+    "denied_authority",
+    "validation_status",
+    "observed_gaps",
+    "next_safe_steps",
+    "no_run_authority_flags",
+    "internal_expert_simulation",
+    "not external validation",
+    "expert output analysis/adjudication",
+    "metadata-only runner helper",
+    "synthetic fixtures",
+    "internal report renderer",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_REVIEW_V1",
+    "Direction check: `A",
+}
+
 _tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
 _tier_0_2_math_challenge_readiness_required_markers = {
     "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
@@ -10355,6 +10411,13 @@ def _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid():
     )
 
 
+def _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_unknown_engine_metadata_shadow_runner_review_doc,
+        _controlled_unknown_engine_metadata_shadow_runner_review_required_markers,
+    )
+
+
 def _tier_0_2_math_challenge_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(
         _tier_0_2_math_challenge_readiness_doc,
@@ -10629,6 +10692,7 @@ def _check_git_scope():
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
+    controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
     tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     tier_0_2_math_challenge_readiness_review_doc_valid = _tier_0_2_math_challenge_readiness_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
@@ -11750,6 +11814,10 @@ def _check_git_scope():
             allowed = controlled_unknown_engine_metadata_shadow_runner_doc_valid
             if not controlled_unknown_engine_metadata_shadow_runner_doc_valid:
                 violations.append(f"  controlled UNKNOWN ENGINE metadata shadow runner doc missing required markers: {path}")
+        if path == _controlled_unknown_engine_metadata_shadow_runner_review_doc:
+            allowed = controlled_unknown_engine_metadata_shadow_runner_review_doc_valid
+            if not controlled_unknown_engine_metadata_shadow_runner_review_doc_valid:
+                violations.append(f"  controlled UNKNOWN ENGINE metadata shadow runner review doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
