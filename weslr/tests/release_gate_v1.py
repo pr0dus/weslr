@@ -8427,6 +8427,27 @@ _namespace_schema_and_source_scope_helpers_review_required_markers = {
     "No public/browser step is authorized",
 }
 
+_namespace_schema_and_source_scope_helpers_implementation_review_doc = "docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_namespace_schema_and_source_scope_helpers_implementation_review_required_markers = {
+    "REVIEW_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_IMPLEMENTATION_V1",
+    "namespace_source_scope_helpers_implementation_valid_ready_for_context_alignment",
+    "build_source_scope_v1",
+    "validate_source_scope_v1",
+    "require_source_scope_for_candidate_v1",
+    "summarize_source_scope_v1",
+    "to_source_scope_json_safe_v1",
+    "render_source_scope_markdown_v1",
+    "metadata-only",
+    "import-safe",
+    "no `.weslr` IO",
+    "denied-authority",
+    "query-string",
+    "tl_default",
+    "process-global",
+    "No runtime step is authorized",
+    "No public/browser step is authorized",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -10017,6 +10038,13 @@ def _namespace_schema_and_source_scope_helpers_review_doc_is_valid():
     )
 
 
+def _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _namespace_schema_and_source_scope_helpers_implementation_review_doc,
+        _namespace_schema_and_source_scope_helpers_implementation_review_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10271,6 +10299,7 @@ def _check_git_scope():
     direction_review_after_safe_final_response_assembly_shadow_boundary_doc_valid = _direction_review_after_safe_final_response_assembly_shadow_boundary_doc_is_valid()
     namespace_schema_and_source_scope_helpers_design_doc_valid = _namespace_schema_and_source_scope_helpers_design_doc_is_valid()
     namespace_schema_and_source_scope_helpers_review_doc_valid = _namespace_schema_and_source_scope_helpers_review_doc_is_valid()
+    namespace_schema_and_source_scope_helpers_implementation_review_doc_valid = _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11362,6 +11391,10 @@ def _check_git_scope():
             allowed = namespace_schema_and_source_scope_helpers_review_doc_valid
             if not namespace_schema_and_source_scope_helpers_review_doc_valid:
                 violations.append(f"  review doc missing required markers: {path}")
+        if path == _namespace_schema_and_source_scope_helpers_implementation_review_doc:
+            allowed = namespace_schema_and_source_scope_helpers_implementation_review_doc_valid
+            if not namespace_schema_and_source_scope_helpers_implementation_review_doc_valid:
+                violations.append(f"  implementation review doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
