@@ -8517,6 +8517,28 @@ _formal_proof_search_assimilation_boundary_required_markers = {
     "final-answer generation remains blocked",
 }
 
+_formal_proof_search_assimilation_boundary_review_doc = "docs/WESLR_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_REVIEW_V1.md"
+_formal_proof_search_assimilation_boundary_review_required_markers = {
+    "REVIEW_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_V1",
+    "review-only",
+    "formal_proof_search_assimilation_boundary_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Non-Goals Result",
+    "Assimilated Principles Result",
+    "WESLR Boundary Mapping Result",
+    "Authority Ladder Result",
+    "Future Artifact Categories Result",
+    "Blocked Behavior Result",
+    "Future Design Sequence Result",
+    "Relationship To Chat-Wiring Blockers Result",
+    "Abort Conditions Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_FORMAL_PROOF_SEARCH_ASSIMILATION_BOUNDARY_REVIEW_V1",
+    "DESIGN_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1",
+    "The reviewed design document was not edited",
+    "No provider/model/search/advisor call was made",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11242,6 +11264,13 @@ def _formal_proof_search_assimilation_boundary_doc_is_valid():
     )
 
 
+def _formal_proof_search_assimilation_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _formal_proof_search_assimilation_boundary_review_doc,
+        _formal_proof_search_assimilation_boundary_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11639,6 +11668,7 @@ def _check_git_scope():
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
     formal_proof_search_architecture_deepmind_paper_audit_doc_valid = _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid()
     formal_proof_search_assimilation_boundary_doc_valid = _formal_proof_search_assimilation_boundary_doc_is_valid()
+    formal_proof_search_assimilation_boundary_review_doc_valid = _formal_proof_search_assimilation_boundary_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12766,6 +12796,10 @@ def _check_git_scope():
             allowed = formal_proof_search_assimilation_boundary_doc_valid
             if not formal_proof_search_assimilation_boundary_doc_valid:
                 violations.append(f"  formal proof search assimilation boundary doc missing required markers: {path}")
+        if path == _formal_proof_search_assimilation_boundary_review_doc:
+            allowed = formal_proof_search_assimilation_boundary_review_doc_valid
+            if not formal_proof_search_assimilation_boundary_review_doc_valid:
+                violations.append(f"  formal proof search assimilation boundary review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
