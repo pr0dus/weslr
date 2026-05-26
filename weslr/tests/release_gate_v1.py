@@ -8824,6 +8824,89 @@ _scoped_artifact_upload_registry_required_markers = {
     "A — review/context-align this design, then implement scoped artifact/upload registry helpers",
 }
 
+_scoped_artifact_upload_registry_review_doc = "docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_REVIEW_V1.md"
+_scoped_artifact_upload_registry_review_required_markers = {
+    "REVIEW_SCOPED_ARTIFACT_UPLOAD_REGISTRY_V1",
+    "review-only",
+    "docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_REVIEW_V1.md",
+    "docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_V1.md",
+    "scoped_artifact_upload_registry_design_valid_ready_for_context_alignment",
+    "design-only",
+    "no implementation",
+    "no artifact file reads",
+    "no upload ingestion",
+    "no filesystem scanning",
+    "no `.weslr` IO",
+    "no database/auth/session implementation",
+    "no runtime/chat/browser wiring",
+    "no provider/model/search/advisor calls",
+    "no final-answer generation",
+    "no public/user-facing output",
+    "no automatic truth from artifacts/uploads",
+    "no cross-user/global artifact reads",
+    "artifact_metadata_intake",
+    "upload_metadata_intake",
+    "source_scope_requirement",
+    "ownership_scope_validation",
+    "central_read_authorization_requirement",
+    "registry_policy_check",
+    "privacy/redaction boundary",
+    "metadata-only preview",
+    "artifact_read_envelope",
+    "rejection/result summary",
+    "audit trace metadata",
+    "build_scoped_artifact_upload_registry_entry_v1",
+    "validate_scoped_artifact_upload_registry_entry_v1",
+    "authorize_scoped_artifact_upload_access_v1",
+    "build_scoped_artifact_upload_access_envelope_v1",
+    "validate_scoped_artifact_upload_access_envelope_v1",
+    "summarize_scoped_artifact_upload_registry_v1",
+    "to_scoped_artifact_upload_registry_json_safe_v1",
+    "render_scoped_artifact_upload_registry_markdown_v1",
+    "content_included: false",
+    "metadata_only_preview",
+    "redacted_summary_candidate",
+    "provenance_summary_metadata",
+    "continuity_anchor_metadata",
+    "blocked_no_access",
+    "raw_artifact_content",
+    "raw_upload_content",
+    "cross_user_artifact_access",
+    "global_artifact_registry",
+    "dot_weslr_artifact_state",
+    "runtime_transcript_upload",
+    "browser_public_upload_state",
+    "provider_output_ingestion",
+    "final_answer_artifact_injection",
+    "unrestricted_artifact_dump",
+    "missing source scope",
+    "invalid source scope",
+    "missing owner/requester/target scope",
+    "missing read authorization",
+    "denied read authorization",
+    "ownership mismatch",
+    "cross-user/cross-tenant risk",
+    "guest/authenticated mismatch",
+    "public-browser/private artifact conflict",
+    "raw artifact/upload request",
+    "forbidden access mode request",
+    "query-string identity",
+    "stale/untrusted artifact requested as truth",
+    "final-answer/runtime/chat/provider/search authority markers",
+    "denied-authority missing fields",
+    "denied-authority true fields",
+    "non-JSON-safe metadata",
+    "`source_scope` identifies and validates ownership and access scope metadata",
+    "`read_authorization` decides whether scoped metadata access may proceed",
+    "the scoped memory/context adapter remains separate",
+    "artifact/upload metadata supports relevance/provenance only, not truth",
+    "evidence/provenance still controls factual authority",
+    "No revision-blocking gaps found",
+    "A — review/context-align this design, then implement scoped artifact/upload registry helpers",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_SCOPED_ARTIFACT_UPLOAD_REGISTRY_REVIEW_V1",
+    "IMPLEMENT_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_V1",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -10824,6 +10907,13 @@ def _scoped_artifact_upload_registry_doc_is_valid():
     )
 
 
+def _scoped_artifact_upload_registry_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _scoped_artifact_upload_registry_review_doc,
+        _scoped_artifact_upload_registry_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -11142,6 +11232,7 @@ def _check_git_scope():
     scoped_memory_context_read_adapter_review_doc_valid = _scoped_memory_context_read_adapter_review_doc_is_valid()
     scoped_memory_context_read_adapter_helpers_implementation_review_doc_valid = _scoped_memory_context_read_adapter_helpers_implementation_review_doc_is_valid()
     scoped_artifact_upload_registry_doc_valid = _scoped_artifact_upload_registry_doc_is_valid()
+    scoped_artifact_upload_registry_review_doc_valid = _scoped_artifact_upload_registry_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12277,6 +12368,10 @@ def _check_git_scope():
             allowed = scoped_artifact_upload_registry_doc_valid
             if not scoped_artifact_upload_registry_doc_valid:
                 violations.append(f"  scoped artifact upload registry design doc missing required markers: {path}")
+        if path == _scoped_artifact_upload_registry_review_doc:
+            allowed = scoped_artifact_upload_registry_review_doc_valid
+            if not scoped_artifact_upload_registry_review_doc_valid:
+                violations.append(f"  scoped artifact upload registry review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
