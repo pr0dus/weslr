@@ -9162,6 +9162,72 @@ _cache_log_trace_scoping_boundary_review_required_markers = {
     "A — review/context-align this design, then implement cache/log/trace scoping helpers",
 }
 
+_cache_log_trace_scoping_helpers_implementation_review_doc = "docs/WESLR_CACHE_LOG_TRACE_SCOPING_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_cache_log_trace_scoping_helpers_implementation_review_required_markers = {
+    "REVIEW_CACHE_LOG_TRACE_SCOPING_HELPERS_IMPLEMENTATION_V1",
+    "review-only",
+    "docs/WESLR_CACHE_LOG_TRACE_SCOPING_HELPERS_IMPLEMENTATION_REVIEW_V1.md",
+    "weslr/cache_log_trace_scope.py",
+    "weslr/tests/test_cache_log_trace_scope_v1.py",
+    "5a9189f",
+    "cache_log_trace_scoping_helpers_implementation_valid_ready_for_context_alignment",
+    "build_cache_log_trace_scope_record_v1",
+    "validate_cache_log_trace_scope_record_v1",
+    "authorize_cache_log_trace_access_v1",
+    "build_cache_log_trace_access_envelope_v1",
+    "validate_cache_log_trace_access_envelope_v1",
+    "summarize_cache_log_trace_scope_v1",
+    "to_cache_log_trace_scope_json_safe_v1",
+    "render_cache_log_trace_scope_markdown_v1",
+    "validate_source_scope_v1",
+    "build_read_authorization_request_v1",
+    "authorize_scoped_read_v1",
+    "pure metadata-only helper behavior",
+    "no cache/log/trace content reads",
+    "no transcript ingestion",
+    "no raw log/trace/cache/transcript content inclusion",
+    "no filesystem scanning",
+    "no filesystem reads/writes",
+    "no `.weslr` IO",
+    "no database/auth/browser/session behavior",
+    "no provider/model/search/advisor calls",
+    "no runtime/chat/browser imports or wiring",
+    "no final-answer or user-facing output authority",
+    "content_included: false",
+    "raw_trace_included: false",
+    "raw_log_included: false",
+    "raw_cache_value_included: false",
+    "cache_entry",
+    "runtime_transcript",
+    "telemetry_summary",
+    "metadata_only_preview",
+    "redacted_diagnostic_summary",
+    "aggregate_count_summary",
+    "provenance_summary_metadata",
+    "blocked_no_access",
+    "raw_log_text",
+    "raw_trace_payload",
+    "raw_cache_value",
+    "runtime_transcript_dump",
+    "provider_trace_dump",
+    "tool_trace_dump",
+    "cross_user_trace_access",
+    "global_log_scan",
+    "dot_weslr_trace_state",
+    "final_answer_trace_injection",
+    "unrestricted_diagnostic_dump",
+    "missing or invalid `source_scope`",
+    "missing owner/requester/target scope",
+    "missing or denied read authorization",
+    "cross-user, cross-tenant, and cross-session risk",
+    "public-browser requests for private/operator-local trace metadata",
+    "truth-authority misuse",
+    "non-JSON-safe metadata",
+    "Markdown renderer is internal metadata-only",
+    "No blocking implementation gaps found",
+    "ALIGN_CONTEXT_AFTER_CACHE_LOG_TRACE_SCOPING_HELPERS_IMPLEMENTATION_REVIEW_V1",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -11190,6 +11256,13 @@ def _cache_log_trace_scoping_boundary_review_doc_is_valid():
     )
 
 
+def _cache_log_trace_scoping_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _cache_log_trace_scoping_helpers_implementation_review_doc,
+        _cache_log_trace_scoping_helpers_implementation_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -11512,6 +11585,7 @@ def _check_git_scope():
     scoped_artifact_upload_registry_helpers_implementation_review_doc_valid = _scoped_artifact_upload_registry_helpers_implementation_review_doc_is_valid()
     cache_log_trace_scoping_boundary_doc_valid = _cache_log_trace_scoping_boundary_doc_is_valid()
     cache_log_trace_scoping_boundary_review_doc_valid = _cache_log_trace_scoping_boundary_review_doc_is_valid()
+    cache_log_trace_scoping_helpers_implementation_review_doc_valid = _cache_log_trace_scoping_helpers_implementation_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12663,6 +12737,10 @@ def _check_git_scope():
             allowed = cache_log_trace_scoping_boundary_review_doc_valid
             if not cache_log_trace_scoping_boundary_review_doc_valid:
                 violations.append(f"  cache/log/trace scoping boundary review doc missing required markers: {path}")
+        if path == _cache_log_trace_scoping_helpers_implementation_review_doc:
+            allowed = cache_log_trace_scoping_helpers_implementation_review_doc_valid
+            if not cache_log_trace_scoping_helpers_implementation_review_doc_valid:
+                violations.append(f"  cache/log/trace scoping helpers implementation review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
