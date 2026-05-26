@@ -8539,6 +8539,35 @@ _formal_proof_search_assimilation_boundary_review_required_markers = {
     "No provider/model/search/advisor call was made",
 }
 
+_lean_formal_problem_sketch_schema_doc = "docs/WESLR_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1.md"
+_lean_formal_problem_sketch_schema_required_markers = {
+    "DESIGN_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1",
+    "design-only",
+    "LeanFormalProblemSketchV1",
+    "metadata-only",
+    "source-scoped",
+    "freshness-labeled",
+    "Problem Intent Metadata",
+    "Source / Provenance Metadata",
+    "Formalization Candidate Metadata",
+    "Lean Environment Metadata",
+    "Protected Statement Metadata",
+    "Bounded Edit Region Metadata",
+    "Proof Sketch Metadata",
+    "Assumption Metadata",
+    "Known Gap Metadata",
+    "Misformalization Risk Metadata",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "permits_lean_execution: false",
+    "permits_proof_search: false",
+    "permits_final_answer_generation: false",
+    "source_content_included: false",
+    "proof_text_included: false",
+    "lean_formal_problem_sketch_schema_design_ready_for_review",
+    "REVIEW_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11271,6 +11300,13 @@ def _formal_proof_search_assimilation_boundary_review_doc_is_valid():
     )
 
 
+def _lean_formal_problem_sketch_schema_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _lean_formal_problem_sketch_schema_doc,
+        _lean_formal_problem_sketch_schema_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11669,6 +11705,7 @@ def _check_git_scope():
     formal_proof_search_architecture_deepmind_paper_audit_doc_valid = _formal_proof_search_architecture_deepmind_paper_audit_doc_is_valid()
     formal_proof_search_assimilation_boundary_doc_valid = _formal_proof_search_assimilation_boundary_doc_is_valid()
     formal_proof_search_assimilation_boundary_review_doc_valid = _formal_proof_search_assimilation_boundary_review_doc_is_valid()
+    lean_formal_problem_sketch_schema_doc_valid = _lean_formal_problem_sketch_schema_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12800,6 +12837,10 @@ def _check_git_scope():
             allowed = formal_proof_search_assimilation_boundary_review_doc_valid
             if not formal_proof_search_assimilation_boundary_review_doc_valid:
                 violations.append(f"  formal proof search assimilation boundary review doc missing required markers: {path}")
+        if path == _lean_formal_problem_sketch_schema_doc:
+            allowed = lean_formal_problem_sketch_schema_doc_valid
+            if not lean_formal_problem_sketch_schema_doc_valid:
+                violations.append(f"  Lean formal problem sketch schema design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
