@@ -8448,6 +8448,26 @@ _namespace_schema_and_source_scope_helpers_implementation_review_required_marker
     "No public/browser step is authorized",
 }
 
+_implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc = "docs/WESLR_IMPLEMENTED_REASONING_CHAIN_GAPS_BEFORE_CHAT_WIRING_AUDIT_V1.md"
+_implemented_reasoning_chain_gaps_before_chat_wiring_audit_required_markers = {
+    "AUDIT_IMPLEMENTED_REASONING_CHAIN_GAPS_BEFORE_CHAT_WIRING_V1",
+    "not_ready_for_chat_wiring_but_ready_for_metadata_helper_sequence",
+    "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
+    "Direction check: `A`",
+    "Reasoning substrate map",
+    "Context/memory trust and evidence boundary",
+    "Candidate response formation substrate",
+    "Response-facing authority/claim checkpoint",
+    "Safe final response assembly shadow boundary",
+    "Multi-user/session/tenant isolation boundary",
+    "Namespace/source-scope helpers",
+    "Cognitive Gym / CALIBRATION_LEDGER helpers",
+    "central read authorization",
+    "Scoped memory/context read adapter",
+    "No runtime/chat/browser/voice/UI behavior changed",
+    "No candidate execution or final-answer generation authorized",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -10045,6 +10065,13 @@ def _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_vali
     )
 
 
+def _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc,
+        _implemented_reasoning_chain_gaps_before_chat_wiring_audit_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10300,6 +10327,7 @@ def _check_git_scope():
     namespace_schema_and_source_scope_helpers_design_doc_valid = _namespace_schema_and_source_scope_helpers_design_doc_is_valid()
     namespace_schema_and_source_scope_helpers_review_doc_valid = _namespace_schema_and_source_scope_helpers_review_doc_is_valid()
     namespace_schema_and_source_scope_helpers_implementation_review_doc_valid = _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid()
+    implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11395,6 +11423,10 @@ def _check_git_scope():
             allowed = namespace_schema_and_source_scope_helpers_implementation_review_doc_valid
             if not namespace_schema_and_source_scope_helpers_implementation_review_doc_valid:
                 violations.append(f"  implementation review doc missing required markers: {path}")
+        if path == _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc:
+            allowed = implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid
+            if not implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid:
+                violations.append(f"  audit doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
