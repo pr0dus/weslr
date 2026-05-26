@@ -8617,6 +8617,74 @@ _scoped_memory_context_read_adapter_required_markers = {
     "A — review/context-align this design, then implement scoped memory/context read adapter helpers",
 }
 
+_scoped_memory_context_read_adapter_review_doc = "docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_REVIEW_V1.md"
+_scoped_memory_context_read_adapter_review_required_markers = {
+    "REVIEW_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_V1",
+    "review-only",
+    "docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_V1.md",
+    "scoped_memory_context_read_adapter_design_valid_ready_for_context_alignment",
+    "design-only",
+    "no adapter implementation",
+    "no real memory/context reads",
+    "no `.weslr` IO",
+    "no database/auth/session implementation",
+    "no runtime/chat/browser wiring",
+    "no provider/model/search/advisor calls",
+    "no final-answer generation",
+    "no public/user-facing output",
+    "automatic truth from memory",
+    "cross-user/global memory reads",
+    "read_request_intake",
+    "source_scope_requirement",
+    "central_read_authorization_requirement",
+    "adapter_policy_check",
+    "redaction/privacy boundary",
+    "metadata-only preview mode",
+    "read_result_envelope",
+    "rejection/result summary",
+    "audit trace metadata",
+    "build_scoped_memory_context_read_request_v1",
+    "validate_scoped_memory_context_read_request_v1",
+    "authorize_scoped_memory_context_read_request_v1",
+    "build_scoped_memory_context_read_envelope_v1",
+    "validate_scoped_memory_context_read_envelope_v1",
+    "summarize_scoped_memory_context_read_adapter_v1",
+    "to_scoped_memory_context_read_adapter_json_safe_v1",
+    "render_scoped_memory_context_read_adapter_markdown_v1",
+    "content_included: false",
+    "metadata_only_preview",
+    "redacted_summary_candidate",
+    "continuity_anchor_metadata",
+    "evidence_summary_metadata",
+    "blocked_no_read",
+    "raw_memory_text",
+    "raw_private_context",
+    "cross_user_context",
+    "global_memory",
+    "dot_weslr_state",
+    "runtime_transcript",
+    "browser_public_state",
+    "provider_output_ingestion",
+    "final_answer_context_injection",
+    "unrestricted_profile_dump",
+    "missing source scope",
+    "invalid source scope",
+    "missing read authorization",
+    "denied read authorization",
+    "query-string identity",
+    "stale/untrusted source",
+    "non-JSON-safe output",
+    "`source_scope` identifies and validates scope metadata",
+    "`read_authorization` decides whether a scoped read may proceed",
+    "the scoped adapter enforces authorization at the read boundary",
+    "memory/context remains relevance input only, not truth",
+    "evidence/provenance still controls factual authority",
+    "No revision-blocking gaps found",
+    "A — review/context-align this design, then implement scoped memory/context read adapter helpers",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_REVIEW_V1",
+    "IMPLEMENT_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_V1",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -10596,6 +10664,13 @@ def _scoped_memory_context_read_adapter_doc_is_valid():
     )
 
 
+def _scoped_memory_context_read_adapter_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _scoped_memory_context_read_adapter_review_doc,
+        _scoped_memory_context_read_adapter_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -10911,6 +10986,7 @@ def _check_git_scope():
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
     scoped_memory_context_read_adapter_doc_valid = _scoped_memory_context_read_adapter_doc_is_valid()
+    scoped_memory_context_read_adapter_review_doc_valid = _scoped_memory_context_read_adapter_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12034,6 +12110,10 @@ def _check_git_scope():
             allowed = scoped_memory_context_read_adapter_doc_valid
             if not scoped_memory_context_read_adapter_doc_valid:
                 violations.append(f"  scoped memory context read adapter design doc missing required markers: {path}")
+        if path == _scoped_memory_context_read_adapter_review_doc:
+            allowed = scoped_memory_context_read_adapter_review_doc_valid
+            if not scoped_memory_context_read_adapter_review_doc_valid:
+                violations.append(f"  scoped memory context read adapter review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
