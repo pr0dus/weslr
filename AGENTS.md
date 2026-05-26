@@ -20,6 +20,36 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Workspace Review Submission And Upstream Promotion Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR workspace review submission and upstream promotion boundary design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_REVIEW_V1.md`; review commit `f73fa76`; judgment `weslr_workspace_review_submission_upstream_promotion_boundary_design_valid_ready_for_context_alignment`.
+- Submission path result: valid separation of local private review, explicit redacted upstream maintainer review, and future public/community sharing.
+- Local review result: valid, private/local by default, and no upstream visibility by default.
+- Upstream review result: valid, opt-in only, consent-gated, redacted by default, and no automatic issue/PR/acceptance/promotion/runtime behavior.
+- Public/community sharing result: valid, future-only, and requires separate license, privacy, moderation, security, and claim boundaries.
+- Consent metadata is valid: explicit consent is required; permissions are false by default unless later explicitly set.
+- Privacy metadata is valid: raw private content, `.weslr`, memory/context, logs/traces/caches, secrets, cross-user material, industrial/customer data, business/customer data, and private research content are excluded by default.
+- Redaction metadata is valid: redaction-first; raw/private/artifact/log/secret content flags are false by default.
+- Artifact reference metadata is valid: identifiers/metadata only, with no raw artifact content.
+- Review/local/upstream/maintainer/promotion metadata is valid and bounded: promotion remains request-not-grant; review, operator approval, release gate, privacy, source-scope, and denied-authority checks are required.
+- License metadata is valid: upstream/community reuse is blocked without license and contributor rights.
+- Security risk metadata is valid and covers scratch script risk, injection, leakage, unsafe industrial/code proposals, overclaiming, laundering, cross-user contamination, and upstream trust confusion.
+- Claim policy is valid: submission grants no truth, proof, public, benchmark, intelligence, Turing, certification, product-readiness, runtime, final-answer, or official acceptance authority.
+- Relationship to workspace boundary is valid: builds on `WeslrUserWorkspaceCapabilitySurfaceV1` and adds submission/visibility controls only.
+- Relationship to helpers is valid: source scope, read authorization, scoped adapters, cache/log/trace, UNKNOWN ENGINE, Cognitive Gym, and formal proof chain remain separate.
+- Future negative tests are sufficient and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: user submissions are visible upstream only when explicitly exported/submitted; local review is private/local by default; upstream submission is opt-in, consented, and redacted by default; submitted does not mean accepted; accepted for review does not mean promoted; promoted does not automatically mean runtime authority; public/community sharing remains future-only.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_REVIEW_V1`.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Possible future lanes only if explicitly requested: `DESIGN_WESLR_LOCAL_WORKSPACE_REVIEW_HELPERS_V1`, `DESIGN_WESLR_REDACTED_UPSTREAM_SUBMISSION_PACKET_HELPERS_V1`, `DESIGN_WESLR_WORKSPACE_PROMOTION_REQUEST_HELPERS_V1`.
+- Current boundary rule remains: the reviewed boundary grants no implementation, workspace creation, submission creation, export packet creation, upstream sending, review queue creation, network calls, provider/model/search/advisor calls, `.weslr` reads or writes, scratch script creation, scratch execution, source-tree writes, runtime chat wiring, voice runtime wiring, final-answer generation, official core promotion, or proof/public/benchmark/intelligence/Turing/certification/product-readiness claims.
+
+
 ### Latest Context Alignment — User Workspace Capability Surface And Scratch Instrument Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
