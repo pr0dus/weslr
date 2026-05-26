@@ -8594,6 +8594,40 @@ _lean_formal_problem_sketch_schema_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_REVIEW_V1",
 }
 
+_proof_sketch_population_failed_path_registry_doc = "docs/WESLR_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_V1.md"
+_proof_sketch_population_failed_path_registry_required_markers = {
+    "DESIGN_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_V1",
+    "design-only",
+    "ProofSketchPopulationAndFailedPathRegistryV1",
+    "metadata-only",
+    "source-scoped",
+    "freshness-labeled",
+    "Population Metadata",
+    "Candidate Record Metadata",
+    "Lineage Metadata",
+    "Failed Path Records",
+    "Mutation Metadata",
+    "Selection Metadata",
+    "Risk Metadata",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Relationship To Lean Formal Problem Sketch Schema",
+    "Relationship To Existing WESLR Helpers",
+    "Future Negative Tests Required",
+    "Relationship To Formal Proof Search Sequence",
+    "permits_lean_execution: false",
+    "permits_proof_search: false",
+    "permits_rater_execution: false",
+    "permits_elo_scoring: false",
+    "permits_final_answer_generation: false",
+    "proof_text_included: false",
+    "candidate_content_included: false",
+    "failed_path_content_included: false",
+    "proof_sketch_population_failed_path_registry_design_ready_for_review",
+    "REVIEW_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11340,6 +11374,13 @@ def _lean_formal_problem_sketch_schema_review_doc_is_valid():
     )
 
 
+def _proof_sketch_population_failed_path_registry_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _proof_sketch_population_failed_path_registry_doc,
+        _proof_sketch_population_failed_path_registry_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11740,6 +11781,7 @@ def _check_git_scope():
     formal_proof_search_assimilation_boundary_review_doc_valid = _formal_proof_search_assimilation_boundary_review_doc_is_valid()
     lean_formal_problem_sketch_schema_doc_valid = _lean_formal_problem_sketch_schema_doc_is_valid()
     lean_formal_problem_sketch_schema_review_doc_valid = _lean_formal_problem_sketch_schema_review_doc_is_valid()
+    proof_sketch_population_failed_path_registry_doc_valid = _proof_sketch_population_failed_path_registry_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12879,6 +12921,10 @@ def _check_git_scope():
             allowed = lean_formal_problem_sketch_schema_review_doc_valid
             if not lean_formal_problem_sketch_schema_review_doc_valid:
                 violations.append(f"  Lean formal problem sketch schema review doc missing required markers: {path}")
+        if path == _proof_sketch_population_failed_path_registry_doc:
+            allowed = proof_sketch_population_failed_path_registry_doc_valid
+            if not proof_sketch_population_failed_path_registry_doc_valid:
+                violations.append(f"  proof sketch population and failed path registry doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
