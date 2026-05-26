@@ -8549,6 +8549,30 @@ _central_read_authorization_helpers_implementation_review_required_markers = {
     "Central read authorization remains metadata-only",
 }
 
+_unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
+_unknown_engine_run_readiness_audit_required_markers = {
+    "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
+    "needs_controlled_runner_design_before_run",
+    "safe_to_run_tests_only",
+    "build_unknown_engine_run_v1",
+    "validate_unknown_engine_run_v1",
+    "build_unknown_engine_result_artifact_v1",
+    "validate_unknown_engine_result_artifact_v1",
+    "No dedicated tracked UNKNOWN ENGINE controlled runner or report-run helper was found",
+    "no proof/solution/open-problem claim is authorized",
+    "no scoring/judging is authorized",
+    "no provider/model/search/advisor call is authorized",
+    "no `.weslr` IO is authorized",
+    "no runtime/chat wiring is authorized",
+    "no final-answer generation is authorized",
+    "no public/browser authority is authorized",
+    "no official benchmark/intelligence/Turing/certification claim is authorized",
+    "no Erdős/Millennium/prize claim is authorized",
+    "no theorem prover/solver execution is authorized",
+    "DESIGN_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_V1",
+    "Direction check: `B",
+}
+
 _tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
 _tier_0_2_math_challenge_readiness_required_markers = {
     "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
@@ -10262,6 +10286,13 @@ def _central_read_authorization_helpers_implementation_review_doc_is_valid():
     )
 
 
+def _unknown_engine_run_readiness_audit_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _unknown_engine_run_readiness_audit_doc,
+        _unknown_engine_run_readiness_audit_required_markers,
+    )
+
+
 def _tier_0_2_math_challenge_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(
         _tier_0_2_math_challenge_readiness_doc,
@@ -10534,6 +10565,7 @@ def _check_git_scope():
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
+    unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     tier_0_2_math_challenge_readiness_review_doc_valid = _tier_0_2_math_challenge_readiness_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
@@ -11647,6 +11679,10 @@ def _check_git_scope():
             allowed = central_read_authorization_helpers_implementation_review_doc_valid
             if not central_read_authorization_helpers_implementation_review_doc_valid:
                 violations.append(f"  central read authorization helpers implementation review doc missing required markers: {path}")
+        if path == _unknown_engine_run_readiness_audit_doc:
+            allowed = unknown_engine_run_readiness_audit_doc_valid
+            if not unknown_engine_run_readiness_audit_doc_valid:
+                violations.append(f"  UNKNOWN ENGINE run-readiness audit doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
