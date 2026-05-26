@@ -20,6 +20,24 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Scoped Memory Context Read Adapter Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR scoped memory/context read adapter design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_V1.md`.
+- Review path: `docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_REVIEW_V1.md`; review commit `cc30105`; judgment `scoped_memory_context_read_adapter_design_valid_ready_for_context_alignment`.
+- Adapter boundary result: valid, design-only, no-read, and no-runtime. It creates no implementation, performs no real memory/context reads, wires no runtime/chat/browser behavior, touches no `.weslr` IO, and grants no final-answer authority.
+- Allowed future adapter modes: `metadata_only_preview`, `redacted_summary_candidate`, `continuity_anchor_metadata`, `evidence_summary_metadata`, and `blocked_no_read`. These modes are bounded metadata/read-envelope modes only and do not authorize runtime, chat, browser, provider/model/search/advisor calls, public output, cross-user access, or final-answer generation.
+- Forbidden modes remain blocked: raw memory/context, cross-user/global memory, `.weslr`, runtime transcript, browser public state, provider ingestion, final-answer injection, and unrestricted profile dump.
+- Fail-closed rules were reviewed as sufficient: missing/invalid source scope, missing/denied authorization, requester/target mismatch, cross-user/cross-tenant risk, guest/auth mismatch, public-browser private state, raw private content, `.weslr`/global/`tl_default`/process-global/default-timeline markers, query-string identity, stale/untrusted source-as-truth, runtime/chat/provider/search/final-answer authority implication, missing/true denied-authority fields, non-JSON-safe output, and memory/context-as-truth all block to `blocked_no_read` or safer metadata-only handling.
+- Relationship carried forward: `source_scope` validates identity/scope metadata; `read_authorization` decides read-permission metadata; a future scoped adapter enforces authorization before reads; memory/context remains relevance input only, not truth; evidence/provenance still controls factual authority.
+- Gaps: no revision-blocking gaps found.
+- Direction check: **A confirmed** — review/context-align this design, then implement scoped memory/context read adapter helpers under the reviewed no-read/no-runtime/no-final-answer boundary.
+- Current recommended next lane: `IMPLEMENT_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_V1`. Do not start it from this context alignment packet unless separately authorized; it must remain metadata-only, synthetic-data-tested, JSON-safe, no real reads, no `.weslr` IO, no runtime/chat/browser wiring, and no final-answer authority.
+- Current boundary rule remains: the reviewed scoped memory/context read adapter design may inform a future separately authorized helper implementation lane only. It does not authorize implementation by itself, real reads, runtime/chat/browser behavior, provider/model/search/advisor calls, `.weslr` IO, public output, final-answer generation, cross-user/global memory access, or authority grants.
+
+
 ### Latest Context Alignment — Controlled UNKNOWN ENGINE Metadata Shadow Report Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
