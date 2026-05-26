@@ -8831,6 +8831,56 @@ _rater_critic_ranking_boundary_required_markers = {
 }
 
 _rater_critic_ranking_boundary_review_doc = "docs/WESLR_RATER_CRITIC_RANKING_BOUNDARY_REVIEW_V1.md"
+
+_global_goal_subgoal_cache_boundary_doc = "docs/WESLR_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1.md"
+_global_goal_subgoal_cache_boundary_required_markers = {
+    "DESIGN_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1",
+    "design-only",
+    "GlobalGoalSubgoalCacheBoundaryV1",
+    "metadata-only",
+    "JSON-safe",
+    "source-scoped",
+    "owner/requester/target scoped",
+    "tenant/session/project scoped",
+    "Cache Purpose Metadata",
+    "Goal Key Metadata",
+    "Subgoal Key Metadata",
+    "Dependency Key Metadata",
+    "Feedback Summary Key Metadata",
+    "Failed Pattern Metadata",
+    "Reuse Policy Metadata",
+    "Privacy Scope Metadata",
+    "Freshness / Invalidation Metadata",
+    "Risk Metadata",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Relationship To Previous Formal Proof Search Components",
+    "Relationship To Existing WESLR Helpers",
+    "Future Negative Tests Required",
+    "Relationship To Formal Proof Search Sequence",
+    "cache_for_metadata_reuse_only: true",
+    "cache_content_included: false",
+    "raw_goal_state_included: false",
+    "raw_subgoal_state_included: false",
+    "dependency_content_included: false",
+    "raw_feedback_included: false",
+    "raw_trace_included: false",
+    "failed_pattern_grants_impossibility_claim: false",
+    "reuse_requires_same_source_scope: true",
+    "reuse_requires_read_authorization: true",
+    "cross_user_reuse_allowed: false",
+    "must_revalidate_before_reuse: true",
+    "permits_cache_creation: false",
+    "permits_cache_reads: false",
+    "permits_cache_writes: false",
+    "permits_lean_execution: false",
+    "permits_proof_search: false",
+    "permits_final_answer_generation: false",
+    "global_goal_subgoal_cache_boundary_design_ready_for_review",
+    "REVIEW_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1",
+}
+
 _rater_critic_ranking_boundary_review_required_markers = {
     "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
     "review-only",
@@ -11658,6 +11708,13 @@ def _rater_critic_ranking_boundary_review_doc_is_valid():
     )
 
 
+def _global_goal_subgoal_cache_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _global_goal_subgoal_cache_boundary_doc,
+        _global_goal_subgoal_cache_boundary_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -12066,6 +12123,7 @@ def _check_git_scope():
     misformalization_detection_adjudication_workflow_review_doc_valid = _misformalization_detection_adjudication_workflow_review_doc_is_valid()
     rater_critic_ranking_boundary_doc_valid = _rater_critic_ranking_boundary_doc_is_valid()
     rater_critic_ranking_boundary_review_doc_valid = _rater_critic_ranking_boundary_review_doc_is_valid()
+    global_goal_subgoal_cache_boundary_doc_valid = _global_goal_subgoal_cache_boundary_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13237,6 +13295,10 @@ def _check_git_scope():
             allowed = rater_critic_ranking_boundary_review_doc_valid
             if not rater_critic_ranking_boundary_review_doc_valid:
                 violations.append(f"  rater critic ranking boundary review doc missing required markers: {path}")
+        if path == _global_goal_subgoal_cache_boundary_doc:
+            allowed = global_goal_subgoal_cache_boundary_doc_valid
+            if not global_goal_subgoal_cache_boundary_doc_valid:
+                violations.append(f"  global goal subgoal cache boundary design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
