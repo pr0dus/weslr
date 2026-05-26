@@ -8959,6 +8959,42 @@ _controlled_local_lean_dry_run_harness_synthetic_only_review_doc = "docs/WESLR_C
 _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc = "docs/WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1.md"
 _weslr_user_workspace_capability_surface_scratch_instrument_boundary_review_doc = "docs/WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_REVIEW_V1.md"
 _weslr_workspace_review_submission_upstream_promotion_boundary_doc = "docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1.md"
+_weslr_workspace_review_submission_upstream_promotion_boundary_review_doc = "docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_REVIEW_V1.md"
+_weslr_workspace_review_submission_upstream_promotion_boundary_review_required_markers = {
+    "REVIEW_WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1",
+    "review-only",
+    "weslr_workspace_review_submission_upstream_promotion_boundary_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Submission Path Result",
+    "Local Review Result",
+    "Upstream Review Result",
+    "Public/Community Sharing Result",
+    "Future Object Result",
+    "Required Top-Level Fields Result",
+    "Submission Kind Metadata Result",
+    "Submission Visibility Metadata Result",
+    "Consent Metadata Result",
+    "Privacy Metadata Result",
+    "Redaction Metadata Result",
+    "Artifact Reference Metadata Result",
+    "Review Request Metadata Result",
+    "Local Review Metadata Result",
+    "Upstream Submission Metadata Result",
+    "Maintainer Review Metadata Result",
+    "Promotion Request Metadata Result",
+    "License Metadata Result",
+    "Security Risk Metadata Result",
+    "Claim Policy Result",
+    "Relationship To Workspace Boundary Result",
+    "Relationship To Helpers Result",
+    "Validation Status Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Example Submission Workflow Result",
+    "Future Negative Tests Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_REVIEW_V1",
+}
 _weslr_workspace_review_submission_upstream_promotion_boundary_required_markers = {
     "DESIGN_WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1",
     "design-only",
@@ -11958,6 +11994,13 @@ def _weslr_workspace_review_submission_upstream_promotion_boundary_doc_is_valid(
     )
 
 
+def _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc,
+        _weslr_workspace_review_submission_upstream_promotion_boundary_review_required_markers,
+    )
+
+
 def _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_local_lean_dry_run_harness_synthetic_only_review_doc,
@@ -12380,6 +12423,7 @@ def _check_git_scope():
     weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_valid = _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_is_valid()
     weslr_user_workspace_capability_surface_scratch_instrument_boundary_review_doc_valid = _weslr_user_workspace_capability_surface_scratch_instrument_boundary_review_doc_is_valid()
     weslr_workspace_review_submission_upstream_promotion_boundary_doc_valid = _weslr_workspace_review_submission_upstream_promotion_boundary_doc_is_valid()
+    weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_valid = _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13579,6 +13623,10 @@ def _check_git_scope():
             allowed = weslr_workspace_review_submission_upstream_promotion_boundary_doc_valid
             if not weslr_workspace_review_submission_upstream_promotion_boundary_doc_valid:
                 violations.append(f"  WESLR workspace review submission upstream promotion boundary design doc missing required markers: {path}")
+        if path == _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc:
+            allowed = weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_valid
+            if not weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_valid:
+                violations.append(f"  WESLR workspace review submission upstream promotion boundary review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
