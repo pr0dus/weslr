@@ -8764,6 +8764,35 @@ _misformalization_detection_adjudication_workflow_required_markers = {
     "REVIEW_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1",
 }
 
+_misformalization_detection_adjudication_workflow_review_doc = "docs/WESLR_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_REVIEW_V1.md"
+_misformalization_detection_adjudication_workflow_review_required_markers = {
+    "REVIEW_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_V1",
+    "review-only",
+    "misformalization_detection_adjudication_workflow_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Workflow Object Result",
+    "Required Workflow Fields Result",
+    "Problem Intent Review Metadata Result",
+    "Formal Statement Review Metadata Result",
+    "Assumption Review Metadata Result",
+    "Definition / Dependency Review Metadata Result",
+    "Source Alignment Review Metadata Result",
+    "Candidate Alignment Review Metadata Result",
+    "Verifier Alignment Review Metadata Result",
+    "Adjudication Metadata Result",
+    "Risk Metadata Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationship To Lean Formal Problem Sketch Schema Result",
+    "Relationship To Population / Failed-Path Registry Result",
+    "Relationship To Formal Verifier Result Envelope Result",
+    "Relationship To Existing WESLR Helpers Result",
+    "Future Negative Tests Result",
+    "Formal Proof Search Sequence Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MISFORMALIZATION_DETECTION_AND_ADJUDICATION_WORKFLOW_REVIEW_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11545,6 +11574,13 @@ def _misformalization_detection_adjudication_workflow_doc_is_valid():
     )
 
 
+def _misformalization_detection_adjudication_workflow_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _misformalization_detection_adjudication_workflow_review_doc,
+        _misformalization_detection_adjudication_workflow_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11950,6 +11986,7 @@ def _check_git_scope():
     formal_verifier_result_envelope_doc_valid = _formal_verifier_result_envelope_doc_is_valid()
     formal_verifier_result_envelope_review_doc_valid = _formal_verifier_result_envelope_review_doc_is_valid()
     misformalization_detection_adjudication_workflow_doc_valid = _misformalization_detection_adjudication_workflow_doc_is_valid()
+    misformalization_detection_adjudication_workflow_review_doc_valid = _misformalization_detection_adjudication_workflow_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13109,6 +13146,10 @@ def _check_git_scope():
             allowed = misformalization_detection_adjudication_workflow_doc_valid
             if not misformalization_detection_adjudication_workflow_doc_valid:
                 violations.append(f"  misformalization detection adjudication workflow design doc missing required markers: {path}")
+        if path == _misformalization_detection_adjudication_workflow_review_doc:
+            allowed = misformalization_detection_adjudication_workflow_review_doc_valid
+            if not misformalization_detection_adjudication_workflow_review_doc_valid:
+                violations.append(f"  misformalization detection adjudication workflow review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
