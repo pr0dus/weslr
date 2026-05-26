@@ -8907,6 +8907,76 @@ _scoped_artifact_upload_registry_review_required_markers = {
     "IMPLEMENT_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_V1",
 }
 
+_scoped_artifact_upload_registry_helpers_implementation_review_doc = "docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_scoped_artifact_upload_registry_helpers_implementation_review_required_markers = {
+    "REVIEW_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_IMPLEMENTATION_V1",
+    "review-only",
+    "f9be798",
+    "weslr/scoped_artifact_upload_registry.py",
+    "weslr/tests/test_scoped_artifact_upload_registry_v1.py",
+    "scoped_artifact_upload_registry_helpers_implementation_valid_ready_for_context_alignment",
+    "build_scoped_artifact_upload_registry_entry_v1",
+    "validate_scoped_artifact_upload_registry_entry_v1",
+    "authorize_scoped_artifact_upload_access_v1",
+    "build_scoped_artifact_upload_access_envelope_v1",
+    "validate_scoped_artifact_upload_access_envelope_v1",
+    "summarize_scoped_artifact_upload_registry_v1",
+    "to_scoped_artifact_upload_registry_json_safe_v1",
+    "render_scoped_artifact_upload_registry_markdown_v1",
+    "validate_source_scope_v1",
+    "authorize_scoped_read_v1",
+    "metadata-only",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "no-read",
+    "no-upload-ingestion",
+    "no-runtime",
+    "JSON-safe",
+    "no-final-answer-authority",
+    "content_included: false",
+    "metadata_only_preview",
+    "redacted_summary_candidate",
+    "provenance_summary_metadata",
+    "continuity_anchor_metadata",
+    "blocked_no_access",
+    "raw_artifact_content",
+    "raw_upload_content",
+    "cross_user_artifact_access",
+    "global_artifact_registry",
+    "dot_weslr_artifact_state",
+    "runtime_transcript_upload",
+    "browser_public_upload_state",
+    "provider_output_ingestion",
+    "final_answer_artifact_injection",
+    "unrestricted_artifact_dump",
+    "missing source scope",
+    "invalid source scope",
+    "missing owner/requester/target scope",
+    "missing read authorization",
+    "denied read authorization",
+    "ownership mismatch",
+    "requester/target mismatch",
+    "cross-user/cross-tenant",
+    "guest/authenticated mismatch",
+    "public-browser/private artifact conflict",
+    "raw artifact/upload request",
+    "forbidden markers",
+    "stale/untrusted artifact requested as truth",
+    "final-answer/runtime/chat/provider/search authority markers",
+    "denied-authority missing fields",
+    "denied-authority true fields",
+    "non-JSON-safe metadata",
+    "46 passed",
+    "25 passed",
+    "32 passed",
+    "47 passed",
+    "chat_responder/source_scope/read_authorization/scoped adapter/shadow runner remain untouched",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_IMPLEMENTATION_REVIEW_V1",
+    "No runtime step is authorized",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -10914,6 +10984,13 @@ def _scoped_artifact_upload_registry_review_doc_is_valid():
     )
 
 
+def _scoped_artifact_upload_registry_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _scoped_artifact_upload_registry_helpers_implementation_review_doc,
+        _scoped_artifact_upload_registry_helpers_implementation_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -11233,6 +11310,7 @@ def _check_git_scope():
     scoped_memory_context_read_adapter_helpers_implementation_review_doc_valid = _scoped_memory_context_read_adapter_helpers_implementation_review_doc_is_valid()
     scoped_artifact_upload_registry_doc_valid = _scoped_artifact_upload_registry_doc_is_valid()
     scoped_artifact_upload_registry_review_doc_valid = _scoped_artifact_upload_registry_review_doc_is_valid()
+    scoped_artifact_upload_registry_helpers_implementation_review_doc_valid = _scoped_artifact_upload_registry_helpers_implementation_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12372,6 +12450,10 @@ def _check_git_scope():
             allowed = scoped_artifact_upload_registry_review_doc_valid
             if not scoped_artifact_upload_registry_review_doc_valid:
                 violations.append(f"  scoped artifact upload registry review doc missing required markers: {path}")
+        if path == _scoped_artifact_upload_registry_helpers_implementation_review_doc:
+            allowed = scoped_artifact_upload_registry_helpers_implementation_review_doc_valid
+            if not scoped_artifact_upload_registry_helpers_implementation_review_doc_valid:
+                violations.append(f"  scoped artifact upload registry helpers implementation review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
