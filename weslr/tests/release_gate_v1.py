@@ -8738,6 +8738,41 @@ _controlled_unknown_engine_metadata_shadow_runner_implementation_review_required
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_IMPLEMENTATION_REVIEW_V1",
 }
 
+_controlled_unknown_engine_metadata_shadow_report_result_doc = "docs/WESLR_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_REPORT_RESULT_V1.md"
+_controlled_unknown_engine_metadata_shadow_report_result_required_markers = {
+    "RUN_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_REPORT_V1",
+    "CONTROLLED_REPORT_RUN",
+    "weslr/controlled_unknown_engine_metadata_shadow_runner.py",
+    "synthetic_unknown_engine_fixture",
+    "synthetic_cognitive_gym_metadata",
+    "synthetic_tier_0_2_math_readiness_card",
+    "synthetic_candidate_invariant_metadata",
+    "synthetic_failed_path_metadata",
+    "explicitly_approved_safe_internal_metadata",
+    "synthetic/internal metadata only",
+    "No raw/private/live/provider/search/model/advisor/.weslr/runtime/final-answer/proof content was used",
+    "valid_metadata_shadow_report",
+    "blocked_claim_summary",
+    "unknown_engine_result_artifact_metadata_shape",
+    "unknown_engine_run_metadata_shape",
+    "Denied-authority summary",
+    "No-run-authority flags summary",
+    "No real problem solving: confirmed",
+    "No theorem solver/prover execution: confirmed",
+    "No proof/solution/open-problem claim: confirmed",
+    "No scoring/judging/benchmark claim: confirmed",
+    "No provider/model/search/advisor calls: confirmed",
+    "No `.weslr` IO: confirmed",
+    "No runtime/chat/browser wiring: confirmed",
+    "No final/user-facing output: confirmed",
+    "No external validation claim: confirmed",
+    "internal_expert_simulation",
+    "not external validation",
+    "Public/proof/prize/solution claims remain blocked",
+    "controlled_unknown_engine_metadata_shadow_report_clean",
+    "REVIEW_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_REPORT_V1",
+}
+
 _tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
 _tier_0_2_math_challenge_readiness_required_markers = {
     "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
@@ -10479,6 +10514,13 @@ def _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_
     )
 
 
+def _controlled_unknown_engine_metadata_shadow_report_result_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_unknown_engine_metadata_shadow_report_result_doc,
+        _controlled_unknown_engine_metadata_shadow_report_result_required_markers,
+    )
+
+
 def _tier_0_2_math_challenge_readiness_doc_is_valid():
     return _doc_with_markers_is_valid(
         _tier_0_2_math_challenge_readiness_doc,
@@ -10755,6 +10797,7 @@ def _check_git_scope():
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_is_valid()
+    controlled_unknown_engine_metadata_shadow_report_result_doc_valid = _controlled_unknown_engine_metadata_shadow_report_result_doc_is_valid()
     tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     tier_0_2_math_challenge_readiness_review_doc_valid = _tier_0_2_math_challenge_readiness_review_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
@@ -11884,6 +11927,10 @@ def _check_git_scope():
             allowed = controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid
             if not controlled_unknown_engine_metadata_shadow_runner_implementation_review_doc_valid:
                 violations.append(f"  controlled UNKNOWN ENGINE metadata shadow runner implementation review doc missing required markers: {path}")
+        if path == _controlled_unknown_engine_metadata_shadow_report_result_doc:
+            allowed = controlled_unknown_engine_metadata_shadow_report_result_doc_valid
+            if not controlled_unknown_engine_metadata_shadow_report_result_doc_valid:
+                violations.append(f"  controlled UNKNOWN ENGINE metadata shadow report result doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
