@@ -8654,6 +8654,47 @@ _proof_sketch_population_failed_path_registry_review_required_markers = {
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_REVIEW_V1",
 }
 
+_formal_verifier_result_envelope_doc = "docs/WESLR_FORMAL_VERIFIER_RESULT_ENVELOPE_V1.md"
+_formal_verifier_result_envelope_required_markers = {
+    "DESIGN_FORMAL_VERIFIER_RESULT_ENVELOPE_V1",
+    "design-only",
+    "FormalVerifierResultEnvelopeV1",
+    "metadata-only",
+    "source-scoped",
+    "freshness-labeled",
+    "Verifier Environment Metadata",
+    "Verifier Result Metadata",
+    "Theorem Statement Integrity Metadata",
+    "Soundness Integrity Metadata",
+    "Import / Dependency Integrity Metadata",
+    "Proof Body Integrity Metadata",
+    "Compiler Feedback Summary Metadata",
+    "Validation Caveat Metadata",
+    "Misformalization Signal Metadata",
+    "Risk Metadata",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Relationship To Lean Formal Problem Sketch Schema",
+    "Relationship To Population / Failed-Path Registry",
+    "Relationship To Existing WESLR Helpers",
+    "Future Negative Tests Required",
+    "Relationship To Formal Proof Search Sequence",
+    "execution_allowed: false",
+    "real_execution_observed: false",
+    "raw_verifier_output_included: false",
+    "raw_compiler_trace_included: false",
+    "proof_body_content_included: false",
+    "raw_error_text_included: false",
+    "raw_goal_state_included: false",
+    "permits_lean_execution: false",
+    "permits_compiler_feedback_capture: false",
+    "permits_real_verifier_result_capture: false",
+    "permits_final_answer_generation: false",
+    "formal_verifier_result_envelope_design_ready_for_review",
+    "REVIEW_FORMAL_VERIFIER_RESULT_ENVELOPE_V1",
+}
+
 _central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
 _central_read_authorization_helpers_design_required_markers = {
     "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
@@ -11414,6 +11455,13 @@ def _proof_sketch_population_failed_path_registry_review_doc_is_valid():
     )
 
 
+def _formal_verifier_result_envelope_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _formal_verifier_result_envelope_doc,
+        _formal_verifier_result_envelope_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -11816,6 +11864,7 @@ def _check_git_scope():
     lean_formal_problem_sketch_schema_review_doc_valid = _lean_formal_problem_sketch_schema_review_doc_is_valid()
     proof_sketch_population_failed_path_registry_doc_valid = _proof_sketch_population_failed_path_registry_doc_is_valid()
     proof_sketch_population_failed_path_registry_review_doc_valid = _proof_sketch_population_failed_path_registry_review_doc_is_valid()
+    formal_verifier_result_envelope_doc_valid = _formal_verifier_result_envelope_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -12963,6 +13012,10 @@ def _check_git_scope():
             allowed = proof_sketch_population_failed_path_registry_review_doc_valid
             if not proof_sketch_population_failed_path_registry_review_doc_valid:
                 violations.append(f"  proof sketch population and failed path registry review doc missing required markers: {path}")
+        if path == _formal_verifier_result_envelope_doc:
+            allowed = formal_verifier_result_envelope_doc_valid
+            if not formal_verifier_result_envelope_doc_valid:
+                violations.append(f"  formal verifier result envelope design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
