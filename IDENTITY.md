@@ -32,6 +32,24 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Central Read Authorization Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR central read authorization helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/read_authorization.py`.
+- Test path: `weslr/tests/test_read_authorization_v1.py`.
+- Implementation review path: `docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `b5f1ecb`; judgment `central_read_authorization_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs implemented and reviewed: `build_read_authorization_request_v1`, `validate_read_authorization_request_v1`, `authorize_scoped_read_v1`, `require_read_authorization_for_candidate_v1`, `summarize_read_authorization_v1`, `to_read_authorization_json_safe_v1`, and `render_read_authorization_markdown_v1`.
+- Implementation status: narrow pure metadata helpers; synthetic-only tests; metadata-only authorization decisions; scoped/policy-safe internal-shadow allow only; no real read adapter; no runtime wiring; no auth/database decisions; no `.weslr` IO; no final-answer or safe assembly authority.
+- Fail-closed behavior blocks missing/invalid scope, requester/target gaps, tenant/account/user/session/conversation mismatches, guest/auth mismatch, query-string identity, `.weslr`, `tl_default`, process-global/default timeline inference, public-browser/private state, raw aggregate private content, unknown policy, runtime/provider/final-answer authority, denied-authority issues, and non-JSON-safe metadata.
+- Tests passed in the implementation/review chain: `python3 -m pytest -q weslr/tests/test_read_authorization_v1.py` passed, 32 passed; `python3 -m pytest -q weslr/tests/test_source_scope_v1.py` passed, 25 passed.
+- Still blocked / not authorized: public/browser runtime, runtime/chat wiring, scoped memory/context adapter implementation, scoped artifact/upload registry, cache/log/trace scoping, async request context, leakage negative full-chain tests, candidate/checkpoint/assembly helper implementations, and final-answer generation.
+- Current recommended next lane: `DESIGN_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_V1`. Do not start it from this context alignment packet; it must be separately authorized and remain design-only unless a later implementation lane is explicitly approved.
+- Direction check: continue the metadata-helper sequence before chat wiring.
+- Current boundary rule remains: the reviewed central read authorization helper implementation may inform a future separately authorized scoped memory/context read adapter design only. It does not authorize public/browser runtime, runtime/chat behavior, real scoped adapters, memory/context/evidence/artifact/upload/cache/log/trace reads, provider/model/search/advisor calls, auth/database decisions, `.weslr` IO/public state, candidate/checkpoint/assembly helper implementation, final-answer generation, or authority grants.
+
+
 ### Latest Context Alignment — Tier 0-2 Math Challenge Readiness Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
