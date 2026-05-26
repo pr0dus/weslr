@@ -20,6 +20,27 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Scoped Memory Context Read Adapter Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR scoped memory/context read adapter helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/scoped_memory_context_read_adapter.py`.
+- Test path: `weslr/tests/test_scoped_memory_context_read_adapter_v1.py`.
+- Implementation review path: `docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `dc1ad3f`; judgment `scoped_memory_context_read_adapter_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs implemented and reviewed: `build_scoped_memory_context_read_request_v1`, `validate_scoped_memory_context_read_request_v1`, `authorize_scoped_memory_context_read_request_v1`, `build_scoped_memory_context_read_envelope_v1`, `validate_scoped_memory_context_read_envelope_v1`, `summarize_scoped_memory_context_read_adapter_v1`, `to_scoped_memory_context_read_adapter_json_safe_v1`, and `render_scoped_memory_context_read_adapter_markdown_v1`.
+- Adapter boundary result: metadata-only, deterministic, import-safe, side-effect-free, JSON-safe, no real memory/context reads, no filesystem/`.weslr`/database/auth/browser/runtime/provider/search/model/advisor behavior, and no final-answer/user-facing authority.
+- Source-scope/read-authorization relationship carried forward: the adapter reuses `source_scope` validation, reuses central `read_authorization`, keeps `content_included: false`, and preserves that memory/context remains relevance input only, not truth.
+- Allowed adapter modes: `metadata_only_preview`, `redacted_summary_candidate`, `continuity_anchor_metadata`, `evidence_summary_metadata`, and `blocked_no_read`.
+- Forbidden modes remain blocked: raw memory/context, cross-user/global memory, `.weslr`, runtime transcript, browser public state, provider ingestion, final-answer injection, and unrestricted profile dump.
+- Fail-closed behavior reviewed: missing/invalid scope, missing/denied authorization, requester/target mismatch, cross-user/cross-tenant, guest/auth mismatch, public-browser/private-state conflict, raw private content, forbidden markers, stale/untrusted source-as-truth, final-answer/runtime/chat/provider/search authority markers, denied-authority missing/true, and non-JSON-safe metadata all block to no-read metadata results.
+- Validation in the implementation review chain: adapter tests passed, 47 passed; source scope tests passed, 25 passed; read authorization tests passed, 32 passed.
+- Gaps: no revision-blocking gaps found.
+- Still blocked before chat wiring: scoped artifact/upload registry, cache/log/trace scoping, async-safe request context, leakage negative full-chain tests, candidate/checkpoint/assembly helper implementations, and final-answer generation.
+- Current recommended next lane: `DESIGN_SCOPED_ARTIFACT_UPLOAD_REGISTRY_V1`. Do not start it from this context alignment packet unless separately authorized; it must remain design-only unless a later implementation lane is explicitly approved.
+- Current boundary rule remains: the reviewed scoped memory/context read adapter helpers may inform future context and later guarded lanes only. They do not authorize real reads, `.weslr` IO, runtime/chat/browser behavior, provider/model/search/advisor calls, public output, final-answer generation, cross-user/global memory access, or authority grants.
+
+
 ### Latest Context Alignment — Scoped Memory Context Read Adapter Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
