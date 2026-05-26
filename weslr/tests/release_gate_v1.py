@@ -8956,6 +8956,40 @@ _controlled_local_lean_dry_run_harness_synthetic_only_required_markers = {
 }
 
 _controlled_local_lean_dry_run_harness_synthetic_only_review_doc = "docs/WESLR_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_REVIEW_V1.md"
+_weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc = "docs/WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1.md"
+_weslr_user_workspace_capability_surface_scratch_instrument_boundary_required_markers = {
+    "DESIGN_WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1",
+    "design-only",
+    "WeslrUserWorkspaceCapabilitySurfaceV1",
+    "Core Human Workflow",
+    "Workspace Boundary Overview",
+    "Required Workspace Fields",
+    "Capability Surface Metadata",
+    "Workspace Artifact Types",
+    "Scratch Instrument Boundary",
+    "Official Core vs Workspace vs Scratch",
+    "Promotion Gate Metadata",
+    "Privacy and Memory Context Boundary",
+    "Execution Policy Metadata",
+    "Authority Policy Metadata",
+    "Relationship To Implemented WESLR Helpers",
+    "Capability Expansion Rule",
+    "Validation Status",
+    "Denied Authority Fields",
+    "Fail-Closed Rules",
+    "Example Human Workflows",
+    "Relationship To OCC",
+    "Future Negative Tests Required",
+    "permits_workspace_creation: false",
+    "permits_scratch_script_creation: false",
+    "permits_scratch_execution: false",
+    "permits_runtime_chat_wiring: false",
+    "permits_voice_runtime_wiring: false",
+    "permits_final_answer_generation: false",
+    "weslr_user_workspace_capability_surface_scratch_instrument_boundary_design_ready_for_review",
+    "REVIEW_WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1",
+}
+
 _controlled_local_lean_dry_run_harness_synthetic_only_review_required_markers = {
     "REVIEW_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1",
     "review-only",
@@ -11830,6 +11864,13 @@ def _controlled_local_lean_dry_run_harness_synthetic_only_doc_is_valid():
     )
 
 
+def _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc,
+        _weslr_user_workspace_capability_surface_scratch_instrument_boundary_required_markers,
+    )
+
+
 def _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_local_lean_dry_run_harness_synthetic_only_review_doc,
@@ -12249,6 +12290,7 @@ def _check_git_scope():
     global_goal_subgoal_cache_boundary_review_doc_valid = _global_goal_subgoal_cache_boundary_review_doc_is_valid()
     controlled_local_lean_dry_run_harness_synthetic_only_doc_valid = _controlled_local_lean_dry_run_harness_synthetic_only_doc_is_valid()
     controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid = _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid()
+    weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_valid = _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13436,6 +13478,10 @@ def _check_git_scope():
             allowed = controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid
             if not controlled_local_lean_dry_run_harness_synthetic_only_review_doc_valid:
                 violations.append(f"  controlled local Lean dry run harness synthetic-only review doc missing required markers: {path}")
+        if path == _weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc:
+            allowed = weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_valid
+            if not weslr_user_workspace_capability_surface_scratch_instrument_boundary_doc_valid:
+                violations.append(f"  WESLR user workspace capability surface scratch instrument boundary design doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
