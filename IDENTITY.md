@@ -32,6 +32,27 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Controlled UNKNOWN ENGINE Metadata Shadow Runner Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR controlled UNKNOWN ENGINE metadata shadow runner design is reviewed and valid for context alignment.
+- Readiness audit path: `docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md`.
+- Runner design path: `docs/WESLR_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_V1.md`.
+- Runner review path: `docs/WESLR_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_REVIEW_V1.md`; review commit `82d698b`; judgment `controlled_unknown_engine_metadata_shadow_runner_design_valid_ready_for_context_alignment`.
+- Prior audit result carried forward: `safe_to_run_tests_only`; `needs_controlled_runner_design_before_run`; no dedicated controlled runner/report-run path existed before the design.
+- Reviewed runner boundary: metadata-only, synthetic/internal-only, no-run-authority, no runtime/chat/browser, no providers/search/advisors/models, no `.weslr`, no solver/prover execution, and no final/user-facing output.
+- Allowed future inputs: synthetic UNKNOWN ENGINE fixtures; synthetic Cognitive Gym metadata; synthetic Tier 0–2 math readiness cards; synthetic candidate/invariant/failed-path metadata; explicitly approved safe/source-scoped internal metadata only.
+- Forbidden future inputs: private material, live Erdős/Millennium solving prompts, theorem prover tasks, provider/model/search/advisor outputs, hidden/protected material, `.weslr`, runtime transcripts, and unscoped memory/context/evidence/artifacts.
+- Shadow report shape: metadata-only with required fields present; no proof text, no final-answer text, and no user-facing text.
+- Expert lane rule: expert-style output is `internal_expert_simulation` only; it is not external validation; it requires adjudication before carry-forward; public/proof/prize/solution claims are blocked.
+- Gaps: no revision-blocking gaps found.
+- Future implementation constraints: negative tests required; denied-authority checks required; expert simulation misclassification tests required; `.weslr`/provider/runtime/final-answer marker blocks required; internal-only renderer required.
+- Current recommended next lane: `IMPLEMENT_CONTROLLED_UNKNOWN_ENGINE_METADATA_SHADOW_RUNNER_V1`. Do not start it from this context alignment packet; it must be separately authorized and restricted to metadata-only runner helper, synthetic fixtures, tests, and internal report renderer.
+- Direction check: **A confirmed** — review/context-align this design, then implement controlled metadata shadow runner only under the reviewed no-run-authority boundary.
+- Current boundary rule remains: the reviewed controlled UNKNOWN ENGINE metadata shadow runner design may inform a future separately authorized implementation lane only. It does not authorize live problem solving, theorem solving, provider/model/search/advisor calls, `.weslr` IO, runtime/chat/browser behavior, final-answer generation, proof/solution/open-problem claims, scoring/judging/benchmark claims, official/product/intelligence/certification/Turing claims, public output, or authority grants.
+
+
 ### Latest Context Alignment — Central Read Authorization Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
