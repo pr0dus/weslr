@@ -8881,6 +8881,35 @@ _global_goal_subgoal_cache_boundary_required_markers = {
     "REVIEW_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1",
 }
 
+_global_goal_subgoal_cache_boundary_review_doc = "docs/WESLR_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_REVIEW_V1.md"
+_global_goal_subgoal_cache_boundary_review_required_markers = {
+    "REVIEW_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1",
+    "review-only",
+    "global_goal_subgoal_cache_boundary_design_valid_ready_for_context_alignment",
+    "Design-Only Posture Result",
+    "Boundary Object Result",
+    "Required Top-Level Fields Result",
+    "Cache Purpose Metadata Result",
+    "Goal Key Metadata Result",
+    "Subgoal Key Metadata Result",
+    "Dependency Key Metadata Result",
+    "Feedback Summary Key Metadata Result",
+    "Failed Pattern Metadata Result",
+    "Reuse Policy Metadata Result",
+    "Privacy Scope Metadata Result",
+    "Freshness / Invalidation Metadata Result",
+    "Risk Metadata Result",
+    "Validation Status Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationships Result",
+    "Relationship To Existing WESLR Helpers Result",
+    "Future Negative Tests Result",
+    "Formal Proof Search Sequence Result",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_REVIEW_V1",
+}
+
 _rater_critic_ranking_boundary_review_required_markers = {
     "REVIEW_RATER_CRITIC_RANKING_BOUNDARY_V1",
     "review-only",
@@ -11715,6 +11744,13 @@ def _global_goal_subgoal_cache_boundary_doc_is_valid():
     )
 
 
+def _global_goal_subgoal_cache_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _global_goal_subgoal_cache_boundary_review_doc,
+        _global_goal_subgoal_cache_boundary_review_required_markers,
+    )
+
+
 def _central_read_authorization_helpers_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _central_read_authorization_helpers_design_doc,
@@ -12124,6 +12160,7 @@ def _check_git_scope():
     rater_critic_ranking_boundary_doc_valid = _rater_critic_ranking_boundary_doc_is_valid()
     rater_critic_ranking_boundary_review_doc_valid = _rater_critic_ranking_boundary_review_doc_is_valid()
     global_goal_subgoal_cache_boundary_doc_valid = _global_goal_subgoal_cache_boundary_doc_is_valid()
+    global_goal_subgoal_cache_boundary_review_doc_valid = _global_goal_subgoal_cache_boundary_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13299,6 +13336,10 @@ def _check_git_scope():
             allowed = global_goal_subgoal_cache_boundary_doc_valid
             if not global_goal_subgoal_cache_boundary_doc_valid:
                 violations.append(f"  global goal subgoal cache boundary design doc missing required markers: {path}")
+        if path == _global_goal_subgoal_cache_boundary_review_doc:
+            allowed = global_goal_subgoal_cache_boundary_review_doc_valid
+            if not global_goal_subgoal_cache_boundary_review_doc_valid:
+                violations.append(f"  global goal subgoal cache boundary review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
