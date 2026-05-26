@@ -8468,6 +8468,32 @@ _implemented_reasoning_chain_gaps_before_chat_wiring_audit_required_markers = {
     "No candidate execution or final-answer generation authorized",
 }
 
+_central_read_authorization_helpers_design_doc = "docs/WESLR_CENTRAL_READ_AUTHORIZATION_HELPERS_V1.md"
+_central_read_authorization_helpers_design_required_markers = {
+    "DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1",
+    "design-only",
+    "central authorization-before-read",
+    "source-scope validation is not permission",
+    "weslr.central_read_authorization.v1",
+    "allow_metadata_only",
+    "allow_read_for_internal_shadow_use",
+    "deny_missing_source_scope",
+    "deny_scope_mismatch",
+    "deny_cross_user_or_cross_tenant",
+    "deny_public_browser_context",
+    "deny_private_or_raw_content",
+    "deny_missing_policy",
+    "deny_runtime_authority",
+    "deny_provider_or_external_call",
+    "deny_final_answer_or_user_output",
+    "build_read_authorization_request_v1",
+    "authorize_scoped_read_v1",
+    "require_read_authorization_for_candidate_v1",
+    "permits_memory_reads_without_adapter",
+    "No memory/context/evidence/artifact/upload/cache/log/trace read is authorized",
+    "Direction check: `A`",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -10072,6 +10098,13 @@ def _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid():
     )
 
 
+def _central_read_authorization_helpers_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _central_read_authorization_helpers_design_doc,
+        _central_read_authorization_helpers_design_required_markers,
+    )
+
+
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_safe_non_model_observation_lane_v2_design_doc,
@@ -10328,6 +10361,7 @@ def _check_git_scope():
     namespace_schema_and_source_scope_helpers_review_doc_valid = _namespace_schema_and_source_scope_helpers_review_doc_is_valid()
     namespace_schema_and_source_scope_helpers_implementation_review_doc_valid = _namespace_schema_and_source_scope_helpers_implementation_review_doc_is_valid()
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
+    central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11427,6 +11461,10 @@ def _check_git_scope():
             allowed = implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid
             if not implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid:
                 violations.append(f"  audit doc missing required markers: {path}")
+        if path == _central_read_authorization_helpers_design_doc:
+            allowed = central_read_authorization_helpers_design_doc_valid
+            if not central_read_authorization_helpers_design_doc_valid:
+                violations.append(f"  central read authorization helpers design doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
