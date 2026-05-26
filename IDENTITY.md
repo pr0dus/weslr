@@ -31,6 +31,23 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+
+### Latest Context Alignment — Tier 0-2 Math Challenge Readiness Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR Tier 0-2 math challenge readiness design is reviewed and valid for context alignment.
+- Design path: `docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md`.
+- Review path: `docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_REVIEW_V1.md`; review commit `9f1f34c`; judgment `tier_0_2_math_challenge_readiness_design_valid_ready_for_context_alignment`.
+- Erdős readiness: Tier 0 is metadata-ready; Tier 1 is toy/known reconstruction only; Tier 2 is bounded exploratory notes only; no frontier claim and no solution claim are authorized.
+- Millennium readiness: Riemann Hypothesis, P vs NP, Navier-Stokes existence and smoothness, Yang-Mills existence and mass gap, Hodge Conjecture, and Birch and Swinnerton-Dyer Conjecture are metadata/prerequisite/toy/exploratory-only. Poincaré Conjecture is solved/reference reconstruction only, not an active prize target.
+- Expert lane carry-forward: internal WESLR expert output is `internal_expert_simulation` only; internal expert output is not external validation; expert-style output must be followed by expert output analysis/adjudication; only genuine external qualified review can satisfy external validation; even external review must be analyzed and recorded, not accepted blindly.
+- Safety boundary: no solving authority, no proof authority, no prize/public/benchmark authority, no runtime/chat/provider/search/theorem-solver authority, and no final-answer authority are granted.
+- Gaps: no revision-blocking gaps found. Carry-forward only: preserve the explicit expert-lane rule in future context alignment or math challenge card/helper designs.
+- Direction check: **A confirmed** — review/context-align this readiness map, then return to central read authorization implementation.
+- Current recommended next lane: `IMPLEMENT_CENTRAL_READ_AUTHORIZATION_HELPERS_V1`. Do not start it from this context alignment packet; it must be separately authorized and must remain narrow, metadata-only, pure, import-safe, synthetic-data-only, deterministic, and no-read.
+- Current boundary rule remains: the reviewed Tier 0-2 math readiness map may inform future separately authorized context or math-card/helper design only. It does not authorize solving, proof generation, theorem solving, provider/model/search/advisor calls, source ingestion, private reads, `.weslr` IO, runtime/chat/browser behavior, final-answer generation, public proof announcements, prize claims, benchmark/intelligence/Turing/product-readiness claims, or authority grants.
+
 ### Latest Context Alignment — Central Read Authorization Helpers Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
