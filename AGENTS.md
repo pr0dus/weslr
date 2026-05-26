@@ -24,6 +24,34 @@ Don't ask permission. Just do it.
 
 
 
+### Latest Context Alignment — Global Goal/Subgoal Cache Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Global goal/subgoal cache boundary design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_REVIEW_V1.md`; review commit `2bcbf55`; judgment `global_goal_subgoal_cache_boundary_design_valid_ready_for_context_alignment`.
+- Boundary result: `GlobalGoalSubgoalCacheBoundaryV1` is valid, metadata-only, JSON-safe, source-scoped, authorization-aware, tenant/session/project/workspace scoped, freshness-labeled, raw-content-denying, raw-trace-denying, cross-user-denying, fail-closed, and authority-denying.
+- Required top-level fields are complete.
+- Cache purpose metadata is valid: metadata-reuse only, with no content authority, no proof authority, no execution authority, and no claim authority.
+- Goal key metadata is valid; raw goal state is excluded and goal-as-truth is blocked.
+- Subgoal key metadata is valid; raw subgoal state is excluded.
+- Dependency key metadata is valid; dependency content is excluded.
+- Feedback summary key metadata is valid; raw feedback, raw error text, and raw traces are excluded.
+- Failed pattern metadata is valid; failed-pattern content is excluded and impossibility claims are blocked.
+- Reuse policy metadata is valid: reuse requires same source scope, authorized scope, freshness match, environment match, misformalization clearance, verifier caveat clearance, and read authorization; it grants no execution authority and no claim authority.
+- Privacy scope metadata is valid: tenant/workspace/session/artifact scoped; cross-user reuse and anonymous/guest reuse are blocked; private context and log/trace/cache content are excluded.
+- Freshness/invalidation metadata is valid: revalidation is required before reuse and stale cache blocks claim authority.
+- Risk metadata is valid and covers unscoped cache, cross-user leakage, stale reuse, raw goal/compiler trace leakage, cache-as-proof, cache-as-intelligence, failed-pattern-as-impossibility, source mismatch, misformalization bypass, verifier caveat bypass, and final-answer overclaim.
+- Denied-authority fields are complete and required false.
+- Fail-closed rules are valid and sufficient.
+- Relationships are valid: prior formal proof-search components remain authoritative only in their limited metadata roles; the cache boundary cannot override the Lean sketch schema, population registry, verifier envelope, misformalization workflow, or rater/critic ranking boundary; cache reuse remains metadata-only and never proof authority; existing WESLR helpers remain separate.
+- Future negative tests are sufficient and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future helper design must preserve source scope, read authorization, freshness, privacy, and fail-closed behavior; cache metadata must never become proof, benchmark, intelligence, Turing, certification, product-readiness, runtime, public, or final-answer authority; stale cache must block claim authority; failed patterns must never become impossibility proofs; raw goal, subgoal, compiler trace, error, proof, and cache content remain excluded unless a later reviewed lane explicitly changes that boundary; any future cache implementation requires separate design/review/authorization.
+- Current next lane: `DESIGN_CONTROLLED_LOCAL_LEAN_DRY_RUN_HARNESS_SYNTHETIC_ONLY_V1`.
+- Current boundary rule remains: the reviewed boundary grants no implementation, cache creation, cache reads, cache writes, `.weslr` reads or writes, log/trace/cache ingestion, private artifact/upload/log/trace/cache reads, cross-user reuse, guest/anonymous reuse, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, real verifier result capture, rater execution, critic execution, Elo scoring, provider/model/search/advisor calls, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+
 ### Latest Context Alignment — Rater Critic Ranking Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
