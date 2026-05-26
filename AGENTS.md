@@ -24,6 +24,31 @@ Don't ask permission. Just do it.
 
 
 
+### Latest Context Alignment — Rater Critic Ranking Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Rater/critic ranking boundary design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_RATER_CRITIC_RANKING_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_RATER_CRITIC_RANKING_BOUNDARY_REVIEW_V1.md`; review commit `6806877`; judgment `rater_critic_ranking_boundary_design_valid_ready_for_context_alignment`.
+- Boundary result: `RaterCriticRankingBoundaryV1` is valid, metadata-only, JSON-safe, source-scoped, fail-closed, raw-content-denying, and authority-denying.
+- Ranking purpose is valid: triage-only, with no proof authority, no benchmark authority, no intelligence authority, and no final-answer authority.
+- Candidate reference metadata is valid; candidates remain non-truth metadata.
+- Critic signal metadata is valid: no execution and no authority.
+- Comparison metadata is valid: no proof authority and no final-answer authority.
+- Priority metadata is valid: no execution authority and no claim authority.
+- Score metadata is valid: bookkeeping only, not benchmark evidence, not intelligence evidence, and not Turing evidence.
+- Adjudication dependency metadata is valid: ranking cannot override the misformalization workflow, verifier caveats, external review requirements, or denied authority.
+- Risk metadata is valid.
+- Denied-authority fields are valid and required false.
+- Fail-closed rules are valid.
+- Relationships are valid for the Lean sketch schema, population registry, verifier envelope, misformalization workflow, and existing WESLR helpers.
+- Future negative tests are sufficient and synthetic-only.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future ranking helper design must preserve triage-only posture; scores/Elo-like metadata must never become benchmark, intelligence, Turing, certification, product-readiness, proof, public, runtime, or final-answer authority; critic/rater outputs must not override misformalization, verifier caveats, external review requirements, source scope, or denied authority; provider/model/search/advisor execution remains unauthorized.
+- Current next lane: `DESIGN_GLOBAL_GOAL_SUBGOAL_CACHE_BOUNDARY_V1`.
+- Current boundary rule remains: the reviewed boundary grants no implementation, rater execution, critic execution, Elo scoring, benchmark scoring, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, real verifier result capture, provider/model/search/advisor calls, `.weslr` reads or writes, private artifact/upload/log/trace/cache reads, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+
 ### Latest Context Alignment — Misformalization Detection And Adjudication Workflow Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
