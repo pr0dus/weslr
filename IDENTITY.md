@@ -34,6 +34,24 @@ WESLR is one unified intelligence/entity under development. It is not a chatbot 
 
 
 
+
+### Latest Context Alignment — Scoped Artifact Upload Registry Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR scoped artifact/upload registry design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_V1.md`.
+- Review path: `docs/WESLR_SCOPED_ARTIFACT_UPLOAD_REGISTRY_REVIEW_V1.md`; review commit `478f561`; judgment `scoped_artifact_upload_registry_design_valid_ready_for_context_alignment`.
+- Registry boundary result: valid, design-only, metadata-only, no artifact/upload reads, no upload ingestion, no runtime/chat/browser wiring, no `.weslr` IO, and no final-answer authority.
+- Allowed future access modes: `metadata_only_preview`, `redacted_summary_candidate`, `provenance_summary_metadata`, `continuity_anchor_metadata`, and `blocked_no_access`. These modes are bounded metadata-only modes and do not authorize content reads, runtime use, public output, or final-answer generation.
+- Forbidden access modes remain blocked: raw artifact/upload content, cross-user/global registry access, `.weslr` artifact state, runtime/browser/provider ingestion, final-answer injection, and unrestricted dumps.
+- Fail-closed behavior reviewed: missing/invalid scope, missing owner/requester/target scope, denied authorization, ownership mismatch, cross-user/cross-tenant risk, public-browser/private artifact conflict, raw content request, forbidden access mode, `.weslr`/global/`tl_default`/process-global markers, query-string identity, stale/untrusted artifact-as-truth, runtime/final-answer/provider authority, denied-authority true/missing, and non-JSON-safe metadata all block to `blocked_no_access` or safer metadata-only handling.
+- Source-scope/read-authorization relationship carried forward: `source_scope` validates ownership/access metadata; `read_authorization` decides scoped metadata access; the registry enforces authorization at the artifact/upload boundary; the scoped memory/context adapter remains separate; artifact/upload metadata supports relevance/provenance only, not truth.
+- Gaps: no revision-blocking gaps found. Cache/log/trace scoping, async request context, and leakage negative full-chain tests remain future gaps before chat wiring.
+- Direction check: **A confirmed** — review/context-align this design, then implement scoped artifact/upload registry helpers under the reviewed metadata-only/no-read/no-runtime/no-final-answer boundary.
+- Current recommended next lane: `IMPLEMENT_SCOPED_ARTIFACT_UPLOAD_REGISTRY_HELPERS_V1`. Do not start it from this context alignment packet unless separately authorized; it must remain metadata-only, synthetic-data-tested, import-safe, JSON-safe, no-read, no `.weslr` IO, no runtime/chat/browser wiring, no provider/model/search/advisor calls, and no final-answer authority.
+- Current boundary rule remains: the reviewed scoped artifact/upload registry design may inform a future separately authorized helper implementation lane only. It does not authorize implementation by itself, artifact/upload reads, upload ingestion, filesystem scanning, `.weslr` IO, database/auth/session work, runtime/chat/browser behavior, provider/model/search/advisor calls, public output, final-answer generation, cross-user/global registry access, automatic truth from artifacts/uploads, or authority grants.
+
 ### Latest Context Alignment — Scoped Memory Context Read Adapter Helpers Implementation Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
