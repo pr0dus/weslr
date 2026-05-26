@@ -31,6 +31,25 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
+### Latest Context Alignment — Namespace Source-Scope Helpers Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR namespace/source-scope helpers are implemented and reviewed as valid for context alignment.
+- Implementation path: `weslr/source_scope.py`.
+- Test path: `weslr/tests/test_source_scope_v1.py`.
+- Design path: `docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1.md`.
+- Design review path: `docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_REVIEW_V1.md`.
+- Implementation review path: `docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_IMPLEMENTATION_REVIEW_V1.md`; review commit `4e56be8`; judgment `namespace_source_scope_helpers_implementation_valid_ready_for_context_alignment`.
+- Public APIs implemented and reviewed: `build_source_scope_v1`, `validate_source_scope_v1`, `require_source_scope_for_candidate_v1`, `summarize_source_scope_v1`, `to_source_scope_json_safe_v1`, and `render_source_scope_markdown_v1`.
+- Implementation status: narrow pure metadata helpers; import-safe; synthetic-data-tested; fail-closed validation; no runtime wiring; no auth decisions; no database migration; no memory reads; no `.weslr` IO; no final-answer or assembly implementation.
+- Validation behavior blocks missing scope/identity, query-string identity, `.weslr`, `tl_default`, process-global inference, unscoped resources, unsafe guest/cross-user/anonymous use, non-JSON-safe values, and denied-authority violations.
+- Candidate behavior: candidate metadata is blocked without valid source scope, and blocked if it implies runtime/public/provider/final-answer/`.weslr` authority.
+- Tests passed in the implementation/review chain: `python3 -m pytest -q weslr/tests/test_source_scope_v1.py` passed, 25 passed.
+- Still blocked / not authorized: public/browser runtime, runtime/chat wiring, auth/database decisions, memory/context reads, provider/model/search/advisor calls, `.weslr` public/runtime state, final-answer generation, safe assembly implementation, central read authorization implementation, and scoped memory/context adapter implementation.
+- Current recommended next lane: `DESIGN_CENTRAL_READ_AUTHORIZATION_HELPERS_V1`. Source-scope helpers identify scope; central read authorization is still needed to decide whether scoped reads are allowed. Do not start it from this context alignment packet; it must be separately authorized and remain design-only unless a later implementation lane is explicitly approved.
+- Current boundary rule remains: the reviewed namespace/source-scope helper implementation may inform future separately authorized central read authorization design only. It does not authorize runtime/browser/public behavior, authentication, database work, memory/context/evidence/artifact/upload/cache/log/trace reads, provider/model/search/advisor calls, final-answer generation, safe assembly implementation, `.weslr` public state, cross-user context use, or authority grants.
+
 ### Latest Context Alignment — Namespace Schema And Source Scope Helpers Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
