@@ -8685,6 +8685,71 @@ _scoped_memory_context_read_adapter_review_required_markers = {
     "IMPLEMENT_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_V1",
 }
 
+_scoped_memory_context_read_adapter_helpers_implementation_review_doc = "docs/WESLR_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+_scoped_memory_context_read_adapter_helpers_implementation_review_required_markers = {
+    "REVIEW_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_IMPLEMENTATION_V1",
+    "review-only",
+    "4985ee6",
+    "weslr/scoped_memory_context_read_adapter.py",
+    "weslr/tests/test_scoped_memory_context_read_adapter_v1.py",
+    "scoped_memory_context_read_adapter_helpers_implementation_valid_ready_for_context_alignment",
+    "build_scoped_memory_context_read_request_v1",
+    "validate_scoped_memory_context_read_request_v1",
+    "authorize_scoped_memory_context_read_request_v1",
+    "build_scoped_memory_context_read_envelope_v1",
+    "validate_scoped_memory_context_read_envelope_v1",
+    "summarize_scoped_memory_context_read_adapter_v1",
+    "to_scoped_memory_context_read_adapter_json_safe_v1",
+    "render_scoped_memory_context_read_adapter_markdown_v1",
+    "validate_source_scope_v1",
+    "authorize_scoped_read_v1",
+    "metadata-only",
+    "deterministic",
+    "import-safe",
+    "side-effect-free",
+    "no-read",
+    "no-runtime",
+    "JSON-safe",
+    "no-final-answer-authority",
+    "content_included: false",
+    "metadata_only_preview",
+    "redacted_summary_candidate",
+    "continuity_anchor_metadata",
+    "evidence_summary_metadata",
+    "blocked_no_read",
+    "raw_memory_text",
+    "raw_private_context",
+    "cross_user_context",
+    "global_memory",
+    "dot_weslr_state",
+    "runtime_transcript",
+    "browser_public_state",
+    "provider_output_ingestion",
+    "final_answer_context_injection",
+    "unrestricted_profile_dump",
+    "missing source scope",
+    "invalid source scope",
+    "missing read authorization",
+    "denied read authorization",
+    "requester/target mismatch",
+    "cross-user/cross-tenant",
+    "guest/authenticated mismatch",
+    "public-browser/private-state conflict",
+    "raw private content request",
+    "query-string identity",
+    "stale or unknown source requested as truth",
+    "untrusted provenance requested as truth",
+    "denied-authority missing fields",
+    "denied-authority true fields",
+    "non-JSON-safe metadata",
+    "47 passed",
+    "25 passed",
+    "32 passed",
+    "No revision-blocking gaps found",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_SCOPED_MEMORY_CONTEXT_READ_ADAPTER_HELPERS_IMPLEMENTATION_REVIEW_V1",
+    "No runtime step is authorized",
+}
+
 _unknown_engine_run_readiness_audit_doc = "docs/WESLR_UNKNOWN_ENGINE_RUN_READINESS_AUDIT_V1.md"
 _unknown_engine_run_readiness_audit_required_markers = {
     "AUDIT_UNKNOWN_ENGINE_RUN_READINESS_FOR_WESLR_V1",
@@ -10671,6 +10736,13 @@ def _scoped_memory_context_read_adapter_review_doc_is_valid():
     )
 
 
+def _scoped_memory_context_read_adapter_helpers_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _scoped_memory_context_read_adapter_helpers_implementation_review_doc,
+        _scoped_memory_context_read_adapter_helpers_implementation_review_required_markers,
+    )
+
+
 def _unknown_engine_run_readiness_audit_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_run_readiness_audit_doc,
@@ -10987,6 +11059,7 @@ def _check_git_scope():
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
     scoped_memory_context_read_adapter_doc_valid = _scoped_memory_context_read_adapter_doc_is_valid()
     scoped_memory_context_read_adapter_review_doc_valid = _scoped_memory_context_read_adapter_review_doc_is_valid()
+    scoped_memory_context_read_adapter_helpers_implementation_review_doc_valid = _scoped_memory_context_read_adapter_helpers_implementation_review_doc_is_valid()
     unknown_engine_run_readiness_audit_doc_valid = _unknown_engine_run_readiness_audit_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_doc_is_valid()
     controlled_unknown_engine_metadata_shadow_runner_review_doc_valid = _controlled_unknown_engine_metadata_shadow_runner_review_doc_is_valid()
@@ -12114,6 +12187,10 @@ def _check_git_scope():
             allowed = scoped_memory_context_read_adapter_review_doc_valid
             if not scoped_memory_context_read_adapter_review_doc_valid:
                 violations.append(f"  scoped memory context read adapter review doc missing required markers: {path}")
+        if path == _scoped_memory_context_read_adapter_helpers_implementation_review_doc:
+            allowed = scoped_memory_context_read_adapter_helpers_implementation_review_doc_valid
+            if not scoped_memory_context_read_adapter_helpers_implementation_review_doc_valid:
+                violations.append(f"  scoped memory context read adapter helpers implementation review doc missing required markers: {path}")
         if path == _unknown_engine_run_readiness_audit_doc:
             allowed = unknown_engine_run_readiness_audit_doc_valid
             if not unknown_engine_run_readiness_audit_doc_valid:
