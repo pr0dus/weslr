@@ -19,6 +19,20 @@ Don't ask permission. Just do it.
 
 ## Current WESLR Project Alignment
 
+### Latest Context Alignment — Namespace Schema And Source Scope Helpers Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR namespace schema and source-scope helpers design is reviewed and valid for context alignment.
+- Design path: `docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1.md`.
+- Review path: `docs/WESLR_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_REVIEW_V1.md`; review commit `6a1b996`; judgment `namespace_schema_and_source_scope_helpers_design_valid_ready_for_context_alignment`.
+- Coverage confirmed: design-only posture; metadata-only source-scope records; fail-closed validation; query-string `user_id` rejected as identity authority; global `.weslr` rejected for public multi-user scope; `tl_default` rejected as shared user scope; process-global inference rejected; unsafe guest/anonymous/cross-user use blocked; source-scope helpers remain separate from central read authorization.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward: add or explicitly model `guest_id` if implementation needs guest records rather than only guest owner labels.
+- Current recommended next lane: `IMPLEMENT_NAMESPACE_SCHEMA_AND_SOURCE_SCOPE_HELPERS_V1`. Do not start it from this context alignment packet; it must be separately authorized and restricted to narrow pure metadata helpers with synthetic negative tests.
+- Future implementation constraints: narrow pure metadata helpers only; synthetic negative tests only; import-safe; no `.weslr` IO; no runtime wiring; no auth decisions; no database migration; no memory reads; no provider/model/search/advisor calls; no final-answer or assembly implementation; `weslr/chat_responder.py` must remain untouched.
+- Current boundary rule remains: the reviewed namespace/source-scope helper design may inform a future separately authorized implementation lane only. It does not authorize runtime/browser/public behavior, authentication, database work, memory/context/evidence/artifact/upload/cache/log/trace reads, provider/model/search/advisor calls, final-answer generation, safe assembly implementation, `.weslr` public state, cross-user context use, or authority grants.
+
 ### Latest Context Alignment — Safe Final Response Assembly Shadow Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
