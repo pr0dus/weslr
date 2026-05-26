@@ -8518,6 +8518,47 @@ _central_read_authorization_helpers_review_required_markers = {
     "No implementation step is authorized by this review",
 }
 
+_tier_0_2_math_challenge_readiness_doc = "docs/WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1.md"
+_tier_0_2_math_challenge_readiness_required_markers = {
+    "DESIGN_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
+    "design-only / readiness map",
+    "Erdős-style challenge readiness",
+    "Millennium Prize Problem readiness",
+    "Riemann Hypothesis",
+    "P vs NP",
+    "Navier-Stokes existence and smoothness",
+    "Yang-Mills existence and mass gap",
+    "Hodge Conjecture",
+    "Birch and Swinnerton-Dyer Conjecture",
+    "Poincaré Conjecture as solved/reference reconstruction only",
+    "Tier 0 — Orientation And Representation",
+    "Tier 1 — Known-Result Reconstruction And Toy Work",
+    "Tier 2 — Bounded Exploratory Work",
+    "ready_metadata_only",
+    "ready_with_toy_examples_only",
+    "needs_prerequisite_map",
+    "needs_source_ingestion_boundary",
+    "needs_external_validation",
+    "not_ready_for_frontier_attempt",
+    "forbidden_to_claim_solution",
+    "Cognitive Gym exploratory case protocol",
+    "CALIBRATION_LEDGER",
+    "source-scope validation remains metadata only and is not permission",
+    "central read authorization before read",
+    "response-facing authority/claim checkpoint",
+    "Safe final response assembly",
+    "math_challenge_card",
+    "candidate_lemma_card",
+    "external_review_request_card",
+    "unvalidated_working_note",
+    "needs_formal_review",
+    "needs_external_expert_review",
+    "forbidden_as_public_claim",
+    "REVIEW_WESLR_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_TIER_0_2_MATH_CHALLENGE_READINESS_V1",
+    "Direction check: `A",
+}
+
 _controlled_safe_non_model_observation_lane_v2_design_doc = "docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md"
 _controlled_safe_non_model_observation_lane_v2_design_required_markers = {
     "DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2",
@@ -10135,6 +10176,12 @@ def _central_read_authorization_helpers_review_doc_is_valid():
         _central_read_authorization_helpers_review_required_markers,
     )
 
+def _tier_0_2_math_challenge_readiness_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _tier_0_2_math_challenge_readiness_doc,
+        _tier_0_2_math_challenge_readiness_required_markers,
+    )
+
 
 def _controlled_safe_non_model_observation_lane_v2_design_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -10394,6 +10441,7 @@ def _check_git_scope():
     implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_valid = _implemented_reasoning_chain_gaps_before_chat_wiring_audit_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
+    tier_0_2_math_challenge_readiness_doc_valid = _tier_0_2_math_challenge_readiness_doc_is_valid()
     answer_formation_helpers_design_doc_valid = _answer_formation_helpers_design_doc_is_valid()
     answer_formation_helpers_review_doc_valid = _answer_formation_helpers_review_doc_is_valid()
     answer_formation_helpers_implementation_plan_doc_valid = _answer_formation_helpers_implementation_plan_doc_is_valid()
@@ -11501,6 +11549,10 @@ def _check_git_scope():
             allowed = central_read_authorization_helpers_review_doc_valid
             if not central_read_authorization_helpers_review_doc_valid:
                 violations.append(f"  central read authorization helpers review doc missing required markers: {path}")
+        if path == _tier_0_2_math_challenge_readiness_doc:
+            allowed = tier_0_2_math_challenge_readiness_doc_valid
+            if not tier_0_2_math_challenge_readiness_doc_valid:
+                violations.append(f"  Tier 0-2 math challenge readiness doc missing required markers: {path}")
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
