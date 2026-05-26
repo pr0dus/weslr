@@ -20,6 +20,25 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+
+### Latest Context Alignment — Lean Formal Problem Sketch Schema Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Lean formal problem sketch schema design was reviewed and judged valid for context alignment.
+- Design path: `docs/WESLR_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_V1.md`.
+- Review path: `docs/WESLR_LEAN_FORMAL_PROBLEM_SKETCH_SCHEMA_REVIEW_V1.md`; review commit `96781b1`; judgment `lean_formal_problem_sketch_schema_design_valid_ready_for_context_alignment`.
+- Schema result: `LeanFormalProblemSketchV1` is valid, JSON-safe, metadata-only, source-scoped, versioned, freshness-labeled, fail-closed, and authority-denying by default.
+- Required top-level fields are complete, covering schema/version/freshness identity, source and owner/requester/target scope, problem intent, source provenance, formalization candidate, Lean environment metadata, protected statement metadata, bounded edit regions, proof-sketch metadata, assumptions, known gaps, misformalization risks, validation state, blocked reasons, next safe steps, and denied authority.
+- Denied-authority fields are complete and required false, including no Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, provider/model/search/advisor calls, `.weslr` reads, private context/artifact/log/trace/cache reads, runtime/chat wiring, final-answer generation, and proof/public/benchmark/intelligence/Turing/certification/product-readiness claims.
+- Fail-closed rules are sufficient for this stage: missing or invalid scope, authorization, freshness/version labels, theorem hash, protected metadata, edit-region metadata, true or missing denied-authority fields, raw proof/source content, `.weslr`/global/process-default/`tl_default` markers, open-problem or execution implications, claims, runtime/final-answer authority, and non-JSON-safe metadata all block to metadata-only no-authority handling.
+- Helper relationship carried forward: `source_scope` remains the scope validator; `read_authorization` remains a separate future authorization gate; the scoped memory/context adapter remains separate; the scoped artifact/upload registry remains separate; cache/log/trace scoping remains separate; UNKNOWN ENGINE and Cognitive Gym remain metadata-only precedents; this schema is not a runner and not proof authority.
+- Future synthetic-only negative-test list is sufficient for this stage.
+- Gaps: no revision-blocking gaps found.
+- Carry-forward notes: future helper design must preserve field-level denied-authority booleans; population/failed-path design must not treat candidates as truth; verifier envelope design must separate compiler status from public proof authority; synthetic-only Lean dry-run harness design remains much later and separately reviewed.
+- Current next lane: `DESIGN_PROOF_SKETCH_POPULATION_AND_FAILED_PATH_REGISTRY_V1`.
+- Current boundary rule remains: the reviewed schema grants no implementation, Lean execution, theorem prover execution, solver runner, proof search, proof-sketch execution, compiler feedback capture, provider/model/search/advisor calls, `.weslr` reads or writes, private artifact/upload/log/trace/cache reads, runtime/chat/browser wiring, final-answer generation, or proof/public/benchmark/prize/intelligence/Turing/certification/product-readiness claims.
+
 ### Latest Context Alignment — Formal Proof Search Assimilation Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
