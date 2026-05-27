@@ -12403,6 +12403,29 @@ def _public_pilot_user_data_storage_quarantine_review_doc_is_valid():
     )
 
 
+_controlled_multiturn_continuity_pressure_test_phase_c_40_doc = "docs/WESLR_CONTROLLED_MULTITURN_CONTINUITY_PRESSURE_TEST_PHASE_C_40_V1.md"
+_controlled_multiturn_continuity_pressure_test_phase_c_40_required_markers = {
+    "WESLR Controlled Multiturn Continuity Pressure Test Phase C 40 V1",
+    "Phase C / 40-turn design only",
+    "no implementation changes",
+    "no test execution",
+    "no chat wiring",
+    "no helper wiring",
+    "no `.weslr` IO",
+    "no provider/model/search/advisor calls",
+    "phase_c_40_multiturn_continuity_design_ready_for_review",
+    "controlled_multiturn_continuity_pressure_test_phase_c_40_design_ready_for_review",
+    "REVIEW_CONTROLLED_MULTITURN_CONTINUITY_PRESSURE_TEST_PHASE_C_40_DESIGN_V1",
+}
+
+
+def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_multiturn_continuity_pressure_test_phase_c_40_doc,
+        _controlled_multiturn_continuity_pressure_test_phase_c_40_required_markers,
+    )
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -13964,6 +13987,10 @@ def _check_git_scope():
             allowed = controlled_unknown_engine_metadata_shadow_report_review_doc_valid
             if not controlled_unknown_engine_metadata_shadow_report_review_doc_valid:
                 violations.append(f"  controlled UNKNOWN ENGINE metadata shadow report review doc missing required markers: {path}")
+        if path == _controlled_multiturn_continuity_pressure_test_phase_c_40_doc:
+            allowed = _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid()
+            if not allowed:
+                violations.append(f"  controlled multiturn continuity pressure test phase C 40 doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
