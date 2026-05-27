@@ -1,0 +1,319 @@
+# WESLR Unknown Engine Conversation Friction Assimilation Run Result V1
+
+## 1. Status
+- controlled metadata run only
+- synthetic observation source only
+- no implementation
+- no runtime changes
+- no chat wiring
+- no final-answer generation
+- no public UX work
+- no public launch
+- no raw private data reads/dumps
+- no `.weslr` IO
+- no continuity raw reads
+- no queue processing
+- no provider/model/search/advisor calls
+- no official benchmark/intelligence/Turing/certification claims
+- no authority grant
+
+## 2. Source Observation
+- source path: `docs/WESLR_CONTROLLED_LOCAL_REAL_CONVERSATION_OBSERVATION_V1.md`
+- source commit if known: `2134417`
+- observation type: controlled local real conversation observation
+- transcript scope: synthetic
+- selected prompt count: 8
+- raw private data included: false
+
+## 3. Assimilation Artifact Summary
+- friction item count: 10
+- cognition gap hypothesis count: 13
+- failed-path reference count: 10
+- improvement target count: 13
+- validation status: validation_pass_metadata_only
+- blocked status: false
+- recommended next lane: REVIEW_UNKNOWN_ENGINE_CONVERSATION_FRICTION_ASSIMILATION_RUN_RESULT_V1
+
+## 4. Friction Items
+- **safe item id:** friction_ref_002
+- **source turn id:** turn_002
+- **friction label:** under_answering
+- **severity label:** medium
+- **evidence label:** bounded planning answer, safe, but somewhat generic
+- **why it matters:** The user asked for a first move and got structure without enough concrete direction.
+- **safe item id:** friction_ref_003
+- **source turn id:** turn_003
+- **friction label:** missed_local_context
+- **severity label:** high
+- **evidence label:** memory-style turn acknowledged memory framing, but did not restate the worry
+- **why it matters:** Continuity trust drops when the answer misses the immediately relevant concern.
+- **safe item id:** friction_ref_005a
+- **source turn id:** turn_005
+- **friction label:** shallow_continuity
+- **severity label:** high
+- **evidence label:** acknowledged memory context only; did not recover the prior worry
+- **why it matters:** The reply tracks the topic label, not the user’s lived conversational thread.
+- **safe item id:** friction_ref_004
+- **source turn id:** turn_004
+- **friction label:** cannedness
+- **severity label:** medium
+- **evidence label:** structured checklist, still template-like
+- **why it matters:** Template-shaped output feels less responsive even when the content is safe.
+- **safe item id:** friction_ref_007
+- **source turn id:** turn_007
+- **friction label:** fallback_to_checklist
+- **severity label:** high
+- **evidence label:** rollout tradeoff response stayed checklist-shaped
+- **why it matters:** When the user asks for judgment, repeating a process frame weakens usefulness.
+- **safe item id:** friction_ref_008a
+- **source turn id:** turn_008
+- **friction label:** weak_human_concern_tracking
+- **severity label:** medium
+- **evidence label:** consistent and safe; still not very human-sounding
+- **why it matters:** The emotional moment is acknowledged only indirectly.
+- **safe item id:** friction_ref_005b
+- **source turn id:** turn_005
+- **friction label:** weak_followup_memory
+- **severity label:** high
+- **evidence label:** did not actually restate the worry; memory framing stayed abstract
+- **why it matters:** A follow-up that misses the prior concern makes continuity feel brittle.
+- **safe item id:** friction_ref_002b
+- **source turn id:** turn_002
+- **friction label:** vague_language
+- **severity label:** medium
+- **evidence label:** `use available context and keep answer bounded` is thin
+- **why it matters:** Thin phrasing reduces actionability and leaves the user to infer too much.
+- **safe item id:** friction_ref_006
+- **source turn id:** turn_006
+- **friction label:** over_safety
+- **severity label:** low
+- **evidence label:** some answers retreat into boundaries instead of the concrete question
+- **why it matters:** Safety framing can crowd out the specific help being requested.
+- **safe item id:** friction_ref_preflight_unsafe_candidate
+- **source turn id:** preflight_unsafe_candidate
+- **friction label:** provider_model_fallback_risk
+- **severity label:** medium
+- **evidence label:** one unsafe candidate prompt was excluded after preflight showed it would fall into the model path
+- **why it matters:** The system must stay guarded against paths that would require provider/model calls.
+
+## 5. Cognition Gap Hypotheses
+- **gap id:** gap_001
+- **gap label:** missing_answer_shape_planner
+- **linked friction labels:** under_answering, cannedness, over_safety
+- **explanation:** The answer form is not being planned for concreteness before responding.
+- **safe next target:** add_answer_shape_planner_helper
+- **gap id:** gap_002
+- **gap label:** missing_concrete_next_step_selection
+- **linked friction labels:** under_answering
+- **explanation:** The response does not reliably pick a concrete next move.
+- **safe next target:** add_concrete_next_step_selection_helper
+- **gap id:** gap_003
+- **gap label:** missing_conversation_state_frame
+- **linked friction labels:** missed_local_context
+- **explanation:** The reply is not tracking the current conversational state tightly enough.
+- **safe next target:** add_conversation_state_frame_helper
+- **gap id:** gap_004
+- **gap label:** missing_current_user_concern_slot
+- **linked friction labels:** missed_local_context, weak_followup_memory
+- **explanation:** The immediate user concern is not being stored and reused as a live slot.
+- **safe next target:** add_current_user_concern_slot_helper
+- **gap id:** gap_005
+- **gap label:** missing_recent_turn_recall_object
+- **linked friction labels:** shallow_continuity, weak_followup_memory
+- **explanation:** The prior turn is not being carried forward in a concrete recall object.
+- **safe next target:** add_recent_turn_recall_object_helper
+- **gap id:** gap_006
+- **gap label:** missing_goal_subgoal_cache_use
+- **linked friction labels:** shallow_continuity
+- **explanation:** The active goal and subgoal tree are not being consulted on follow-up turns.
+- **safe next target:** add_goal_subgoal_cache_use_helper
+- **gap id:** gap_007
+- **gap label:** missing_non_cannedness_pressure
+- **linked friction labels:** cannedness, fallback_to_checklist
+- **explanation:** The response lacks pressure to stay specific instead of templated.
+- **safe next target:** add_non_cannedness_pressure_helper
+- **gap id:** gap_008
+- **gap label:** missing_response_shape_diversity
+- **linked friction labels:** fallback_to_checklist
+- **explanation:** The system keeps falling back to the same answer skeleton.
+- **safe next target:** add_response_shape_diversity_helper
+- **gap id:** gap_009
+- **gap label:** missing_empathy_concern_integration
+- **linked friction labels:** weak_human_concern_tracking
+- **explanation:** The reply is not integrating the user’s feeling or concern into the answer shape.
+- **safe next target:** add_empathy_concern_integration_helper
+- **gap id:** gap_010
+- **gap label:** missing_response_self_check_before_final_answer
+- **linked friction labels:** vague_language
+- **explanation:** The reply needs a final self-check pass before output.
+- **safe next target:** add_response_self_check_before_final_answer_helper
+- **gap id:** gap_011
+- **gap label:** missing_directness_pressure
+- **linked friction labels:** vague_language
+- **explanation:** The answer needs stronger directness before it is sent.
+- **safe next target:** add_directness_pressure_helper
+- **gap id:** gap_012
+- **gap label:** missing_boundary_specific_authority_calibration
+- **linked friction labels:** over_safety, provider_model_fallback_risk
+- **explanation:** Boundary handling is not tuned finely enough to avoid over-retreat or overreach.
+- **safe next target:** add_boundary_specific_authority_calibration_helper
+- **gap id:** gap_013
+- **gap label:** missing_boundary_specific_fallback_gating
+- **linked friction labels:** provider_model_fallback_risk
+- **explanation:** Fallback selection needs a stricter boundary-aware gate.
+- **safe next target:** add_boundary_specific_fallback_gating_helper
+
+## 6. Failed-Path References
+- **safe reference id:** failed_ref_001
+- **source turn id:** turn_002
+- **failure label:** under_answering
+- **gap label:** missing_answer_shape_planner
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_002
+- **source turn id:** turn_003
+- **failure label:** missed_local_context
+- **gap label:** missing_conversation_state_frame
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_003
+- **source turn id:** turn_005
+- **failure label:** shallow_continuity
+- **gap label:** missing_recent_turn_recall_object
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_004
+- **source turn id:** turn_004
+- **failure label:** cannedness
+- **gap label:** missing_non_cannedness_pressure
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_005
+- **source turn id:** turn_007
+- **failure label:** fallback_to_checklist
+- **gap label:** missing_non_cannedness_pressure
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_006
+- **source turn id:** turn_008
+- **failure label:** weak_human_concern_tracking
+- **gap label:** missing_empathy_concern_integration
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_007
+- **source turn id:** turn_005
+- **failure label:** weak_followup_memory
+- **gap label:** missing_recent_turn_recall_object
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_008
+- **source turn id:** turn_002
+- **failure label:** vague_language
+- **gap label:** missing_response_self_check_before_final_answer
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_009
+- **source turn id:** turn_006
+- **failure label:** over_safety
+- **gap label:** missing_boundary_specific_authority_calibration
+- **no raw private data:** true
+- **no runtime authority:** true
+- **safe reference id:** failed_ref_010
+- **source turn id:** preflight_unsafe_candidate
+- **failure label:** provider_model_fallback_risk
+- **gap label:** missing_boundary_specific_fallback_gating
+- **no raw private data:** true
+- **no runtime authority:** true
+
+## 7. Improvement Targets
+- **target id:** target_001
+- **target label:** add_answer_shape_planner_helper
+- **linked gap label:** missing_answer_shape_planner
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_002
+- **target label:** add_concrete_next_step_selection_helper
+- **linked gap label:** missing_concrete_next_step_selection
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_003
+- **target label:** add_conversation_state_frame_helper
+- **linked gap label:** missing_conversation_state_frame
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_004
+- **target label:** add_current_user_concern_slot_helper
+- **linked gap label:** missing_current_user_concern_slot
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_005
+- **target label:** add_recent_turn_recall_object_helper
+- **linked gap label:** missing_recent_turn_recall_object
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_006
+- **target label:** add_goal_subgoal_cache_use_helper
+- **linked gap label:** missing_goal_subgoal_cache_use
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_007
+- **target label:** add_non_cannedness_pressure_helper
+- **linked gap label:** missing_non_cannedness_pressure
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_008
+- **target label:** add_response_shape_diversity_helper
+- **linked gap label:** missing_response_shape_diversity
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_009
+- **target label:** add_empathy_concern_integration_helper
+- **linked gap label:** missing_empathy_concern_integration
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_010
+- **target label:** add_response_self_check_before_final_answer_helper
+- **linked gap label:** missing_response_self_check_before_final_answer
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_011
+- **target label:** add_directness_pressure_helper
+- **linked gap label:** missing_directness_pressure
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_012
+- **target label:** add_boundary_specific_authority_calibration_helper
+- **linked gap label:** missing_boundary_specific_authority_calibration
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+- **target id:** target_013
+- **target label:** add_boundary_specific_fallback_gating_helper
+- **linked gap label:** missing_boundary_specific_fallback_gating
+- **proposed future lane type:** design/helper only
+- **no runtime authority:** true
+- **no achievement claim:** true
+
+## 8. Interpretation
+- WESLR did not automatically improve yet.
+- This run converted observation into inspected cognition pressure.
+- Growth is now staged and reviewable.
+- Public UX remains paused.
+- V2 conversation should only happen after targeted response-formation helpers are designed, implemented, and reviewed.
+
+## 9. Recommended Next Lane
+REVIEW_UNKNOWN_ENGINE_CONVERSATION_FRICTION_ASSIMILATION_RUN_RESULT_V1
+
+## 10. Decision
+unknown_engine_conversation_friction_assimilation_run_result_ready_for_review
