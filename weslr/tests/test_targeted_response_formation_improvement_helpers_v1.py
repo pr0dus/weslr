@@ -221,6 +221,11 @@ def test_response_self_check_flags_vague_answer_blocks_memory_claim_and_never_ge
     assert "increase_specificity" in self_check["recommended_repair_labels"]
     assert self_check["final_answer_generated"] is False
 
+    fallback = tri.run_response_self_check_before_final_answer_v1(provider_fallback_risk=True)
+    assert fallback["provider_fallback_risk"] is True
+    assert "route_to_fallback_gate" in fallback["recommended_repair_labels"]
+    assert fallback["final_answer_generated"] is False
+
     blocked = tri.run_response_self_check_before_final_answer_v1(memory_claim_without_evidence=True)
     assert blocked["memory_claim_without_evidence"] is True
     assert "remove_memory_claim" in blocked["recommended_repair_labels"]
@@ -257,6 +262,12 @@ def test_fallback_gating_detects_provider_model_risk_and_stops_without_safe_loca
     assert gate["should_stop"] is False
     assert gate["safe_next_lane_label"] == "AWAIT_OPERATOR_DECISION"
 
+    search_advisor_gate = tri.gate_boundary_specific_fallback_v1(search_advisor_path_detected=True, local_safe_alternative_available=False)
+    assert search_advisor_gate["search_advisor_path_detected"] is True
+    assert search_advisor_gate["should_stop"] is True
+    assert "search_advisor_path_detected_true" in search_advisor_gate["blocked_reason_labels"]
+    assert "local_safe_alternative_unavailable" in search_advisor_gate["blocked_reason_labels"]
+
     stopped = tri.gate_boundary_specific_fallback_v1(local_safe_alternative_available=False)
     assert stopped["should_stop"] is True
     assert stopped["validation_status"] == "blocked_invalid_or_unsafe_metadata_only"
@@ -285,6 +296,34 @@ def test_full_plan_rejects_missing_required_fields_and_unsupported_gap_label():
     assert tri.validate_targeted_response_formation_improvement_plan_v1(unsupported_gap)["valid"] is False
 
 
+def test_full_plan_rejects_unsupported_helper_label_and_denied_authority_changes():
+    plan = _valid_plan()
+
+    unsupported_helper = dict(plan)
+    helper_plans = [dict(item) for item in plan["helper_plans"]]
+    helper_plans[0]["helper_label"] = "UnsupportedHelperV1"
+    unsupported_helper["helper_plans"] = helper_plans
+    validation = tri.validate_targeted_response_formation_improvement_plan_v1(unsupported_helper)
+    assert validation["valid"] is False
+    assert any("unsupported_helper_label:UnsupportedHelperV1" in label for label in validation["blocked_reason_labels"])
+    assert "helper_labels_incomplete_or_unsupported" in validation["blocked_reason_labels"]
+
+    chat_wiring = dict(plan)
+    chat_wiring["denied_authority"] = dict(plan["denied_authority"], permits_chat_wiring=True)
+    chat_wiring_validation = tri.validate_targeted_response_formation_improvement_plan_v1(chat_wiring)
+    assert chat_wiring_validation["valid"] is False
+    assert "denied_authority_field_not_false:permits_chat_wiring" in chat_wiring_validation["blocked_reason_labels"]
+
+    final_answer = dict(plan)
+    final_answer["denied_authority"] = dict(plan["denied_authority"], permits_final_answer_generation=True)
+    final_answer_validation = tri.validate_targeted_response_formation_improvement_plan_v1(final_answer)
+    assert final_answer_validation["valid"] is False
+    assert "denied_authority_field_not_false:permits_final_answer_generation" in final_answer_validation["blocked_reason_labels"]
+
+    summary = tri.summarize_targeted_response_formation_improvement_plan_v1(plan)
+    assert "final_answer" not in " ".join(summary["blocked_reason_labels"])
+
+
 def test_full_plan_rejects_disallowed_paths_and_authority_claims():
     plan = _valid_plan()
 
@@ -300,6 +339,10 @@ def test_full_plan_rejects_disallowed_paths_and_authority_claims():
     provider["authority_calibration_policy"] = {"permits_provider_calls": True}
     provider["denied_authority"] = dict(plan["denied_authority"], permits_provider_calls=True)
     assert tri.validate_targeted_response_formation_improvement_plan_v1(provider)["valid"] is False
+
+    search = dict(plan)
+    search["denied_authority"] = dict(plan["denied_authority"], permits_search_calls=True, permits_advisor_calls=True)
+    assert tri.validate_targeted_response_formation_improvement_plan_v1(search)["valid"] is False
 
     runtime = dict(plan)
     runtime["denied_authority"] = dict(plan["denied_authority"], permits_runtime_changes=True)
