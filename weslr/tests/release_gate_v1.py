@@ -137,6 +137,19 @@ _public_pilot_storage_privacy_retention_governance_boundary_review_required_mark
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_GOVERNANCE_BOUNDARY_REVIEW_V1",
 }
 
+_public_pilot_user_data_storage_quarantine_review_doc = "docs/WESLR_PUBLIC_PILOT_USER_DATA_STORAGE_QUARANTINE_REVIEW_V1.md"
+_public_pilot_user_data_storage_quarantine_review_required_markers = {
+    "WESLR Public Pilot User Data Storage Quarantine Review V1",
+    "review-only",
+    "no implementation",
+    "no raw private data reads/dumps",
+    "no raw JSON reads",
+    "no `.weslr` IO",
+    "public_pilot_user_data_storage_quarantine_implementation_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_USER_DATA_STORAGE_QUARANTINE_REVIEW_V1",
+    "public_pilot_user_data_storage_quarantine_review_valid_ready_for_context_alignment",
+}
+
 _frontier_intelligence_shadow_review_canon_doc = "docs/WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_V1.md"
 _frontier_intelligence_shadow_review_required_markers = {
     "APPROVE_WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_ONLY",
@@ -12383,6 +12396,13 @@ def _public_pilot_storage_privacy_retention_governance_boundary_review_doc_is_va
     )
 
 
+def _public_pilot_user_data_storage_quarantine_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _public_pilot_user_data_storage_quarantine_review_doc,
+        _public_pilot_user_data_storage_quarantine_review_required_markers,
+    )
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -12518,6 +12538,7 @@ def _check_git_scope():
     public_pilot_storage_privacy_retention_audit_review_doc_valid = _public_pilot_storage_privacy_retention_audit_review_doc_is_valid()
     public_pilot_storage_privacy_retention_governance_boundary_doc_valid = _public_pilot_storage_privacy_retention_governance_boundary_doc_is_valid()
     public_pilot_storage_privacy_retention_governance_boundary_review_doc_valid = _public_pilot_storage_privacy_retention_governance_boundary_review_doc_is_valid()
+    public_pilot_user_data_storage_quarantine_review_doc_valid = _public_pilot_user_data_storage_quarantine_review_doc_is_valid()
     frontier_intelligence_shadow_review_doc_valid = _frontier_intelligence_shadow_review_canon_doc_is_valid()
     internal_evaluation_corpus_helper_doc_valid = _internal_evaluation_corpus_helper_canon_doc_is_valid()
     internal_corpus_to_advisor_review_adapter_doc_valid = _internal_corpus_to_advisor_review_adapter_design_doc_is_valid()
@@ -12851,6 +12872,10 @@ def _check_git_scope():
             allowed = public_pilot_storage_privacy_retention_governance_boundary_review_doc_valid
             if not public_pilot_storage_privacy_retention_governance_boundary_review_doc_valid:
                 violations.append(f"  public pilot storage privacy retention governance boundary review doc missing required markers: {path}")
+        if path == _public_pilot_user_data_storage_quarantine_review_doc:
+            allowed = public_pilot_user_data_storage_quarantine_review_doc_valid
+            if not public_pilot_user_data_storage_quarantine_review_doc_valid:
+                violations.append(f"  public pilot user data storage quarantine review doc missing required markers: {path}")
         if path == _frontier_intelligence_shadow_review_canon_doc:
             allowed = frontier_intelligence_shadow_review_doc_valid
             if not frontier_intelligence_shadow_review_doc_valid:
