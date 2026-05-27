@@ -70,7 +70,7 @@
   - selected intent type: planning
   - current concern label: privacy risk in the pilot
   - unresolved question label: how to keep the pilot private
-  - selected answer shape: direct_answer_with_boundary
+  - selected answer shape: planning_with_constraints
   - why selected: The prompt is planning-focused and privacy is the governing constraint, so planning with constraints fits best.
   - blocked shape avoided: generic_checklist_when_judgment_requested
   - concrete next-step label: state the privacy constraints before rollout planning
@@ -180,6 +180,7 @@
 
 ## 6. Answer Shape Result
 - practical next-step prompts selected concrete_next_step: yes
+- planning-focused privacy prompt selected planning_with_constraints: yes
 - tradeoff/judgment prompts selected tradeoff_reasoning: yes
 - correction prompts selected correction_repair when applicable: yes
 - checklist fallback was avoided or flagged: yes
