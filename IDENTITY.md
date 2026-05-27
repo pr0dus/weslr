@@ -32,6 +32,24 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Public Pilot Storage Privacy Retention Governance Boundary Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR public pilot storage/privacy/retention governance boundary design and review were completed and judged valid for context alignment.
+- Design path: `docs/WESLR_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_GOVERNANCE_BOUNDARY_V1.md`.
+- Review path: `docs/WESLR_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_GOVERNANCE_BOUNDARY_REVIEW_V1.md`; review commit `5451c66`; review judgment `public_pilot_storage_privacy_retention_governance_boundary_design_valid_ready_for_context_alignment`; decision `public_pilot_storage_privacy_retention_governance_boundary_review_valid_ready_for_context_alignment`.
+- Readiness basis: `not_ready_confirmed`; the first-30 pilot remains directionally useful but blocked; existing surfaces remain unsafe for public pilot until governance and later enforceable safety fixes exist; the governance boundary precedes implementation fixes.
+- Confirmed valid governance areas: governance object; required fields; consent policy; privacy policy; redaction policy; retention policy; deletion/revocation policy; queue/review output policy; promotion isolation policy; `.weslr` path authority policy; OCW/Ubuntu access policy; public feedback/GitHub template policy; suggestion storage policy; pilot logger policy; validation labels; denied authority; fail-closed rules; future synthetic tests.
+- Relationship to existing surfaces: the boundary governs existing surfaces only and does not duplicate the suggestion box, pilot logger, GitHub feedback template, website/public signal metadata, advisor/review interfaces, consolidation promotion, OCW handoff docs/contracts, or continuity indicators.
+- Carry-forward notes: later implementation must convert policy into enforceable safety fixes before public pilot use; quarantine may be needed if public use is imminent before fixes; later OCW boundary review must preserve the no-default-storage-access rule; UX work should happen after governance/context alignment and core safety fixes.
+- Denied boundaries: no implementation, no source/runtime/helper edits, no data migration, no raw private data reads/dumps, no raw JSON reads, no DB row reads/writes, no queue processing, no email sending, no deployment changes, no OCW management changes, no `.weslr` IO, no provider/model/search/advisor calls, no runtime/chat/UI/voice changes, no final-answer generation, no public launch, no product/intelligence/Turing/certification claims, and no authority grant.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_GOVERNANCE_BOUNDARY_REVIEW_V1`.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Likely next choices after context alignment: `IMPLEMENT_PUBLIC_PILOT_STORAGE_PRIVACY_SAFETY_FIXES_V1`, `QUARANTINE_PUBLIC_PILOT_USER_DATA_STORAGE_SURFACES_V1`, `REVIEW_PUBLIC_PILOT_OCW_DEPLOYMENT_ACCESS_BOUNDARY_V1`, or `DESIGN_PUBLIC_PILOT_USER_EXPERIENCE_REVIEW_PLAN_V1`.
+- Current boundary rule remains: the reviewed governance boundary grants no implementation, source/runtime/helper edits, data migration, raw private data reads/dumps, raw JSON reads, DB row reads/writes, queue processing, email sending, deployment changes, OCW management changes, `.weslr` IO, provider/model/search/advisor calls, runtime/chat/UI/voice changes, final-answer generation, public launch, product/intelligence/Turing/certification claims, or authority grant.
+
+
 ### Latest Context Alignment — Public Pilot Storage Privacy Retention Audit Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
