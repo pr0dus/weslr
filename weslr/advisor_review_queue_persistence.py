@@ -18,6 +18,9 @@ import re
 import tempfile
 
 from .public_pilot_storage_privacy_safety import (
+    apply_public_pilot_suppression_to_metadata_v1,
+    build_public_pilot_removal_receipt_v1,
+    build_public_pilot_suppression_marker_v1,
     reject_public_pilot_dot_weslr_path_v1,
     require_public_pilot_storage_surface_not_quarantined_v1,
 )
@@ -474,3 +477,149 @@ def create_status_update_event(
         redacted_summary="status update requested",
     )
 
+
+PUBLIC_PILOT_QUEUE_SUPPRESSION_SCOPES = (
+    "queue_item",
+    "feedback",
+    "suggestion",
+    "project_review",
+    "consent",
+    "future_use",
+    "export",
+    "backup",
+    "anonymization",
+    "purge",
+)
+
+
+def build_public_pilot_queue_suppression_marker_v1(metadata: dict[str, Any] | None = None, **overrides: Any) -> dict[str, Any]:
+    payload = dict(metadata or {})
+    payload.update(overrides)
+    receipt = build_public_pilot_removal_receipt_v1({**payload, "request_kind": payload.get("request_kind", "deletion")})
+    return {
+        "schema_version": "public_pilot_queue_suppression_marker_v1",
+        "requester": receipt.get("requester"),
+        "surface": receipt.get("surface"),
+        "scope": receipt.get("scope", []),
+        "reason_summary": receipt.get("reason_summary", ""),
+        "display_allowed": False,
+        "export_allowed": False,
+        "promotion_allowed": False,
+        "queue_processing_allowed": False,
+        "raw_records_read": False,
+        "raw_records_included": False,
+        "raw_display_allowed": False,
+        "raw_export_allowed": False,
+        "blocked": bool(receipt.get("blocked", False)),
+        "validated": bool(receipt.get("validated", True)),
+        "validation_errors": list(receipt.get("validation_errors", [])),
+        "future_use_suppressed": True,
+        "real_deletion_allowed": False,
+    }
+
+
+def validate_public_pilot_queue_suppression_marker_v1(metadata: dict[str, Any] | None) -> list[str]:
+    if not isinstance(metadata, dict):
+        return ["public pilot queue suppression marker metadata is required"]
+    try:
+        json.dumps(metadata, sort_keys=True)
+    except (TypeError, ValueError):
+        return ["public pilot queue suppression marker metadata must be JSON-safe"]
+    errors = []
+    if not metadata.get("requester"):
+        errors.append("requester metadata is required")
+    if not metadata.get("surface"):
+        errors.append("surface metadata is required")
+    if not metadata.get("scope"):
+        errors.append("scope metadata is required")
+    if not metadata.get("reason_summary"):
+        errors.append("reason metadata is required")
+    if metadata.get("display_allowed") is not False:
+        errors.append("display_allowed must remain false")
+    if metadata.get("export_allowed") is not False:
+        errors.append("export_allowed must remain false")
+    if metadata.get("promotion_allowed") is not False:
+        errors.append("promotion_allowed must remain false")
+    if metadata.get("queue_processing_allowed") is not False:
+        errors.append("queue_processing_allowed must remain false")
+    return errors
+
+
+def apply_public_pilot_queue_suppression_to_event_v1(
+    event: AdvisorQueuePersistenceEvent | dict[str, Any],
+    suppression_marker: dict[str, Any] | None = None,
+    **overrides: Any,
+) -> dict[str, Any]:
+    normalized = persistence_event_to_dict(event) if isinstance(event, AdvisorQueuePersistenceEvent) else dict(event or {})
+    normalized.update(overrides)
+    marker = suppression_marker or build_public_pilot_queue_suppression_marker_v1(normalized)
+    if not isinstance(normalized, dict) or not isinstance(marker, dict):
+        return {
+            "schema_version": "public_pilot_queue_suppressed_event_v1",
+            "blocked": True,
+            "display_allowed": False,
+            "export_allowed": False,
+            "promotion_allowed": False,
+            "queue_processing_allowed": False,
+            "raw_records_read": False,
+            "raw_records_included": False,
+            "future_use_suppressed": True,
+            "real_deletion_allowed": False,
+        }
+    snapshot = normalized.get("queue_item_snapshot")
+    sanitized = {
+        "schema_version": "public_pilot_queue_suppressed_event_v1",
+        "suppressed": True,
+        "display_allowed": False,
+        "export_allowed": False,
+        "promotion_allowed": False,
+        "queue_processing_allowed": False,
+        "raw_records_read": False,
+        "raw_records_included": False,
+        "raw_display_allowed": False,
+        "raw_export_allowed": False,
+        "future_use_suppressed": True,
+        "real_deletion_allowed": False,
+        "requester": marker.get("requester"),
+        "surface": marker.get("surface"),
+        "scope": marker.get("scope", []),
+        "reason_summary": marker.get("reason_summary", ""),
+        "queue_item_snapshot_field_count": len(snapshot) if isinstance(snapshot, dict) else 0,
+        "suppression_marker": {
+            "schema_version": marker.get("schema_version", "public_pilot_queue_suppression_marker_v1"),
+            "requester": marker.get("requester"),
+            "surface": marker.get("surface"),
+            "scope": marker.get("scope", []),
+            "display_allowed": False,
+            "export_allowed": False,
+            "promotion_allowed": False,
+            "queue_processing_allowed": False,
+            "future_use_suppressed": True,
+            "real_deletion_allowed": False,
+        },
+    }
+    for key, value in normalized.items():
+        if key in {"event_id", "queue_item_id"} and isinstance(value, str):
+            sanitized[key] = value[:16]
+        elif key == "actor" and isinstance(value, str):
+            sanitized[key] = value[:32]
+        elif key in {"previous_status", "new_status", "operator_decision", "event_type", "created_at", "schema_version"} and isinstance(value, str):
+            sanitized[key] = value
+        elif key == "safety_flags":
+            sanitized[key] = value if isinstance(value, dict) else persistence_event_to_dict(value).get("safety_flags", {})
+    return sanitized
+
+
+def build_public_pilot_queue_removal_receipt_v1(metadata: dict[str, Any] | None = None, **overrides: Any) -> dict[str, Any]:
+    payload = dict(metadata or {})
+    payload.update(overrides)
+    payload.setdefault("request_kind", "deletion")
+    receipt = build_public_pilot_removal_receipt_v1(payload)
+    return {
+        **receipt,
+        "schema_version": "public_pilot_queue_removal_receipt_v1",
+        "queue_processing_allowed": False,
+        "display_allowed": False,
+        "export_allowed": False,
+        "promotion_allowed": False,
+    }

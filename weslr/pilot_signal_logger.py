@@ -22,7 +22,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .public_pilot_storage_privacy_safety import (
+    apply_public_pilot_suppression_to_metadata_v1,
+    build_public_pilot_deletion_request_v1,
     build_public_pilot_quarantine_result_v1,
+    build_public_pilot_removal_receipt_v1,
+    build_public_pilot_revocation_request_v1,
+    build_public_pilot_suppression_marker_v1,
     is_public_pilot_storage_surface_quarantined_v1,
     minimize_public_pilot_identifier_v1,
     reject_public_pilot_raw_private_text_v1,
@@ -142,6 +147,117 @@ class PilotSignalLogger:
         active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
         if active and (raw_display or raw_export):
             raise ValueError("raw pilot event display/export is denied in public-pilot safe mode")
+
+    def _public_pilot_synthetic_context_enabled(self, synthetic_safe_storage_context: dict[str, Any] | None = None) -> bool:
+        context = synthetic_safe_storage_context or {}
+        return bool(context.get("test_safe_storage")) and bool(context.get("synthetic_temp_path"))
+
+    def build_public_pilot_deletion_receipt(
+        self,
+        metadata: Dict[str, Any] | None = None,
+        *,
+        synthetic_safe_storage_context: dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        payload = dict(metadata or {})
+        payload["request_kind"] = "deletion"
+        if synthetic_safe_storage_context:
+            payload.update(synthetic_safe_storage_context)
+            payload["synthetic_test_safe_storage"] = True
+            payload["test_safe_storage"] = True
+        if payload.get("user_id"):
+            payload["user_id"] = minimize_public_pilot_identifier_v1(str(payload.get("user_id")), label="user")
+        if payload.get("session_id"):
+            payload["session_id"] = minimize_public_pilot_identifier_v1(str(payload.get("session_id")), label="session")
+        deletion_request = build_public_pilot_deletion_request_v1(payload)
+        return build_public_pilot_removal_receipt_v1(deletion_request)
+
+    def build_public_pilot_revocation_receipt(
+        self,
+        metadata: Dict[str, Any] | None = None,
+        *,
+        synthetic_safe_storage_context: dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        payload = dict(metadata or {})
+        payload["request_kind"] = "revocation"
+        if synthetic_safe_storage_context:
+            payload.update(synthetic_safe_storage_context)
+            payload["synthetic_test_safe_storage"] = True
+            payload["test_safe_storage"] = True
+        if payload.get("user_id"):
+            payload["user_id"] = minimize_public_pilot_identifier_v1(str(payload.get("user_id")), label="user")
+        if payload.get("session_id"):
+            payload["session_id"] = minimize_public_pilot_identifier_v1(str(payload.get("session_id")), label="session")
+        revocation_request = build_public_pilot_revocation_request_v1(payload)
+        return build_public_pilot_removal_receipt_v1(revocation_request)
+
+    def apply_public_pilot_event_suppression(
+        self,
+        metadata: Dict[str, Any] | None = None,
+        *,
+        public_pilot_safe_mode: bool | None = None,
+        synthetic_safe_storage_context: dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        payload = dict(metadata or {})
+        if synthetic_safe_storage_context:
+            payload.update(synthetic_safe_storage_context)
+            payload["synthetic_test_safe_storage"] = True
+            payload["test_safe_storage"] = True
+        if payload.get("user_id"):
+            payload["user_id"] = minimize_public_pilot_identifier_v1(str(payload.get("user_id")), label="user")
+        if payload.get("session_id"):
+            payload["session_id"] = minimize_public_pilot_identifier_v1(str(payload.get("session_id")), label="session")
+        marker = build_public_pilot_suppression_marker_v1(payload)
+        if not active:
+            return payload if payload else marker
+        if not self._public_pilot_synthetic_context_enabled(synthetic_safe_storage_context):
+            return marker
+        return apply_public_pilot_suppression_to_metadata_v1(payload, marker)
+
+    def request_public_pilot_deletion(
+        self,
+        metadata: Dict[str, Any] | None = None,
+        *,
+        public_pilot_safe_mode: bool | None = None,
+        synthetic_safe_storage_context: dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        receipt = self.build_public_pilot_deletion_receipt(
+            metadata,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
+        if not active:
+            return receipt
+        if not self._public_pilot_synthetic_context_enabled(synthetic_safe_storage_context):
+            return receipt
+        return self.apply_public_pilot_event_suppression(
+            metadata,
+            public_pilot_safe_mode=active,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
+
+    def request_public_pilot_revocation(
+        self,
+        metadata: Dict[str, Any] | None = None,
+        *,
+        public_pilot_safe_mode: bool | None = None,
+        synthetic_safe_storage_context: dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        receipt = self.build_public_pilot_revocation_receipt(
+            metadata,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
+        if not active:
+            return receipt
+        if not self._public_pilot_synthetic_context_enabled(synthetic_safe_storage_context):
+            return receipt
+        return self.apply_public_pilot_event_suppression(
+            metadata,
+            public_pilot_safe_mode=active,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
+
 
     def get_public_pilot_safe_event_summary(self) -> Dict[str, Any]:
         """Return counts only; no raw event JSON/details are exposed."""

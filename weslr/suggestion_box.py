@@ -10,7 +10,12 @@ from typing import Optional, Literal, Union
 from dataclasses import dataclass, asdict
 
 from .public_pilot_storage_privacy_safety import (
+    apply_public_pilot_suppression_to_metadata_v1,
+    build_public_pilot_deletion_request_v1,
     build_public_pilot_quarantine_result_v1,
+    build_public_pilot_removal_receipt_v1,
+    build_public_pilot_revocation_request_v1,
+    build_public_pilot_suppression_marker_v1,
     is_public_pilot_storage_surface_quarantined_v1,
     reject_public_pilot_raw_private_text_v1,
     require_public_pilot_storage_consent_v1,
@@ -321,6 +326,84 @@ class SuggestionBox:
                 json.dump(continuity, f, indent=2)
 
         return True
+
+
+    def _public_pilot_synthetic_context_enabled(self, synthetic_safe_storage_context: Optional[dict] = None) -> bool:
+        context = synthetic_safe_storage_context or {}
+        return bool(context.get("test_safe_storage")) and bool(context.get("synthetic_temp_path"))
+
+    def _public_pilot_removal_request(
+        self,
+        request_data: dict,
+        *,
+        request_kind: str,
+        public_pilot_mode: bool = False,
+        synthetic_safe_storage_context: Optional[dict] = None,
+    ) -> dict:
+        active_public_pilot_mode = public_pilot_mode or self.public_pilot_mode
+        metadata = dict(request_data or {})
+        metadata["request_kind"] = request_kind
+        if synthetic_safe_storage_context:
+            metadata.update(synthetic_safe_storage_context)
+            metadata["synthetic_test_safe_storage"] = True
+            metadata["test_safe_storage"] = True
+        receipt = build_public_pilot_removal_receipt_v1(metadata)
+        if not active_public_pilot_mode:
+            return receipt
+
+        # Public-pilot mode must stay metadata-only unless the tests pass an explicit
+        # synthetic temp context. No real continuity/suggestion data is touched here.
+        if not self._public_pilot_synthetic_context_enabled(synthetic_safe_storage_context):
+            return receipt
+
+        request_id = metadata.get("request_id")
+        if request_kind == "deletion" and request_id:
+            self.requests = [req for req in self.requests if req.get("request_id") != request_id]
+            self._save_requests()
+        elif request_id:
+            marker = build_public_pilot_suppression_marker_v1(metadata)
+            self.requests = [
+                apply_public_pilot_suppression_to_metadata_v1(req, marker)
+                if req.get("request_id") == request_id
+                else req
+                for req in self.requests
+            ]
+            self._save_requests()
+        return receipt
+
+    def request_public_pilot_deletion(
+        self,
+        request_data: dict,
+        *,
+        public_pilot_mode: bool = False,
+        synthetic_safe_storage_context: Optional[dict] = None,
+    ) -> dict:
+        return self._public_pilot_removal_request(
+            request_data,
+            request_kind="deletion",
+            public_pilot_mode=public_pilot_mode,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
+
+    def request_public_pilot_revocation(
+        self,
+        request_data: dict,
+        *,
+        public_pilot_mode: bool = False,
+        synthetic_safe_storage_context: Optional[dict] = None,
+    ) -> dict:
+        metadata = dict(request_data or {})
+        metadata.setdefault("scope", ["consent", "future_use"])
+        metadata.setdefault("reason", "revocation requested")
+        metadata["request_kind"] = "revocation"
+        if synthetic_safe_storage_context:
+            metadata.update(synthetic_safe_storage_context)
+        return self._public_pilot_removal_request(
+            metadata,
+            request_kind="revocation",
+            public_pilot_mode=public_pilot_mode,
+            synthetic_safe_storage_context=synthetic_safe_storage_context,
+        )
 
 
 # Convenience function for CLI usage
