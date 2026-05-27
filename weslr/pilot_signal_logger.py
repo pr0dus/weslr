@@ -22,8 +22,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .public_pilot_storage_privacy_safety import (
+    build_public_pilot_quarantine_result_v1,
+    is_public_pilot_storage_surface_quarantined_v1,
     minimize_public_pilot_identifier_v1,
     reject_public_pilot_raw_private_text_v1,
+    require_public_pilot_storage_surface_not_quarantined_v1,
     safe_public_pilot_summary_v1,
 )
 
@@ -38,15 +41,44 @@ class PilotSignalLogger:
     All data is persisted for analysis and audit.
     """
 
-    def __init__(self, log_dir: str = "continuity/pilot_signals", *, public_pilot_safe_mode: bool = False):
+    def __init__(
+        self,
+        log_dir: str = "continuity/pilot_signals",
+        *,
+        public_pilot_safe_mode: bool = False,
+        quarantine_authorization_metadata: dict[str, Any] | None = None,
+    ):
         self.log_dir = Path(log_dir)
         self.public_pilot_safe_mode = public_pilot_safe_mode
+        self.quarantine_authorization_metadata = quarantine_authorization_metadata
+        self.public_pilot_quarantine_status = None
         self.signals_dir = self.log_dir / "signals"
         self.events_dir = self.log_dir / "events"
         self.user_events_file = self.log_dir / "user_events.json"
         self.interventions_file = self.log_dir / "interventions.json"
         self.redteam_file = self.log_dir / "redteam_events.json"
         
+        # Trust score tracking
+        self.trust_history_file = self.signals_dir / "trust_score.json"
+        # Continuity tracking
+        self.continuity_history_file = self.signals_dir / "continuity_rate.json"
+        # Recovery rate tracking
+        self.recovery_history_file = self.signals_dir / "recovery_rate.json"
+        # Intervention tracking
+        self.intervention_history_file = self.signals_dir / "intervention_rate.json"
+
+        if public_pilot_safe_mode and is_public_pilot_storage_surface_quarantined_v1(
+            self.log_dir,
+            public_pilot_mode=True,
+            authorization_metadata=quarantine_authorization_metadata,
+        ):
+            self.public_pilot_quarantine_status = build_public_pilot_quarantine_result_v1(
+                "pilot_signal_logger",
+                ["public_pilot_legacy_pilot_signal_storage_quarantined"],
+                path_label=str(self.log_dir),
+            )
+            return
+
         # Create directories
         self.signals_dir.mkdir(parents=True, exist_ok=True)
         self.events_dir.mkdir(parents=True, exist_ok=True)
@@ -55,21 +87,9 @@ class PilotSignalLogger:
         self._init_file(self.user_events_file, {"events": []})
         self._init_file(self.interventions_file, {"interventions": []})
         self._init_file(self.redteam_file, {"events": []})
-        
-        # Trust score tracking
-        self.trust_history_file = self.signals_dir / "trust_score.json"
         self._init_file(self.trust_history_file, {"scores": []})
-        
-        # Continuity tracking
-        self.continuity_history_file = self.signals_dir / "continuity_rate.json"
         self._init_file(self.continuity_history_file, {"rates": []})
-        
-        # Recovery rate tracking
-        self.recovery_history_file = self.signals_dir / "recovery_rate.json"
         self._init_file(self.recovery_history_file, {"rates": []})
-        
-        # Intervention tracking
-        self.intervention_history_file = self.signals_dir / "intervention_rate.json"
         self._init_file(self.intervention_history_file, {"rates": []})
 
     def _init_file(self, path: Path, default: Dict[str, Any]) -> None:
@@ -90,6 +110,15 @@ class PilotSignalLogger:
         """Save JSON file."""
         with open(path, 'w') as f:
             json.dump(data, f, indent=2)
+
+    def _require_public_pilot_storage_not_quarantined(self, path: Path | None = None) -> None:
+        if not self.public_pilot_safe_mode:
+            return
+        require_public_pilot_storage_surface_not_quarantined_v1(
+            path or self.log_dir,
+            public_pilot_mode=True,
+            authorization_metadata=self.quarantine_authorization_metadata,
+        )
 
     def _safe_identifier(self, value: str | None, label: str, public_pilot_safe_mode: bool | None = None) -> str | None:
         active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
@@ -116,6 +145,9 @@ class PilotSignalLogger:
 
     def get_public_pilot_safe_event_summary(self) -> Dict[str, Any]:
         """Return counts only; no raw event JSON/details are exposed."""
+        if self.public_pilot_quarantine_status:
+            return self.public_pilot_quarantine_status
+        self._require_public_pilot_storage_not_quarantined()
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "summary_mode": "public_pilot_safe_counts_only",
@@ -132,6 +164,7 @@ class PilotSignalLogger:
 
     def log_trust_score(self, score: float, user_id: str = None, session_id: str = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a trust score measurement."""
+        self._require_public_pilot_storage_not_quarantined()
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "score": score,
@@ -166,6 +199,7 @@ class PilotSignalLogger:
 
     def log_continuity_rate(self, rate: float, session_id: str = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a continuity rate measurement."""
+        self._require_public_pilot_storage_not_quarantined()
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "rate": rate,
@@ -232,6 +266,7 @@ class PilotSignalLogger:
 
     def log_intervention(self, user_id: str, session_id: str, intervention_type: str, action: str, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log an operator intervention."""
+        self._require_public_pilot_storage_not_quarantined()
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": self._safe_identifier(user_id, "user", public_pilot_safe_mode),
@@ -278,6 +313,7 @@ class PilotSignalLogger:
 
     def log_user_event(self, event_type: str, user_id: str, session_id: str, details: Dict[str, Any] = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a user event."""
+        self._require_public_pilot_storage_not_quarantined()
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "event_type": event_type,
@@ -298,6 +334,7 @@ class PilotSignalLogger:
 
     def log_redteam_event(self, attack_family: str, user_id: str, session_id: str, severity: str, action: str, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a red-team event."""
+        self._require_public_pilot_storage_not_quarantined()
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "attack_family": attack_family,
@@ -348,9 +385,18 @@ class PilotSignalLogger:
         }
 
 
-def create_pilot_logger(log_dir: str = "continuity/pilot_signals", *, public_pilot_safe_mode: bool = False) -> PilotSignalLogger:
+def create_pilot_logger(
+    log_dir: str = "continuity/pilot_signals",
+    *,
+    public_pilot_safe_mode: bool = False,
+    quarantine_authorization_metadata: dict[str, Any] | None = None,
+) -> PilotSignalLogger:
     """Create a configured PilotSignalLogger instance."""
-    return PilotSignalLogger(log_dir, public_pilot_safe_mode=public_pilot_safe_mode)
+    return PilotSignalLogger(
+        log_dir,
+        public_pilot_safe_mode=public_pilot_safe_mode,
+        quarantine_authorization_metadata=quarantine_authorization_metadata,
+    )
 
 
 def main():

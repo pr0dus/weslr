@@ -192,3 +192,111 @@ def minimize_public_pilot_identifier_v1(value: str | None, *, label: str) -> str
         return None
     digest = hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:16]
     return f"{label}_sha256:{digest}"
+
+
+QUARANTINED_PUBLIC_PILOT_SURFACE_LABELS = (
+    "continuity/suggestion_box/" "requests" ".json",
+    "continuity/suggestion_box/" "continuity" ".json",
+    "continuity/pilot_signals/" "user_events" ".json",
+    "continuity/pilot_signals/" "interventions" ".json",
+    "continuity/pilot_signals/" "redteam_events" ".json",
+    "review_queue" ".json",
+    ".weslr/advisor_review_queue" ".jsonl",
+)
+
+
+def validate_public_pilot_quarantine_authorization_v1(metadata: dict[str, Any] | None) -> list[str]:
+    """Validate quarantine bypass metadata without IO; missing metadata fails closed."""
+    if not isinstance(metadata, dict):
+        return ["public pilot quarantine authorization metadata is required"]
+    if not _json_safe(metadata):
+        return ["public pilot quarantine authorization metadata must be JSON-safe"]
+    errors = validate_public_pilot_denied_authority_v1(metadata.get("denied_authority"))
+    if metadata.get("revoked") is True:
+        errors.append("public pilot quarantine authorization has been revoked")
+    if metadata.get("test_safe_storage") is not True:
+        errors.append("test_safe_storage authorization is required")
+    if metadata.get("synthetic_temp_path") is not True:
+        errors.append("synthetic_temp_path authorization is required")
+    for field in ("raw_display", "raw_export", "queue_processing", "promotion", "runtime_behavior", "final_answer_behavior", "public_launch"):
+        if metadata.get(field) is True:
+            errors.append(f"quarantine authority must remain false: {field}")
+    return errors
+
+
+def _public_pilot_surface_label(path_or_surface: str | Path) -> str:
+    return str(path_or_surface).replace("\\", "/")
+
+
+def is_public_pilot_storage_surface_quarantined_v1(
+    path_or_surface: str | Path,
+    *,
+    public_pilot_mode: bool = False,
+    authorization_metadata: dict[str, Any] | None = None,
+) -> bool:
+    """Return True when a public-pilot storage surface must fail closed."""
+    if not public_pilot_mode:
+        return False
+    label = _public_pilot_surface_label(path_or_surface)
+    if ".weslr" in Path(label).parts or label.startswith(".weslr/") or "/.weslr/" in label:
+        return True
+    normalized = label.lstrip("./")
+    risky = (
+        normalized in QUARANTINED_PUBLIC_PILOT_SURFACE_LABELS
+        or normalized == "continuity/suggestion_box"
+        or normalized.startswith("continuity/suggestion_box/")
+        or normalized == "continuity/pilot_signals"
+        or normalized.startswith("continuity/pilot_signals/")
+        or normalized.endswith("review_queue.json")
+    )
+    if not risky:
+        return False
+    return bool(validate_public_pilot_quarantine_authorization_v1(authorization_metadata))
+
+
+def build_public_pilot_quarantine_result_v1(
+    surface: str,
+    reason_labels: list[str] | tuple[str, ...],
+    *,
+    path_label: str | None = None,
+) -> dict[str, Any]:
+    """Return JSON-safe blocked/quarantined metadata with no raw record values."""
+    safe_reasons = [str(reason) for reason in reason_labels]
+    return {
+        "schema_version": "public_pilot_user_data_storage_quarantine_v1",
+        "surface": str(surface),
+        "path_label": str(path_label or surface),
+        "quarantined": True,
+        "blocked": True,
+        "reason_labels": safe_reasons,
+        "raw_records_read": False,
+        "raw_records_included": False,
+        "raw_display_allowed": False,
+        "raw_export_allowed": False,
+        "queue_processing_allowed": False,
+        "promotion_allowed": False,
+        "runtime_behavior_allowed": False,
+        "final_answer_behavior_allowed": False,
+        "public_launch_allowed": False,
+    }
+
+
+def require_public_pilot_storage_surface_not_quarantined_v1(
+    path_or_surface: str | Path,
+    *,
+    public_pilot_mode: bool = False,
+    authorization_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Raise ValueError when a public-pilot surface is quarantined."""
+    if is_public_pilot_storage_surface_quarantined_v1(
+        path_or_surface,
+        public_pilot_mode=public_pilot_mode,
+        authorization_metadata=authorization_metadata,
+    ):
+        result = build_public_pilot_quarantine_result_v1(
+            "public_pilot_user_data_storage",
+            ["public_pilot_storage_surface_quarantined"],
+            path_label=_public_pilot_surface_label(path_or_surface),
+        )
+        raise ValueError(json.dumps(result, sort_keys=True))
+    return {"quarantined": False, "blocked": False, "path_label": _public_pilot_surface_label(path_or_surface)}

@@ -10,8 +10,11 @@ from typing import Optional, Literal, Union
 from dataclasses import dataclass, asdict
 
 from .public_pilot_storage_privacy_safety import (
+    build_public_pilot_quarantine_result_v1,
+    is_public_pilot_storage_surface_quarantined_v1,
     reject_public_pilot_raw_private_text_v1,
     require_public_pilot_storage_consent_v1,
+    require_public_pilot_storage_surface_not_quarantined_v1,
     safe_public_pilot_summary_v1,
 )
 
@@ -88,17 +91,42 @@ class SuggestionBox:
         self,
         storage_path: Optional[Union[str, Path]] = None,
         continuity_path: Optional[Union[str, Path]] = None,
+        *,
+        public_pilot_mode: bool = False,
+        quarantine_authorization_metadata: Optional[dict] = None,
     ):
         # Default storage location
         self.storage_path = Path(storage_path or "continuity/suggestion_box/requests.json")
         self.continuity_path = Path(continuity_path or "continuity/suggestion_box/continuity.json")
+        self.public_pilot_mode = public_pilot_mode
+        self.quarantine_authorization_metadata = quarantine_authorization_metadata
+        self.public_pilot_quarantine_status = None
+
+        self.requests: list[dict] = []
+        if public_pilot_mode and (
+            is_public_pilot_storage_surface_quarantined_v1(
+                self.storage_path,
+                public_pilot_mode=True,
+                authorization_metadata=quarantine_authorization_metadata,
+            )
+            or is_public_pilot_storage_surface_quarantined_v1(
+                self.continuity_path,
+                public_pilot_mode=True,
+                authorization_metadata=quarantine_authorization_metadata,
+            )
+        ):
+            self.public_pilot_quarantine_status = build_public_pilot_quarantine_result_v1(
+                "suggestion_box",
+                ["public_pilot_legacy_suggestion_storage_quarantined"],
+                path_label=str(self.storage_path),
+            )
+            return
 
         # Ensure storage directories exist
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.continuity_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing requests or initialize empty list
-        self.requests: list[dict] = []
         self._load_requests()
 
     def _load_requests(self) -> None:
@@ -143,7 +171,18 @@ class SuggestionBox:
         if missing:
             raise ValueError(f"Missing required fields: {missing}")
 
-        if public_pilot_mode:
+        active_public_pilot_mode = public_pilot_mode or self.public_pilot_mode
+        if active_public_pilot_mode:
+            require_public_pilot_storage_surface_not_quarantined_v1(
+                self.storage_path,
+                public_pilot_mode=True,
+                authorization_metadata=self.quarantine_authorization_metadata,
+            )
+            require_public_pilot_storage_surface_not_quarantined_v1(
+                self.continuity_path,
+                public_pilot_mode=True,
+                authorization_metadata=self.quarantine_authorization_metadata,
+            )
             metadata = consent_metadata or request_data.get("consent_metadata")
             require_public_pilot_storage_consent_v1(
                 metadata,
@@ -181,6 +220,14 @@ class SuggestionBox:
         self._update_continuity("submitted", request_id, requester_type, domain)
 
         return req
+
+    def get_public_pilot_quarantine_result(self) -> dict:
+        """Return safe blocked/quarantined metadata for public-pilot legacy storage."""
+        return self.public_pilot_quarantine_status or build_public_pilot_quarantine_result_v1(
+            "suggestion_box",
+            ["public_pilot_suggestion_storage_not_quarantined"],
+            path_label=str(self.storage_path),
+        )
 
     def summarize_public_pilot_request(self, request_data: dict) -> dict:
         """Return a safe metadata/redaction summary without raw suggestion text."""

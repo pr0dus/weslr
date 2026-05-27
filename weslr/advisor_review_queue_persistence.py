@@ -17,7 +17,10 @@ import json
 import re
 import tempfile
 
-from .public_pilot_storage_privacy_safety import reject_public_pilot_dot_weslr_path_v1
+from .public_pilot_storage_privacy_safety import (
+    reject_public_pilot_dot_weslr_path_v1,
+    require_public_pilot_storage_surface_not_quarantined_v1,
+)
 
 
 ALLOWED_STORAGE_FORMATS = {"jsonl", "json", "unknown"}
@@ -323,6 +326,11 @@ def validate_queue_storage_path(
         errors.append("missing queue storage path")
     try:
         reject_public_pilot_dot_weslr_path_v1(path_text, public_pilot_mode=public_pilot_mode)
+        require_public_pilot_storage_surface_not_quarantined_v1(
+            path_text,
+            public_pilot_mode=public_pilot_mode,
+            authorization_metadata=None,
+        )
     except ValueError as exc:
         errors.append(str(exc))
 

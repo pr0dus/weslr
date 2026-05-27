@@ -170,20 +170,6 @@ def decide_promotion(
     if cfg is None:
         cfg = load_config()
 
-    if public_pilot_mode:
-        try:
-            reject_public_pilot_dot_weslr_path_v1(_AUDIT_PATH, public_pilot_mode=True)
-        except ValueError as exc:
-            return PromotionResult(
-                cluster_id=cluster.get("cluster_id", "?"),
-                promoted=False,
-                zone="n/a",
-                decision="blocked",
-                destination=cluster.get("proposed_destination", ""),
-                blocked_reasons=[str(exc), "public-pilot flows cannot use consolidation promotion paths"],
-                record_written=False,
-            )
-
     cluster_id = cluster.get("cluster_id", "?")
     destination = cluster.get("proposed_destination", "")
     provenance = cluster.get("provenance", [])
@@ -308,9 +294,6 @@ def auto_promote(
     - decision: auto_promoted | review_required | approval_required | blocked | V1_disabled
     - record_written: True only for actual promotions
     """
-    if cfg is None:
-        cfg = load_config()
-
     if public_pilot_mode:
         try:
             reject_public_pilot_dot_weslr_path_v1(_AUDIT_PATH, public_pilot_mode=True)
@@ -324,6 +307,9 @@ def auto_promote(
                 blocked_reasons=[str(exc), "public-pilot flows cannot use consolidation promotion paths"],
                 record_written=False,
             )
+
+    if cfg is None:
+        cfg = load_config()
 
     cluster_id = cluster.get("cluster_id", "?")
     destination = cluster.get("proposed_destination", "")

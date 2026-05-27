@@ -20,6 +20,11 @@ import pathlib
 import re
 from typing import Any
 
+from .public_pilot_storage_privacy_safety import (
+    build_public_pilot_quarantine_result_v1,
+    require_public_pilot_storage_surface_not_quarantined_v1,
+)
+
 # ---------------------------------------------------------------------------
 # Storage paths
 # ---------------------------------------------------------------------------
@@ -55,7 +60,7 @@ def _strip_forbidden(record: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _load_raw_records(log_path: str | None = None) -> list[dict]:
+def _load_raw_records(log_path: str | None = None, *, public_pilot_mode: bool = False, authorization_metadata: dict[str, Any] | None = None) -> list[dict]:
     """Load all parseable records from the proposal log, stripping forbidden fields.
 
 
@@ -63,6 +68,12 @@ def _load_raw_records(log_path: str | None = None) -> list[dict]:
     every record. Returns a safe, read-only copy of each record.
     """
     path = pathlib.Path(log_path or DEFAULT_PROPOSAL_LOG_PATH)
+    if public_pilot_mode:
+        require_public_pilot_storage_surface_not_quarantined_v1(
+            path,
+            public_pilot_mode=True,
+            authorization_metadata=authorization_metadata,
+        )
     if not path.exists():
         return []
 
@@ -86,7 +97,7 @@ def _load_raw_records(log_path: str | None = None) -> list[dict]:
 # load_pending_contract_reviews
 # ---------------------------------------------------------------------------
 
-def load_pending_contract_reviews(log_path: str | None = None) -> list[dict]:
+def load_pending_contract_reviews(log_path: str | None = None, *, public_pilot_mode: bool = False, authorization_metadata: dict[str, Any] | None = None) -> list[dict]:
     """
     Return all review records where proposal_status == "pending_review".
 
@@ -97,7 +108,7 @@ def load_pending_contract_reviews(log_path: str | None = None) -> list[dict]:
         pattern_type, contract, response_path, evidence_summary,
         operator_action_requested, automatic_change, proposal_status
     """
-    records = _load_raw_records(log_path)
+    records = _load_raw_records(log_path, public_pilot_mode=public_pilot_mode, authorization_metadata=authorization_metadata)
     pending = []
     for rec in records:
         if rec.get("proposal_status") == "pending_review":
@@ -112,6 +123,9 @@ def load_pending_contract_reviews(log_path: str | None = None) -> list[dict]:
 def get_contract_review_by_id(
     proposal_id: str,
     log_path: str | None = None,
+    *,
+    public_pilot_mode: bool = False,
+    authorization_metadata: dict[str, Any] | None = None,
 ) -> dict | None:
     """
     Return the review record with the given proposal_id, or None if not found.
@@ -121,7 +135,7 @@ def get_contract_review_by_id(
     if not proposal_id or not isinstance(proposal_id, str):
         return None
 
-    records = _load_raw_records(log_path)
+    records = _load_raw_records(log_path, public_pilot_mode=public_pilot_mode, authorization_metadata=authorization_metadata)
     for rec in records:
         if rec.get("proposal_id") == proposal_id:
             return _strip_forbidden(rec)
@@ -132,7 +146,7 @@ def get_contract_review_by_id(
 # summarize_pending_reviews
 # ---------------------------------------------------------------------------
 
-def summarize_pending_reviews(log_path: str | None = None) -> dict:
+def summarize_pending_reviews(log_path: str | None = None, *, public_pilot_mode: bool = False, authorization_metadata: dict[str, Any] | None = None) -> dict:
     """
     Return a read-only summary of all pending reviews.
 
@@ -145,7 +159,7 @@ def summarize_pending_reviews(log_path: str | None = None) -> dict:
             "records": list[dict]  # lightweight copies, no PII/raw
         }
     """
-    pending = load_pending_contract_reviews(log_path)
+    pending = load_pending_contract_reviews(log_path, public_pilot_mode=public_pilot_mode, authorization_metadata=authorization_metadata)
 
     by_pattern_type: dict[str, int] = {}
     by_contract: dict[str, int] = {}
@@ -183,6 +197,15 @@ def summarize_pending_reviews(log_path: str | None = None) -> dict:
         "records": lightweight_records,
     }
 
+
+
+def get_public_pilot_review_quarantine_result(log_path: str | None = None) -> dict:
+    """Return blocked/quarantined metadata without reading review records."""
+    return build_public_pilot_quarantine_result_v1(
+        "review_interface",
+        ["public_pilot_raw_review_access_quarantined"],
+        path_label=str(log_path or DEFAULT_PROPOSAL_LOG_PATH),
+    )
 
 # ---------------------------------------------------------------------------
 # CLI (read-only inspection)
