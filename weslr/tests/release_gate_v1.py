@@ -8961,6 +8961,7 @@ _weslr_user_workspace_capability_surface_scratch_instrument_boundary_review_doc 
 _weslr_workspace_review_submission_upstream_promotion_boundary_doc = "docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1.md"
 _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc = "docs/WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_REVIEW_V1.md"
 _weslr_workspace_review_helper_triad_boundaries_doc = "docs/WESLR_WORKSPACE_REVIEW_HELPER_TRIAD_BOUNDARIES_V1.md"
+_weslr_workspace_review_helper_triad_boundaries_review_doc = "docs/WESLR_WORKSPACE_REVIEW_HELPER_TRIAD_BOUNDARIES_REVIEW_V1.md"
 _weslr_workspace_review_submission_upstream_promotion_boundary_review_required_markers = {
     "REVIEW_WESLR_WORKSPACE_REVIEW_SUBMISSION_AND_UPSTREAM_PROMOTION_BOUNDARY_V1",
     "review-only",
@@ -9087,6 +9088,27 @@ _weslr_workspace_review_helper_triad_boundaries_required_markers = {
     "permits_product_readiness_claims",
     "weslr_workspace_review_helper_triad_boundaries_design_ready_for_review",
     "REVIEW_WESLR_WORKSPACE_REVIEW_HELPER_TRIAD_BOUNDARIES_V1",
+}
+_weslr_workspace_review_helper_triad_boundaries_review_required_markers = {
+    "REVIEW_WESLR_WORKSPACE_REVIEW_HELPER_TRIAD_BOUNDARIES_V1",
+    "review-only",
+    "WeslrLocalWorkspaceReviewHelpersV1",
+    "WeslrRedactedUpstreamSubmissionPacketHelpersV1",
+    "WeslrWorkspacePromotionRequestHelpersV1",
+    "Design-Only Posture Result",
+    "Triad Relationship Result",
+    "Shared Helper Family Boundary Result",
+    "Local Review Helper Boundary Result",
+    "Redacted Upstream Packet Helper Boundary Result",
+    "Promotion Request Helper Boundary Result",
+    "Shared Fields Result",
+    "Denied Authority Result",
+    "Fail-Closed Result",
+    "Relationships Result",
+    "Future Synthetic Tests Result",
+    "No revision-blocking gaps found",
+    "weslr_workspace_review_helper_triad_boundaries_design_valid_ready_for_context_alignment",
+    "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_WESLR_WORKSPACE_REVIEW_HELPER_TRIAD_BOUNDARIES_REVIEW_V1",
 }
 _weslr_user_workspace_capability_surface_scratch_instrument_boundary_review_required_markers = {
     "REVIEW_WESLR_USER_WORKSPACE_CAPABILITY_SURFACE_AND_SCRATCH_INSTRUMENT_BOUNDARY_V1",
@@ -12058,6 +12080,13 @@ def _weslr_workspace_review_helper_triad_boundaries_doc_is_valid():
     )
 
 
+def _weslr_workspace_review_helper_triad_boundaries_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _weslr_workspace_review_helper_triad_boundaries_review_doc,
+        _weslr_workspace_review_helper_triad_boundaries_review_required_markers,
+    )
+
+
 def _controlled_local_lean_dry_run_harness_synthetic_only_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_local_lean_dry_run_harness_synthetic_only_review_doc,
@@ -12482,6 +12511,7 @@ def _check_git_scope():
     weslr_workspace_review_submission_upstream_promotion_boundary_doc_valid = _weslr_workspace_review_submission_upstream_promotion_boundary_doc_is_valid()
     weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_valid = _weslr_workspace_review_submission_upstream_promotion_boundary_review_doc_is_valid()
     weslr_workspace_review_helper_triad_boundaries_doc_valid = _weslr_workspace_review_helper_triad_boundaries_doc_is_valid()
+    weslr_workspace_review_helper_triad_boundaries_review_doc_valid = _weslr_workspace_review_helper_triad_boundaries_review_doc_is_valid()
     central_read_authorization_helpers_design_doc_valid = _central_read_authorization_helpers_design_doc_is_valid()
     central_read_authorization_helpers_review_doc_valid = _central_read_authorization_helpers_review_doc_is_valid()
     central_read_authorization_helpers_implementation_review_doc_valid = _central_read_authorization_helpers_implementation_review_doc_is_valid()
@@ -13689,6 +13719,10 @@ def _check_git_scope():
             allowed = weslr_workspace_review_helper_triad_boundaries_doc_valid
             if not weslr_workspace_review_helper_triad_boundaries_doc_valid:
                 violations.append(f"  WESLR workspace review helper triad boundaries design doc missing required markers: {path}")
+        if path == _weslr_workspace_review_helper_triad_boundaries_review_doc:
+            allowed = weslr_workspace_review_helper_triad_boundaries_review_doc_valid
+            if not weslr_workspace_review_helper_triad_boundaries_review_doc_valid:
+                violations.append(f"  WESLR workspace review helper triad boundaries review doc missing required markers: {path}")
         if path == _central_read_authorization_helpers_design_doc:
             allowed = central_read_authorization_helpers_design_doc_valid
             if not central_read_authorization_helpers_design_doc_valid:
