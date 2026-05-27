@@ -20,6 +20,30 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Public Pilot Real Deletion Executor Implementation Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR public pilot real deletion executor implementation was reviewed and judged valid for context alignment.
+- Implementation commit: `59d6c5d`.
+- Implementation review path: `docs/WESLR_PUBLIC_PILOT_REAL_DELETION_EXECUTOR_IMPLEMENTATION_REVIEW_V1.md`; review commit `72b6df3`; review judgment `public_pilot_real_deletion_executor_implementation_valid_ready_for_context_alignment`; decision `public_pilot_real_deletion_executor_implementation_review_valid_ready_for_context_alignment`.
+- Commit scope carried forward: `weslr/public_pilot_real_deletion_executor.py`, `weslr/tests/test_public_pilot_real_deletion_executor_v1.py`.
+- Executor APIs reviewed: `build_public_pilot_real_deletion_plan_v1`, `validate_public_pilot_real_deletion_plan_v1`, `execute_public_pilot_real_deletion_plan_v1`, `build_public_pilot_real_deletion_audit_event_v1`, `build_public_pilot_real_deletion_receipt_v1`, `validate_public_pilot_real_deletion_receipt_v1`, `classify_public_pilot_deletion_surface_v1`, and `redact_public_pilot_deletion_audit_metadata_v1`.
+- Implementation validity carried forward: narrow; JSON-safe; fail-closed; explicit-authorization-based; synthetic-test-safe; no provider/model/search/advisor calls; no runtime/final-answer/public-launch authority; no `.weslr` IO; no queue processing; no raw private data return.
+- Supported classifier labels carried forward: `suggestion_requests_json`, `suggestion_continuity_json`, `pilot_user_events_json`, `pilot_interventions_json`, `pilot_redteam_events_json`, `review_queue_json`, `advisor_queue_jsonl`, and `unknown_or_blocked`.
+- Blocked/fail-closed paths carried forward: real continuity paths; `.weslr` paths; real `review_queue.json`; DB-like paths; unknown surfaces; traversal/glob/directory paths.
+- Plan validation carried forward: explicit operator authorization required; requester required; surface scope required; target ID required; scope required; reason required; non-JSON-safe metadata blocked; denied-authority true fields blocked; real execution authorization mode unsupported; dry-run supported; synthetic temp execution supported; real continuity execution remains blocked.
+- Execution behavior carried forward: synthetic JSON dry-run returns count-only metadata; no raw record text returned; no file mutation during dry-run; synthetic JSON list/object collection removal or suppression works by safe metadata ID; synthetic JSONL event removal or suppression works by safe metadata ID; no entire-file deletion; no directory deletion; no broad wipe; no recursive deletion; no glob deletion; no DB deletion; no real continuity execution; no `.weslr` execution.
+- Receipt/audit behavior carried forward: receipts return safe labels/counts only; audit events return hashed/label-only metadata; no raw user ID/contact/feedback/suggestion/project-review/queue/raw JSON/DB content.
+- Adapter result carried forward: no adapter changes required; `suggestion_box.py` unchanged; `pilot_signal_logger.py` unchanged; `advisor_review_queue_persistence.py` unchanged; no automatic deletion path; no CLI real deletion path; no runtime/chat/UI wiring.
+- Validation carried forward: py_compile passed; focused pytest passed; release gate passed; release check passed; quiet diff checks passed; no real continuity files changed.
+- Remaining gaps carried forward: executor is synthetic-test-safe only; real continuity execution remains blocked; DB deletion unsupported; backup/export/log deletion out of scope; public pilot still not ready; UX review still pending; `datetime.utcnow()` deprecation remains outside this lane if still true.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_REAL_DELETION_EXECUTOR_IMPLEMENTATION_REVIEW_V1`.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Likely next choices after this alignment: `DESIGN_PUBLIC_PILOT_USER_EXPERIENCE_REVIEW_PLAN_V1` or `AUDIT_PUBLIC_PILOT_REMAINING_LEGACY_STORAGE_BEHAVIOR_V1`.
+- Current boundary rule remains: this reviewed implementation grants no runtime changes, no execution changes, no implementation changes, no source/runtime/helper edits, no docs edits beyond the already-completed review lane, no data migration, no raw private data reads/dumps, no raw JSON or DB row reads/writes, no queue processing, no `.weslr` IO, no provider/model/search/advisor calls, no deployment/OCW behavior changes, no runtime/chat/UI/voice changes, no final-answer generation, no public launch, and no product/intelligence/Turing/certification claims.
+
+
 ### Latest Context Alignment — Public Pilot User-Data Storage Quarantine Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
