@@ -20,6 +20,23 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Public Pilot Storage Privacy Retention Audit Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR public pilot storage/privacy/retention audit and review were completed and judged valid for context alignment.
+- Audit path: `docs/WESLR_PUBLIC_PILOT_STORAGE_PRIVACY_AND_RETENTION_AUDIT_V1.md`.
+- Review path: `docs/WESLR_PUBLIC_PILOT_STORAGE_PRIVACY_AND_RETENTION_AUDIT_REVIEW_V1.md`; review commit `a696f4c`; review judgment `public_pilot_storage_privacy_retention_audit_valid_ready_for_context_alignment`; decision `public_pilot_storage_privacy_retention_audit_review_valid_ready_for_context_alignment`.
+- Audit validity result: safe source/schema/path/metadata-only inspection confirmed; raw private/user data avoidance confirmed; high-risk storage indicators confirmed; source read/write path mapping confirmed; public pilot readiness `not ready` confirmed.
+- Readiness impact: `not_ready_confirmed`.
+- Confirmed risk areas: high-risk pilot/suggestion/continuity storage indicators; consent absent/partial/unsafe unclear; privacy protections partial; suggestion/pilot storage blocker gaps; retention/deletion/revocation not ready; deletion/revocation/purge mostly absent; queue/review output risks; possible private data and promotion/runtime influence risks; OCW/Ubuntu storage-access boundary unclear.
+- Blocker/high findings to carry forward: suggestion storage consent/privacy blocker; pilot logger storage/display blocker; deletion/revocation/purge blocker; public-readiness blocker; GitHub feedback privacy notice high risk; `.weslr` path authority high risk; promotion/release boundary high risk; review queue/log/continuity breadth needs follow-up.
+- Public-readiness framing: first-30 pilot remains directionally useful, but existing surfaces must not be used for public pilot until storage/privacy/retention governance and later fixes exist. Feedback, reviews, suggestions, and project-review-style submissions must be governed before public use. OCW/Ubuntu management must not access pilot/private storage without an explicit future boundary. UX review should come after core functionality and governance are stable.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_AUDIT_REVIEW_V1`.
+- Current next lane: `DESIGN_PUBLIC_PILOT_STORAGE_PRIVACY_RETENTION_GOVERNANCE_BOUNDARY_V1`.
+- Current boundary rule remains: the reviewed storage/privacy/retention audit grants no raw private/user data reads or dumps, no raw JSON or DB row reads, no `.weslr` reads or writes, no queue processing, no source/runtime/helper/deployment/data behavior changes, no pilot launch, no email sending, no upstream submission, no public/product/intelligence/Turing/certification claims, no OCW management changes, no Ubuntu deployment changes, no service restart, no provider/model/search/advisor calls, and no final-answer generation authority.
+
+
 ### Latest Context Alignment — Existing Public Pilot Feedback Surfaces Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
