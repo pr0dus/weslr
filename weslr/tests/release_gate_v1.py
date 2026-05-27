@@ -82,6 +82,17 @@ _existing_public_pilot_feedback_surfaces_audit_required_markers = {
     "existing_public_pilot_feedback_surfaces_audit_complete_ready_for_review",
 }
 
+_existing_public_pilot_feedback_surfaces_review_doc = "docs/WESLR_EXISTING_PUBLIC_PILOT_FEEDBACK_SURFACES_REVIEW_V1.md"
+_existing_public_pilot_feedback_surfaces_review_required_markers = {
+    "WESLR Existing Public Pilot Feedback Surfaces Review V1",
+    "review-only",
+    "no implementation",
+    "no raw private data reads/dumps",
+    "no `.weslr` IO",
+    "AUDIT_PUBLIC_PILOT_STORAGE_PRIVACY_AND_RETENTION_V1",
+    "existing_public_pilot_feedback_surfaces_review_valid_ready_for_context_alignment",
+}
+
 _frontier_intelligence_shadow_review_canon_doc = "docs/WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_V1.md"
 _frontier_intelligence_shadow_review_required_markers = {
     "APPROVE_WESLR_FRONTIER_INTELLIGENCE_SHADOW_REVIEW_CANON_ONLY",
@@ -12293,6 +12304,13 @@ def _existing_public_pilot_feedback_surfaces_audit_doc_is_valid():
     )
 
 
+def _existing_public_pilot_feedback_surfaces_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _existing_public_pilot_feedback_surfaces_review_doc,
+        _existing_public_pilot_feedback_surfaces_review_required_markers,
+    )
+
+
 def _check_git_scope():
     """Gate 2 — Check that staged files are within allowed scope.
     
@@ -12421,6 +12439,7 @@ def _check_git_scope():
     frontier_intelligence_doctrine_doc_valid = _frontier_intelligence_doctrine_doc_is_valid()
     frontier_intelligence_dry_pipeline_doc_valid = _frontier_intelligence_dry_pipeline_canon_doc_is_valid()
     existing_public_pilot_feedback_surfaces_audit_doc_valid = _existing_public_pilot_feedback_surfaces_audit_doc_is_valid()
+    existing_public_pilot_feedback_surfaces_review_doc_valid = _existing_public_pilot_feedback_surfaces_review_doc_is_valid()
     frontier_intelligence_shadow_review_doc_valid = _frontier_intelligence_shadow_review_canon_doc_is_valid()
     internal_evaluation_corpus_helper_doc_valid = _internal_evaluation_corpus_helper_canon_doc_is_valid()
     internal_corpus_to_advisor_review_adapter_doc_valid = _internal_corpus_to_advisor_review_adapter_design_doc_is_valid()
@@ -12730,6 +12749,10 @@ def _check_git_scope():
             allowed = existing_public_pilot_feedback_surfaces_audit_doc_valid
             if not existing_public_pilot_feedback_surfaces_audit_doc_valid:
                 violations.append(f"  existing public pilot feedback surfaces audit doc missing required markers: {path}")
+        if path == _existing_public_pilot_feedback_surfaces_review_doc:
+            allowed = existing_public_pilot_feedback_surfaces_review_doc_valid
+            if not existing_public_pilot_feedback_surfaces_review_doc_valid:
+                violations.append(f"  existing public pilot feedback surfaces review doc missing required markers: {path}")
         if path == _frontier_intelligence_shadow_review_canon_doc:
             allowed = frontier_intelligence_shadow_review_doc_valid
             if not frontier_intelligence_shadow_review_doc_valid:
