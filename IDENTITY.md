@@ -32,6 +32,27 @@ OCC is the OpenClaw coding/operator agent assisting the owner in building WESLR.
 WESLR is one unified intelligence/entity under development. It is not a chatbot wrapper, plugin collection, deterministic response table, or LLM wrapper. OCC should align project context and implementation work toward WESLR's unified response formation canon without claiming to be WESLR.
 
 
+### Latest Context Alignment — Existing Public Pilot Feedback Surfaces Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- Existing WESLR public pilot / feedback / review / suggestion / intake / queue / OCW-deployment implementation surfaces were audited and reviewed.
+- Audit path: `docs/WESLR_EXISTING_PUBLIC_PILOT_FEEDBACK_IMPLEMENTATION_SURFACES_AUDIT_V1.md`.
+- Review path: `docs/WESLR_EXISTING_PUBLIC_PILOT_FEEDBACK_SURFACES_REVIEW_V1.md`; review commit `7b4e6cf`; review judgment `existing_public_pilot_feedback_surfaces_audit_valid_ready_for_context_alignment`; decision `existing_public_pilot_feedback_surfaces_review_valid_ready_for_context_alignment`.
+- Audit validity result: valid. Existing implementation surfaces already exist, so WESLR should not create a duplicate public pilot/feedback boundary or duplicate implementation.
+- Existing surfaces include public/user intake, website signal capture, GitHub feedback template, review queue schema/persistence/read interface, suggestion box/capability intake, consolidation promotion, pilot cohort docs/logger/storage indicators, and OCW/Ubuntu handoff docs/contracts.
+- Public-readiness framing: this is about what WESLR needs to become complete and safely public-ready, not operator preference. Coming-soon / first-30-pilot remains a product direction, but feedback, reviews, suggestions, and project-review-style submissions must reuse and govern existing surfaces rather than create parallel forms, queues, loggers, or boundaries.
+- OCW/Ubuntu access remains governed: OCW must not bypass release gates or privacy boundaries, and deployment/service authority does not grant pilot data access, queue processing, or public launch authority.
+- UX review comes after core functional coding and governance are stable.
+- Primary consolidation recommendation and next lane: `AUDIT_PUBLIC_PILOT_STORAGE_PRIVACY_AND_RETENTION_V1`.
+- Why this is next: existing surfaces include storage, queue, and user-data indicators. Before using or expanding pilot feedback, WESLR needs a storage/privacy/retention audit. Raw private data must not be read or dumped; consent, redaction, deletion/revocation, retention, queue outputs, and cross-user reuse boundaries must be understood before public pilot use.
+- Boundary reminders: no raw private data read/dump, no runtime/source/helper/deployment behavior changed, no queue processing, no email sending, no upstream submission, no public launch authority, and no product-readiness/intelligence/Turing/certification claims.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_EXISTING_PUBLIC_PILOT_FEEDBACK_SURFACES_REVIEW_V1`.
+- Current next lane: `AUDIT_PUBLIC_PILOT_STORAGE_PRIVACY_AND_RETENTION_V1`.
+- Current boundary rule remains: the reviewed public pilot feedback surface work grants no implementation, duplicate boundary, duplicate forms, duplicate queues, duplicate loggers, queue processing, `.weslr` reads or writes, raw private data reads/dumps, provider/model/search/advisor calls, email sending, upstream submission, OCW management changes, Ubuntu deployment changes, service restart, runtime/chat/UI/voice wiring, final-answer generation, public launch, or product-readiness/intelligence/Turing/certification authority.
+
+
+
 ### Latest Context Alignment — Workspace Review Helper Triad Boundaries Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
