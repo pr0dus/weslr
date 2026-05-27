@@ -20,6 +20,22 @@ Don't ask permission. Just do it.
 ## Current WESLR Project Alignment
 
 
+### Latest Context Alignment — Public Pilot User-Data Storage Quarantine Review
+
+- This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
+- OCC/OpenClaw is construction/execution tooling only: it inspects and modifies WESLR files when instructed. OCC/OpenClaw is not deployed WESLR and must not be treated as WESLR.
+- WESLR public pilot user-data storage quarantine implementation was reviewed and judged valid for context alignment.
+- Quarantine implementation commit: `7b7a520`.
+- Quarantine review path: `docs/WESLR_PUBLIC_PILOT_USER_DATA_STORAGE_QUARANTINE_REVIEW_V1.md`; review commit `6635c7e`; review judgment `public_pilot_user_data_storage_quarantine_implementation_valid_ready_for_context_alignment`; decision `public_pilot_user_data_storage_quarantine_review_valid_ready_for_context_alignment`.
+- Implementation validity carried forward: quarantine helper valid; suggestion quarantine valid; pilot logger quarantine valid; advisor/review queue quarantine valid; consolidation promotion quarantine valid; tests valid (`37 passed`).
+- Quarantine meaning carried forward: public-pilot legacy reads/writes are blocked unless future safe authorization plus consent pass; public-pilot raw pilot display/export is blocked; `.weslr` advisor queue is blocked in public-pilot mode; raw `review_queue.json` public-pilot access is blocked; public-pilot promotion path is blocked before promotion/audit writes; no queue processing; no raw data reads/dumps; no continuity data modifications; no `.weslr` IO.
+- Public-readiness posture remains `not_ready_confirmed`: the first-30 pilot remains directionally useful but blocked; quarantine is safety gating, not launch approval; no public pilot use until deletion/revocation, consent, retention, OCW, and UX readiness are completed as needed.
+- Remaining gaps carried forward: deletion/revocation not implemented; existing stored data not retro-cleaned; public pilot still not ready; broader legacy behavior may remain outside explicit public-pilot mode; OCW access boundary still pending; UX review still pending.
+- Current lane completed by this context alignment: `AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_PUBLIC_PILOT_USER_DATA_STORAGE_QUARANTINE_REVIEW_V1`.
+- Likely next choices after this alignment: `IMPLEMENT_PUBLIC_PILOT_DELETION_REVOCATION_ENFORCEMENT_V1`, `REVIEW_PUBLIC_PILOT_OCW_DEPLOYMENT_ACCESS_BOUNDARY_V1`, `DESIGN_PUBLIC_PILOT_USER_EXPERIENCE_REVIEW_PLAN_V1`, or `AUDIT_PUBLIC_PILOT_REMAINING_LEGACY_STORAGE_BEHAVIOR_V1`.
+- Current next lane: `AWAIT_OPERATOR_DECISION`.
+- Current boundary rule remains: this reviewed quarantine context grants no runtime changes, no execution changes, no implementation changes, no source/runtime/helper edits, no docs edits beyond the already-completed review lane, no data migration, no raw private data reads/dumps, no raw JSON or DB row reads/writes, no queue processing, no `.weslr` IO, no provider/model/search/advisor calls, no deployment/OCW behavior changes, no runtime/chat/UI/voice changes, no final-answer generation, no public launch, and no product/intelligence/Turing/certification claims.
+
 ### Latest Context Alignment — Public Pilot Storage Privacy Retention Governance Boundary Review
 
 - This section is `OCC_CONTEXT_ALIGNMENT` only: it updates how OCC/OpenClaw orients future WESLR work. It is context alignment only, not WESLR runtime behavior, not WESLR canon by itself, and not runtime authorization.
