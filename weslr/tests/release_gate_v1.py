@@ -12418,11 +12418,32 @@ _controlled_multiturn_continuity_pressure_test_phase_c_40_required_markers = {
     "REVIEW_CONTROLLED_MULTITURN_CONTINUITY_PRESSURE_TEST_PHASE_C_40_DESIGN_V1",
 }
 
+_controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc = "docs/WESLR_CONTROLLED_MULTITURN_CONTINUITY_PRESSURE_TEST_PHASE_C_40_REVIEW_V1.md"
+_controlled_multiturn_continuity_pressure_test_phase_c_40_review_required_markers = {
+    "WESLR Controlled Multiturn Continuity Pressure Test Phase C 40 Review V1",
+    "review-only",
+    "no implementation changes",
+    "no test execution",
+    "no chat wiring",
+    "no helper wiring",
+    "no `.weslr` IO",
+    "no provider/model/search/advisor calls",
+    "controlled_multiturn_continuity_pressure_test_phase_c_40_design_valid_ready_for_context_alignment",
+    "controlled_multiturn_continuity_pressure_test_phase_c_40_design_review_valid_ready_for_context_alignment",
+}
+
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_multiturn_continuity_pressure_test_phase_c_40_doc,
         _controlled_multiturn_continuity_pressure_test_phase_c_40_required_markers,
+    )
+
+
+def _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc,
+        _controlled_multiturn_continuity_pressure_test_phase_c_40_review_required_markers,
     )
 
 
@@ -13991,6 +14012,10 @@ def _check_git_scope():
             allowed = _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid()
             if not allowed:
                 violations.append(f"  controlled multiturn continuity pressure test phase C 40 doc missing required markers: {path}")
+        if path == _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc:
+            allowed = _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc_is_valid()
+            if not allowed:
+                violations.append(f"  controlled multiturn continuity pressure test phase C 40 review doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
