@@ -9,6 +9,12 @@ from datetime import datetime
 from typing import Optional, Literal, Union
 from dataclasses import dataclass, asdict
 
+from .public_pilot_storage_privacy_safety import (
+    reject_public_pilot_raw_private_text_v1,
+    require_public_pilot_storage_consent_v1,
+    safe_public_pilot_summary_v1,
+)
+
 
 # Self-Architecture Core v6: Scenario comparison entry point
 from .scenario_model import (
@@ -110,7 +116,13 @@ class SuggestionBox:
     def _generate_request_id(self) -> str:
         return f"req-{uuid.uuid4().hex[:6]}"
 
-    def submit_request(self, request_data: dict) -> SuggestionRequest:
+    def submit_request(
+        self,
+        request_data: dict,
+        *,
+        public_pilot_mode: bool = False,
+        consent_metadata: Optional[dict] = None,
+    ) -> SuggestionRequest:
         """Accept a structured request entry and store it."""
         # Validate requester type
         requester_type = request_data.get("requester_type")
@@ -130,6 +142,19 @@ class SuggestionBox:
         missing = [f for f in required_fields if f not in request_data]
         if missing:
             raise ValueError(f"Missing required fields: {missing}")
+
+        if public_pilot_mode:
+            metadata = consent_metadata or request_data.get("consent_metadata")
+            require_public_pilot_storage_consent_v1(
+                metadata,
+                require_contact_storage=bool(request_data.get("contact_email")),
+                require_suggestion_storage=True,
+            )
+            for field_name in ("requested_capability", "problem_statement", "additional_notes"):
+                reject_public_pilot_raw_private_text_v1(
+                    request_data.get(field_name),
+                    field_name=field_name,
+                )
 
         # Build request object
         request_id = self._generate_request_id()
@@ -156,6 +181,13 @@ class SuggestionBox:
         self._update_continuity("submitted", request_id, requester_type, domain)
 
         return req
+
+    def summarize_public_pilot_request(self, request_data: dict) -> dict:
+        """Return a safe metadata/redaction summary without raw suggestion text."""
+        return safe_public_pilot_summary_v1(
+            request_data,
+            text_fields=("requested_capability", "problem_statement", "additional_notes", "contact_email"),
+        )
 
     def list_requests(
         self,
@@ -253,6 +285,8 @@ def submit_suggestion(
     requester_id: Optional[str] = None,
     contact_email: Optional[str] = None,
     additional_notes: Optional[str] = None,
+    public_pilot_mode: bool = False,
+    consent_metadata: Optional[dict] = None,
 ) -> dict:
     """Quick submit via CLI/function call."""
     box = SuggestionBox()
@@ -264,7 +298,7 @@ def submit_suggestion(
         "requester_id": requester_id,
         "contact_email": contact_email,
         "additional_notes": additional_notes,
-    })
+    }, public_pilot_mode=public_pilot_mode, consent_metadata=consent_metadata)
     return req.to_dict()
 
 

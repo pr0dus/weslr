@@ -17,6 +17,8 @@ import json
 import re
 import tempfile
 
+from .public_pilot_storage_privacy_safety import reject_public_pilot_dot_weslr_path_v1
+
 
 ALLOWED_STORAGE_FORMATS = {"jsonl", "json", "unknown"}
 ALLOWED_PERSISTENCE_EVENT_TYPES = {
@@ -296,6 +298,8 @@ def summarize_persistence_event(event: AdvisorQueuePersistenceEvent) -> dict[str
 def validate_queue_storage_path(
     path: str | Path,
     policy: AdvisorQueuePersistencePathPolicy | None = None,
+    *,
+    public_pilot_mode: bool = False,
 ) -> list[str]:
     """Validate a queue storage path without reading or writing it."""
     active_policy = policy or create_empty_persistence_path_policy()
@@ -317,6 +321,10 @@ def validate_queue_storage_path(
         errors.append("external storage paths are not allowed")
     if not path_text.strip():
         errors.append("missing queue storage path")
+    try:
+        reject_public_pilot_dot_weslr_path_v1(path_text, public_pilot_mode=public_pilot_mode)
+    except ValueError as exc:
+        errors.append(str(exc))
 
     return errors
 
@@ -325,12 +333,14 @@ def append_persistence_event(
     path: str | Path,
     event: AdvisorQueuePersistenceEvent | dict[str, Any],
     policy: AdvisorQueuePersistencePathPolicy | None = None,
+    *,
+    public_pilot_mode: bool = False,
 ) -> dict[str, Any]:
     """Append one validated JSONL event to an explicit path."""
     active_policy = policy or create_empty_persistence_path_policy()
     queue_path = Path(path)
     persistence_event = event if isinstance(event, AdvisorQueuePersistenceEvent) else persistence_event_from_dict(event)
-    errors = validate_queue_storage_path(queue_path, active_policy)
+    errors = validate_queue_storage_path(queue_path, active_policy, public_pilot_mode=public_pilot_mode)
     errors.extend(validate_persistence_event(persistence_event))
     if errors:
         return {
@@ -366,11 +376,13 @@ def append_persistence_event(
 def load_persistence_events(
     path: str | Path,
     policy: AdvisorQueuePersistencePathPolicy | None = None,
+    *,
+    public_pilot_mode: bool = False,
 ) -> dict[str, Any]:
     """Load validated JSONL events from an explicit path."""
     active_policy = policy or create_empty_persistence_path_policy()
     queue_path = Path(path)
-    path_errors = validate_queue_storage_path(queue_path, active_policy)
+    path_errors = validate_queue_storage_path(queue_path, active_policy, public_pilot_mode=public_pilot_mode)
     if path_errors:
         return {"events": [], "validation_errors": path_errors, "load_errors": path_errors}
     if not queue_path.exists():

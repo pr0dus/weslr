@@ -12389,6 +12389,8 @@ def _check_git_scope():
     Allowed paths:
       - weslr/** (any file inside weslr/)
       - interpretation.py
+      - .github/ISSUE_TEMPLATE/feedback_request.yml for the narrow public-pilot
+        feedback privacy warning lane
       - docs/WESLR_LOGICAL_FORM_NORMALIZER_ATOMIC_HELPERS_APPROVAL_V1.md only when
         the operator-approved helper-phase markers are present
       - docs/WESLR_LOGICAL_FORM_NORMALIZER_PREDICATE_HELPERS_APPROVAL_V1.md only when
@@ -12796,7 +12798,11 @@ def _check_git_scope():
         if any(path.endswith(ext) for ext in FORBIDDEN_EXTENSIONS):
             violations.append(f"  forbidden extension: {path}")
 
-        allowed = path.startswith("weslr/") or path == "interpretation.py"
+        allowed = (
+            path.startswith("weslr/")
+            or path == "interpretation.py"
+            or path == ".github/ISSUE_TEMPLATE/feedback_request.yml"
+        )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
             if not approval_doc_valid:

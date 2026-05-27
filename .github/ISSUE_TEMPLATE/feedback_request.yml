@@ -6,7 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking a look at CircleForge.
+        Thanks for taking a look at WESLR.
+        Privacy/safety: GitHub issues may be public. Do not include secrets, customer data, private project data, credentials, tokens, API keys, addresses, phone numbers, or sensitive personal data.
+        Feedback submission is not testimonial consent. It is not endorsement, not product-readiness evidence, and does not approve roadmap, promotion, runtime behavior, or public claims.
         Use this template if you want to share feedback on direction, design, usability, or whether the project seems useful.
   - type: textarea
     id: area

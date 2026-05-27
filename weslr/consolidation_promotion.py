@@ -24,6 +24,7 @@ from .consolidation_config import (
     load_config,
     save_config,
 )
+from .public_pilot_storage_privacy_safety import reject_public_pilot_dot_weslr_path_v1
 
 # ---------------------------------------------------------------------------
 # Audit log path
@@ -169,6 +170,20 @@ def decide_promotion(
     if cfg is None:
         cfg = load_config()
 
+    if public_pilot_mode:
+        try:
+            reject_public_pilot_dot_weslr_path_v1(_AUDIT_PATH, public_pilot_mode=True)
+        except ValueError as exc:
+            return PromotionResult(
+                cluster_id=cluster.get("cluster_id", "?"),
+                promoted=False,
+                zone="n/a",
+                decision="blocked",
+                destination=cluster.get("proposed_destination", ""),
+                blocked_reasons=[str(exc), "public-pilot flows cannot use consolidation promotion paths"],
+                record_written=False,
+            )
+
     cluster_id = cluster.get("cluster_id", "?")
     destination = cluster.get("proposed_destination", "")
     provenance = cluster.get("provenance", [])
@@ -282,6 +297,8 @@ class PromotionResult:
 def auto_promote(
     cluster: dict,
     cfg: ConsolidationConfig | None = None,
+    *,
+    public_pilot_mode: bool = False,
 ) -> PromotionResult:
     """
     Attempt to auto-promote a consolidation candidate.
@@ -293,6 +310,20 @@ def auto_promote(
     """
     if cfg is None:
         cfg = load_config()
+
+    if public_pilot_mode:
+        try:
+            reject_public_pilot_dot_weslr_path_v1(_AUDIT_PATH, public_pilot_mode=True)
+        except ValueError as exc:
+            return PromotionResult(
+                cluster_id=cluster.get("cluster_id", "?"),
+                promoted=False,
+                zone="n/a",
+                decision="blocked",
+                destination=cluster.get("proposed_destination", ""),
+                blocked_reasons=[str(exc), "public-pilot flows cannot use consolidation promotion paths"],
+                record_written=False,
+            )
 
     cluster_id = cluster.get("cluster_id", "?")
     destination = cluster.get("proposed_destination", "")

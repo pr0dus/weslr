@@ -21,6 +21,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .public_pilot_storage_privacy_safety import (
+    minimize_public_pilot_identifier_v1,
+    reject_public_pilot_raw_private_text_v1,
+    safe_public_pilot_summary_v1,
+)
+
 
 __all__ = ["PilotSignalLogger", "create_pilot_logger"]
 
@@ -32,8 +38,9 @@ class PilotSignalLogger:
     All data is persisted for analysis and audit.
     """
 
-    def __init__(self, log_dir: str = "continuity/pilot_signals"):
+    def __init__(self, log_dir: str = "continuity/pilot_signals", *, public_pilot_safe_mode: bool = False):
         self.log_dir = Path(log_dir)
+        self.public_pilot_safe_mode = public_pilot_safe_mode
         self.signals_dir = self.log_dir / "signals"
         self.events_dir = self.log_dir / "events"
         self.user_events_file = self.log_dir / "user_events.json"
@@ -84,17 +91,52 @@ class PilotSignalLogger:
         with open(path, 'w') as f:
             json.dump(data, f, indent=2)
 
+    def _safe_identifier(self, value: str | None, label: str, public_pilot_safe_mode: bool | None = None) -> str | None:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        if not active:
+            return value
+        return minimize_public_pilot_identifier_v1(value, label=label)
+
+    def _safe_details(self, details: Dict[str, Any] | None, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        if not active:
+            return details or {}
+        for key, value in (details or {}).items():
+            if isinstance(value, str):
+                reject_public_pilot_raw_private_text_v1(value, field_name=f"details.{key}")
+        return {
+            **safe_public_pilot_summary_v1(details or {}, text_fields=tuple(str(k) for k in (details or {}).keys())),
+            "raw_details_included": False,
+        }
+
+    def require_safe_display(self, *, public_pilot_safe_mode: bool | None = None, raw_display: bool = False, raw_export: bool = False) -> None:
+        active = self.public_pilot_safe_mode if public_pilot_safe_mode is None else public_pilot_safe_mode
+        if active and (raw_display or raw_export):
+            raise ValueError("raw pilot event display/export is denied in public-pilot safe mode")
+
+    def get_public_pilot_safe_event_summary(self) -> Dict[str, Any]:
+        """Return counts only; no raw event JSON/details are exposed."""
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "summary_mode": "public_pilot_safe_counts_only",
+            "raw_event_json_included": False,
+            "raw_details_included": False,
+            "user_events": len(self._load_json(self.user_events_file).get("events", [])),
+            "interventions": len(self._load_json(self.interventions_file).get("interventions", [])),
+            "redteam_events": len(self._load_json(self.redteam_file).get("events", [])),
+        }
+
     # =========================================================================
     # TRUST SCORE LOGGING
     # =========================================================================
 
-    def log_trust_score(self, score: float, user_id: str = None, session_id: str = None) -> Dict[str, Any]:
+    def log_trust_score(self, score: float, user_id: str = None, session_id: str = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a trust score measurement."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "score": score,
-            "user_id": user_id,
-            "session_id": session_id,
+            "user_id": self._safe_identifier(user_id, "user", public_pilot_safe_mode),
+            "session_id": self._safe_identifier(session_id, "session", public_pilot_safe_mode),
         }
         
         data = self._load_json(self.trust_history_file)
@@ -122,12 +164,12 @@ class PilotSignalLogger:
     # CONTINUITY RATE LOGGING
     # =========================================================================
 
-    def log_continuity_rate(self, rate: float, session_id: str = None) -> Dict[str, Any]:
+    def log_continuity_rate(self, rate: float, session_id: str = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a continuity rate measurement."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "rate": rate,
-            "session_id": session_id,
+            "session_id": self._safe_identifier(session_id, "session", public_pilot_safe_mode),
         }
         
         data = self._load_json(self.continuity_history_file)
@@ -188,12 +230,12 @@ class PilotSignalLogger:
     # INTERVENTION RATE LOGGING
     # =========================================================================
 
-    def log_intervention(self, user_id: str, session_id: str, intervention_type: str, action: str) -> Dict[str, Any]:
+    def log_intervention(self, user_id: str, session_id: str, intervention_type: str, action: str, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log an operator intervention."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "user_id": user_id,
-            "session_id": session_id,
+            "user_id": self._safe_identifier(user_id, "user", public_pilot_safe_mode),
+            "session_id": self._safe_identifier(session_id, "session", public_pilot_safe_mode),
             "intervention_type": intervention_type,
             "action": action,
         }
@@ -234,14 +276,14 @@ class PilotSignalLogger:
     # USER EVENT LOGGING
     # =========================================================================
 
-    def log_user_event(self, event_type: str, user_id: str, session_id: str, details: Dict[str, Any] = None) -> Dict[str, Any]:
+    def log_user_event(self, event_type: str, user_id: str, session_id: str, details: Dict[str, Any] = None, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a user event."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "event_type": event_type,
-            "user_id": user_id,
-            "session_id": session_id,
-            "details": details or {},
+            "user_id": self._safe_identifier(user_id, "user", public_pilot_safe_mode),
+            "session_id": self._safe_identifier(session_id, "session", public_pilot_safe_mode),
+            "details": self._safe_details(details, public_pilot_safe_mode),
         }
         
         data = self._load_json(self.user_events_file)
@@ -254,13 +296,13 @@ class PilotSignalLogger:
     # RED-TEAM EVENT LOGGING
     # =========================================================================
 
-    def log_redteam_event(self, attack_family: str, user_id: str, session_id: str, severity: str, action: str) -> Dict[str, Any]:
+    def log_redteam_event(self, attack_family: str, user_id: str, session_id: str, severity: str, action: str, *, public_pilot_safe_mode: bool | None = None) -> Dict[str, Any]:
         """Log a red-team event."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "attack_family": attack_family,
-            "user_id": user_id,
-            "session_id": session_id,
+            "user_id": self._safe_identifier(user_id, "user", public_pilot_safe_mode),
+            "session_id": self._safe_identifier(session_id, "session", public_pilot_safe_mode),
             "severity": severity,
             "action": action,
         }
@@ -306,9 +348,9 @@ class PilotSignalLogger:
         }
 
 
-def create_pilot_logger(log_dir: str = "continuity/pilot_signals") -> PilotSignalLogger:
+def create_pilot_logger(log_dir: str = "continuity/pilot_signals", *, public_pilot_safe_mode: bool = False) -> PilotSignalLogger:
     """Create a configured PilotSignalLogger instance."""
-    return PilotSignalLogger(log_dir)
+    return PilotSignalLogger(log_dir, public_pilot_safe_mode=public_pilot_safe_mode)
 
 
 def main():
@@ -323,22 +365,29 @@ def main():
     parser.add_argument("--user-events", action="store_true", help="Show user events")
     parser.add_argument("--interventions", action="store_true", help="Show interventions")
     parser.add_argument("--redteam", action="store_true", help="Show red-team events")
+    parser.add_argument("--public-pilot-safe", action="store_true", help="Deny raw display/export and show safe summaries only")
 
     args = parser.parse_args()
 
-    logger = create_pilot_logger()
+    logger = create_pilot_logger(public_pilot_safe_mode=args.public_pilot_safe)
 
     if args.summary:
         print(json.dumps(logger.get_daily_summary(), indent=2))
     elif args.signals:
-        print(json.dumps(logger.get_signal_summary(), indent=2))
+        if args.public_pilot_safe:
+            print(json.dumps(logger.get_public_pilot_safe_event_summary(), indent=2))
+        else:
+            print(json.dumps(logger.get_signal_summary(), indent=2))
     elif args.user_events:
+        logger.require_safe_display(raw_display=True)
         data = logger._load_json(logger.user_events_file)
         print(json.dumps(data, indent=2))
     elif args.interventions:
+        logger.require_safe_display(raw_display=True)
         data = logger._load_json(logger.interventions_file)
         print(json.dumps(data, indent=2))
     elif args.redteam:
+        logger.require_safe_display(raw_display=True)
         data = logger._load_json(logger.redteam_file)
         print(json.dumps(data, indent=2))
     else:
