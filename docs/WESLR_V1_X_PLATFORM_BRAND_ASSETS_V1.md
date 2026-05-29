@@ -1,6 +1,7 @@
-# WESLR V1 X Platform Brand Assets V1
+# WESLR V1 X Platform Brand Assets V2
 
 Date: 2026-05-29
+Version: V2 (refinement pass)
 Status: brand asset creation only
 Purpose: X platform profile icon and banner for WESLR
 
@@ -30,10 +31,13 @@ Purpose: X platform profile icon and banner for WESLR
 
 ### 2.1 Logo Variant
 
-**Variant A + C Combined:**
-- Minimal W-oar/vessel mark
-- Small governance dot/star above center
-- Meaning: Evidence, operator authority, governance
+**Refined W-oar/vessel (V2):**
+- Clearer W shape with visible "W" letterform
+- Oar-blade terminals at top and bottom of strokes
+- Center V connection forms vessel hull shape
+- Governance dot above center
+- Meaning: Evidence, operator authority, governed navigation
+- Design intent: Recognizable as "W" while maintaining nautical/vessel essence
 
 ### 2.2 Color Palette
 

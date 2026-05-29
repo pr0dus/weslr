@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500">
-  <!-- WESLR X Platform Banner/Header -->
+  <!-- WESLR X Platform Banner/Header V2 -->
+  <!-- Refined: Clearer W with tagline -->
   
   <!-- Background -->
   <rect width="1500" height="500" fill="#0D1117"/>
@@ -14,28 +15,36 @@
   </defs>
   <rect width="1500" height="500" fill="url(#bgGradient)"/>
   
-  <!-- W Mark - Centered left area for profile icon overlap avoidance -->
+  <!-- W Mark - Positioned for profile icon safe zone (left 200px) -->
   <g transform="translate(350, 250)">
-    <!-- Left oar stroke -->
-    <path d="M-100,-80 L-60,-50 L-35,80 L-60,100 L-85,75 L-70,0 Z" 
-          fill="#388BFF" opacity="0.9"/>
-    
-    <!-- Right oar stroke -->
-    <path d="M100,-80 L60,-50 L35,80 L60,100 L85,75 L70,0 Z" 
-          fill="#388BFF" opacity="0.9"/>
-    
-    <!-- Center hull/vessel curve -->
-    <path d="M-35,80 Q0,115 35,80 L25,25 Q0,45 -25,25 Z" 
+    <!-- Left stroke of W (oar blade terminals) -->
+    <path d="M-110,-110 L-90,-85 L-60,60 L-30,110 L-50,85 L-75,12 Z" 
           fill="#388BFF"/>
     
-    <!-- Governance dot -->
-    <circle cx="0" cy="-90" r="16" fill="#388BFF"/>
+    <!-- Right stroke of W (mirrored) -->
+    <path d="M110,-110 L90,-85 L60,60 L30,110 L50,85 L75,12 Z" 
+          fill="#388BFF"/>
+    
+    <!-- Center V connection - vessel hull -->
+    <path d="M-60,60 L-30,110 L0,135 L30,110 L60,60 L30,85 L0,105 L-30,85 Z" 
+          fill="#388BFF" opacity="0.85"/>
+    
+    <!-- Inner W strokes -->
+    <path d="M-75,12 L-30,-50 L0,25 L30,-50 L75,12" 
+          stroke="#388BFF" 
+          stroke-width="10" 
+          stroke-linecap="round"
+          fill="none"
+          opacity="0.7"/>
+    
+    <!-- Governance dot above -->
+    <circle cx="0" cy="-120" r="18" fill="#388BFF"/>
   </g>
   
-  <!-- Text - Centered to the right of the icon -->
+  <!-- Text - Right of profile icon safe zone -->
   <g transform="translate(550, 250)">
     <!-- WESLR wordmark -->
-    <text x="0" y="-30" 
+    <text x="0" y="-25" 
           font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
           font-size="72" 
           font-weight="700" 
@@ -43,22 +52,13 @@
           letter-spacing="-0.02em">WESLR</text>
     
     <!-- Tagline -->
-    <text x="0" y="40" 
+    <text x="0" y="45" 
           font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
-          font-size="24" 
+          font-size="22" 
           font-weight="400" 
           fill="#C9D1D9"
           letter-spacing="0.01em">Governed continuity-first intelligence</text>
   </g>
   
-  <!-- Safe zone indicator (left 200px reserved for profile icon overlay) -->
-  <!-- Note: Critical content is right of x=200 -->
-  
-  <!-- Footer text -->
-  <text x="750" y="480" 
-        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
-        font-size="14" 
-        font-weight="400" 
-        fill="#8B949E"
-        text-anchor="middle">Pilot access by invitation</text>
+  <!-- Safe zone note: Critical content is right of x=200 -->
 </svg>

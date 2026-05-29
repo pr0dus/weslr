@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <!-- WESLR X Platform Profile Icon -->
+  <!-- WESLR X Platform Profile Icon V2 -->
+  <!-- Refined: Clearer W with subtle oar/vessel essence -->
+  
   <!-- Background -->
   <rect width="400" height="400" fill="#0D1117"/>
   
-  <!-- W Mark - Minimal W-oar/vessel shape -->
+  <!-- W Mark - Clear W shape with oar-blade terminals -->
   <g transform="translate(200, 200)">
-    <!-- Left oar stroke -->
-    <path d="M-80,-60 L-50,-40 L-30,60 L-50,80 L-70,60 L-60,0 Z" 
-          fill="#388BFF" opacity="0.9"/>
-    
-    <!-- Right oar stroke -->
-    <path d="M80,-60 L50,-40 L30,60 L50,80 L70,60 L60,0 Z" 
-          fill="#388BFF" opacity="0.9"/>
-    
-    <!-- Center hull/vessel curve -->
-    <path d="M-30,60 Q0,90 30,60 L20,20 Q0,35 -20,20 Z" 
+    <!-- Left stroke of W (oar blade at top and bottom) -->
+    <path d="M-90,-90 L-75,-70 L-50,50 L-25,90 L-40,70 L-60,10 Z" 
           fill="#388BFF"/>
     
-    <!-- Governance dot -->
-    <circle cx="0" cy="-70" r="12" fill="#388BFF"/>
+    <!-- Right stroke of W (mirrored oar blade) -->
+    <path d="M90,-90 L75,-70 L50,50 L25,90 L40,70 L60,10 Z" 
+          fill="#388BFF"/>
+    
+    <!-- Center V connection - vessel hull -->
+    <path d="M-50,50 L-25,90 L0,110 L25,90 L50,50 L25,70 L0,85 L-25,70 Z" 
+          fill="#388BFF" opacity="0.85"/>
+    
+    <!-- Inner W strokes for clarity -->
+    <path d="M-60,10 L-25,-40 L0,20 L25,-40 L60,10" 
+          stroke="#388BFF" 
+          stroke-width="8" 
+          stroke-linecap="round"
+          fill="none"
+          opacity="0.7"/>
+    
+    <!-- Governance dot above -->
+    <circle cx="0" cy="-100" r="14" fill="#388BFF"/>
   </g>
 </svg>
