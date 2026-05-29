@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 400 400">
   <!-- WESLR X Platform Profile Icon -->
-  <!-- Canonical sharp geometric W monogram -->
-  <!-- Dark navy background, white W mark -->
+  <!-- SVG wrapper embedding owner-approved W logo PNG -->
+  <!-- True vector tracing is DEFERRED - do not invent path geometry -->
+  <!-- Source: weslr-owner-approved-w-mark-light.png -->
   
   <!-- Background -->
   <rect width="400" height="400" fill="#0D1117"/>
   
-  <!-- W Mark - Centered, scaled for circular crop -->
-  <g transform="translate(200, 200) scale(0.85)">
-    <!-- Sharp geometric W with extended upper tips -->
-    <path d="M-180,-180 L-120,-180 L-60,80 L0,-20 L60,80 L120,-180 L180,-180 L100,180 L60,180 L0,60 L-60,180 L-100,180 Z" 
-          fill="#FFFFFF"/>
-  </g>
+  <!-- Embedded owner-approved artwork -->
+  <!-- Note: This SVG embeds the raster image. True vectorization requires separate approval. -->
+  <image width="400" height="400" xlink:href="weslr-x-icon-400.png"/>
 </svg>

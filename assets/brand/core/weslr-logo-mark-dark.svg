@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- WESLR Canonical Logo Mark - Dark Background -->
-  <!-- Sharp geometric W monogram - white on transparent -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
+  <!-- WESLR Core Logo Mark - Dark Background -->
+  <!-- SVG wrapper embedding owner-approved W logo PNG -->
+  <!-- True vector tracing is DEFERRED - do not invent path geometry -->
+  <!-- Source: weslr-owner-approved-w-banner-dark.png (cropped to W mark) -->
   
-  <g transform="translate(256, 256)">
-    <!-- Main W shape - sharp geometric, extended upper tips -->
-    <path d="M-180,-180 L-120,-180 L-60,80 L0,-20 L60,80 L120,-180 L180,-180 L100,180 L60,180 L0,60 L-60,180 L-100,180 Z" 
-          fill="#FFFFFF"/>
-  </g>
+  <!-- Embedded owner-approved artwork (white W on transparent) -->
+  <image width="512" height="512" xlink:href="weslr-logo-mark-dark.png"/>
 </svg>

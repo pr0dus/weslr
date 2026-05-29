@@ -2,26 +2,32 @@
 
 ## Current Logo Direction
 
-**Effective: 2026-05-29**
+**Effective: 2026-05-29 (V2.1)**
 
-The canonical WESLR logo is the **sharp geometric W monogram**.
+The canonical WESLR logo is the **owner-approved sharp geometric W monogram**.
 
-### Description
+### Important Notice
 
-- Bold, premium, angular W
-- Upper tips extended outward
-- Center negative-space element
-- Monochrome-first design
-- Serious, premium, non-generic AI
+**SVG files in this repo are wrapper/embed format only.**
+**They embed the exact owner-approved PNG artwork.**
+**True vector tracing is DEFERRED until separately approved.**
+**No invented geometry is allowed.**
 
-### Canonical Files
+### Source Files
+
+| File | Use |
+|------|-----|
+| `assets/brand/source/weslr-owner-approved-w-mark-light.png` | Original owner-provided |
+| `assets/brand/source/weslr-owner-approved-w-banner-dark.png` | Original owner-provided |
+
+### Derived Files
 
 | File | Use Case |
 |------|----------|
-| `assets/brand/core/weslr-logo-mark-light.svg` | Light backgrounds |
-| `assets/brand/core/weslr-logo-mark-dark.svg` | Dark backgrounds |
-| `assets/brand/x/weslr-x-icon.svg` | X/Twitter profile icon |
-| `assets/brand/x/weslr-x-banner.svg` | X/Twitter banner |
+| `assets/brand/core/weslr-logo-mark-light.png` | Light backgrounds |
+| `assets/brand/core/weslr-logo-mark-dark.png` | Dark backgrounds |
+| `assets/brand/x/weslr-x-icon-400.png` | X/Twitter profile icon |
+| `assets/brand/x/weslr-x-banner-1500x500.png` | X/Twitter banner |
 
 ### Color Usage
 
@@ -33,16 +39,44 @@ The canonical WESLR logo is the **sharp geometric W monogram**.
 
 ---
 
+## Logo History
+
+### V2.1: Owner-Approved Artwork (Current)
+
+**Status: CURRENT**
+
+Owner-provided raster images used directly.
+No invented SVG geometry.
+True vector tracing deferred.
+
+### V2: SVG Interpretation (Obsolete)
+
+**Status: SUPERSEDED**
+
+Commit `507e8b8` — Nova hand-drew SVG paths.
+This was incorrect. Do not use.
+
+### V1: W-oar/Vessel (Obsolete)
+
+**Status: SUPERSEDED**
+
+Previous direction with W-oar strokes, vessel hull, governance dot.
+All V1 assets are obsolete.
+
+---
+
 ## Design Rules
 
 ### Allowed
 
+- Use exact owner-provided artwork
 - Resize proportionally
-- Use monochrome
-- Place on contrasting background
+- Use on contrasting background
 
 ### Forbidden
 
+- No invented SVG paths
+- No geometry interpretation
 - No robot heads
 - No neural graphics
 - No sparkles
@@ -51,40 +85,6 @@ The canonical WESLR logo is the **sharp geometric W monogram**.
 - No gradients on the mark
 - No shadows
 - No 3D effects
-
----
-
-## Logo History
-
-### V1: W-oar/Vessel (Obsolete)
-
-**Status: Superseded**
-
-The previous Nova-generated logo direction featuring:
-- W-oar strokes
-- Vessel/hull shape
-- Governance dot
-- Inner stroke overlay
-
-This direction was AI-generated exploration and has been **replaced** by the owner-approved canonical W monogram.
-
-**Do not use V1 assets.**
-
----
-
-## Taglines
-
-### Allowed
-
-- "WESLR" (wordmark only)
-- "Governed continuity-first intelligence"
-- "The model helps. WESLR governs."
-
-### Forbidden
-
-- No claims of "autonomous" or "error-free"
-- No comparisons to other AI systems
-- No unverified certifications
 
 ---
 
