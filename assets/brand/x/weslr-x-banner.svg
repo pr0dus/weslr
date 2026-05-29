@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500">
-  <!-- WESLR X Platform Banner/Header V2 -->
-  <!-- Refined: Clearer W with tagline -->
+  <!-- WESLR X Platform Banner/Header -->
+  <!-- Canonical sharp geometric W monogram -->
+  <!-- Dark background, white W, minimal text -->
   
   <!-- Background -->
   <rect width="1500" height="500" fill="#0D1117"/>
@@ -15,50 +16,29 @@
   </defs>
   <rect width="1500" height="500" fill="url(#bgGradient)"/>
   
-  <!-- W Mark - Positioned for profile icon safe zone (left 200px) -->
-  <g transform="translate(350, 250)">
-    <!-- Left stroke of W (oar blade terminals) -->
-    <path d="M-110,-110 L-90,-85 L-60,60 L-30,110 L-50,85 L-75,12 Z" 
-          fill="#388BFF"/>
-    
-    <!-- Right stroke of W (mirrored) -->
-    <path d="M110,-110 L90,-85 L60,60 L30,110 L50,85 L75,12 Z" 
-          fill="#388BFF"/>
-    
-    <!-- Center V connection - vessel hull -->
-    <path d="M-60,60 L-30,110 L0,135 L30,110 L60,60 L30,85 L0,105 L-30,85 Z" 
-          fill="#388BFF" opacity="0.85"/>
-    
-    <!-- Inner W strokes -->
-    <path d="M-75,12 L-30,-50 L0,25 L30,-50 L75,12" 
-          stroke="#388BFF" 
-          stroke-width="10" 
-          stroke-linecap="round"
-          fill="none"
-          opacity="0.7"/>
-    
-    <!-- Governance dot above -->
-    <circle cx="0" cy="-120" r="18" fill="#388BFF"/>
+  <!-- W Mark - Left side, profile icon safe zone -->
+  <g transform="translate(300, 250) scale(0.65)">
+    <!-- Sharp geometric W with extended upper tips -->
+    <path d="M-180,-180 L-120,-180 L-60,80 L0,-20 L60,80 L120,-180 L180,-180 L100,180 L60,180 L0,60 L-60,180 L-100,180 Z" 
+          fill="#FFFFFF"/>
   </g>
   
-  <!-- Text - Right of profile icon safe zone -->
-  <g transform="translate(550, 250)">
+  <!-- Text - Right of profile icon safe zone (x > 200) -->
+  <g transform="translate(520, 250)">
     <!-- WESLR wordmark -->
-    <text x="0" y="-25" 
+    <text x="0" y="-20" 
           font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
-          font-size="72" 
+          font-size="68" 
           font-weight="700" 
           fill="#F0F6FC"
           letter-spacing="-0.02em">WESLR</text>
     
     <!-- Tagline -->
-    <text x="0" y="45" 
+    <text x="0" y="50" 
           font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
-          font-size="22" 
+          font-size="20" 
           font-weight="400" 
-          fill="#C9D1D9"
+          fill="#8B949E"
           letter-spacing="0.01em">Governed continuity-first intelligence</text>
   </g>
-  
-  <!-- Safe zone note: Critical content is right of x=200 -->
 </svg>

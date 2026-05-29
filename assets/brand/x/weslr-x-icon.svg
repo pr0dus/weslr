@@ -1,34 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <!-- WESLR X Platform Profile Icon V2 -->
-  <!-- Refined: Clearer W with subtle oar/vessel essence -->
+  <!-- WESLR X Platform Profile Icon -->
+  <!-- Canonical sharp geometric W monogram -->
+  <!-- Dark navy background, white W mark -->
   
   <!-- Background -->
   <rect width="400" height="400" fill="#0D1117"/>
   
-  <!-- W Mark - Clear W shape with oar-blade terminals -->
-  <g transform="translate(200, 200)">
-    <!-- Left stroke of W (oar blade at top and bottom) -->
-    <path d="M-90,-90 L-75,-70 L-50,50 L-25,90 L-40,70 L-60,10 Z" 
-          fill="#388BFF"/>
-    
-    <!-- Right stroke of W (mirrored oar blade) -->
-    <path d="M90,-90 L75,-70 L50,50 L25,90 L40,70 L60,10 Z" 
-          fill="#388BFF"/>
-    
-    <!-- Center V connection - vessel hull -->
-    <path d="M-50,50 L-25,90 L0,110 L25,90 L50,50 L25,70 L0,85 L-25,70 Z" 
-          fill="#388BFF" opacity="0.85"/>
-    
-    <!-- Inner W strokes for clarity -->
-    <path d="M-60,10 L-25,-40 L0,20 L25,-40 L60,10" 
-          stroke="#388BFF" 
-          stroke-width="8" 
-          stroke-linecap="round"
-          fill="none"
-          opacity="0.7"/>
-    
-    <!-- Governance dot above -->
-    <circle cx="0" cy="-100" r="14" fill="#388BFF"/>
+  <!-- W Mark - Centered, scaled for circular crop -->
+  <g transform="translate(200, 200) scale(0.85)">
+    <!-- Sharp geometric W with extended upper tips -->
+    <path d="M-180,-180 L-120,-180 L-60,80 L0,-20 L60,80 L120,-180 L180,-180 L100,180 L60,180 L0,60 L-60,180 L-100,180 Z" 
+          fill="#FFFFFF"/>
   </g>
 </svg>
