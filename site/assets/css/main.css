@@ -417,82 +417,94 @@ body {
   color: var(--color-text-primary);
   font-size: 24px;
   cursor: pointer;
-  z-index: 110;
+  z-index: 200;
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
+/* Desktop: show nav links, hide hamburger */
+@media (min-width: 769px) {
+  .nav {
+    display: flex !important;
+  }
+  .mobile-nav-toggle {
+    display: none !important;
+  }
+}
+
+/* Mobile: hide nav by default, show hamburger */
 @media (max-width: 768px) {
   .mobile-nav-toggle {
     display: flex;
   }
   
-  /* Hide desktop nav by default on mobile */
+  /* Nav hidden by default on mobile */
   .nav {
     display: none;
+  }
+  
+  /* Nav shown when open - simple dropdown below header */
+  .nav.open {
+    display: block;
     position: fixed;
     top: 64px;
     left: 0;
     right: 0;
-    bottom: 0;
     background-color: #0D1117;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    padding: 24px;
-    gap: 8px;
-    z-index: 105;
-    overflow-y: auto;
-    box-sizing: border-box;
-  }
-  
-  /* Show mobile nav when open */
-  .nav.open {
-    display: flex !important;
-  }
-  
-  /* Style nav links for mobile */
-  .nav .nav-link {
-    display: block;
-    width: 100%;
+    border-top: 1px solid #30363D;
     padding: 16px;
-    font-size: 16px;
+    z-index: 150;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  
+  /* Style links for mobile */
+  .nav.open .nav-link {
+    display: block;
+    padding: 14px 16px;
+    font-size: 17px;
     font-weight: 500;
+    color: #F0F6FC;
     text-align: left;
     text-decoration: none;
     border-radius: 6px;
-    color: #F0F6FC;
+    margin-bottom: 4px;
     background-color: transparent;
-    box-sizing: border-box;
   }
   
-  .nav .nav-link:hover,
-  .nav .nav-link:active {
+  .nav.open .nav-link:hover,
+  .nav.open .nav-link:active {
     background-color: #21262D;
-    color: #F0F6FC;
   }
   
-  .nav .nav-link-active {
+  .nav.open .nav-link-active {
     color: #388BFF;
   }
   
   /* Style button for mobile */
-  .nav .btn {
+  .nav.open .btn {
     display: block;
     width: 100%;
-    margin-top: 16px;
-    padding: 12px 24px;
+    margin-top: 12px;
+    padding: 14px 24px;
     text-align: center;
   }
   
-  /* Prevent body scroll when nav is open */
+  /* Header must stay above everything */
+  .header {
+    z-index: 300 !important;
+  }
+  
+  /* Prevent background scroll when menu open */
   body.nav-open {
     overflow: hidden;
   }
   
+  /* Responsive text sizes */
   .hero-headline {
     font-size: var(--font-size-h1);
   }

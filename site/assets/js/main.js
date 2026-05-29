@@ -6,17 +6,21 @@ document.addEventListener('DOMContentLoaded', function() {
   const nav = document.getElementById('nav');
   
   if (mobileNavToggle && nav) {
-    mobileNavToggle.addEventListener('click', function() {
-      nav.classList.toggle('open');
+    // Toggle menu
+    mobileNavToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
       const isOpen = nav.classList.contains('open');
-      mobileNavToggle.setAttribute('aria-expanded', isOpen);
-      mobileNavToggle.textContent = isOpen ? '✕' : '☰';
       
-      // Prevent body scroll when nav is open
       if (isOpen) {
-        document.body.classList.add('nav-open');
-      } else {
+        nav.classList.remove('open');
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.textContent = '☰';
         document.body.classList.remove('nav-open');
+      } else {
+        nav.classList.add('open');
+        mobileNavToggle.setAttribute('aria-expanded', 'true');
+        mobileNavToggle.textContent = '✕';
+        document.body.classList.add('nav-open');
       }
     });
     
@@ -28,6 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileNavToggle.textContent = '☰';
         document.body.classList.remove('nav-open');
       });
+    });
+    
+    // Close nav when clicking outside (on the page content)
+    document.addEventListener('click', function(e) {
+      if (nav.classList.contains('open')) {
+        if (!nav.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+          nav.classList.remove('open');
+          mobileNavToggle.setAttribute('aria-expanded', 'false');
+          mobileNavToggle.textContent = '☰';
+          document.body.classList.remove('nav-open');
+        }
+      }
     });
   }
   
