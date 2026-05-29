@@ -50,6 +50,7 @@ BLOCKED_LABELS_V1 = set(REAL_ANSWER_BLOCKED_LABELS_V1) | {
 }
 
 DENIED_AUTHORITY_FLAGS_V1 = {
+    "public_output_authority",
     "final_answer_authority",
     "public_live_authority",
     "public_ux_authority",
@@ -416,6 +417,11 @@ def build_controlled_real_answer_adapter_contract_v1(
     }
     if extra_metadata:
         record.update(extra_metadata)
+    record["raw_answer_stored"] = False
+    record["execution_mode"] = EXECUTION_MODE
+    record["runtime_authority"] = False
+    record["final_answer_authority"] = False
+    record["public_output_authority"] = False
     return to_controlled_real_answer_sample_json_safe_v1(record)
 
 
@@ -566,6 +572,9 @@ def build_controlled_real_answer_sample_run_plan_v1(
     }
     if extra_metadata:
         plan.update(extra_metadata)
+    plan["raw_answer_stored"] = False
+    plan["no_run_marker"] = True
+    plan["execution_mode"] = EXECUTION_MODE
     return to_controlled_real_answer_sample_json_safe_v1(plan)
 
 
@@ -683,6 +692,7 @@ def build_controlled_real_answer_observation_stub_v1(
     }
     if extra_metadata:
         stub.update(extra_metadata)
+    stub["raw_answer_stored"] = False
     return to_controlled_real_answer_sample_json_safe_v1(stub)
 
 
@@ -731,6 +741,9 @@ def build_controlled_real_answer_sample_review_packet_v1(
     }
     if extra_metadata:
         packet.update(extra_metadata)
+    packet["no_run_marker"] = _safe_bool(no_run_marker)
+    packet["operator_review_required"] = True
+    packet["raw_answer_stored"] = False
     return to_controlled_real_answer_sample_json_safe_v1(packet)
 
 

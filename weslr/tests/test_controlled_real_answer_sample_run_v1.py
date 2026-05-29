@@ -95,6 +95,19 @@ def test_build_adapter_contract_is_metadata_only_and_no_execution():
     assert adapter["public_output_authority"] is False
     assert adapter["raw_answer_stored"] is False
 
+def test_builder_enforced_fields_cannot_be_overridden_by_extra_metadata():
+    adapter = _valid_adapter(runtime_authority=True, final_answer_authority=True, public_output_authority=True, raw_answer_stored=True, execution_mode="wrong")
+    assert adapter["runtime_authority"] is False
+    assert adapter["final_answer_authority"] is False
+    assert adapter["public_output_authority"] is False
+    assert adapter["raw_answer_stored"] is False
+    assert adapter["execution_mode"] == EXECUTION_MODE
+
+    plan = _valid_plan(3, no_run_marker=False, raw_answer_stored=True, execution_mode="wrong")
+    assert plan["no_run_marker"] is True
+    assert plan["raw_answer_stored"] is False
+    assert plan["execution_mode"] == EXECUTION_MODE
+
 
 def test_valid_preconditions_pass():
     preconditions = validate_controlled_real_answer_sample_preconditions_v1(
