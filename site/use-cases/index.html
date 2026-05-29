@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Use-cases - WESLR Governed Intelligence">
+  <meta name="description" content="WESLR Use Cases — Long-running projects, team continuity, governed automation.">
   <meta name="robots" content="index, follow">
-  <title>Use-cases — WESLR</title>
-  <link rel="stylesheet" href="../assets/css/reset.css?v=20260529-navfix4">
-  <link rel="stylesheet" href="../assets/css/variables.css?v=20260529-navfix4">
-  <link rel="stylesheet" href="../assets/css/main.css?v=20260529-navfix4">
+  <title>Use Cases — WESLR</title>
+  <link rel="stylesheet" href="../assets/css/reset.css?v=20260529-content-v1">
+  <link rel="stylesheet" href="../assets/css/variables.css?v=20260529-content-v1">
+  <link rel="stylesheet" href="../assets/css/main.css?v=20260529-content-v1">
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
 </head>
 <body>
@@ -26,20 +26,191 @@
       <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">☰</button>
     </div>
   </header>
+
   <main style="padding-top: 80px;">
     <section class="section">
       <div class="container">
-        <h1 class="section-title">Use-cases</h1>
-        <p class="section-subtitle">This page is under construction. Content will be added based on the WESLR V1 UI specification.</p>
+        <div class="section-header">
+          <h1 class="section-title">Use Cases</h1>
+          <p class="section-subtitle" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+            WESLR is designed for domains where continuity, evidence, and governance matter.
+          </p>
+        </div>
       </div>
     </section>
-    <section class="section"><div class="container"><div class="disclaimer"><strong>Important:</strong> WESLR is in internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.</div></div></section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Designed For</h2>
+        </div>
+        
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-icon">⚙️</div>
+            <h3 class="card-title">Long-Running Projects</h3>
+            <p class="card-text">Projects that span weeks, months, or years. WESLR maintains continuity when team members change, context is lost, or work resumes after gaps.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">🔬</div>
+            <h3 class="card-title">Research Support</h3>
+            <p class="card-text">Research teams working on complex problems over time. Evidence tracking, hypothesis management, and knowledge continuity across experiments.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">📊</div>
+            <h3 class="card-title">Technical & Product Work</h3>
+            <p class="card-text">Engineering teams, product development, and technical projects where context accumulation and decision history matter.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">🏭</div>
+            <h3 class="card-title">Industrial Continuity</h3>
+            <p class="card-text">Industrial systems and processes that require traceability, audit trails, and controlled change management.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">👥</div>
+            <h3 class="card-title">Team Memory</h3>
+            <p class="card-text">Teams that need governed collective memory. What is remembered is explicit, approved, and auditable.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">✓</div>
+            <h3 class="card-title">Operator-Reviewed Automation</h3>
+            <p class="card-text">Automation proposals that require human review before execution. WESLR suggests; operators approve.</p>
+            <span class="status-badge status-badge-designed">Designed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Domain Adaptation</h2>
+        </div>
+        <div style="max-width: 800px; margin: 0 auto;">
+          <p class="card-text" style="margin-bottom: var(--spacing-lg);">
+            WESLR is designed to adapt to specific domains. Domain adapters can provide specialized context, evidence sources, and governance rules.
+          </p>
+          <p class="card-text" style="margin-bottom: var(--spacing-lg);">
+            Domain adaptation is a future direction. No production domain adapters are currently available.
+          </p>
+          <a href="../industrial-adaptation/" class="btn btn-ghost">Learn About Industrial Adaptation →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Example Scenarios</h2>
+          <p class="section-subtitle">These are designed use cases — not claims of live deployment.</p>
+        </div>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 class="card-title">Engineering Project Continuity</h3>
+            <p class="card-text" style="margin-bottom: var(--spacing-md);">
+              A team works on a complex engineering project. Over months, team members change. WESLR maintains context about decisions, constraints, and rationale.
+            </p>
+            <p class="card-text" style="color: var(--color-text-muted);">
+              <strong>Status:</strong> Designed, not deployed.
+            </p>
+          </div>
+          
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 class="card-title">Research Knowledge Base</h3>
+            <p class="card-text" style="margin-bottom: var(--spacing-md);">
+              A research group accumulates knowledge across experiments. WESLR tracks evidence, hypotheses, and experimental results with provenance.
+            </p>
+            <p class="card-text" style="color: var(--color-text-muted);">
+              <strong>Status:</strong> Designed, not deployed.
+            </p>
+          </div>
+          
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 class="card-title">Governed Team Memory</h3>
+            <p class="card-text" style="margin-bottom: var(--spacing-md);">
+              A team needs collective memory for decisions, policies, and context. What WESLR remembers is approved by operators. Audit trails are preserved.
+            </p>
+            <p class="card-text" style="color: var(--color-text-muted);">
+              <strong>Status:</strong> Designed, not deployed.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="text-center">
+          <h2 class="section-title">Not a Universal Solution</h2>
+          <p class="section-subtitle mb-4">WESLR is not designed for every use case. It is designed for domains where governance, continuity, and evidence matter.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="disclaimer">
+          <strong>Important:</strong> WESLR is in internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer class="footer">
     <div class="footer-inner">
-      <div class="footer-bottom"><p>WESLR — Continuity-first Governed Intelligence</p></div>
+      <div class="footer-grid">
+        <div>
+          <h4 class="footer-section-title">Product</h4>
+          <ul class="footer-links">
+            <li><a href="../about/" class="footer-link">What is WESLR?</a></li>
+            <li><a href="../how-it-works/" class="footer-link">How It Works</a></li>
+            <li><a href="../product/" class="footer-link">Product Experience</a></li>
+            <li><a href="../governance/" class="footer-link">Governance & Trust</a></li>
+            <li><a href="../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Resources</h4>
+          <ul class="footer-links">
+            <li><a href="./" class="footer-link">Use Cases</a></li>
+            <li><a href="../industrial-adaptation/" class="footer-link">Industrial Adaptation</a></li>
+            <li><a href="../about-weslr/" class="footer-link">About</a></li>
+            <li><a href="../contact/" class="footer-link">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="../privacy/" class="footer-link">Privacy Policy</a></li>
+            <li><a href="../terms/" class="footer-link">Terms of Use</a></li>
+            <li><a href="../license/" class="footer-link">Commercial License</a></li>
+            <li><a href="../impressum/" class="footer-link">Impressum</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Pilot</h4>
+          <ul class="footer-links">
+            <li><a href="../pilot/" class="footer-link">Request Pilot Access</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>WESLR — Continuity-first Governed Intelligence</p>
+      </div>
     </div>
   </footer>
-  <script src="../assets/js/main.js?v=20260529-navfix4"></script>
+
+  <script src="../assets/js/main.js?v=20260529-content-v1"></script>
 </body>
 </html>
