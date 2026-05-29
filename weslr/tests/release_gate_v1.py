@@ -12432,6 +12432,20 @@ _controlled_multiturn_continuity_pressure_test_phase_c_40_review_required_marker
     "controlled_multiturn_continuity_pressure_test_phase_c_40_design_review_valid_ready_for_context_alignment",
 }
 
+_controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_doc = "docs/WESLR_CONTROLLED_INTERNAL_REHEARSAL_REPEATABILITY_STATISTICS_AND_LEARNING_BOUNDARY_V1.md"
+_controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_required_markers = {
+    "WESLR Controlled Internal Rehearsal Repeatability Statistics and Learning Boundary V1",
+    "internal-only",
+    "metadata-only",
+    "non-public",
+    "no runtime authority",
+    "no final-answer authority",
+    "no automatic self-modification",
+    "no new learning system",
+    "no new architecture",
+    "REVIEW_CONTROLLED_INTERNAL_REHEARSAL_REPEATABILITY_STATISTICS_AND_LEARNING_BOUNDARY_V1",
+}
+
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -12444,6 +12458,13 @@ def _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc_is_vali
     return _doc_with_markers_is_valid(
         _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc,
         _controlled_multiturn_continuity_pressure_test_phase_c_40_review_required_markers,
+    )
+
+
+def _controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_doc,
+        _controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_required_markers,
     )
 
 
@@ -12543,6 +12564,8 @@ def _check_git_scope():
         the approved controlled local ChatResponder shadow observation design markers are present
       - docs/WESLR_CONTROLLED_LOCAL_CHATRESPONDER_SHADOW_EXECUTION_V1.md only when
         the approved controlled local ChatResponder shadow execution design markers are present
+      - docs/WESLR_CONTROLLED_INTERNAL_REHEARSAL_REPEATABILITY_STATISTICS_AND_LEARNING_BOUNDARY_V1.md only when
+        the approved controlled internal rehearsal repeatability statistics and learning boundary markers are present
       - docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md only when
         the approved controlled safe non-model observation lane V2 design markers are present
       - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
@@ -14016,6 +14039,10 @@ def _check_git_scope():
             allowed = _controlled_multiturn_continuity_pressure_test_phase_c_40_review_doc_is_valid()
             if not allowed:
                 violations.append(f"  controlled multiturn continuity pressure test phase C 40 review doc missing required markers: {path}")
+        if path == _controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_doc:
+            allowed = _controlled_internal_rehearsal_repeatability_statistics_and_learning_boundary_doc_is_valid()
+            if not allowed:
+                violations.append(f"  controlled internal rehearsal repeatability statistics and learning boundary doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
