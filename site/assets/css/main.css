@@ -430,6 +430,7 @@ body {
     display: flex;
   }
   
+  /* Hide desktop nav by default on mobile */
   .nav {
     display: none;
     position: fixed;
@@ -437,45 +438,57 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--color-bg-primary);
+    background-color: #0D1117;
     flex-direction: column;
-    padding: var(--spacing-xl);
-    padding-top: var(--spacing-lg);
-    gap: var(--spacing-sm);
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 24px;
+    gap: 8px;
     z-index: 105;
     overflow-y: auto;
+    box-sizing: border-box;
   }
   
+  /* Show mobile nav when open */
   .nav.open {
-    display: flex;
+    display: flex !important;
   }
   
+  /* Style nav links for mobile */
   .nav .nav-link {
     display: block;
-    padding: var(--spacing-md);
-    font-size: var(--font-size-body);
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 500;
     text-align: left;
-    border-radius: var(--radius-sm);
-    color: var(--color-text-primary);
+    text-decoration: none;
+    border-radius: 6px;
+    color: #F0F6FC;
     background-color: transparent;
-    transition: background-color 0.15s;
+    box-sizing: border-box;
   }
   
   .nav .nav-link:hover,
   .nav .nav-link:active {
-    background-color: var(--color-bg-elevated);
+    background-color: #21262D;
+    color: #F0F6FC;
   }
   
   .nav .nav-link-active {
-    color: var(--color-accent-primary);
+    color: #388BFF;
   }
   
+  /* Style button for mobile */
   .nav .btn {
     display: block;
-    margin-top: var(--spacing-md);
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px 24px;
     text-align: center;
   }
   
+  /* Prevent body scroll when nav is open */
   body.nav-open {
     overflow: hidden;
   }
