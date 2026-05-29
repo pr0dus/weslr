@@ -31,7 +31,49 @@ This website is **NOT**:
 - An autonomous system interface
 - A chatbot deployment
 
-### 1.3 Staging First
+### 1.3 Language Strategy
+
+**English-first for V1:**
+
+| Decision | Status |
+|----------|--------|
+| Primary language | English |
+| Multilingual pages | Future/roadmap |
+| Localization trigger | Based on observed traffic |
+
+**Rationale:**
+- English is canonical source language
+- Outreach is international
+- Multilingual adds complexity
+- Observe traffic before adding languages
+
+**Future language paths (not for V1):**
+- `/en` (English canonical)
+- `/de` (German)
+- `/it` (Italian)
+- `/zh` (Chinese)
+- `/ja` (Japanese)
+- Others based on traffic data
+
+**Localization requires separate owner approval.**
+
+### 1.4 Business/Legal Status
+
+| Item | Status |
+|------|--------|
+| Current business | Owner has Nebengewerbe under e-qubs name |
+| Business change | Owner intends to update/change in coming weeks |
+| Legal discussion | Later dedicated discussion |
+| Public legal wording | **Not finalized yet** |
+| Final Impressum/Privacy/Terms | **Owner-blocking before public launch** |
+
+**Important:**
+- Do NOT finalize public legal wording yet
+- Do NOT confuse WESLR with e-qubs publicly
+- e-qubs.de remains **OFF LIMITS** operationally
+- Final legal text requires separate owner approval
+
+### 1.5 Staging First
 
 Build sequence:
 1. Build locally first
@@ -53,15 +95,26 @@ Build sequence:
 
 ## 2. Build Location
 
-### 2.1 Proposed Directory
+### 2.1 Decided: Build Folder and Stack
 
-**Recommended:** `/home/pr0/projects/weslr-v1-ui-website/site/`
+**Owner has delegated build folder and static stack decisions to Nova.**
 
-This provides:
-- Isolation from existing weslr-ui/ code
-- Clear separation between docs and website
-- Easy git tracking within the same repo
-- No conflict with existing WESLR runtime code
+**Decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Build folder | `/home/pr0/projects/weslr-v1-ui-website/site/` | Isolated from existing code |
+| Static stack | Plain static HTML/CSS/JS | Minimal risk, easy review |
+
+**Why plain static HTML/CSS/JS:**
+- No backend dependency
+- No build step complexity
+- Easy to audit for claims
+- Fast to load
+- Easy to stage locally
+- Easy to migrate later
+- No framework lock-in
+- Easier staging deployment
 
 ### 2.2 Directory Structure
 
@@ -680,20 +733,173 @@ Staging DNS configuration:
 
 ## 12. Pre-Build Owner Decisions
 
-### 12.1 Blocking Decisions
+### 12.1 Decided by Owner
+
+| Decision | Resolution |
+|----------|------------|
+| Build folder | `/home/pr0/projects/weslr-v1-ui-website/site/` |
+| Static stack | Plain HTML/CSS/JS |
+| Language strategy | English-first, localization future/roadmap |
+| Business/legal status | Not finalized, separate discussion later |
+
+### 12.2 Blocking Decisions (Require Owner Approval)
 
 | Decision | Must Decide Before | Status |
 |----------|-------------------|--------|
-| Exact build folder | Build start | ⏳ Open |
-| Static stack (plain HTML vs Vite) | Build start | ⏳ Open |
 | DNS target/hosting location | Production deployment | ⏳ Open |
 | Staging protection method | Staging deployment | ⏳ Open |
-| Final legal language | Public launch | ⏳ Open |
+| Final legal language (Impressum, Privacy, Terms) | Public launch | ⏳ Open |
+| Contact email for site | Build start | ⏳ Open |
 
-### 12.2 Non-Blocking Decisions
+### 12.3 Non-Blocking Decisions (Can Proceed with Defaults)
 
-| Decision | Default | Status |
-|----------|---------|--------|
+| Decision | Default | Can Change Later |
+|----------|---------|------------------|
+| Mockup vs text diagrams | Text diagrams | Yes |
+| Contact form vs mailto | mailto link | Yes |
+| Demo chat shown as disabled | Shown as "Not available" | Yes |
+| Logo placeholder vs final | Placeholder | Yes |
+| Multilingual support | English-only for V1 | Yes |
+
+### 12.4 Decisions That Can Wait
+
+| Decision | Can Wait Until |
+|----------|----------------|
+| Exact file/storage limits | After launch |
+| Pricing wording | After launch |
+| Demo chat enablement | Separate project |
+| Invite login implementation | Separate project |
+| Localization | Based on traffic data |
+
+---
+
+## 13. Scalability and Traffic Architecture
+
+### 13.1 Beyond One Ubuntu Box
+
+This plan thinks beyond a single Ubuntu server:
+
+| Consideration | Approach |
+|---------------|----------|
+| Static assets behind Cloudflare | Yes, for V1 |
+| Separate app/backend from website | Future stage |
+| No unbounded uploads on local disk | Yes, never |
+| Object storage or separate file storage | Future stage |
+| Multiple backend origins | Future stage |
+| Health checks | Future stage |
+| Load balancing / traffic steering | Future stage |
+| Staging separate from production | Yes, required |
+
+### 13.2 Staged Architecture
+
+**Stage 0: Static Local Preview**
+- Build HTML/CSS/JS locally
+- Preview on localhost
+- No network deployment
+- No DNS changes
+
+**Stage 1: Protected Staging**
+- Deploy to staging.weslr.de
+- Password/IP protection required
+- No public access
+- No search engine indexing
+- Owner review before production
+
+**Stage 2: Public Static Site**
+- Deploy to weslr.de
+- Configure www.weslr.de redirect
+- Static assets via Cloudflare
+- No app/backend yet
+
+**Stage 3: Invite-Only App/Backend (Separate)**
+- Separate from public website
+- app.weslr.de or chat.weslr.de
+- Invite-only pilot
+- Not part of V1 static website
+
+**Stage 4: Object Storage + Backup/Retention**
+- If file storage needed later
+- Separate from web server
+- Backup/retention policy defined
+- Not part of V1
+
+**Stage 5: Multiple Origins/Load Balancing**
+- If traffic grows beyond single server
+- Requires traffic data first
+- Requires cost/benefit analysis
+- Not part of V1
+
+**Stage 6: Regional/Localized Expansion**
+- If international traffic justifies
+- Requires traffic/language data
+- Requires localization approval
+- Not part of V1
+
+### 13.3 Traffic Observation
+
+**Before buying another server, measure:**
+
+| Metric | Tool |
+|--------|------|
+| Visits | Cloudflare Analytics |
+| Countries/languages | Cloudflare Analytics |
+| Page engagement | Cloudflare Analytics |
+| Pilot requests | Form submissions |
+| Bandwidth | Cloudflare Analytics |
+| Failed requests | Cloudflare Analytics |
+| Bot/spam traffic | Cloudflare Analytics |
+| App/backend usage | If enabled later |
+
+**Cloudflare Analytics Rules:**
+- Use scoped WESLR token only
+- Read-only access
+- No DNS/tunnel writes
+- No changes without owner approval
+
+### 13.4 Scaling Triggers
+
+| Trigger | Action |
+|---------|--------|
+| Traffic exceeds single server capacity | Evaluate Stage 5 |
+| International traffic > 20% | Evaluate localization |
+| Pilot requests exceed capacity | Evaluate backend scaling |
+| Storage needs exceed local disk | Evaluate object storage |
+
+---
+
+## 14. Staging Protection Methods
+
+### 14.1 Possible Methods (Not Implemented Yet)
+
+| Method | Pros | Cons |
+|--------|------|------|
+| HTTP Basic Auth | Simple, widely supported | Credentials in URL, shared password |
+| Cloudflare Access | No password management | Requires Cloudflare plan |
+| IP Restriction | No password needed | Must know all IPs, dynamic IPs |
+| VPN Required | High security | Requires VPN infrastructure |
+| Obscure URL | Simple | Not real security |
+
+### 14.2 Implementation Rules
+
+**If password or access protection is needed:**
+- Nova must ask owner at that moment
+- Do NOT invent or commit passwords
+- Do NOT print secrets
+- Do NOT store secrets in repo
+- Store credentials in local secrets file only
+
+### 14.3 Staging Protection Approval
+
+| Action | Owner Approval Required |
+|--------|------------------------|
+| Choose protection method | **Yes** |
+| Set up password/auth | **Yes** |
+| Configure IP restrictions | **Yes** |
+| Deploy to staging | **Yes** |
+
+---
+
+## 15. Proposed Implementation Lane
 | Mockup screenshots vs text diagrams | Text diagrams | ⏳ Open |
 | Contact form vs mailto link | mailto link | ⏳ Open |
 | Demo chat shown as disabled | Shown as "Not available" | ⏳ Open |
@@ -712,33 +918,35 @@ Staging DNS configuration:
 
 ## 13. Proposed Implementation Lane
 
-### 13.1 Lane Name
+## 15. Proposed Implementation Lane
+
+### 15.1 Lane Name
 
 `BUILD_OCW_WESLR_V1_STATIC_WEBSITE_PREVIEW_V1`
 
-### 13.2 Lane Scope
+### 15.2 Lane Scope
 
 | In Scope | Out of Scope |
 |----------|--------------|
 | Build static HTML/CSS/JS | Backend services |
-| Create all 12 pages | Database/storage |
+| Create all 15 pages | Database/storage |
 | Implement logo/visuals | User authentication |
 | Local preview | Production deployment |
 | Staging deployment (after approval) | DNS changes (without approval) |
 | Legal placeholders | Final legal text (owner provides) |
 
-### 13.3 Lane Prerequisites
+### 15.3 Lane Prerequisites
 
 Before implementation:
-- [ ] Owner approves build folder
-- [ ] Owner approves static stack
+- [x] Owner approves build folder → **Decided: `/home/pr0/projects/weslr-v1-ui-website/site/`**
+- [x] Owner approves static stack → **Decided: Plain HTML/CSS/JS**
 - [ ] Owner approves logo direction
 - [ ] Owner approves claim rules
 - [ ] Owner approves staging protection method
 - [ ] Owner provides contact email
 - [ ] Owner provides or approves legal placeholders
 
-### 13.4 Lane Dependencies
+### 15.4 Lane Dependencies
 
 | Dependency | Owner Action |
 |------------|--------------|
@@ -750,9 +958,9 @@ Before implementation:
 
 ---
 
-## 14. Validation Plan for Future Build
+## 16. Validation Plan for Future Build
 
-### 14.1 Pre-Deployment Validation
+### 16.1 Pre-Deployment Validation
 
 | Check | Method |
 |-------|--------|
@@ -765,7 +973,7 @@ Before implementation:
 | No runtime changes | Verify no weslr/chat_responder.py edits |
 | No main.py changes | Verify no weslr/main.py edits |
 
-### 14.2 Pre-Staging Validation
+### 16.2 Pre-Staging Validation
 
 | Check | Method |
 |-------|--------|
@@ -776,7 +984,7 @@ Before implementation:
 | Disclaimer visible | Manual review |
 | Staging protection configured | Manual verification |
 
-### 14.3 Pre-Production Validation
+### 16.3 Pre-Production Validation
 
 | Check | Method |
 |-------|--------|
@@ -786,7 +994,7 @@ Before implementation:
 | No process changes | Verify processes still running |
 | No secrets committed | Grep for secrets in git |
 
-### 14.4 Post-Deployment Validation
+### 16.4 Post-Deployment Validation
 
 | Check | Method |
 |-------|--------|
@@ -798,7 +1006,7 @@ Before implementation:
 
 ---
 
-## 15. Validation Commands
+## 17. Validation Commands
 
 ```bash
 # Validate no Python syntax errors
@@ -811,6 +1019,49 @@ python3 weslr/tests/release_gate_v1.py
 bash scripts/weslr_release_check.sh
 
 # Verify chat_responder.py unchanged
+git diff --quiet HEAD -- weslr/chat_responder.py
+
+# Verify main.py unchanged
+git diff --quiet HEAD -- weslr/main.py
+```
+
+---
+
+## 18. Boundary Confirmations
+
+- This is build plan only ✅
+- No website code implemented ✅
+- No site/ folder created ✅
+- No weslr-ui/ changes ✅
+- No dashboard changes ✅
+- No runtime changes ✅
+- No processes stopped ✅
+- No cronjobs deleted ✅
+- No DNS changes ✅
+- No Cloudflare tunnel changes ✅
+- No secrets committed ✅
+- e-qubs.de untouched ✅
+- plantdelux.ro untouched ✅
+- weslr/chat_responder.py unchanged ✅
+- weslr/main.py unchanged ✅
+
+---
+
+## 19. Recommended Next Lane
+
+`REVIEW_OCW_WESLR_V1_STATIC_WEBSITE_BUILD_PLAN_V1`
+
+---
+
+## 20. Document Status
+
+**Status:** Build plan only — no implementation
+**Implementation:** Requires owner approval
+**Changes Made:** Documentation update only
+
+---
+
+*End of WESLR V1 Static Website Build Plan V1*
 git diff --quiet HEAD -- weslr/chat_responder.py
 
 # Verify main.py unchanged
