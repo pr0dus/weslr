@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /pilot/
+
+Sitemap: https://weslr.de/sitemap.xml
