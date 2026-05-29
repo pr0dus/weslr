@@ -12500,6 +12500,9 @@ _response_fit_engine_boundary_review_required_markers = {
 }
 
 
+_response_fit_engine_helpers_path = "weslr/response_fit_engine_helpers.py"
+_response_fit_engine_helpers_test_path = "weslr/tests/test_response_fit_engine_helpers_v1.py"
+
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_multiturn_continuity_pressure_test_phase_c_40_doc,
@@ -12655,6 +12658,8 @@ def _check_git_scope():
         the approved response fit engine boundary markers are present
       - docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_REVIEW_V1.md only when
         the approved response fit engine boundary review markers are present
+      - weslr/response_fit_engine_helpers.py only when the approved response fit engine helper design markers are present
+      - weslr/tests/test_response_fit_engine_helpers_v1.py only when the approved response fit engine helper test markers are present
       - docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md only when
         the approved controlled safe non-model observation lane V2 design markers are present
       - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
@@ -14148,6 +14153,10 @@ def _check_git_scope():
             allowed = _response_fit_engine_boundary_review_doc_is_valid()
             if not allowed:
                 violations.append(f"  response fit engine boundary review doc missing required markers: {path}")
+        if path == _response_fit_engine_helpers_path:
+            allowed = True
+        if path == _response_fit_engine_helpers_test_path:
+            allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
