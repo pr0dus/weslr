@@ -12474,6 +12474,21 @@ _unknown_engine_graded_friction_response_levels_required_markers = {
     "REVIEW_UNKNOWN_ENGINE_GRADED_FRICTION_RESPONSE_LEVELS_V1",
 }
 
+_response_fit_engine_boundary_doc = "docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_V1.md"
+_response_fit_engine_boundary_required_markers = {
+    "WESLR Response Fit Engine Boundary V1",
+    "internal-only",
+    "metadata-only",
+    "non-public",
+    "no runtime authority",
+    "no final-answer authority",
+    "no deception / Turing-passing claim",
+    "no stereotype engine",
+    "no manipulation engine",
+    "no template engine",
+    "REVIEW_WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_V1",
+}
+
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -12507,6 +12522,13 @@ def _unknown_engine_graded_friction_response_levels_doc_is_valid():
     return _doc_with_markers_is_valid(
         _unknown_engine_graded_friction_response_levels_doc,
         _unknown_engine_graded_friction_response_levels_required_markers,
+    )
+
+
+def _response_fit_engine_boundary_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _response_fit_engine_boundary_doc,
+        _response_fit_engine_boundary_required_markers,
     )
 
 
@@ -12612,6 +12634,8 @@ def _check_git_scope():
         the approved UNKNOWN ENGINE friction test against repeatability learning boundary markers are present
       - docs/WESLR_UNKNOWN_ENGINE_GRADED_FRICTION_RESPONSE_LEVELS_V1.md only when
         the approved UNKNOWN ENGINE graded friction response levels markers are present
+      - docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_V1.md only when
+        the approved response fit engine boundary markers are present
       - docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md only when
         the approved controlled safe non-model observation lane V2 design markers are present
       - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
@@ -14097,6 +14121,10 @@ def _check_git_scope():
             allowed = _unknown_engine_graded_friction_response_levels_doc_is_valid()
             if not allowed:
                 violations.append(f"  UNKNOWN ENGINE graded friction response levels doc missing required markers: {path}")
+        if path == _response_fit_engine_boundary_doc:
+            allowed = _response_fit_engine_boundary_doc_is_valid()
+            if not allowed:
+                violations.append(f"  response fit engine boundary doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
