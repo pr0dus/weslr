@@ -419,14 +419,19 @@ body {
   cursor: pointer;
   z-index: 110;
   position: relative;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
   .mobile-nav-toggle {
-    display: block;
+    display: flex;
   }
   
   .nav {
+    display: none;
     position: fixed;
     top: 64px;
     left: 0;
@@ -435,31 +440,38 @@ body {
     background-color: var(--color-bg-primary);
     flex-direction: column;
     padding: var(--spacing-xl);
-    gap: var(--spacing-md);
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    padding-top: var(--spacing-lg);
+    gap: var(--spacing-sm);
     z-index: 105;
     overflow-y: auto;
   }
   
   .nav.open {
-    transform: translateX(0);
+    display: flex;
   }
   
-  .nav.open .nav-link,
-  .nav.open .btn {
+  .nav .nav-link {
     display: block;
     padding: var(--spacing-md);
     font-size: var(--font-size-body);
     text-align: left;
     border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    background-color: transparent;
+    transition: background-color 0.15s;
   }
   
-  .nav.open .nav-link:hover {
+  .nav .nav-link:hover,
+  .nav .nav-link:active {
     background-color: var(--color-bg-elevated);
   }
   
-  .nav.open .btn {
+  .nav .nav-link-active {
+    color: var(--color-accent-primary);
+  }
+  
+  .nav .btn {
+    display: block;
     margin-top: var(--spacing-md);
     text-align: center;
   }
