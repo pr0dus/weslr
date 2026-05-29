@@ -12489,6 +12489,16 @@ _response_fit_engine_boundary_required_markers = {
     "REVIEW_WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_V1",
 }
 
+_response_fit_engine_boundary_review_doc = "docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_REVIEW_V1.md"
+_response_fit_engine_boundary_review_required_markers = {
+    "WESLR Response Fit Engine Boundary V1 — Review",
+    "review-only",
+    "no implementation",
+    "no runtime/public/voice/final-answer/official-claim work",
+    "response_fit_engine_boundary_valid_ready_for_helper_implementation",
+    "IMPLEMENT_WESLR_RESPONSE_FIT_ENGINE_HELPERS_V1",
+}
+
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -12529,6 +12539,13 @@ def _response_fit_engine_boundary_doc_is_valid():
     return _doc_with_markers_is_valid(
         _response_fit_engine_boundary_doc,
         _response_fit_engine_boundary_required_markers,
+    )
+
+
+def _response_fit_engine_boundary_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _response_fit_engine_boundary_review_doc,
+        _response_fit_engine_boundary_review_required_markers,
     )
 
 
@@ -12636,6 +12653,8 @@ def _check_git_scope():
         the approved UNKNOWN ENGINE graded friction response levels markers are present
       - docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_V1.md only when
         the approved response fit engine boundary markers are present
+      - docs/WESLR_RESPONSE_FIT_ENGINE_BOUNDARY_REVIEW_V1.md only when
+        the approved response fit engine boundary review markers are present
       - docs/WESLR_DESIGN_CONTROLLED_SAFE_NON_MODEL_OBSERVATION_LANE_V2.md only when
         the approved controlled safe non-model observation lane V2 design markers are present
       - docs/WESLR_DESIGN_TRANSITION_FROM_MOCKED_OBSERVATION_TO_LIVE_SLICE_GOVERNANCE_V1.md only when
@@ -14125,6 +14144,10 @@ def _check_git_scope():
             allowed = _response_fit_engine_boundary_doc_is_valid()
             if not allowed:
                 violations.append(f"  response fit engine boundary doc missing required markers: {path}")
+        if path == _response_fit_engine_boundary_review_doc:
+            allowed = _response_fit_engine_boundary_review_doc_is_valid()
+            if not allowed:
+                violations.append(f"  response fit engine boundary review doc missing required markers: {path}")
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
             if not tier_0_2_math_challenge_readiness_doc_valid:
