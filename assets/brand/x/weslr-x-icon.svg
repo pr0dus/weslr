@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!-- WESLR X Platform Profile Icon -->
+  <!-- Background -->
+  <rect width="400" height="400" fill="#0D1117"/>
+  
+  <!-- W Mark - Minimal W-oar/vessel shape -->
+  <g transform="translate(200, 200)">
+    <!-- Left oar stroke -->
+    <path d="M-80,-60 L-50,-40 L-30,60 L-50,80 L-70,60 L-60,0 Z" 
+          fill="#388BFF" opacity="0.9"/>
+    
+    <!-- Right oar stroke -->
+    <path d="M80,-60 L50,-40 L30,60 L50,80 L70,60 L60,0 Z" 
+          fill="#388BFF" opacity="0.9"/>
+    
+    <!-- Center hull/vessel curve -->
+    <path d="M-30,60 Q0,90 30,60 L20,20 Q0,35 -20,20 Z" 
+          fill="#388BFF"/>
+    
+    <!-- Governance dot -->
+    <circle cx="0" cy="-70" r="12" fill="#388BFF"/>
+  </g>
+</svg>
