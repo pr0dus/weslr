@@ -1,7 +1,8 @@
 # WESLR Protected Chat Workflow Review V1
 
 **Date:** 2026-05-30  
-**Status:** protected_chat_runtime_analysis_needed  
+**Status:** protected_chat_not_ready_runtime_missing  
+**Judgment:** Chat interface not running — serves static landing page instead  
 **Branch:** ocw-weslr-v1-ui-20260529
 
 ---
@@ -367,6 +368,140 @@ The prompts would need to be run against the chat interface after it's started:
 
 ---
 
-**Status:** Investigation complete — chat interface not running  
+---
+
+## Bring-Up Attempt Results
+
+### What Was Attempted
+
+| Action | Result |
+|--------|--------|
+| Start chat_ui.py on port 8081 | ✅ Started |
+| Test /api/state endpoint | ✅ Returns state |
+| Test /api/send endpoint | ❌ Import error |
+
+### Error Encountered
+
+```
+Error: cannot import name 'handle_direct_message' from 'dialogue'
+File: /home/pr0/projects/weslr/chat_ui.py, line 816-817
+```
+
+### Test Prompt Observations
+
+| Prompt | Responded | Response |
+|--------|-----------|----------|
+| "What is WESLR?" | ❌ | Import error |
+| "Explain your current status..." | ❌ | Import error |
+| "Help me plan the next safe step..." | ❌ | Import error |
+| "If I ask you to upload a file..." | ❌ | Import error |
+| "What do you remember..." | ❌ | Import error |
+
+**Note:** Chat backend runs but all messages return the same import error. No actual WESLR responses are generated.
+
+---
+
+## Workflow Gaps
+
+| Gap | Description |
+|-----|-------------|
+| Broken import | `handle_direct_message` missing from `dialogue.py` |
+| Frontend not built | `weslr-ui` needs `npm install && npm run build` |
+| Backend not integrated | `chat_ui.py` calls missing function |
+| nginx routes to static | `chat.weslr.de` serves marketing page, not chat |
+
+---
+
+## Response Gaps
+
+| Gap | Description |
+|-----|-------------|
+| No WESLR responses | Backend returns import error, not actual responses |
+| No model calls | Import fails before LLM is invoked |
+| No conversation | Cannot maintain conversation context |
+| No continuity | No artifact/memory features |
+
+---
+
+## Safety Gaps
+
+| Check | Status |
+|-------|--------|
+| File upload | ⚠️ Code has upload handling in backend contract |
+| Payment | ✅ No payment processing in codebase |
+| Marketplace | ✅ No marketplace features |
+| Account creation | ✅ No account system |
+| External API calls | ⚠️ Would use Ollama (configured but not reached) |
+
+**Note:** File upload code exists in `weslr_backend_contract.py` but is not exposed via HTTP. The static landing page has no upload functionality.
+
+---
+
+## Readiness Assessment
+
+### Ready for Owner-Only Testing?
+
+**NO** — Chat backend is broken (import error). `chat.weslr.de` serves static marketing page, not chat interface.
+
+### Ready for External Testers?
+
+**NO** — Chat interface is not functional. Static landing page is served instead.
+
+---
+
+## Confirmations
+
+| Item | Confirmation |
+|------|--------------|
+| No public pilot enabled | ✅ Confirmed — `chat.weslr.de` is password-protected static page |
+| No uploads enabled | ✅ Confirmed — Static page has no upload, backend not exposed |
+| No payments enabled | ✅ Confirmed — No payment code in codebase |
+| No marketplace enabled | ✅ Confirmed — No marketplace features |
+| No e-qubs changes | ✅ Confirmed — No changes to e-qubs.de or port 8097 |
+| No PlantDelux changes | ✅ Confirmed — No changes to plantdelux.ro or port 8083 |
+| No secrets committed | ✅ Confirmed — No secrets in commits |
+| No nginx changes | ✅ Confirmed — nginx config unchanged |
+| No Cloudflare changes | ✅ Confirmed — tunnel config unchanged |
+
+---
+
+## Services State
+
+| Service | Port | Status |
+|---------|------|--------|
+| weslr-landing (static) | 8081 | Running |
+| weslr-v1-ui-website (static) | 8089 | Running |
+| plantdelux | 8083 | Running |
+| inbound-email | 8085 | Running |
+| e-qubs | 8097 | Running |
+| nginx | 8080 | Running |
+| chat_ui.py | — | Started then stopped (broken) |
+| weslr-ui (React) | — | Not built |
+
+---
+
+## Final Judgment
+
+**protected_chat_not_ready_runtime_missing**
+
+### Reason
+
+1. `chat.weslr.de` serves static marketing page, not chat interface
+2. Chat backend (`chat_ui.py`) has broken import — `handle_direct_message` missing from `dialogue.py`
+3. Chat frontend (`weslr-ui`) not built
+4. All test prompts return import error, no WESLR responses possible
+
+### What Would Be Needed
+
+1. Fix code: Add `handle_direct_message` to `dialogue.py` or fix import
+2. Build frontend: `npm install && npm run build` in weslr-ui
+3. Start backend: chat_ui.py on dedicated port (after fix)
+4. Update nginx: Route chat.weslr.de to chat backend
+
+**Per constraints:** Implementation changes require owner approval.
+
+---
+
+**Status:** Bring-up attempt complete — runtime broken  
 **Judgment:** protected_chat_not_ready_runtime_missing  
 **Next Lane:** OWNER_DECISION_REQUIRED
