@@ -145,7 +145,7 @@ All legal pages correctly show "Draft" or "Pending" status where applicable.
 
 ### Immediate (Before Public Launch)
 
-1. **Impressum** — Not complete, needs update
+1. ~~**Impressum**~~ — ✅ COMPLETE (updated 2026-05-30)
 2. **Terms of Use** — Not complete, needs update
 3. **Commercial License** — Not complete, needs update
 

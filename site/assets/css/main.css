@@ -538,3 +538,85 @@ body {
 .mt-2 { margin-top: var(--spacing-md); }
 .mt-3 { margin-top: var(--spacing-lg); }
 .mt-4 { margin-top: var(--spacing-xl); }
+/* Legal Content Scroll Box */
+.legal-scroll-box {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-bg-surface);
+  line-height: 1.7;
+}
+
+.legal-scroll-box h2 {
+  color: var(--color-text-primary);
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+  font-size: var(--font-size-h3);
+}
+
+.legal-scroll-box h3 {
+  color: var(--color-text-primary);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-h4);
+}
+
+.legal-scroll-box p {
+  margin-bottom: var(--spacing-md);
+}
+
+.legal-scroll-box ul,
+.legal-scroll-box ol {
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-xl);
+}
+
+.legal-scroll-box li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.legal-scroll-box table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--spacing-md) 0;
+}
+
+.legal-scroll-box th,
+.legal-scroll-box td {
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm);
+  text-align: left;
+}
+
+.legal-scroll-box th {
+  background-color: var(--color-bg-primary);
+  font-weight: 600;
+}
+
+.legal-scroll-box code {
+  background-color: var(--color-bg-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Mobile scroll box adjustment */
+@media (max-width: 768px) {
+  .legal-scroll-box {
+    max-height: 60vh;
+    padding: var(--spacing-md);
+  }
+  
+  .legal-scroll-box h2 {
+    font-size: var(--font-size-h4);
+  }
+  
+  .legal-scroll-box h3 {
+    font-size: var(--font-size-body);
+  }
+}
