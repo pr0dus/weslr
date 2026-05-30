@@ -109,12 +109,10 @@ from weslr.response_formatter import build_deterministic_response
 |------|--------|
 | Cloudflare tunnel | ✅ Routes chat.weslr.de to port 8080 |
 | nginx on port 8080 | ✅ Receives chat.weslr.de requests |
-| nginx auth_basic | ✅ Password protected |
-| Current backend | Static site on port 8089 |
-| Required change | Route to port 8092 |
-| Requires sudo | ⚠️ Yes |
+| nginx auth_basic | ✅ Password protected (username: weslr) |
+| Backend | ✅ Now routes to port 8092 (non-model workflow) |
 
-**Current nginx config:**
+**nginx config applied:**
 ```nginx
 # chat.weslr.de - Password-protected interface
 server {
@@ -124,19 +122,13 @@ server {
     auth_basic_user_file /etc/nginx/.htpasswd-weslr-staging;
     
     location / {
-        # Currently serves static site
-        proxy_pass http://127.0.0.1:8089;  # <-- Need to change to 8092
+        # Protected non-model workflow server
+        proxy_pass http://127.0.0.1:8092;
     }
 }
 ```
 
-**Required change:**
-```nginx
-    location / {
-        # Protected non-model workflow server
-        proxy_pass http://127.0.0.1:8092;  # <-- Change to non-model server
-    }
-```
+**nginx backup:** `/etc/nginx/conf.d/weslr-unified-8080.conf.bak.20260530-chat-nonmodel`
 
 ---
 
@@ -353,4 +345,108 @@ curl -u user:pass https://chat.weslr.de/api/state
 
 ---
 
-**Report saved:** `/home/pr0/projects/weslr-v1-ui-website/docs/WESLR_PROTECTED_NON_MODEL_WORKFLOW_SURFACE_REPORT_V1.md`
+## 14. Live Verification Results
+
+### chat.weslr.de Status
+
+| Test | Result |
+|------|--------|
+| Unauthenticated access | ✅ HTTP 401 |
+| Authenticated access | ✅ Shows no-model workflow preview |
+| Page label | ✅ "⚠️ No Model Provider Active" |
+| Page disclaimer | ✅ "This is NOT public pilot. For owner testing only." |
+
+### Other Sites Verified
+
+| Site | Status |
+|------|--------|
+| weslr.de | ✅ HTTP 200 (static site) |
+| www.weslr.de | ✅ HTTP 301 → weslr.de |
+| staging.weslr.de | ✅ HTTP 401 (password protected) |
+| e-qubs.de | ✅ HTTP 200 (untouched) |
+| plantdelux.ro | ✅ HTTP 200 (untouched) |
+
+### Test Prompts via chat.weslr.de (Authenticated)
+
+| Prompt | Responded | Path | No Model | Overclaim | Public Pilot | Upload/Payment |
+|--------|-----------|------|----------|-----------|-------------|-----------------|
+| "What is WESLR?" | ✅ | system_definition_query | ✅ | ❌ No | ❌ No | N/A |
+| "What is your current status?" | ✅ | state_checkpoint_query | ✅ | ❌ No | ❌ No | N/A |
+| "What are you not allowed to claim?" | ✅ | self_identity | ✅ | ❌ No | ❌ No | N/A |
+| "What should happen if I ask for upload, payment, or marketplace?" | ✅ | upload_payment_marketplace_boundary | ✅ | ❌ No | ❌ No | ❌ Not active |
+| "Explain optional user-configured model providers." | ✅ | model_provider_explanation | ✅ | ❌ No | ❌ No | N/A |
+
+### Response Quality Assessment
+
+| Criterion | Assessment |
+|-----------|------------|
+| Useful for owner workflow review | ✅ Yes — clear system identity, boundaries, status |
+| Too canned/stale | ⚠️ Somewhat scripted but accurate — deterministic responses by design |
+| Accurate boundaries | ✅ Yes — no AGI claim, no learning from users, no autonomy |
+| Model/provider calls | ❌ Confirmed: NO model calls |
+| Secrets committed | ❌ Confirmed: NO secrets |
+| DNS/tunnel changes | ❌ Confirmed: NO changes after owner correction |
+
+---
+
+## 15. Final Status
+
+**`protected_non_model_workflow_ready_for_owner_review`**
+
+### Summary
+
+| Item | Status |
+|------|--------|
+| No-model server running | ✅ Port 8092, PID 2730523 |
+| nginx routing | ✅ chat.weslr.de → 8092 |
+| Basic Auth | ✅ Active on chat.weslr.de |
+| Test prompts | ✅ All 5 working |
+| No model/provider calls | ✅ Confirmed |
+| No overclaims | ✅ Confirmed |
+| No secrets committed | ✅ Confirmed |
+| Other sites untouched | ✅ Confirmed |
+| Ready for owner review | ✅ Yes |
+| Ready for external testers | ❌ NO — password protected, not public pilot |
+
+### Not Ready for External Testers
+
+This protected workflow surface is NOT ready for external testers:
+
+1. **Password protected** — requires authentication
+2. **No model provider** — deterministic responses only
+3. **Not public pilot** — clearly labeled as owner testing only
+4. **Limited coverage** — deterministic handlers only, fallback for unmatched prompts
+5. **No uploads/payments/marketplace** — features not active
+
+---
+
+## 16. Rollback Instructions
+
+```bash
+# Restore nginx to static site
+sudo cp /etc/nginx/conf.d/weslr-unified-8080.conf.bak.20260530-chat-nonmodel /etc/nginx/conf.d/weslr-unified-8080.conf
+sudo nginx -t && sudo systemctl reload nginx
+
+# Stop non-model server
+pkill -f protected_non_model_workflow_server.py
+
+# Verify chat.weslr.de returns to static site
+curl -I https://chat.weslr.de/  # Should return 401
+```
+
+---
+
+## 17. Remaining Gaps
+
+1. **Limited prompt coverage** — Only deterministic handlers; unmatched prompts get fallback response
+2. **No conversation memory** — Each request is independent
+3. **No evidence/provenance display** — No artifact linking yet
+4. **No governance controls visible** — ISS/proposals not exposed in this surface
+5. **No model provider** — By design, but limits conversational depth
+
+These gaps are acceptable for owner workflow review but should be documented for future enhancement decisions.
+
+---
+
+**Report updated:** 2026-05-30 22:06 CEST  
+**Final status:** protected_non_model_workflow_ready_for_owner_review
