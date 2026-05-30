@@ -1,7 +1,7 @@
 # WESLR V1 Legal Pages Update Report V1
 
 **Date:** 2026-05-30  
-**Status:** LEGAL_PAGES_UPDATED_FOR_OWNER_REVIEW  
+**Status:** ALL_FOUR_LEGAL_PAGES_COMPLETE  
 **Branch:** ocw-weslr-v1-ui-20260529
 
 ---
@@ -42,6 +42,13 @@ WESLR befindet sich in Entwicklung. Öffentliche Selbstregistrierung, öffentlic
 ### 3. Commercial License / License Terms
 **Source:** `/home/pr0/.openclaw/media/inbound/WESLR_COMMERCIAL_LICENSE_TERMS_DRAFT_V1---c19a411e-0a4d-4741-8af3-542efe4c3ec8.md`
 
+### 4. Terms of Use
+**Source:** `/home/pr0/.openclaw/media/inbound/WESLR_Terms_of_Use_Draft_owner_legal_review---840975f9-ffe9-4eaa-9b7a-d6c7bf1c7160.md`
+
+- Draft version: 0.1
+- Last updated: 30 May 2026
+- Status: Draft for owner/legal review
+
 - Draft version: V1
 - Draft date: 30 May 2026
 - Status: Draft for owner/legal review before public announcement
@@ -55,6 +62,8 @@ WESLR befindet sich in Entwicklung. Öffentliche Selbstregistrierung, öffentlic
 |------|--------|---------|
 | `site/privacy/index.html` | Updated | +676 lines, -23 lines (full privacy policy) |
 | `site/impressum/index.html` | Updated | +45 lines, -31 lines (owner-provided content) |
+| `site/license/index.html` | Updated | +483 lines, -25 lines (full commercial license) |
+| `site/terms/index.html` | Updated | +446 lines, -18 lines (full terms of use) |
 | `site/license/index.html` | Updated | +483 lines, -25 lines (full commercial license) |
 
 ---
@@ -189,7 +198,9 @@ WESLR befindet sich in Entwicklung. Öffentliche Selbstregistrierung, öffentlic
 | ~~Impressum~~ | ✅ Complete |
 | ~~Privacy Policy~~ | ✅ Complete |
 | ~~Commercial License~~ | ✅ Complete |
-| Terms of Use | ⏳ Pending — needs update |
+| ~~Terms of Use~~ | ✅ Complete |
+
+**All four core legal pages are now complete.**
 
 ### Before Feature Activation
 
@@ -236,20 +247,80 @@ https://weslr.de/license/ → HTTP/2 200 OK ✅
 
 ---
 
+## Terms of Use Page Status
+
+**URL:** https://weslr.de/terms/  
+**HTTP Status:** 200 OK  
+**Last Modified:** Sat, 30 May 2026 08:57:26 GMT
+
+### Content Verification
+
+| Check | Status |
+|-------|--------|
+| Draft status shown | ✅ "Draft for owner/legal review" |
+| Provider/Contact | ✅ Chirodea-Rosca Arthur-Robert, e-qubs, Mitterfeld 3, 87719 Mindelheim |
+| Contact email | ✅ contact@weslr.de |
+| Private Gmail hidden | ✅ Not present in HTML |
+| VAT ID | ✅ Correctly omitted |
+| Current status table | ✅ Included with all status entries |
+| Minimum age | ✅ 16+ |
+| Inactivity deletion | ✅ 6 months |
+| Public Explanation, Private Implementation | ✅ Key principle stated |
+| No warranty | ✅ Section 23 clearly stated |
+| Liability section | ✅ Section 24 with German law note |
+| Consumer rights placeholder | ✅ Section 26 |
+| Governing law | ✅ Germany (Section 27) |
+
+### Key Sections (29 total)
+
+1. Introduction and Scope
+2. Provider and Contact
+3. Current Service Status
+4. Eligibility and Minimum Age
+5. Access and Accounts
+6. Acceptable Use
+7. User Content
+8. License from User to WESLR
+9. Artifacts and Ownership
+10. Marketplace Terms Placeholder
+11. Uploaded Files
+12. AI/Model Provider Configuration
+13. AI Outputs and No Professional Advice
+14. Governance, Operator Approvals, and Controlled Actions
+15. Payments and Subscriptions
+16. Availability and Changes
+17. Beta and Pilot Status
+18. Intellectual Property
+19. Privacy
+20. Confidentiality and Private Implementation
+21. Termination and Deletion
+22. Third-Party Services
+23. Disclaimers
+24. Limitation of Liability
+25. Indemnity and User Responsibility
+26. Consumer Rights, Withdrawal, and Digital Content
+27. Dispute Resolution and Governing Law
+28. Changes to These Terms
+29. Contact
+
+---
+
 ## Git Commits
 
 ```
+8725a32 WESLR: update Terms of Use page with draft V1
+118e4fb WESLR: add legal pages update report V1
 fee0bc9 WESLR: update Commercial License / License Terms page with draft V1
+459ffa6 WESLR: add privacy policy and Impressum update report
 d069b77 WESLR: update Impressum with owner-provided content
 0ac302d WESLR: update privacy policy legal page
-459ffa6 WESLR: add privacy policy and Impressum update report
 ```
 
 ---
 
 ## Summary
 
-All three legal pages have been updated with owner-provided content:
+All four legal pages have been updated with owner-provided content:
 
 1. **Privacy Policy** — Full draft v5 (30 May 2026)
    - All 29 sections preserved
@@ -273,14 +344,38 @@ All three legal pages have been updated with owner-provided content:
    - Liability section with German law note
    - Draft status shown at top
 
+4. **Terms of Use** — Full draft V1 (30 May 2026)
+   - All 29 sections preserved
+   - Current status table included
+   - Minimum age 16+
+   - Inactivity deletion 6 months
+   - Acceptable use policy
+   - No warranty section
+   - Liability section with German law note
+   - Consumer rights placeholder
+   - Draft status shown at top
+
+---
+
+## All Core Legal Pages Complete
+
+**Status:** ALL_FOUR_LEGAL_PAGES_COMPLETE
+
+The following legal pages are now ready for owner/legal review:
+- Privacy Policy
+- Impressum
+- Commercial License
+- Terms of Use
+
 ---
 
 ## Remaining Work
 
-1. **Terms of Use** — needs update
+1. ~~Terms of Use~~ — ✅ Complete
 2. Cloudflare Analytics technical verification (before activation)
 3. Pilot Terms (before pilot accounts)
 4. Payment/subscription terms (before payments)
+5. Marketplace Terms (before marketplace launch)
 
 ---
 
