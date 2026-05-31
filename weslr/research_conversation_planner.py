@@ -16,10 +16,12 @@ from typing import Any, Iterable, Mapping, Sequence
 
 from weslr.broad_topic_domain_intake import (
     BroadTopicDomainIntake,
+    build_broad_topic_domain_intake_v1,
     build_initial_broad_topic_domain_intake_examples_v1,
     classify_broad_topic_domain_v1,
     validate_broad_topic_domain_intake_v1,
 )
+from weslr.broad_topic_ontology import build_broad_topic_ontology_packet_v1
 
 HELPER_TYPE_V1 = "research_conversation_planner_helper_v1"
 PLAN_TYPE_V1 = "research_conversation_plan_v1"
@@ -95,6 +97,18 @@ UNSAFE_DEPLOYMENT_TERMS_V1 = {"covert", "deploy", "deployment", "track", "tracki
 CONSENT_TERMS_V1 = {"consent", "consented", "lawful", "lawfully", "authorized", "permission", "ethical", "ethically", "approved", "opt in", "opt-in"}
 PRIVACY_BOUNDARY_TERMS_V1 = {"privacy", "surveillance", "tracking", "biometric", "location", "monitoring", "human sensing", "rf", "wifi"}
 SAFETY_BOUNDARY_TERMS_V1 = {"safety", "electrical", "grid", "battery", "power", "control", "hardware", "equipment", "robot", "robotics", "fault"}
+ONTOLOGY_PLAN_FIELD_NAMES_V1 = (
+    "ontology_packet_id",
+    "ontology_meta_domains",
+    "ontology_domain_families",
+    "ontology_subdomain_traits",
+    "ontology_objects_of_study",
+    "ontology_evidence_classes",
+    "ontology_risk_classes",
+    "ontology_sensitivity_classes",
+    "ontology_response_route_family",
+    "ontology_behavior_pack_candidate_labels",
+)
 
 class ValidationError(ValueError):
     pass
@@ -128,6 +142,16 @@ class ResearchConversationPlan:
     runtime_authority: bool
     writes_state: bool
     model_provider_used: bool
+    ontology_packet_id: str = ""
+    ontology_meta_domains: tuple[str, ...] = ()
+    ontology_domain_families: tuple[str, ...] = ()
+    ontology_subdomain_traits: tuple[str, ...] = ()
+    ontology_objects_of_study: tuple[str, ...] = ()
+    ontology_evidence_classes: tuple[str, ...] = ()
+    ontology_risk_classes: tuple[str, ...] = ()
+    ontology_sensitivity_classes: tuple[str, ...] = ()
+    ontology_response_route_family: str = ""
+    ontology_behavior_pack_candidate_labels: tuple[str, ...] = ()
     safe_metadata: dict[str, Any] | None = None
 
 
@@ -211,6 +235,47 @@ def _json_safe(value: Any) -> Any:
 
 
 
+def _intake_ontology_snapshot(intake: Any) -> dict[str, Any]:
+    def _seq(name: str) -> tuple[str, ...]:
+        return _normalize_sequence(getattr(intake, name, ()))
+
+    snapshot = {
+        "ontology_packet_id": _safe_text(getattr(intake, "ontology_packet_id", "")),
+        "ontology_meta_domains": _seq("ontology_meta_domains"),
+        "ontology_domain_families": _seq("ontology_domain_families"),
+        "ontology_subdomain_traits": _seq("ontology_subdomain_traits"),
+        "ontology_objects_of_study": _seq("ontology_objects_of_study"),
+        "ontology_evidence_classes": _seq("ontology_evidence_classes"),
+        "ontology_risk_classes": _seq("ontology_risk_classes"),
+        "ontology_sensitivity_classes": _seq("ontology_sensitivity_classes"),
+        "ontology_response_route_family": _safe_text(getattr(intake, "ontology_response_route_family", "")),
+        "ontology_behavior_pack_candidate_labels": _seq("ontology_behavior_pack_candidate_labels"),
+    }
+    if snapshot["ontology_packet_id"] or any(snapshot[name] for name in ONTOLOGY_PLAN_FIELD_NAMES_V1 if name != "ontology_packet_id"):
+        return snapshot
+
+    safe_metadata = getattr(intake, "safe_metadata", None)
+    if isinstance(safe_metadata, Mapping):
+        ontology = safe_metadata.get("ontology")
+        packet = ontology.get("packet") if isinstance(ontology, Mapping) else None
+        source = ontology if isinstance(ontology, Mapping) else packet if isinstance(packet, Mapping) else None
+        if isinstance(source, Mapping):
+            snapshot = {
+                "ontology_packet_id": _safe_text(source.get("ontology_id") or source.get("ontology_packet_id")),
+                "ontology_meta_domains": _normalize_sequence(source.get("meta_domains")),
+                "ontology_domain_families": _normalize_sequence(source.get("domain_families")),
+                "ontology_subdomain_traits": _normalize_sequence(source.get("subdomain_traits")),
+                "ontology_objects_of_study": _normalize_sequence(source.get("objects_of_study")),
+                "ontology_evidence_classes": _normalize_sequence(source.get("evidence_classes")),
+                "ontology_risk_classes": _normalize_sequence(source.get("risk_classes")),
+                "ontology_sensitivity_classes": _normalize_sequence(source.get("sensitivity_classes")),
+                "ontology_response_route_family": _safe_text(source.get("response_route_family")),
+                "ontology_behavior_pack_candidate_labels": _normalize_sequence(source.get("behavior_pack_candidate_labels")),
+            }
+    return snapshot
+
+
+
 def _collect_forbidden_fields(value: Any, path: str = "") -> list[str]:
     blocked: list[str] = []
     if is_dataclass(value):
@@ -263,6 +328,30 @@ def _contains_unsafe_deployment_marker(value: Any) -> bool:
 
 
 
+def _contains_unsafe_deployment_marker_in_guidance(plan: Any) -> bool:
+    if is_dataclass(plan):
+        source = asdict(plan)
+    elif isinstance(plan, Mapping):
+        source = dict(plan)
+    else:
+        return _contains_unsafe_deployment_marker(plan)
+    guidance_keys = (
+        "safe_next_steps",
+        "prototype_phase_outline",
+        "owner_questions",
+        "boundary_warnings",
+        "evidence_needed",
+        "assumptions",
+        "knowns",
+        "unknowns",
+        "friction_capture_triggers",
+        "recommended_response_mode",
+        "plan_type",
+    )
+    return any(_contains_unsafe_deployment_marker(source.get(key)) for key in guidance_keys)
+
+
+
 def _has_token(blob: str, terms: Iterable[str]) -> bool:
     text = _normalize_text(blob)
     return any(_normalize_text(term) in text for term in terms)
@@ -295,6 +384,26 @@ def _safe_metadata(
 
 
 # ---------------------------------------------------------------------------
+# Ontology helpers
+# ---------------------------------------------------------------------------
+
+
+def _ontology_context(intake: BroadTopicDomainIntake) -> dict[str, Any]:
+    return {
+        "ontology_packet_id": _safe_text(getattr(intake, "ontology_packet_id", "")),
+        "ontology_meta_domains": _normalize_sequence(getattr(intake, "ontology_meta_domains", ())),
+        "ontology_domain_families": _normalize_sequence(getattr(intake, "ontology_domain_families", ())),
+        "ontology_subdomain_traits": _normalize_sequence(getattr(intake, "ontology_subdomain_traits", ())),
+        "ontology_objects_of_study": _normalize_sequence(getattr(intake, "ontology_objects_of_study", ())),
+        "ontology_evidence_classes": _normalize_sequence(getattr(intake, "ontology_evidence_classes", ())),
+        "ontology_risk_classes": _normalize_sequence(getattr(intake, "ontology_risk_classes", ())),
+        "ontology_sensitivity_classes": _normalize_sequence(getattr(intake, "ontology_sensitivity_classes", ())),
+        "ontology_response_route_family": _safe_text(getattr(intake, "ontology_response_route_family", "")),
+        "ontology_behavior_pack_candidate_labels": _normalize_sequence(getattr(intake, "ontology_behavior_pack_candidate_labels", ())),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Domain-specific content
 # ---------------------------------------------------------------------------
 
@@ -303,8 +412,66 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
     domain = intake.domain_family
     novelty = intake.novelty_level
     intent = intake.owner_intent
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
 
-    if domain == "privacy_sensitive_technology":
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or domain in {"metamaterials", "materials_discovery", "physics", "chemistry"}:
+        knowns = (
+            "topic is frontier materials or metamaterials research",
+            "technical literature and validation criteria matter",
+        )
+        unknowns = (
+            "target property or material class",
+            "evidence gaps",
+            "validation criteria and uncertainty bounds",
+        )
+        assumptions = (
+            "high evidence need is appropriate",
+            "feasibility is not established until validated",
+        )
+    elif ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"} or domain in {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        knowns = (
+            "topic is theory of mind and conceptual mind and intelligence research",
+            "definitions and distinctions matter",
+        )
+        unknowns = (
+            "which conceptual distinction matters most",
+            "how philosophy, cognitive science, neuroscience, and AI theory differ here",
+            "which evidence gap should anchor the plan",
+        )
+        assumptions = (
+            "strong claims should be avoided",
+            "conceptual clarity comes before stronger conclusions",
+        )
+    elif ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"} or domain in {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        knowns = (
+            "topic is AI or agent architecture work",
+            "governance and evaluation context matter",
+        )
+        unknowns = (
+            "system architecture",
+            "safety and governance questions",
+            "evaluation criteria and operational constraints",
+        )
+        assumptions = (
+            "architecture should stay evidence-based",
+            "external certainty should stay bounded",
+        )
+    elif ontology_families & {"medicine_health_research", "biology_life_sciences"} or domain == "medicine_health_research":
+        knowns = (
+            "topic is health or clinical-adjacent research",
+            "validation and regulatory context matter",
+        )
+        unknowns = (
+            "intended use boundary",
+            "clinical and regulatory evidence needs",
+            "safety constraints and misuse risk",
+        )
+        assumptions = (
+            "diagnostic or treatment authority should not be implied",
+            "boundary review comes first",
+        )
+    elif domain == "privacy_sensitive_technology":
         knowns = (
             "topic is privacy-sensitive technology research",
             "boundary review is required before any stronger claim",
@@ -329,12 +496,12 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
             "operator constraints and safety context",
         )
         assumptions = (
-            "equipment behavior should be treated as safety-sensitive when control/hardware labels appear",
+            "equipment behavior should be treated as safety-sensitive when control or hardware labels appear",
             "troubleshooting should start from the current observable state",
         )
     elif domain == "legal_privacy":
         knowns = (
-            "topic involves legal/privacy review",
+            "topic involves legal or privacy review",
             "certainty should stay bounded",
         )
         unknowns = (
@@ -343,21 +510,7 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
         )
         assumptions = (
             "no legal certainty should be implied",
-            "sources and jurisdiction matter before claims",
-        )
-    elif domain == "materials_discovery":
-        knowns = (
-            "topic is materials discovery research",
-            "feasibility depends on evidence and validation criteria",
-        )
-        unknowns = (
-            "candidate material class or target property",
-            "evidence gaps",
-            "validation criteria and uncertainty bounds",
-        )
-        assumptions = (
-            "high evidence need is appropriate",
-            "feasibility is not established until validated",
+            "sources and jurisdiction matter before stronger conclusions",
         )
     elif domain == "energy_systems":
         knowns = (
@@ -389,7 +542,7 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
         )
     elif domain in {"software_product", "website_public_launch"}:
         knowns = (
-            "topic is software/product planning",
+            "topic is software or product planning",
             "owner goals and launch state matter",
         )
         unknowns = (
@@ -417,7 +570,7 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
     elif domain == "owner_workflow":
         knowns = (
             "topic concerns owner workflow or WESLR process",
-            "governed metadata-only planning is appropriate",
+            "metadata-only planning is appropriate",
         )
         unknowns = (
             "which workflow bottleneck is being addressed",
@@ -426,7 +579,7 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
         )
         assumptions = (
             "behavior-pack candidate formation may be relevant",
-            "no public wording or runtime authority should be implied",
+            "no external wording or runtime authority should be implied",
         )
     else:
         knowns = ("topic family is unknown",)
@@ -446,27 +599,36 @@ def _build_knowns_unknowns_assumptions(intake: BroadTopicDomainIntake) -> tuple[
         unknowns = unknowns + ("owner intent needs clarification",)
     return list(knowns), _dedupe_preserve(unknowns), list(assumptions)
 
-
-
 def _boundary_warnings(intake: BroadTopicDomainIntake) -> list[str]:
     warnings: list[str] = []
-    blob = " ".join((intake.safe_topic_descriptor, intake.domain_family, intake.owner_intent, intake.novelty_level, " ".join(intake.risk_labels), intake.recommended_next_stage))
-    if intake.domain_family == "privacy_sensitive_technology":
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    ontology_traits = set(ontology["ontology_subdomain_traits"])
+    ontology_risks = set(ontology["ontology_risk_classes"])
+    ontology_sensitivity = set(ontology["ontology_sensitivity_classes"])
+    blob = " ".join((intake.safe_topic_descriptor, intake.domain_family, intake.owner_intent, intake.novelty_level, " ".join(intake.risk_labels), intake.recommended_next_stage, " ".join(ontology_families), " ".join(ontology_traits), " ".join(ontology_risks), " ".join(ontology_sensitivity)))
+    if ontology_families & {"privacy_sensitive_technology"} or intake.domain_family == "privacy_sensitive_technology":
         warnings.extend(("privacy review required", "privacy misuse risk", "non-consensual rollout guidance is forbidden", "consent and lawfulness must be clarified before deeper steps"))
-    if intake.domain_family == "legal_privacy":
-        warnings.extend(("no legal certainty claim", "jurisdiction and policy context matter", "evidence mapping is required before claims"))
-    if intake.domain_family == "industrial_automation":
+    if ontology_families & {"legal_privacy", "policy_governance"} or intake.domain_family == "legal_privacy":
+        warnings.extend(("no legal certainty claim", "jurisdiction and policy context matter", "evidence mapping is required before stronger conclusions"))
+    if ontology_families & {"industrial_automation"} or intake.domain_family == "industrial_automation":
         warnings.append("equipment, control, and hardware context may be safety-sensitive")
-    if intake.domain_family == "materials_discovery":
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or intake.domain_family == "materials_discovery":
         warnings.append("validation criteria and uncertainty gaps must be explicit")
-    if intake.domain_family == "energy_systems":
+    if ontology_families & {"energy_systems"} or intake.domain_family == "energy_systems":
         warnings.append("battery, grid, power, and electrical safety context may be relevant")
-    if intake.domain_family == "robotics":
+    if ontology_families & {"robotics"} or intake.domain_family == "robotics":
         warnings.append("physical safety and failure modes should stay explicit")
-    if intake.domain_family in {"software_product", "website_public_launch"}:
-        warnings.append("launch and product scope should remain evidence grounded")
-    if intake.domain_family == "unknown_domain":
-        warnings.append("domain knowledge is insufficient for strong claims")
+    if ontology_families & {"software_product", "website_public_launch"} or intake.domain_family in {"software_product", "website_public_launch"}:
+        warnings.append("product or launch scope should remain evidence grounded")
+    if ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        warnings.append("keep distinctions between philosophy, cognitive science, neuroscience, and AI explicit")
+    if ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        warnings.append("architecture and governance should stay bounded by evidence and evaluation")
+    if ontology_families & {"medicine_health_research", "biology_life_sciences"} or intake.domain_family == "medicine_health_research":
+        warnings.append("clinical and regulatory boundaries must be explicit")
+    if ontology_families & {"unknown_domain"} or intake.domain_family == "unknown_domain":
+        warnings.append("domain knowledge is insufficient for strong conclusions")
     if "blocked" in intake.risk_level or intake.novelty_level == "blocked_or_sensitive":
         warnings.append("boundary review is mandatory")
     if _has_token(blob, {"human sensing", "rf", "wifi"}) and intake.domain_family != "privacy_sensitive_technology":
@@ -475,54 +637,70 @@ def _boundary_warnings(intake: BroadTopicDomainIntake) -> list[str]:
         warnings.append("keep the plan bounded and evidence-oriented")
     return _dedupe_preserve(warnings)
 
-
-
 def _evidence_needed(intake: BroadTopicDomainIntake) -> list[str]:
     domain = intake.domain_family
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    ontology_evidence = set(ontology["ontology_evidence_classes"])
+    ontology_traits = set(ontology["ontology_subdomain_traits"])
     items: list[str] = []
-    if domain == "privacy_sensitive_technology":
+    if ontology_families & {"privacy_sensitive_technology"} or domain == "privacy_sensitive_technology":
         items.extend(("consent and lawfulness context", "privacy boundary analysis", "technical literature or terminology", "prototype validation criteria"))
-    elif domain == "industrial_automation":
-        items.extend(("device specs and configuration", "current fault or symptom context", "control/hardware boundaries", "safety constraints"))
-    elif domain == "legal_privacy":
-        items.extend(("jurisdiction or policy scope", "legal/privacy sources", "specific compliance question", "uncertainty gaps"))
-    elif domain == "materials_discovery":
-        items.extend(("definitions and terminology", "technical literature", "validation criteria", "uncertainty gaps"))
-    elif domain == "energy_systems":
-        items.extend(("system constraints", "safety constraints", "hardware/software requirements", "validation criteria"))
-    elif domain == "robotics":
+    elif ontology_families & {"industrial_automation"} or domain == "industrial_automation":
+        items.extend(("device specs and configuration", "current fault or symptom context", "control or hardware boundaries", "safety constraints"))
+    elif ontology_families & {"legal_privacy", "policy_governance"} or domain == "legal_privacy":
+        items.extend(("jurisdiction or policy scope", "legal or privacy sources", "specific compliance question", "uncertainty gaps"))
+    elif ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or domain == "materials_discovery":
+        items.extend(("technical literature", "experimental validation criteria", "uncertainty gaps", "definitions and terminology"))
+    elif ontology_families & {"energy_systems"} or domain == "energy_systems":
+        items.extend(("system constraints", "safety constraints", "hardware or software requirements", "validation criteria"))
+    elif ontology_families & {"robotics"} or domain == "robotics":
         items.extend(("mechanical and control constraints", "safety constraints", "prototype validation criteria"))
-    elif domain in {"software_product", "website_public_launch"}:
+    elif ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        items.extend(("system architecture questions", "evaluation criteria", "safety or governance boundaries", "implementation constraints"))
+    elif ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        items.extend(("definitions and distinctions", "conceptual contrasts", "evidence gaps", "scope of the question"))
+    elif ontology_families & {"medicine_health_research", "biology_life_sciences"} or domain == "medicine_health_research":
+        items.extend(("clinical or regulatory scope", "safety constraints", "validation criteria", "intended use boundary"))
+    elif ontology_families & {"software_product", "website_public_launch"} or domain in {"software_product", "website_public_launch"}:
         items.extend(("owner goals", "audience and launch state", "constraints", "prototype validation criteria"))
     elif domain == "language_vocabulary":
-        items.extend(("term context", "definitions/terminology", "related usage examples"))
+        items.extend(("term context", "definitions or terminology", "related usage examples"))
     elif domain == "owner_workflow":
         items.extend(("workflow bottleneck", "friction evidence", "pack references", "proof requirements"))
     else:
         items.extend(("domain definition", "unknowns", "evidence gaps"))
-    if intake.evidence_need_level == "must_collect_before_claims":
-        items.append("evidence must be collected before stronger claims")
+    if intake.evidence_need_level == "must_collect_before_claims" or "experimental_validation_needed" in ontology_evidence or "high_uncertainty" in ontology_traits:
+        items.append("evidence must be collected before stronger conclusions")
     return _dedupe_preserve(items)
-
-
 
 def _safe_next_steps(intake: BroadTopicDomainIntake, plan_type: str, response_mode: str) -> list[str]:
     domain = intake.domain_family
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    ontology_traits = set(ontology["ontology_subdomain_traits"])
+    ontology_route = ontology["ontology_response_route_family"]
     steps: list[str] = []
-    if domain == "privacy_sensitive_technology":
-        steps.extend(("confirm whether the use case is consent-based and lawful", "separate research exploration from real-world rollout", "map privacy boundaries", "collect evidence before stronger claims"))
-    elif domain == "industrial_automation":
+    if ontology_families & {"privacy_sensitive_technology"} or domain == "privacy_sensitive_technology":
+        steps.extend(("confirm whether the use case is consent-based and lawful", "separate research exploration from rollout planning", "map privacy boundaries", "collect evidence before stronger conclusions"))
+    elif ontology_families & {"industrial_automation"} or domain == "industrial_automation":
         steps.extend(("describe the current fault or operating symptom", "list device specs and control context", "separate troubleshooting from safety validation"))
-    elif domain == "legal_privacy":
-        steps.extend(("define the jurisdiction or policy scope", "collect legal/privacy sources", "separate informational review from decision-making"))
-    elif domain == "materials_discovery":
+    elif ontology_families & {"legal_privacy", "policy_governance"} or domain == "legal_privacy":
+        steps.extend(("define the jurisdiction or policy scope", "collect legal or privacy sources", "separate informational review from decision-making"))
+    elif ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or domain == "materials_discovery":
         steps.extend(("define the target property or material class", "list evidence gaps", "set validation criteria", "choose a research question path"))
-    elif domain == "energy_systems":
+    elif ontology_families & {"energy_systems"} or domain == "energy_systems":
         steps.extend(("define the use case and constraints", "review safety and electrical boundaries", "choose a high-level feasibility path"))
-    elif domain == "robotics":
+    elif ontology_families & {"robotics"} or domain == "robotics":
         steps.extend(("define the robot task and environment", "review safety and motion constraints", "keep prototype guidance high-level"))
-    elif domain in {"software_product", "website_public_launch"}:
-        steps.extend(("define the owner goal and audience", "capture constraints and launch state", "choose a product/prototype path"))
+    elif ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        steps.extend(("map architecture and evaluation questions", "define governance constraints", "keep the plan evidence-oriented"))
+    elif ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        steps.extend(("define the theory of mind conceptual question", "separate philosophy, science, and AI angles", "identify evidence gaps and terminology"))
+    elif ontology_families & {"medicine_health_research", "biology_life_sciences"} or domain == "medicine_health_research":
+        steps.extend(("define the intended use boundary", "review regulatory and safety evidence needs", "keep health conclusions non-authoritative"))
+    elif ontology_families & {"software_product", "website_public_launch"} or domain in {"software_product", "website_public_launch"}:
+        steps.extend(("define the owner goal and audience", "capture constraints and launch state", "choose a product or prototype path"))
     elif domain == "language_vocabulary":
         steps.extend(("give a bounded explanation", "ask for the exact term or context if needed"))
     elif domain == "owner_workflow":
@@ -535,46 +713,65 @@ def _safe_next_steps(intake: BroadTopicDomainIntake, plan_type: str, response_mo
     if response_mode == "behavior_pack_candidate":
         steps.append("preserve metadata for candidate pack review")
     if response_mode == "evidence_request":
-        steps.append("ask for evidence before stronger claims")
+        steps.append("ask for evidence before stronger conclusions")
     if response_mode == "prototype_path_high_level" and not intake.prototype_planning_allowed:
         steps.append("keep prototype discussion high-level only")
+    if ontology_route == "conceptual_theory_path":
+        steps.append("keep the explanation conceptual and bounded")
+    if ontology_route == "privacy_safety_legal_boundary_review":
+        steps.append("treat boundary review as a prerequisite before deeper planning")
     return _dedupe_preserve(steps)
-
-
 
 def _owner_questions(intake: BroadTopicDomainIntake) -> list[str]:
     domain = intake.domain_family
-    if domain == "privacy_sensitive_technology":
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    if ontology_families & {"privacy_sensitive_technology"} or domain == "privacy_sensitive_technology":
         return [
             "Is the sensing use case consent-based and lawful?",
-            "Is this research only, or are you considering real-world rollout?",
+            "Is this research only, or are you considering rollout?",
         ]
-    if domain == "industrial_automation":
+    if ontology_families & {"industrial_automation"} or domain == "industrial_automation":
         return [
             "What device, controller, or control system is involved?",
             "What symptom, fault, or configuration detail should we anchor on?",
         ]
-    if domain == "legal_privacy":
+    if ontology_families & {"legal_privacy", "policy_governance"} or domain == "legal_privacy":
         return [
             "What jurisdiction or policy scope applies?",
-            "Is this informational review or a decision-critical legal/privacy question?",
+            "Is this informational review or a decision-critical legal or privacy question?",
         ]
-    if domain == "materials_discovery":
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or domain == "materials_discovery":
         return [
             "What material class or target property are you exploring?",
             "What validation criterion would count as success?",
         ]
-    if domain == "energy_systems":
+    if ontology_families & {"energy_systems"} or domain == "energy_systems":
         return [
             "What system boundary matters most—battery, grid, inverter, or power path?",
             "Is the goal feasibility review or a high-level prototype path?",
         ]
-    if domain == "robotics":
+    if ontology_families & {"robotics"} or domain == "robotics":
         return [
             "What task and environment is the robot supposed to handle?",
             "What safety constraint matters most?",
         ]
-    if domain in {"software_product", "website_public_launch"}:
+    if ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        return [
+            "What architecture question or system boundary matters most?",
+            "What evaluation or governance constraint should shape the plan?",
+        ]
+    if ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        return [
+            "Which conceptual distinction or research question matters most?",
+            "Do you want a conceptual overview or a research-question map?",
+        ]
+    if ontology_families & {"medicine_health_research", "biology_life_sciences"} or domain == "medicine_health_research":
+        return [
+            "What intended use boundary should we respect?",
+            "What validation or regulatory evidence matters most?",
+        ]
+    if ontology_families & {"software_product", "website_public_launch"} or domain in {"software_product", "website_public_launch"}:
         return [
             "What is the owner goal and target audience?",
             "What constraints or launch state should we plan around?",
@@ -582,7 +779,7 @@ def _owner_questions(intake: BroadTopicDomainIntake) -> list[str]:
     if domain == "language_vocabulary":
         return [
             "What is the exact term or phrase?",
-            "Do you want a direct explanation or a deeper research question path?",
+            "Do you want a direct explanation or a deeper research path?",
         ]
     if domain == "owner_workflow":
         return [
@@ -591,123 +788,178 @@ def _owner_questions(intake: BroadTopicDomainIntake) -> list[str]:
         ]
     return ["What domain are we in, and what outcome do you want?"]
 
-
-
 def _prototype_outline(intake: BroadTopicDomainIntake, allowed: bool, plan_type: str) -> list[str]:
     if not allowed:
         return ["prototype detail is deferred until intake allows it"]
     domain = intake.domain_family
-    if domain == "privacy_sensitive_technology":
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    if ontology_families & {"privacy_sensitive_technology"} or domain == "privacy_sensitive_technology":
         return [
             "define a lawful and consent-based use case",
             "collect evidence and boundary constraints",
             "choose a toy or synthetic test environment",
             "validate limitations and failure modes",
         ]
-    if domain in {"industrial_automation", "energy_systems", "robotics"}:
+    if ontology_families & {"industrial_automation", "energy_systems", "robotics"} or domain in {"industrial_automation", "energy_systems", "robotics"}:
         return [
             "define the scope and constraints",
             "choose a safe high-level prototype environment",
             "validate failure modes and safety limits",
             "review whether to continue",
         ]
-    if domain in {"software_product", "website_public_launch"}:
+    if ontology_families & {"software_product", "website_public_launch"} or domain in {"software_product", "website_public_launch"}:
         return [
             "define user goal and scope",
             "pick a small prototype slice",
             "validate launch constraints and evidence needs",
             "decide whether to continue",
         ]
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or domain == "materials_discovery":
+        return [
+            "define the material target or property",
+            "select literature and validation criteria",
+            "keep prototype discussion at feasibility level",
+            "test uncertainty bounds before implementation detail",
+        ]
+    if ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        return [
+            "define the architecture scope",
+            "map evaluation and governance constraints",
+            "keep prototype detail high level",
+            "review safety limits before implementation detail",
+        ]
+    if ontology_families & {"medicine_health_research", "biology_life_sciences"} or domain == "medicine_health_research":
+        return [
+            "define the intended use boundary",
+            "keep health review high level",
+            "validate regulatory and safety constraints before detail",
+            "avoid diagnosis or treatment authority",
+        ]
     return ()
-
-
 
 def _friction_triggers(intake: BroadTopicDomainIntake) -> list[str]:
     triggers = [
         "novel domain or unfamiliar terms",
-        "missing evidence or unclear claims",
+        "missing evidence or unclear conclusions",
         "boundary ambiguity",
         "prototype detail requested without sufficient context",
     ]
-    if intake.domain_family == "privacy_sensitive_technology":
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    ontology_traits = set(ontology["ontology_subdomain_traits"])
+    if ontology_families & {"privacy_sensitive_technology"} or intake.domain_family == "privacy_sensitive_technology":
         triggers.append("consent or lawfulness not yet established")
-    if intake.domain_family == "industrial_automation":
+    if ontology_families & {"industrial_automation"} or intake.domain_family == "industrial_automation":
         triggers.append("device specs or current fault context missing")
-    if intake.domain_family == "legal_privacy":
+    if ontology_families & {"legal_privacy", "policy_governance"} or intake.domain_family == "legal_privacy":
         triggers.append("jurisdiction or policy scope missing")
-    if intake.domain_family == "materials_discovery":
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or intake.domain_family == "materials_discovery":
         triggers.append("validation criteria or uncertainty gaps missing")
-    if intake.domain_family == "energy_systems":
+    if ontology_families & {"energy_systems"} or intake.domain_family == "energy_systems":
         triggers.append("safety or electrical constraints missing")
-    if intake.domain_family == "robotics":
+    if ontology_families & {"robotics"} or intake.domain_family == "robotics":
         triggers.append("motion or failure-mode safety missing")
-    if intake.domain_family in {"software_product", "website_public_launch"}:
+    if ontology_families & {"software_product", "website_public_launch"} or intake.domain_family in {"software_product", "website_public_launch"}:
         triggers.append("audience, launch state, or scope missing")
+    if ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        triggers.append("architecture or evaluation constraints missing")
+    if ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        triggers.append("conceptual distinctions or evidence gaps missing")
+    if ontology_families & {"medicine_health_research", "biology_life_sciences"} or intake.domain_family == "medicine_health_research":
+        triggers.append("regulatory or safety evidence missing")
+    if ontology_families & {"unknown_domain"} or intake.domain_family == "unknown_domain" or "high_uncertainty" in ontology_traits:
+        triggers.append("clarification or evidence mapping needed")
     if intake.domain_family == "owner_workflow":
         triggers.append("repeated friction or pack-candidate evidence present")
     return _dedupe_preserve(triggers)
-
-
 
 def _plan_type_and_mode(intake: BroadTopicDomainIntake) -> tuple[str, str, bool, bool, bool, bool]:
     family = intake.domain_family
     intent = intake.owner_intent
     novelty = intake.novelty_level
     allowed_proto = intake.prototype_planning_allowed
+    ontology = _ontology_context(intake)
+    ontology_families = set(ontology["ontology_domain_families"])
+    ontology_traits = set(ontology["ontology_subdomain_traits"])
+    ontology_evidence = set(ontology["ontology_evidence_classes"])
+    ontology_risk = set(ontology["ontology_risk_classes"])
+    ontology_sensitivity = set(ontology["ontology_sensitivity_classes"])
+    ontology_route = ontology["ontology_response_route_family"]
     has_consent = _has_token(intake.safe_topic_descriptor, CONSENT_TERMS_V1) or any(_has_token(label, CONSENT_TERMS_V1) for label in intake.candidate_behavior_pack_labels)
 
-    if family == "privacy_sensitive_technology":
+    if ontology_families & {"medicine_health_research", "biology_life_sciences"} or family == "medicine_health_research":
+        plan_type = "risk_boundary_review" if intent in {"evaluate_feasibility", "research", "build_prototype"} or "medical_or_health_sensitive" in ontology_sensitivity else "evidence_collection_plan"
+        mode = "evidence_request"
+        return plan_type, mode, True, True, False, False
+
+    if ontology_families & {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"} or family in {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        plan_type = "explain_topic" if intent == "learn_explain" else "map_research_questions"
+        mode = "direct_bounded_overview" if plan_type == "explain_topic" else "research_plan"
+        requires_boundary_review = "public_claim_sensitive" in ontology_risk or "public_claim_sensitive" in ontology_sensitivity
+        return plan_type, mode, requires_boundary_review, True, False, False
+
+    if ontology_families & {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"} or family in {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        plan_type = "feasibility_review" if intent in {"build_prototype", "evaluate_feasibility"} else "map_research_questions"
+        return plan_type, "research_plan", True, True, allowed_proto, False
+
+    if ontology_families & {"metamaterials", "materials_discovery", "physics", "chemistry"} or family in {"metamaterials", "materials_discovery", "physics", "chemistry"}:
+        plan_type = "feasibility_review" if intent == "evaluate_feasibility" or "experimental_validation_needed" in ontology_evidence or "frontier_research" in ontology_traits else "map_research_questions"
+        mode = "evidence_request" if "experimental_validation_needed" in ontology_evidence or novelty in {"high_uncertainty", "adjacent_to_existing_pack"} else "research_plan"
+        requires_boundary_review = novelty in {"high_uncertainty", "blocked_or_sensitive"} or "unknown_risk" in ontology_risk
+        return plan_type, mode, requires_boundary_review, True, allowed_proto and plan_type == "feasibility_review", False
+
+    if ontology_families & {"privacy_sensitive_technology"} or family == "privacy_sensitive_technology":
         plan_type = "risk_boundary_review" if novelty in {"high_uncertainty", "blocked_or_sensitive"} or intake.boundary_review_required else "map_research_questions"
         if has_consent and allowed_proto and intent in {"research", "build_prototype", "evaluate_feasibility"}:
             plan_type = "map_research_questions"
         mode = "refusal_boundary" if not has_consent else "research_plan"
         return plan_type, mode, True, True, allowed_proto and has_consent, False
 
-    if family == "industrial_automation":
+    if ontology_families & {"industrial_automation"} or family == "industrial_automation":
         plan_type = "troubleshooting_plan" if intent == "troubleshooting" else "feasibility_review"
-        mode = "research_plan"
-        return plan_type, mode, False, True, allowed_proto, False
+        return plan_type, "research_plan", False, True, allowed_proto, False
 
-    if family == "legal_privacy":
+    if ontology_families & {"legal_privacy", "policy_governance"} or family == "legal_privacy":
         plan_type = "risk_boundary_review" if intent == "safety_legal_privacy_review" else "evidence_collection_plan"
         mode = "evidence_request" if plan_type == "evidence_collection_plan" else "refusal_boundary"
         return plan_type, mode, True, True, False, False
 
-    if family == "materials_discovery":
-        plan_type = "feasibility_review" if intent == "evaluate_feasibility" else "map_research_questions"
-        return plan_type, "research_plan", False, True, False, False
-
-    if family == "energy_systems":
+    if ontology_families & {"energy_systems"} or family == "energy_systems":
         plan_type = "prototype_path_high_level" if intent == "build_prototype" and allowed_proto else "feasibility_review"
         mode = "prototype_path_high_level" if plan_type == "prototype_path_high_level" else "research_plan"
         return plan_type, mode, False, True, allowed_proto, False
 
-    if family == "robotics":
+    if ontology_families & {"robotics"} or family == "robotics":
         plan_type = "prototype_path_high_level" if intent == "build_prototype" and allowed_proto else "feasibility_review"
         mode = "prototype_path_high_level" if plan_type == "prototype_path_high_level" else "research_plan"
         return plan_type, mode, False, True, allowed_proto, False
 
-    if family == "software_product":
+    if ontology_families & {"software_product", "website_public_launch", "economics_business_strategy"} or family in {"software_product", "website_public_launch"}:
+        if "medicine_health_research" in ontology_families:
+            return "risk_boundary_review", "evidence_request", True, True, False, False
+        if "ai_systems" in ontology_families or "agentic_systems" in ontology_families:
+            return "map_research_questions", "research_plan", True, True, allowed_proto, False
         plan_type = "product_development_plan" if intent == "commercial_product_strategy" else "prototype_path_high_level"
         mode = "research_plan" if plan_type == "product_development_plan" else "prototype_path_high_level"
         return plan_type, mode, False, True, allowed_proto, False
 
-    if family == "website_public_launch":
-        plan_type = "product_development_plan" if intent == "commercial_product_strategy" else "prototype_path_high_level"
-        mode = "research_plan" if plan_type == "product_development_plan" else "prototype_path_high_level"
-        return plan_type, mode, False, True, allowed_proto, False
-
-    if family == "language_vocabulary":
+    if ontology_families & {"language_vocabulary", "education_learning", "creative_design"} or family == "language_vocabulary":
         plan_type = "explain_topic" if intent == "learn_explain" else "map_research_questions"
         mode = "direct_bounded_overview" if plan_type == "explain_topic" else "research_plan"
         return plan_type, mode, False, False, False, False
 
-    if family == "owner_workflow":
-        plan_type = "behavior_pack_seed_plan" if intake.behavior_pack_seed_candidate else "clarifying_intake_plan"
+    if ontology_families & {"owner_workflow"} or family == "owner_workflow":
+        behavior_pack_seed_candidate = bool(intake.candidate_behavior_pack_labels or ontology["ontology_behavior_pack_candidate_labels"])
+        plan_type = "behavior_pack_seed_plan" if behavior_pack_seed_candidate else "clarifying_intake_plan"
         mode = "behavior_pack_candidate" if plan_type == "behavior_pack_seed_plan" else "clarifying_question"
-        return plan_type, mode, False, True, False, True
+        return plan_type, mode, False, True, False, behavior_pack_seed_candidate
 
-    # unknown_domain
+    if ontology_families & {"unknown_domain"} or family == "unknown_domain":
+        plan_type = "clarifying_intake_plan" if novelty == "high_uncertainty" else "evidence_collection_plan"
+        mode = "clarifying_question" if plan_type == "clarifying_intake_plan" else "evidence_request"
+        return plan_type, mode, True, True, False, False
+
     plan_type = "clarifying_intake_plan" if novelty == "high_uncertainty" else "evidence_collection_plan"
     mode = "clarifying_question" if plan_type == "clarifying_intake_plan" else "evidence_request"
     return plan_type, mode, True, True, False, False
@@ -745,6 +997,16 @@ def build_research_conversation_plan_v1(*, domain_intake: BroadTopicDomainIntake
             runtime_authority=bool(intake.get("runtime_authority")),
             writes_state=bool(intake.get("writes_state")),
             model_provider_used=bool(intake.get("model_provider_used")),
+            ontology_packet_id=_safe_text(intake.get("ontology_packet_id")),
+            ontology_meta_domains=_normalize_sequence(intake.get("ontology_meta_domains")),
+            ontology_domain_families=_normalize_sequence(intake.get("ontology_domain_families")),
+            ontology_subdomain_traits=_normalize_sequence(intake.get("ontology_subdomain_traits")),
+            ontology_objects_of_study=_normalize_sequence(intake.get("ontology_objects_of_study")),
+            ontology_evidence_classes=_normalize_sequence(intake.get("ontology_evidence_classes")),
+            ontology_risk_classes=_normalize_sequence(intake.get("ontology_risk_classes")),
+            ontology_sensitivity_classes=_normalize_sequence(intake.get("ontology_sensitivity_classes")),
+            ontology_response_route_family=_safe_text(intake.get("ontology_response_route_family")),
+            ontology_behavior_pack_candidate_labels=_normalize_sequence(intake.get("ontology_behavior_pack_candidate_labels")),
             safe_metadata=dict(intake.get("safe_metadata") or {}),
         )
     validate_broad_topic_domain_intake_v1(intake)
@@ -764,6 +1026,7 @@ def build_research_conversation_plan_v1(*, domain_intake: BroadTopicDomainIntake
         requires_boundary_review = True
     if intake.evidence_mapping_required:
         requires_evidence_mapping = True
+    ontology = _intake_ontology_snapshot(intake)
     plan = ResearchConversationPlan(
         plan_id=_plan_id(intake.intake_id, plan_type, intake.domain_family),
         source_intake_id=intake.intake_id,
@@ -791,7 +1054,17 @@ def build_research_conversation_plan_v1(*, domain_intake: BroadTopicDomainIntake
         runtime_authority=False,
         writes_state=False,
         model_provider_used=False,
-        safe_metadata=_safe_metadata(intake, plan_type, response_mode, behavior_pack_seed_candidate),
+        ontology_packet_id=ontology["ontology_packet_id"],
+        ontology_meta_domains=tuple(ontology["ontology_meta_domains"]),
+        ontology_domain_families=tuple(ontology["ontology_domain_families"]),
+        ontology_subdomain_traits=tuple(ontology["ontology_subdomain_traits"]),
+        ontology_objects_of_study=tuple(ontology["ontology_objects_of_study"]),
+        ontology_evidence_classes=tuple(ontology["ontology_evidence_classes"]),
+        ontology_risk_classes=tuple(ontology["ontology_risk_classes"]),
+        ontology_sensitivity_classes=tuple(ontology["ontology_sensitivity_classes"]),
+        ontology_response_route_family=ontology["ontology_response_route_family"],
+        ontology_behavior_pack_candidate_labels=tuple(ontology["ontology_behavior_pack_candidate_labels"]),
+        safe_metadata={**_safe_metadata(intake, plan_type, response_mode, behavior_pack_seed_candidate), "ontology": ontology},
     )
     validate_research_conversation_plan_v1(plan)
     return plan
@@ -812,7 +1085,7 @@ def validate_research_conversation_plan_v1(plan: Any) -> bool:
         raise ValidationError("forbidden_raw_fields_present")
     if _contains_forbidden_claim_marker(plan):
         raise ValidationError("forbidden_public_or_claim_language_present")
-    if _contains_unsafe_deployment_marker(plan):
+    if _contains_unsafe_deployment_marker_in_guidance(plan):
         raise ValidationError("unsafe_deployment_marker_present")
 
     if is_dataclass(plan):
@@ -849,6 +1122,16 @@ def validate_research_conversation_plan_v1(plan: Any) -> bool:
             runtime_authority=bool(plan.get("runtime_authority")),
             writes_state=bool(plan.get("writes_state")),
             model_provider_used=bool(plan.get("model_provider_used")),
+            ontology_packet_id=_safe_text(plan.get("ontology_packet_id")),
+            ontology_meta_domains=_normalize_sequence(plan.get("ontology_meta_domains")),
+            ontology_domain_families=_normalize_sequence(plan.get("ontology_domain_families")),
+            ontology_subdomain_traits=_normalize_sequence(plan.get("ontology_subdomain_traits")),
+            ontology_objects_of_study=_normalize_sequence(plan.get("ontology_objects_of_study")),
+            ontology_evidence_classes=_normalize_sequence(plan.get("ontology_evidence_classes")),
+            ontology_risk_classes=_normalize_sequence(plan.get("ontology_risk_classes")),
+            ontology_sensitivity_classes=_normalize_sequence(plan.get("ontology_sensitivity_classes")),
+            ontology_response_route_family=_safe_text(plan.get("ontology_response_route_family")),
+            ontology_behavior_pack_candidate_labels=_normalize_sequence(plan.get("ontology_behavior_pack_candidate_labels")),
             safe_metadata=dict(plan.get("safe_metadata") or {}),
         )
     else:
@@ -870,6 +1153,20 @@ def validate_research_conversation_plan_v1(plan: Any) -> bool:
         "website_public_launch",
         "language_vocabulary",
         "owner_workflow",
+        "metamaterials",
+        "theory_of_mind",
+        "philosophy_of_mind",
+        "cognitive_science",
+        "psychology",
+        "neuroscience",
+        "ai_systems",
+        "agentic_systems",
+        "ai_safety_governance",
+        "cognitive_architecture",
+        "medicine_health_research",
+        "biology_life_sciences",
+        "physics",
+        "chemistry",
         "unknown_domain",
     }:
         raise ValidationError("unknown_domain_family")
@@ -979,6 +1276,16 @@ def summarize_research_conversation_plan_v1(plan: Any) -> ResearchConversationPl
                 runtime_authority=bool(plan.get("runtime_authority")),
                 writes_state=bool(plan.get("writes_state")),
                 model_provider_used=bool(plan.get("model_provider_used")),
+                ontology_packet_id=_safe_text(plan.get("ontology_packet_id")),
+                ontology_meta_domains=_normalize_sequence(plan.get("ontology_meta_domains")),
+                ontology_domain_families=_normalize_sequence(plan.get("ontology_domain_families")),
+                ontology_subdomain_traits=_normalize_sequence(plan.get("ontology_subdomain_traits")),
+                ontology_objects_of_study=_normalize_sequence(plan.get("ontology_objects_of_study")),
+                ontology_evidence_classes=_normalize_sequence(plan.get("ontology_evidence_classes")),
+                ontology_risk_classes=_normalize_sequence(plan.get("ontology_risk_classes")),
+                ontology_sensitivity_classes=_normalize_sequence(plan.get("ontology_sensitivity_classes")),
+                ontology_response_route_family=_safe_text(plan.get("ontology_response_route_family")),
+                ontology_behavior_pack_candidate_labels=_normalize_sequence(plan.get("ontology_behavior_pack_candidate_labels")),
                 safe_metadata=dict(plan.get("safe_metadata") or {}),
             )
     return ResearchConversationPlanSummary(
@@ -1008,9 +1315,105 @@ def to_research_conversation_plan_json_safe_v1(value: Any) -> Any:
 
 
 def build_initial_research_conversation_plan_examples_v1() -> tuple[ResearchConversationPlan, ...]:
-    from weslr.broad_topic_domain_intake import build_initial_broad_topic_domain_intake_examples_v1
+    example_specs = [
+        {
+            "safe_topic_descriptor": "WiFi/RF sensing for consent-based research in a home setting",
+            "prompt_labels": ("wifi sensing", "research only", "privacy"),
+            "owner_intent_labels": ("research",),
+            "risk_hints": ("consent required", "lawful only"),
+            "known_unknown_hints": ("researchable",),
+        },
+        {
+            "safe_topic_descriptor": "Industrial automation troubleshooting for a control system",
+            "prompt_labels": ("industrial automation", "troubleshooting", "PLC", "equipment"),
+            "owner_intent_labels": ("troubleshooting",),
+            "risk_hints": ("equipment safety",),
+            "known_unknown_hints": ("adjacent",),
+        },
+        {
+            "safe_topic_descriptor": "Materials discovery feasibility planning",
+            "prompt_labels": ("materials discovery", "feasibility", "research"),
+            "owner_intent_labels": ("evaluate feasibility",),
+            "risk_hints": ("high evidence need",),
+            "known_unknown_hints": ("unfamiliar",),
+        },
+        {
+            "safe_topic_descriptor": "Metamaterials frontier research",
+            "prompt_labels": ("metamaterials", "materials discovery", "frontier research", "experimental validation"),
+            "owner_intent_labels": ("evaluate feasibility",),
+            "risk_hints": ("high uncertainty",),
+            "known_unknown_hints": ("frontier", "high uncertainty"),
+        },
+        {
+            "safe_topic_descriptor": "Theory of mind conceptual research",
+            "prompt_labels": ("theory of mind", "philosophy of mind", "cognitive science"),
+            "owner_intent_labels": ("learn explain",),
+            "risk_hints": ("high uncertainty",),
+            "known_unknown_hints": ("high uncertainty",),
+        },
+        {
+            "safe_topic_descriptor": "AI agent architecture and governance",
+            "prompt_labels": ("ai systems", "agentic systems", "cognitive architecture", "ai safety governance"),
+            "owner_intent_labels": ("research",),
+            "risk_hints": ("public-facing sensitivity", "safety critical"),
+            "known_unknown_hints": ("adjacent",),
+        },
+        {
+            "safe_topic_descriptor": "Medical software regulated path",
+            "prompt_labels": ("medicine health research", "software product", "clinical validation"),
+            "owner_intent_labels": ("evaluate feasibility",),
+            "risk_hints": ("medical sensitive", "regulated domain"),
+            "known_unknown_hints": ("unfamiliar",),
+        },
+        {
+            "safe_topic_descriptor": "Legal/privacy policy review for a new workflow",
+            "prompt_labels": ("legal privacy", "policy review", "compliance"),
+            "owner_intent_labels": ("safety legal privacy review",),
+            "risk_hints": ("legal", "privacy"),
+            "known_unknown_hints": ("unfamiliar",),
+        },
+        {
+            "safe_topic_descriptor": "Energy system prototype planning",
+            "prompt_labels": ("energy systems", "prototype", "battery", "power"),
+            "owner_intent_labels": ("build prototype",),
+            "risk_hints": ("safety sensitive",),
+            "known_unknown_hints": ("adjacent",),
+        },
+        {
+            "safe_topic_descriptor": "Software product planning for an owner-facing feature",
+            "prompt_labels": ("software product", "product strategy", "feature planning"),
+            "owner_intent_labels": ("commercial product strategy",),
+            "risk_hints": ("medium uncertainty",),
+            "known_unknown_hints": ("known existing pack",),
+        },
+        {
+            "safe_topic_descriptor": "Language and vocabulary discovery for a new term",
+            "prompt_labels": ("language", "vocabulary", "definition"),
+            "owner_intent_labels": ("learn explain",),
+            "risk_hints": ("low risk",),
+            "known_unknown_hints": ("known existing pack",),
+        },
+        {
+            "safe_topic_descriptor": "Unknown future topic",
+            "prompt_labels": ("unknown", "novel"),
+            "owner_intent_labels": ("unknown",),
+            "risk_hints": ("high uncertainty",),
+            "known_unknown_hints": ("high uncertainty",),
+        },
+    ]
 
-    return tuple(build_research_conversation_plan_v1(domain_intake=intake) for intake in build_initial_broad_topic_domain_intake_examples_v1())
+    plans: list[ResearchConversationPlan] = []
+    for spec in example_specs:
+        intake = build_broad_topic_domain_intake_v1(
+            safe_topic_descriptor=spec["safe_topic_descriptor"],
+            prompt_labels=spec["prompt_labels"],
+            owner_intent_labels=spec["owner_intent_labels"],
+            risk_hints=spec["risk_hints"],
+            known_unknown_hints=spec["known_unknown_hints"],
+            existing_behavior_pack_refs=(),
+        )
+        plans.append(build_research_conversation_plan_v1(domain_intake=intake))
+    return tuple(plans)
 
 
 # Backwards-compatible aliases.
