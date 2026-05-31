@@ -23,7 +23,7 @@ from weslr.friction_case_capture import (
     build_initial_renderer_friction_cases_v1,
     to_friction_case_json_safe_v1,
 )
-from weslr.protected_no_model_chat_adapter import build_protected_no_model_chat_response_v1
+from weslr.no_model_bounded_renderer import render_no_model_bounded_answer_v1, to_no_model_bounded_render_json_safe_v1
 
 PACKET_TYPE_V1 = "friction_replay_harness_v1"
 SUMMARY_TYPE_V1 = "friction_replay_summary_v1"
@@ -288,8 +288,10 @@ def _coerce_case(value: Any) -> FrictionCase:
 
 def _extract_observed_response(case: FrictionCase, observed_response: Any | None) -> dict[str, Any]:
     if observed_response is None:
-        message = " ".join(case.replay_labels or case.prompt_labels or (case.safe_prompt_descriptor,))
-        observed_response = build_protected_no_model_chat_response_v1(message, context_signals={"source": "friction_replay_harness_v1"})
+        labels = list(case.replay_labels or case.prompt_labels or (case.safe_prompt_descriptor,))
+        observed_response = to_no_model_bounded_render_json_safe_v1(
+            render_no_model_bounded_answer_v1(labels, context_signals={"source": "friction_replay_harness_v1"})
+        )
     if not isinstance(observed_response, Mapping):
         raise ValidationError("observed_response_must_be_mapping")
     if _collect_forbidden_keys(observed_response):

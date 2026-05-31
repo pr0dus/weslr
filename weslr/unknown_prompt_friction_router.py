@@ -420,16 +420,16 @@ def _detect_families(labels: list[str], context_signals: Mapping[str, Any]) -> t
     if provider_hit:
         add("provider_boundary", "context_signals" if (provider_available_present and _truthy(context_signals.get("model_available")) is False) else "turn_labels", ["provider boundary"], strength=0.75)
 
-    unknown_capability_labels = [label for label in labels if _contains_any(label, ["unknown capability", "capability unknown", "what can you do", "can you do", "what are you able", "future capability"]) ]
+    unknown_capability_labels = [label for label in labels if _contains_any(label, ["unknown capability", "capability unknown", "what can you do", "what can you do now", "what are you able", "what capabilities are active", "current ability", "future capability", "can you do", "can i upload", "can i pay", "upload files", "pay now", "marketplace active", "public pilot"])]
     capability_known_present = "capability_known" in context_signals
-    if _truthy(context_signals.get("unknown_capability")) or (capability_known_present and _truthy(context_signals.get("capability_known")) is False and (unknown_capability_labels or _contains_any_label(labels, ["capability", "can you"]))):
+    if _truthy(context_signals.get("unknown_capability")) or (capability_known_present and _truthy(context_signals.get("capability_known")) is False and (unknown_capability_labels or _contains_any_label(labels, ["capability", "can you", "can i"]))):
         add("unknown_capability_request", "context_signals" if _truthy(context_signals.get("unknown_capability")) else "turn_labels", unknown_capability_labels or ["unknown capability"], strength=0.92)
 
     unknown_intent_labels = [label for label in labels if _contains_any(label, ["unknown intent", "unclear intent", "ambiguous intent", "what do you mean", "intent unknown"])]
     if _truthy(context_signals.get("unknown_intent")) or unknown_intent_labels:
         add("unknown_intent", "context_signals" if _truthy(context_signals.get("unknown_intent")) else "turn_labels", unknown_intent_labels or ["unknown intent"], strength=0.9)
 
-    unknown_word_labels = [label for label in labels if _contains_any(label, ["unknown word", "unknown phrase", "what does this mean", "word meaning", "phrase meaning"])]
+    unknown_word_labels = [label for label in labels if _contains_any(label, ["unknown word", "unknown phrase", "unknown term", "unfamiliar", "what does this mean", "word meaning", "phrase meaning", "what is", "what does"])]
     if _safe_text(context_signals.get("unknown_terms")) or unknown_word_labels:
         add("unknown_word_or_phrase", "context_signals" if _safe_text(context_signals.get("unknown_terms")) else "turn_labels", unknown_word_labels or ["unknown word/phrase"], strength=0.9)
 

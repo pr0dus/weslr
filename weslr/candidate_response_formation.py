@@ -332,6 +332,12 @@ def _augment_turn_labels_for_selection(normalized_labels: tuple[str, ...]) -> tu
         labels.extend(["safety boundary", "refusal"])
     if _contains_any(blob, ("template", "generic", "boilerplate", "canned")):
         labels.extend(["non canned specificity", "specific", "tailored"])
+    if _contains_any(blob, ("weslr", "identity", "status", "who are you", "what are you", "what is weslr", "explain weslr")):
+        labels.extend(["identity", "status", "identity status", "self description"])
+    if _contains_any(blob, ("capability", "what can you do", "what can you do now", "what capabilities are active", "current ability", "help with", "can i upload", "can i pay", "upload files", "pay now", "marketplace active", "public pilot")):
+        labels.extend(["capability", "capability orientation", "capability boundary", "current ability"])
+    if _contains_any(blob, ("unknown word", "unknown phrase", "unknown term", "unfamiliar", "what does this mean", "what is ", "what does ")):
+        labels.extend(["unknown word", "unknown phrase", "unknown term", "unfamiliar", "unknown friction"])
     return _dedupe_preserve(labels)
 
 

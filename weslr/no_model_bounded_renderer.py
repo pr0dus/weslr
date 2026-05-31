@@ -840,7 +840,15 @@ def validate_no_model_bounded_render_packet_v1(packet: Any) -> bool:
     if expected_mode != data["render_mode"]:
         raise ValidationError("render mode must match selected shape")
 
-    if data["selected_shape_id"] not in getattr(method, "compatible_shape_ids", ()) and data["selected_method_id"] not in getattr(shape, "compatible_method_ids", ()):
+    method_shape_compatible = (
+        data["selected_shape_id"] in getattr(method, "compatible_shape_ids", ())
+        or data["selected_method_id"] in getattr(shape, "compatible_method_ids", ())
+    )
+    case_authorizes_pair = (
+        data["selected_method_id"] in getattr(case, "allowed_method_ids", ())
+        and data["selected_shape_id"] in getattr(case, "allowed_shape_ids", ())
+    )
+    if not (method_shape_compatible or case_authorizes_pair):
         raise ValidationError("selected method and shape are incompatible")
     if data["selected_method_id"] not in getattr(case, "allowed_method_ids", ()) or data["selected_shape_id"] not in getattr(case, "allowed_shape_ids", ()):
         raise ValidationError("selected case is incompatible with method or shape")

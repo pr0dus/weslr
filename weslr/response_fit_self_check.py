@@ -283,10 +283,11 @@ def _labels_blob(values: Sequence[str]) -> str:
 
 
 def _candidate_active(candidate_type: str, labels_blob: str, context_signals: Mapping[str, Any]) -> bool:
-    ctx_blob = _labels_blob(_normalize_labels(context_signals.values()))
+    ctx_values = [value for key, value in context_signals.items() if key not in {"source", "origin", "producer", "adapter"}]
+    ctx_blob = _labels_blob(_normalize_labels(ctx_values))
     blob = f"{labels_blob} {ctx_blob}".strip()
     if candidate_type == "direct_bounded_candidate":
-        return _contains_any(blob, ("who are you", "status", "identity", "about you", "what are you"))
+        return _contains_any(blob, ("who are you", "status", "identity", "about you", "what are you", "weslr", "what can you do", "what capabilities are active", "current ability", "can you do", "can i upload", "can i pay", "marketplace active", "public pilot", "upload files", "upload", "files", "pay", "marketplace", "pilot", "public"))
     if candidate_type == "clarification_candidate":
         return not labels_blob or _contains_any(blob, ("clarify", "clarification", "ambiguous", "unclear", "missing", "what do you mean"))
     if candidate_type == "bounded_uncertainty_candidate":
@@ -314,7 +315,7 @@ def _candidate_active(candidate_type: str, labels_blob: str, context_signals: Ma
     if candidate_type == "benchmark_evaluation_candidate":
         return _contains_any(blob, ("benchmark", "evaluation", "turing", "readiness", "assessment"))
     if candidate_type == "unknown_friction_candidate":
-        return _contains_any(blob, ("unknown", "unclear", "ambiguous", "stuck", "friction", "failed")) or not labels_blob
+        return _contains_any(blob, ("unknown", "unclear", "ambiguous", "stuck", "friction", "failed", "what is ", "what does ", "what's ", "unfamiliar")) or not labels_blob
     if candidate_type == "memory_honesty_candidate":
         return _contains_any(blob, ("memory", "remember", "recall", "continuity", "do you remember"))
     if candidate_type == "continuity_recap_candidate":
@@ -552,6 +553,14 @@ def _final_candidate_type(candidates: Sequence[CandidateResponsePath], labels_bl
         if _contains_any(labels_blob, ("unknown", "friction", "stuck", "failed")):
             return "unknown_friction_candidate"
         return "clarification_candidate"
+    if _truthy(context_signals.get("unknown_detected")) or _contains_any(labels_blob, ("unknown word", "unknown phrase", "unknown term", "unfamiliar", "what is ", "what does ")):
+        for candidate in active_candidates:
+            if candidate.candidate_type == "unknown_friction_candidate":
+                return candidate.candidate_type
+    if _contains_any(labels_blob, ("weslr", "who are you", "what are you", "what can you do", "what capabilities are active", "current ability", "upload", "files", "pay", "marketplace", "pilot", "public", "boundary")):
+        for candidate in active_candidates:
+            if candidate.candidate_type == "direct_bounded_candidate":
+                return candidate.candidate_type
     active_candidates.sort(key=lambda candidate: (-_candidate_priority(candidate.candidate_type), -candidate.selection_score, candidate.candidate_id))
     return active_candidates[0].candidate_type
 

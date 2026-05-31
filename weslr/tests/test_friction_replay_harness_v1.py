@@ -60,6 +60,9 @@ def test_initial_four_friction_cases_are_replayed() -> None:
         "unknown_word_blorvatek_friction",
         "upload_files_now_boundary_friction",
     }
+    assert packet.passed_count == 4
+    assert packet.partial_count == 0
+    assert packet.failed_count == 0
 
 
 @pytest.mark.parametrize(

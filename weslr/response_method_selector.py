@@ -9,6 +9,7 @@ No final answer generation. No model/provider calls. No state writes.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, is_dataclass
+import re
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 
@@ -68,6 +69,73 @@ def _score_match(blob: str, phrases: Sequence[str]) -> float:
         return 0.0
     hits = sum(1 for phrase in phrases if phrase in blob)
     return hits / float(len(phrases))
+
+
+def _identity_signal(blob: str) -> bool:
+    return _contains_any(blob, (
+        "identity",
+        "status",
+        "who are you",
+        "what are you",
+        "about you",
+        "what is weslr",
+        "explain weslr",
+        "weslr",
+    ))
+
+
+def _capability_signal(blob: str) -> bool:
+    return _contains_any(blob, (
+        "what can you do",
+        "what can you do now",
+        "capabilities are active",
+        "what capabilities are active",
+        "current ability",
+        "help with",
+        "able to",
+        "can i upload",
+        "can i pay",
+        "upload files",
+        "marketplace active",
+        "public pilot",
+        "account",
+        "upload",
+        "files",
+        "pay",
+        "marketplace",
+        "pilot",
+        "public",
+    ))
+
+
+def _inactive_capability_signal(blob: str) -> bool:
+    return _contains_any(blob, (
+        "upload",
+        "pay now",
+        "marketplace",
+        "account",
+        "public pilot",
+        "public ready",
+        "files",
+    )) and _contains_any(blob, ("can i", "is ", "active", "available", "now"))
+
+
+def _unknown_word_signal(blob: str) -> bool:
+    if _contains_any(blob, (
+        "unknown word",
+        "unknown phrase",
+        "unknown term",
+        "unfamiliar",
+        "what does this mean",
+        "word meaning",
+        "phrase meaning",
+    )):
+        return True
+    if _contains_any(blob, ("what is ", "what does ")) and not _identity_signal(blob) and not _capability_signal(blob):
+        return True
+    if "unknown" in blob and _contains_any(blob, ("word", "phrase", "term", "unfamiliar")):
+        return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -186,10 +254,10 @@ class _RouteSpec:
 
 
 _ROUTE_SPECS: List[_RouteSpec] = [
-    _RouteSpec("identity_status_route", "method_identity_status", "shape_identity_status", "case_identity_status", ["identity status", "identity", "status", "who are you", "self"], "identity_status"),
+    _RouteSpec("identity_status_route", "method_identity_status", "shape_identity_status", "case_identity_status", ["identity status", "identity", "status", "who are you", "what are you", "what is weslr", "explain weslr", "weslr", "self"], "identity_status"),
     _RouteSpec("memory_honesty_route", "method_memory_honesty", "shape_memory_honesty", "case_memory_honesty", ["memory honesty", "memory", "remember", "forget", "honest memory"], "memory_honesty"),
     _RouteSpec("continuity_route", "method_continuity", "shape_continuity", "case_continuity", ["continuity", "resume", "where we left off", "context continuity", "follow up"], "continuity"),
-    _RouteSpec("capability_orientation_route", "method_capability_orientation", "shape_capability_orientation", "case_capability_orientation", ["capability orientation", "capability", "what can you do", "can you", "ability"], "capability_orientation"),
+    _RouteSpec("capability_orientation_route", "method_capability_orientation", "shape_capability_orientation", "case_capability_orientation", ["capability orientation", "capability", "what can you do", "what can you do now", "what capabilities are active", "current ability", "help with", "ability", "can i", "upload files", "pay now", "marketplace active", "public pilot"], "capability_orientation"),
     _RouteSpec("clarification_route", "method_clarification", "shape_clarification", "case_clarification", ["clarify", "clarification", "what do you mean", "ask clarify", "rephrase"], "clarification", needs_clarification=True, blocked=True),
     _RouteSpec("uncertainty_route", "method_uncertainty", "shape_uncertainty", "case_uncertainty", ["uncertainty", "uncertain", "not sure", "unknown", "unsure"], "uncertainty", needs_clarification=True, blocked=True, unknown_or_friction=True),
     _RouteSpec("refusal_boundary_route", "method_refusal_boundary", "shape_refusal_boundary", "case_refusal_boundary", ["refusal", "boundary", "cannot", "can't", "safety boundary"], "refusal_boundary", blocked=True),
@@ -203,9 +271,9 @@ _ROUTE_SPECS: List[_RouteSpec] = [
     _RouteSpec("language_discovery_route", "method_language_discovery", "shape_language_discovery", "case_language_discovery", ["language discovery", "language", "translation", "phrase", "word"], "language_discovery"),
     _RouteSpec("scientific_discovery_route", "method_scientific_discovery", "shape_scientific_discovery", "case_scientific_discovery", ["scientific discovery", "scientific", "hypothesis", "experiment", "discovery"], "scientific_discovery"),
     _RouteSpec("benchmark_evaluation_route", "method_benchmark_evaluation", "shape_benchmark_evaluation", "case_benchmark_evaluation", ["benchmark evaluation", "benchmark", "evaluation", "score", "test"], "benchmark_evaluation"),
-    _RouteSpec("unknown_word_phrase_route", "method_unknown_word_phrase", "shape_unknown_word_phrase", "case_unknown_word_phrase", ["unknown word phrase", "unknown word", "unknown phrase", "word meaning"], "unknown_word_phrase", needs_clarification=True, blocked=True, unknown_or_friction=True),
+    _RouteSpec("unknown_word_phrase_route", "method_unknown_word_phrase", "shape_unknown_word_phrase", "case_unknown_word_phrase", ["unknown word phrase", "unknown word", "unknown phrase", "unknown term", "unfamiliar", "what is", "what does", "word meaning", "phrase meaning"], "unknown_word_phrase", needs_clarification=True, blocked=True, unknown_or_friction=True),
     _RouteSpec("unknown_intent_route", "method_unknown_intent", "shape_unknown_intent", "case_unknown_intent", ["unknown intent", "intent unknown"], "unknown_intent", needs_clarification=True, blocked=True, unknown_or_friction=True),
-    _RouteSpec("unknown_capability_route", "method_unknown_capability", "shape_unknown_capability", "case_unknown_capability", ["unknown capability", "capability unknown", "can you do"], "unknown_capability", needs_clarification=True, blocked=True, unknown_or_friction=True),
+    _RouteSpec("unknown_capability_route", "method_unknown_capability", "shape_unknown_capability", "case_unknown_capability", ["unknown capability", "capability unknown", "can you do", "can i", "upload files", "pay now", "marketplace active", "public pilot"], "unknown_capability", needs_clarification=True, blocked=True, unknown_or_friction=True),
     _RouteSpec("friction_repeated_failure_route", "method_friction_repeated_failure", "shape_friction_repeated_failure", "case_friction_repeated_failure", ["repeated failure", "friction", "stuck", "keeps failing"], "friction_repeated_failure", needs_clarification=True, blocked=True, unknown_or_friction=True),
     _RouteSpec("relationship_feedback_route", "method_relationship_feedback", "shape_relationship_feedback", "case_relationship_feedback", ["relationship feedback", "relationship", "rapport", "tone"], "relationship_feedback"),
     _RouteSpec("correction_repair_route", "method_correction_repair", "shape_correction_repair", "case_correction_repair", ["correction repair", "correction", "repair", "fix", "actually"], "correction_repair"),
@@ -452,6 +520,18 @@ def _route_priority(labels_blob: str, normalized_labels: List[str], signals: Dic
         score = _score_match(labels_blob, spec.keywords)
         if score <= 0.0:
             continue
+        if spec.route_id == "identity_status_route" and _identity_signal(labels_blob):
+            score += 0.4
+        if spec.route_id == "capability_orientation_route" and _capability_signal(labels_blob):
+            score += 0.45
+        if spec.route_id == "capability_orientation_route" and _inactive_capability_signal(labels_blob):
+            score += 0.85
+        if spec.route_id == "unknown_word_phrase_route" and _unknown_word_signal(labels_blob):
+            score += 0.5
+        if spec.route_id == "unknown_capability_route" and _contains_any(labels_blob, ("unknown capability", "capability unknown")):
+            score += 1.0
+        if spec.route_id == "unknown_capability_route" and _inactive_capability_signal(labels_blob):
+            score += 0.2
         if spec.route_id == "clarification_route" and _contains_any(labels_blob, ["clarify", "clarification"]):
             score += 0.2
         if spec.route_id == "evidence_needed_route" and _as_bool(signals.get("evidence_needed")):
@@ -480,6 +560,14 @@ def _route_priority(labels_blob: str, normalized_labels: List[str], signals: Dic
 def _default_route_from_signals(labels_blob: str, signals: Dict[str, Any]) -> _RouteSpec:
     if not labels_blob:
         return _ROUTE_LOOKUP["clarification_route"]
+    if _identity_signal(labels_blob):
+        return _ROUTE_LOOKUP["identity_status_route"]
+    if _capability_signal(labels_blob):
+        return _ROUTE_LOOKUP["capability_orientation_route"]
+    if _unknown_word_signal(labels_blob):
+        return _ROUTE_LOOKUP["unknown_word_phrase_route"]
+    if _inactive_capability_signal(labels_blob):
+        return _ROUTE_LOOKUP["capability_orientation_route"]
     if _as_bool(signals.get("needs_owner_approval")):
         return _ROUTE_LOOKUP["governance_escalation_route"]
     if _as_bool(signals.get("evidence_needed")):
