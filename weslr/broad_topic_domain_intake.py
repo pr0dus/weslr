@@ -20,6 +20,7 @@ from weslr.behavior_pack_registry import (
     PACK_OWNER,
     PACK_UNKNOWN,
 )
+from weslr.broad_topic_ontology import build_broad_topic_ontology_packet_v1, to_broad_topic_ontology_json_safe_v1
 
 HELPER_TYPE_V1 = "broad_topic_domain_intake_helper_v1"
 INTAKE_TYPE_V1 = "broad_topic_domain_intake_v1"
@@ -38,6 +39,19 @@ ALLOWED_DOMAIN_FAMILIES_V1 = {
     "website_public_launch",
     "language_vocabulary",
     "owner_workflow",
+    "ai_systems",
+    "agentic_systems",
+    "ai_safety_governance",
+    "cognitive_architecture",
+    "theory_of_mind",
+    "philosophy_of_mind",
+    "cognitive_science",
+    "psychology",
+    "neuroscience",
+    "medicine_health_research",
+    "biology_life_sciences",
+    "physics",
+    "chemistry",
     "unknown_domain",
 }
 
@@ -78,6 +92,7 @@ ALLOWED_NEXT_STAGES_V1 = {
     "clarifying_question",
     "refusal_boundary",
     "behavior_pack_candidate_seed",
+    "conceptual_theory_path",
 }
 
 FORBIDDEN_FIELD_NAMES_V1 = {
@@ -363,6 +378,16 @@ class BroadTopicDomainClassification:
     writes_state: bool
     model_provider_used: bool
     safe_metadata: dict[str, Any] | None = None
+    ontology_packet_id: str = ""
+    ontology_meta_domains: tuple[str, ...] = ()
+    ontology_domain_families: tuple[str, ...] = ()
+    ontology_subdomain_traits: tuple[str, ...] = ()
+    ontology_objects_of_study: tuple[str, ...] = ()
+    ontology_evidence_classes: tuple[str, ...] = ()
+    ontology_risk_classes: tuple[str, ...] = ()
+    ontology_sensitivity_classes: tuple[str, ...] = ()
+    ontology_response_route_family: str = ""
+    ontology_behavior_pack_candidate_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -391,6 +416,16 @@ class BroadTopicDomainIntake:
     writes_state: bool
     model_provider_used: bool
     safe_metadata: dict[str, Any] | None = None
+    ontology_packet_id: str = ""
+    ontology_meta_domains: tuple[str, ...] = ()
+    ontology_domain_families: tuple[str, ...] = ()
+    ontology_subdomain_traits: tuple[str, ...] = ()
+    ontology_objects_of_study: tuple[str, ...] = ()
+    ontology_evidence_classes: tuple[str, ...] = ()
+    ontology_risk_classes: tuple[str, ...] = ()
+    ontology_sensitivity_classes: tuple[str, ...] = ()
+    ontology_response_route_family: str = ""
+    ontology_behavior_pack_candidate_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -608,7 +643,7 @@ def _risk_level_from_family(domain_family: str, risk_hints: Sequence[str], label
     blob = " ".join((" ".join(risk_hints), " ".join(labels)))
     if _contains_any_text(blob, {"blocked", "unsafe", "surveillance", "illegal", "weapon", "harm"}):
         return "blocked"
-    if domain_family in {"privacy_sensitive_technology", "legal_privacy"}:
+    if domain_family in {"privacy_sensitive_technology", "legal_privacy", "medicine_health_research"}:
         return "high"
     if domain_family in {"industrial_automation", "robotics", "energy_systems"} and _contains_any_text(blob, SAFETY_SENSITIVE_TOKENS_V1):
         return "high"
@@ -626,8 +661,14 @@ def _evidence_need_from_inputs(domain_family: str, novelty_level: str, owner_int
     blob = " ".join(labels)
     if risk_level == "blocked" or novelty_level == "blocked_or_sensitive":
         return "must_collect_before_claims"
-    if domain_family in {"privacy_sensitive_technology", "legal_privacy", "materials_discovery"}:
-        return "must_collect_before_claims" if domain_family != "materials_discovery" else "high"
+    if domain_family in {"privacy_sensitive_technology", "legal_privacy", "medicine_health_research"}:
+        return "must_collect_before_claims"
+    if domain_family == "materials_discovery":
+        return "high"
+    if domain_family in {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        return "high" if owner_intent in {"research", "evaluate_feasibility", "build_prototype"} else "medium"
+    if domain_family in {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        return "high" if novelty_level == "high_uncertainty" else "medium"
     if domain_family == "energy_systems":
         return "high" if _contains_any_text(blob, SAFETY_SENSITIVE_TOKENS_V1) or owner_intent == "build_prototype" else "medium"
     if domain_family == "robotics":
@@ -692,6 +733,12 @@ def _candidate_behavior_pack_labels(domain_family: str, novelty_level: str, owne
         labels.extend(("owner_workflow_pack", "owner_workflow_candidate_pack"))
     elif domain_family == "technical_research":
         labels.append("technical_research_candidate_pack")
+    elif domain_family in {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        labels.extend(("ai_systems_candidate_pack", "cognitive_architecture_candidate_pack"))
+    elif domain_family in {"theory_of_mind", "philosophy_of_mind", "cognitive_science", "psychology", "neuroscience"}:
+        labels.extend(("mind_intelligence_candidate_pack", "conceptual_reasoning_candidate_pack"))
+    elif domain_family == "medicine_health_research":
+        labels.extend(("medicine_health_candidate_pack", "regulatory_boundary_candidate_pack"))
     else:
         labels.append("unknown_domain_candidate_pack")
 
@@ -728,6 +775,12 @@ def _recommended_next_stage(
         return "evidence_mapping" if owner_intent != "safety_legal_privacy_review" else "privacy_safety_legal_boundary_review"
     if domain_family == "materials_discovery":
         return "evidence_mapping" if owner_intent == "evaluate_feasibility" else "research_conversation_plan"
+    if domain_family in {"ai_systems", "agentic_systems", "ai_safety_governance", "cognitive_architecture"}:
+        return "research_conversation_plan"
+    if domain_family == "theory_of_mind" or domain_family == "philosophy_of_mind" or domain_family == "cognitive_science":
+        return "conceptual_theory_path" if owner_intent == "learn_explain" else "research_conversation_plan"
+    if domain_family in {"psychology", "neuroscience", "medicine_health_research", "biology_life_sciences"}:
+        return "privacy_safety_legal_boundary_review" if domain_family == "medicine_health_research" else "research_conversation_plan"
     if domain_family == "energy_systems":
         return "prototype_path_high_level" if owner_intent == "build_prototype" else "research_conversation_plan"
     if domain_family == "robotics":
@@ -802,6 +855,7 @@ def _build_safe_metadata(
         "risk_hints": list(risk_hints),
         "known_unknown_hints": list(known_unknown_hints),
         "existing_behavior_pack_refs": list(existing_behavior_pack_refs),
+        "ontology": _json_safe(classification.safe_metadata.get("ontology", {})),
         "classification": _json_safe(classification),
     }
 
@@ -815,6 +869,43 @@ def _deterministic_intake_id(descriptor: str, domain_family: str, novelty_level:
 
 def _normalize_pack_refs(existing_behavior_pack_refs: Sequence[Any] | None) -> tuple[str, ...]:
     return _normalize_sequence(existing_behavior_pack_refs)
+
+
+def _ontology_payload_from_inputs(
+    *,
+    descriptor: str,
+    prompt_labels: Sequence[str],
+    owner_intent_labels: Sequence[str],
+    risk_hints: Sequence[str],
+    known_unknown_hints: Sequence[str],
+    existing_behavior_pack_refs: Sequence[str],
+):
+    return build_broad_topic_ontology_packet_v1(
+        safe_topic_descriptor=descriptor,
+        prompt_labels=prompt_labels,
+        owner_intent_labels=owner_intent_labels,
+        risk_hints=risk_hints,
+        evidence_hints=(),
+        known_unknown_hints=known_unknown_hints,
+        existing_behavior_pack_refs=existing_behavior_pack_refs,
+    )
+
+
+def _prefer_ontology_domain_family(flat_domain_family: str, ontology_domain_families: Sequence[str]) -> str:
+    ontology_primary = next((family for family in ontology_domain_families if family != "unknown_domain"), "unknown_domain")
+    if not ontology_primary or ontology_primary == flat_domain_family:
+        return flat_domain_family
+    if flat_domain_family in {"technical_research", "unknown_domain", "software_product"} and ontology_primary in {
+        "ai_systems",
+        "agentic_systems",
+        "ai_safety_governance",
+        "cognitive_architecture",
+        "theory_of_mind",
+        "philosophy_of_mind",
+        "cognitive_science",
+    }:
+        return ontology_primary
+    return flat_domain_family
 
 
 # ---------------------------------------------------------------------------
@@ -841,9 +932,20 @@ def classify_broad_topic_domain_v1(
     known_unknown_hints_n = _normalize_sequence(known_unknown_hints)
     existing_refs_n = _normalize_pack_refs(existing_behavior_pack_refs)
 
+    ontology = _ontology_payload_from_inputs(
+        descriptor=descriptor,
+        prompt_labels=prompt_labels_n,
+        owner_intent_labels=owner_intent_labels_n,
+        risk_hints=risk_hints_n,
+        known_unknown_hints=known_unknown_hints_n,
+        existing_behavior_pack_refs=existing_refs_n,
+    )
+
     domain_family = _domain_family_from_labels(prompt_labels_n, descriptor)
-    if _contains_any_text(" ".join((descriptor, " ".join(prompt_labels_n), " ".join(known_unknown_hints_n))), {"privacy", "surveillance", "tracking", "biometric", "human sensing"}) and domain_family in {"technical_research", "unknown_domain"}:
-        domain_family = "privacy_sensitive_technology"
+    ontology_domain_family = _prefer_ontology_domain_family(domain_family, ontology.domain_families)
+    if _contains_any_text(" ".join((descriptor, " ".join(prompt_labels_n), " ".join(known_unknown_hints_n))), {"privacy", "surveillance", "tracking", "biometric", "human sensing"}) and ontology_domain_family in {"technical_research", "unknown_domain"}:
+        ontology_domain_family = "privacy_sensitive_technology"
+    domain_family = ontology_domain_family
 
     owner_intent = _intent_from_labels(owner_intent_labels_n, descriptor)
     if owner_intent == "unknown_intent":
@@ -868,10 +970,21 @@ def classify_broad_topic_domain_v1(
         legal_sensitive = True
         boundary_review_required = True
         evidence_mapping_required = True
+    if domain_family == "medicine_health_research":
+        safety_sensitive = True
+        legal_sensitive = True
+        boundary_review_required = True
+        evidence_mapping_required = True
     if domain_family == "energy_systems" and _has_safety_signals(prompt_labels_n + owner_intent_labels_n + risk_hints_n, descriptor):
         safety_sensitive = True
     if domain_family == "industrial_automation" and _has_safety_signals(prompt_labels_n + owner_intent_labels_n + risk_hints_n, descriptor):
         safety_sensitive = True
+    if domain_family == "software_product" and _contains_any_text(" ".join((descriptor, " ".join(prompt_labels_n), " ".join(risk_hints_n))), {"medical", "health", "clinical", "therapy", "treatment", "self-care", "wellness"}):
+        safety_sensitive = True
+        legal_sensitive = True
+        boundary_review_required = True
+        evidence_mapping_required = True
+        risk_level = "high"
     if domain_family == "robotics":
         safety_sensitive = True
     recommended_next_stage = _recommended_next_stage(domain_family, novelty_level, owner_intent, risk_level, prompt_labels_n + owner_intent_labels_n + risk_hints_n + known_unknown_hints_n, descriptor)
@@ -887,6 +1000,8 @@ def classify_broad_topic_domain_v1(
         recommended_next_stage = "behavior_pack_candidate_seed"
     if owner_intent == "safety_legal_privacy_review":
         recommended_next_stage = "privacy_safety_legal_boundary_review"
+    if domain_family == "software_product" and safety_sensitive:
+        recommended_next_stage = "privacy_safety_legal_boundary_review" if owner_intent in {"evaluate_feasibility", "research"} else "evidence_mapping"
     if domain_family == "unknown_domain" and novelty_level == "high_uncertainty":
         recommended_next_stage = "clarifying_question"
     if risk_level == "blocked":
@@ -917,7 +1032,17 @@ def classify_broad_topic_domain_v1(
         runtime_authority=False,
         writes_state=False,
         model_provider_used=False,
-        safe_metadata={},
+        safe_metadata={"ontology": _json_safe(ontology)},
+        ontology_packet_id=ontology.ontology_id,
+        ontology_meta_domains=tuple(ontology.meta_domains),
+        ontology_domain_families=tuple(ontology.domain_families),
+        ontology_subdomain_traits=tuple(ontology.subdomain_traits),
+        ontology_objects_of_study=tuple(ontology.objects_of_study),
+        ontology_evidence_classes=tuple(ontology.evidence_classes),
+        ontology_risk_classes=tuple(ontology.risk_classes),
+        ontology_sensitivity_classes=tuple(ontology.sensitivity_classes),
+        ontology_response_route_family=ontology.response_route_family,
+        ontology_behavior_pack_candidate_labels=tuple(ontology.behavior_pack_candidate_labels),
     )
     return BroadTopicDomainClassification(**{**asdict(classification), "safe_metadata": _build_safe_metadata(descriptor, prompt_labels_n, owner_intent_labels_n, risk_hints_n, known_unknown_hints_n, existing_refs_n, classification)})
 
@@ -1023,6 +1148,16 @@ def build_broad_topic_domain_intake_v1(
         writes_state=classification.writes_state,
         model_provider_used=classification.model_provider_used,
         safe_metadata=classification.safe_metadata,
+        ontology_packet_id=classification.ontology_packet_id,
+        ontology_meta_domains=classification.ontology_meta_domains,
+        ontology_domain_families=classification.ontology_domain_families,
+        ontology_subdomain_traits=classification.ontology_subdomain_traits,
+        ontology_objects_of_study=classification.ontology_objects_of_study,
+        ontology_evidence_classes=classification.ontology_evidence_classes,
+        ontology_risk_classes=classification.ontology_risk_classes,
+        ontology_sensitivity_classes=classification.ontology_sensitivity_classes,
+        ontology_response_route_family=classification.ontology_response_route_family,
+        ontology_behavior_pack_candidate_labels=classification.ontology_behavior_pack_candidate_labels,
     )
     validate_broad_topic_domain_intake_v1(intake)
     return intake
@@ -1071,6 +1206,16 @@ def validate_broad_topic_domain_intake_v1(intake: Any) -> bool:
             writes_state=bool(intake.get("writes_state")),
             model_provider_used=bool(intake.get("model_provider_used")),
             safe_metadata=dict(intake.get("safe_metadata") or {}),
+            ontology_packet_id=_safe_text(intake.get("ontology_packet_id")),
+            ontology_meta_domains=tuple(_normalize_sequence(intake.get("ontology_meta_domains"))),
+            ontology_domain_families=tuple(_normalize_sequence(intake.get("ontology_domain_families"))),
+            ontology_subdomain_traits=tuple(_normalize_sequence(intake.get("ontology_subdomain_traits"))),
+            ontology_objects_of_study=tuple(_normalize_sequence(intake.get("ontology_objects_of_study"))),
+            ontology_evidence_classes=tuple(_normalize_sequence(intake.get("ontology_evidence_classes"))),
+            ontology_risk_classes=tuple(_normalize_sequence(intake.get("ontology_risk_classes"))),
+            ontology_sensitivity_classes=tuple(_normalize_sequence(intake.get("ontology_sensitivity_classes"))),
+            ontology_response_route_family=_safe_text(intake.get("ontology_response_route_family")),
+            ontology_behavior_pack_candidate_labels=tuple(_normalize_sequence(intake.get("ontology_behavior_pack_candidate_labels"))),
         )
     else:
         raise ValidationError("intake_must_be_dataclass_or_mapping")
@@ -1160,6 +1305,16 @@ def summarize_broad_topic_domain_intake_v1(intake: Any) -> BroadTopicDomainIntak
                 writes_state=bool(intake.get("writes_state")),
                 model_provider_used=bool(intake.get("model_provider_used")),
                 safe_metadata=dict(intake.get("safe_metadata") or {}),
+                ontology_packet_id=_safe_text(intake.get("ontology_packet_id")),
+                ontology_meta_domains=tuple(_normalize_sequence(intake.get("ontology_meta_domains"))),
+                ontology_domain_families=tuple(_normalize_sequence(intake.get("ontology_domain_families"))),
+                ontology_subdomain_traits=tuple(_normalize_sequence(intake.get("ontology_subdomain_traits"))),
+                ontology_objects_of_study=tuple(_normalize_sequence(intake.get("ontology_objects_of_study"))),
+                ontology_evidence_classes=tuple(_normalize_sequence(intake.get("ontology_evidence_classes"))),
+                ontology_risk_classes=tuple(_normalize_sequence(intake.get("ontology_risk_classes"))),
+                ontology_sensitivity_classes=tuple(_normalize_sequence(intake.get("ontology_sensitivity_classes"))),
+                ontology_response_route_family=_safe_text(intake.get("ontology_response_route_family")),
+                ontology_behavior_pack_candidate_labels=tuple(_normalize_sequence(intake.get("ontology_behavior_pack_candidate_labels"))),
             )
         else:
             valid = intake
