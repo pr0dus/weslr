@@ -105,10 +105,34 @@ def test_correction_prompt_returns_correction_repair():
     assert "correct" in payload["response_text"].lower() or "repair" in payload["response_text"].lower()
 
 
+def test_contradiction_prompt_returns_conflict_response():
+    payload = _json(_response("These two things contradict each other."))
+    assert payload["render_mode"] == "conflict_contradiction"
+    assert "contradiction" in payload["response_text"].lower() or "conflict" in payload["response_text"].lower()
+
+
 def test_relationship_feedback_prompt_returns_bounded_acknowledgement():
     payload = _json(_response("A bit of relationship feedback: the tone felt off."))
     assert payload["render_mode"] == "relationship_feedback"
     assert "feedback" in payload["response_text"].lower() or "tone" in payload["response_text"].lower()
+
+
+def test_continuity_prompt_returns_continuity_recap():
+    payload = _json(_response("What were we doing before, continue the thread."))
+    assert payload["render_mode"] == "continuity_recap"
+    assert "continuity" in payload["response_text"].lower() or "we were on" in payload["response_text"].lower()
+
+
+def test_ordinary_task_prompt_returns_stepwise_plan_text():
+    payload = _json(_response("Please make a checklist and plan the task."))
+    assert payload["render_mode"] == "stepwise_plan"
+    assert "1." in payload["response_text"]
+
+
+def test_benchmark_prompt_returns_non_official_summary():
+    payload = _json(_response("Benchmark evaluation readiness, but no official claim."))
+    assert payload["render_mode"] == "benchmark_evaluation_summary"
+    assert "official" not in payload["response_text"].lower()
 
 
 def test_no_model_provider_used():

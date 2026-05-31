@@ -72,15 +72,15 @@ def normalize_owner_chat_message_v1(message: str) -> dict[str, Any]:
     if _contains_any(blob, ("unknown", "what does this mean", "friction", "stuck", "failure")):
         labels.append("unknown")
     if _contains_any(blob, ("relationship", "feedback", "frustration", "trust", "tone")):
-        labels.append("relationship")
+        labels.extend(["relationship", "feedback", "frustration", "trust", "tone"])
     if _contains_any(blob, ("actually", "wrong", "fix", "correct", "revise")):
         labels.append("correction")
-    if _contains_any(blob, ("contradiction", "inconsistent", "clash", "both true")):
-        labels.append("contradiction")
+    if _contains_any(blob, ("contradiction", "contradict", "inconsistent", "clash", "both true", "conflict")):
+        labels.extend(["contradiction", "conflict"])
     if _contains_any(blob, ("template", "generic", "boilerplate", "canned")):
         labels.append("non canned")
-    if _contains_any(blob, ("directness", "too direct", "concern", "self-check", "loaded")):
-        labels.append("directness")
+    if _contains_any(blob, ("directness", "too direct", "concern", "self-check", "loaded", "considerate", "tone")):
+        labels.extend(["directness", "too direct", "concern", "self-check", "loaded"])
 
     if not labels:
         labels.extend(words[:6] or ["clarify"])
