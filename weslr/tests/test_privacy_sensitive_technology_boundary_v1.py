@@ -270,7 +270,52 @@ def test_sensitive_contexts_are_high_risk(descriptor, prompt_labels, risk_hints,
     assert boundary.covert_use_blocked is True
 
 
-def test_generic_non_person_sensor_research_may_allow_bounded_research():
+def test_ontology_enriched_wifi_rf_intake_keeps_privacy_boundary_high():
+    boundary = _boundary(
+        "WiFi/RF sensing for human presence and location in a house",
+        prompt_labels=("wifi sensing", "human tracking", "privacy", "consent required"),
+        owner_intent_labels=("research",),
+        risk_hints=("high risk", "privacy-sensitive", "consent required", "lawful only"),
+        known_unknown_hints=("unfamiliar", "researchable"),
+        context_overrides={
+            "authenticated_user_context": True,
+            "terms_acceptance_context": True,
+            "responsible_use_context": True,
+            "consent_context_present": True,
+            "lawfulness_context_present": True,
+            "affected_person_consent_present": True,
+        },
+    )
+    assert boundary.boundary_decision in {"require_consent_and_lawfulness_context", "require_boundary_clarification", "allow_privacy_by_design_prototype_plan", "allow_consent_based_assistive_research"}
+    assert boundary.person_tracking_sensitive is True
+    assert boundary.privacy_risk_level == "high"
+    assert boundary.covert_use_blocked is True
+    assert boundary.deployment_guidance_allowed is False
+
+
+
+def test_ontology_enriched_medical_software_triggers_medical_boundary():
+    boundary = _boundary(
+        "Medical software regulated path",
+        prompt_labels=("medicine health research", "software product", "clinical validation"),
+        owner_intent_labels=("evaluate feasibility",),
+        risk_hints=("medical sensitive", "regulated domain"),
+        known_unknown_hints=("unfamiliar",),
+        context_overrides={
+            "authenticated_user_context": True,
+            "terms_acceptance_context": True,
+            "responsible_use_context": True,
+        },
+    )
+    assert boundary.medical_claim_boundary_required is True
+    assert boundary.medical_diagnosis_claim_blocked is True
+    assert boundary.treatment_recommendation_blocked is True
+    assert boundary.regulatory_review_required_for_health_product is True
+    assert boundary.allowed_guidance_level in {"privacy_by_design_plan", "medical_claim_boundary_only"}
+
+
+
+def test_ontology_enriched_generic_sensor_research_remains_bounded():
     boundary = _boundary(
         "Generic sensor research for a lab prototype",
         prompt_labels=("sensor research", "lab prototype"),
@@ -285,6 +330,7 @@ def test_generic_non_person_sensor_research_may_allow_bounded_research():
     )
     assert boundary.boundary_decision == "allow_bounded_research"
     assert boundary.person_tracking_sensitive is False
+    assert boundary.emergency_escalation_requires_explicit_permission is False
     assert boundary.allowed_guidance_level in {"conceptual_only", "research_questions_only"}
 
 

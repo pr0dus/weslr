@@ -405,6 +405,34 @@ def _context_from_mapping(mapping: Mapping[str, Any] | None, key: str, default: 
 
 
 
+def _extract_ontology_metadata(
+    intake: BroadTopicDomainIntake,
+    research_plan: ResearchConversationPlan | None,
+    overrides: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+
+    def _merge(source: Any) -> None:
+        if isinstance(source, Mapping):
+            for key, value in source.items():
+                if key == "safe_metadata" and isinstance(value, Mapping):
+                    _merge(value)
+                else:
+                    merged[str(key)] = value
+
+    if intake.safe_metadata:
+        _merge(intake.safe_metadata.get("ontology"))
+        classification = intake.safe_metadata.get("classification")
+        if isinstance(classification, Mapping):
+            _merge(classification.get("safe_metadata"))
+    if research_plan and research_plan.safe_metadata:
+        _merge(research_plan.safe_metadata.get("ontology"))
+    if overrides:
+        _merge(overrides.get("ontology"))
+    return merged
+
+
+
 def _safe_slug(text: str, *, fallback: str = "boundary") -> str:
     tokens = _normalize_text(text).replace("/", " ").replace("-", " ").replace("_", " ").split()
     if not tokens:
@@ -583,9 +611,21 @@ def _context_flags(intake: BroadTopicDomainIntake, research_plan: ResearchConver
     if overrides:
         meta.update(overrides)
 
+    ontology = _extract_ontology_metadata(intake, research_plan, overrides)
+    ontology_domain_families = set(_normalize_sequence(ontology.get("domain_families")))
+    ontology_subdomain_traits = set(_normalize_sequence(ontology.get("subdomain_traits")))
+    ontology_evidence_classes = set(_normalize_sequence(ontology.get("evidence_classes")))
+    ontology_risk_classes = set(_normalize_sequence(ontology.get("risk_classes")))
+    ontology_sensitivity_classes = set(_normalize_sequence(ontology.get("sensitivity_classes")))
+    ontology_privacy_sensitive = bool(ontology.get("privacy_sensitive")) or "privacy_sensitive" in ontology_subdomain_traits or "privacy_sensitive" in ontology_sensitivity_classes or "privacy_sensitive_technology" in ontology_domain_families
+    ontology_human_subject_involved = bool(ontology.get("human_subject_involved")) or "human_subject_involved" in ontology_subdomain_traits or ontology_privacy_sensitive
+    ontology_beneficial_assistive_use = bool(ontology.get("beneficial_assistive_use")) or "beneficial_assistive_use" in ontology_subdomain_traits
+    ontology_medical_sensitive = bool(ontology.get("medical_sensitive")) or "medical_or_health_sensitive" in ontology_sensitivity_classes or "medicine_health_research" in ontology_domain_families
+    ontology_safety_critical = bool(ontology.get("safety_sensitive")) or "safety_critical" in ontology_sensitivity_classes or "safety_critical" in ontology_risk_classes
+
     descriptor = intake.safe_topic_descriptor
     plan_blob = " ".join((research_plan.plan_type if research_plan else "", research_plan.recommended_response_mode if research_plan else "", " ".join(research_plan.safe_next_steps) if research_plan else "", " ".join(research_plan.boundary_warnings) if research_plan else ""))
-    blob = " ".join((descriptor, intake.domain_family, intake.owner_intent, intake.novelty_level, intake.risk_level, intake.recommended_next_stage, plan_blob, " ".join(intake.risk_labels), " ".join(intake.candidate_behavior_pack_labels), " ".join(str(v) for v in meta.values())))
+    blob = " ".join((descriptor, intake.domain_family, intake.owner_intent, intake.novelty_level, intake.risk_level, intake.recommended_next_stage, plan_blob, " ".join(intake.risk_labels), " ".join(intake.candidate_behavior_pack_labels)))
 
     authenticated_user_context = _context_from_mapping(meta, "authenticated_user_context", True)
     terms_acceptance_context = _context_from_mapping(meta, "terms_acceptance_context", True)
@@ -596,11 +636,11 @@ def _context_flags(intake: BroadTopicDomainIntake, research_plan: ResearchConver
     self_care_context = _has_token(blob, {"self care", "self-care", "future self", "forgetful"})
     caregiver_context_present = _has_token(blob, {"caregiver", "elder care", "elder-care", "care support"})
     routine_support_context_present = _has_token(blob, {"medication", "meds", "missed meals", "routine", "reminder", "schedule"})
-    security_safety_context_present = _has_token(blob, {"home safety", "home security", "safety", "security"})
-    assistive_health_support_intent = self_care_context or caregiver_context_present or routine_support_context_present or _has_token(blob, {"breathing", "wellness", "health"})
+    security_safety_context_present = _has_token(blob, {"home safety", "home security", "safety", "security"}) or ontology_safety_critical
+    assistive_health_support_intent = self_care_context or caregiver_context_present or routine_support_context_present or _has_token(blob, {"breathing", "wellness", "health"}) or ontology_beneficial_assistive_use
     beneficial_use_detected = assistive_health_support_intent or security_safety_context_present
 
-    person_tracking_sensitive = _has_token(blob, {"wifi", "wi-fi", "rf", "radio frequency", "sensing", "human sensing", "presence", "location", "person", "people", "someone", "home", "house", "workplace", "minor", "vulnerable", "biometric", "identity", "face", "voice", "gait"})
+    person_tracking_sensitive = _has_token(blob, {"wifi", "wi-fi", "rf", "radio frequency", "sensing", "human sensing", "presence", "location", "person", "people", "someone", "home", "house", "workplace", "minor", "vulnerable", "biometric", "identity", "face", "voice", "gait"}) or ontology_privacy_sensitive or ontology_human_subject_involved
     home_monitoring_sensitive = _has_token(blob, {"home", "house"}) and person_tracking_sensitive
     workplace_monitoring_sensitive = _has_token(blob, WORKPLACE_CONTEXT_TOKENS_V1) or _has_token(blob, {"employee", "staff"})
     minor_or_vulnerable_person_sensitive = _has_token(blob, MINOR_CONTEXT_TOKENS_V1)
@@ -608,18 +648,18 @@ def _context_flags(intake: BroadTopicDomainIntake, research_plan: ResearchConver
     affected_person_consent_required = person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or _has_token(blob, BIOMETRIC_CONTEXT_TOKENS_V1)
     affected_person_consent_present = _context_from_mapping(meta, "affected_person_consent_present", False) or (_has_token(blob, {"consent", "consented", "authorized", "permission"}) and not _has_token(blob, {"covert", "hidden"}))
 
-    medical_claim_boundary_required = assistive_health_support_intent or _has_token(blob, {"medical", "medication", "breathing", "health", "wellness"})
+    medical_claim_boundary_required = assistive_health_support_intent or _has_token(blob, {"medical", "medication", "breathing", "health", "wellness", "clinical", "therapy", "treatment"}) or ontology_medical_sensitive or ("medical_claim_adjacent" in ontology_subdomain_traits)
     validation_required_before_reliance = medical_claim_boundary_required or beneficial_use_detected or person_tracking_sensitive
-    regulatory_review_required_for_health_product = medical_claim_boundary_required and bool(_context_from_mapping(meta, "regulatory_review_required_for_health_product", False) or _has_token(blob, {"product", "launch", "prototype", "app", "service"}))
+    regulatory_review_required_for_health_product = medical_claim_boundary_required and bool(_context_from_mapping(meta, "regulatory_review_required_for_health_product", False) or _has_token(blob, {"product", "launch", "prototype", "app", "service"}) or ontology_medical_sensitive)
 
     emergency_escalation_requires_explicit_permission = _has_token(blob, EMERGENCY_CONTEXT_TOKENS_V1) or bool(_context_from_mapping(meta, "emergency_escalation_requires_explicit_permission", False))
 
-    lawfulness_required = person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or medical_claim_boundary_required or security_safety_context_present
+    lawfulness_required = person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or medical_claim_boundary_required or security_safety_context_present or ontology_medical_sensitive or ontology_privacy_sensitive
 
-    privacy_risk_level = "high" if person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or _has_token(blob, BIOMETRIC_CONTEXT_TOKENS_V1) else ("medium" if beneficial_use_detected else "low")
-    safety_risk_level = "high" if minor_or_vulnerable_person_sensitive or emergency_escalation_requires_explicit_permission or medical_claim_boundary_required else ("medium" if security_safety_context_present else "low")
+    privacy_risk_level = "high" if person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or _has_token(blob, BIOMETRIC_CONTEXT_TOKENS_V1) or ontology_privacy_sensitive else ("medium" if beneficial_use_detected else "low")
+    safety_risk_level = "high" if minor_or_vulnerable_person_sensitive or emergency_escalation_requires_explicit_permission or medical_claim_boundary_required or ontology_safety_critical else ("medium" if security_safety_context_present else "low")
     legal_risk_level = "blocked" if _has_token(blob, {"covert", "hidden"}) else ("high" if lawfulness_required else "medium")
-    abuse_risk_level = "blocked" if _has_token(blob, {"covert", "hidden"}) else ("high" if person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive else "medium")
+    abuse_risk_level = "blocked" if _has_token(blob, {"covert", "hidden"}) else ("high" if person_tracking_sensitive or workplace_monitoring_sensitive or minor_or_vulnerable_person_sensitive or ontology_privacy_sensitive else "medium")
 
     return {
         "authenticated_user_context": authenticated_user_context,
