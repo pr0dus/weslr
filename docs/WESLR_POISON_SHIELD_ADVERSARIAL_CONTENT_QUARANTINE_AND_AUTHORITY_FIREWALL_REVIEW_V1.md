@@ -1,19 +1,19 @@
 # WESLR Poison Shield / Adversarial Content Quarantine & Authority Firewall V1 — Review
 
-## Review verdict
+## Verdict
 
-The design is valid as a cross-cutting WESLR authority firewall.
+The design is valid as a cross-cutting authority firewall for WESLR.
 
-## What is correct
+## What works
 
-- External content is treated as evidence, never authority.
-- Prompt injection, indirect injection, document poisoning, retrieval poisoning, memory poisoning, tool manipulation, and source-trust impersonation are all covered.
-- Image/OCR poisoning is explicitly bounded without requiring hostile-image inspection.
-- Fake owner/operator approval is classified as a claim, not authority.
+- External content is treated as evidence, not authority.
+- Prompt injection, indirect injection, retrieval poisoning, memory poisoning, and tool manipulation are all explicitly covered.
+- Image/OCR poisoning is handled without requiring hostile-image inspection.
+- Fake owner/operator approval is blocked as a claim, not authority.
 - Cross-user and cross-project contamination are blocked by design.
-- The design explicitly rejects perfect-detection claims.
-- The design does not grant runtime authority, memory-write authority, or tool-execution authority.
-- The design rejects hostile-corpus ingestion and public security/certification claims.
+- The design explicitly avoids perfect-detection claims.
+- It does not grant runtime authority, memory-write authority, or tool-execution authority.
+- It rejects hostile-corpus ingestion and public security/certification claims.
 
 ## Integration alignment
 
@@ -30,12 +30,11 @@ The design aligns with the surrounding WESLR boundaries:
 
 ## Boundary assessment
 
-The document remains design-only and does not wire any runtime behavior.
-It also preserves the required distinction between evidence, trust, and authority.
+The document stays design-only and preserves the separation between evidence, trust, and authority.
 
 ## Minor follow-up
 
-Future helper implementation should keep the source-class and risk-label taxonomy stable enough for downstream integration and review packets.
+Keep the source-class and risk-label taxonomy stable enough for downstream helper validation and review packets.
 
 ## Final judgment
 
