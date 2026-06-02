@@ -20,7 +20,6 @@ from weslr.capability_maturity_registry import CapabilityMaturityRecord
 from weslr.energy_signal_conflict_resolution_policy import EnergySignalConflictDecision
 from weslr.forecast_error_ledger import ForecastErrorRecord
 from weslr.future_state_forecasting_engine import FutureStateForecastPacket
-import weslr.poison_shield as poison_shield
 from weslr.scenario_simulation_engine import ScenarioSimulationPacket
 from weslr.signal_provenance_freshness_model import SignalProvenanceRecord
 
