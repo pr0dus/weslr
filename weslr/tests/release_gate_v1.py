@@ -14193,7 +14193,7 @@ def _check_execution_allowed():
 
     violations = []
     for py_file in weslr_dir.rglob("*.py"):
-        if py_file.name in ("test_harness_v1.py", "release_gate_v1.py", "test_tool_use_executor_boundary_v1.py"):
+        if py_file.name in ("test_harness_v1.py", "release_gate_v1.py", "test_tool_use_executor_boundary_v1.py", "test_action_authority_boundary_v1.py"):
             continue
         try:
             content = py_file.read_text()
