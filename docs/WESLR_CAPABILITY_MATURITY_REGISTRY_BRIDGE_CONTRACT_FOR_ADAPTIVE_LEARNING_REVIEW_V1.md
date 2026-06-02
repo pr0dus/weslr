@@ -16,7 +16,7 @@ Repository anchor confirmed:
 
 Confirmed.
 
-The design is clearly metadata-only and explicitly states:
+The design is metadata-only and explicitly states:
 
 - bridge from adaptive learning metadata to registry candidate metadata
 - no registry writes
