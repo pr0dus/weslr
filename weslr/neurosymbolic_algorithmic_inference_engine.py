@@ -23,7 +23,6 @@ from weslr.future_state_forecasting_engine import FutureStateForecastPacket
 import weslr.poison_shield as poison_shield
 from weslr.scenario_simulation_engine import ScenarioSimulationPacket
 from weslr.signal_provenance_freshness_model import SignalProvenanceRecord
-from weslr.energy_grid_signal_intelligence import EnergyGridSignalIntelligencePacket
 
 HELPER_TYPE_V1 = "neurosymbolic_algorithmic_inference_engine_v1"
 PACKET_TYPE_V1 = "neurosymbolic_inference_packet_v1"
