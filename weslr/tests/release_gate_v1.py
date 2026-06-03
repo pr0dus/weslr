@@ -1490,6 +1490,39 @@ _mfcc_feature_quality_metadata_helper_implementation_plan_review_required_marker
     "AUDIT_AND_UPDATE_OCC_CONTEXT_AFTER_MFCC_FEATURE_QUALITY_METADATA_HELPER_PLAN_REVIEW_V1",
 }
 
+_mfcc_feature_quality_metadata_helper_implementation_review_doc = "docs/WESLR_MFCC_FEATURE_QUALITY_METADATA_HELPER_IMPLEMENTATION_REVIEW_V1.md"
+_mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
+    "WESLR MFCC Feature Quality Metadata Helper Implementation Review V1",
+    "mfcc_feature_quality_metadata_helper_v1_implementation_valid_ready_for_context_alignment",
+    "Repo: `/data/data/com.termux/files/home/weslr-pr47-clean`",
+    "Branch: `master`",
+    "Start HEAD: `272ab85c08745171ca861d37a1ddd7a2cfbff6dc`",
+    "OCC workspace repo: `/data/data/com.termux/files/home/.openclaw/workspace`",
+    "OCC workspace branch: `public-demo-experience-ui-v1`",
+    "OCC workspace HEAD: `cca4576599178e2d24aa777049adf42e266e4902`",
+    "weslr/mfcc_feature_quality_metadata.py",
+    "weslr/tests/test_mfcc_feature_quality_metadata_v1.py",
+    "docs/WESLR_MFCC_FEATURE_QUALITY_METADATA_HELPER_IMPLEMENTATION_PLAN_V1.md",
+    "docs/WESLR_MFCC_FEATURE_QUALITY_METADATA_HELPER_IMPLEMENTATION_PLAN_REVIEW_V1.md",
+    "Handshake result",
+    "Public APIs present",
+    "Safety / dependency audit",
+    "Packet structure",
+    "Safe bounded metadata classes",
+    "Unsafe source/provenance classes fail closed",
+    "Safe feature families and quality metadata",
+    "Denied authority fields",
+    "Fail-closed behavior",
+    "Cymatics / recognition boundary",
+    "Test coverage assessment",
+    "Blocking gaps",
+    "Non-blocking gaps",
+    "Protected-file status",
+    "Validation results",
+    "Final judgment",
+    "Recommended next lane",
+}
+
 _answer_composition_authority_helpers_implementation_review_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _answer_composition_authority_helpers_implementation_review_required_markers = {
     "WESLR Answer Composition Authority Helpers Implementation Review V1",
@@ -10957,6 +10990,13 @@ def _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_vali
     )
 
 
+def _mfcc_feature_quality_metadata_helper_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _mfcc_feature_quality_metadata_helper_implementation_review_doc,
+        _mfcc_feature_quality_metadata_helper_implementation_review_required_markers,
+    )
+
+
 def _answer_composition_authority_helpers_implementation_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _answer_composition_authority_helpers_implementation_review_doc,
@@ -12802,6 +12842,7 @@ def _check_git_scope():
     answer_composition_authority_helpers_implementation_plan_doc_valid = _answer_composition_authority_helpers_implementation_plan_doc_is_valid()
     answer_composition_authority_helpers_implementation_plan_review_doc_valid = _answer_composition_authority_helpers_implementation_plan_review_doc_is_valid()
     mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_valid()
+    mfcc_feature_quality_metadata_helper_implementation_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_review_doc_is_valid()
     answer_composition_authority_helpers_implementation_review_doc_valid = _answer_composition_authority_helpers_implementation_review_doc_is_valid()
     answer_composition_authority_report_helpers_doc_valid = _answer_composition_authority_report_helpers_doc_is_valid()
     answer_composition_authority_report_helpers_review_doc_valid = _answer_composition_authority_report_helpers_review_doc_is_valid()
@@ -13311,6 +13352,10 @@ def _check_git_scope():
             allowed = mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid
             if not mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid:
                 violations.append(f"  MFCC feature quality metadata helper implementation plan review doc missing required markers: {path}")
+        if path == _mfcc_feature_quality_metadata_helper_implementation_review_doc:
+            allowed = mfcc_feature_quality_metadata_helper_implementation_review_doc_valid
+            if not mfcc_feature_quality_metadata_helper_implementation_review_doc_valid:
+                violations.append(f"  MFCC feature quality metadata helper implementation review doc missing required markers: {path}")
         if path == _answer_composition_authority_report_helpers_doc:
             allowed = answer_composition_authority_report_helpers_doc_valid
             if not answer_composition_authority_report_helpers_doc_valid:
