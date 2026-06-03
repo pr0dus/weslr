@@ -11,6 +11,7 @@ registry writes, .weslr writes, runtime wiring, or any public claims.
 from __future__ import annotations
 
 import copy
+import re
 from typing import Any, Mapping, Sequence
 
 HELPER_TYPE_V1 = "weslr_speech_quality_packet_helper_v1"
@@ -145,6 +146,35 @@ SENSITIVE_KEY_HINTS_V1 = (
     "raw user",
 )
 
+AUTHORITY_ADJACENT_METADATA_KEYS_V1 = {
+    "speaker_verified",
+    "speaker_verification",
+    "speaker_verification_status",
+    "speaker_identity",
+    "identity_claimed",
+    "identity_verified",
+    "voice_identity",
+    "voice_verified",
+    "biometric_identity",
+    "biometric_verified",
+    "template_verified",
+    "voice_template_updated",
+    "speaker_template_updated",
+    "account_access_restored",
+    "fallback_auth_status",
+    "authorization_granted",
+    "authority_granted",
+    "action_authorized",
+    "owner_verified",
+    "operator_verified",
+    "approved_by_voice",
+    "voice_approval",
+}
+
+AUTHORITY_ADJACENT_KEY_HINTS_V1 = tuple(sorted({
+    re.sub(r"[^a-z0-9]+", "_", key).strip("_") for key in AUTHORITY_ADJACENT_METADATA_KEYS_V1
+}))
+
 FORBIDDEN_FIELD_MARKERS_V1 = (
     "raw waveform data",
     "audio buffers",
@@ -213,12 +243,34 @@ def _contains_forbidden_marker(value: Any) -> bool:
     )
 
 
+def _normalize_key_token(value: Any) -> str:
+    text = _safe_str(value).lower()
+    return re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+
+
+def _contains_authority_adjacent_key(value: Any) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if _contains_authority_adjacent_key(key) or _contains_authority_adjacent_key(item):
+                return True
+        return False
+    if isinstance(value, (list, tuple, set)):
+        return any(_contains_authority_adjacent_key(item) for item in value)
+    token = _normalize_key_token(value)
+    if not token:
+        return False
+    return token in AUTHORITY_ADJACENT_KEY_HINTS_V1
+
+
 def _is_safe_metadata_key(key: str) -> bool:
     key_text = _safe_str(key)
     if not key_text or key_text.startswith("_"):
         return False
     lowered = key_text.lower()
+    normalized = _normalize_key_token(lowered)
     if lowered in RESERVED_PACKET_FIELD_NAMES_V1:
+        return False
+    if normalized in AUTHORITY_ADJACENT_KEY_HINTS_V1:
         return False
     if any(marker in lowered for marker in SENSITIVE_KEY_HINTS_V1):
         return False
@@ -315,6 +367,8 @@ def _normalize_extra_metadata(extra_metadata: Mapping[str, Any]) -> dict[str, An
             raise ValueError(f"extra metadata must be JSON-safe: {name}")
         if _contains_forbidden_marker(raw):
             raise ValueError(f"extra metadata contains forbidden content: {name}")
+        if _contains_authority_adjacent_key(raw):
+            raise ValueError(f"authority-adjacent metadata not allowed: {name}")
         out[name] = _json_safe_copy(raw)
     return out
 
@@ -463,6 +517,8 @@ def _validate_packet_core(packet: Any) -> dict[str, Any]:
             result["errors"].append(f"extra metadata must be JSON-safe: {field_name}")
         if _contains_forbidden_marker(value):
             result["errors"].append(f"extra metadata contains forbidden content: {field_name}")
+        if _contains_authority_adjacent_key(value):
+            result["errors"].append(f"authority-adjacent metadata not allowed: {field_name}")
 
     if result["errors"]:
         result["status"] = VALIDATION_STATUS_INVALID_V1
@@ -617,6 +673,9 @@ def summarize_speech_quality_packet_v1(packet: Any) -> dict[str, Any]:
 def to_speech_quality_packet_json_safe_v1(packet: Any) -> Any:
     """Return a JSON-safe copy of the packet without mutating input."""
 
+    validation = _validate_packet_core(packet)
+    if not validation["valid"]:
+        raise ValueError("unsafe speech quality packet inputs")
     return _json_safe_copy(packet)
 
 
