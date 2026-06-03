@@ -1523,6 +1523,41 @@ _mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
     "Recommended next lane",
 }
 
+_mfcc_feature_quality_metadata_helper_implementation_review_doc = "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_REVIEW_V1.md"
+_mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
+    "WESLR Reaction Time and Latency Budget Audit Review V1",
+    "reaction_time_latency_budget_audit_design_valid_ready_for_helper_plan",
+    "Repo: `/data/data/com.termux/files/home/weslr-pr47-clean`",
+    "Branch: `master`",
+    "Start HEAD: `9b559f00cb393150f2a5f98a415535574470f3e6`",
+    "OCC context aligned at: `8c8f0272576b282f7b1a7aa0dfc1e84e983d4290`",
+    "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_V1.md",
+    "design-only",
+    "audit-planning-only",
+    "metadata/planning-only",
+    "internal-only",
+    "non-authoritative",
+    "no runtime authority",
+    "no routing authority",
+    "no speech/audio authority",
+    "no performance claim",
+    "no public benchmark/product-readiness/certification claim",
+    "perceived reaction time",
+    "first visible acknowledgement",
+    "local routing decision time",
+    "safety/preflight validation time",
+    "future audit phases",
+    "safe measurement surfaces",
+    "forbidden measurement surfaces",
+    "reaction_time_latency_budget_audit_packet_v1",
+    "denied authority fields",
+    "latency budget tiers",
+    "safety-first latency doctrine",
+    "explicit boundary statements",
+    "workflow / context-alignment decision",
+    "Recommended next lane",
+}
+
 _answer_composition_authority_helpers_implementation_review_doc = "docs/WESLR_ANSWER_COMPOSITION_AUTHORITY_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
 _answer_composition_authority_helpers_implementation_review_required_markers = {
     "WESLR Answer Composition Authority Helpers Implementation Review V1",
