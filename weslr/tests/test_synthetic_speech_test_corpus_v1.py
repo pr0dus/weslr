@@ -150,6 +150,43 @@ def test_invalid_variant_family_rejected(variant_family_refs):
 
 
 @pytest.mark.parametrize(
+    "field_name",
+    [
+        "source_refs",
+        "provenance_refs",
+        "variant_family_refs",
+        "scenario_refs",
+        "related_packet_refs",
+        "related_design_refs",
+    ],
+)
+def test_dict_inputs_are_rejected_by_builder(field_name):
+    override = {field_name: {"a": "fixture:text-only-1"}}
+    with pytest.raises(ValueError):
+        _build_valid_packet(**override)
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    [
+        "source_refs",
+        "provenance_refs",
+        "variant_family_refs",
+        "scenario_refs",
+        "related_packet_refs",
+        "related_design_refs",
+    ],
+)
+def test_dict_inputs_are_rejected_by_validation(field_name):
+    packet = _build_valid_packet()
+    packet[field_name] = {"a": "fixture:text-only-1"}
+    validation = validate_synthetic_speech_corpus_packet_v1(packet)
+
+    assert validation["valid"] is False
+    assert any("real list" in error for error in validation["errors"])
+
+
+@pytest.mark.parametrize(
     "flag_name",
     sorted(REQUIRED_FORBIDDEN_SOURCE_FLAG_NAMES_V1 | {"has_audio_generation", "has_speaker_verification"}),
 )
@@ -308,6 +345,57 @@ def test_forbidden_content_markers_are_rejected(mutation, expected_error):
 
     assert validation["valid"] is False
     assert any(expected_error in error for error in validation["errors"])
+
+
+@pytest.mark.parametrize(
+    "field_name,audio_value",
+    [
+        ("source_refs", ["fixture:text-only-public-1", "https://example.com/clip.mp3"]),
+        ("provenance_refs", ["prov:text-only-public-1", "file:///tmp/clip.wav"]),
+        ("scenario_refs", ["scenario:text-only-public-1", "audio/sample.opus"]),
+        ("related_packet_refs", ["packet:related-1", "voice/clip.m4a"]),
+        ("related_design_refs", ["design:related-1", "https://example.com/media.flac?download=1"]),
+        ("related_design_refs", ["design:related-1", "sound/room.ogg"]),
+    ],
+)
+def test_public_open_text_only_rejects_audio_like_refs(field_name, audio_value):
+    with pytest.raises(ValueError):
+        _build_valid_packet(
+            allowed_source_class="public_open_text_only",
+            **{field_name: audio_value},
+        )
+
+
+@pytest.mark.parametrize(
+    "field_name,audio_value",
+    [
+        ("notes", "voice_sample"),
+        ("notes", "raw_audio"),
+        ("notes", "microphone"),
+        ("notes", "https://example.com/clip.opus"),
+    ],
+)
+def test_public_open_text_only_rejects_audio_like_notes(field_name, audio_value):
+    with pytest.raises(ValueError):
+        _build_valid_packet(
+            allowed_source_class="public_open_text_only",
+            **{field_name: audio_value},
+        )
+
+
+@pytest.mark.parametrize(
+    "field_name,audio_value",
+    [
+        ("custom_meta", {"nested": {"uri": "https://example.com/clip.webm"}}),
+        ("operator_note", {"nested": ["sound/room.wav"]}),
+    ],
+)
+def test_public_open_text_only_rejects_audio_like_nested_extra_metadata(field_name, audio_value):
+    with pytest.raises(ValueError):
+        _build_valid_packet(
+            allowed_source_class="public_open_text_only",
+            **{field_name: audio_value},
+        )
 
 
 def test_json_safe_copy_does_not_mutate_input():

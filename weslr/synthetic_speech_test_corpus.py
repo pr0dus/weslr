@@ -203,6 +203,39 @@ SENSITIVE_KEY_HINTS_V1 = (
     ".weslr",
 )
 
+PUBLIC_OPEN_TEXT_ONLY_AUDIO_MARKERS_V1 = (
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".opus",
+    ".webm",
+    ".mp4",
+    ".mov",
+    "audio/",
+    "audio:",
+    "sound/",
+    "voice/",
+    "recording",
+    "microphone",
+    "mic_input",
+    "voice_sample",
+    "raw_audio",
+    "speech_audio",
+)
+
+PUBLIC_OPEN_TEXT_ONLY_AUDIO_URL_PATTERN_V1 = re.compile(
+    r"https?://\S+\.(?:mp3|wav|m4a|aac|flac|ogg|opus|webm|mp4|mov)(?:[?#]\S*)?$",
+    re.IGNORECASE,
+)
+
+PUBLIC_OPEN_TEXT_ONLY_AUDIO_FILE_PATTERN_V1 = re.compile(
+    r"\.(?:mp3|wav|m4a|aac|flac|ogg|opus|webm|mp4|mov)(?:[?#]\S*)?$",
+    re.IGNORECASE,
+)
+
 AUTHORITY_ADJACENT_METADATA_KEYS_V1 = {
     "speaker_verified",
     "speaker_verification",
@@ -375,6 +408,27 @@ def _contains_authority_adjacent_key(value: Any) -> bool:
     return token in AUTHORITY_ADJACENT_KEY_HINTS_V1
 
 
+def _contains_public_open_text_only_audio_like_content(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(
+            _contains_public_open_text_only_audio_like_content(key)
+            or _contains_public_open_text_only_audio_like_content(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple, set)):
+        return any(_contains_public_open_text_only_audio_like_content(item) for item in value)
+    text = _safe_str(value).lower()
+    if not text:
+        return False
+    if any(marker in text for marker in PUBLIC_OPEN_TEXT_ONLY_AUDIO_MARKERS_V1):
+        return True
+    if PUBLIC_OPEN_TEXT_ONLY_AUDIO_URL_PATTERN_V1.search(text):
+        return True
+    if PUBLIC_OPEN_TEXT_ONLY_AUDIO_FILE_PATTERN_V1.search(text):
+        return True
+    return False
+
+
 def _is_safe_metadata_key(key: str) -> bool:
     if not isinstance(key, str):
         return False
@@ -404,11 +458,9 @@ def _normalize_string(value: Any, field_name: str, *, allow_empty: bool = False)
 def _normalize_string_list(value: Any, field_name: str, *, allow_empty: bool = True) -> list[str]:
     if value is None:
         items: list[Any] = []
-    elif isinstance(value, (str, bytes)):
+    elif isinstance(value, (str, bytes, dict)):
         raise ValueError(f"{field_name} must be a real list of safe strings")
-    elif isinstance(value, dict):
-        items = list(value.values())
-    elif isinstance(value, (list, tuple, set)):
+    elif isinstance(value, list):
         items = list(value)
     else:
         raise ValueError(f"{field_name} must be a real list of safe strings")
@@ -728,6 +780,28 @@ def _validate_packet_core(packet: Any) -> dict[str, Any]:
             result["errors"].append(f"extra metadata contains forbidden content: {field_name}")
         if _contains_authority_adjacent_key(value):
             result["errors"].append(f"authority-adjacent metadata not allowed: {field_name}")
+
+    if isinstance(source_class_value, str) and source_class_value == "public_open_text_only":
+        text_only_fields = {
+            "source_refs",
+            "provenance_refs",
+            "corpus_name",
+            "corpus_scope",
+            "variant_family_refs",
+            "scenario_refs",
+            "created_at",
+            "created_by_ref",
+            "related_packet_refs",
+            "related_design_refs",
+            "notes",
+            "coverage_summary",
+        }
+        text_only_fields.update(extra_fields)
+        for field_name in text_only_fields:
+            if field_name not in packet:
+                continue
+            if _contains_public_open_text_only_audio_like_content(packet.get(field_name)):
+                result["errors"].append(f"public_open_text_only must remain text-only: {field_name}")
 
     if result["errors"]:
         result["status"] = VALIDATION_STATUS_INVALID_V1
