@@ -1523,6 +1523,42 @@ _mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
     "Recommended next lane",
 }
 
+_reaction_time_latency_budget_helper_implementation_plan_doc = "docs/WESLR_REACTION_TIME_LATENCY_BUDGET_HELPER_IMPLEMENTATION_PLAN_V1.md"
+_reaction_time_latency_budget_helper_implementation_plan_required_markers = {
+    "WESLR Reaction Time Latency Budget Helper Implementation Plan V1",
+    "reaction_time_latency_budget_helper_implementation_plan_ready_for_review",
+    "Repo: `/data/data/com.termux/files/home/weslr-pr47-clean`",
+    "Branch: `master`",
+    "Start HEAD: `8910138122bd224b7ad0885325c533a29a301617`",
+    "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_V1.md",
+    "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_REVIEW_V1.md",
+    "implementation-plan-only",
+    "design/planning-only",
+    "metadata-helper-planning-only",
+    "internal-only",
+    "non-authoritative",
+    "no runtime authority",
+    "no routing authority",
+    "no chat authority",
+    "no voice/audio authority",
+    "no measurement execution authority",
+    "no performance claim",
+    "no public benchmark/product-readiness/certification claim",
+    "Future helper paths",
+    "Future packet name",
+    "Safe case source classes",
+    "Forbidden case source classes",
+    "Latency category labels",
+    "Latency budget tier labels",
+    "Measurement method labels",
+    "Future fail-closed validation principles",
+    "Safe UI acknowledgement language follow-up",
+    "Implementation phases",
+    "Explicit boundary statements",
+    "Final judgment",
+    "Recommended next lane",
+}
+
 _mfcc_feature_quality_metadata_helper_implementation_review_doc = "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_REVIEW_V1.md"
 _mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
     "WESLR Reaction Time and Latency Budget Audit Review V1",
@@ -11025,6 +11061,13 @@ def _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_vali
     )
 
 
+def _reaction_time_latency_budget_helper_implementation_plan_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _reaction_time_latency_budget_helper_implementation_plan_doc,
+        _reaction_time_latency_budget_helper_implementation_plan_required_markers,
+    )
+
+
 def _mfcc_feature_quality_metadata_helper_implementation_review_doc_is_valid():
     return _doc_with_markers_is_valid(
         _mfcc_feature_quality_metadata_helper_implementation_review_doc,
@@ -12877,6 +12920,7 @@ def _check_git_scope():
     answer_composition_authority_helpers_implementation_plan_doc_valid = _answer_composition_authority_helpers_implementation_plan_doc_is_valid()
     answer_composition_authority_helpers_implementation_plan_review_doc_valid = _answer_composition_authority_helpers_implementation_plan_review_doc_is_valid()
     mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_valid()
+    reaction_time_latency_budget_helper_implementation_plan_doc_valid = _reaction_time_latency_budget_helper_implementation_plan_doc_is_valid()
     mfcc_feature_quality_metadata_helper_implementation_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_review_doc_is_valid()
     answer_composition_authority_helpers_implementation_review_doc_valid = _answer_composition_authority_helpers_implementation_review_doc_is_valid()
     answer_composition_authority_report_helpers_doc_valid = _answer_composition_authority_report_helpers_doc_is_valid()
@@ -13387,6 +13431,10 @@ def _check_git_scope():
             allowed = mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid
             if not mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid:
                 violations.append(f"  MFCC feature quality metadata helper implementation plan review doc missing required markers: {path}")
+        if path == _reaction_time_latency_budget_helper_implementation_plan_doc:
+            allowed = reaction_time_latency_budget_helper_implementation_plan_doc_valid
+            if not reaction_time_latency_budget_helper_implementation_plan_doc_valid:
+                violations.append(f"  reaction time latency budget helper implementation plan doc missing required markers: {path}")
         if path == _mfcc_feature_quality_metadata_helper_implementation_review_doc:
             allowed = mfcc_feature_quality_metadata_helper_implementation_review_doc_valid
             if not mfcc_feature_quality_metadata_helper_implementation_review_doc_valid:
