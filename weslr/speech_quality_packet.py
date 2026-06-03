@@ -172,7 +172,7 @@ AUTHORITY_ADJACENT_METADATA_KEYS_V1 = {
 }
 
 AUTHORITY_ADJACENT_KEY_HINTS_V1 = tuple(sorted({
-    re.sub(r"[^a-z0-9]+", "_", key).strip("_") for key in AUTHORITY_ADJACENT_METADATA_KEYS_V1
+    re.sub(r"[^a-z0-9]+", "", key.lower()).strip() for key in AUTHORITY_ADJACENT_METADATA_KEYS_V1
 }))
 
 FORBIDDEN_FIELD_MARKERS_V1 = (
@@ -245,12 +245,14 @@ def _contains_forbidden_marker(value: Any) -> bool:
 
 def _normalize_key_token(value: Any) -> str:
     text = _safe_str(value).lower()
-    return re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return re.sub(r"[^a-z0-9]+", "", text).strip()
 
 
 def _contains_authority_adjacent_key(value: Any) -> bool:
     if isinstance(value, dict):
         for key, item in value.items():
+            if not isinstance(key, str):
+                return True
             if _contains_authority_adjacent_key(key) or _contains_authority_adjacent_key(item):
                 return True
         return False
@@ -263,6 +265,8 @@ def _contains_authority_adjacent_key(value: Any) -> bool:
 
 
 def _is_safe_metadata_key(key: str) -> bool:
+    if not isinstance(key, str):
+        return False
     key_text = _safe_str(key)
     if not key_text or key_text.startswith("_"):
         return False

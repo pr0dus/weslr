@@ -291,8 +291,88 @@ def test_build_rejects_nested_authority_adjacent_metadata():
         build_speech_quality_packet_v1(**_minimal_packet_kwargs(custom_meta={"speaker_verified": True}))
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"speakerVerified": True},
+        {"SpeakerVerified": True},
+        {"speakerverified": True},
+        {"speaker-verification": True},
+        {"speaker verification": True},
+        {"speaker.verification": True},
+        {"speaker/verification": True},
+        {"speaker:verification": True},
+    ],
+)
+def test_validation_rejects_normalized_speaker_verification_variants(mutation):
+    packet = _minimal_packet_kwargs(**mutation)
+    result = validate_speech_quality_packet_v1(packet)
+
+    assert result["valid"] is False
+    assert any("authority-adjacent" in error.lower() or "unsafe extra metadata field" in error.lower() for error in result["errors"])
+
+
+@pytest.mark.parametrize("mutation", [{"speakerVerified": True}, {"speakerverified": True}])
+def test_build_rejects_normalized_speaker_verified_claims(mutation):
+    with pytest.raises(ValueError):
+        build_speech_quality_packet_v1(**_minimal_packet_kwargs(**mutation))
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"identityVerified": True},
+        {"voiceVerified": True},
+        {"biometricVerified": True},
+        {"speakerIdentity": True},
+        {"accountAccessRestored": True},
+        {"fallbackAuthStatus": "restored"},
+        {"authorizationGranted": True},
+        {"authorityGranted": True},
+        {"actionAuthorized": True},
+        {"ownerVerified": True},
+        {"operatorVerified": True},
+        {"approvedByVoice": True},
+        {"voiceApproval": True},
+    ],
+)
+def test_validation_rejects_normalized_authority_adjacent_metadata_keys(mutation):
+    packet = _minimal_packet_kwargs(**mutation)
+    result = validate_speech_quality_packet_v1(packet)
+
+    assert result["valid"] is False
+    assert any("authority-adjacent" in error.lower() or "unsafe extra metadata field" in error.lower() for error in result["errors"])
+
+
+def test_validation_rejects_normalized_nested_authority_adjacent_metadata():
+    packet = _minimal_packet_kwargs(custom_meta={"speakerVerified": True, "safe": "metadata"})
+    result = validate_speech_quality_packet_v1(packet)
+
+    assert result["valid"] is False
+    assert any("authority-adjacent" in error.lower() or "unsafe extra metadata field" in error.lower() for error in result["errors"])
+
+
+def test_validation_rejects_list_contained_nested_authority_adjacent_metadata():
+    packet = _minimal_packet_kwargs(custom_meta=[{"voiceVerified": True}, {"safe": "metadata"}])
+    result = validate_speech_quality_packet_v1(packet)
+
+    assert result["valid"] is False
+    assert any("authority-adjacent" in error.lower() or "unsafe extra metadata field" in error.lower() for error in result["errors"])
+
+
+def test_build_rejects_normalized_nested_authority_adjacent_metadata():
+    with pytest.raises(ValueError):
+        build_speech_quality_packet_v1(**_minimal_packet_kwargs(custom_meta={"speakerVerified": True}))
+
+
 def test_json_safe_copy_rejects_invalid_speaker_verified_packet():
     packet = _minimal_packet_kwargs(speaker_verified=True)
+    with pytest.raises(ValueError):
+        to_speech_quality_packet_json_safe_v1(packet)
+
+
+def test_json_safe_copy_rejects_nested_normalized_authority_adjacent_metadata():
+    packet = _minimal_packet_kwargs(custom_meta={"nested": {"voiceVerified": True}})
     with pytest.raises(ValueError):
         to_speech_quality_packet_json_safe_v1(packet)
 
@@ -317,6 +397,24 @@ def test_markdown_marks_speaker_verified_packet_invalid():
     assert "speaker" in markdown.lower()
     assert "authority" in markdown.lower()
     assert "public claim" in markdown.lower()
+
+
+def test_summary_marks_normalized_speaker_verified_packet_invalid():
+    packet = _minimal_packet_kwargs(speakerVerified=True)
+    summary = summarize_speech_quality_packet_v1(packet)
+
+    assert summary["valid"] is False
+    assert summary["status"] == "invalid"
+    assert any("authority-adjacent" in error.lower() or "unsafe extra metadata field" in error.lower() for error in summary["errors"])
+
+
+def test_markdown_marks_normalized_speaker_verified_packet_invalid():
+    packet = _minimal_packet_kwargs(speakerVerified=True)
+    markdown = render_speech_quality_packet_markdown_v1(packet)
+
+    assert "Status: INVALID" in markdown
+    assert "speaker" in markdown.lower()
+    assert "authority" in markdown.lower()
 
 
 def test_validation_rejects_missing_required_field():
