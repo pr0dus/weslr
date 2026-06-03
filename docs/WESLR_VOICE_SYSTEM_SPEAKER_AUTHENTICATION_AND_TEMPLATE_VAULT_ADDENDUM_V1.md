@@ -20,6 +20,10 @@
 
 This addendum extends `VOICE_SYSTEM_STANDARD_V1.md` with a narrow future-facing design for consented monthly voice reauthentication and biometric voice-template vault metadata.
 
+"Monthly" here is the initial/default cadence only. It is not a biological truth claim about universal voice drift, and it does not imply that voice changes on a fixed schedule.
+
+Cadence is governed metadata, not runtime behavior.
+
 It does **not** replace existing voice provenance or source-attribution documents. Those remain the correct place for “who said that?”, output provenance, pre-speak/post-speak hooks, and attribution logging.
 
 This addendum defines:
@@ -59,7 +63,7 @@ It also preserves the existing boundary that provenance and source attribution a
 
 ## 4. Monthly reauthentication flow
 
-Future monthly reauthentication is a consented refresh cycle, not a passive identity guess.
+Future monthly reauthentication is a consented refresh cycle, not a passive identity guess. Monthly is the default starting policy, not a universal timing claim.
 
 Future flow:
 
@@ -79,6 +83,57 @@ Future flow:
 9. successful results update metadata/template version only after consent
 
 Monthly refresh updates metadata only; it does not grant authority.
+
+### 4.1 Adaptive cadence policy
+
+The cadence policy is adaptive metadata and may evolve based on evidence.
+
+Cadence labels:
+
+- `monthly_default`
+- `risk_triggered_refresh`
+- `drift_triggered_refresh`
+- `quality_triggered_refresh`
+- `illness_fallback`
+- `owner_requested_refresh`
+- `operator_requested_refresh`
+- `disabled_or_revoked`
+- `manual_review_required`
+
+Rules:
+
+- default refresh interval starts monthly
+- earlier refresh may be triggered by spoof/replay risk
+- earlier refresh may be triggered by template drift
+- earlier refresh may be triggered by low sample quality
+- refresh may be deferred during illness, hoarseness, or noisy environments
+- refresh may be disabled after revocation
+- owner/operator review can change cadence policy
+- cadence change does not expand voice authority
+
+### 4.2 Fallback authentication
+
+If voice verification fails or is uncertain, the user may authenticate through the normal account system.
+
+Supported fallback categories may include:
+
+- normal account login
+- Google login / external IdP login
+- GitHub login / external IdP login
+- email key / email link
+- phone-number-backed login option where supported by the identity provider
+- passkey/device authentication where available
+- owner/operator manual review where required
+
+Rules:
+
+- fallback auth may restore account access
+- fallback auth may verify the account user through the normal account system
+- fallback auth must not automatically update the voice template
+- fallback auth must not automatically set `speaker_verified`
+- failed voice verification blocks `speaker_verified`, not the entire user account
+- voice auth is optional step-up metadata, not primary account recovery
+- high-risk actions still require Owner/Operator Workflow and Action Authority
 
 ## 5. Dynamic challenge design
 
@@ -151,6 +206,8 @@ No passive enrollment from ambient speech is allowed.
 
 Small drift may be recorded as metadata.
 
+Illness, hoarseness, colds, and noisy environments may cause temporary drift or poor sample quality.
+
 Drift bands:
 
 - `stable`
@@ -161,8 +218,11 @@ Drift bands:
 Rules:
 
 - monthly refresh updates template version only if safe
+- if illness or noise is declared or detected, route to fallback auth
 - unexpected drift triggers owner/operator review
 - repeated mismatch blocks verification
+- template update may be deferred when voice quality is unsafe
+- repeated mismatch during illness or noise is not treated as malicious by default, but it still blocks verification until safe
 - drift does not expand authority
 
 ## 9. Spoof/replay/synthetic voice protection
@@ -242,6 +302,16 @@ Future `speaker_auth_packet` shape:
 - `speaker_verified`
 - `identity_claimed`
 - `authority_granted`
+- `reauth_cadence_policy`
+- `reauth_trigger_reason`
+- `fallback_auth_required`
+- `fallback_auth_method`
+- `fallback_auth_status`
+- `illness_or_hoarseness_declared`
+- `environment_quality_status`
+- `template_update_deferred`
+- `account_access_restored`
+- `speaker_verified_update_allowed`
 - `owner_review_required`
 - `operator_review_required`
 - `action_authority_required`
@@ -261,6 +331,16 @@ Rules:
 
 Future review scenarios should include:
 
+- sick/hoarse user attempts refresh
+- user with cold fails voice challenge but passes Google login
+- user fails voice but passes GitHub login
+- user passes email key/link but `speaker_verified` remains false
+- user passes phone-backed login but voice template update remains deferred
+- noisy environment causes fallback auth path
+- drift-triggered refresh succeeds after review
+- risk-triggered refresh blocks due to spoof suspicion
+- revoked user passes external login but voice auth remains revoked
+- fallback auth success followed by attempted high-risk action still requires Action Authority
 - replayed monthly phrase
 - synthetic cloned voice
 - old recording
