@@ -1592,6 +1592,23 @@ _reaction_time_latency_budget_helper_implementation_plan_review_required_markers
     "Recommended next lane",
 }
 
+_reaction_time_latency_budget_helper_implementation_review_doc = "docs/WESLR_REACTION_TIME_LATENCY_BUDGET_HELPER_IMPLEMENTATION_REVIEW_V1.md"
+_reaction_time_latency_budget_helper_implementation_review_required_markers = {
+    "WESLR Reaction Time Latency Budget Helper Implementation Review V1",
+    "reaction_time_latency_budget_helper_v1_implementation_valid_ready_for_context_alignment",
+    "Repo: `/data/data/com.termux/files/home/weslr-pr47-clean`",
+    "Branch: `master`",
+    "Start HEAD: `4a0d7fea2ebf035e065d8563833aa317465bed7c`",
+    "weslr/reaction_time_latency_budget_helper.py",
+    "weslr/tests/test_reaction_time_latency_budget_helper_v1.py",
+    "blocking gaps",
+    "non-blocking gaps",
+    "Safety / boundary confirmation",
+    "Validation result",
+    "Final judgment",
+    "Recommended next lane",
+}
+
 _mfcc_feature_quality_metadata_helper_implementation_review_doc = "docs/WESLR_REACTION_TIME_AND_LATENCY_BUDGET_AUDIT_REVIEW_V1.md"
 _mfcc_feature_quality_metadata_helper_implementation_review_required_markers = {
     "WESLR Reaction Time and Latency Budget Audit Review V1",
@@ -11094,6 +11111,13 @@ def _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_vali
     )
 
 
+def _reaction_time_latency_budget_helper_implementation_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _reaction_time_latency_budget_helper_implementation_review_doc,
+        _reaction_time_latency_budget_helper_implementation_review_required_markers,
+    )
+
+
 def _reaction_time_latency_budget_helper_implementation_plan_doc_is_valid():
     return _doc_with_markers_is_valid(
         _reaction_time_latency_budget_helper_implementation_plan_doc,
@@ -12964,6 +12988,7 @@ def _check_git_scope():
     mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_plan_review_doc_is_valid()
     reaction_time_latency_budget_helper_implementation_plan_doc_valid = _reaction_time_latency_budget_helper_implementation_plan_doc_is_valid()
     reaction_time_latency_budget_helper_implementation_plan_review_doc_valid = _reaction_time_latency_budget_helper_implementation_plan_review_doc_is_valid()
+    reaction_time_latency_budget_helper_implementation_review_doc_valid = _reaction_time_latency_budget_helper_implementation_review_doc_is_valid()
     mfcc_feature_quality_metadata_helper_implementation_review_doc_valid = _mfcc_feature_quality_metadata_helper_implementation_review_doc_is_valid()
     answer_composition_authority_helpers_implementation_review_doc_valid = _answer_composition_authority_helpers_implementation_review_doc_is_valid()
     answer_composition_authority_report_helpers_doc_valid = _answer_composition_authority_report_helpers_doc_is_valid()
@@ -13482,6 +13507,10 @@ def _check_git_scope():
             allowed = reaction_time_latency_budget_helper_implementation_plan_review_doc_valid
             if not reaction_time_latency_budget_helper_implementation_plan_review_doc_valid:
                 violations.append(f"  reaction time latency budget helper implementation plan review doc missing required markers: {path}")
+        if path == _reaction_time_latency_budget_helper_implementation_review_doc:
+            allowed = reaction_time_latency_budget_helper_implementation_review_doc_valid
+            if not reaction_time_latency_budget_helper_implementation_review_doc_valid:
+                violations.append(f"  reaction time latency budget helper implementation review doc missing required markers: {path}")
         if path == _mfcc_feature_quality_metadata_helper_implementation_review_doc:
             allowed = mfcc_feature_quality_metadata_helper_implementation_review_doc_valid
             if not mfcc_feature_quality_metadata_helper_implementation_review_doc_valid:
