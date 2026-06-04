@@ -10710,9 +10710,18 @@ _occ_weslr_separation_hardening_review_required_markers = {
     "safe_workflow_provenance",
     "risky_doctrine_drift",
     "No blocking gaps",
-    "occ_weslr_separation_contamination_hardening_design_valid_ready_for_protected_runtime_cleanup",
+    "protected_runtime_tooling_reference_cleanup_valid_ready_for_public_doc_cleanup",
 }
 
+_protected_runtime_tooling_reference_cleanup_review_doc = "docs/WESLR_PROTECTED_RUNTIME_TOOLING_REFERENCE_CLEANUP_REVIEW_V1.md"
+_protected_runtime_tooling_reference_cleanup_review_required_markers = {
+    "WESLR Protected Runtime Tooling Reference Cleanup Review V1",
+    "Review scope",
+    "safe_workflow_provenance",
+    "risky_doctrine_drift",
+    "No blocking gaps",
+    "protected_runtime_tooling_reference_cleanup_valid_ready_for_public_doc_cleanup",
+}
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -13236,6 +13245,10 @@ def _check_git_scope():
         _occ_weslr_separation_hardening_review_doc,
         _occ_weslr_separation_hardening_review_required_markers,
     )
+    protected_runtime_tooling_reference_cleanup_review_doc_valid = _doc_with_markers_is_valid(
+        _protected_runtime_tooling_reference_cleanup_review_doc,
+        _protected_runtime_tooling_reference_cleanup_review_required_markers,
+    )
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -14212,6 +14225,10 @@ def _check_git_scope():
             allowed = occ_weslr_separation_hardening_review_doc_valid
             if not occ_weslr_separation_hardening_review_doc_valid:
                 violations.append(f"  separation hardening review doc missing required markers: {path}")
+        if path == _protected_runtime_tooling_reference_cleanup_review_doc:
+            allowed = protected_runtime_tooling_reference_cleanup_review_doc_valid
+            if not protected_runtime_tooling_reference_cleanup_review_doc_valid:
+                violations.append(f"  protected runtime tooling reference cleanup review doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
