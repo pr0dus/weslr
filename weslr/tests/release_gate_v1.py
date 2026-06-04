@@ -10736,6 +10736,7 @@ _public_doc_tooling_reference_cleanup_docs = {
     "IDENTITY.md",
     "MEMORY.md",
     "docs/WESLR_INTERNAL_CONTEXT_TOOLING_DOCTRINE_DRIFT_CLEANUP_RESULT_V1.md",
+    "docs/WESLR_INTERNAL_CONTEXT_TOOLING_DOCTRINE_DRIFT_CLEANUP_REVIEW_V1.md",
 }
 
 def _run_harness():
