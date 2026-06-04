@@ -9,7 +9,8 @@ PASS
 - Root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `5b648cec5a2389c7a456738832f466a4db7a7806`
-- End HEAD: `0936567bc65614cfa0d395b9580d2665da2e0546`
+- First review commit / pre-follow-up HEAD: `0936567bc65614cfa0d395b9580d2665da2e0546`
+- Final follow-up doc-only commit / final repo HEAD: `17eb64205e80349addd4c067e3fb1361287da0ff`
 
 3. OCC workspace repo root / branch / HEAD verification
 - Root: `/data/data/com.termux/files/home/.openclaw/workspace`
