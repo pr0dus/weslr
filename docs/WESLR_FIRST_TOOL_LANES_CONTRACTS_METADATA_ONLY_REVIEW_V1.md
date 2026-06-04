@@ -18,8 +18,7 @@ Final judgment: `weslr_first_tool_lanes_contracts_metadata_only_valid_ready_for_
 ## 3. Files changed
 
 - `docs/WESLR_FIRST_TOOL_LANES_CONTRACTS_METADATA_ONLY_REVIEW_V1.md`
-
-No other files are required for this review doc.
+- `weslr/tests/release_gate_v1.py`
 
 ## 4. Review findings
 
@@ -303,7 +302,7 @@ None material.
 
 ## 28. Commit hash
 
-`f7ff385b07dc97d4daf2f521ce584f7349f9d516`
+`68c132462188e9b2c038ae652ea10948b720fda3`
 
 ## 29. Final judgment
 
