@@ -10731,6 +10731,7 @@ _public_doc_tooling_reference_cleanup_docs = {
     "docs/PHASE-1-CHAT-CONTROL-IMPLEMENTATION.md",
     "docs/FRONT_DOOR_BRIDGE_CONTRACT_v1.md",
     "docs/CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md",
+    "docs/WESLR_PUBLIC_DOC_TOOLING_REFERENCE_CLEANUP_REVIEW_V1.md",
 }
 
 def _run_harness():
