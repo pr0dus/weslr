@@ -12834,6 +12834,7 @@ _state_and_continuity_mvp_helpers_path = "weslr/state_and_continuity_mvp_helpers
 _state_and_continuity_mvp_helpers_test_path = "weslr/tests/test_state_and_continuity_mvp_helpers_v1.py"
 _state_and_continuity_mvp_helpers_report_doc = "docs/WESLR_STATE_AND_CONTINUITY_MVP_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 _state_and_continuity_mvp_helpers_review_doc = "docs/WESLR_STATE_AND_CONTINUITY_MVP_HELPERS_REVIEW_V1.md"
+_project_state_model_helpers_report_doc = "docs/WESLR_PROJECT_STATE_MODEL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -14561,6 +14562,8 @@ def _check_git_scope():
         if path == _state_and_continuity_mvp_helpers_report_doc:
             allowed = True
         if path == _state_and_continuity_mvp_helpers_review_doc:
+            allowed = True
+        if path == _project_state_model_helpers_report_doc:
             allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
