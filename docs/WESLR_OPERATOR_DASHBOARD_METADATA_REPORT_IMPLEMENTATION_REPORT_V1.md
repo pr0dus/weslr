@@ -9,7 +9,7 @@ PASS
 - Root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `bd38bea51e1fbf273ea0717563514b12a68b16b2`
-- End HEAD: `db1741285b5938f6d0e3eb4723f323bee99d96bc`
+- End HEAD: `7724d3606515b8c3f83259cf718d056fdf1505e7`
 
 3. OCC workspace repo root / branch / HEAD verification
 - Root: `/data/data/com.termux/files/home/.openclaw/workspace`
@@ -20,6 +20,7 @@ PASS
 - `weslr/operator_dashboard_metadata_report.py`
 - `weslr/tests/test_operator_dashboard_metadata_report_v1.py`
 - `docs/WESLR_OPERATOR_DASHBOARD_METADATA_REPORT_IMPLEMENTATION_REPORT_V1.md`
+- `weslr/tests/release_gate_v1.py`
 
 5. Helper implemented
 - `weslr/operator_dashboard_metadata_report.py`
@@ -214,7 +215,8 @@ PASS
 - Pass after final verification.
 
 24. Commit hash
-- `db1741285b5938f6d0e3eb4723f323bee99d96bc`
+- Implementation commit recorded in report artifact: `db1741285b5938f6d0e3eb4723f323bee99d96bc`
+- Final follow-up exact-file allowlist/report-status commit: `7724d3606515b8c3f83259cf718d056fdf1505e7`
 
 25. Final judgment
 - `weslr_operator_dashboard_metadata_report_implemented_ready_for_review`
