@@ -274,16 +274,15 @@ None material in this review scope.
 
 ## 24. Validation results
 
-Pending file-level checks to run in the final validation pass:
-- `git diff --check`
-- `git status --short`
-- `git diff --stat`
-- `python3 weslr/tests/release_gate_v1.py`
-- `bash scripts/weslr_release_check.sh`
+- `git diff --check` — PASS
+- `git status --short` — only pre-existing unrelated untracked docs/tests remain
+- `git diff --stat` — review doc only in this change set
+- `python3 weslr/tests/release_gate_v1.py` — PASS
+- `bash scripts/weslr_release_check.sh` — PASS
 
 ## 25. Protected-file status
 
-Expected unchanged:
+Unchanged:
 - `weslr/chat_responder.py`
 - `weslr/main.py`
 - `main.py`
@@ -305,7 +304,7 @@ Expected unchanged:
 
 ## 27. Release-gate allowance note
 
-If needed, the allowance should be an exact-file entry only for `docs/WESLR_OPERATOR_OBSERVABILITY_AND_CONTROL_REVIEW_V1.md`, because this review doc is the only new staged review artifact.
+None needed beyond the exact-file allowance already used when the gate required it.
 
 ## 28. Final judgment
 
