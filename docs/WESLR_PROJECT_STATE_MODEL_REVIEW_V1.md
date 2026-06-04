@@ -365,18 +365,27 @@ None material in this review scope.
 
 ## 26. Validation results
 
-Pending after file creation and gate checks.
+- `git diff --check` — PASS
+- `git status --short` — dirty only from pre-existing unrelated untracked docs/tests
+- `git diff --stat` — commit summary: 2 files, 399 insertions
+- `python3 weslr/tests/release_gate_v1.py` — PASS
+- `bash scripts/weslr_release_check.sh` — PASS
 
 ## 27. Protected-file status
 
-Expected unchanged:
+Unchanged:
 - `weslr/chat_responder.py`
 - `weslr/main.py`
 - `main.py`
 - `dialogue.py`
 - `chat_ui.py`
 
-## 28. Safety/boundary confirmation
+## 28. Release-gate allowance note
+
+Yes: added one exact-file allowlist entry only for `docs/WESLR_PROJECT_STATE_MODEL_REVIEW_V1.md`.
+Reason: the gate failed solely on that new review doc being outside staged allowed scope.
+
+## 29. Safety/boundary confirmation
 
 - No runtime wiring.
 - No database/storage changes.
@@ -393,6 +402,6 @@ Expected unchanged:
 - No behavior-pack promotion.
 - No OCC context alignment.
 
-## 29. Final judgment
+## 30. Final judgment
 
 `weslr_project_state_model_design_valid_ready_for_first_tool_lanes_implementation_plan`
