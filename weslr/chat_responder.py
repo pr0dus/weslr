@@ -3,7 +3,7 @@
 This is the WESLR-owned conversational response layer.
 It formats decision output into natural language for the operator.
 
-IMPORTANT: This is NOT the OpenClaw adapter. This is the canonical
+IMPORTANT: This is the canonical
 WESLR conversational surface, independent of any host runtime.
 """
 
@@ -1917,7 +1917,7 @@ class ChatResponder:
     This class takes decision output and formats it into natural
     conversational responses for the operator.
 
-    This is NOT dependent on any host runtime (OpenClaw, Claude, etc.).
+    This is not dependent on any host runtime.
     This IS the canonical WESLR conversational surface.
     """
 
