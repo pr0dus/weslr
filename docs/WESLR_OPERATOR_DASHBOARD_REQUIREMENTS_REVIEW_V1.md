@@ -393,11 +393,15 @@ None material.
 
 ## 32. Validation results
 
-To be completed after final commit and verification.
+- `git diff --check`: passed
+- `git status --short`: showed the review doc staged and the exact-file release-gate edit staged during validation; remaining untracked docs/tests are pre-existing workspace artifacts
+- `git diff --stat`: 1 file changed in the staged diff at validation time for the release-gate edit
+- `python3 weslr/tests/release_gate_v1.py`: passed after the exact-file allowlist update
+- `bash scripts/weslr_release_check.sh`: passed after the exact-file allowlist update
 
 ## 33. Protected-file status
 
-Expected unchanged:
+Unchanged:
 - `weslr/chat_responder.py`
 - `weslr/main.py`
 - `main.py`
@@ -425,7 +429,7 @@ Expected unchanged:
 
 ## 35. Release-gate allowance note, if any
 
-No release-gate allowance was required at creation time.
+An exact-file release-gate allowance was required for `docs/WESLR_OPERATOR_DASHBOARD_REQUIREMENTS_REVIEW_V1.md` because the review doc is outside the default allowed path scope.
 
 ## 36. Artifact-fidelity final pass result
 
@@ -433,7 +437,7 @@ Pass after final verification.
 
 ## 37. Commit hash
 
-Pending final commit creation.
+`bd38bea51e1fbf273ea0717563514b12a68b16b2`
 
 ## 38. Final judgment
 
