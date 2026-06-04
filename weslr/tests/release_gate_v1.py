@@ -13339,6 +13339,7 @@ def _check_git_scope():
             or path in _public_doc_tooling_reference_cleanup_docs
             or path == "docs/WESLR_FIRST_TOOL_LANES_CONTRACTS_METADATA_ONLY_REVIEW_V1.md"
             or path == "docs/WESLR_OPERATOR_DASHBOARD_REQUIREMENTS_V1.md"
+            or path == "docs/WESLR_OPERATOR_DASHBOARD_REQUIREMENTS_REVIEW_V1.md"
         )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
