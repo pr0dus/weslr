@@ -10742,6 +10742,28 @@ _public_doc_tooling_reference_cleanup_docs = {
     "docs/WESLR_RELEASE_GATE_TOOLING_CONTEXT_DRIFT_HARDENING_IMPLEMENTATION_PLAN_V1.md",
 }
 
+def _is_broad_allowlist_pattern_v1(entry):
+    """Return True when a release-gate allowance is not an exact file path."""
+    if not isinstance(entry, str):
+        return True
+    candidate = entry.strip()
+    if not candidate:
+        return True
+    if candidate.endswith("/"):
+        return True
+    if any(char in candidate for char in "*?[]"):
+        return True
+    return pathlib.PurePosixPath(candidate).as_posix() != candidate
+
+
+def _validate_exact_file_allowlist_entries_v1(entries):
+    """Return the broad or ambiguous release-gate allowlist entries."""
+    invalid = []
+    for entry in sorted({str(item) for item in entries}, key=str):
+        if _is_broad_allowlist_pattern_v1(entry):
+            invalid.append(entry)
+    return invalid
+
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
     result = subprocess.run(
@@ -12965,6 +12987,13 @@ def _check_git_scope():
     FORBIDDEN_EXTENSIONS = {".cs"}
 
     violations = []
+    broad_allowlist_violations = _validate_exact_file_allowlist_entries_v1(_public_doc_tooling_reference_cleanup_docs)
+    if broad_allowlist_violations:
+        for entry in broad_allowlist_violations:
+            violations.append(
+                f"  broad release-gate allowlist entry in _public_doc_tooling_reference_cleanup_docs: {entry!r}"
+                " — release-gate allowances must be exact-file scoped"
+            )
     approval_doc_valid = _atomic_helper_approval_doc_is_valid()
     predicate_approval_doc_valid = _predicate_helper_approval_doc_is_valid()
     relation_approval_doc_valid = _relation_helper_approval_doc_is_valid()
