@@ -9,7 +9,7 @@ PASS
 - Root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `bd38bea51e1fbf273ea0717563514b12a68b16b2`
-- End HEAD: `WILL_BE_FILLED_AFTER_COMMIT`
+- End HEAD: `db1741285b5938f6d0e3eb4723f323bee99d96bc`
 
 3. OCC workspace repo root / branch / HEAD verification
 - Root: `/data/data/com.termux/files/home/.openclaw/workspace`
@@ -169,8 +169,9 @@ PASS
 18. Validation results
 - py_compile: passed
 - pytest: passed
-- release gate: will be run after the exact-file allowlist update for this report artifact
-- release check: will be run after the exact-file allowlist update for this report artifact
+- release gate: passed after the exact-file allowlist update for this report artifact
+- release check: passed after the exact-file allowlist update for this report artifact
+- git status drift outside this lane: `docs/WESLR_OPERATOR_DASHBOARD_REQUIREMENTS_REVIEW_V1.md` remained modified in the workspace but was not staged or committed here
 
 19. Static/no-side-effect checks
 - source scan confirms no `open(`
@@ -207,13 +208,13 @@ PASS
 - no OCC context alignment
 
 22. Release-gate allowance note, if any
-- An exact-file release-gate allowance will be required for `docs/WESLR_OPERATOR_DASHBOARD_METADATA_REPORT_IMPLEMENTATION_REPORT_V1.md` because the report artifact is outside the default allowed path scope.
+- An exact-file release-gate allowance was required for `docs/WESLR_OPERATOR_DASHBOARD_METADATA_REPORT_IMPLEMENTATION_REPORT_V1.md` because the report artifact is outside the default allowed path scope.
 
 23. Artifact-fidelity final pass result
 - Pass after final verification.
 
 24. Commit hash
-- `WILL_BE_FILLED_AFTER_COMMIT`
+- `db1741285b5938f6d0e3eb4723f323bee99d96bc`
 
 25. Final judgment
 - `weslr_operator_dashboard_metadata_report_implemented_ready_for_review`
