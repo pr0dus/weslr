@@ -6,7 +6,7 @@ Implemented minimal text-chat control layer for the safe capability evolution en
 
 ## Files Created
 
-### `/data/data/com.termux/files/home/.openclaw/workspace/self_improvement_chat.py`
+### `self_improvement_chat.py` (internal workspace artifact)
 
 **Purpose:** Chat intent parser and formatter for Phase 1 chat control
 
@@ -27,7 +27,7 @@ Implemented minimal text-chat control layer for the safe capability evolution en
 
 ## Files Modified
 
-### `/data/data/com.termux/files/home/.openclaw/workspace/sim.py`
+### `sim.py` (internal runtime shim)
 
 **Changes:**
 1. Added import: `from self_improvement_chat import handle_chat_intent, load_chat_context, save_chat_context, get_current_proposal_id, set_current_proposal_id`

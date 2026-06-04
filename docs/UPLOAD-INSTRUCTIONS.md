@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the **exact files and structure** that should be uploaded to GitHub for the Weslr project. This prevents uploading unnecessary OpenClaw files, backups, and internal data.
+This document defines the **exact files and structure** that should be uploaded to GitHub for the Weslr project. This prevents uploading unnecessary internal build/tooling files, backups, and workspace-local data.
 
 ---
 
@@ -72,7 +72,7 @@ translations/steuerwesen/steuerwesen_translations.json
 
 ## What Should NOT Be Uploaded (Excluded)
 
-### OpenClaw Internal Files
+### Internal Build/Tooling Files
 ```
 SOUL.md                            # Your personal soul file
 USER.md                            # Your personal user info
@@ -84,15 +84,15 @@ MEMORY.md                          # Your long-term memory
 .BOOTSTRAP.md                      # Bootstrap marker
 ```
 
-### OpenClaw Directories
+### Internal Workspace Directories
 ```
-.openclaw/                         # OpenClaw internal config
+internal-workspace/                # internal workspace config
 memory/                            # Daily session memories
 .learnings/                        # Learning logs
 agents/                            # Agent storage (unless Weslr-specific)
 ```
 
-### OpenClaw Data Files
+### Internal Workspace Data Files
 ```
 messages.json                      # Message history
 public_memory.json                 # Public memory store
@@ -121,7 +121,7 @@ main_backup.py                     # Backup file
 *.backup.*                         # Any backup files
 ```
 
-### OpenClaw Model Files
+### Internal Model Files
 ```
 models/*.gguf                      # LLM model files
 models/*.bin                       # Model binaries
@@ -132,14 +132,14 @@ models/*.bin                       # Model binaries
 ## Current Git Status
 
 ### Files Currently in Git (418 files total)
-- Includes many OpenClaw files that shouldn't be there
-- Includes `.openclaw/workspace-state.json` and `agents/` subdirectory
+- Includes many internal build/tooling files that shouldn't be there
+- Includes internal workspace state and `agents/` subdirectory
 - Includes `sim.py` (432KB) and `workspace_state.json` (56KB)
 
 ### Files to Remove Before Next Upload
-1. **OpenClaw identity files**: `SOUL.md`, `USER.md`, `IDENTITY.md`, `AGENTS.md`, `TOOLS.md`, `MEMORY.md`, `HEARTBEAT.md`
-2. **OpenClaw config**: `.openclaw/`, `memory/`, `.learnings/`
-3. **OpenClaw data**: `messages.json`, `public_memory.json`, `relationships.json`, `projects.json`, `opportunity_board.json`, `needs.json`, `requests.json`, `offer_board.json`, `categories.json`, `search_index.json`
+1. **Internal build/tooling identity files**: `SOUL.md`, `USER.md`, `IDENTITY.md`, `AGENTS.md`, `TOOLS.md`, `MEMORY.md`, `HEARTBEAT.md`
+2. **Internal workspace config**: `internal-workspace/`, `memory/`, `.learnings/`
+3. **Internal workspace data**: `messages.json`, `public_memory.json`, `relationships.json`, `projects.json`, `opportunity_board.json`, `needs.json`, `requests.json`, `offer_board.json`, `categories.json`, `search_index.json`
 4. **Cache files**: `__pycache__/`, `*.pyc`, `sim.py`, `workspace_state.json`
 5. **Backups**: `main_backup.py`, `agents/` directory
 6. **Old models**: `models/*.gguf`, `models/*.bin`
@@ -230,7 +230,7 @@ sim.py
 workspace_state.json
 world.db
 
-# OpenClaw identity files (keep local only)
+# Internal build/tooling identity files (keep local only)
 SOUL.md
 USER.md
 IDENTITY.md
@@ -239,13 +239,13 @@ TOOLS.md
 MEMORY.md
 .BOOTSTRAP.md
 
-# OpenClaw directories
-.openclaw/
+# Internal workspace directories
+internal-workspace/
 memory/
 .learnings/
 agents/
 
-# OpenClaw data files
+# Internal workspace data files
 messages.json
 public_memory.json
 relationships.json
@@ -277,8 +277,8 @@ __pycache__/
 - Consciousness evidence system is in place
 
 **What Needs Fixing:**
-1. `.gitignore` needs updating to exclude more OpenClaw files
-2. Many OpenClaw identity/config files are tracked but shouldn't be
+1. `.gitignore` needs updating to exclude more internal build/tooling files
+2. Many internal identity/config files are tracked but shouldn't be
 3. Large files (`sim.py`, `workspace_state.json`) should be `.gitignore`d
 4. Submodule `weslr-tia-openness-bridge` needs its own repository
 5. Backup files exist that shouldn't be committed
@@ -286,7 +286,7 @@ __pycache__/
 ### Recommended Actions
 
 1. **Create clean upload instructions** — This file (`UPLOAD-INSTRUCTIONS.md`) defines what should be uploaded
-2. **Update `.gitignore`** — Add all OpenClaw identity files and data files to exclusion list
+2. **Update `.gitignore`** — Add all internal identity files and data files to exclusion list
 3. **Remove backup files** — Delete `main_backup.py` and other backup copies
 4. **Move large files** — Add `sim.py` and `workspace_state.json` to `.gitignore`
 5. **Separate TIA bridge** — Make `weslr-tia-openness-bridge` its own repository
@@ -302,10 +302,10 @@ __pycache__/
 - Translations (translations/steuerwesen/)
 - Weslr-specific documentation
 
-**NOT Weslr = OpenClaw framework and user-specific data:**
+**NOT Weslr = internal build/tooling framework and user-specific data:**
 - Identity files (SOUL.md, USER.md, etc.)
 - Memory files (MEMORY.md, memory/)
-- OpenClaw data (messages.json, projects.json, etc.)
+- internal workspace data (messages.json, projects.json, etc.)
 - Cache and backups
 
 Always verify `git status` before committing to ensure only Weslr files are included.

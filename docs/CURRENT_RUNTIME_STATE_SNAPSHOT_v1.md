@@ -50,9 +50,9 @@ Refresh rules:
 - Add/update links in checkpoint docs to this snapshot where appropriate.
 
 ## Canonical Startup + Status Reference
-- Core/worktree: weslr/canonical-clean-signals at /data/data/com.termux/files/home/.openclaw/workspace_clean_signals
+- Core/worktree: weslr/canonical-clean-signals at the internal clean-signals workspace
 - Canonical path: route_request → DecisionLayer → anchor (LLM_ANCHOR=local) via thin client/service (browser deferred)
-- Startup: `WESLR_CORE_PATH=/data/data/com.termux/files/home/.openclaw/workspace_clean_signals LLM_ANCHOR=local ./scripts/weslr_thin_client.py`
+- Startup: `WESLR_CORE_PATH=<internal clean-signals workspace> LLM_ANCHOR=local ./scripts/weslr_thin_client.py`
 - Status/checkpoints: see PHASES_1_TO_5_ACTIVATION_SUMMARY_v1.md and CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md
 - Deferred surfaces: browser UI deferred; legacy/CLI speak prohibited (non-default)
 

@@ -60,14 +60,14 @@ Weslr is a consciousness-aware entity intelligence system with:
 
 ### Files in Git: 418 files total
 ### Files That Should Be Removed:
-- OpenClaw identity files (SOUL.md, USER.md, etc.)
-- OpenClaw config (.openclaw/, memory/)
-- OpenClaw data files (messages.json, projects.json, etc.)
-- Cache files (__pycache__, *.pyc)
-- Large files (sim.py, workspace_state.json, world.db)
-- Backup files (main_backup.py, *.backup.*)
-- OpenClaw agent storage (agents/ directory)
-- Large models (models/*.gguf, models/*.bin)
+- internal build/tooling identity files (SOUL.md, USER.md, etc.)
+- internal workspace config (workspace-local config, memory/)
+- internal workspace data files (messages.json, projects.json, etc.)
+- cache files (__pycache__, *.pyc)
+- large files (sim.py, workspace_state.json, world.db)
+- backup files (main_backup.py, *.backup.*)
+- internal agent storage (agents/ directory)
+- large models (models/*.gguf, models/*.bin)
 
 ### Files That Should Be Added:
 - `commands/` directory (already exists, needs `git add -f` if ignored)
@@ -85,16 +85,16 @@ Weslr is a consciousness-aware entity intelligence system with:
 ### Current .gitignore Coverage: 90%
 **Already Excluded:**
 - Python cache (__, pyc, world.db)
-- OpenClaw config files (AGENTS.md, SOUL.md, etc.)
-- OpenClaw directories (.openclaw/, .memory/, .learnings/)
-- OpenClaw data files (messages.json, projects.json, etc.)
+- internal build/tooling config files (AGENTS.md, SOUL.md, etc.)
+- internal workspace directories (workspace-local config, memory, learnings)
+- internal workspace data files (messages.json, projects.json, etc.)
 - Model files (models/*.gguf, models/*.bin)
 - Backup files (main_backup.py, *.backup.*)
 
 ### New Exclusions Added:
 - Weslr runtime data (weslr_time_state.json, extraction_history.json, etc.)
 - Large simulation files (sim.py, workspace_state.json)
-- OpenClaw config (communicator_state.json, experiments.json, etc.)
+- internal workspace config (communicator_state.json, experiments.json, etc.)
 - Weslr TIA bridge submodule (weslr-tia-openness-bridge/)
 
 ---
@@ -121,7 +121,7 @@ Weslr is a consciousness-aware entity intelligence system with:
 - [ ] Remove large files from git history if needed
 - [ ] Split weslr-tia-openness-bridge into separate repo
 - [ ] Run `git status` and verify only Weslr files are staged
-- [ ] Run `git add .` and verify no OpenClaw files are added
+- [ ] Run `git add .` and verify no internal build/tooling files are added
 - [ ] Commit and push
 
 ---
@@ -130,6 +130,6 @@ Weslr is a consciousness-aware entity intelligence system with:
 
 **Weslr is HEALTHY.** All core modules work correctly, the entity graph is populated, and the German tax system integration is functional.
 
-**Before next upload:** Remove OpenClaw identity/config/data files and large files from the repository. Use `UPLOAD-INSTRUCTIONS.md` as your guide for what should be included.
+**Before next upload:** Remove internal build/tooling identity/config/data files and large files from the repository. Use `UPLOAD-INSTRUCTIONS.md` as your guide for what should be included.
 
 **Recommendation:** Create a clean Weslr-only repository for future uploads, or use `git clean` to remove untracked files before committing.

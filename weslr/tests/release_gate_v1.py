@@ -10723,6 +10723,16 @@ _protected_runtime_tooling_reference_cleanup_review_required_markers = {
     "protected_runtime_tooling_reference_cleanup_valid_ready_for_public_doc_cleanup",
 }
 
+_public_doc_tooling_reference_cleanup_docs = {
+    "docs/WESLR-HEALTH.md",
+    "docs/UPLOAD-INSTRUCTIONS.md",
+    "docs/QUICK-UPLOAD-GUIDE.md",
+    "docs/HEADLESS_DEPLOYMENT_BOOTSTRAP_GUIDE_v1.md",
+    "docs/PHASE-1-CHAT-CONTROL-IMPLEMENTATION.md",
+    "docs/FRONT_DOOR_BRIDGE_CONTRACT_v1.md",
+    "docs/CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md",
+}
+
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
     result = subprocess.run(
@@ -13260,6 +13270,7 @@ def _check_git_scope():
             path.startswith("weslr/")
             or path == "interpretation.py"
             or path == ".github/ISSUE_TEMPLATE/feedback_request.yml"
+            or path in _public_doc_tooling_reference_cleanup_docs
         )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid

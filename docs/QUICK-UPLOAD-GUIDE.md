@@ -14,7 +14,7 @@ git status
 
 ### 3. Verify Only Weslr Files Are Staged
 - ✅ **Weslr files:** `weslr_*.py`, `entity_*.py`, `steuerwesen_*.py`, `commands/`, `CONSCIOUSNESS-ALIGNMENT.md`, `WESLR_CLI.md`
-- ❌ **OpenClaw files:** `SOUL.md`, `USER.md`, `MEMORY.md`, `.openclaw/`, `memory/`, `messages.json`, `projects.json`, etc.
+- ❌ **Internal build/tooling files:** `SOUL.md`, `USER.md`, `MEMORY.md`, `internal-workspace/`, `memory/`, `messages.json`, `projects.json`, etc.
 - ❌ **Large files:** `sim.py`, `workspace_state.json`, `world.db`
 - ❌ **Backups:** `main_backup.py`, `*.backup.*`
 
@@ -61,7 +61,7 @@ git push origin master
 SOUL.md              USER.md              IDENTITY.md
 AGENTS.md            TOOLS.md             MEMORY.md
 HEARTBEAT.md         .BOOTSTRAP.md
-.openclaw/           memory/              .learnings/
+internal-workspace/  memory/              .learnings/
 agents/              messages.json        public_memory.json
 projects.json        opportunity_board.json
 needs.json           relationships.json
@@ -80,14 +80,14 @@ introspection_history.json
 valence_history.json
 ```
 
-## If You Accidentally Upload OpenClaw Files
+## If You Accidentally Upload internal build/tooling files
 
 ```bash
 # Remove from git history
 git rm --cached SOUL.md USER.md AGENTS.md
 
 # Commit removal
-git commit -m "Remove OpenClaw files from repo"
+git commit -m "Remove internal build/tooling files from repo"
 git push origin master
 ```
 
@@ -113,8 +113,8 @@ git filter-branch --force --index-filter \
 | .gitignore coverage | ✅ (95%) |
 | Large files excluded | ✅ |
 | Backup files excluded | ✅ |
-| OpenClaw files excluded | ✅ |
+| Internal build/tooling files excluded | ✅ |
 
 ---
 
-**Remember:** Upload only Weslr files. Keep OpenClaw identity/config/data files local.
+**Remember:** Upload only Weslr files. Keep internal build/tooling identity/config/data files local.

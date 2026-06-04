@@ -15,7 +15,7 @@
 ## 1. Start the Canonical Runtime
 
 ```bash
-cd /data/data/com.termux/files/home/.openclaw/workspace
+cd "$WESLR_WORKSPACE_DIR"
 python3 main.py serve --host 0.0.0.0 --port 8000
 ```
 
@@ -84,7 +84,7 @@ python3 main.py init-operator --name "Alice" --role "DevOps" --json
   "success": true,
   "operator_name": "Alice",
   "role": "DevOps",
-  "profile_path": "/data/data/com.termux/files/home/.openclaw/workspace/operator_profile.json"
+  "profile_path": "$WESLR_WORKSPACE_DIR/operator_profile.json"
 }
 ```
 
@@ -272,7 +272,7 @@ if [ -z "$OPERATOR_NAME" ]; then
   exit 1
 fi
 
-WORKSPACE_DIR="/data/data/com.termux/files/home/.openclaw/workspace"
+WORKSPACE_DIR="${WESLR_WORKSPACE_DIR:-$HOME/weslr-workspace}"
 cd "$WORKSPACE_DIR"
 
 echo "=== Starting WESLR canonical runtime ==="

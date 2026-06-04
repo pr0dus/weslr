@@ -35,7 +35,7 @@ Purpose: Define the minimal contract for a real front-door (chat/UI/API) bridge 
 - If absent, call route_request without it. No deep persistence required initially.
 
 ## 6) Implementation Target Note
-- To be implemented in the real ingress service (e.g., web backend/chat service/API gateway/OpenClaw-facing gateway). This repo does not contain that service; only the contract and core entrypoint exist here.
+- To be implemented in the real ingress service (e.g., web backend/chat service/API gateway/internal gateway). This repo does not contain that service; only the contract and core entrypoint exist here.
 
 ## 7) Success Criteria
 - Any real front-door implementation calls route_request as the single path into WESLR.
