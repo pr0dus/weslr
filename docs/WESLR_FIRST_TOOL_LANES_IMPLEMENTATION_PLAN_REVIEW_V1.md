@@ -398,7 +398,7 @@ None material.
 
 ## 30. Protected-file status
 
-Expected unchanged:
+Unchanged:
 - `weslr/chat_responder.py`
 - `weslr/main.py`
 - `main.py`
@@ -426,7 +426,7 @@ No release-gate allowance was required at review creation time.
 
 ## 33. Commit hash
 
-Committed in this review lane.
+`5a4a288cfab5e406cc066a81caac1a39c176227b`
 
 ## 34. Final judgment
 
