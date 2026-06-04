@@ -10692,6 +10692,17 @@ _weslr_working_root_context_required_markers = {
     "DESIGN_FIRST_DETERMINISTIC_SAFE_LIVE_SLICE_PREIMPLEMENTATION_PLAN_V1",
 }
 
+_occ_weslr_separation_hardening_doc = "docs/WESLR_OCC_WESLR_SEPARATION_AND_CONTAMINATION_HARDENING_V1.md"
+_occ_weslr_separation_hardening_required_markers = {
+    "WESLR OCC/WESLR Separation and Contamination Hardening V1",
+    "OCC/OpenClaw is execution tooling only.",
+    "safe_workflow_provenance",
+    "risky_doctrine_drift",
+    "REPAIR_WESLR_PROTECTED_RUNTIME_TOOLING_REFERENCE_CLEANUP_V1",
+    "DESIGN_WESLR_RELEASE_GATE_TOOLING_CONTEXT_DRIFT_HARDENING_V1",
+    "occ_weslr_separation_contamination_hardening_design_ready_for_review",
+}
+
 
 def _run_harness():
     """Gate 1 — Run test harness, require TEST_HARNESS_V1_OK."""
@@ -13207,6 +13218,10 @@ def _check_git_scope():
     first_deterministic_safe_live_slice_implementation_guards_design_doc_valid = _first_deterministic_safe_live_slice_implementation_guards_design_doc_is_valid()
     first_deterministic_safe_live_slice_dry_run_plan_doc_valid = _first_deterministic_safe_live_slice_dry_run_plan_doc_is_valid()
     weslr_working_root_context_doc_valid = _weslr_working_root_context_doc_is_valid()
+    occ_weslr_separation_hardening_doc_valid = _doc_with_markers_is_valid(
+        _occ_weslr_separation_hardening_doc,
+        _occ_weslr_separation_hardening_required_markers,
+    )
     for path in staged:
         for prefix in FORBIDDEN_PREFIXES:
             if path.startswith(prefix):
@@ -14175,6 +14190,10 @@ def _check_git_scope():
             allowed = weslr_working_root_context_doc_valid
             if not weslr_working_root_context_doc_valid:
                 violations.append(f"  working-root context doc missing required markers: {path}")
+        if path == _occ_weslr_separation_hardening_doc:
+            allowed = occ_weslr_separation_hardening_doc_valid
+            if not occ_weslr_separation_hardening_doc_valid:
+                violations.append(f"  separation hardening doc missing required markers: {path}")
         if path in _occ_weslr_bootstrap_context_docs:
             allowed = _occ_weslr_bootstrap_context_doc_is_valid(path)
             if not allowed:
