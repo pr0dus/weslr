@@ -10,7 +10,8 @@ PASS
 - Branch: `master`
 - Start HEAD: `5b648cec5a2389c7a456738832f466a4db7a7806`
 - First review commit / pre-follow-up HEAD: `0936567bc65614cfa0d395b9580d2665da2e0546`
-- Final follow-up doc-only commit / final repo HEAD: `17eb64205e80349addd4c067e3fb1361287da0ff`
+- Final follow-up doc-only commit recorded in the report: `17eb64205e80349addd4c067e3fb1361287da0ff`
+- Current final repo HEAD after this repair commit: `d7ff8ca80ccb562f9f427fa131b14fb72cde4585`
 
 3. OCC workspace repo root / branch / HEAD verification
 - Root: `/data/data/com.termux/files/home/.openclaw/workspace`
