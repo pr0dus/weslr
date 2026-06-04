@@ -253,16 +253,15 @@ None material in this review scope.
 
 ## 22. Validation results
 
-Pending file-level checks to run in the final validation pass:
-- `git diff --check`
-- `git status --short`
-- `git diff --stat`
-- `python3 weslr/tests/release_gate_v1.py`
-- `bash scripts/weslr_release_check.sh`
+- `git diff --check` — PASS
+- `git status --short` — only pre-existing unrelated untracked docs/tests remain
+- `git diff --stat` — review doc + gate file only in this change set
+- `python3 weslr/tests/release_gate_v1.py` — PASS
+- `bash scripts/weslr_release_check.sh` — PASS
 
 ## 23. Protected-file status
 
-Expected unchanged:
+Unchanged:
 - `weslr/chat_responder.py`
 - `weslr/main.py`
 - `main.py`
@@ -284,7 +283,8 @@ Expected unchanged:
 
 ## 25. Release-gate allowance note
 
-If the release gate requires it, the allowance should be an exact-file entry only for `docs/WESLR_FIRST_TOOL_LANES_SELECTION_REVIEW_V1.md`, because this review doc is the only new staged design-review artifact.
+Yes: added one exact-file allowance only for `docs/WESLR_FIRST_TOOL_LANES_SELECTION_REVIEW_V1.md`.
+Reason: the gate failed solely on that new review doc not being allowlisted.
 
 ## 26. Final judgment
 
