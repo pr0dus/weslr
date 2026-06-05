@@ -10760,6 +10760,7 @@ _public_doc_tooling_reference_cleanup_docs = {
     "docs/FRONT_DOOR_BRIDGE_CONTRACT_v1.md",
     "docs/CURRENT_RUNTIME_STATE_SNAPSHOT_v1.md",
     "docs/WESLR_PUBLIC_DOC_TOOLING_REFERENCE_CLEANUP_REVIEW_V1.md",
+    "docs/WESLR_PROJECT_CHAT_RAG_AND_EVIDENCE_RETRIEVAL_BOUNDARY_V1.md",
     "AGENTS.md",
     "IDENTITY.md",
     "MEMORY.md",
