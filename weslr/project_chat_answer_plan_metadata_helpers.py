@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any, Mapping
 
 HELPER_TYPE_V1 = "weslr_project_chat_answer_plan_metadata_helpers_v1"
@@ -73,6 +74,39 @@ DENIED_AUTHORITY_FIELDS_V1 = (
     "unsupported_certainty_authority",
     "public_product_readiness_authority",
     "autonomous_self_improvement_authority",
+)
+
+USER_VISIBLE_STATUS_FORBIDDEN_PHRASES_V1 = (
+    "unknown engine",
+    "chat" + "_" + "responder",
+    "respond_chat",
+    "generate_chat",
+    "chat" + "_" + "ui",
+    "dia" + "logue",
+    "main" + ".py",
+    "." + "weslr",
+    "hidden prompt",
+    "system prompt",
+    "private mechanism",
+    "internal mechanism",
+    "internal scoring",
+    "tool executed",
+    "i executed",
+    "i searched your private data",
+    "i saved this project",
+    "i remember this",
+    "searxng proves",
+    "the web confirms",
+    "truth authority",
+    "final answer authority",
+    "runtime authority",
+    "mutation authority",
+    "memory authority",
+    "tool execution authority",
+    "storage authority",
+    "public readiness",
+    "certified intelligence",
+    "autonomous self-improvement",
 )
 
 _DEFAULT_FALSE_DENIED_AUTHORITY = {field: False for field in DENIED_AUTHORITY_FIELDS_V1}
@@ -250,6 +284,20 @@ def _blocked_authority_name(plan: Mapping[str, Any]) -> str:
     return ""
 
 
+def _slugify_v1(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", _safe_str(text).lower()).strip("_")
+    return slug or "forbidden_phrase"
+
+
+def _find_user_visible_status_violations_v1(text: Any) -> list[str]:
+    candidate = _safe_str(text).lower()
+    violations: list[str] = []
+    for phrase in USER_VISIBLE_STATUS_FORBIDDEN_PHRASES_V1:
+        if phrase.lower() in candidate:
+            violations.append(phrase)
+    return violations
+
+
 def _validate_allowed_value(value: str, allowed: tuple[str, ...], label: str, blocked_labels: list[str]) -> bool:
     if not value:
         blocked_labels.append(f"missing_{label}")
@@ -352,11 +400,9 @@ def validate_project_chat_answer_plan_v1(plan: Any) -> dict[str, Any]:
     user_visible_status = _safe_str(candidate.get("user_visible_status"))
     if not user_visible_status:
         blocked_labels.append("missing_user_visible_status")
-    if "Unknown Engine" in user_visible_status:
-        blocked_labels.append("unknown_engine_in_user_visible_status")
-    private_markers = ("private_runtime_surface", "private_file_marker", "private_control_surface")
-    if any(marker in user_visible_status for marker in private_markers):
-        blocked_labels.append("private_mechanism_name_in_user_visible_status")
+    user_visible_status_violations = _find_user_visible_status_violations_v1(user_visible_status)
+    for phrase in user_visible_status_violations:
+        blocked_labels.append(f"user_visible_status_forbidden_phrase_{_slugify_v1(phrase)}")
 
     blocked_authority = _blocked_authority_name(candidate)
     if blocked_authority:
@@ -381,6 +427,7 @@ def validate_project_chat_answer_plan_v1(plan: Any) -> dict[str, Any]:
         "blocked_labels": blocked_labels,
         "validation_notes": blocked_labels[:],
         "user_visible_status": user_visible_status,
+        "user_visible_status_violations": user_visible_status_violations,
         "operator_visible_summary": _safe_str(candidate.get("operator_visible_summary")),
         "denied_authority": dict(denied),
     }
@@ -450,6 +497,7 @@ def summarize_project_chat_answer_plan_v1(plan: Any) -> dict[str, Any]:
     candidate = build_project_chat_answer_plan_v1(plan)
     validation = validate_project_chat_answer_plan_v1(candidate)
     summary_text = _summary_text_for_plan(candidate, validation["blocked"])
+    safe_user_visible_status = _default_user_visible_status(candidate)
     candidate["operator_visible_summary"] = summary_text
     return {
         "schema_version": SCHEMA_VERSION_V1,
@@ -466,7 +514,7 @@ def summarize_project_chat_answer_plan_v1(plan: Any) -> dict[str, Any]:
         "blocked": validation["blocked"],
         "blocked_labels": validation["blocked_labels"],
         "limitations": candidate.get("limitations", []),
-        "user_visible_status": _safe_str(candidate.get("user_visible_status")),
+        "user_visible_status": safe_user_visible_status if validation["blocked"] else _safe_str(candidate.get("user_visible_status")),
         "operator_visible_summary": _safe_str(candidate.get("operator_visible_summary")),
     }
 

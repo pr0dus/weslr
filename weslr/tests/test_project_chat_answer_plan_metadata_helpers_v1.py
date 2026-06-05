@@ -315,6 +315,40 @@ def test_deeper_analysis_requires_approval_refs():
     assert validation["answer_plan"]["approval_refs"] == ["approval-1"]
 
 
+FORBIDDEN_USER_VISIBLE_STATUS_CASES = [
+    "Unknown Engine",
+    "chat_responder",
+    "respond_chat",
+    "generate_chat",
+    "chat_ui",
+    "dialogue",
+    "main.py",
+    ".weslr",
+    "hidden prompt",
+    "system prompt",
+    "private mechanism",
+    "internal mechanism",
+    "internal scoring",
+    "tool executed",
+    "I executed",
+    "I searched your private data",
+    "I saved this project",
+    "I remember this",
+    "SearXNG proves",
+    "the web confirms",
+    "truth authority",
+    "final answer authority",
+    "runtime authority",
+    "mutation authority",
+    "memory authority",
+    "tool execution authority",
+    "storage authority",
+    "public readiness",
+    "certified intelligence",
+    "autonomous self-improvement",
+]
+
+
 def test_user_visible_status_is_mechanism_neutral_and_contains_no_unknown_engine_or_private_mechanisms():
     plan = build_project_chat_answer_plan_v1(_base_plan(user_visible_status="clarification needed"))
     validation = validate_project_chat_answer_plan_v1(plan)
@@ -329,6 +363,21 @@ def test_denied_authority_fields_remain_false_or_blocked():
     validation = validate_project_chat_answer_plan_v1(plan)
     assert set(validation["denied_authority"]) == set(DENIED_AUTHORITY_FIELDS_V1)
     assert all(value is False for value in validation["denied_authority"].values())
+
+
+@pytest.mark.parametrize("forbidden_phrase", FORBIDDEN_USER_VISIBLE_STATUS_CASES)
+def test_user_visible_status_forbidden_phrases_fail_closed(forbidden_phrase):
+    plan = build_project_chat_answer_plan_v1(
+        _base_plan(user_visible_status=f"safe prefix {forbidden_phrase} safe suffix")
+    )
+    validation = validate_project_chat_answer_plan_v1(plan)
+    classification = classify_project_chat_answer_plan_v1(plan)
+    assert validation["blocked"] is True
+    assert validation["answer_status"] == "invalid"
+    assert validation["user_visible_status_violations"]
+    assert any(forbidden_phrase.lower() in item.lower() for item in validation["user_visible_status_violations"])
+    assert any(label.startswith("user_visible_status_forbidden_phrase_") for label in validation["blocked_labels"])
+    assert classification["blocked"] is True
 
 
 def test_no_final_answer_text_generated_and_no_mutation_or_retrieval_or_tool_execution_claims():
@@ -393,6 +442,21 @@ def test_helper_has_no_filesystem_network_subprocess_side_effects():
     assert "requests" not in source
     assert "socket" not in source
     assert ".weslr" not in source
+
+
+def test_user_visible_status_violation_metadata_and_summary_stay_safe():
+    plan = build_project_chat_answer_plan_v1(
+        _base_plan(user_visible_status="chat_responder and final answer authority")
+    )
+    validation = validate_project_chat_answer_plan_v1(plan)
+    summary = summarize_project_chat_answer_plan_v1(plan)
+    encoded = json.dumps(to_project_chat_answer_plan_json_safe_v1(validation), sort_keys=True)
+    assert "user_visible_status_violations" in validation
+    assert "chat_responder" in encoded.lower()
+    assert summary["blocked"] is True
+    assert "chat_responder" not in summary["user_visible_status"].lower()
+    assert "final answer authority" not in summary["summary_text"].lower()
+    assert "final answer" not in json.dumps(to_project_chat_answer_plan_json_safe_v1(summary), sort_keys=True).lower()
 
 
 def test_json_safe_normalization_handles_nested_non_primitives():
