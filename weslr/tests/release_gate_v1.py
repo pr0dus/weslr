@@ -90,6 +90,10 @@ _cognitive_research_protocol_helpers_implementation_report_doc = (
 )
 _cognitive_research_protocol_helpers_path = "weslr/cognitive_research_protocol.py"
 _cognitive_research_protocol_helpers_test_path = "weslr/tests/test_cognitive_research_protocol_v1.py"
+_cognitive_research_protocol_helpers_allowed_paths = {
+    _cognitive_research_protocol_helpers_path,
+    _cognitive_research_protocol_helpers_test_path,
+}
 
 
 def _cognitive_research_protocol_helpers_lane_is_valid(staged):
@@ -14660,6 +14664,8 @@ def _check_git_scope():
                 violations.append(f"  Tier 0-2 math challenge readiness review doc missing required markers: {path}")
 
         if path in _cognitive_research_doc_family_allowed_paths:
+            allowed = True
+        if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
