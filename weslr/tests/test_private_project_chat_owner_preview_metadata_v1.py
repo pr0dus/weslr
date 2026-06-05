@@ -359,10 +359,17 @@ def test_static_source_scan_confirms_no_filesystem_network_subprocess_runtime_or
 
 
 def test_protected_file_drift_remains_absent():
-    status_output = subprocess.run(["git", "-C", str(REPO_ROOT), "status", "--short"], check=True, capture_output=True, text=True).stdout
+    status_output = subprocess.run(["git", "-C", str(REPO_ROOT), "status", "--short", "--untracked-files=no"], check=True, capture_output=True, text=True).stdout
     status_paths = {line[3:].strip() for line in status_output.splitlines() if line.strip()}
+    diff_output = subprocess.run(["git", "-C", str(REPO_ROOT), "diff", "--name-only"], check=True, capture_output=True, text=True).stdout
+    diff_paths = {line.strip() for line in diff_output.splitlines() if line.strip()}
+
     assert not (status_paths & PROTECTED_FILES)
-    assert ALLOWED_NEW_FILES <= status_paths
+    assert not (diff_paths & PROTECTED_FILES)
+    if status_paths:
+        assert status_paths <= ALLOWED_NEW_FILES
+    if diff_paths:
+        assert diff_paths <= ALLOWED_NEW_FILES
 
 
 @pytest.mark.parametrize(
