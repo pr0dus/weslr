@@ -5,9 +5,8 @@
 1. Handshake result
 PASS
 
-2. Start HEAD / end HEAD
-- Start HEAD: `0210d2da3ac402b92b608cd26fd68087c8545094`
-- End HEAD: `0210d2da3ac402b92b608cd26fd68087c8545094` (no commit created)
+2. Start HEAD
+- `0210d2da3ac402b92b608cd26fd68087c8545094`
 
 3. Target review lane
 - `REVIEW_WESLR_PROJECT_STATE_MODEL_HELPERS_V1`
