@@ -71,6 +71,38 @@ _frontier_intelligence_dry_pipeline_required_markers = {
     "not_safe_to_wire_runtime_yet",
 }
 
+# Narrow, exact-path allowance for reviewed cognitive-research documentation only.
+# This is intentionally not a broad docs/ allowlist.
+_cognitive_research_doc_family_allowed_paths = {
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_SUITE_SHARED_PROTOCOL_RECON_V1.md",
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_SUITE_SHARED_PROTOCOL_V1.md",
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_SUITE_SHARED_PROTOCOL_REVIEW_V1.md",
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_UNIQUENESS_AND_EMERGENCE_DOCTRINE_V1.md",
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_UNIQUENESS_AND_EMERGENCE_DOCTRINE_REVIEW_V1.md",
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_UNIQUENESS_DOCTRINE_RELEASE_GATE_RECHECK_V1.md",
+    "docs/WESLR_RELEASE_GATE_JSONDECODEERROR_AFTER_COGNITIVE_RESEARCH_RECON_DIAGNOSTIC_V1.md",
+    "docs/WESLR_RELEASE_GATE_COGNITIVE_RESEARCH_DOC_FAMILY_ALLOWANCE_V1.md",
+    "weslr/tests/release_gate_v1.py",
+}
+
+_cognitive_research_protocol_helpers_implementation_report_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_cognitive_research_protocol_helpers_path = "weslr/cognitive_research_protocol.py"
+_cognitive_research_protocol_helpers_test_path = "weslr/tests/test_cognitive_research_protocol_v1.py"
+
+
+def _cognitive_research_protocol_helpers_lane_is_valid(staged):
+    """Gate 2 helper: keep the future helper-report allowance paired only.
+
+    The implementation report is only accepted when the matching helper and test
+    files are staged in the same lane.
+    """
+    return (
+        _cognitive_research_protocol_helpers_path in staged
+        and _cognitive_research_protocol_helpers_test_path in staged
+    )
+
 _existing_public_pilot_feedback_surfaces_audit_doc = "docs/WESLR_EXISTING_PUBLIC_PILOT_FEEDBACK_IMPLEMENTATION_SURFACES_AUDIT_V1.md"
 _existing_public_pilot_feedback_surfaces_audit_required_markers = {
     "WESLR Existing Public Pilot Feedback Implementation Surfaces Audit V1",
@@ -14626,6 +14658,16 @@ def _check_git_scope():
             allowed = tier_0_2_math_challenge_readiness_review_doc_valid
             if not tier_0_2_math_challenge_readiness_review_doc_valid:
                 violations.append(f"  Tier 0-2 math challenge readiness review doc missing required markers: {path}")
+
+        if path in _cognitive_research_doc_family_allowed_paths:
+            allowed = True
+        if path == _cognitive_research_protocol_helpers_implementation_report_doc:
+            allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  cognitive research protocol helpers implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
