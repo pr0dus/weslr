@@ -12843,6 +12843,7 @@ _project_start_chat_flow_metadata_path = "weslr/project_start_chat_flow_metadata
 _project_start_chat_flow_metadata_test_path = "weslr/tests/test_project_start_chat_flow_metadata_v1.py"
 _project_start_chat_flow_metadata_report_doc = "docs/WESLR_PROJECT_START_CHAT_FLOW_METADATA_IMPLEMENTATION_REPORT_V1.md"
 _project_start_chat_flow_metadata_review_doc = "docs/WESLR_PROJECT_START_CHAT_FLOW_METADATA_REVIEW_V1.md"
+_private_project_gap_analysis_layer_doc = "docs/WESLR_PRIVATE_PROJECT_GAP_ANALYSIS_LAYER_V1.md"
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -14588,6 +14589,8 @@ def _check_git_scope():
         if path == _project_start_chat_flow_metadata_report_doc:
             allowed = True
         if path == _project_start_chat_flow_metadata_review_doc:
+            allowed = True
+        if path == _private_project_gap_analysis_layer_doc:
             allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
