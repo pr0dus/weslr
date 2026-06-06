@@ -223,6 +223,9 @@ _mutable_axiom_math_helper_test_path = "weslr/tests/test_mutable_axiom_math_engi
 _mutable_axiom_math_helper_report_doc = (
     "docs/WESLR_MUTABLE_AXIOM_MATH_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
+_mutable_axiom_math_helper_review_doc = (
+    "docs/WESLR_MUTABLE_AXIOM_MATH_ENGINE_HELPERS_REVIEW_V1.md"
+)
 _mutable_axiom_math_helper_allowed_paths = {
     _mutable_axiom_math_helper_path,
     _mutable_axiom_math_helper_test_path,
@@ -14923,6 +14926,8 @@ def _check_git_scope():
         if path in _mutable_axiom_math_design_allowed_paths:
             allowed = True
         if path in _mutable_axiom_math_review_allowed_paths:
+            allowed = True
+        if path == _mutable_axiom_math_helper_review_doc:
             allowed = True
         if path in _mutable_axiom_math_helper_allowed_paths:
             allowed = True
