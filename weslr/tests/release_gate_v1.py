@@ -107,6 +107,13 @@ _workflow_integrity_red_zone_allowed_paths = {
     _workflow_integrity_red_zone_report_doc,
 }
 
+_workflow_integrity_red_zone_review_doc = (
+    "docs/WESLR_WORKFLOW_INTEGRITY_RED_ZONE_FLAGGING_HELPERS_REVIEW_V1.md"
+)
+_workflow_integrity_red_zone_review_allowed_paths = {
+    _workflow_integrity_red_zone_review_doc,
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -14702,6 +14709,8 @@ def _check_git_scope():
                     "  workflow integrity red-zone helpers implementation report requires the paired helper and test files: "
                     f"{path}"
                 )
+        if path in _workflow_integrity_red_zone_review_allowed_paths:
+            allowed = True
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
