@@ -96,6 +96,24 @@ _cognitive_research_protocol_helpers_allowed_paths = {
     _cognitive_research_protocol_helpers_test_path,
 }
 
+_workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
+_workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
+_workflow_integrity_red_zone_report_doc = (
+    "docs/WESLR_WORKFLOW_INTEGRITY_RED_ZONE_FLAGGING_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_workflow_integrity_red_zone_allowed_paths = {
+    _workflow_integrity_red_zone_helper_path,
+    _workflow_integrity_red_zone_test_path,
+    _workflow_integrity_red_zone_report_doc,
+}
+
+
+def _workflow_integrity_red_zone_lane_is_valid(staged):
+    return (
+        _workflow_integrity_red_zone_helper_path in staged
+        and _workflow_integrity_red_zone_test_path in staged
+    )
+
 
 def _cognitive_research_protocol_helpers_lane_is_valid(staged):
     """Gate 2 helper: keep the future helper-report allowance paired only.
@@ -14673,6 +14691,15 @@ def _check_git_scope():
             if not allowed:
                 violations.append(
                     "  cognitive research protocol helpers implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
+        if path in _workflow_integrity_red_zone_allowed_paths:
+            allowed = True
+        if path == _workflow_integrity_red_zone_report_doc:
+            allowed = _workflow_integrity_red_zone_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  workflow integrity red-zone helpers implementation report requires the paired helper and test files: "
                     f"{path}"
                 )
 
