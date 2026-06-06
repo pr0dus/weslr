@@ -184,6 +184,9 @@ _algorithm_emergence_review_doc = (
 _algorithm_emergence_review_allowed_paths = {
     _algorithm_emergence_review_doc,
 }
+_algorithm_emergence_review_artifact_doc = (
+    "docs/WESLR_ALGORITHM_EMERGENCE_ENGINE_HELPERS_REVIEW_V1.md"
+)
 
 _algorithm_emergence_helper_path = "weslr/algorithm_emergence_engine.py"
 _algorithm_emergence_helper_test_path = "weslr/tests/test_algorithm_emergence_engine_v1.py"
@@ -14889,6 +14892,8 @@ def _check_git_scope():
         if path in _algorithm_emergence_design_allowed_paths:
             allowed = True
         if path in _algorithm_emergence_review_allowed_paths:
+            allowed = True
+        if path == _algorithm_emergence_review_artifact_doc:
             allowed = True
         if path in _algorithm_emergence_helper_allowed_paths:
             allowed = True
