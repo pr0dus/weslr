@@ -156,6 +156,13 @@ _algorithm_emergence_design_allowed_paths = {
     _algorithm_emergence_design_doc,
 }
 
+_algorithm_emergence_review_doc = (
+    "docs/WESLR_ALGORITHM_EMERGENCE_ENGINE_BOUNDARY_REVIEW_V1.md"
+)
+_algorithm_emergence_review_allowed_paths = {
+    _algorithm_emergence_review_doc,
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -14764,6 +14771,8 @@ def _check_git_scope():
         if path in _signal_vs_noise_review_allowed_paths:
             allowed = True
         if path in _algorithm_emergence_design_allowed_paths:
+            allowed = True
+        if path in _algorithm_emergence_review_allowed_paths:
             allowed = True
 
         if not allowed:
