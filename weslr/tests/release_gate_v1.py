@@ -244,6 +244,9 @@ _boundary_sequence_selection_doc = (
 _boundary_sequence_selection_allowed_paths = {
     _boundary_sequence_selection_doc,
 }
+_closeout_helper_stack_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_HELPER_STACK_CLOSEOUT_V1.md"
+)
 
 _cognitive_research_boundary_helpers_path = (
     "weslr/cognitive_research_engine_boundaries.py"
@@ -14939,6 +14942,8 @@ def _check_git_scope():
                     f"{path}"
                 )
         if path in _boundary_sequence_selection_allowed_paths:
+            allowed = True
+        if path == _closeout_helper_stack_doc:
             allowed = True
         if path in _cognitive_research_boundary_helpers_allowed_paths:
             allowed = True
