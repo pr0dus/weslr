@@ -114,6 +114,13 @@ _workflow_integrity_red_zone_review_allowed_paths = {
     _workflow_integrity_red_zone_review_doc,
 }
 
+_raw_signal_cartographer_review_doc = (
+    "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_ENGINE_BOUNDARY_REVIEW_V1.md"
+)
+_raw_signal_cartographer_review_allowed_paths = {
+    _raw_signal_cartographer_review_doc,
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -14710,6 +14717,8 @@ def _check_git_scope():
                     f"{path}"
                 )
         if path in _workflow_integrity_red_zone_review_allowed_paths:
+            allowed = True
+        if path in _raw_signal_cartographer_review_allowed_paths:
             allowed = True
 
         if not allowed:
