@@ -124,8 +124,12 @@ _raw_signal_cartographer_review_allowed_paths = {
 _unintelligible_output_analyzer_review_doc = (
     "docs/WESLR_UNINTELLIGIBLE_OUTPUT_ANALYZER_ENGINE_BOUNDARY_REVIEW_V1.md"
 )
+_unintelligible_output_analyzer_review_artifact_doc = (
+    "docs/WESLR_UNINTELLIGIBLE_OUTPUT_ANALYZER_ENGINE_HELPERS_REVIEW_V1.md"
+)
 _unintelligible_output_analyzer_review_allowed_paths = {
     _unintelligible_output_analyzer_review_doc,
+    _unintelligible_output_analyzer_review_artifact_doc,
 }
 
 _unintelligible_output_analyzer_scope_reconciliation_doc = (
