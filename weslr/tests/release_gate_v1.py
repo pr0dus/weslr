@@ -196,11 +196,15 @@ _cognitive_research_boundary_helpers_report_doc = (
 _cognitive_research_boundary_helpers_review_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_HELPERS_REVIEW_V1.md"
 )
+_cognitive_research_engine_helper_consumption_plan_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_HELPER_CONSUMPTION_PLAN_V1.md"
+)
 _cognitive_research_boundary_helpers_allowed_paths = {
     _cognitive_research_boundary_helpers_path,
     _cognitive_research_boundary_helpers_test_path,
     _cognitive_research_boundary_helpers_report_doc,
     _cognitive_research_boundary_helpers_review_doc,
+    _cognitive_research_engine_helper_consumption_plan_doc,
 }
 
 
