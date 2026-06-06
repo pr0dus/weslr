@@ -121,6 +121,13 @@ _project_chat_final_answer_generation_review_allowed_paths = {
     _project_chat_final_answer_generation_review_doc,
 }
 
+_controlled_private_project_chat_runtime_wiring_review_doc = (
+    "docs/WESLR_CONTROLLED_PRIVATE_PROJECT_CHAT_RUNTIME_WIRING_REVIEW_V1.md"
+)
+_controlled_private_project_chat_runtime_wiring_review_allowed_paths = {
+    _controlled_private_project_chat_runtime_wiring_review_doc,
+}
+
 _controlled_private_project_chat_runtime_wiring_implementation_report_doc = (
     "docs/WESLR_CONTROLLED_PRIVATE_PROJECT_CHAT_RUNTIME_WIRING_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -14952,6 +14959,8 @@ def _check_git_scope():
         if path in _workflow_integrity_red_zone_review_allowed_paths:
             allowed = True
         if path in _project_chat_final_answer_generation_review_allowed_paths:
+            allowed = True
+        if path in _controlled_private_project_chat_runtime_wiring_review_allowed_paths:
             allowed = True
         if path in _controlled_private_project_chat_runtime_wiring_implementation_report_allowed_paths:
             allowed = True
