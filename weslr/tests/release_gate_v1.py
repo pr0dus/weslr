@@ -151,6 +151,7 @@ _signal_vs_noise_review_doc = (
 )
 _signal_vs_noise_review_allowed_paths = {
     _signal_vs_noise_review_doc,
+    "docs/WESLR_SIGNAL_VS_NOISE_ENGINE_HELPERS_REVIEW_V1.md",
 }
 
 _signal_vs_noise_helper_path = "weslr/signal_vs_noise_engine.py"
