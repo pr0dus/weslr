@@ -184,6 +184,21 @@ _boundary_sequence_selection_allowed_paths = {
     _boundary_sequence_selection_doc,
 }
 
+_cognitive_research_boundary_helpers_path = (
+    "weslr/cognitive_research_engine_boundaries.py"
+)
+_cognitive_research_boundary_helpers_test_path = (
+    "weslr/tests/test_cognitive_research_engine_boundaries_v1.py"
+)
+_cognitive_research_boundary_helpers_report_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_cognitive_research_boundary_helpers_allowed_paths = {
+    _cognitive_research_boundary_helpers_path,
+    _cognitive_research_boundary_helpers_test_path,
+    _cognitive_research_boundary_helpers_report_doc,
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -14800,6 +14815,8 @@ def _check_git_scope():
         if path in _mutable_axiom_math_review_allowed_paths:
             allowed = True
         if path in _boundary_sequence_selection_allowed_paths:
+            allowed = True
+        if path in _cognitive_research_boundary_helpers_allowed_paths:
             allowed = True
 
         if not allowed:
