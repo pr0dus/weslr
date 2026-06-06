@@ -114,6 +114,13 @@ _workflow_integrity_red_zone_review_allowed_paths = {
     _workflow_integrity_red_zone_review_doc,
 }
 
+_project_chat_final_answer_generation_review_doc = (
+    "docs/WESLR_PROJECT_CHAT_FINAL_ANSWER_GENERATION_HELPERS_REVIEW_V1.md"
+)
+_project_chat_final_answer_generation_review_allowed_paths = {
+    _project_chat_final_answer_generation_review_doc,
+}
+
 _raw_signal_cartographer_review_doc = (
     "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_ENGINE_BOUNDARY_REVIEW_V1.md"
 )
@@ -14891,6 +14898,8 @@ def _check_git_scope():
                     f"{path}"
                 )
         if path in _workflow_integrity_red_zone_review_allowed_paths:
+            allowed = True
+        if path in _project_chat_final_answer_generation_review_allowed_paths:
             allowed = True
         if path in _raw_signal_cartographer_review_allowed_paths:
             allowed = True
