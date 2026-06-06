@@ -13106,6 +13106,9 @@ _private_project_gap_analysis_metadata_helpers_report_doc = "docs/WESLR_PRIVATE_
 _private_project_gap_analysis_metadata_helpers_review_doc = "docs/WESLR_PRIVATE_PROJECT_GAP_ANALYSIS_METADATA_HELPERS_REVIEW_V1.md"
 _project_chat_runtime_boundary_doc = "docs/WESLR_PROJECT_CHAT_RUNTIME_BOUNDARY_V1.md"
 _project_chat_runtime_boundary_review_doc = "docs/WESLR_PROJECT_CHAT_RUNTIME_BOUNDARY_REVIEW_V1.md"
+_project_chat_runtime_shell_code_target_selection_doc = (
+    "docs/WESLR_NEXT_PROJECT_CHAT_RUNTIME_SHELL_CODE_TARGET_SELECTION_V1.md"
+)
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -14867,6 +14870,8 @@ def _check_git_scope():
         if path == _project_chat_runtime_boundary_doc:
             allowed = True
         if path == _project_chat_runtime_boundary_review_doc:
+            allowed = True
+        if path == _project_chat_runtime_shell_code_target_selection_doc:
             allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
