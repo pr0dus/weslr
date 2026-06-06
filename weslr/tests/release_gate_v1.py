@@ -13125,6 +13125,9 @@ _project_chat_assembly_orchestration_packet_test_path = (
 _project_chat_assembly_orchestration_packet_report_doc = (
     "docs/WESLR_PROJECT_CHAT_ASSEMBLY_ORCHESTRATION_PACKET_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
+_project_chat_assembly_orchestration_packet_review_doc = (
+    "docs/WESLR_PROJECT_CHAT_ASSEMBLY_ORCHESTRATION_PACKET_HELPERS_REVIEW_V1.md"
+)
 
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -14896,6 +14899,8 @@ def _check_git_scope():
                     "  project chat assembly orchestration packet implementation report requires the paired helper and test files: "
                     f"{path}"
                 )
+        if path == _project_chat_assembly_orchestration_packet_review_doc:
+            allowed = True
         if path in {_project_chat_assembly_orchestration_packet_helper_path, _project_chat_assembly_orchestration_packet_test_path}:
             allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
