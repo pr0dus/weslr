@@ -177,6 +177,13 @@ _mutable_axiom_math_review_allowed_paths = {
     _mutable_axiom_math_review_doc,
 }
 
+_boundary_sequence_selection_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_SEQUENCE_CLOSEOUT_OR_NEXT_ENGINE_SELECTION_V1.md"
+)
+_boundary_sequence_selection_allowed_paths = {
+    _boundary_sequence_selection_doc,
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -14791,6 +14798,8 @@ def _check_git_scope():
         if path in _mutable_axiom_math_design_allowed_paths:
             allowed = True
         if path in _mutable_axiom_math_review_allowed_paths:
+            allowed = True
+        if path in _boundary_sequence_selection_allowed_paths:
             allowed = True
 
         if not allowed:
