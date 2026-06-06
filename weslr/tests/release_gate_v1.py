@@ -185,6 +185,23 @@ _algorithm_emergence_review_allowed_paths = {
     _algorithm_emergence_review_doc,
 }
 
+_algorithm_emergence_helper_path = "weslr/algorithm_emergence_engine.py"
+_algorithm_emergence_helper_test_path = "weslr/tests/test_algorithm_emergence_engine_v1.py"
+_algorithm_emergence_helper_report_doc = (
+    "docs/WESLR_ALGORITHM_EMERGENCE_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_algorithm_emergence_helper_allowed_paths = {
+    _algorithm_emergence_helper_path,
+    _algorithm_emergence_helper_test_path,
+}
+
+
+def _algorithm_emergence_helper_lane_is_valid(staged):
+    return (
+        _algorithm_emergence_helper_path in staged
+        and _algorithm_emergence_helper_test_path in staged
+    )
+
 _mutable_axiom_math_design_doc = (
     "docs/WESLR_MUTABLE_AXIOM_MATH_ENGINE_BOUNDARY_V1.md"
 )
@@ -14873,6 +14890,15 @@ def _check_git_scope():
             allowed = True
         if path in _algorithm_emergence_review_allowed_paths:
             allowed = True
+        if path in _algorithm_emergence_helper_allowed_paths:
+            allowed = True
+        if path == _algorithm_emergence_helper_report_doc:
+            allowed = _algorithm_emergence_helper_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  algorithm emergence helpers implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
         if path in _mutable_axiom_math_design_allowed_paths:
             allowed = True
         if path in _mutable_axiom_math_review_allowed_paths:
