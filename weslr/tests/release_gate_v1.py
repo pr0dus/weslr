@@ -207,6 +207,15 @@ _raw_signal_cartographer_helper_report_doc = (
 _raw_signal_cartographer_helper_review_doc = (
     "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_ENGINE_HELPERS_REVIEW_V1.md"
 )
+_unintelligible_output_analyzer_helper_path = (
+    "weslr/unintelligible_output_analyzer.py"
+)
+_unintelligible_output_analyzer_helper_test_path = (
+    "weslr/tests/test_unintelligible_output_analyzer_v1.py"
+)
+_unintelligible_output_analyzer_helper_report_doc = (
+    "docs/WESLR_UNINTELLIGIBLE_OUTPUT_ANALYZER_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
 _cognitive_research_boundary_helpers_allowed_paths = {
     _cognitive_research_boundary_helpers_path,
     _cognitive_research_boundary_helpers_test_path,
@@ -217,6 +226,9 @@ _cognitive_research_boundary_helpers_allowed_paths = {
     _raw_signal_cartographer_helper_test_path,
     _raw_signal_cartographer_helper_report_doc,
     _raw_signal_cartographer_helper_review_doc,
+    _unintelligible_output_analyzer_helper_path,
+    _unintelligible_output_analyzer_helper_test_path,
+    _unintelligible_output_analyzer_helper_report_doc,
 }
 
 
