@@ -13110,6 +13110,22 @@ _project_chat_runtime_shell_code_target_selection_doc = (
     "docs/WESLR_NEXT_PROJECT_CHAT_RUNTIME_SHELL_CODE_TARGET_SELECTION_V1.md"
 )
 
+
+def _project_chat_assembly_orchestration_packet_lane_is_valid(staged):
+    return (
+        _project_chat_assembly_orchestration_packet_helper_path in staged
+        and _project_chat_assembly_orchestration_packet_test_path in staged
+    )
+_project_chat_assembly_orchestration_packet_helper_path = (
+    "weslr/project_chat_assembly_orchestration_packet.py"
+)
+_project_chat_assembly_orchestration_packet_test_path = (
+    "weslr/tests/test_project_chat_assembly_orchestration_packet_v1.py"
+)
+_project_chat_assembly_orchestration_packet_report_doc = (
+    "docs/WESLR_PROJECT_CHAT_ASSEMBLY_ORCHESTRATION_PACKET_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+
 def _controlled_multiturn_continuity_pressure_test_phase_c_40_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_multiturn_continuity_pressure_test_phase_c_40_doc,
@@ -14872,6 +14888,15 @@ def _check_git_scope():
         if path == _project_chat_runtime_boundary_review_doc:
             allowed = True
         if path == _project_chat_runtime_shell_code_target_selection_doc:
+            allowed = True
+        if path == _project_chat_assembly_orchestration_packet_report_doc:
+            allowed = _project_chat_assembly_orchestration_packet_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  project chat assembly orchestration packet implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
+        if path in {_project_chat_assembly_orchestration_packet_helper_path, _project_chat_assembly_orchestration_packet_test_path}:
             allowed = True
         if path == _tier_0_2_math_challenge_readiness_doc:
             allowed = tier_0_2_math_challenge_readiness_doc_valid
