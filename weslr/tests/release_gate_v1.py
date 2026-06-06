@@ -153,6 +153,23 @@ _signal_vs_noise_review_allowed_paths = {
     _signal_vs_noise_review_doc,
 }
 
+_signal_vs_noise_helper_path = "weslr/signal_vs_noise_engine.py"
+_signal_vs_noise_helper_test_path = "weslr/tests/test_signal_vs_noise_engine_v1.py"
+_signal_vs_noise_helper_report_doc = (
+    "docs/WESLR_SIGNAL_VS_NOISE_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_signal_vs_noise_helper_allowed_paths = {
+    _signal_vs_noise_helper_path,
+    _signal_vs_noise_helper_test_path,
+}
+
+
+def _signal_vs_noise_helper_lane_is_valid(staged):
+    return (
+        _signal_vs_noise_helper_path in staged
+        and _signal_vs_noise_helper_test_path in staged
+    )
+
 _algorithm_emergence_design_doc = (
     "docs/WESLR_ALGORITHM_EMERGENCE_ENGINE_BOUNDARY_V1.md"
 )
@@ -14842,6 +14859,15 @@ def _check_git_scope():
             allowed = True
         if path in _signal_vs_noise_review_allowed_paths:
             allowed = True
+        if path in _signal_vs_noise_helper_allowed_paths:
+            allowed = True
+        if path == _signal_vs_noise_helper_report_doc:
+            allowed = _signal_vs_noise_helper_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  signal vs noise helpers implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
         if path in _algorithm_emergence_design_allowed_paths:
             allowed = True
         if path in _algorithm_emergence_review_allowed_paths:
