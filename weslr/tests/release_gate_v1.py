@@ -199,12 +199,20 @@ _cognitive_research_boundary_helpers_review_doc = (
 _cognitive_research_engine_helper_consumption_plan_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_HELPER_CONSUMPTION_PLAN_V1.md"
 )
+_raw_signal_cartographer_helper_path = "weslr/raw_signal_cartographer.py"
+_raw_signal_cartographer_helper_test_path = "weslr/tests/test_raw_signal_cartographer_v1.py"
+_raw_signal_cartographer_helper_report_doc = (
+    "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
 _cognitive_research_boundary_helpers_allowed_paths = {
     _cognitive_research_boundary_helpers_path,
     _cognitive_research_boundary_helpers_test_path,
     _cognitive_research_boundary_helpers_report_doc,
     _cognitive_research_boundary_helpers_review_doc,
     _cognitive_research_engine_helper_consumption_plan_doc,
+    _raw_signal_cartographer_helper_path,
+    _raw_signal_cartographer_helper_test_path,
+    _raw_signal_cartographer_helper_report_doc,
 }
 
 
