@@ -193,10 +193,14 @@ _cognitive_research_boundary_helpers_test_path = (
 _cognitive_research_boundary_helpers_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
+_cognitive_research_boundary_helpers_review_doc = (
+    "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_HELPERS_REVIEW_V1.md"
+)
 _cognitive_research_boundary_helpers_allowed_paths = {
     _cognitive_research_boundary_helpers_path,
     _cognitive_research_boundary_helpers_test_path,
     _cognitive_research_boundary_helpers_report_doc,
+    _cognitive_research_boundary_helpers_review_doc,
 }
 
 
