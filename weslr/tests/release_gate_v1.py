@@ -218,6 +218,22 @@ _mutable_axiom_math_review_doc = (
 _mutable_axiom_math_review_allowed_paths = {
     _mutable_axiom_math_review_doc,
 }
+_mutable_axiom_math_helper_path = "weslr/mutable_axiom_math_engine.py"
+_mutable_axiom_math_helper_test_path = "weslr/tests/test_mutable_axiom_math_engine_v1.py"
+_mutable_axiom_math_helper_report_doc = (
+    "docs/WESLR_MUTABLE_AXIOM_MATH_ENGINE_HELPERS_IMPLEMENTATION_REPORT_V1.md"
+)
+_mutable_axiom_math_helper_allowed_paths = {
+    _mutable_axiom_math_helper_path,
+    _mutable_axiom_math_helper_test_path,
+}
+
+
+def _mutable_axiom_math_helper_lane_is_valid(staged):
+    return (
+        _mutable_axiom_math_helper_path in staged
+        and _mutable_axiom_math_helper_test_path in staged
+    )
 
 _boundary_sequence_selection_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_ENGINE_BOUNDARY_SEQUENCE_CLOSEOUT_OR_NEXT_ENGINE_SELECTION_V1.md"
@@ -14908,6 +14924,15 @@ def _check_git_scope():
             allowed = True
         if path in _mutable_axiom_math_review_allowed_paths:
             allowed = True
+        if path in _mutable_axiom_math_helper_allowed_paths:
+            allowed = True
+        if path == _mutable_axiom_math_helper_report_doc:
+            allowed = _mutable_axiom_math_helper_lane_is_valid(staged)
+            if not allowed:
+                violations.append(
+                    "  mutable axiom math helpers implementation report requires the paired helper and test files: "
+                    f"{path}"
+                )
         if path in _boundary_sequence_selection_allowed_paths:
             allowed = True
         if path in _cognitive_research_boundary_helpers_allowed_paths:
