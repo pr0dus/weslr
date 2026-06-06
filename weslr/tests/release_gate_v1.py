@@ -191,6 +191,13 @@ _private_local_project_chat_smoke_test_run_review_allowed_paths = {
     _private_local_project_chat_smoke_test_run_review_doc,
 }
 
+_private_local_chat_decision_doc = (
+    "docs/WESLR_OWNER_PRIVATE_LOCAL_CHAT_DECISION_V1.md"
+)
+_private_local_chat_decision_allowed_paths = {
+    _private_local_chat_decision_doc,
+}
+
 _controlled_private_project_chat_runtime_wiring_implementation_report_doc = (
     "docs/WESLR_CONTROLLED_PRIVATE_PROJECT_CHAT_RUNTIME_WIRING_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15042,6 +15049,8 @@ def _check_git_scope():
         if path in _private_local_project_chat_smoke_test_run_result_allowed_paths:
             allowed = True
         if path in _private_local_project_chat_smoke_test_run_review_allowed_paths:
+            allowed = True
+        if path in _private_local_chat_decision_allowed_paths:
             allowed = True
         if path in _controlled_private_project_chat_runtime_wiring_implementation_report_allowed_paths:
             allowed = True
