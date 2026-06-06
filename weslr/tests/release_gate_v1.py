@@ -13109,6 +13109,9 @@ _project_chat_runtime_boundary_review_doc = "docs/WESLR_PROJECT_CHAT_RUNTIME_BOU
 _project_chat_runtime_shell_code_target_selection_doc = (
     "docs/WESLR_NEXT_PROJECT_CHAT_RUNTIME_SHELL_CODE_TARGET_SELECTION_V1.md"
 )
+_project_chat_runtime_shell_dry_run_consumer_target_selection_doc = (
+    "docs/WESLR_PROJECT_CHAT_RUNTIME_SHELL_DRY_RUN_CONSUMER_TARGET_SELECTION_V1.md"
+)
 
 
 def _project_chat_assembly_orchestration_packet_lane_is_valid(staged):
@@ -14891,6 +14894,8 @@ def _check_git_scope():
         if path == _project_chat_runtime_boundary_review_doc:
             allowed = True
         if path == _project_chat_runtime_shell_code_target_selection_doc:
+            allowed = True
+        if path == _project_chat_runtime_shell_dry_run_consumer_target_selection_doc:
             allowed = True
         if path == _project_chat_assembly_orchestration_packet_report_doc:
             allowed = _project_chat_assembly_orchestration_packet_lane_is_valid(staged)
