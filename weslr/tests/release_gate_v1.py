@@ -413,6 +413,10 @@ _rf_field_discovery_floor_plan_translation_allowed_paths = {
     "docs/WESLR_RF_FIELD_DISCOVERY_FLOOR_PLAN_TRANSLATION_V1.md",
 }
 
+_rf_field_discovery_floor_plan_translation_review_allowed_paths = {
+    "docs/WESLR_RF_FIELD_DISCOVERY_FLOOR_PLAN_TRANSLATION_REVIEW_V1.md",
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -15145,6 +15149,8 @@ def _check_git_scope():
         if path in _rf_field_discovery_schema_helpers_review_allowed_paths:
             allowed = True
         if path in _rf_field_discovery_floor_plan_translation_allowed_paths:
+            allowed = True
+        if path in _rf_field_discovery_floor_plan_translation_review_allowed_paths:
             allowed = True
 
         if not allowed:
