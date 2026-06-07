@@ -398,6 +398,7 @@ _rf_field_discovery_doc_family_allowed_paths = {
     "docs/WESLR_RF_FIELD_DISCOVERY_ARTIFACT_REVIEW_V1.md",
     "docs/WESLR_RF_FIELD_DISCOVERY_SCHEMA_CANDIDATES_V1.md",
     "docs/WESLR_RF_FIELD_DISCOVERY_SCHEMA_CANDIDATES_REVIEW_V1.md",
+    "docs/WESLR_RF_FIELD_DISCOVERY_LOCAL_IMPORT_BOUNDARY_V1.md",
 }
 
 _rf_field_discovery_schema_helpers_allowed_paths = {
