@@ -38,265 +38,197 @@
           <p class="card-text">WESLR has implemented and reviewed systems where the source/docs/tests show the completed workflow: design → implementation → review → tests → commit.</p>
           <p class="card-text">This page distinguishes between:</p>
           <ul>
-            <li><strong>Implemented in WESLR codebase</strong> — Source-backed, tested, committed</li>
+            <li><strong>Implemented and reviewed in codebase</strong> — Source-backed, tested, committed</li>
             <li><strong>Publicly visible</strong> — Exposed as public interface with controlled access</li>
             <li><strong>Protected/internal</strong> — Governed by safety, operator control, or operational boundaries</li>
           </ul>
         </div>
 
-        <h2>Continuity and State</h2>
+        <h2>Continuity and State Systems</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Thread Management</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/thread_tracker.py</code>, 100+ functions)</p>
+            <h4 class="card-title">Thread management</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Controlled access, invite-only pilot</p>
-            <p class="card-text"><strong>Status label:</strong> Implemented and reviewed in codebase, not publicly open product</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Continuity Tracking</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/continuity.py</code>)</p>
+            <h4 class="card-title">Session continuity tracking</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">State Management</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/state.py</code>, <code>state_defs.py</code>)</p>
+            <h4 class="card-title">State definitions</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
-        <h2>Memory/Project State</h2>
+        <h2>Evidence and Retrieval Systems</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Entity Memory</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/entity_memory.py</code>, <code>entity_timeline_memory.py</code>)</p>
+            <h4 class="card-title">Evidence RAG</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Architecture Memory</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/architecture_memory.py</code>)</p>
+            <h4 class="card-title">External evidence retrieval</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Entity Co-occurrence</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/interpretation.py::_record_cooccurrence</code>)</p>
+            <h4 class="card-title">Source trust ranking</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
-        <h2>Project Chat and Controlled Runtime Shell</h2>
+        <h2>Capability Discovery</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Human Turn Classification</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/interpretation.py::interpret_human_turn()</code>)</p>
+            <h4 class="card-title">Capability gap detection</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Response Generation</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/chat_responder.py</code>, 958 lines)</p>
+            <h4 class="card-title">Signal analysis</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Voice Gateway</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/voice_gateway.py</code>, ~460 lines)</p>
-            <p class="card-text"><strong>Public availability:</strong> Browser STT/TTS only, server-side STT optional/experimental</p>
-            <p class="card-text"><strong>Status label:</strong> Implemented and reviewed in codebase, not publicly live (browser STT/TTS only)</p>
+            <h4 class="card-title">Improvement area suggestions</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
           </div>
         </div>
 
-        <h2>Artifact/Output Infrastructure</h2>
+        <h2>Request Intelligence</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Artifact Store</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/artifact_store.py</code>)</p>
+            <h4 class="card-title">Provider suitability</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact Quality Feedback</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/test_artifact_quality_feedback.py</code>)</p>
+            <h4 class="card-title">Classifier</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact Scoring</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>WESLR_PROJECT_SYNTHESIS.md</code>, dual scoring: internal + opportunity)</p>
+            <h4 class="card-title">Knowledge and uncertainty</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
-        <h2>Owner Preview/Rendering</h2>
+        <h2>Artifact Infrastructure</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Operator Dashboard</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>PROJECT-SYNTHESIS.md</code>)</p>
+            <h4 class="card-title">Artifact storage and retrieval</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Render View Model</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/dialogue.py::generate_turn_response()</code>)</p>
+            <h4 class="card-title">Artifact metadata</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Operator Feedback Logging</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/interpretation.py::log_operator_feedback()</code>)</p>
+            <h4 class="card-title">Artifact quality feedback</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Validation before rendering</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
           </div>
         </div>
 
-        <h2>Evidence/RAG/Source Grounding</h2>
+        <h2>Operator Feedback and Review</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Evidence Pipeline</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/evidence_pipeline.py</code>)</p>
+            <h4 class="card-title">Operator feedback logging</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Evidence Policy</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/evidence_policy.py</code>)</p>
+            <h4 class="card-title">Manual trigger and visibility</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">External Evidence Retrieval</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/evidence_intake/</code>)</p>
+            <h4 class="card-title">Audit support helpers</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
-        <h2>Operator Control/Governance</h2>
+        <h2>Project/Chat Boundaries</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Operator Approval</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/operator_control/</code>)</p>
+            <h4 class="card-title">Human turn classification</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Red-Zone Flags</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>SECURITY.md</code>, <code>SAFETY-INTEGRATION.md</code>)</p>
+            <h4 class="card-title">Response generation</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Operator Feedback Visibility</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/interpretation.py::get_operator_feedback_visibility()</code>)</p>
+            <h4 class="card-title">Controlled runtime shell</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
-          </div>
-        </div>
-
-        <h2>Tool Lanes/Agentic Boundaries</h2>
-        <div class="card-grid">
-          <div class="card">
-            <h4 class="card-title">Controlled Self-Modification</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>SELF-MODIFICATION.md</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Operator-gated, not publicly open</p>
-            <p class="card-text"><strong>Status label:</strong> Implemented and reviewed in codebase, not publicly open</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Write Control Presets</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/interpretation.py::interpret_human_turn(mode=...)</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Agentic Tool Boundaries</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>WESLR_OPERATIONAL_RUNBOOK_V1.md</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
         <h2>Cognitive Research Helpers</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Causality Reasoning</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/causality.py</code>)</p>
+            <h4 class="card-title">Causality reasoning</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Spatial/Temporal Reasoning</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/spatial_reasoning.py</code>, <code>weslr/temporal_reasoning.py</code>)</p>
+            <h4 class="card-title">Spatial/temporal reasoning</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Quantum Logic Helpers</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/quantum_logic.py</code>)</p>
+            <h4 class="card-title">Quantum logic helpers</h4>
+            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
             <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
           </div>
         </div>
 
-        <h2>UI/UX/Product Shell</h2>
-        <div class="card-grid">
-          <div class="card">
-            <h4 class="card-title">Voice Gateway UI</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/voice_gateway.py</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Browser STT/TTS only, server-side STT optional/experimental</p>
-            <p class="card-text"><strong>Status label:</strong> Implemented and reviewed in codebase, not publicly live (browser STT/TTS only)</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Operator Dashboard UI</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>PROJECT-SYNTHESIS.md</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-            <p class="card-text"><strong>Status label:</strong> Protected/internal operator control</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Product Shell</h4>
-            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>WESLR_CURRENT_TASK.md</code>)</p>
-            <p class="card-text"><strong>Public availability:</strong> Controlled access, invite-only pilot</p>
-            <p class="card-text"><strong>Status label:</strong> Implemented and reviewed in codebase, not publicly open product</p>
-          </div>
-        </div>
-
-        <h2>Not Claimed</h2>
-        <div class="card-grid">
-          <div class="card">
-            <h4 class="card-title">Explicitly Not Claimed</h4>
-            <ul>
-              <li>AGI, consciousness, self-awareness</li>
-              <li>Official benchmark proof or certification</li>
-              <li>Production guarantee</li>
-              <li>Public marketplace or unrestricted user creation</li>
-              <li>Autonomous economic agents</li>
-              <li>Production-grade software (alpha research system only)</li>
-            </ul>
-          </div>
+        <h2>What WESLR Does Not Claim</h2>
+        <div class="content-card">
+          <p class="card-text"><strong>WESLR is not:</strong></p>
+          <ul>
+            <li>AGI or conscious</li>
+            <li>Certified public benchmark or certification program</li>
+            <li>Production guarantee</li>
+            <li>Public marketplace</li>
+            <li>Unrestricted autonomous runtime</li>
+            <li>Publicly open chat or agent system</li>
+          </ul>
         </div>
       </div>
     </section>
