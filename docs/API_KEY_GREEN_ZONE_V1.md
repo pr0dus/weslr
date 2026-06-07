@@ -6,6 +6,7 @@ Scope: external API keys used by WESLR workflows, starting with `MATERIALS_PROJE
 ## Purpose
 
 This document defines when an API key may be used inside WESLR as a low-risk green-zone capability.
+All examples below reference the secret name or env-var name only; never a real key value.
 
 The immediate use case is the Materials Project API key for Scatti / CaSc2TiO6 research validation workflows.
 
@@ -26,7 +27,7 @@ An API key is green-zone only when all of the following are true:
 
 If any condition is false, the API key use is not green-zone and must be treated as yellow or red.
 
-## Initial green-zone key
+## Initial green-zone secret name
 
 ```text
 MATERIALS_PROJECT_API_KEY
@@ -77,6 +78,8 @@ PY
 ```
 
 The output must confirm presence only, not reveal the key.
+
+When documenting or testing this workflow, keep the literal value out of commits, logs, and artifacts.
 
 ## Materials / Scatti workflow stance
 

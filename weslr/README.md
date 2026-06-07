@@ -239,7 +239,7 @@ Results should be reviewed by a subject-matter expert before use in real-world d
 
 | Variable | Default | Description |
 |---|---|---|
-| `MATERIALS_PROJECT_API_KEY` | *(unset)* | API key for Materials Project. MP source is disabled if unset. |
+| `MATERIALS_PROJECT_API_KEY` | *(unset)* | Environment variable name for a protected Materials Project secret. Use a secret-backed runtime value only; MP source is disabled if unset. |
 | `WESLR_EXHAUSTIVE_TIMEOUT` | `10` | Timeout in seconds per API call during exhaustive structural checks. |
 | `WESLR_AUTO_CONFIRM_FRONTIER` | `0` | Set to `1` to auto-confirm live PubMed/arXiv and exhaustive DB queries. |
 

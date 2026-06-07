@@ -35,7 +35,7 @@ The exhaustive novelty checker and thermodynamic stability estimator form a **ca
 
 ## 3. Thermodynamic Stability — What MP Data Means
 
-When `MATERIALS_PROJECT_API_KEY` is set, the checker queries the Materials Project `/thermo/` endpoint and returns:
+When the `MATERIALS_PROJECT_API_KEY` environment variable is supplied via protected runtime secret, the checker queries the Materials Project `/thermo/` endpoint and returns:
 
 - `energy_above_hull` (eV/atom): energy above the convex hull of stable phases. Zero = on the hull.
 - `formation_energy_per_atom` (eV/atom): negative values indicate thermodynamic driving force for formation.

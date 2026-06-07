@@ -22,7 +22,7 @@ But WESLR must not overclaim scientific discovery, expose secrets, or execute un
 
 ## Current key decision
 
-The `MATERIALS_PROJECT_API_KEY` may remain available for the Scatti/materials research lane while more data is gathered.
+The `MATERIALS_PROJECT_API_KEY` environment variable may remain available for the Scatti/materials research lane while more data is gathered.
 
 However:
 
@@ -49,7 +49,7 @@ Allowed:
 
 Required:
 
-- secret-backed key storage
+- secret-backed env-var storage
 - no logging key value
 - no committing key
 - no frontend/browser exposure
@@ -94,6 +94,8 @@ Before production deployment, deployment checks should eventually verify:
 
 ```text
 MATERIALS_PROJECT_API_KEY is absent or explicitly enabled for the intended research mode.
+
+Examples and docs should use placeholders or secret references only; never paste a literal API key into the repository.
 ```
 
 ## Materials research map
