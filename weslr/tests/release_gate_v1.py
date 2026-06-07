@@ -400,6 +400,11 @@ _rf_field_discovery_doc_family_allowed_paths = {
     "docs/WESLR_RF_FIELD_DISCOVERY_SCHEMA_CANDIDATES_REVIEW_V1.md",
 }
 
+_rf_field_discovery_schema_helpers_allowed_paths = {
+    "weslr/rf_field_discovery_schema_helpers.py",
+    "weslr/tests/test_rf_field_discovery_schema_helpers_v1.py",
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -15126,6 +15131,8 @@ def _check_git_scope():
         if path in _cognitive_research_boundary_helpers_allowed_paths:
             allowed = True
         if path in _rf_field_discovery_doc_family_allowed_paths:
+            allowed = True
+        if path in _rf_field_discovery_schema_helpers_allowed_paths:
             allowed = True
 
         if not allowed:
