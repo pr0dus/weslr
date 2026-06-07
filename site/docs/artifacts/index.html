@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WESLR Artifacts — Artifact creation story, implementation status, and availability.">
+  <meta name="robots" content="index, follow">
+  <title>WESLR Artifacts — Implementation Truth</title>
+  <link rel="stylesheet" href="../../assets/css/reset.css?v=20260607-wiki-v1">
+  <link rel="stylesheet" href="../../assets/css/variables.css?v=20260607-wiki-v1">
+  <link rel="stylesheet" href="../../assets/css/main.css?v=20260607-wiki-v1">
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="../../" class="logo"><span class="logo-mark">W<span class="logo-governance-dot"></span></span><span>WESLR</span></a>
+      <nav class="nav" id="nav">
+        <a href="../../" class="nav-link">What is WESLR?</a>
+        <a href="../../how-it-works/" class="nav-link">How It Works</a>
+        <a href="../../product/" class="nav-link">Product</a>
+        <a href="../../governance/" class="nav-link">Governance</a>
+        <a href="../../roadmap/" class="nav-link">Roadmap</a>
+        <a href="../../pilot/" class="btn btn-primary">Request Pilot Access</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="docs-section">
+      <div class="container">
+        <div class="section-header">
+          <h1 class="section-title">WESLR Artifacts</h1>
+          <p class="section-subtitle">Artifact creation story, implementation status, and availability</p>
+        </div>
+
+        <div class="content-card">
+          <p class="card-text"><strong>WESLR has implemented and reviewed artifact-oriented infrastructure for structured outputs, metadata, validation, owner preview, and controlled rendering.</strong></p>
+          <p class="card-text">This page explains what exists, what is publicly available, and what is not claimed.</p>
+        </div>
+
+        <h2>Artifact Infrastructure (Implemented and Reviewed)</h2>
+        <div class="card-grid">
+          <div class="card">
+            <h4 class="card-title">Artifact Store</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/artifact_store.py</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public artifact marketplace, unrestricted user creation</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Artifact Quality Feedback</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/test_artifact_quality_feedback.py</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public quality ratings, user reviews, open feedback</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Artifact Metadata</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>PROJECT-SYNTHESIS.md</code>, opportunity/sellability scoring)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public metadata explorer, open analytics</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Validation Before Rendering</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>WESLR_ARTIFACT_QUALITY_FEEDBACK_LOOP_SLICE2_V1.md</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public validation results, audit trail</p>
+          </div>
+        </div>
+
+        <h2>Controlled Rendering (Not Publicly Open)</h2>
+        <div class="card-grid">
+          <div class="card">
+            <h4 class="card-title">Owner Preview</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>WESLR_REVIEW_INTERFACE_V1.md</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public preview system, user preview</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Governance Boundaries</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/governance_*.py</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public governance, open voting, decentralized control</p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Operator Control</h4>
+            <p class="card-text"><strong>Implementation:</strong> Implemented and reviewed in codebase (<code>weslr/operator_control/</code>)</p>
+            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <p class="card-text"><strong>Not claimed:</strong> Public operator interface, open control plane</p>
+          </div>
+        </div>
+
+        <h2>Not Claimed (Public Safety)</h2>
+        <div class="card-grid">
+          <div class="card">
+            <h4 class="card-title">What WESLR Artifacts Are NOT</h4>
+            <ul>
+              <li><strong>Public artifact marketplace:</strong> WESLR does not offer public marketplaces for user-created artifacts</li>
+              <li><strong>Unrestricted user artifact creation:</strong> Artifact creation is controlled by governance, validation, and operator boundaries</li>
+              <li><strong>Open public chat:</strong> Artifacts are not created through unrestricted public chat</li>
+              <li><strong>Production-grade software:</strong> WESLR is an alpha research system, not production-grade software</li>
+              <li><strong>Production guarantee:</strong> Artifacts are experimental, not production-grade</li>
+              <li><strong>Certification:</strong> Artifacts are not certified for production use</li>
+              <li><strong>Public benchmark proof:</strong> Artifacts are not benchmark-certified</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Explicitly Not Claimed</h4>
+            <ul>
+              <li>Public marketplace for user artifacts</li>
+              <li>Unrestricted user artifact creation</li>
+              <li>Production-grade software</li>
+              <li>Production guarantee</li>
+              <li>Certification, official benchmark proof</li>
+              <li>Autonomous economic agents</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Implementation Truth</h2>
+        <div class="content-card">
+          <p class="card-text"><strong>WESLR has implemented and reviewed artifact-oriented infrastructure for structured outputs, metadata, validation, owner preview, and controlled rendering.</strong></p>
+          <p class="card-text"><strong>Public artifact marketplace is not live.</strong></p>
+          <p class="card-text"><strong>Unrestricted user artifact creation is not publicly open.</strong></p>
+          <p class="card-text"><strong>Artifacts are controlled by governance, validation, and operator boundaries.</strong></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-sections">
+        <div>
+          <h4 class="footer-section-title">What is WESLR?</h4>
+          <ul class="footer-links">
+            <li><a href="../../" class="footer-link">What is WESLR?</a></li>
+            <li><a href="../../how-it-works/" class="footer-link">How It Works</a></li>
+            <li><a href="../../product/" class="footer-link">Product Experience</a></li>
+            <li><a href="../../governance/" class="footer-link">Governance & Trust</a></li>
+            <li><a href="../../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Resources</h4>
+          <ul class="footer-links">
+            <li><a href="../../use-cases/" class="footer-link">Use Cases</a></li>
+            <li><a href="../../industrial-adaptation/" class="footer-link">Industrial Adaptation</a></li>
+            <li><a href="../../about-weslr/" class="footer-link">Examples</a></li>
+            <li><a href="../../contact/" class="footer-link">Contact</a></li>
+            <li><a href="../../docs/" class="footer-link">Documentation</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="../../privacy/" class="footer-link">Privacy Policy</a></li>
+            <li><a href="../../terms/" class="footer-link">Terms of Use</a></li>
+            <li><a href="../../license/" class="footer-link">Commercial License</a></li>
+            <li><a href="../../impressum/" class="footer-link">Impressum</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/main.js?v=20260607-wiki-v1"></script>
+</body>
+</html>

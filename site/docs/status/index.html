@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WESLR Status — Current implementation status, public visibility, and availability.">
+  <meta name="robots" content="index, follow">
+  <title>WESLR Status — Current Implementation Status</title>
+  <link rel="stylesheet" href="../../assets/css/reset.css?v=20260607-wiki-v1">
+  <link rel="stylesheet" href="../../assets/css/variables.css?v=20260607-wiki-v1">
+  <link rel="stylesheet" href="../../assets/css/main.css?v=20260607-wiki-v1">
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="../../" class="logo"><span class="logo-mark">W<span class="logo-governance-dot"></span></span><span>WESLR</span></a>
+      <nav class="nav" id="nav">
+        <a href="../../" class="nav-link">What is WESLR?</a>
+        <a href="../../how-it-works/" class="nav-link">How It Works</a>
+        <a href="../../product/" class="nav-link">Product</a>
+        <a href="../../governance/" class="nav-link">Governance</a>
+        <a href="../../roadmap/" class="nav-link">Roadmap</a>
+        <a href="../../pilot/" class="btn btn-primary">Request Pilot Access</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="docs-section">
+      <div class="container">
+        <div class="section-header">
+          <h1 class="section-title">WESLR Status</h1>
+          <p class="section-subtitle">Current implementation status, public visibility, and availability</p>
+        </div>
+
+        <div class="content-card">
+          <h2>Overview</h2>
+          <p class="card-text">WESLR contains implemented and reviewed systems in the codebase. Public access is still controlled, and not every implemented subsystem is exposed as a public product.</p>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <h3 class="card-title">Implemented and Reviewed</h3>
+            <p class="card-text">WESLR contains implemented and reviewed code where the source/docs/tests show the completed workflow: design → implementation → review → tests → commit.</p>
+            <p class="card-text"><strong>Examples:</strong> Thread management, entity extraction, topic tracking, evidence RAG, capability discovery, request intelligence, operator feedback logging, behavior phases B1-B11.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Publicly Visible Now</h3>
+            <p class="card-text">Some subsystems are exposed as public interfaces with controlled access. These include the public API, limited pilot access, and select documentation pages.</p>
+            <p class="card-text"><strong>Status:</strong> Controlled access, invite-only pilot, documentation-only exposure.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Protected/Internal</h3>
+            <p class="card-text">Many implemented features are internal-only due to governance, safety, or operational boundaries. These include operator approval workflows, red-zone flags, secret cleanup, and protected runtime tooling.</p>
+            <p class="card-text"><strong>Examples:</strong> Controlled self-modification, operator feedback logging, write control presets, M-layer audit helpers.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Not Publicly Live Yet</h3>
+            <p class="card-text">Some capabilities exist in the codebase but are not yet exposed as public interfaces. These require additional work before public access can be granted.</p>
+            <p class="card-text"><strong>Examples:</strong> Server-side STT/TTS, external person timelines, persistent human memory across sessions.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Not Claimed</h3>
+            <p class="card-text">WESLR does not claim AGI, consciousness, official benchmark proof, certification, or production guarantee. It is a local operator-facing research system.</p>
+            <p class="card-text"><strong>Explicitly not claimed:</strong> Production-grade software, certified AI, conscious agents, autonomous economic agents, public marketplace.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Key Distinction</h3>
+            <p class="card-text"><strong>Implemented in WESLR codebase ≠ publicly open product</strong></p>
+            <p class="card-text"><strong>Implemented in WESLR codebase ≠ open public chat</strong></p>
+            <p class="card-text"><strong>Implemented in WESLR codebase ≠ live marketplace</strong></p>
+            <p class="card-text"><strong>Implemented in WESLR codebase ≠ unrestricted autonomous runtime</strong></p>
+          </div>
+        </div>
+
+        <h2>Implementation Status Categories</h2>
+        <div class="card-grid">
+          <div class="card">
+            <h4 class="card-title">Implemented and Reviewed</h4>
+            <ul>
+              <li>Thread management (thread_tracker.py)</li>
+              <li>Entity extraction (entity_extractor.py)</li>
+              <li>Topic tracking (interpretation.py::_track_topic)</li>
+              <li>Entity co-occurrence (entity_cooccurrence.json)</li>
+              <li>Evidence RAG (evidence_pipeline.py)</li>
+              <li>Capability discovery (capability_discovery/)</li>
+              <li>Request intelligence (request_intelligence/)</li>
+              <li>Artifact scoring (opportunity/sellability)</li>
+              <li>Operator feedback logging (log_operator_feedback)</li>
+              <li>Behavior phases B1-B11 (dialogue.py)</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Protected/Internal Only</h4>
+            <ul>
+              <li>Controlled self-modification (requires operator approval)</li>
+              <li>Write control presets (normal, observe, topic_only, etc.)</li>
+              <li>Dry-run modes (interpret_human_turn(dry_run=True))</li>
+              <li>Operator feedback statistics (read-only inspection)</li>
+              <li>M-layer audit helpers (caller scanning)</li>
+              <li>Red-zone flags (operator safety controls)</li>
+              <li>Secrets cleanup (runtime safety)</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Not Publicly Live Yet</h4>
+            <ul>
+              <li>Server-side STT (scaffolded, optional binaries)</li>
+              <li>Server-side TTS (not implemented, browser only)</li>
+              <li>Human long-term memory (no persistent memory across sessions)</li>
+              <li>External person timelines (WESLR-only entity tracking)</li>
+              <li>Real-time voice assistant (only shim + browser STT/TTS)</li>
+              <li>Wake word detection (not implemented)</li>
+              <li>VAD (voice activity detection, not implemented)</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Public Safety Boundaries</h2>
+        <div class="card-grid">
+          <div class="card">
+            <h4 class="card-title">Forbidden Claims</h4>
+            <ul>
+              <li>Autonomous coding (requires operator approval loop)</li>
+              <li>"Remembers everything" (no persistent human memory store)</li>
+              <li>Predictions, forecasts, "knows what will happen"</li>
+              <li>Sells products, generates revenue</li>
+              <li>Real-time voice assistant (only browser STT/TTS)</li>
+              <li>Feelings, emotions, consciousness, self-awareness</li>
+              <li>Production guarantee, certification, official benchmark proof</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title">Permitted Language</h4>
+            <ul>
+              <li>"Local agent research sandbox"</li>
+              <li>"Discovers recurring operator pain, turns into inspectable artifacts"</li>
+              <li>"Thread-based conversation management"</li>
+              <li>"Dual scoring system (internal + opportunity/sellability)"</li>
+              <li>"Artifact clustering into opportunity-themed packs"</li>
+              <li>"Operator feedback logging (manual trigger)"</li>
+              <li>"Read-only inspection modes"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-sections">
+        <div>
+          <h4 class="footer-section-title">What is WESLR?</h4>
+          <ul class="footer-links">
+            <li><a href="../../" class="footer-link">What is WESLR?</a></li>
+            <li><a href="../../how-it-works/" class="footer-link">How It Works</a></li>
+            <li><a href="../../product/" class="footer-link">Product Experience</a></li>
+            <li><a href="../../governance/" class="footer-link">Governance & Trust</a></li>
+            <li><a href="../../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Resources</h4>
+          <ul class="footer-links">
+            <li><a href="../../use-cases/" class="footer-link">Use Cases</a></li>
+            <li><a href="../../industrial-adaptation/" class="footer-link">Industrial Adaptation</a></li>
+            <li><a href="../../about-weslr/" class="footer-link">Examples</a></li>
+            <li><a href="../../contact/" class="footer-link">Contact</a></li>
+            <li><a href="../../docs/" class="footer-link">Documentation</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-section-title">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="../../privacy/" class="footer-link">Privacy Policy</a></li>
+            <li><a href="../../terms/" class="footer-link">Terms of Use</a></li>
+            <li><a href="../../license/" class="footer-link">Commercial License</a></li>
+            <li><a href="../../impressum/" class="footer-link">Impressum</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/main.js?v=20260607-wiki-v1"></script>
+</body>
+</html>
