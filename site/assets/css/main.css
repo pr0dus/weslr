@@ -225,19 +225,6 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
-  transition: transform 0.15s, border-color 0.15s;
-  cursor: pointer;
-}
-
-.card:hover {
-  border-color: var(--color-border-accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.card:focus-visible {
-  outline: 2px solid var(--color-accent-primary);
-  outline-offset: 2px;
 }
 
 .card-title {
@@ -249,6 +236,22 @@ body {
 .card-text {
   color: var(--color-text-secondary);
   font-size: var(--font-size-body-sm);
+}
+
+a.card {
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+a.card:hover {
+  border-color: var(--color-border-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+a.card:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
 }
 
 .card-icon {
