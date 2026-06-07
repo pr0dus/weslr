@@ -11,9 +11,11 @@
 
 ## Selected Implementation Target
 
-**Target:** Add `/about/not/` — "What WESLR is not"
+**Target:** Create wiki page: `docs/WESLR_WHAT_WESLR_IS_NOT.md`
 
 **Priority:** First implementation target
+
+**Note:** User prefers wiki page format over static HTML.
 
 **Rationale:**
 - Reinforces public claim boundaries before adding examples or docs expansion
@@ -28,8 +30,8 @@
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `site/about/not/index.html` | Create | New "What WESLR is not" page |
-| `site/about/index.html` | Optional edit | Add link to `/about/not/` |
+| `docs/WESLR_WHAT_WESLR_IS_NOT.md` | Create | Wiki page explaining what WESLR is not |
+| `docs/NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_SELECTION_V1.md` | Update | Update to reflect wiki page format instead of HTML |
 
 **No other files expected to change in this lane.**
 
@@ -60,12 +62,18 @@
 - `WESLR_PUBLIC_UX_CONTRACT_V1.md` — public site limits
 - `docs/WESLR_COGNITIVE_AI_POSITIONING_V1.md` — OCC positioning doctrine
 
-**From Source:**
+**From Source (wiki format):**
 - WESLR is not conscious
 - WESLR is not AGI/beyond science
 - WESLR is not production-ready
 - WESLR does not claim certified intelligence
 - WESLR is not a benchmark-proven system
+
+**Wiki Style:**
+- Plain language, conservative tone
+- Clear claim boundaries
+- Public-facing documentation
+- No HTML formatting, pure markdown
 
 ---
 
@@ -102,9 +110,16 @@
 openclaw message send \
   --channel telegram \
   --target 2096877071 \
+  --media docs/WESLR_WHAT_WESLR_IS_NOT.md \
+  --force-document \
+  --message "docs/WESLR_WHAT_WESLR_IS_NOT.md - Wiki page explaining what WESLR is not"
+
+openclaw message send \
+  --channel telegram \
+  --target 2096877071 \
   --media docs/NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_SELECTION_V1.md \
   --force-document \
-  --message "NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_SELECTION_V1 - Implementation target selected"
+  --message "docs/NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_SELECTION_V1.md - Selection artifact (updated)"
 ```
 
 **Verification:**
@@ -125,13 +140,14 @@ openclaw message send \
 
 ## Recommended Next Lane
 
-**Next Lane:** `IMPLEMENT_NOVA_WESLR_WHAT_WESLR_IS_NOT_PAGE_V1`
+**Next Lane:** `IMPLEMENT_NOVA_WESLR_WHAT_WESLR_IS_NOT_WIKI_PAGE_V1`
 
 **What This Lane Does:**
-- Create `site/about/not/index.html`
-- Optionally update `site/about/index.html` to link to `/about/not/`
+- Create `docs/WESLR_WHAT_WESLR_IS_NOT.md` (wiki page format)
+- Update `docs/NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_SELECTION_V1.md` to reflect wiki format
 - Keep legal pages untouched
 - Keep protected routes untouched
+- No HTML static pages created
 
 ---
 
