@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="WESLR Status — Current implementation status, public visibility, and availability.">
+  <meta name="description" content="WESLR Status — What is implemented, what is public, what remains protected, and what is not claimed.">
   <meta name="robots" content="index, follow">
   <title>WESLR Status — Current Implementation Status</title>
   <link rel="stylesheet" href="../../assets/css/reset.css?v=20260607-wiki-v1">
@@ -12,8 +12,8 @@
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
+  <header class="header">
+    <div class="header-inner">
       <a href="../../" class="logo"><span class="logo-mark">W<span class="logo-governance-dot"></span></span><span>WESLR</span></a>
       <nav class="nav" id="nav">
         <a href="../../" class="nav-link">What is WESLR?</a>
@@ -23,22 +23,38 @@
         <a href="../../roadmap/" class="nav-link">Roadmap</a>
         <a href="../../pilot/" class="btn btn-primary">Request Pilot Access</a>
       </nav>
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">☰</button>
     </div>
   </header>
 
-  <main class="main">
-    <section class="docs-section">
+  <main style="padding-top: 80px;">
+    <section class="section">
       <div class="container">
         <div class="section-header">
           <h1 class="section-title">WESLR Status</h1>
-          <p class="section-subtitle">What is implemented, what is public, what remains protected, and what is not claimed.</p>
+          <p class="section-subtitle" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+            What is implemented, what is public, what remains protected, and what is not claimed.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <p class="card-text" style="margin-bottom: var(--spacing-lg);">
+            <strong>Key distinction:</strong> Implemented in the WESLR codebase does not automatically mean public access, open chat, marketplace availability, or unrestricted autonomous runtime.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Implementation Status</h2>
         </div>
 
-        <div class="content-card">
-          <p class="card-text"><strong>Key distinction:</strong> Implemented in the WESLR codebase does not automatically mean public access, open chat, marketplace availability, or unrestricted autonomous runtime.</p>
-        </div>
-
-        <h2>Implementation Status</h2>
         <div class="card-grid">
           <div class="card">
             <h3 class="card-title">Implemented and reviewed in the codebase</h3>
@@ -64,72 +80,95 @@
             <p class="card-text">Examples: Server-side STT/TTS, external person timelines, persistent human memory across sessions.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>What WESLR Does Not Claim</h2>
-        <div class="content-card">
-          <p class="card-text"><strong>WESLR is not:</strong></p>
-          <ul>
-            <li>An AGI or conscious system</li>
-            <li>A certified public benchmark or certification program</li>
-            <li>A production guarantee</li>
-            <li>A public marketplace</li>
-            <li>An unrestricted autonomous runtime</li>
-            <li>A publicly open chat or agent system</li>
-          </ul>
-          <p class="card-text"><strong>Explicitly not claimed:</strong> AGI, consciousness, self-awareness, official benchmark proof, certification, production-grade software.</p>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 class="card-title" style="color: var(--color-danger);">What WESLR Does Not Claim</h3>
+            <p class="card-text"><strong>WESLR is not:</strong></p>
+            <ul>
+              <li>An AGI or conscious system</li>
+              <li>A certified public benchmark or certification program</li>
+              <li>A production guarantee</li>
+              <li>A public marketplace</li>
+              <li>An unrestricted autonomous runtime</li>
+              <li>A publicly open chat or agent system</li>
+            </ul>
+            <p class="card-text"><strong>Explicitly not claimed:</strong> AGI, consciousness, self-awareness, official benchmark proof, certification, production-grade software.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Implementation Status Categories</h2>
         </div>
 
-        <h2>Implementation Status Categories</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Continuity and state systems</h4>
+            <h3 class="card-title">Continuity and state systems</h3>
             <p class="card-text">Thread management, session continuity tracking, entity memory, state definitions.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Evidence and retrieval systems</h4>
+            <h3 class="card-title">Evidence and retrieval systems</h3>
             <p class="card-text">Evidence RAG, external evidence retrieval, source trust ranking, grounding.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Capability discovery</h4>
+            <h3 class="card-title">Capability discovery</h3>
             <p class="card-text">Capability gap detection, signal analysis, improvement area suggestions.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Request intelligence</h4>
+            <h3 class="card-title">Request intelligence</h3>
             <p class="card-text">Provider suitability, classifier, knowledge, difficulty/uncertainty analysis.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact infrastructure</h4>
+            <h3 class="card-title">Artifact infrastructure</h3>
             <p class="card-text">Artifact storage and retrieval, metadata, quality feedback, validation before rendering.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Operator feedback and review</h4>
+            <h3 class="card-title">Operator feedback and review</h3>
             <p class="card-text">Operator feedback logging, manual trigger, visibility helpers, audit support.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Project/chat boundaries</h4>
+            <h3 class="card-title">Project/chat boundaries</h3>
             <p class="card-text">Human turn classification, response generation, controlled runtime shell.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Cognitive research helpers</h4>
+            <h3 class="card-title">Cognitive research helpers</h3>
             <p class="card-text">Causality reasoning, spatial/temporal reasoning, quantum logic helpers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div class="disclaimer">
+            <strong>Status:</strong> Internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.
           </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-sections">
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
         <div>
-          <h4 class="footer-section-title">What is WESLR?</h4>
+          <h4 class="footer-section-title">Product</h4>
           <ul class="footer-links">
             <li><a href="../../" class="footer-link">What is WESLR?</a></li>
             <li><a href="../../how-it-works/" class="footer-link">How It Works</a></li>
@@ -138,6 +177,7 @@
             <li><a href="../../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Resources</h4>
           <ul class="footer-links">
@@ -148,6 +188,7 @@
             <li><a href="../../docs/" class="footer-link">Documentation</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Legal</h4>
           <ul class="footer-links">
@@ -157,6 +198,18 @@
             <li><a href="../../impressum/" class="footer-link">Impressum</a></li>
           </ul>
         </div>
+
+        <div>
+          <h4 class="footer-section-title">Pilot</h4>
+          <ul class="footer-links">
+            <li><a href="../../pilot/" class="footer-link">Request Pilot Access</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>WESLR — Continuity-first Governed Intelligence</p>
+        <p style="margin-top: var(--spacing-sm);">WESLR is in internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.</p>
       </div>
     </div>
   </footer>

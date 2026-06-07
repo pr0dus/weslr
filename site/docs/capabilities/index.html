@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="WESLR Capabilities — Complete implementation status with exact availability labels.">
+  <meta name="description" content="WESLR Capabilities — Implementation status by capability group with status badges.">
   <meta name="robots" content="index, follow">
   <title>WESLR Capabilities — Implementation Status</title>
   <link rel="stylesheet" href="../../assets/css/reset.css?v=20260607-wiki-v1">
@@ -12,8 +12,8 @@
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
+  <header class="header">
+    <div class="header-inner">
       <a href="../../" class="logo"><span class="logo-mark">W<span class="logo-governance-dot"></span></span><span>WESLR</span></a>
       <nav class="nav" id="nav">
         <a href="../../" class="nav-link">What is WESLR?</a>
@@ -23,222 +23,252 @@
         <a href="../../roadmap/" class="nav-link">Roadmap</a>
         <a href="../../pilot/" class="btn btn-primary">Request Pilot Access</a>
       </nav>
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">☰</button>
     </div>
   </header>
 
-  <main class="main">
-    <section class="docs-section">
+  <main style="padding-top: 80px;">
+    <section class="section">
       <div class="container">
         <div class="section-header">
           <h1 class="section-title">WESLR Capabilities</h1>
-          <p class="section-subtitle">Complete implementation status with exact availability labels</p>
+          <p class="section-subtitle" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+            Implementation status by capability group — no filenames, public wording only.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <p class="card-text" style="margin-bottom: var(--spacing-lg);">
+            WESLR has implemented and reviewed systems where the source/docs/tests show the completed workflow: design → implementation → review → tests → commit.
+          </p>
+          <p class="card-text">
+            This page distinguishes between:
+            <strong>Implemented and reviewed in codebase</strong> — Source-backed, tested, committed,
+            <strong>Protected/internal</strong> — Governed by safety, operator control, or operational boundaries.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Continuity & Memory</h2>
         </div>
 
-        <div class="content-card">
-          <p class="card-text">WESLR has implemented and reviewed systems where the source/docs/tests show the completed workflow: design → implementation → review → tests → commit.</p>
-          <p class="card-text">This page distinguishes between:</p>
-          <ul>
-            <li><strong>Implemented and reviewed in codebase</strong> — Source-backed, tested, committed</li>
-            <li><strong>Publicly visible</strong> — Exposed as public interface with controlled access</li>
-            <li><strong>Protected/internal</strong> — Governed by safety, operator control, or operational boundaries</li>
-          </ul>
-        </div>
-
-        <h2>Continuity and State Systems</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Thread management</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Controlled access, invite-only pilot</p>
+            <h3 class="card-title">Thread management</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Thread tracking, session continuity, entity memory, state definitions.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Session continuity tracking</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Session continuity</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Session tracking, thread state, active artifact resolution.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">State definitions</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Entity memory</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Entity timeline, memory tiers, continuity tracking.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Evidence and Retrieval Systems</h2>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Project Chat & Controlled Runtime</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Evidence RAG</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Human turn classification</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Turn type detection, intent recognition, context extraction.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">External evidence retrieval</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Response generation</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Response formatting, explanation generation, status summaries.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Source trust ranking</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Controlled runtime shell</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Operator-gated execution, protected runtime tooling.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Capability Discovery</h2>
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Artifact Infrastructure</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Capability gap detection</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Artifact storage and retrieval</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Artifact store, metadata, validation, preview infrastructure.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Signal analysis</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Artifact quality feedback</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Quality scoring, validation, operator review workflow.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Improvement area suggestions</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Validation before rendering</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Pre-render validation, metadata review, owner preview.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Report-style outputs</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Structured report generation, JSON-safe metadata.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Request Intelligence</h2>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Evidence & Grounding</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Provider suitability</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Evidence RAG</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • External evidence retrieval, source trust ranking.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Classifier</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Evidence policy</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Evidence selection, quality gates, grounding boundaries.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Knowledge and uncertainty</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Source trust ranking</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Trust scoring, provenance tracking, freshness metrics.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Artifact Infrastructure</h2>
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Operator Control</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Artifact storage and retrieval</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Operator approval</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Operator-gated self-modification, red-zone flags.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact metadata</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Operator feedback logging</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Manual trigger, visibility helpers, audit support.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact quality feedback</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Validation before rendering</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Red-zone flags</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Safety controls, secrets cleanup, protected tooling.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Operator Feedback and Review</h2>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Tool Boundaries</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Operator feedback logging</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Write control presets</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Dry-run, observe, topic-only, entity-only modes.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Manual trigger and visibility</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Agentic tool boundaries</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Controlled self-modification, operator approval loop.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Audit support helpers</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Capability discovery</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Capability gap detection, signal analysis, improvement suggestions.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Project/Chat Boundaries</h2>
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Cognitive Research Helpers</h2>
+        </div>
+
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Human turn classification</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Causality reasoning</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Causal analysis, relationship detection.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Response generation</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Spatial/temporal reasoning</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Time and space reasoning, pattern detection.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Controlled runtime shell</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Quantum logic helpers</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Quantum reasoning, probability handling.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Request intelligence</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Provider suitability, classifier, knowledge, difficulty/uncertainty.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>Cognitive Research Helpers</h2>
-        <div class="card-grid">
-          <div class="card">
-            <h4 class="card-title">Causality reasoning</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 class="card-title" style="color: var(--color-danger);">What WESLR Does Not Claim</h3>
+            <p class="card-text"><strong>WESLR is not:</strong></p>
+            <ul>
+              <li>AGI or conscious</li>
+              <li>A certified public benchmark or certification program</li>
+              <li>Production guarantee</li>
+              <li>Public marketplace</li>
+              <li>Unrestricted autonomous runtime</li>
+              <li>Publicly open chat or agent system</li>
+            </ul>
+            <p class="card-text"><strong>Explicitly not claimed:</strong> AGI, consciousness, self-awareness, official benchmark proof, certification, production-grade software.</p>
           </div>
 
-          <div class="card">
-            <h4 class="card-title">Spatial/temporal reasoning</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+          <div class="disclaimer">
+            <strong>Status:</strong> Internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.
           </div>
-
-          <div class="card">
-            <h4 class="card-title">Quantum logic helpers</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-        </div>
-
-        <h2>What WESLR Does Not Claim</h2>
-        <div class="content-card">
-          <p class="card-text"><strong>WESLR is not:</strong></p>
-          <ul>
-            <li>AGI or conscious</li>
-            <li>Certified public benchmark or certification program</li>
-            <li>Production guarantee</li>
-            <li>Public marketplace</li>
-            <li>Unrestricted autonomous runtime</li>
-            <li>Publicly open chat or agent system</li>
-          </ul>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-sections">
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
         <div>
-          <h4 class="footer-section-title">What is WESLR?</h4>
+          <h4 class="footer-section-title">Product</h4>
           <ul class="footer-links">
             <li><a href="../../" class="footer-link">What is WESLR?</a></li>
             <li><a href="../../how-it-works/" class="footer-link">How It Works</a></li>
@@ -247,6 +277,7 @@
             <li><a href="../../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Resources</h4>
           <ul class="footer-links">
@@ -257,6 +288,7 @@
             <li><a href="../../docs/" class="footer-link">Documentation</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Legal</h4>
           <ul class="footer-links">
@@ -266,6 +298,18 @@
             <li><a href="../../impressum/" class="footer-link">Impressum</a></li>
           </ul>
         </div>
+
+        <div>
+          <h4 class="footer-section-title">Pilot</h4>
+          <ul class="footer-links">
+            <li><a href="../../pilot/" class="footer-link">Request Pilot Access</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>WESLR — Continuity-first Governed Intelligence</p>
+        <p style="margin-top: var(--spacing-sm);">WESLR is in internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.</p>
       </div>
     </div>
   </footer>

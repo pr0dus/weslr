@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="WESLR Artifacts — Artifact creation story, implementation status, and availability.">
+  <meta name="description" content="WESLR Artifacts — Artifact creation story, governance, and boundaries.">
   <meta name="robots" content="index, follow">
   <title>WESLR Artifacts — Implementation Truth</title>
   <link rel="stylesheet" href="../../assets/css/reset.css?v=20260607-wiki-v1">
@@ -12,8 +12,8 @@
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
+  <header class="header">
+    <div class="header-inner">
       <a href="../../" class="logo"><span class="logo-mark">W<span class="logo-governance-dot"></span></span><span>WESLR</span></a>
       <nav class="nav" id="nav">
         <a href="../../" class="nav-link">What is WESLR?</a>
@@ -23,95 +23,136 @@
         <a href="../../roadmap/" class="nav-link">Roadmap</a>
         <a href="../../pilot/" class="btn btn-primary">Request Pilot Access</a>
       </nav>
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">☰</button>
     </div>
   </header>
 
-  <main class="main">
-    <section class="docs-section">
+  <main style="padding-top: 80px;">
+    <section class="section">
       <div class="container">
         <div class="section-header">
           <h1 class="section-title">Artifacts in WESLR</h1>
-          <p class="section-subtitle">Structured outputs governed by metadata, validation, preview, and operator boundaries</p>
+          <p class="section-subtitle" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+            Structured outputs governed by metadata, validation, preview, and operator boundaries.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <p class="card-text"><strong>Strong truth statement:</strong> WESLR has implemented and reviewed artifact-oriented infrastructure for structured outputs, metadata, validation, owner preview, and controlled rendering.</p>
+            <p class="card-text"><strong>What exists:</strong> Artifact storage and retrieval infrastructure, artifact metadata, artifact quality feedback, validation before rendering, owner preview, controlled rendering, report-style outputs, JSON-safe metadata.</p>
+          </div>
+
+          <div class="disclaimer">
+            <strong>Status:</strong> Internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">What WESLR Does Not Claim</h2>
         </div>
 
-        <div class="content-card">
-          <p class="card-text"><strong>Strong truth statement:</strong> WESLR has implemented and reviewed artifact-oriented infrastructure for structured outputs, metadata, validation, owner preview, and controlled rendering.</p>
-          <p class="card-text"><strong>What exists:</strong> Artifact storage and retrieval, metadata, quality feedback, validation before rendering, owner preview, controlled rendering, report-style outputs, JSON-safe metadata.</p>
-        </div>
-
-        <h2>How Artifacts Are Governed</h2>
-        <div class="content-card">
-          <p class="card-text">Artifact workflow follows this chain:</p>
-          <p class="card-text"><strong>Request → Evidence/context → Metadata → Validation → Preview → Controlled rendering</strong></p>
-        </div>
-
-        <h2>Artifact Infrastructure</h2>
         <div class="card-grid">
           <div class="card">
-            <h4 class="card-title">Artifact storage and retrieval</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Public artifact marketplace</h3>
+            <p class="card-text"><span class="status-badge status-badge-future">Not publicly live</span> • No public marketplace for user-created artifacts.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact metadata</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Unrestricted user creation</h3>
+            <p class="card-text"><span class="status-badge status-badge-future">Not publicly live</span> • Artifact creation is controlled by governance, validation, and operator boundaries.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Artifact quality feedback</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Open public upload</h3>
+            <p class="card-text"><span class="status-badge status-badge-future">Not publicly live</span> • User uploads are restricted to invited participants.</p>
           </div>
 
           <div class="card">
-            <h4 class="card-title">Validation before rendering</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Owner preview</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Controlled rendering</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">Report-style outputs</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
-          </div>
-
-          <div class="card">
-            <h4 class="card-title">JSON-safe metadata</h4>
-            <p class="card-text"><strong>Status:</strong> Implemented and reviewed in codebase</p>
-            <p class="card-text"><strong>Public availability:</strong> Internal-only, not publicly live</p>
+            <h3 class="card-title">Public analytics/reviews</h3>
+            <p class="card-text"><span class="status-badge status-badge-future">Not publicly live</span> • Analytics and review systems are internal.</p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h2>What WESLR Does Not Claim</h2>
+    <section class="section" style="background-color: var(--color-bg-surface);">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Artifact Governance Flow</h2>
+        </div>
+
         <div class="content-card">
-          <p class="card-text"><strong>Public artifact marketplace is not live.</strong></p>
-          <p class="card-text"><strong>Unrestricted user artifact creation is not publicly open.</strong></p>
-          <p class="card-text"><strong>Artifacts are controlled by governance, validation, and operator boundaries.</strong></p>
-          <p class="card-text"><strong>Explicitly not claimed:</strong> Public marketplace, unrestricted user creation, production-grade software, certification.</p>
+          <p class="card-text"><strong>Request → Evidence/context → Metadata → Validation → Preview → Controlled rendering</strong></p>
+          <p class="card-text" style="margin-top: var(--spacing-md);">All artifacts follow this chain, with operator approval gates at each stage.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Artifact Infrastructure</h2>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <h3 class="card-title">Artifact storage and retrieval</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Structured artifact storage, retrieval, and lineage tracking.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Artifact metadata</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Metadata schema, validation, JSON-safe structure.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Artifact quality feedback</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Quality scoring, validation, operator review workflow.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Validation before rendering</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Pre-render validation, metadata review, owner preview.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Owner preview</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Controlled preview before public release.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Controlled rendering</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Operator-gated rendering, protected runtime tooling.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Report-style outputs</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Structured report generation, JSON-safe metadata.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">JSON-safe metadata</h3>
+            <p class="card-text"><span class="status-badge status-badge-implemented">Implemented</span> • Validation, schema compliance, safe serialization.</p>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-sections">
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
         <div>
-          <h4 class="footer-section-title">What is WESLR?</h4>
+          <h4 class="footer-section-title">Product</h4>
           <ul class="footer-links">
             <li><a href="../../" class="footer-link">What is WESLR?</a></li>
             <li><a href="../../how-it-works/" class="footer-link">How It Works</a></li>
@@ -120,6 +161,7 @@
             <li><a href="../../roadmap/" class="footer-link">Evaluation Roadmap</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Resources</h4>
           <ul class="footer-links">
@@ -130,6 +172,7 @@
             <li><a href="../../docs/" class="footer-link">Documentation</a></li>
           </ul>
         </div>
+
         <div>
           <h4 class="footer-section-title">Legal</h4>
           <ul class="footer-links">
@@ -139,6 +182,18 @@
             <li><a href="../../impressum/" class="footer-link">Impressum</a></li>
           </ul>
         </div>
+
+        <div>
+          <h4 class="footer-section-title">Pilot</h4>
+          <ul class="footer-links">
+            <li><a href="../../pilot/" class="footer-link">Request Pilot Access</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>WESLR — Continuity-first Governed Intelligence</p>
+        <p style="margin-top: var(--spacing-sm);">WESLR is in internal evaluation. No official test results claimed. No production guarantee. Pilot access by invitation.</p>
       </div>
     </div>
   </footer>
