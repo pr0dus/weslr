@@ -393,6 +393,12 @@ _cognitive_research_boundary_helpers_allowed_paths = {
     _unintelligible_output_analyzer_helper_report_doc,
 }
 
+_rf_field_discovery_doc_family_allowed_paths = {
+    "docs/WESLR_RF_FIELD_DISCOVERY_ARTIFACT_V1.md",
+    "docs/WESLR_RF_FIELD_DISCOVERY_ARTIFACT_REVIEW_V1.md",
+    "docs/WESLR_RF_FIELD_DISCOVERY_SCHEMA_CANDIDATES_V1.md",
+}
+
 
 def _workflow_integrity_red_zone_lane_is_valid(staged):
     return (
@@ -15117,6 +15123,8 @@ def _check_git_scope():
         if path == _closeout_helper_stack_doc:
             allowed = True
         if path in _cognitive_research_boundary_helpers_allowed_paths:
+            allowed = True
+        if path in _rf_field_discovery_doc_family_allowed_paths:
             allowed = True
 
         if not allowed:
