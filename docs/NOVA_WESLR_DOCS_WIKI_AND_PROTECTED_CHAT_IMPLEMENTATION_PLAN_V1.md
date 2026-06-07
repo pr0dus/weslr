@@ -310,11 +310,13 @@ After owner review, a separate cleanup lane can:
 ## 9. Later Implementation Steps
 
 ### Phase 1: Site Restructure
-- [ ] Reconcile `/about/` and `/about-weslr/`
+- [ ] Keep `/about/` as main "What is WESLR?"
+- [ ] Keep `/about-weslr/` for candidate/example content
+- [ ] Add `/about-weslr/candidate-material-example/`
 - [ ] Add `/about/not/` (What WESLR is not)
-- [ ] Add `/about/candidate-material-example/`
-- [ ] Update all nav links
-- [ ] Update all footer links
+- [ ] Update all nav links to reference `/about-weslr/`
+- [ ] Update all footer links to keep both pages
+- [ ] Defer full `/about/` vs `/about-weslr/` merge/redirect cleanup to a future owner-approved lane
 - [ ] Test with local `python3 -m http.server 8081`
 
 ### Phase 2: Docs/Wiki Pages
