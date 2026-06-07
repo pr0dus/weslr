@@ -79,31 +79,38 @@
 
 ## 3. Proposed Page/File Changes
 
-### A. Reconcile `/about/` and `/about-weslr/`
+### A. `/about/` vs `/about-weslr/` Reconciliation
 
-**Recommendation:** **MERGE** — keep `/about/` as "What is WESLR?", remove `/about-weslr/`.
+**Decision:** **KEEP BOTH — `/about/` as main "What is WESLR?", `/about-weslr/` as example/candidate section**
 
 **Rationale:**
-- `/about-weslr/` duplicates origin/mission content already present in `/about/`
-- Current nav maps "What is WESLR?" to `/about/` — clear intent
-- `/about-weslr/` adds redundant origin story with no unique content
-- Cleaner structure: `/about/` for main explanation, `/contact/` for operator info
+- `/about/` already contains complete "What is WESLR?" explanation with governance, continuity, evidence sections
+- `/about-weslr/` has placeholder content but could serve as candidate/example section
+- Merging now creates risk of breaking existing navigation links
+- Owner-approved approach: keep both, add material example to `/about-weslr/`, defer full merge to cleanup lane
 
 **Action in Implementation Lane:**
-1. Move `/about-weslr/index.html` content into `/about/index.html` if any unique content exists
-2. Update nav in all pages to remove `/about-weslr/` reference
-3. Update footer links in all pages
-4. Update `robots.txt` if needed
+1. Keep `/about/` as-is (What is WESLR?)
+2. Add material research example under `/about-weslr/candidate-material-example/`
+3. Update `/about-weslr/index.html` as example引导 page with link to subpage
+4. Update nav in all pages to reference `/about-weslr/` for candidate examples
+5. Update footer links to keep both pages
+
+**Cleanup Lane (Future):**
+After owner review, a separate cleanup lane can:
+- Review `/about-weslr/` for any unique content
+- Determine if redirect to `/about/` or `/about-weslr/` is better
+- Update navigation consistently
 
 ### B. Material Research Example Placement
 
-**Recommendation:** **ADD TO `/about-weslr/` directory as a new subpage**, then redirect `/about-weslr/` to the example page.
+**Recommendation:** **ADD TO `/about-weslr/candidate-material-example/` as a new page**
 
 **Rationale:**
 - Current `/about-weslr/` page has placeholder content ("Origin", "Mission", "Development Posture")
 - OCC source docs suggest material research as a **candidate workflow example**, not production-ready
 - "Example: Evaluating a Candidate Material Idea" is public-safe phrasing
-- Use `/about-weslr/` as the example page location (already exists, low public traffic)
+- New page structure keeps `/about-weslr/` as example引导 page
 
 **Content to Add:**
 ```html
@@ -128,7 +135,7 @@
 - `site/about-weslr/candidate-material-example/index.html`
 
 **Files to Update:**
-- `site/about-weslr/index.html` — rewrite as example引导 page with link to subpage
+- `site/about-weslr/index.html` — rewrite as example引导 page with link to `/candidate-material-example/`
 
 ### C. What WESLR is Not Page
 
@@ -248,7 +255,7 @@ docs/
 
 ## 7. Material Research Example Placement Recommendation
 
-**Location:** `/about-weslr/` (redirect/rename to example page)
+**Location:** `/about-weslr/candidate-material-example/` (new page)
 
 **Content Title:** "Example: Evaluating a Candidate Material Idea"
 
@@ -267,24 +274,36 @@ docs/
 
 **Wording Rule:** Use "Example:" prefix to clarify this is illustrative, not production.
 
+**Rationale for Change:**
+- Owner review identified internal inconsistency in original plan
+- `/about-weslr/` kept as-is (not merged into `/about/`)
+- Material example added as subpage to avoid restructuring `/about-weslr/`
+- Cleaner separation: `/about/` = explanation, `/about-weslr/` = examples
+
 ---
 
 ## 8. `/about/` vs `/about-weslr/` Reconciliation Recommendation
 
-**Decision:** **MERGE — keep `/about/` as main explanation, remove `/about-weslr/`**
+**Decision:** **KEEP BOTH — `/about/` as main "What is WESLR?", `/about-weslr/` as example/candidate section**
 
-**Reasoning:**
-1. Current nav maps "What is WESLR?" to `/about/` — clear intent
-2. `/about-weslr/` adds redundant origin story
-3. `/about/index.html` already has origin, mission, development posture
-4. Cleaner structure: `/about/` for explanation, `/contact/` for operator info
+**Rationale:**
+- `/about/` already contains complete "What is WESLR?" explanation with governance, continuity, evidence sections
+- `/about-weslr/` has placeholder content but could serve as candidate/example section
+- Merging now creates risk of breaking existing navigation links
+- Owner-approved approach: keep both, add material example to `/about-weslr/`, defer full merge to cleanup lane
 
 **Implementation Steps:**
-1. Review `/about-weslr/index.html` for any unique content not in `/about/index.html`
-2. If unique content exists, merge into `/about/index.html`
-3. Remove `/about-weslr/` directory
-4. Update all nav links from `../about-weslr/` to `../about/`
-5. Update all footer links from `../about-weslr/` to `../about/`
+1. Keep `/about/` as-is (What is WESLR?)
+2. Add material research example under `/about-weslr/candidate-material-example/`
+3. Update `/about-weslr/index.html` as example引导 page with link to `/candidate-material-example/`
+4. Update nav in all pages to reference `/about-weslr/` for candidate examples
+5. Update footer links to keep both pages
+
+**Cleanup Lane (Future):**
+After owner review, a separate cleanup lane can:
+- Review `/about-weslr/` for any unique content
+- Determine if redirect to `/about/` or `/about-weslr/` is better
+- Update navigation consistently
 
 ---
 
@@ -384,13 +403,13 @@ openclaw message send \
 - No protected chat was accessed or modified
 - No public access was opened
 
-**Next Lane:** `SELECT_NOVA_WESLR_FIRST_DOCS_WIKI_PAGE_DRAFT_TARGET_V1` (or owner-approved alternative)
+**Next Lane:** `SELECT_NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_V1` (or owner-approved alternative)
 
 ---
 
-**Final Judgment:** `nova_weslr_docs_wiki_and_protected_chat_implementation_plan_ready_for_review`
+**Final Judgment:** `nova_weslr_docs_wiki_and_protected_chat_implementation_plan_valid_ready_for_implementation_target_selection`
 
-**Recommended Next Lane:** `SELECT_NOVA_WESLR_FIRST_DOCS_WIKI_PAGE_DRAFT_TARGET_V1`
+**Recommended Next Lane:** `SELECT_NOVA_WESLR_DOCS_WIKI_IMPLEMENTATION_TARGET_V1`
 
 ---
 
