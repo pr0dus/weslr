@@ -11,7 +11,7 @@
 
 ### Location
 
-**Path:** `/home/pr0/projects/weslr-v1-ui-website/site/app/`  
+**Path:** `/home/pr0/projects/weslr-v1-ui-website/protected-preview/chat-app-shell/`  
 **File:** `index.html`  
 **Route on chat.weslr.de:** `/app/`
 
