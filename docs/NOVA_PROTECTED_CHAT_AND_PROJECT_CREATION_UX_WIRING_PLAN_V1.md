@@ -4,7 +4,9 @@
 **Author:** Nova (MAIN_DISPATCHER)  
 **Status:** Ready for Owner Review  
 **Target:** https://chat.weslr.de/ (protected)  
-**Public Site:** https://weslr.de/ (unchanged)
+**Public Site:** https://weslr.de/ (unchanged)  
+**Internal Location:** `/docs/NOVA_PROTECTED_CHAT_AND_PROJECT_CREATION_UX_WIRING_PLAN_V1.md`  
+**Previous Location:** `site/docs/NOVA_PROTECTED_CHAT_AND_PROJECT_CREATION_UX_WIRING_PLAN_V1.md` (moved 2026-06-08)
 
 ---
 
