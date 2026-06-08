@@ -32,7 +32,7 @@
       color: var(--text-primary);
       min-height: 100dvh;
       padding-bottom: env(safe-area-inset-bottom);
-      overflow: hidden;
+      overscroll-behavior: auto;
     }
 
     /* Toast */
@@ -750,7 +750,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- App Header -->
-  <header class="app-header">
+  <header class="app-header" onclick="handleHeaderClick(e)">
     <div class="header-left">
       <div class="logo">W</div>
       <div class="app-title">Protected Workspace</div>
@@ -975,6 +975,20 @@
     // Settings data (read-only, safe defaults)
     const settings = [
       {
+        id: 'refresh-preview',
+        name: 'Refresh Preview',
+        description: 'Reload current preview (UI only)',
+        currentState: 'Ready',
+        risk: 'LOW',
+        riskClass: 'risk-low',
+        requiresApproval: 'NO',
+        requiresRestart: 'NO',
+        publicExposure: 'NONE',
+        backendStatus: 'UI only — no backend',
+        toggleEnabled: true,
+        toggleActive: false
+      },
+      {
         id: 'ui-preview-mode',
         name: 'UI Preview Mode',
         description: 'Local frontend preview behavior only',
@@ -1147,6 +1161,9 @@
       const setting = settings.find(s => s.id === id);
       if (!setting.toggleEnabled) {
         showToast('backend-blocked', `${setting.name}: Backend not connected (UI only preview)`);
+      } else if (id === 'refresh-preview') {
+        showToast('ui-preview', 'Refreshing preview...');
+        setTimeout(() => location.reload(), 500);
       }
     }
 
@@ -1164,11 +1181,13 @@
         main.classList.add('active');
         right.classList.remove('hidden');
         composer.classList.remove('hidden');
+        settingsOpen = false;
       } else {
         panel.classList.add('active');
         main.classList.remove('active');
         right.classList.add('hidden');
         composer.classList.add('hidden');
+        settingsOpen = true;
       }
     }
 
@@ -1284,10 +1303,66 @@
       }
     });
 
+    // State tracking
+    let settingsOpen = false;
+    let drawerOpen = false;
+
+    // Refresh button in settings (UI-only)
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      showToast('ui-preview', 'Refreshing preview...');
+      setTimeout(() => location.reload(), 500);
+    });
+
+    // Header click handler
+    function handleHeaderClick(e) {
+      if (e.target.closest('.logo') || e.target.closest('.app-title')) {
+        // Return to workspace home
+        toggleDrawer();
+        toggleSettings();
+        // Select default project
+        selectProject('p-001');
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
     // Mobile drawer
     function toggleDrawer() {
-      document.getElementById('mobileDrawer').classList.toggle('active');
+      const drawer = document.getElementById('mobileDrawer');
+      drawerOpen = !drawerOpen;
+      if (drawerOpen) {
+        drawer.classList.add('active');
+      } else {
+        drawer.classList.remove('active');
+      }
     }
+
+    // Click outside handler for drawers and panels
+    document.addEventListener('click', (e) => {
+      // Close drawer if clicking outside and not on toggle button
+      if (drawerOpen && !e.target.closest('.mobile-drawer') && !e.target.closest('.mobile-drawer-toggle')) {
+        toggleDrawer();
+      }
+      // Close settings panel if clicking outside
+      if (settingsOpen && e.target.classList.contains('settings-panel')) {
+        toggleSettings();
+      }
+    });
+
+    // Settings panel overlay click
+    document.querySelector('.settings-panel').addEventListener('click', (e) => {
+      if (e.target.classList.contains('settings-panel')) {
+        toggleSettings();
+      }
+    });
+
+    // Escape key handler
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        toggleDrawer();
+        toggleSettings();
+      }
+    });
 
     // Mobile tabs
     function showMobilePanel(panel) {
