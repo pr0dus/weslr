@@ -762,7 +762,7 @@
   </header>
 
   <!-- Settings Tab (Mobile) -->
-  <div class="settings-tab" id="settingsTab" onclick="toggleSettings()">
+  <div class="settings-tab" id="settingsTab" onclick="handleSettingsClick(event)">
     <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </div>
 
@@ -838,7 +838,7 @@
           <button class="icon-btn" title="Evidence" onclick="showToast('ui-preview', 'Evidence panel — requires backend wiring')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
           </button>
-          <button class="icon-btn" title="Settings" onclick="toggleSettings()">
+          <button class="icon-btn" title="Settings" onclick="handleSettingsClick(event)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle></svg>
           </button>
           <button class="icon-btn" title="Open Drawer" onclick="toggleDrawer()">
@@ -1337,6 +1337,16 @@
       }
     }
 
+    // Settings panel toggle with proper click handling
+    function handleSettingsClick(e) {
+      e.stopPropagation();
+      if (settingsOpen) {
+        toggleSettings();
+      } else {
+        toggleSettings();
+      }
+    }
+
     // Click outside handler for drawers and panels
     document.addEventListener('click', (e) => {
       // Close drawer if clicking outside and not on toggle button
@@ -1344,12 +1354,12 @@
         toggleDrawer();
       }
       // Close settings panel if clicking outside
-      if (settingsOpen && e.target.classList.contains('settings-panel')) {
+      if (settingsOpen && !e.target.closest('.settings-panel') && !e.target.closest('.settings-tab') && !e.target.closest('.settings-back-btn') && !e.target.closest('.setting-card') && !e.target.closest('.setting-card-title') && !e.target.closest('.setting-toggle') && !e.target.closest('.status-label') && !e.target.closest('.risk-badge') && !e.target.closest('.setting-feedback')) {
         toggleSettings();
       }
     });
 
-    // Settings panel overlay click
+    // Settings panel overlay click - only close when clicking on background
     document.querySelector('.settings-panel').addEventListener('click', (e) => {
       if (e.target.classList.contains('settings-panel')) {
         toggleSettings();
