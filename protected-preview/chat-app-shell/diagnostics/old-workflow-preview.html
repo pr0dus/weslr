@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WESLR Protected Workflow (No Model)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1115; color: #e8eaed; margin: 0; }
+    .wrap { max-width: 800px; margin: 40px auto; padding: 20px; }
+    h1 { color: #4f8cff; margin-bottom: 8px; }
+    .subtitle { color: #9aa0a6; margin-bottom: 24px; }
+    .notice { background: #2a1a1a; border: 1px solid #c0392b; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; }
+    .notice strong { color: #e74c3c; }
+    .chat { background: #171a21; border: 1px solid #2a2f3a; padding: 20px; border-radius: 12px; }
+    .prompts { margin-bottom: 16px; }
+    .prompts h3 { margin: 0 0 12px 0; color: #9aa0a6; font-size: 14px; }
+    .prompts ul { margin: 0; padding-left: 20px; }
+    .prompts li { margin: 4px 0; color: #b0b8c1; cursor: pointer; }
+    .prompts li:hover { color: #4f8cff; }
+    textarea { width: 100%; height: 80px; background: #11141a; color: #e8eaed; border: 1px solid #2a2f3a; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 14px; resize: vertical; }
+    textarea:focus { outline: none; border-color: #4f8cff; }
+    .buttons { margin-top: 12px; display: flex; gap: 12px; }
+    button { background: #4f8cff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #3a7bd5; }
+    button.secondary { background: #2d333b; }
+    button.secondary:hover { background: #3d434b; }
+    .response { background: #1b2a1f; padding: 16px; border-radius: 8px; margin-top: 16px; min-height: 60px; }
+    .response-header { display: flex; gap: 16px; margin-bottom: 12px; font-size: 12px; color: #9aa0a6; }
+    .response-header span { padding: 2px 8px; background: #252d20; border-radius: 4px; }
+    .response-text { white-space: pre-wrap; line-height: 1.6; }
+    .footer { color: #6b7280; font-size: 11px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #2a2f3a; }
+    .footer strong { color: #9aa0a6; }
+    .no-match { color: #f39c12; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>WESLR Protected Workflow Preview</h1>
+    <div class="subtitle">Continuity-first governed intelligence — deterministic responses only</div>
+    
+    <div class="notice">
+      <strong>⚠️ No Model Provider Active</strong><br>
+      This is a deterministic workflow surface. Responses come from registered system knowledge only.
+      No LLM, no AI model, no external API calls, no learning from users.
+      This is NOT public pilot. For owner testing only.
+    </div>
+    
+    <div class="chat">
+      <div class="prompts">
+        <h3>Try These Prompts:</h3>
+        <ul>
+          <li onclick="setPrompt('What is WESLR?')">What is WESLR?</li>
+          <li onclick="setPrompt('What is your current status?')">What is your current status?</li>
+          <li onclick="setPrompt('What are you not allowed to claim?')">What are you not allowed to claim?</li>
+          <li onclick="setPrompt('What should happen if I ask for upload, payment, or marketplace?')">What should happen if I ask for upload, payment, or marketplace?</li>
+          <li onclick="setPrompt('Explain optional user-configured model providers.')">Explain optional user-configured model providers.</li>
+          <li onclick="setPrompt('What can I try?')">What can I try?</li>
+          <li onclick="setPrompt('Is this AGI?')">Is this AGI?</li>
+          <li onclick="setPrompt('How does WESLR improve?')">How does WESLR improve?</li>
+        </ul>
+      </div>
+      
+      <textarea id="msg" placeholder="Type a prompt..."></textarea>
+      <div class="buttons">
+        <button onclick="send()">Send</button>
+        <button class="secondary" onclick="clearAll()">Clear</button>
+      </div>
+      
+      <div class="response" id="response">
+        <div class="response-header">
+          <span id="path-badge">Path: —</span>
+          <span id="conf-badge">Confidence: —</span>
+        </div>
+        <div class="response-text" id="response-text">Send a message to see the response.</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <strong>WESLR Protected Owner Workflow Preview — No Model Provider Active</strong><br>
+      Not Public Pilot — Not Production Runtime — For Owner Testing Only<br>
+      Deterministic handlers only — No learning from user input — No external API calls
+    </div>
+  </div>
+  
+  <script>
+    function setPrompt(text) {
+      document.getElementById('msg').value = text;
+    }
+    
+    function clearAll() {
+      document.getElementById('msg').value = '';
+      document.getElementById('response-text').innerHTML = 'Send a message to see the response.';
+      document.getElementById('path-badge').textContent = 'Path: —';
+      document.getElementById('conf-badge').textContent = 'Confidence: —';
+    }
+    
+    async function send() {
+      const msg = document.getElementById('msg').value.trim();
+      if (!msg) return;
+      
+      document.getElementById('response-text').innerHTML = 'Processing...';
+      
+      try {
+        const res = await fetch('/api/message', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({message: msg})
+        });
+        const data = await res.json();
+        
+        document.getElementById('path-badge').textContent = 'Path: ' + data.path;
+        document.getElementById('conf-badge').textContent = 'Confidence: ' + data.confidence;
+        
+        let html = data.response_text;
+        if (data._no_match) {
+          html = '<span class="no-match">' + html + '</span>';
+        }
+        document.getElementById('response-text').innerHTML = html;
+      } catch (e) {
+        document.getElementById('response-text').innerHTML = 'Error: ' + e.message;
+      }
+    }
+    
+    document.getElementById('msg').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+  </script>
+</body>
+</html>
