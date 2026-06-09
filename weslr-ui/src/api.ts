@@ -10,6 +10,48 @@ import config from './config';
 
 const API_BASE = '';
 
+export interface AuthInfo {
+  authenticated: boolean;
+  role: string;
+  account_mode: string;
+  email: string | null;
+  display_name: string;
+  permissions: string[];
+  writes_enabled: boolean;
+  google_auth_enabled: boolean;
+  htpasswd_active: boolean;
+}
+
+export async function fetchAuthInfo(): Promise<AuthInfo> {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`);
+    const data = await response.json();
+    return {
+      authenticated: data.authenticated || false,
+      role: data.role || 'viewer',
+      account_mode: data.account_mode || 'unknown',
+      email: data.email || null,
+      display_name: data.display_name || 'Unknown User',
+      permissions: data.permissions || [],
+      writes_enabled: data.writes_enabled || false,
+      google_auth_enabled: data.google_auth_enabled || false,
+      htpasswd_active: data.htpasswd_active || false,
+    };
+  } catch (_e) {
+    return {
+      authenticated: false,
+      role: 'unknown',
+      account_mode: 'backend_unavailable',
+      email: null,
+      display_name: 'Auth Adapter Unavailable',
+      permissions: [],
+      writes_enabled: false,
+      google_auth_enabled: false,
+      htpasswd_active: false,
+    };
+  }
+}
+
 export interface ContinuityStatus {
   active: boolean;
   last_snapshot_id?: string;

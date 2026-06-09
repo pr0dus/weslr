@@ -6,9 +6,11 @@ import {
   fetchOperatorSummary,
   uploadFile as uploadFileToBackend,
   sendChatMessage,
+  fetchAuthInfo,
   ContinuityStatus,
   OperatorVisibility,
   OperatorSummary,
+  AuthInfo,
 } from './api';
 
 const RIGHT_WIDTH = 320;
@@ -299,17 +301,20 @@ export default function App() {
   const [continuity, setContinuity] = useState<ContinuityStatus>({ active: false, snapshots: [] });
   const [visibility, setVisibility] = useState<OperatorVisibility>({ visible: false, reason: 'public_demo', can_review: false });
   const [summary, setSummary] = useState<OperatorSummary>({ active_proposals: [], pending_reviews: 0, total_proposals: 0 });
+  const [authInfo, setAuthInfo] = useState<AuthInfo>({ authenticated: false, role: 'unknown', account_mode: 'unknown', email: null, display_name: 'Unknown', permissions: [], writes_enabled: false, google_auth_enabled: false, htpasswd_active: false });
 
   useEffect(() => {
     const fetchData = async () => {
-      const [c, v, s] = await Promise.all([
+      const [c, v, s, a] = await Promise.all([
         fetchContinuityStatus(),
         fetchOperatorVisibility(),
         fetchOperatorSummary(),
+        fetchAuthInfo(),
       ]);
       setContinuity(c);
       setVisibility(v);
       setSummary(s);
+      setAuthInfo(a);
     };
     fetchData();
   }, []);
@@ -320,6 +325,18 @@ export default function App() {
 
   return (
     <div style={styles.appShell}>
+      <div style={styles.headerRow}>
+        <div style={styles.headerLeft}>
+          <strong style={styles.appTitle}>WESLR Protected Workspace</strong>
+          <span style={{
+            ...styles.roleBadge,
+            background: authInfo.htpasswd_active ? 'rgba(239,68,68,0.12)' : 'rgba(234,179,8,0.12)',
+            border: authInfo.htpasswd_active ? '1px solid rgba(239,68,68,0.28)' : '1px solid rgba(234,179,8,0.28)'
+          }}>
+            Role: {authInfo.display_name} {authInfo.htpasswd_active ? '(htpasswd)' : ''}
+          </span>
+        </div>
+      </div>
       <ChatSurface continuity={continuity} onFileUploaded={handleFileUploaded} />
       <OperatorPanel visibility={visibility} summary={summary} />
     </div>
@@ -366,7 +383,10 @@ const styles: Record<string, React.CSSProperties> = {
   composer: { padding: '0.85rem 1rem', display: 'flex', alignItems: 'flex-end', gap: '0.65rem', backgroundColor: 'rgba(7, 16, 24, 0.96)', borderTop: '1px solid rgba(148, 163, 184, 0.18)' },
   textarea: { flex: 1, padding: '0.75rem 0.9rem', color: '#e5edf8', background: 'rgba(15, 23, 42, 0.92)', border: '1px solid rgba(148, 163, 184, 0.28)', borderRadius: '14px', resize: 'none', minHeight: '46px', maxHeight: '120px', fontFamily: 'inherit', fontSize: '0.94rem' },
   sendButton: { padding: '0.78rem 1.1rem', border: 'none', background: 'linear-gradient(135deg, #38bdf8, #60a5fa)', color: '#06111f', borderRadius: '14px', cursor: 'pointer', fontWeight: 800 },
-  statusBar: { padding: '0.42rem 1rem', fontSize: '0.75rem', color: '#94a3b8', backgroundColor: 'rgba(7, 16, 24, 0.98)', borderTop: '1px solid rgba(148, 163, 184, 0.16)', display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' },
+  headerRow: { padding: '0.65rem 1rem', background: 'rgba(15, 23, 42, 0.96)', borderBottom: '1px solid rgba(148, 163, 184, 0.16)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' },
+  appTitle: { fontSize: '0.85rem', color: '#e7eef8' },
+  roleBadge: { fontSize: '0.75rem', padding: '0.18rem 0.55rem', borderRadius: '999px', color: '#fca5a5', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)' },
   operatorPanel: { width: RIGHT_WIDTH, borderLeft: '1px solid rgba(148, 163, 184, 0.18)', backgroundColor: '#0f172a', overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   operatorHeader: { padding: '0.5rem 1rem', borderBottom: '1px solid rgba(148, 163, 184, 0.18)' },
   operatorBody: { flex: 1, padding: '1rem', overflowY: 'auto', fontSize: '0.875rem' },
