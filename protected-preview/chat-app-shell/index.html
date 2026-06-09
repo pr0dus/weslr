@@ -59,6 +59,18 @@
       font-weight: 700;
       letter-spacing: -0.02em;
     }
+    .build-marker {
+      margin-left: 0.6rem;
+      padding: 0.15rem 0.45rem;
+      background: rgba(56, 189, 248, 0.10);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #7dd3fc;
+      font-family: ui-monospace, "JetBrains Mono", monospace;
+      letter-spacing: 0.02em;
+    }
     .status-pill {
       padding: 0.2rem 0.5rem;
       background: rgba(239, 68, 68, 0.12);
@@ -334,6 +346,7 @@
     <div class="header-left">
       <div class="logo" onclick="handleHeaderClick()">W</div>
       <div class="app-title">Protected Workspace</div>
+      <span class="build-marker" title="Build marker for owner verification">Build: protected-chat-auth-status-20260609-OWNERTEST</span>
     </div>
     <div class="status-pill" id="authStatusPill">Protected • Internal</div>
   </header>
@@ -349,8 +362,8 @@
 
     <main class="main-content">
       <div class="empty-state" id="emptyState">
-        <h2>Protected Workspace Preview</h2>
-        <p>This is a UI-only preview of the protected WESLR workspace. Real backend wiring is not yet connected.</p>
+        <h2>Protected Workspace</h2>
+        <p>Protected backend preview active · <code>/api/message</code> route configured · auth status pulled live from <code>/api/auth/me</code>.</p>
         <div class="backend-warning" id="authStatusNotice">Protected session · auth status unavailable</div>
       </div>
       <div class="chat-messages" id="chatMessages"></div>
@@ -437,7 +450,7 @@
         'project-options': '<h4>Project Options</h4><p class="status-label status-protected">Protected route</p><p class="status-label status-backend-blocked">Auth status unavailable</p><p>Visibility: Private</p>',
         'artifacts': '<h4>Artifacts</h4><p class="status-label status-approval">Requires approval</p><p>Upload: Disabled</p>',
         'evidence': '<h4>Evidence/Context</h4><p class="status-label status-available">Available</p><p>Continuity: Not active</p>',
-        'settings': '<h4>Environment Settings</h4><p class="status-label status-backend-blocked">Auth status unavailable</p><p>Settings panel ready for backend wiring</p>'
+        'settings': '<h4>Environment Settings</h4><p class="status-label status-backend-blocked">Auth status unavailable</p><p>Settings panel ready · read-only until role/writes allow edits</p>'
       };
       content.innerHTML = panels[activePanel] || '';
     }
