@@ -464,18 +464,63 @@
     function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text) {
+        showToast('ui-preview', 'Please type a message first');
+        return;
+      }
+
       const chat = document.getElementById('chatMessages');
       const userMsg = document.createElement('div');
       userMsg.className = 'message message-user';
       userMsg.innerHTML = `${escapeHtml(text)}<span class="message-sent-at">${new Date().toLocaleTimeString()}</span>`;
       chat.appendChild(userMsg);
-      const sysMsg = document.createElement('div');
-      sysMsg.className = 'message message-system';
-      sysMsg.innerHTML = `<strong>UI Preview Only</strong><div>Backend not connected. This message was not sent to WESLR runtime.</div><span class="local-preview-label">Local UI preview only</span><span class="message-sent-at">${new Date().toLocaleTimeString()}</span>`;
-      chat.appendChild(sysMsg);
       input.value = '';
       chat.scrollTop = chat.scrollHeight;
+
+      // Show pending state
+      const pendingMsg = document.createElement('div');
+      pendingMsg.className = 'message message-system';
+      pendingMsg.innerHTML = `<strong>Sending...</strong><span class="message-sent-at">${new Date().toLocaleTimeString()}</span>`;
+      chat.appendChild(pendingMsg);
+      chat.scrollTop = chat.scrollHeight;
+
+      fetch('/api/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          project_id: 'preview-weslr-website-review',
+          mode: 'protected_owner_preview'
+        })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error(`Backend error: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        chat.removeChild(pendingMsg);
+        const sysMsg = document.createElement('div');
+        sysMsg.className = 'message message-system';
+        sysMsg.innerHTML = `
+          <p><strong>WESLR Response:</strong> ${escapeHtml(data.response_text || 'No response')}</p>
+          ${data.path ? `<span class="message-meta">Path: ${escapeHtml(data.path)}</span>` : ''}
+          <span class="message-local-label">Backend response</span>
+          <span class="message-sent-at">${new Date().toLocaleTimeString()}</span>
+        `;
+        chat.appendChild(sysMsg);
+        chat.scrollTop = chat.scrollHeight;
+      })
+      .catch(error => {
+        chat.removeChild(pendingMsg);
+        const sysMsg = document.createElement('div');
+        sysMsg.className = 'message message-system';
+        sysMsg.innerHTML = `
+          <p><strong>Backend Error:</strong> ${escapeHtml(error.message || 'Unknown error')}</p>
+          <span class="message-meta">Check backend connectivity</span>
+        `;
+        chat.appendChild(sysMsg);
+        chat.scrollTop = chat.scrollHeight;
+      });
     }
 
     function escapeHtml(text) {
