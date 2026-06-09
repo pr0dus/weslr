@@ -96,6 +96,11 @@ _cognitive_research_protocol_helpers_allowed_paths = {
     _cognitive_research_protocol_helpers_test_path,
 }
 
+_workflow_boundary_bootstrap_allowed_paths = {
+    "docs/PROJECT_BOUNDARIES_v1.md",
+    "BUILD_STANDARD.md",
+}
+
 _workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
 _workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
 _workflow_integrity_red_zone_report_doc = (
@@ -15039,6 +15044,8 @@ def _check_git_scope():
                 violations.append(f"  Tier 0-2 math challenge readiness review doc missing required markers: {path}")
 
         if path in _cognitive_research_doc_family_allowed_paths:
+            allowed = True
+        if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True
