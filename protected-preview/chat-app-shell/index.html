@@ -335,7 +335,7 @@
       <div class="logo" onclick="handleHeaderClick()">W</div>
       <div class="app-title">Protected Workspace</div>
     </div>
-    <div class="status-pill">Protected • Internal</div>
+    <div class="status-pill" id="authStatusPill">Protected • Internal</div>
   </header>
 
   <div class="app-shell">
@@ -351,7 +351,7 @@
       <div class="empty-state" id="emptyState">
         <h2>Protected Workspace Preview</h2>
         <p>This is a UI-only preview of the protected WESLR workspace. Real backend wiring is not yet connected.</p>
-        <div class="backend-warning">Backend not connected - All messages are local UI preview only.</div>
+        <div class="backend-warning" id="authStatusNotice">Protected session · auth status unavailable</div>
       </div>
       <div class="chat-messages" id="chatMessages"></div>
 
@@ -385,7 +385,7 @@
       <h3>Project Options</h3>
       <div class="panel-content">
         <p class="status-label status-protected">Protected route</p>
-        <p class="status-label status-backend-blocked">Backend not connected</p>
+        <p class="status-label status-backend-blocked" id="panelBackendLabel">Auth status unavailable</p>
         <p>Visibility: Private</p>
         <p>Protection: Password (htpasswd)</p>
       </div>
@@ -434,10 +434,10 @@
         return;
       }
       const panels = {
-        'project-options': '<h4>Project Options</h4><p class="status-label status-protected">Protected route</p><p class="status-label status-backend-blocked">Backend not connected</p><p>Visibility: Private</p>',
+        'project-options': '<h4>Project Options</h4><p class="status-label status-protected">Protected route</p><p class="status-label status-backend-blocked">Auth status unavailable</p><p>Visibility: Private</p>',
         'artifacts': '<h4>Artifacts</h4><p class="status-label status-approval">Requires approval</p><p>Upload: Disabled</p>',
         'evidence': '<h4>Evidence/Context</h4><p class="status-label status-available">Available</p><p>Continuity: Not active</p>',
-        'settings': '<h4>Environment Settings</h4><p class="status-label status-backend-blocked">Backend not connected</p><p>Settings panel ready for backend wiring</p>'
+        'settings': '<h4>Environment Settings</h4><p class="status-label status-backend-blocked">Auth status unavailable</p><p>Settings panel ready for backend wiring</p>'
       };
       content.innerHTML = panels[activePanel] || '';
     }
@@ -459,6 +459,35 @@
     function selectProject(id) {
       activeProjectId = id;
       showToast('ui-preview', 'Selected: ' + id);
+    }
+
+    // Auth/status integration: call /api/auth/me on load, render role chip.
+    // Does NOT block the composer. If backend is unavailable, show "auth status
+    // unavailable" rather than a broken or misleading state.
+    async function initAuthStatus() {
+      const pill = document.getElementById('authStatusPill');
+      const notice = document.getElementById('authStatusNotice');
+      try {
+        const res = await fetch('/api/auth/me', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('auth-me ' + res.status);
+        const data = await res.json();
+        const role = (data && data.role) ? data.role : 'unknown';
+        const writes = (data && data.writes_enabled === true);
+        const googleAuth = (data && data.google_auth_enabled === true);
+        let label = 'Role: ' + role;
+        if (role === 'owner') label = 'Owner Preview';
+        pill.textContent = label + (writes ? ' • writes:on' : ' • writes:off');
+        pill.title = 'role=' + role + ' | writes=' + (writes ? 'true' : 'false') + ' | google_auth=' + (googleAuth ? 'true' : 'false');
+        if (notice) notice.style.display = 'none';
+      } catch (err) {
+        pill.textContent = 'Auth status unavailable';
+        pill.title = '/api/auth/me unreachable: ' + (err && err.message ? err.message : 'unknown');
+        if (notice) {
+          notice.textContent = 'Protected session · auth status unavailable';
+          notice.style.display = '';
+        }
+        // Composer remains usable — sendMessage() does not depend on /api/auth/me.
+      }
     }
 
     function sendMessage() {
@@ -548,6 +577,9 @@
     document.getElementById('message-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
+
+    // Initial auth/status probe. Non-blocking — composer is wired independently.
+    initAuthStatus();
   </script>
 </body>
 </html>
