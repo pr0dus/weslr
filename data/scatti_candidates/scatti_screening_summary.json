@@ -1,13 +1,13 @@
 {
-  "total_candidates": 19,
+  "total_candidates": 20,
   "dft_ready_count": 0,
   "pre_relaxation_count": 2,
   "downgraded_count": 13,
-  "metadata_only_count": 0,
+  "metadata_only_count": 1,
   "reference_phase_count": 4,
   "target_formula": "CaSc2TiO6",
-  "generated_at": "2026-05-08T10:44:28.719096+00:00",
-  "audit_at": "2026-05-08T10:44:29.203056+00:00",
+  "generated_at": "2026-05-08T14:40:02.773937+00:00",
+  "audit_at": "2026-05-08T14:40:03.245598+00:00",
   "candidates": [
     {
       "candidate_id": "SCATTI-OCTACHAIN-001",
@@ -253,6 +253,22 @@
         "warning: O site 8 has 1 < 2 neighbors",
         "warning: O site 9 has 1 < 2 neighbors"
       ],
+      "next_action": "revise"
+    },
+    {
+      "candidate_id": "SCATTI-MP-PARENT-001",
+      "candidate_type": "metadata_only",
+      "formula": "CaSc4Ti2O11",
+      "structure_family": "mp_parent_derived",
+      "prototype_source": "Materials Project parent CIFs",
+      "atom_count": 18,
+      "density": 4.062185285056048,
+      "density_note": null,
+      "min_distance": 0.36095748610078277,
+      "dft_ready": false,
+      "dft_readiness_level": "downgraded",
+      "reason": "metadata entry only",
+      "validation_warnings": [],
       "next_action": "revise"
     },
     {

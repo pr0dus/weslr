@@ -1,0 +1,4 @@
+COMMERCIAL-FILES
+commands
+languages
+weslr

@@ -1,0 +1,5 @@
+.weslr/
+.env.local
+.env
+credentials.json
+*.json

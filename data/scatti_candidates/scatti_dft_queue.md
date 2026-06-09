@@ -1,7 +1,7 @@
 # SCATTI DFT Queue
 
-Generated: 2026-05-08T10:44:28.719096+00:00
-Audit completed: 2026-05-08T10:44:29.203056+00:00
+Generated: 2026-05-08T14:40:02.773937+00:00
+Audit completed: 2026-05-08T14:40:03.245598+00:00
 
 **Target Formula**: CaSc2TiO6
 

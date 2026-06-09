@@ -1,0 +1,43 @@
+# generated using pymatgen
+data_CaSc2TiO6
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.60000000
+_cell_length_b   6.60000000
+_cell_length_c   6.60000000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   CaSc2TiO6
+_chemical_formula_sum   'Ca1 Sc2 Ti1 O6'
+_cell_volume   287.49600000
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_type_symbol
+ _atom_type_oxidation_number
+  Ca  0.0
+  Sc  0.0
+  Ti  0.0
+  O  0.0
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  1  0.92145917  0.94238739  0.97757034  1
+  Sc  Sc1  1  0.27302850  0.21695572  0.26552255  1
+  Sc  Sc2  1  0.69398935  0.71187511  0.25227923  1
+  Ti  Ti3  1  0.55643924  0.52357209  0.58034438  1
+  O  O4  1  0.16069070  0.00549781  0.43414454  1
+  O  O5  1  0.88837685  0.99221386  0.36731072  1
+  O  O6  1  0.19740981  0.48410948  0.02310225  1
+  O  O7  1  0.82394738  0.50854669  0.97879871  1
+  O  O8  1  0.52535293  0.06162066  0.15354058  1
+  O  O9  1  0.51714295  0.89903336  0.90721276  1

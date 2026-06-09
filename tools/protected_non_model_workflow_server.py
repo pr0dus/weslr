@@ -310,6 +310,28 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
             self.wfile.write(HTML_TEMPLATE.encode('utf-8'))
+        elif self.path == '/api/auth/me':
+            # Protected auth role adapter mock - htpasswd protected preview
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            auth_info = {
+                "authenticated": True,
+                "role": "owner",
+                "account_mode": "htpasswd_protected_owner_preview",
+                "email": None,
+                "display_name": "Owner Preview",
+                "permissions": [
+                    "view_dashboard",
+                    "view_owner_settings",
+                    "view_environment_settings",
+                    "view_runtime_status"
+                ],
+                "writes_enabled": False,
+                "google_auth_enabled": False,
+                "htpasswd_active": True
+            }
+            self.wfile.write(json.dumps(auth_info).encode('utf-8'))
         elif self.path == '/api/state':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')

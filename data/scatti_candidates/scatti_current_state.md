@@ -167,6 +167,11 @@ Related parent structures found but require manual construction for exact CaSc2T
   - Exact CaSc2TiO6 construction failed
   - Wrong stoichiometry observed: CaSc4Ti2O11
   - Result: metadata_only (no honest transformation possible)
+- **Multilingual literature search completed** (Phase 1R)
+  - Languages searched: English, German, Russian, Chinese, Japanese, Korean, French, Spanish, Italian
+  - Exact CaSc2TiO6 found: No
+  - Related Sc-doped CaTiO3 found: Yes (English, high usefulness)
+  - Phase diagram studies found: Yes (German/English)
 - **No Quantum ESPRESSO installed**
 - **No DFT run performed**
 

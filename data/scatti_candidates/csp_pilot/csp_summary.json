@@ -1,0 +1,462 @@
+{
+  "experiment": "scatti_csp_pilot",
+  "date": "2026-05-08T16:02:35.509500+00:00",
+  "target_formula": "CaSc2TiO6",
+  "n_attempts": 50,
+  "exact_formula": 50,
+  "geometry_pass": 1,
+  "geometry_warning": 3,
+  "rejected": 46,
+  "results": [
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.5356817237038254,
+      "geometry_status": "geometry_warning",
+      "reason": "warning: Sc-O 1.59; warning: Sc-O 1.60; warning: Sc-O 1.54",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.4983683103268814,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.60; fatal: Sc-Ti 2.05; fatal: O-O 1.50",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.4998782800849786,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.79; warning: Sc-O 1.75; fatal: Sc-Ti 1.50",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.5084903019718345,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.51; fatal: O-O 1.56",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.7865036739937357,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.94; warning: Sc-O 1.79",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.44267797269021,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.44; fatal: Sc-Ti 1.98",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.6579556374628521,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.03; fatal: O-O 1.66",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 0.8111740312084375,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.79; fatal: O-O 0.81",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.6437878554935779,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.64",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.5509741687150365,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.91; warning: Sc-O 1.55",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 0.9317293608984936,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.34; fatal: Sc-Ti 1.70; fatal: O-O 0.93",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.270690078854283,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.14; warning: Sc-O 1.44; fatal: Sc-Ti 1.63; fatal: O-O 1.27",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.5115404083467774,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.21; warning: Sc-O 1.56; fatal: O-O 1.51",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.5999854221499248,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.18; fatal: O-O 1.60",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.886448799002275,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.11; fatal: Sc-Ti 2.09",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.2588377406130067,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.74; warning: Sc-O 1.52; warning: Sc-O 1.55; fatal: Sc-Ti 2.08; fatal: O-O 1.26",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.17518329553771,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.79; fatal: Sc-Ti 1.97; fatal: O-O 1.18; fatal: O-O 1.73; fatal: O-O 1.44",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.3997423167635457,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.79; warning: Sc-O 1.40; fatal: Sc-Ti 1.94",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.258527407620053,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.75; fatal: Sc-Ti 2.20; fatal: O-O 1.26",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.4726019927559262,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.47",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.1223399866355168,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Ca-O 1.93; warning: Sc-O 1.45; fatal: O-O 1.62; fatal: O-O 1.12; fatal: O-O 1.14",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.1516416084726164,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.20; fatal: Sc-Ti 1.96; warning: Sc-O 1.15; fatal: O-O 1.56",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 0.9122014379949134,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.79; warning: Sc-O 1.56; fatal: Sc-Ti 1.79; fatal: O-O 0.91",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.1696381538795912,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.72; warning: Sc-O 1.17; fatal: Sc-Ti 1.87",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.8205491146688921,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.83; fatal: Sc-Ti 1.90",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.6466547603094117,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.97; warning: Sc-O 1.65; fatal: O-O 1.73",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.4930035170789098,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.52; warning: Sc-O 1.49; fatal: Sc-Ti 2.16; fatal: O-O 1.73",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.6797281945971632,
+      "geometry_status": "geometry_warning",
+      "reason": "warning: Sc-O 1.68; warning: Sc-O 1.68; warning: Sc-O 1.76",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.1993550199148906,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.20; fatal: Sc-Ti 1.81; fatal: O-O 1.67",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.7314506145954505,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.18; fatal: O-O 1.73",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.5355277884467182,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.54; warning: Sc-O 1.76; warning: Sc-O 1.64; fatal: Sc-Ti 1.92",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 0.7750170346614474,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.53; fatal: O-O 1.32; fatal: O-O 0.78",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.3292521572613711,
+      "geometry_status": "geometry_warning",
+      "reason": "warning: Ca-O 1.95; warning: Sc-O 1.33; warning: Sc-O 1.78",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.1551247343961608,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.16; warning: Sc-O 1.78; fatal: O-O 1.45",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.7325708945567209,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.73; fatal: Sc-Ti 2.08; warning: Sc-O 1.74; fatal: O-O 1.75",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.5336464160826468,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.66; warning: Sc-O 1.53",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.3595425081139654,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.25; warning: Sc-O 1.76; fatal: O-O 1.36",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.3181018250076793,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.32; fatal: Sc-Ti 2.15",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 0.8315345764993782,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.69; fatal: O-O 0.83",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.5313222303429985,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.14; warning: Sc-O 1.53; fatal: Sc-Ti 2.14; fatal: O-O 1.56",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.4843163886833308,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.15; warning: Sc-O 1.57; fatal: O-O 1.48",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.844745139168871,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Ca-O 1.98; fatal: Sc-Ti 2.09",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.6100660674083391,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: O-O 1.61",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.515937219206565,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.52",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 2.004249997427805,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.00",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 2.1052961926004627,
+      "min_distance": 1.465386732494841,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 1.47",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-000",
+      "formula": "CaSc2TiO6",
+      "density": 1.8186340072134437,
+      "min_distance": 1.355939121943955,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.27; warning: Sc-O 1.69; fatal: O-O 1.65; fatal: O-O 1.36; fatal: O-O 1.67",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-001",
+      "formula": "CaSc2TiO6",
+      "density": 1.5817401897824666,
+      "min_distance": 1.8526853807298498,
+      "geometry_status": "geometry_pass",
+      "reason": "passed",
+      "candidates_dir": "/home/pr0/projects/weslr/data/scatti_candidates/csp_pilot/candidates/SCATTI-CSP-001.cif"
+    },
+    {
+      "id": "SCATTI-CSP-001",
+      "formula": "CaSc2TiO6",
+      "density": 1.3842664207120654,
+      "min_distance": 1.7606283976503772,
+      "geometry_status": "rejected_geometry",
+      "reason": "fatal: Sc-Ti 2.15; fatal: O-O 1.76",
+      "candidates_dir": null
+    },
+    {
+      "id": "SCATTI-CSP-001",
+      "formula": "CaSc2TiO6",
+      "density": 1.2183427040511936,
+      "min_distance": 1.32563395608813,
+      "geometry_status": "rejected_geometry",
+      "reason": "warning: Sc-O 1.33; fatal: Sc-Ti 2.18; fatal: O-O 1.77",
+      "candidates_dir": null
+    }
+  ]
+}

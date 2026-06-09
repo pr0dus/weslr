@@ -1,0 +1,363 @@
+{
+  "formula": "CaSc2TiO6",
+  "max_candidates": 50,
+  "generated": 50,
+  "exact_formula_count": 50,
+  "geometry_pass_count": 0,
+  "geometry_warning_count": 0,
+  "rejected_count": 50,
+  "exported": 0,
+  "timestamp": "2026-05-11T02:11:42.296284",
+  "candidates": [
+    {
+      "id": 1,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.217 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 2,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.095 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 3,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.046 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 4,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.265 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 5,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.672 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 6,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.720 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 7,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "Ti has 3 O neighbors < 4"
+      }
+    },
+    {
+      "id": 8,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.239 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 9,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.754 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 10,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.064 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 11,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.829 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 12,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.467 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 13,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.002 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 14,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.668 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 15,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.808 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 16,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.042 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 17,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.101 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 18,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.759 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 19,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.116 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 20,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.527 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 21,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.319 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 22,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.744 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 23,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.702 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 24,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.503 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 25,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.941 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 26,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.095 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 27,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.749 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 28,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.599 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 29,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.261 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 30,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.111 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 31,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.315 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 32,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.349 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 33,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "Ti has 3 O neighbors < 4"
+      }
+    },
+    {
+      "id": 34,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.698 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 35,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.156 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 36,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.624 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 37,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.654 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 38,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.417 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 39,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.638 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 40,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.585 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 41,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.256 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 42,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.440 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 43,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.765 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 44,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.448 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 45,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 0.687 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 46,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.179 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 47,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.617 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 48,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.027 \u00c5 < 1.8 \u00c5"
+      }
+    },
+    {
+      "id": 49,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "Ti has 2 O neighbors < 4"
+      }
+    },
+    {
+      "id": 50,
+      "classification": "rejected_geometry",
+      "details": {
+        "reason": "O-O distance too short: 1.704 \u00c5 < 1.8 \u00c5"
+      }
+    }
+  ]
+}

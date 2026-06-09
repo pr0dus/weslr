@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""WESLR demo server bound to specific host:port for LAN access."""
+import sys
+import json
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+sys.path.insert(0, '/home/pr0/projects/weslr')
+from interpretation import interpret_human_turn, set_weslr_mode, get_weslr_mode
+
+LAN_IP = '192.168.2.47'
+PORT = 8090
+
+# Set public_demo_readonly mode on startup
+set_weslr_mode("public_demo_readonly")
+print(f"WESLR mode set to: {get_weslr_mode()}", flush=True)
+
+HTML_PAGE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WESLR — Continuity Intelligence System</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #0f0f1f; color: #e0e0e0; }
+    h1 { color: #4ecdc4; margin-bottom: 5px; }
+    .subtitle { color: #a8d5ba; font-size: 1em; margin-bottom: 20px; font-style: italic; }
+    .safety-text { background: #2d2d4a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4ecdc4; }
+    .safety-text p { margin: 8px 0; font-size: 0.9em; }
+    .layers-section { background: #1a1a2e; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .layers-section h2 { color: #4ecdc4; margin: 0 0 15px 0; font-size: 1.1em; }
+    .layer { margin-bottom: 12px; }
+    .layer h3 { color: #a8d5ba; margin: 0 0 5px 0; font-size: 0.95em; }
+    .layer p { margin: 0; font-size: 0.9em; color: #d0d0d0; }
+    .command-label { margin: 10px 0 5px 0; font-size: 0.85em; color: #a8d5ba; }
+    .command-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .btn { background: #4ecdc4; color: #0f0f1f; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+    .btn:hover { background: #45b7af; }
+    .btn.hook { border: 2px dashed #4ecdc4; }
+    input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #4ecdc4; background: #1a1a2e; color: #e0e0e0; font-size: 1em; box-sizing: border-box; }
+    button#send { margin-top: 10px; width: 100%; padding: 12px; font-size: 1.1em; }
+    .output-section { background: #1a1a2e; border-radius: 8px; padding: 15px; margin-top: 20px; }
+    .output-section h3 { margin: 0 0 10px 0; color: #a8d5ba; }
+    textarea { width: 100%; height: 150px; background: #0f0f1f; color: #a8d5ba; border: 1px solid #4ecdc4; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.9em; resize: vertical; box-sizing: border-box; }
+    .status { margin-top: 10px; padding: 10px; border-radius: 4px; background: #2d2d4a; font-size: 0.9em; }
+    .response-tag { margin-top: 10px; padding: 8px; border-radius: 4px; background: #1a1a2e; color: #d0d0d0; font-size: 0.85em; }
+    .response-tag strong { color: #4ecdc4; }
+  </style>
+</head>
+<body>
+  <h1>WESLR — Continuity Intelligence System</h1>
+  <div class="subtitle">Not a chatbot. A system that observes, reasons, and evolves through structure.</div>
+  
+  <div class="safety-text">
+    <strong>Public Demo Mode — Read-Only</strong>
+    <p>• Write actions disabled</p>
+    <p>• LLM disabled</p>
+    <p>• No raw prompts stored</p>
+    <p>• No account required</p>
+  </div>
+
+  <div class="layers-section">
+    <h2>What you are seeing:</h2>
+    
+    <div class="layer">
+      <h3>1. Tool (Immediate)</h3>
+      <p>WESLR answers using deterministic system knowledge — no guessing, no hallucination.</p>
+    </div>
+    
+    <div class="layer">
+      <h3>2. System (Deeper)</h3>
+      <p>It tracks capabilities, gaps, and reasoning paths over time.</p>
+    </div>
+    
+    <div class="layer">
+      <h3>3. Vision (Future)</h3>
+      <p>WESLR is designed to evolve with humans — through governed learning, not uncontrolled AI behavior.</p>
+    </div>
+  </div>
+
+  <div class="command-label">Try structured system queries:</div>
+  <div class="command-buttons">
+    <button class="btn" onclick="runCommand('show system overview')">show system overview</button>
+    <button class="btn" onclick="runCommand('show diagnostics')">show diagnostics</button>
+    <button class="btn" onclick="runCommand('show weslr status')">show weslr status</button>
+    <button class="btn" onclick="runCommand('show iss probes')">show iss probes</button>
+    <button class="btn" onclick="runCommand('explain plan iss.not_integrated')">explain plan iss.not_integrated</button>
+    <button class="btn hook" onclick="runCommand('what can you do')">what can you do</button>
+  </div>
+
+  <input type="text" id="messageInput" placeholder="Enter your query..." autocomplete="off">
+  <button id="send" class="btn" onclick="sendMessage()">Send</button>
+
+  <div class="output-section">
+    <h3>Response</h3>
+    <textarea id="responseText" readonly></textarea>
+  </div>
+
+  <div class="output-section">
+    <h3>Raw JSON</h3>
+    <textarea id="rawJson" readonly></textarea>
+  </div>
+
+  <div id="status" class="status"></div>
+  <div id="responseTag" class="response-tag"></div>
+  <div id="fallbackButtons" class="command-buttons" style="display: none;"></div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+      
+      document.getElementById('status').textContent = 'Processing...';
+      
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        
+        const result = await response.json();
+        document.getElementById('responseText').value = result.response_text || JSON.stringify(result, null, 2);
+        document.getElementById('rawJson').value = JSON.stringify(result, null, 2);
+        
+        // Response context tag
+        const tagType = result.path === 'blocked_write' ? 'blocked' : 
+                        result.path === 'fallback_safe' ? 'fallback' : 
+                        result._weslr_deterministic ? 'deterministic' : 'unknown';
+        document.getElementById('responseTag').innerHTML = 
+          '<strong>Mode:</strong> Public Demo (Read-only) | ' +
+          '<strong>Type:</strong> ' + tagType + ' | ' +
+          '<strong>Path:</strong> ' + (result.path || 'unknown');
+        
+        document.getElementById('status').textContent = result._weslr_deterministic ? 'Deterministic response (read-only mode)' : 'Response generated';
+        
+        // Fallback-specific UI: show new message and guided buttons
+        if (result.path === 'fallback_safe') {
+          const newFallback = "I can't answer open-ended chat in this public demo yet.\n\nTry asking:\n• what is WESLR\n• why was WESLR created\n• how is WESLR different from ChatGPT\n• why does continuity matter\n• what can I try\n\nThis demo is read-only and deterministic.";
+          document.getElementById('responseText').value = newFallback;
+        }
+        
+        // Show guided fallback buttons for fallback_safe path
+        const fallbackButtonsContainer = document.getElementById('fallbackButtons');
+        if (result.path === 'fallback_safe' && !fallbackButtonsContainer.hasChildNodes()) {
+          const buttons = [
+            {text: 'what is WESLR', cmd: 'what is WESLR'},
+            {text: 'why was WESLR created', cmd: 'why was WESLR created'},
+            {text: 'how is WESLR different from ChatGPT', cmd: 'how is WESLR different from ChatGPT'},
+            {text: 'why does continuity matter', cmd: 'why does continuity matter'},
+            {text: 'how does WESLR improve', cmd: 'how does WESLR improve'},
+            {text: 'can WESLR learn from users', cmd: 'can WESLR learn from users'}
+          ];
+          buttons.forEach(b => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.textContent = b.text;
+            btn.onclick = () => runCommand(b.cmd);
+            fallbackButtonsContainer.appendChild(btn);
+            const br = document.createElement('br');
+            fallbackButtonsContainer.appendChild(br);
+          });
+        } else if (result.path !== 'fallback_safe' && fallbackButtonsContainer.hasChildNodes()) {
+          // Clear fallback buttons when not in fallback
+          fallbackButtonsContainer.innerHTML = '';
+        }
+      } catch (error) {
+        document.getElementById('status').textContent = 'Error: ' + error.message;
+        document.getElementById('responseText').value = '';
+        document.getElementById('rawJson').value = JSON.stringify({ error: error.message }, null, 2);
+      }
+    }
+    
+    async function runCommand(cmd) {
+      document.getElementById('messageInput').value = cmd;
+      await sendMessage();
+    }
+    
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
+"""
+
+class WESLRHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(HTML_PAGE.encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+    
+    def do_POST(self):
+        if self.path == '/chat':
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else '{}'
+            try:
+                data = json.loads(body)
+            except:
+                data = {"message": body}
+            
+            message = data.get("message", "")
+            
+            try:
+                result = interpret_human_turn(message)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(result, indent=2).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}, indent=2).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+    
+    def log_message(self, format, *args):
+        pass  # quiet
+
+if __name__ == '__main__':
+    print(f"WESLR demo server running on {LAN_IP}:{PORT}", flush=True)
+    server = HTTPServer((LAN_IP, PORT), WESLRHandler)
+    server.serve_forever()

@@ -21,39 +21,43 @@
     "unfinished_threads": []
   },
   "relationships": {
-    "human_salience": 0.12,
-    "known_humans": [],
-    "last_human_topic": "",
-    "human_profiles": {},
+    "human_salience": 0.28,
+    "known_humans": [
+      "interlocutor_001"
+    ],
+    "last_human_topic": "entity status",
+    "human_profiles": {
+      "interlocutor_001": {
+        "message_count": 4,
+        "salience": 0.36,
+        "trust": 0.32,
+        "attachment": 0.22,
+        "known_topics": [
+          "what weslr",
+          "who",
+          "capability list",
+          "entity status"
+        ],
+        "recurring_topics": {
+          "what weslr": 1,
+          "who": 1,
+          "capability list": 1,
+          "entity status": 1
+        },
+        "unresolved_shared_threads": [
+          "what weslr",
+          "who",
+          "capability list",
+          "entity status"
+        ],
+        "last_message_at": 1780168370,
+        "last_message_summary": "entity stats",
+        "relationship_summary": "You is a recurring human with 4 remembered exchanges around what weslr, who, capability list.",
+        "discovered_name": "",
+        "identity_confidence": 0.0
+      }
+    },
     "recent_human_messages": [
-      {
-        "id": "direct-1776788774",
-        "human": "you",
-        "message": "hello",
-        "topics": [],
-        "timestamp": 1776788774
-      },
-      {
-        "id": "direct-1776793448",
-        "human": "you",
-        "message": "hello",
-        "topics": [],
-        "timestamp": 1776793448
-      },
-      {
-        "id": "direct-1776793448",
-        "human": "you",
-        "message": "explain this artifact",
-        "topics": [],
-        "timestamp": 1776793448
-      },
-      {
-        "id": "direct-1776793448",
-        "human": "you",
-        "message": "hello explain this",
-        "topics": [],
-        "timestamp": 1776793448
-      },
       {
         "id": "direct-1776793448",
         "human": "you",
@@ -109,13 +113,276 @@
         "message": "hello",
         "topics": [],
         "timestamp": 1776793497
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "what weslr"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "What is WESLR?",
+        "response": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/projects/weslr/dialogue.py))",
+        "turn_type": "question",
+        "intent": "",
+        "stance": "neutral",
+        "reply_shape": "deterministic_answer",
+        "likely_need": "direct_answer",
+        "created_at": 1780168325,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "who"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "who are you",
+        "response": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/projects/weslr/dialogue.py))",
+        "turn_type": "statement",
+        "intent": "",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1780168350,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "capability list"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "capability list",
+        "response": "No suggestions found.",
+        "turn_type": "statement",
+        "intent": "",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1780168350,
+        "unresolved": true
+      },
+      {
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "entity status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message": "entity stats",
+        "response": "",
+        "turn_type": "statement",
+        "intent": "",
+        "stance": "neutral",
+        "reply_shape": "answer_directly",
+        "likely_need": "direct_answer",
+        "created_at": 1780168370,
+        "unresolved": true
       }
     ],
-    "recent_human_exchanges": [],
-    "conversation_threads": {},
-    "unresolved_shared_threads": []
+    "recent_human_exchanges": [
+      {
+        "id": "human-exchange-interlocutor_001-1780168325-1",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "what weslr"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "What is WESLR?",
+        "response_summary": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/project\u2026",
+        "created_at": 1780168325,
+        "source": "human_exchange",
+        "message": "What is WESLR?",
+        "response": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/projects/weslr/dialogue.py))",
+        "unresolved": true,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.4547,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.2273,
+          "relationship_weight": 0.2273
+        },
+        "last_used_at": 1780168325
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1780168350-2",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "who"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "who are you",
+        "response_summary": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/project\u2026",
+        "created_at": 1780168350,
+        "source": "human_exchange",
+        "message": "who are you",
+        "response": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/projects/weslr/dialogue.py))",
+        "unresolved": true,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.4547,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.2273,
+          "relationship_weight": 0.2273
+        },
+        "last_used_at": 1780168350
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1780168350-3",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "capability list"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "capability list",
+        "response_summary": "No suggestions found.",
+        "created_at": 1780168350,
+        "source": "human_exchange",
+        "message": "capability list",
+        "response": "No suggestions found.",
+        "unresolved": true,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.4547,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.2273,
+          "relationship_weight": 0.2273
+        },
+        "last_used_at": 1780168350
+      },
+      {
+        "id": "human-exchange-interlocutor_001-1780168370-4",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "topics": [
+          "entity status"
+        ],
+        "clarified_target": "",
+        "has_explicit_clarification": false,
+        "message_summary": "entity stats",
+        "response_summary": "",
+        "created_at": 1780168370,
+        "source": "human_exchange",
+        "message": "entity stats",
+        "response": "",
+        "unresolved": true,
+        "kind": "human_exchange",
+        "memory_score": {
+          "salience": 0.4547,
+          "unresolvedness": 0.0,
+          "identity_weight": 0.2273,
+          "relationship_weight": 0.2273
+        },
+        "last_used_at": 1780168370
+      }
+    ],
+    "conversation_threads": {
+      "what weslr": {
+        "topic": "what weslr",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "What is WESLR?",
+        "last_response_summary": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/project\u2026",
+        "last_exchange_at": 1780168325,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1780168325-1"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1780168325,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "who": {
+        "topic": "who",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "who are you",
+        "last_response_summary": "I'm Weslr. (Error: cannot import name 'handle_direct_message' from 'dialogue' (/home/pr0/project\u2026",
+        "last_exchange_at": 1780168350,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1780168350-2"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1780168350,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "capability list": {
+        "topic": "capability list",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "capability list",
+        "last_response_summary": "No suggestions found.",
+        "last_exchange_at": 1780168350,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1780168350-3"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1780168350,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      },
+      "entity status": {
+        "topic": "entity status",
+        "human": "interlocutor_001",
+        "human_label": "you",
+        "exchange_count": 1,
+        "last_message_summary": "entity stats",
+        "last_response_summary": "",
+        "last_exchange_at": 1780168370,
+        "status": "open",
+        "recent_exchange_ids": [
+          "human-exchange-interlocutor_001-1780168370-4"
+        ],
+        "clarified_target": "",
+        "last_human_exchange_at": 1780168370,
+        "last_passive_reinforced_at": 0,
+        "passive_reinforcement_count": 0
+      }
+    },
+    "unresolved_shared_threads": [
+      "what weslr",
+      "who",
+      "capability list",
+      "entity status"
+    ]
   },
-  "active_concerns": [],
+  "active_concerns": [
+    {
+      "topic": "shared thread with you: who",
+      "weight": 0.52,
+      "updated_at": 1780168350
+    },
+    {
+      "topic": "shared thread with you: capability list",
+      "weight": 0.52,
+      "updated_at": 1780168350
+    },
+    {
+      "topic": "shared thread with you: entity status",
+      "weight": 0.52,
+      "updated_at": 1780168370
+    }
+  ],
   "evidence_profile": {
     "outcome_weighted_actions": {},
     "stable_traits": {},
@@ -129,19 +396,28 @@
   },
   "narrative_state": {
     "self_story": "Weslr is trying to remain continuous, learn honestly, and become more than a reactive loop.",
-    "last_reflection": "bootstrap",
-    "relationship_state": "No human continuity yet.",
-    "active_thread_summary": "No active shared threads yet.",
-    "follow_up_impulse": "Wait for a meaningful shared thread to form.",
-    "why_it_matters": "Continuity needs shared threads that can be revisited instead of forgotten."
+    "last_reflection": "you: entity status",
+    "relationship_state": "Currently carrying 4 unresolved shared thread(s) with humans.",
+    "active_thread_summary": "Active shared thread: entity status with you.",
+    "follow_up_impulse": "Revisit entity status with you until the shared thread changes state.",
+    "why_it_matters": "entity status matters because shared human context should shape what Weslr returns to instead of resetting."
   },
   "memory_layers": {
     "working": {
       "summary": "Current hot memory for active thinking.",
-      "recent_exchange_ids": [],
+      "recent_exchange_ids": [
+        "human-exchange-interlocutor_001-1780168325-1",
+        "human-exchange-interlocutor_001-1780168350-2",
+        "human-exchange-interlocutor_001-1780168350-3",
+        "human-exchange-interlocutor_001-1780168370-4"
+      ],
       "recent_thought_ids": [],
       "active_thread_ids": [],
-      "active_concern_topics": [],
+      "active_concern_topics": [
+        "who",
+        "capability list",
+        "entity status"
+      ],
       "last_compacted_at": 0,
       "max_recent_exchanges": 24,
       "max_recent_thoughts": 80,
@@ -282,8 +558,125 @@
     "last_biography_refresh_at": 1774820805
   },
   "self_evolution_log": [],
-  "updated_at": 1774820805,
+  "updated_at": 1780168370,
   "outbox_stats": {
     "last_outbox_type": "human_response"
+  },
+  "internal_role_state": {
+    "observer": {
+      "purpose": "notice novelty, drift, change, and weak signals in the world or self",
+      "baseline_wake_chance": 0.22,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "builder": {
+      "purpose": "propose tiny capability growth, addons, subprocesses, or self-modification steps",
+      "baseline_wake_chance": 0.16,
+      "refractory_ticks": 2,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "critic": {
+      "purpose": "question brittle moves, detect inconsistency, and keep the being from collapsing into shallow confidence",
+      "baseline_wake_chance": 0.18,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "communicator": {
+      "purpose": "translate inner pressure into outward language for a human without becoming the whole self",
+      "baseline_wake_chance": 0.2,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    },
+    "memory_keeper": {
+      "purpose": "preserve continuity, unresolved threads, bonds, and what still matters across time",
+      "baseline_wake_chance": 0.24,
+      "refractory_ticks": 1,
+      "last_wake_tick": 0,
+      "last_wake_at": 0,
+      "last_wake_reason": "bootstrap",
+      "last_thought_summary": "",
+      "wake_count": 0,
+      "suppressed_until_tick": 0,
+      "activation": 0.0,
+      "fatigue": 0.0,
+      "pressure": 0.0,
+      "last_hazard": 0.0,
+      "last_pressure_breakdown": {},
+      "dominant_topic": "",
+      "restlessness": 0.0,
+      "inhibition": 0.0
+    }
+  },
+  "dynamic_mind_state": {
+    "curiosity": 0.58,
+    "tension": 0.18,
+    "stability": 0.62,
+    "attachment": 0.2,
+    "uncertainty": 0.33,
+    "background_noise": 0.08,
+    "sleep_pressure": 0.12,
+    "mode": "engaged",
+    "last_mode_shift_at": 1780168325
+  },
+  "topic_pressure": {},
+  "inner_thoughts": [],
+  "llm_adapter": {
+    "enabled": true,
+    "provider": "embedded",
+    "model": "qwen2.5-0.5b-instruct-q5_k_m",
+    "last_error": "",
+    "last_success_at": 0
   }
 }
