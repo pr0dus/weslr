@@ -9,377 +9,360 @@
 
 ## 0. Important Framing
 
-This report is a **direction document**, not a pixel-perfect spec or an implementation patch. It captures intent, structure, and visual language so that future UI work (Step B and beyond) has a coherent target to converge on.
+This report is a **direction document**, not a pixel-perfect spec or an implementation patch. It captures intent, structure, and visual language so that future UI work has a coherent target to converge on.
 
 **This report does NOT copy Perplexity or Cursor.** It draws only on the modern interaction principles those products are known for, then reinterprets them through WESLR's identity:
 
 > Continuity-first operational intelligence. Governed, traceable, operator-approved. Project-based workspace. Protected/private by default. Evidence/context aware. Artifact-oriented. Owner-controlled environment settings. German/engineering-grade trust — not magic chatbot.
 
-WESLR is a **governed operator cockpit**, not a public AI playground. The direction below reflects that.
+WESLR is a **governed operator cockpit**, not a public AI playground.
 
 ---
 
-## A. Current UI Problems (Audit of `protected-preview/chat-app-shell/index.html`)
+## 1. Stabilize Current Source/Deployed and `/api/message`
 
-After reading the full file, here is a concrete list of what is working directionally but feels dated or rigid.
+### Status
+- ✅ **Done in Step A (commit `d445bb2`):** Source reconciled with deployed. `/api/message` fetch is present in source line 487. Source and deployed are byte-identical (`cmp -s` returned `SOURCE_DEPLOYED_MATCH`).
+- ✅ Pre-reconciliation backup preserved locally as `protected-preview/chat-app-shell/index.html.pre-reconcile-20260609-215300.bak`.
+- ✅ `UI Preview Only` removed from source (count 0). `Backend not connected` banner still present (informational, conditional display TBD).
 
-### A1. Outdated bottom action buttons
-- The composer-actions row uses **5 separate `icon-btn` controls** (⚙, 📄, 🔍, ⚙️, ☰) plus a Send button. Two of them render as ⚙ / ⚙️ with the same glyph but different actions — easy to confuse.
-- Visual style: 34×34 hard-bordered squares, `border-radius: 8px`, dark slate background. Reads as "form controls", not as primary action affordances.
-- Layout: `flex-wrap: wrap` is allowed. On narrow widths the chips wrap awkwardly, breaking the visual rhythm.
-- No action labels on desktop. The same icons must be inferred.
+### Why first
+- All future UI work builds on a stable baseline. Regressing `/api/message` again would break the entire protected surface.
+- The reconciliation patch is the foundation; everything below assumes it.
 
-### A2. Rigid mobile layout
-- The sidebar at `<768px` collapses to a **70px-tall horizontal strip**, so the entire project list becomes a tappable row. Project names truncate and there is no indication of active selection beyond hover color.
-- The composer still occupies the bottom on mobile with the same button row, which is too tall.
-- The `mobile-drawer` (`.mobile-drawer`) slides in from the right and **has no explicit close button** — only outside-tap or back navigation closes it.
-- The `mobile-tabs` row duplicates the icon buttons. Two parallel navigation systems for the same panels.
-
-### A3. Overlapping panels
-- The `.right-panel` (desktop) and `.mobile-drawer` (mobile) carry the **same content model** but are not coordinated. On mobile, you can have `right-panel` (inherited from desktop) and `mobile-drawer` both present in the DOM.
-- Multiple panels can be opened sequentially without explicit close.
-
-### A4. Unclear backend status
-- The static "Backend not connected" banner (line 354) is **always shown** even when `/api/auth/me` returns a valid session. It needs to be conditional on actual backend reachability, not on a developer placeholder.
-- "UI Preview Only" is still referenced in the source (line 475 — removed in Step A reconciliation, but the surrounding warning text was preserved). After Step A, that string is gone from the source — but the visual language of "preview-only" still leaks through other status pills.
-
-### A5. Unclear project / sidebar structure
-- The sidebar has no header, no grouping, no role badge, no environment status, no continuity indicator.
-- Projects are a flat list of two with a "+ New Project" button that only triggers a toast.
-
-### A6. Settings not clearly owner-only
-- The Settings panel exists, but its content is generic. There is no "owner-only" lock, no environment state, no approval gating visible.
-
-### A7. Too much "preview" language
-- "Protected Workspace Preview", "UI only preview", "Backend not connected", "Local UI preview only" — all of these belong in a development placeholder, not a live protected operator cockpit. After backend wiring lands, this language should be retired.
-
-### A8. No streaming/pending feedback
-- The fixed `sendMessage()` shows a hard "Sending..." pending message and replaces it with the result. No streaming dots, no cursor, no progressive reveal. Feels old.
-
-### A9. No role / security state visibility
-- A role badge is missing from the topbar. There is a "Protected • Internal" pill, but no `Owner / Admin / Tester / Viewer` indicator. No `writes_enabled: true/false` chip. No `google_auth_enabled` chip.
-
-### A10. Toast system is functional but rough
-- `toast-container` is fixed at `bottom: 1rem; right: 1rem;`. The visual is decent, but there is no type system (success/info/warning/error) and no keyboard close.
+### What's required to maintain this stability
+- Do not run `git reset HEAD~n` on the repo. Use `git revert <sha>` for rollback.
+- Before any re-deploy, run `cmp -s protected-preview/chat-app-shell/index.html /var/www/weslr-chat-app-shell/index.html` and refuse to proceed if they differ.
+- Keep the deployed file as the source of truth for "what works"; reconcile source to deployed, not the other way.
 
 ---
 
-## B. Modern UI Principles for WESLR
+## 2. Replace Bottom Buttons with Modern Action Chips
 
-These are the principles to converge on. None of them are new inventions — they are distillations of what makes modern operator tools feel modern.
+### Current problem
+- 5 separate `icon-btn` controls (⚙ 📄 🔍 ⚙️ ☰) plus a Send button
+- Two render as ⚙/⚙️ — easy to confuse
+- 34×34 hard-bordered squares, `border-radius: 8px`
+- No labels on desktop
+- Wraps awkwardly on narrow widths
 
-### B1. Answer / chat is the center
-- The conversational surface is the **primary canvas**. Everything else is supporting cast.
-- Empty state should not be a banner — it should be a low-density **suggested start** with a couple of prompt chips, not a warning box.
+### Proposed change
+Replace the 5-icon button row with a **horizontal action chip rail** above the composer.
 
-### B2. Project rail, not sidebar blob
-- A **dedicated project rail** (left column on desktop, top selector on mobile) is the navigation entry point. Each project is a chip, not a list item.
-- Active project is visually distinct: filled accent + label. Inactive projects are low-contrast.
+**Action chip set (in priority order):**
+1. **Project** — opens Project drawer
+2. **Evidence** — opens Evidence drawer
+3. **Artifact** — opens Artifacts drawer
+4. **Settings** — opens Settings drawer
+5. **Memory** — opens Memory / Continuity drawer
 
-### B3. Evidence / Artifact / Settings drawers
-- Right side opens **at most one** of: Evidence, Artifacts, Settings, or Memory/Continuity. Closing one is required to open another.
-- Drawers are full-height on desktop, **bottom sheet** on mobile.
-- Drawer header carries a clear close (×) button.
+**Send** is a single primary button at the right of the input — not a chip.
 
-### B4. Status chips, not status banners
-- Replace the static "Backend not connected" warning with a **status chip row** in the topbar: `Backend: connected | writes: off | google_auth: off | role: owner`.
-- Chips are color-coded (green/amber/red). Tapping a chip opens the relevant drawer with full context.
+**Visual style:**
+- Pill shape, 32px tall
+- 12px radius
+- Icon + label on desktop; icon-only on mobile (with tooltip)
+- Inactive: dark slate fill, muted text
+- Active (drawer open): accent-blue border, accent-blue text
+- Tap target: minimum 32×32px
 
-### B5. Command / action bar
-- The current bottom composer button row is replaced with a **horizontal action chip row** above the input. Chips: `Project options`, `Evidence`, `Artifacts`, `Settings`, `Memory`, `Command palette`.
-- Send is a single primary button at the right of the input, not a chip.
-
-### B6. Owner environment controls
-- Settings drawer surfaces only what the current role can actually change. For owner: all toggles. For viewer: read-only labels.
-- High-risk writes have a clear approval gate (currently `writes_enabled: false`).
-
-### B7. Mobile bottom sheet behavior
-- On mobile, drawers come up from the **bottom** as a sheet with a drag handle and explicit close button.
-- One sheet at a time. Opening a new one closes the previous.
-
-### B8. No hidden panels occupying layout
-- Layout reserves space for visible panels only. Drawers overlay — they do not push content.
-- Composer is always docked to the bottom of the viewport (or just above the keyboard on mobile).
-
-### B9. Streaming / pending feedback
-- Replace hard "Sending..." with **typing dots** in the assistant bubble, optionally streaming tokens if the backend supports it.
-- Pending state should be visually subtle, not blocky.
-
-### B10. WESLR identity throughout
-- Dark navy base, refined blue accent, restrained amber/red for warnings.
-- No emojis as primary action affordances — use them only as secondary decoration.
-- No marketing flourishes. Tone: engineering, controlled, traceable.
+**Why:**
+- Action chips with labels are scannable. Icons alone require memorization.
+- A consistent horizontal rail is mobile-friendly without needing a separate mobile-tabs row.
+- One affordance per drawer, so closing/opening is unambiguous.
 
 ---
 
-## C. Proposed Layout
+## 3. Rebuild Mobile Panels as Bottom Sheets
 
-### C1. Desktop (≥ 1024px)
+### Current problem
+- The mobile `<768px` sidebar collapses to a 70px horizontal strip — project names truncate.
+- The `mobile-drawer` slides in from the right and has **no explicit close button** — only outside-tap or back navigation closes it.
+- The `mobile-tabs` row duplicates the icon-button navigation. Two parallel navigation systems for the same panels.
+- The `right-panel` (desktop) and `mobile-drawer` (mobile) carry the same content model but are not coordinated.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  W  Protected Workspace          [role] [writes] [auth] [backend] │ ← topbar (48px)
-├──────────┬──────────────────────────────────────┬────────────────┤
-│          │                                      │                │
-│ Projects │       Chat / Workspace               │   Drawer       │
-│          │                                      │   (Evidence /  │
-│ ▣ WESLR  │  ┌──────────────────────────────┐    │    Artifacts / │
-│   Web    │  │  user message bubble        │    │    Settings /  │
-│          │  └──────────────────────────────┘    │    Memory)     │
-│ ▢ Artif  │  ┌──────────────────────────────┐    │                │
-│   Test   │  │  WESLR response card         │    │                │
-│          │  │  • evidence chips            │    │                │
-│ ▢ + New  │  │  • artifact preview          │    │                │
-│          │  └──────────────────────────────┘    │                │
-│          │  ┌──────────────────────────────┐    │                │
-│          │  │  ● ● ●  (pending state)      │    │                │
-│          │  └──────────────────────────────┘    │                │
-│          │                                      │                │
-│          │  ┌──────────────────────────────┐    │                │
-│          │  │ [Project][Evidence][Artifact]│    │                │
-│          │  │ [Settings][Memory]  ⌘  [Send]│    │                │
-│          │  └──────────────────────────────┘    │                │
-├──────────┴──────────────────────────────────────┴────────────────┤
-│  © WESLR — Protected • Internal • Owner Preview                   │ ← status footer
-└──────────────────────────────────────────────────────────────────┘
-```
+### Proposed change
+- On mobile, every drawer becomes a **bottom sheet** with:
+  - Drag handle at top (3px-tall pill, centered)
+  - Header with title + explicit × close button
+  - Scrollable content area
+  - Drag-down-to-dismiss gesture
+- **One sheet at a time.** Opening a new one closes the previous.
+- Project list becomes a **topbar selector chip** (project name + ▾) that opens a project picker sheet.
+- The `mobile-tabs` row is **removed entirely** — replaced by the action chip rail (see §2).
 
-**Three columns:**
-- **Left rail:** project list (240px)
-- **Center:** chat / workspace (flex, max 800px content, centered)
-- **Right drawer:** context panel (320px, can collapse to icon rail)
+**Visual style for bottom sheets:**
+- Slides up from the bottom, max-height 85vh
+- Background: `--bg-secondary` with 16px top radius
+- Drag handle: 36px × 4px pill, `--text-muted` color
+- Header: 48px tall, title left, × right
+- Body: padded 16px
+- Backdrop: `rgba(0,0,0,0.5)` over the rest of the screen
 
-**Top bar chips:** role, writes, auth, backend — at most 4 small chips, never wrapping.
-
-### C2. Mobile (< 768px)
-
-```
-┌──────────────────────────────────────┐
-│  W  [WESLR Website Review ▾]    ⋯     │ ← topbar (44px)
-├──────────────────────────────────────┤
-│                                      │
-│   ┌────────────────────────────┐     │
-│   │  user message              │     │
-│   └────────────────────────────┘     │
-│   ┌────────────────────────────┐     │
-│   │  WESLR response card       │     │
-│   └────────────────────────────┘     │
-│                                      │
-├──────────────────────────────────────┤
-│  [Project][Evidence][Artifact][Set]   │ ← horizontal chip rail
-├──────────────────────────────────────┤
-│  Type a message...           [Send]   │ ← composer
-├──────────────────────────────────────┤
-│  [status chips: role • backend]      │ ← status footer
-└──────────────────────────────────────┘
-```
-
-**Bottom sheet (when triggered):**
-```
-        ─────  (drag handle)
-   Evidence                              ×
-   ──────────────────────────────
-   Project: WESLR Website Review
-   Continuity: active
-   Source A · source_1.md
-   Source B · source_2.md
-```
-
-**Mobile rules:**
-- One bottom sheet at a time, with explicit × close.
-- No side columns.
-- Horizontal chip rail is the navigation, replaces sidebar+tabs+icon-buttons.
-- Topbar project selector opens a project picker sheet.
-
-### C3. Tablet (768–1023px)
-
-- Two-column: project rail (collapsible icon-rail) + chat. Drawer opens as overlay sheet, not a fixed right column.
-- Composer remains docked bottom.
+**Why:**
+- Bottom sheets are a familiar pattern from iOS/Android — users expect them.
+- One-sheet-at-a-time removes the "which panel am I looking at" ambiguity.
+- Explicit × is mandatory; implicit dismissal is hostile.
 
 ---
 
-## D. Component System
+## 4. Add Right-Side Inspector on Desktop
 
-A modular inventory of components the new UI will use. Each has a defined role, visual style, and interaction contract.
+### Current problem
+- The `.right-panel` is a fixed 320px column that **only renders content when a panel is active**. There is no always-visible right-side context.
 
-| Component | Purpose | Visual style | Interaction |
-|-----------|---------|--------------|-------------|
-| **Topbar** | App identity + global status | 48px, sticky, dark navy, subtle bottom border | None (display only) |
-| **Status chip** (role/writes/auth/backend) | Surface runtime state | Pill, 22px tall, color-coded | Tap opens relevant drawer |
-| **Project rail** | Project list | 240px left column, dark slate, active = accent fill | Tap switches active project |
-| **Project chip (mobile)** | Project selector | Pill in topbar, label + caret | Tap opens project picker sheet |
-| **Chat message bubble (user)** | User-typed message | Right-aligned, accent-tinted background, 16px radius | None |
-| **Chat message bubble (WESLR response)** | Assistant reply | Left-aligned, dark slate, evidence chips below | None (display) |
-| **Pending state (typing dots)** | Live feedback during fetch | Three animated dots in assistant bubble | None |
-| **Evidence chip** | Inline source marker | Small pill, monospace font, link-style | Tap scrolls/highlights evidence in drawer |
-| **Artifact card** | Generated file preview | Card with icon, name, size, action | Tap opens artifact detail |
-| **Backend status chip** | System health | Topbar or footer, green/amber/red | Tap → Settings drawer |
-| **Role chip** | Identity indicator | Topbar, accent border, role text | Read-only |
-| **Owner setting card** | Toggled setting | Card with title, description, switch | Switch (owner only) |
-| **Action chip** (Project/Evidence/Artifact/Settings/Memory) | Primary navigation | Pill, 32px tall, icon + label | Tap opens drawer |
-| **Send button** | Submit composer | Filled accent, 36px, right of input | Tap submits |
-| **Bottom sheet** | Drawer on mobile | Slides up, drag handle, explicit × close | Swipe down to dismiss |
-| **Toast / snackbar** | Ephemeral feedback | Bottom center, type-colored, auto-dismiss | Optional action button |
-| **Command palette** (placeholder) | Quick actions | Modal overlay, search field, action list | Cmd/Ctrl+K opens |
-| **Empty state** | First-run / no project | Centered icon, suggested prompts | Tap prompt to send |
+### Proposed change
+Introduce a **right-side inspector** on desktop (≥1024px) that is structurally separate from the action-chip drawers.
+
+**Inspector scope (always-visible, lightweight):**
+- Project continuity indicator
+- Role/security chip
+- Backend status chip
+- Quick artifact count + most recent artifact link
+- Memory / continuity chip
+
+**Drawer scope (on-demand, opened by action chips):**
+- Project details
+- Evidence
+- Artifacts (full list)
+- Settings
+- Memory
+
+**Why the split:**
+- Status, role, backend, project name are **always relevant** — they should not be hidden behind a chip.
+- Drawers are for **on-demand inspection** of larger content (full evidence, full artifact list, full settings).
+
+**Layout impact:**
+- Desktop layout becomes a 3-column grid: project rail (240px) + chat (flex) + inspector (280px).
+- Total fixed side width: 520px. Maintains the 800px max content width for chat.
+
+**Why:**
+- Continuous visibility of role/backend/continuity reinforces the "operator cockpit" identity.
+- Decoupling inspector from drawer avoids the "where did the panel go" confusion.
 
 ---
 
-## E. Visual Style
+## 5. Add Owner Settings Role-Gated Panel
 
-### E1. Color tokens
+### Current problem
+- The Settings panel content is generic. There is no owner-only lock, no environment state, no approval gating visible.
+
+### Proposed change
+The Settings drawer surfaces only what the **current role** can actually change.
+
+**Role hierarchy:**
+- **Owner** — sees all toggles, can change environment settings, can approve writes
+- **Admin** — sees most toggles, can manage projects, cannot change owner-only environment
+- **Tester** — sees read-only labels + a "Test mode" indicator
+- **Viewer** — read-only labels only; no toggles
+
+**Backend contract assumed (to be confirmed with owner):**
+```json
+{
+  "role": "owner",
+  "writes_enabled": false,
+  "google_auth_enabled": false
+}
 ```
---bg-primary:      #071018   (deep navy)
---bg-secondary:    #0b111b   (panel)
---bg-tertiary:     #0f172a   (raised card)
---border-subtle:   rgba(148,163,184,0.18)
---border-muted:    rgba(148,163,184,0.12)
---text-primary:    #e7eef8
---text-secondary:  #cbd5e1
---text-muted:      #94a3b8
---accent-blue:     #38bdf8   (refined — not electric)
---accent-blue-500: #0ea5e9
---accent-amber:    #f59e0b   (warnings only)
---accent-red:      #ef4444   (errors only)
---accent-green:    #22c55e   (success / connected)
+
+**Owner-only toggles (examples):**
+- `writes_enabled` — global write permission gate
+- `google_auth_enabled` — toggle Google OAuth availability
+- `streaming_enabled` — enable progressive token response
+- `evidence_ingestion` — enable evidence/artifact pipeline
+- `command_palette_enabled` — enable ⌘K palette
+
+**High-risk writes** (artifact creation, settings change, project mutation) require `writes_enabled: true` AND a confirmation toast.
+
+**Visual:**
+- Toggles: iOS-style switches, accent-blue when on, gray when off
+- Each setting: card with title, 1-line description, switch aligned right
+- Owner-only items: subtle "Owner" badge in the top-right corner of the card
+
+**Why:**
+- Role gating is non-negotiable for an "operator-approved" product.
+- The current `writes_enabled: false` lock must be visibly enforced, not just configured.
+
+---
+
+## 6. Add Evidence/Artifact Response Cards
+
+### Current problem
+- `sendMessage()` posts to `/api/message` and renders the raw `data.response_text`. There is no structured rendering of evidence (sources) or artifacts (generated files).
+
+### Proposed change
+Each `/api/message` response renders as a **WESLR response card** with optional evidence and artifact sections.
+
+**Response card structure:**
+```
+┌──────────────────────────────────────────┐
+│  WESLR Response                          │ ← header
+│  [evidence-chip] [evidence-chip]         │ ← optional evidence row
+│                                          │
+│  Response body text...                   │ ← main content
+│                                          │
+│  ┌────────────────────────────────┐      │
+│  │  📄 artifact-name.pdf          │      │ ← optional artifact card
+│  │  12 KB · generated 2m ago      │      │
+│  └────────────────────────────────┘      │
+│                                          │
+│  Path: /api/runtime/...  ·  14:32:01     │ ← metadata footer
+└──────────────────────────────────────────┘
 ```
 
-**Direction:** Dark navy with restrained blue accent. Amber and red appear only on warnings and errors. Green only on "connected" or "approved" states. No glassmorphism beyond a subtle 1px border + low-opacity fill.
+**Backend contract assumed (to be confirmed with owner):**
+```json
+{
+  "response_text": "...",
+  "evidence": [
+    {"id": "src_001", "label": "Source A", "path": "/api/evidence/src_001"},
+    {"id": "src_002", "label": "Source B", "path": "/api/evidence/src_002"}
+  ],
+  "artifacts": [
+    {"id": "art_001", "name": "weslr-pilot-brief.pdf", "size": 12288, "created_at": "2026-06-09T14:30:00Z", "path": "/api/artifacts/art_001"}
+  ],
+  "path": "/api/runtime/...",
+  "stream_id": null
+}
+```
 
-### E2. Radii & spacing
-- **Radius scale:** `4 / 8 / 12 / 16 / 24` (rounded but not pillowy)
-- **Spacing scale:** `4 / 8 / 12 / 16 / 24 / 32 / 48` (8-point baseline)
-- **Composer height:** 56px standard, 64px on focus (subtle grow)
-- **Chip height:** 32px standard
-- **Topbar height:** 48px desktop, 44px mobile
-- **Drawer width:** 320px desktop, full-width bottom sheet mobile
+**Evidence chip behavior:**
+- Small pill, monospace font, link-style
+- Tap → Evidence drawer opens, scrolls to that source
+- Hover → tooltip with full source label
 
-### E3. Typography
-- **Font:** Inter, system-ui fallback. (Already in use.)
-- **Weights:** 400 (body), 500 (label), 600 (heading), 700 (action)
-- **Sizes:** 11 / 12 / 13 / 14 / 16 / 18 / 22 / 28 (compact, modern)
-- **Line height:** 1.5 body, 1.2 headings, 1.0 in chips
-- **Letter spacing:** -0.01em on display, 0.04em on uppercase labels
-- **Monospace:** JetBrains Mono or system mono for code, evidence IDs
+**Artifact card behavior:**
+- Card with file icon, name, size, "generated Xm ago"
+- Tap → Artifact drawer opens, showing full preview
+- Disabled state if `writes_enabled: false` and the artifact is a "write" type
 
-### E4. Surfaces
-- **Less bulky cards:** replace chunky 24px-radius cards with 12-16px and a 1px border.
-- **Less old button styling:** remove 1px solid borders on every action — use a fill or an underline instead.
-- **Modern rounded controls:** 8–12px on inputs, 12px on chips, 16px on cards.
-- **Strong spacing consistency:** 8-point baseline everywhere; no `padding: 0.85rem` ad-hoc values.
-
-### E5. Elevation
-- Use **1px borders** as the primary depth signal, not box-shadows.
-- One allowed shadow level for toasts and the command palette: `0 8px 24px rgba(0,0,0,0.4)`.
-- No drop shadows on cards or chips.
-
----
-
-## F. Interaction Model
-
-The new shell's interaction grammar:
-
-| Action | Trigger | Result |
-|--------|---------|--------|
-| Send message | Enter / Send button | Pending dots → response card with evidence chips |
-| Cancel pending | Tap "×" in pending bubble | Removes pending state, no message sent |
-| Open drawer | Tap status chip or action chip | Drawer slides in (right on desktop, bottom on mobile) |
-| Close drawer | Tap ×, swipe down (mobile), or Esc | Drawer slides out |
-| Switch drawer | Tap a different action chip | Old drawer closes, new one opens |
-| Switch project | Tap project rail item / project chip | Project context reloads, evidence/artifact scope updates |
-| Open command palette | ⌘K / Ctrl+K / Tap "⌘" chip | Modal opens, search-as-you-type |
-| Toggle owner setting | Tap switch in Settings drawer | Local state change + chip color update; requires writes_enabled |
-| Stream response | Backend supports it | Tokens append progressively in the assistant bubble |
-| View artifact | Tap artifact card | Artifact drawer opens with full preview |
-| View evidence | Tap evidence chip | Evidence drawer opens, scrolls to source |
-| Toast dismiss | Auto after 3s, or tap | Toast fades out |
-| Empty-state prompt | Tap suggested prompt chip | Composer prefills, focus stays |
-
-### Hidden rules
-- **One drawer open at a time.** Always.
-- **No "preview" language** appears in any visible surface once `/api/auth/me` returns a real session.
-- **Role determines visible settings.** Viewer sees no toggles. Owner sees all.
-- **High-risk writes** (artifact creation, settings change, project mutation) require `writes_enabled: true` AND a confirmation toast.
-- **No public-chat affordances.** No "share", no "invite", no public link generation.
+**Why:**
+- Evidence and artifacts are the WESLR identity. They must be first-class in the response surface.
+- The current implementation throws away all the structured data and renders only `response_text`.
 
 ---
 
-## G. Implementation Plan (Phased)
+## 7. Add Command Palette / Action Menu
 
-This is a multi-phase effort. **Step A (source/deployed reconciliation) is the only thing shipped so far.** Everything below is forward-looking.
+### Current problem
+- All actions go through the action chip rail. There is no keyboard-driven quick action.
+- A "command palette" pattern is a major differentiator of modern operator tools.
 
-### Phase 0 — Stabilize (DONE in Step A)
-- ✅ Source matches deployed
-- ✅ /api/message fetch is in source
-- ✅ Backup of pre-Step-A source preserved
+### Proposed change
+A **command palette** is invoked by:
+- ⌘K (macOS) / Ctrl+K (Windows/Linux)
+- Tap on the "⌘" action chip in the rail
 
-### Phase 1 — Component foundation
-- Establish CSS custom-property tokens (colors, radii, spacing, typography)
-- Refactor `index.html` to use the new component classes
-- Keep `sendMessage()` working unchanged
-- **Do not change behavior. Do not change content. Do not deploy.**
+**Palette structure:**
+```
+┌──────────────────────────────────────────┐
+│  🔍  Type a command or search...         │
+├──────────────────────────────────────────┤
+│  ↗  New project                          │
+│  ⇄  Switch project                       │
+│  🔍  Open evidence                       │
+│  📄  Open artifacts                      │
+│  ⚙  Open settings                        │
+│  ⌘  Toggle streaming                     │
+│  ⚠  Toggle writes (owner only)           │
+└──────────────────────────────────────────┘
+```
 
-### Phase 2 — Drawer consolidation
-- Replace `.right-panel` + `.mobile-drawer` with a single `.drawer` component
-- Add explicit × close, Esc-to-close, focus trap
-- Wire one-drawer-at-a-time logic
-- Mobile: bottom sheet behavior
-- **Behavior parity check:** all current panel functions still work.
+**Visual:**
+- Modal overlay, centered, 560px max width
+- Search field at top, autofocused
+- Action list below, 6–8 actions
+- Selected action highlighted with accent-blue background
+- Esc closes, ↑/↓ navigates, Enter executes
 
-### Phase 3 — Composer refresh
-- Replace 5-icon button row with horizontal action chip rail
-- Action chip set: Project, Evidence, Artifact, Settings, Memory
-- Add ⌘K command palette placeholder (disabled stub is fine for v1)
-- Send is a single primary button
-- **No change to sendMessage() behavior.**
+**Scope for v1:**
+- v1 ships a **placeholder** command palette — visually present, but only 3–4 actions are wired (Open Settings, Open Evidence, Switch Project, New Project).
+- Full action coverage comes in a later phase.
 
-### Phase 4 — Status chips
-- Replace static "Backend not connected" banner with conditional status chip row
-- Read `/api/auth/me` response to determine role/writes/auth chips
-- Real `connected` / `disconnected` state from a health endpoint
-- **Wiring depends on backend health endpoint, not in scope for UI-only phase.**
-
-### Phase 5 — Visual polish
-- Reduce card bulk
-- Refine spacing scale to 8-point baseline
-- Refine typography to compact modern scale
-- Replace ad-hoc padding values
-
-### Phase 6 — Mobile pass
-- Tablet layout: collapsible project rail
-- Mobile: project chip in topbar, bottom-sheet drawers
-- Explicit close buttons
-- Safe-area-inset for composer
-
-### Phase 7 — Owner settings UX
-- Settings drawer shows role-gated controls
-- Switch components for owner-toggled values
-- Confirmation toasts for high-risk writes
-- "View as: Owner / Admin / Tester / Viewer" preview switch (owner only)
-
-### Phase 8 — Streaming response
-- Backend support for streaming
-- Replace hard "Sending..." with progressive token append
-- Cursor blink in last assistant bubble
-
-### Phase 9 — Authenticated end-to-end verification
-- Owner-supplied htpasswd credentials
-- Authenticated curl + browser smoke test
-- Confirm /api/message returns role/writes/auth/owner correctly
-- Confirm UI shows "Role: Owner" chip
-- Confirm no "preview" text appears
+**Why:**
+- The placeholder establishes the affordance and the keybinding.
+- A real command palette is a major differentiator but needs a stable action surface to wire against.
 
 ---
 
-## H. Open Questions for Owner
+## 8. Add Streaming / Pending Response Polish
 
-1. **Backend `/api/auth/me` contract:** What does the response actually contain today? The rehydration report did not see `writes_enabled` or `google_auth_enabled` fields — only `role` is referenced. Should I curl with creds to confirm?
-2. **Drawer scope priority:** Is the Evidence / Artifact / Settings / Memory drawer set the right four? WESLR-specific (continuity, artifact) — should one be split into "Memory" and "Continuity"?
-3. **Command palette:** Build a real one, or keep a stub for v1? Cursor's ⌘K is a major differentiator.
-4. **Streaming:** Does the backend support SSE / WebSocket / chunked responses, or is the current implementation a single JSON response?
-5. **Owner role-switch preview:** Some operator tools (Linear, Vercel) let the owner preview the UI "as Admin" or "as Viewer". Is that in scope?
-6. **Brand mark:** The current logo is a flat "W" square. Is there a Weslr logomark I should be using instead?
-7. **No emoji as action:** I am proposing to drop emojis (📄 🔍 ⚙️ ☰) from primary action affordances. Owner approval?
+### Current problem
+- The current `sendMessage()` shows a hard "Sending..." pending message and replaces it with the result. No streaming dots, no cursor, no progressive reveal.
+
+### Proposed change
+Replace the hard "Sending..." pending state with **typing dots** in an assistant bubble.
+
+**Pending state structure:**
+```
+┌──────────────────────────────────────────┐
+│  WESLR                                   │
+│                                          │
+│  ● ● ●                                   │ ← three animated dots
+│                                          │
+└──────────────────────────────────────────┘
+```
+
+**Animation:**
+- Three dots, 6px diameter each
+- Each dot fades from 0.3 to 1.0 opacity in sequence, 600ms cycle
+- Subtle, non-distracting
+
+**Streaming (when backend supports it):**
+- The pending bubble transforms into a streaming assistant bubble
+- Tokens append progressively as they arrive
+- A blinking cursor (`|`) at the end of the last token
+- When complete, the cursor disappears
+
+**Cancel affordance:**
+- A small "×" appears in the top-right of the pending/streaming bubble
+- Tap to abort the fetch
+- No message is sent
+
+**Error state:**
+- If `/api/message` returns an error, the pending bubble is replaced with an error card
+- Error card: red left border, error icon, error message, "Retry" action
+
+**Why:**
+- Modern operator tools feel responsive. A 200ms response should not look identical to a 2s response.
+- The cancel affordance is critical for a 30+ second long-running WESLR query.
+
+---
+
+## H. Non-Copying Boundary (Explicit)
+
+This section is the explicit, non-copied boundary for the entire design.
+
+### H1. Inspiration only
+- Perplexity and Cursor are referenced as **inspiration for interaction patterns only**.
+- No specific screen, layout, or visual treatment is being replicated.
+- The goal is to **learn from the principles** (answer-centered layout, project-first, command palette, streaming feel, evidence visibility) and reapply them through WESLR's identity.
+
+### H2. No cloned UI
+- **WESLR is not Perplexity.** WESLR is a governed operator cockpit, not a public research engine. There is no "ask anything" field. There is no share button. There is no "related questions" panel.
+- **WESLR is not Cursor.** WESLR is not a code editor. There is no file tree. There is no diff viewer. There is no inline-edit affordance.
+- No layout, color scheme, or visual treatment is being copied.
+
+### H3. WESLR keeps its own identity
+- **Continuity-first operational intelligence** — WESLR surfaces project continuity as a first-class indicator.
+- **Governed, traceable, operator-approved** — every action is gated by role; every response carries a `path` and a timestamp.
+- **Project-based workspace** — projects are the navigation primitive, not chat threads.
+- **Protected/private by default** — no public link generation, no share, no invite.
+- **Evidence/context aware** — evidence chips are inline in the response, not a sidebar afterthought.
+- **Artifact-oriented** — artifacts (generated files) are first-class cards, not download links.
+- **Owner-controlled environment settings** — settings drawer is role-gated, not user-gated.
+- **German/engineering-grade trust** — restrained visual language, no marketing flourishes, no magic.
+
+### H4. No Perplexity or Cursor trademarks
+- No Perplexity logomark, color, or layout treatment.
+- No Cursor logomark, color, or layout treatment.
+- No Perplexity or Cursor copy text.
+- No reference to those products anywhere in the protected app.
+
+### H5. Boundary enforcement
+- **At implementation time:** any new component must pass a check: "Does this look like Perplexity or Cursor?" If yes, redesign.
+- **At review time:** owner reviews the design and explicitly approves or rejects any element that feels borrowed.
+- **Long-term:** if WESLR ever ships a public-facing surface, none of these patterns may leak into it.
 
 ---
 
@@ -407,9 +390,21 @@ If this direction is **not** approved, the working `index.html` from Step A reco
 
 ---
 
-## K. Final Judgment
+## K. Open Questions for Owner
 
-`nova_weslr_protected_workspace_modern_ui_direction_v1_documented_ready_for_owner_review`
+1. **Backend `/api/auth/me` contract:** What does the response actually contain today? The rehydration report did not see `writes_enabled` or `google_auth_enabled` fields — only `role` is referenced. Should I curl with creds to confirm?
+2. **Drawer scope priority:** Is the Evidence / Artifact / Settings / Memory drawer set the right four? WESLR-specific (continuity, artifact) — should one be split into "Memory" and "Continuity"?
+3. **Command palette:** Build a real one, or keep a stub for v1? Cursor's ⌘K is a major differentiator.
+4. **Streaming:** Does the backend support SSE / WebSocket / chunked responses, or is the current implementation a single JSON response?
+5. **Owner role-switch preview:** Some operator tools (Linear, Vercel) let the owner preview the UI "as Admin" or "as Viewer". Is that in scope?
+6. **Brand mark:** The current logo is a flat "W" square. Is there a Weslr logomark I should be using instead?
+7. **No emoji as action:** I am proposing to drop emojis (📄 🔍 ⚙️ ☰) from primary action affordances. Owner approval?
+
+---
+
+## L. Final Judgment
+
+`nova_weslr_protected_workspace_modern_ui_direction_ready_for_owner_review`
 
 Direction captured. No code, no deploy, no behavior change. Awaiting owner review and approval to begin Phase 1 (component foundation, CSS refactor, behavior-preserving).
 
@@ -418,7 +413,7 @@ Direction captured. No code, no deploy, no behavior change. Awaiting owner revie
 **Report author:** Nova (Telegram dispatcher, WESLR ops context)  
 **Active model during report:** `minimax-m3:cloud`  
 **Owner-visible next actions:**
-1. Review the direction above
-2. Answer the open questions in section H (especially the `/api/auth/me` contract and the streaming question)
+1. Review the direction above (sections 1–8, then boundary H)
+2. Answer the open questions in section K (especially the `/api/auth/me` contract and the streaming question)
 3. Approve Phase 1 as the next dispatch
 4. Or amend the direction before any implementation begins
