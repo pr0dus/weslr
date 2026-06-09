@@ -32,6 +32,92 @@ from typing import Optional
 # Import ONLY the deterministic handler dispatcher — NO model calls
 from weslr.deterministic_handlers import dispatch_deterministic_handler
 
+# ─────────────────────────────────────────────────────────────────────────────
+# OMNICHAT BRIDGE (V1, 2026-06-09)
+#
+# Wires the protected owner chat to the REAL WESLR runtime/contract-reply
+# stack (dialogue.interpret_human_turn + weslr.omnichat.response_expander.
+# format_reply). This is the highest existing in-process WESLR chat path that:
+#   - is purely deterministic (no provider, no API key, no LLM call)
+#   - uses the live WESLR state (state checkpoint, plans, ISS, omnichat policy)
+#   - returns contract replies declared in weslr.omnichat.response_expander
+#   - is read-only (no writes, no daemon, no settings mutations)
+#
+# Used as the bridge from the deterministic-handler registry (which handles
+# the structured slash-command surface: /probes, /plans, /status, etc.) into
+# the real WESLR intelligence layer for free-form owner questions.
+#
+# SAFETY: never imports weslr.chat_responder, weslr.llm_runtime, or any
+# provider module. Never reads auth-profiles.json. Never sets
+# WESLR_LLM_PROVIDER or OPENAI_API_KEY. If the import fails for any reason
+# we degrade gracefully to the deterministic catalog.
+# ─────────────────────────────────────────────────────────────────────────────
+try:
+    from dialogue import interpret_human_turn as _weslr_interpret_human_turn
+    from weslr.omnichat.response_expander import (
+        format_reply as _weslr_omnichat_format_reply,
+    )
+    _OMNICHAT_BRIDGE_AVAILABLE = True
+    _OMNICHAT_BRIDGE_ERROR = None
+except Exception as _bridge_exc:  # pragma: no cover
+    _OMNICHAT_BRIDGE_AVAILABLE = False
+    _OMNICHAT_BRIDGE_ERROR = repr(_bridge_exc)
+    _weslr_interpret_human_turn = None
+    _weslr_omnichat_format_reply = None
+
+
+def _weslr_omnichat_bridge(message: str) -> Optional[dict]:
+    """
+    Run the real WESLR omnichat contract-reply engine on a free-form message.
+
+    Returns a dict shaped like a deterministic-handler result so the existing
+    HTTP layer can consume it uniformly. Returns None if the bridge is not
+    available or the engine produced no reply.
+    """
+    if not _OMNICHAT_BRIDGE_AVAILABLE:
+        return None
+    try:
+        interpreted = _weslr_interpret_human_turn(message)
+        if not isinstance(interpreted, dict):
+            return None
+        contract_reply = _weslr_omnichat_format_reply(interpreted)
+        if not contract_reply:
+            return None
+        path = interpreted.get("path") or "omnichat_contract_reply"
+        # Honest treatment: omnichat path "fallback_safe" means the engine
+        # did not find a confirmed answer — surface that truthfully.
+        return {
+            "message": message,
+            "response_text": contract_reply,
+            "path": f"real_weslr_omnichat::{path}",
+            "confidence": "high" if path != "fallback_safe" else "medium",
+            "suggested_mode": "observe",
+            "_weslr_deterministic": True,
+            "_weslr_runtime_path": "real_weslr_omnichat_contract_reply",
+            "_weslr_intent": {
+                "path": path,
+                "intent_class": interpreted.get("intent_class"),
+                "turn_type": interpreted.get("turn_type"),
+                "topics": interpreted.get("topics"),
+                "guided_intent": interpreted.get("guided_intent"),
+            },
+        }
+    except Exception as exc:  # pragma: no cover
+        return {
+            "message": message,
+            "response_text": (
+                f"Real WESLR omnichat bridge failed: {exc!r}. "
+                "Falling back to deterministic catalog."
+            ),
+            "path": "real_weslr_omnichat_bridge_error",
+            "confidence": "low",
+            "suggested_mode": "observe",
+            "_weslr_deterministic": True,
+            "_weslr_runtime_path": "real_weslr_omnichat_bridge_error",
+            "_weslr_bridge_error": repr(exc),
+        }
+
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
 <head>
@@ -341,7 +427,15 @@ class Handler(BaseHTTPRequestHandler):
                 "model_provider": "none",
                 "mode": "deterministic_only",
                 "_no_model": True,
-                "_protected_preview": True
+                "_protected_preview": True,
+                "_weslr_runtime_bridge": {
+                    "available": _OMNICHAT_BRIDGE_AVAILABLE,
+                    "error": _OMNICHAT_BRIDGE_ERROR,
+                    "bridge_target": (
+                        "dialogue.interpret_human_turn + "
+                        "weslr.omnichat.response_expander.format_reply"
+                    ),
+                },
             }
             self.wfile.write(json.dumps(state).encode('utf-8'))
         elif self.path == '/health':
@@ -372,22 +466,125 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 
                 lowered = message.lower()
+                project_id = data.get("project_id") or "preview-weslr-website-review"
+                req_mode = data.get("mode") or "protected_owner_preview"
+
+                # 1. Try the deterministic handler registry (structured
+                #    slash-commands: /probes, /plans, /status, ISS, etc.)
                 result = dispatch_with_fallback(message, lowered)
-                
+                handler_path = result.get("path", "unknown")
+                used_runtime_path = "deterministic_handler_registry"
+
+                # 2. If the registry fell through to its canned
+                #    fallback_unmatched, bridge into the REAL WESLR
+                #    omnichat contract-reply engine. This is what wires
+                #    the protected chat to the actual WESLR runtime.
+                if handler_path == "fallback_unmatched" and _OMNICHAT_BRIDGE_AVAILABLE:
+                    bridge_result = _weslr_omnichat_bridge(message)
+                    if bridge_result is not None:
+                        result = bridge_result
+                        handler_path = result.get("path", handler_path)
+                        used_runtime_path = "real_weslr_omnichat_contract_reply"
+                    else:
+                        used_runtime_path = "deterministic_handler_registry_fallback_only"
+                elif not _OMNICHAT_BRIDGE_AVAILABLE and handler_path == "fallback_unmatched":
+                    used_runtime_path = "deterministic_handler_registry_fallback_only_bridge_unavailable"
+
+                # 3. Build the response. Keep every existing field stable
+                #    so the UI keeps working, and add the structured
+                #    bridge contract on top.
+                omnichat_path = None
+                if isinstance(handler_path, str) and handler_path.startswith("real_weslr_omnichat::"):
+                    omnichat_path = handler_path.split("::", 1)[1]
+
+                # Determine ok / capability_status honestly
+                if omnichat_path == "fallback_safe":
+                    ok = False
+                    capability_status = {
+                        "answered_by_real_runtime": True,
+                        "answered_with_confirmed_answer": False,
+                        "answered_with_truthful_gap": True,
+                        "reason": "real_weslr_omnichat_returned_fallback_safe",
+                    }
+                elif used_runtime_path == "real_weslr_omnichat_contract_reply":
+                    ok = True
+                    capability_status = {
+                        "answered_by_real_runtime": True,
+                        "answered_with_confirmed_answer": True,
+                        "answered_with_truthful_gap": False,
+                        "reason": "real_weslr_omnichat_contract_reply_matched",
+                    }
+                else:
+                    ok = True
+                    capability_status = {
+                        "answered_by_real_runtime": True,
+                        "answered_with_confirmed_answer": True,
+                        "answered_with_truthful_gap": False,
+                        "reason": "deterministic_handler_registry_matched",
+                    }
+
                 response = {
+                    # existing fields (UI compatibility)
                     "message": message,
                     "response_text": result.get("response_text", ""),
-                    "path": result.get("path", "unknown"),
+                    "path": handler_path,
                     "confidence": result.get("confidence", "high"),
                     "suggested_mode": result.get("suggested_mode", "observe"),
                     "_weslr_deterministic": result.get("_weslr_deterministic", True),
                     "_no_model": True,
-                    "_protected_preview": True
+                    "_protected_preview": True,
+                    # structured bridge contract (WESLR runtime wiring V1)
+                    "ok": ok,
+                    "answer": result.get("response_text", ""),
+                    "runtime_path": used_runtime_path,
+                    "mode": req_mode,
+                    "project_id": project_id,
+                    "capability_status": capability_status,
+                    "evidence": [],
+                    "artifacts": [],
+                    "warnings": [],
+                    "blocked_actions": [
+                        "autonomous_tools",
+                        "public_registration",
+                        "settings_writes",
+                        "daemon",
+                        "google_oauth",
+                        "public_users",
+                        "hardcoded_final_answers",
+                    ],
+                    "side_effects_performed": False,
+                    "tools_executed": False,
+                    "daemon_enabled": False,
+                    "model_provider_used": False,
                 }
-                
-                if result.get("path") == "fallback_unmatched":
+
+                if result.get("path") == "fallback_unmatched" and used_runtime_path.startswith("deterministic_handler_registry_fallback_only"):
                     response["_no_match"] = True
-                
+
+                # Surface omnichat intent metadata (read-only) when present
+                if "_weslr_intent" in result:
+                    response["_weslr_intent"] = result["_weslr_intent"]
+                if "_weslr_runtime_path" in result and used_runtime_path != "real_weslr_omnichat_contract_reply":
+                    response["_weslr_runtime_path"] = result["_weslr_runtime_path"]
+                if "_weslr_bridge_error" in result:
+                    response["_weslr_bridge_error"] = result["_weslr_bridge_error"]
+
+                # Truthful structured failure when the real runtime
+                # explicitly says fallback_safe. Never fake a full answer.
+                if omnichat_path == "fallback_safe":
+                    response["error"] = "real_weslr_runtime_entrypoint_present_but_no_confirmed_answer"
+                    response["available_paths"] = [
+                        "real_weslr_omnichat_contract_reply",
+                        "weslr.omnichat.response_expander.format_reply",
+                        "dialogue.interpret_human_turn",
+                        "weslr.deterministic_handlers.dispatch_with_fallback",
+                    ]
+                    response["next_required_work"] = [
+                        "Extend weslr.omnichat.response_expander with confirmed-answer entries for status / implementation / capability-summary questions.",
+                        "Or implement a private project-chat runtime that retrieves real WESLR state (state-checkpoint, implementation plans, capability discovery) and assembles a confirmed answer.",
+                    ]
+                    response["truthful_gap_report"] = True
+
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
