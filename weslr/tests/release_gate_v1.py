@@ -150,6 +150,11 @@ _perspicuity_scorer_review_allowed_paths = {
     _perspicuity_scorer_review_doc,
 }
 
+_suggestion_store_update_packet_review_doc = "docs/WESLR_SUGGESTION_STORE_UPDATE_PACKET_REVIEW_V1.md"
+_suggestion_store_update_packet_review_allowed_paths = {
+    _suggestion_store_update_packet_review_doc,
+}
+
 _workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
 _workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
 _workflow_integrity_red_zone_report_doc = (
@@ -15111,6 +15116,8 @@ def _check_git_scope():
         if path in _perspicuity_scorer_allowed_paths:
             allowed = True
         if path in _perspicuity_scorer_review_allowed_paths:
+            allowed = True
+        if path in _suggestion_store_update_packet_review_allowed_paths:
             allowed = True
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True
