@@ -124,6 +124,13 @@ _rule_pressure_engine_allowed_paths = {
     _rule_pressure_engine_test_path,
 }
 
+_dialectic_generator_loop_helper_path = "weslr/dialectic_generator_loop.py"
+_dialectic_generator_loop_test_path = "weslr/tests/test_dialectic_generator_loop_v1.py"
+_dialectic_generator_loop_allowed_paths = {
+    _dialectic_generator_loop_helper_path,
+    _dialectic_generator_loop_test_path,
+}
+
 _workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
 _workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
 _workflow_integrity_red_zone_report_doc = (
@@ -15079,6 +15086,8 @@ def _check_git_scope():
         if path in _nonlinear_inspiration_resonance_engine_allowed_paths:
             allowed = True
         if path in _rule_pressure_engine_allowed_paths:
+            allowed = True
+        if path in _dialectic_generator_loop_allowed_paths:
             allowed = True
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True

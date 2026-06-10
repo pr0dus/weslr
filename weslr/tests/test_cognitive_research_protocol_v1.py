@@ -49,6 +49,8 @@ ALLOWED_NEW_FILES = {
     "weslr/tests/test_nonlinear_inspiration_resonance_engine_v1.py",
     "weslr/rule_pressure_engine.py",
     "weslr/tests/test_rule_pressure_engine_v1.py",
+    "weslr/dialectic_generator_loop.py",
+    "weslr/tests/test_dialectic_generator_loop_v1.py",
 }
 
 PROTECTED_FILES = {
