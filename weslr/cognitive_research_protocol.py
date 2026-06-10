@@ -22,6 +22,7 @@ ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1 = (
     "discovery_generation",
     "reasoning_integrity",
     "candidate_ranking",
+    "candidate_store_update",
     "calibration_and_forecast",
     "frontier_gap_mapping",
     "human_project_intelligence",
@@ -85,6 +86,7 @@ ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1 = (
     "dialectic_generator_loop",
     "rule_pressure_engine",
     "perspicuity_scorer",
+    "suggestion_store_update_packet",
     "live_weird_feed_adapter",
     "public_gap_card_exporter",
 )
@@ -147,6 +149,7 @@ _ENGINE_FAMILY_BY_NAME_V1 = {
     "dialectic_generator_loop": "recursive_generation",
     "rule_pressure_engine": "adversarial_pressure",
     "perspicuity_scorer": "candidate_ranking",
+    "suggestion_store_update_packet": "candidate_store_update",
     "live_weird_feed_adapter": "live_signal_ingestion",
     "public_gap_card_exporter": "public_export",
 }
@@ -175,6 +178,7 @@ _ENGINE_FAMILY_ALIASES_V1 = {
     "DIALECTIC_GENERATOR_LOOP": "recursive_generation",
     "RULE_PRESSURE_ENGINE": "adversarial_pressure",
     "PERSPICUITY_SCORER": "reasoning_integrity",
+    "SUGGESTION_STORE_UPDATE_PACKET": "candidate_store_update",
     "LIVE_WEIRD_FEED_ADAPTER": "live_signal_ingestion",
     "PUBLIC_GAP_CARD_EXPORTER": "public_export",
 }
@@ -1599,6 +1603,15 @@ def build_initial_cognitive_research_examples_v1() -> list[dict[str, Any]]:
             "input_summary": "Perspicuity ranking for structural usefulness only.",
             "perspicuity_score": build_perspicuity_score_metadata_v1({"clarity": 70, "signal_density": 75, "novelty": 60, "gap_pressure": 65, "verification_potential": 72, "recurrence": 58, "cross_domain_resonance": 61}),
             "compressed_lesson": "Scoring ranks usefulness, not safety.",
+        },
+        {
+            "engine_name": "suggestion_store_update_packet",
+            "engine_family": "candidate_store_update",
+            "research_mode": "internal_exploration",
+            "input_artifact_ref": "artifact:suggestion-store-update-001",
+            "input_artifact_type": "suggestion-store-update",
+            "input_summary": "Suggestion-store update intent metadata only.",
+            "compressed_lesson": "Update proposals stay metadata-only.",
         },
         {
             "engine_name": "live_weird_feed_adapter",
