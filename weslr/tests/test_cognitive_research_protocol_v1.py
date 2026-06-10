@@ -47,6 +47,8 @@ ALLOWED_NEW_FILES = {
     "entity_graph.py",
     "weslr/nonlinear_inspiration_resonance_engine.py",
     "weslr/tests/test_nonlinear_inspiration_resonance_engine_v1.py",
+    "weslr/rule_pressure_engine.py",
+    "weslr/tests/test_rule_pressure_engine_v1.py",
 }
 
 PROTECTED_FILES = {
@@ -112,7 +114,7 @@ def test_allowed_enums_match_constants(getter, expected):
         ("mutable_axiom_math_engine", "reasoning_integrity"),
         ("gap_cartographer", "frontier_gap_mapping"),
         ("dialectic_generator_loop", "recursive_generation"),
-        ("rule_pressure_engine", "recursive_generation"),
+        ("rule_pressure_engine", "adversarial_pressure"),
         ("perspicuity_scorer", "reasoning_integrity"),
         ("live_weird_feed_adapter", "live_signal_ingestion"),
         ("public_gap_card_exporter", "public_export"),
@@ -177,7 +179,7 @@ def test_default_denied_authority_is_complete_and_false(key):
         ("governance_boundary_engine", "governance_and_boundary"),
         ("intent_reconstruction_engine", "human_project_intelligence"),
         ("dialectic_generator_loop", "recursive_generation"),
-        ("rule_pressure_engine", "recursive_generation"),
+        ("rule_pressure_engine", "adversarial_pressure"),
         ("perspicuity_scorer", "reasoning_integrity"),
         ("live_weird_feed_adapter", "live_signal_ingestion"),
         ("public_gap_card_exporter", "public_export"),
