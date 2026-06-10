@@ -222,8 +222,12 @@ _controlled_private_project_chat_runtime_wiring_implementation_report_allowed_pa
 _raw_signal_cartographer_review_doc = (
     "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_ENGINE_BOUNDARY_REVIEW_V1.md"
 )
+_raw_signal_cartographer_review_v1_doc = (
+    "docs/WESLR_RAW_SIGNAL_CARTOGRAPHER_REVIEW_V1.md"
+)
 _raw_signal_cartographer_review_allowed_paths = {
     _raw_signal_cartographer_review_doc,
+    _raw_signal_cartographer_review_v1_doc,
 }
 
 _unintelligible_output_analyzer_review_doc = (
