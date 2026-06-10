@@ -21,6 +21,7 @@ ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1 = (
     "raw_signal_analysis",
     "discovery_generation",
     "reasoning_integrity",
+    "candidate_ranking",
     "calibration_and_forecast",
     "frontier_gap_mapping",
     "human_project_intelligence",
@@ -145,7 +146,7 @@ _ENGINE_FAMILY_BY_NAME_V1 = {
     "intent_reconstruction_engine": "human_project_intelligence",
     "dialectic_generator_loop": "recursive_generation",
     "rule_pressure_engine": "adversarial_pressure",
-    "perspicuity_scorer": "reasoning_integrity",
+    "perspicuity_scorer": "candidate_ranking",
     "live_weird_feed_adapter": "live_signal_ingestion",
     "public_gap_card_exporter": "public_export",
 }
@@ -1591,7 +1592,7 @@ def build_initial_cognitive_research_examples_v1() -> list[dict[str, Any]]:
         },
         {
             "engine_name": "perspicuity_scorer",
-            "engine_family": "reasoning_integrity",
+            "engine_family": "candidate_ranking",
             "research_mode": "synthetic_test",
             "input_artifact_ref": "artifact:perspicuity-001",
             "input_artifact_type": "score-card",
