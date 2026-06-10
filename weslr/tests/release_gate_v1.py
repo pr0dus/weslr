@@ -107,6 +107,17 @@ _suggestion_store_update_packet_allowed_paths = {
     _suggestion_store_update_packet_test_path,
 }
 
+_minimal_recursive_research_loop_dry_run_executor_helper_path = (
+    "weslr/minimal_recursive_research_loop_dry_run_executor.py"
+)
+_minimal_recursive_research_loop_dry_run_executor_test_path = (
+    "weslr/tests/test_minimal_recursive_research_loop_dry_run_executor_v1.py"
+)
+_minimal_recursive_research_loop_dry_run_executor_allowed_paths = {
+    _minimal_recursive_research_loop_dry_run_executor_helper_path,
+    _minimal_recursive_research_loop_dry_run_executor_test_path,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15122,6 +15133,8 @@ def _check_git_scope():
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True
         if path in _suggestion_store_update_packet_allowed_paths:
+            allowed = True
+        if path in _minimal_recursive_research_loop_dry_run_executor_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
