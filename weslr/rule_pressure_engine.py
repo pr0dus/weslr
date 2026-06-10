@@ -15,7 +15,6 @@ from typing import Any, Mapping
 
 from weslr.cognitive_research_protocol import (
     ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1,
-    ALLOWED_COGNITIVE_RESEARCH_RESEARCH_MODES_V1,
     build_cognitive_research_run_v1,
     build_default_cognitive_research_denied_authority_v1,
     build_rule_pressure_test_metadata_v1,
@@ -90,6 +89,13 @@ _ALLOWED_PUBLIC_CLAIM_STATUSES_V1 = (
     "not_public_claim",
     "internal_candidate_only",
     "public_export_blocked",
+)
+
+_ALLOWED_RULE_PRESSURE_RESEARCH_MODES_V1 = (
+    "internal_exploration",
+    "synthetic_test",
+    "calibration_replay",
+    "frontier_mapping",
 )
 
 _FORBIDDEN_TEXT_MARKERS_V1 = (
@@ -524,7 +530,7 @@ def build_rule_pressure_correction_v1(payload: Any = None, **overrides: Any) -> 
 
 def build_rule_pressure_packet_v1(payload: Any = None, **overrides: Any) -> dict[str, Any]:
     data = _merge_payload(payload, **overrides)
-    research_mode = _normalize_choice(data.get("research_mode"), tuple(ALLOWED_COGNITIVE_RESEARCH_RESEARCH_MODES_V1), "internal_exploration")
+    research_mode = _normalize_choice(data.get("research_mode"), _ALLOWED_RULE_PRESSURE_RESEARCH_MODES_V1, "internal_exploration")
     public_claim_status = _normalize_choice(data.get("public_claim_status"), tuple(ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1), "internal_candidate_only")
     public_gap_card_status = _compact_text(data.get("public_gap_card_status") or "public_export_blocked") or "public_export_blocked"
     source_engine_name = _compact_text(data.get("source_engine_name") or data.get("upstream_engine_name") or "unknown_engine").lower()
@@ -534,6 +540,9 @@ def build_rule_pressure_packet_v1(payload: Any = None, **overrides: Any) -> dict
         target_payload = dict(data)
         target_payload.setdefault("source_engine_name", source_engine_name)
         target_payload.setdefault("target_summary", input_summary)
+        target_payload["public_claim_status"] = (
+            "internal_candidate_only" if public_claim_status == "public_export_blocked" else public_claim_status
+        )
         target = build_rule_pressure_target_v1(target_payload)
     else:
         target = build_rule_pressure_target_v1(target)
@@ -767,8 +776,8 @@ def _validate_target(target: Any, index: int = 0) -> list[str]:
         violations.append(f"missing_uncertainty_factors_{index}")
     if not _ensure_list(target.get("invalidation_signals")):
         violations.append(f"missing_invalidation_signals_{index}")
-    public_status = _normalize_target_status(target.get("public_claim_status"))
-    if public_status != "not_public_claim":
+    public_status = _compact_text(target.get("public_claim_status")).lower()
+    if public_status not in {"not_public_claim", "internal_candidate_only"}:
         violations.append(f"target_marked_public_claim_or_export_safe_{index}")
     if _has_forbidden_markers(target):
         violations.append(f"forbidden_text_marker_{index}")
@@ -888,7 +897,7 @@ def validate_rule_pressure_packet_v1(packet: Any) -> dict[str, Any]:
         violations.append("invalid_engine_name")
     if engine_family != ENGINE_FAMILY_V1:
         violations.append("invalid_engine_family")
-    if research_mode not in set(ALLOWED_COGNITIVE_RESEARCH_RESEARCH_MODES_V1):
+    if research_mode not in set(_ALLOWED_RULE_PRESSURE_RESEARCH_MODES_V1):
         violations.append("invalid_research_mode")
     if public_claim_status not in set(_ALLOWED_PUBLIC_CLAIM_STATUSES_V1):
         violations.append("invalid_public_claim_status")

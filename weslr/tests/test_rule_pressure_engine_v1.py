@@ -145,6 +145,68 @@ def test_valid_targets_cover_required_shapes(target_type):
 
 
 @pytest.mark.parametrize(
+    "research_mode",
+    ["shadow_evaluation", "owner_preview", "recursive_generation", "rule_pressure_test", "public_export_blocked"],
+)
+def test_rule_pressure_research_mode_is_stricter_than_shared_protocol(research_mode):
+    shared_packet = _packet()
+    shared_packet["research_mode"] = research_mode
+    protocol_validation = protocol.validate_cognitive_research_run_v1(shared_packet)
+    validation = validate_rule_pressure_packet_v1(shared_packet)
+
+    assert protocol_validation["blocked"] is False
+    assert validation["valid"] is False
+    assert "invalid_research_mode" in validation["violations"]
+
+
+@pytest.mark.parametrize(
+    "target_public_claim_status",
+    ["internal_candidate_only"],
+)
+def test_internal_candidate_only_target_public_status_is_allowed(target_public_claim_status):
+    target = _target(public_claim_status=target_public_claim_status)
+    test = _test(target=target)
+    result = _result(target, test, observed_result_summary="not observed yet")
+    correction = _correction(target, test, result, calibration_record_ref="")
+    packet = _packet(
+        target=target,
+        pressure_test=test,
+        pressure_result=result,
+        corrections=[correction],
+        compressed_lesson="Pressure reveals limits; survival is not evidence.",
+        public_claim_status="internal_candidate_only",
+    )
+    validation = validate_rule_pressure_packet_v1(packet)
+    assert packet["rule_pressure_targets"][0]["public_claim_status"] == "internal_candidate_only"
+    assert validation["valid"] is True
+
+
+def test_public_export_blocked_packet_status_keeps_target_internal():
+    packet = _packet(public_claim_status="public_export_blocked")
+    validation = validate_rule_pressure_packet_v1(packet)
+    assert packet["public_claim_status"] == "public_export_blocked"
+    assert packet["rule_pressure_targets"][0]["public_claim_status"] == "internal_candidate_only"
+    assert validation["valid"] is True
+
+
+@pytest.mark.parametrize(
+    "target_public_claim_status",
+    ["public_safe_summary_required", "public_gap_card_candidate"],
+)
+def test_public_safe_target_public_status_fails_closed(target_public_claim_status):
+    packet = _packet(
+        pressure_test=_test(),
+        pressure_result=_result(),
+        corrections=[_correction()],
+        compressed_lesson="Pressure reveals limits; survival is not evidence.",
+    )
+    packet["rule_pressure_targets"][0]["public_claim_status"] = target_public_claim_status
+    validation = validate_rule_pressure_packet_v1(packet)
+    assert validation["valid"] is False
+    assert any("target_marked_public_claim_or_export_safe" in violation for violation in validation["violations"])
+
+
+@pytest.mark.parametrize(
     "pressure_type",
     [
         "counterexample_search",
