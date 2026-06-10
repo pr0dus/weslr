@@ -21,6 +21,7 @@ from weslr.cognitive_research_engine_boundaries import (
 )
 from weslr.cognitive_research_protocol import (
     ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1,
+    LEGACY_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1,
     build_default_cognitive_research_denied_authority_v1,
 )
 
@@ -125,7 +126,7 @@ _REQUIRED_RAW_SIGNAL_RELATIONSHIP_FIELDS_V1 = (
     "not_public_claim_authority",
 )
 
-_REQUIRED_PUBLIC_CLAIM_STATUS_V1 = set(ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1)
+_REQUIRED_PUBLIC_CLAIM_STATUS_V1 = set(ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1) | set(LEGACY_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1)
 
 
 def _compact_text(value: Any, default: str = "") -> str:
