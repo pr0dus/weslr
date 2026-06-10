@@ -45,6 +45,8 @@ ALLOWED_NEW_FILES = {
     "weslr/tests/release_gate_v1.py",
     "docs/WESLR_FORECAST_CALIBRATION_BRIDGE_REVIEW_V1.md",
     "entity_graph.py",
+    "weslr/nonlinear_inspiration_resonance_engine.py",
+    "weslr/tests/test_nonlinear_inspiration_resonance_engine_v1.py",
 }
 
 PROTECTED_FILES = {
@@ -104,8 +106,8 @@ def test_allowed_enums_match_constants(getter, expected):
         ("unknown_engine", "unknown_modeling"),
         ("raw_signal_cartographer", "raw_signal_analysis"),
         ("unintelligible_output_analyzer", "reasoning_integrity"),
-        ("nonlinear_inspiration_engine", "recursive_generation"),
-        ("resonance_engine", "recursive_generation"),
+        ("nonlinear_inspiration_engine", "discovery_generation"),
+        ("resonance_engine", "discovery_generation"),
         ("algorithm_emergence_engine", "discovery_generation"),
         ("mutable_axiom_math_engine", "reasoning_integrity"),
         ("gap_cartographer", "frontier_gap_mapping"),
@@ -156,8 +158,8 @@ def test_default_denied_authority_is_complete_and_false(key):
         ("raw_signal_cartographer", "raw_signal_analysis"),
         ("unintelligible_output_analyzer", "reasoning_integrity"),
         ("signal_vs_noise_engine", "raw_signal_analysis"),
-        ("nonlinear_inspiration_engine", "recursive_generation"),
-        ("resonance_engine", "recursive_generation"),
+        ("nonlinear_inspiration_engine", "discovery_generation"),
+        ("resonance_engine", "discovery_generation"),
         ("algorithm_emergence_engine", "discovery_generation"),
         ("mutable_axiom_math_engine", "reasoning_integrity"),
         ("operator_forge_engine", "discovery_generation"),

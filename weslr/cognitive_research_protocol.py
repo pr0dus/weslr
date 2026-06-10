@@ -124,8 +124,8 @@ _ENGINE_FAMILY_BY_NAME_V1 = {
     "raw_signal_cartographer": "raw_signal_analysis",
     "unintelligible_output_analyzer": "reasoning_integrity",
     "signal_vs_noise_engine": "raw_signal_analysis",
-    "nonlinear_inspiration_engine": "recursive_generation",
-    "resonance_engine": "recursive_generation",
+    "nonlinear_inspiration_engine": "discovery_generation",
+    "resonance_engine": "discovery_generation",
     "algorithm_emergence_engine": "discovery_generation",
     "mutable_axiom_math_engine": "reasoning_integrity",
     "operator_forge_engine": "discovery_generation",
@@ -1378,7 +1378,7 @@ def build_initial_cognitive_research_examples_v1() -> list[dict[str, Any]]:
         },
         {
             "engine_name": "nonlinear_inspiration_engine",
-            "engine_family": "recursive_generation",
+            "engine_family": "discovery_generation",
             "research_mode": "frontier_mapping",
             "input_artifact_ref": "artifact:nonlinear-inspiration-001",
             "input_artifact_type": "gap-card",
@@ -1388,7 +1388,7 @@ def build_initial_cognitive_research_examples_v1() -> list[dict[str, Any]]:
         },
         {
             "engine_name": "resonance_engine",
-            "engine_family": "recursive_generation",
+            "engine_family": "discovery_generation",
             "research_mode": "frontier_mapping",
             "input_artifact_ref": "artifact:resonance-001",
             "input_artifact_type": "bridge-card",
