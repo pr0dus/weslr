@@ -105,6 +105,11 @@ _workflow_boundary_bootstrap_allowed_paths = {
     "BUILD_STANDARD.md",
 }
 
+# Narrow exact-path allowance for the entity-graph import blocker repair.
+_entity_graph_import_guard_allowed_paths = {
+    "entity_graph.py",
+}
+
 _workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
 _workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
 _workflow_integrity_red_zone_report_doc = (
@@ -15054,6 +15059,8 @@ def _check_git_scope():
         if path in _cognitive_research_doc_family_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
+            allowed = True
+        if path in _entity_graph_import_guard_allowed_paths:
             allowed = True
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True

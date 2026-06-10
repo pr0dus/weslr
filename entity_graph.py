@@ -396,15 +396,22 @@ class EntityGraph:
 
     @classmethod
     def load(cls, path: Path = ENTITY_GRAPH_PATH) -> EntityGraph:
-        """Load entity graph from JSON file."""
+        """Load entity graph from JSON file.
+
+        Fail closed to an empty graph when the backing JSON is missing or
+        malformed so imports remain safe and deterministic.
+        """
         if not path.exists():
             return cls()
-        with open(path, "r") as f:
-            data = json.load(f)
-        graph = cls.from_dict(data)
-        if graph._validation_enabled:
-            graph.validate_graph()
-        return graph
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            graph = cls.from_dict(data)
+            if graph._validation_enabled:
+                graph.validate_graph()
+            return graph
+        except (OSError, json.JSONDecodeError, ValueError):
+            return cls()
 
     def save(self, path: Path = ENTITY_GRAPH_PATH):
         """Save entity graph to JSON file."""

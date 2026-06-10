@@ -41,8 +41,10 @@ ALLOWED_NEW_FILES = {
     "weslr/unintelligible_output_analyzer.py",
     "weslr/tests/test_cognitive_research_protocol_v1.py",
     "weslr/tests/test_raw_signal_cartographer_v1.py",
+    "weslr/tests/test_entity_graph_import_guard_v1.py",
     "weslr/tests/release_gate_v1.py",
     "docs/WESLR_FORECAST_CALIBRATION_BRIDGE_REVIEW_V1.md",
+    "entity_graph.py",
 }
 
 PROTECTED_FILES = {
