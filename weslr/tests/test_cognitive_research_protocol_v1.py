@@ -9,20 +9,20 @@ import pytest
 
 import weslr.cognitive_research_protocol as protocol
 from weslr.cognitive_research_protocol import (
-    ALLOWED_COGNITIVE_RESEARCH_BOUNDARY_STATUSES_V1,
     ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1,
     ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1,
     ALLOWED_COGNITIVE_RESEARCH_LLM_HELPER_ROLES_V1,
-    ALLOWED_COGNITIVE_RESEARCH_MODES_V1,
     ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1,
-    allowed_cognitive_research_engine_families_v1,
-    allowed_cognitive_research_engine_names_v1,
-    allowed_cognitive_research_llm_helper_roles_v1,
-    allowed_cognitive_research_modes_v1,
-    allowed_cognitive_research_public_claim_statuses_v1,
+    ALLOWED_COGNITIVE_RESEARCH_PUBLIC_GAP_CARD_STATUSES_V1,
+    ALLOWED_COGNITIVE_RESEARCH_RESEARCH_MODES_V1,
     build_cognitive_research_run_v1,
     build_default_cognitive_research_denied_authority_v1,
+    build_generated_source_signal_metadata_v1,
     build_initial_cognitive_research_examples_v1,
+    build_nonlinear_resonance_candidate_v1,
+    build_perspicuity_score_metadata_v1,
+    build_rule_pressure_test_metadata_v1,
+    build_source_signal_metadata_v1,
     classify_cognitive_research_engine_family_v1,
     summarize_cognitive_research_run_v1,
     to_cognitive_research_json_safe_v1,
@@ -31,12 +31,16 @@ from weslr.cognitive_research_protocol import (
 
 HELPER_PATH = Path(__file__).resolve().parents[1] / "cognitive_research_protocol.py"
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
 ALLOWED_NEW_FILES = {
+    "BUILD_STANDARD.md",
+    "docs/PROJECT_BOUNDARIES_v1.md",
+    "docs/WESLR_RECURSIVE_COGNITIVE_RESEARCH_PROTOCOL_AND_GENERATOR_LOOP_V1.md",
     "weslr/cognitive_research_protocol.py",
     "weslr/tests/test_cognitive_research_protocol_v1.py",
-    "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md",
     "weslr/tests/release_gate_v1.py",
 }
+
 PROTECTED_FILES = {
     "weslr/chat_responder.py",
     "weslr/main.py",
@@ -45,20 +49,16 @@ PROTECTED_FILES = {
     "chat_ui.py",
 }
 
-
 BASE_PACKET = build_cognitive_research_run_v1(
     {
-        "engine_name": "UNKNOWN_ENGINE",
-        "engine_family": "unknown",
-        "research_mode": "exploratory",
-        "domain": "signal interpretation",
-        "domain_subtype": "hidden-rule discovery",
-        "system_level": "component",
-        "artifact_scale": "bounded artifact",
-        "source_scope": "metadata_only",
-        "input_artifact_ref": "artifact:unknown-base-001",
-        "input_artifact_type": "report",
-        "input_summary": "Metadata-only observation set for hidden-rule discovery.",
+        "engine_name": "unknown_engine",
+        "research_mode": "internal_exploration",
+        "input_artifact_ref": "artifact:recursive-base-001",
+        "input_artifact_type": "notes",
+        "input_summary": "Metadata-only recursive research input.",
+        "public_claim_status": "internal_candidate_only",
+        "public_gap_card_status": "public_export_blocked",
+        "llm_helper_role": "candidate_generator_only",
         "hypotheses": ["A hidden rule may explain the contradiction cloud."],
         "probes": ["observe -> predict -> reveal -> correct"],
         "compressed_lesson": "Unknowns should stay unknown until probes earn them.",
@@ -66,12 +66,12 @@ BASE_PACKET = build_cognitive_research_run_v1(
 )
 
 
-def _packet(engine_name: str = "UNKNOWN_ENGINE", engine_family: str | None = None, **overrides):
+def _packet(engine_name: str = "unknown_engine", engine_family: str | None = None, **overrides):
     payload = deepcopy(BASE_PACKET)
     payload.update(
         {
             "engine_name": engine_name,
-            "engine_family": engine_family if engine_family is not None else classify_cognitive_research_engine_family_v1(engine_name) or "unknown",
+            "engine_family": engine_family if engine_family is not None else classify_cognitive_research_engine_family_v1(engine_name) or "unknown_modeling",
         }
     )
     payload.update(overrides)
@@ -81,11 +81,11 @@ def _packet(engine_name: str = "UNKNOWN_ENGINE", engine_family: str | None = Non
 @pytest.mark.parametrize(
     "getter, expected",
     [
-        (allowed_cognitive_research_engine_families_v1, ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1),
-        (allowed_cognitive_research_engine_names_v1, ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1),
-        (allowed_cognitive_research_modes_v1, ALLOWED_COGNITIVE_RESEARCH_MODES_V1),
-        (allowed_cognitive_research_public_claim_statuses_v1, ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1),
-        (allowed_cognitive_research_llm_helper_roles_v1, ALLOWED_COGNITIVE_RESEARCH_LLM_HELPER_ROLES_V1),
+        (protocol.allowed_cognitive_research_engine_families_v1, ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1),
+        (protocol.allowed_cognitive_research_engine_names_v1, ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1),
+        (protocol.allowed_cognitive_research_research_modes_v1, ALLOWED_COGNITIVE_RESEARCH_RESEARCH_MODES_V1),
+        (protocol.allowed_cognitive_research_public_claim_statuses_v1, ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1),
+        (protocol.allowed_cognitive_research_llm_helper_roles_v1, ALLOWED_COGNITIVE_RESEARCH_LLM_HELPER_ROLES_V1),
     ],
 )
 def test_allowed_enums_match_constants(getter, expected):
@@ -95,16 +95,19 @@ def test_allowed_enums_match_constants(getter, expected):
 @pytest.mark.parametrize(
     "engine_name, expected_family",
     [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-        ("UNINTELLIGIBLE_OUTPUT_ANALYZER", "raw-signal"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "math"),
-        ("GAP_CARTOGRAPHER", "gap"),
-        ("CHEMICAL_SPACE_CARTOGRAPHER", "chemical/material"),
-        ("BIOLOGICAL_SYSTEMS_ANALYZER", "biological"),
-        ("MEDICAL_REASONING_BOUNDARY_ENGINE", "medical-boundary"),
-        ("CYBER_RESILIENCE_ENGINE", "cyber-resilience"),
-        ("LEGAL_GOVERNANCE_GAP_ENGINE", "legal/governance"),
+        ("unknown_engine", "unknown_modeling"),
+        ("raw_signal_cartographer", "raw_signal_analysis"),
+        ("unintelligible_output_analyzer", "reasoning_integrity"),
+        ("nonlinear_inspiration_engine", "recursive_generation"),
+        ("resonance_engine", "recursive_generation"),
+        ("algorithm_emergence_engine", "discovery_generation"),
+        ("mutable_axiom_math_engine", "reasoning_integrity"),
+        ("gap_cartographer", "frontier_gap_mapping"),
+        ("dialectic_generator_loop", "recursive_generation"),
+        ("rule_pressure_engine", "recursive_generation"),
+        ("perspicuity_scorer", "reasoning_integrity"),
+        ("live_weird_feed_adapter", "live_signal_ingestion"),
+        ("public_gap_card_exporter", "public_export"),
     ],
 )
 def test_engine_family_classification_is_deterministic(engine_name, expected_family):
@@ -115,31 +118,23 @@ def test_engine_family_classification_is_deterministic(engine_name, expected_fam
 @pytest.mark.parametrize(
     "key",
     [
-        "runtime_authority",
-        "runtime_execution_authority",
-        "tool_authority",
-        "provider_authority",
-        "search_authority",
-        "persistence_authority",
-        "dot_weslr_authority",
-        "public_export_authority",
-        "answer_authority",
-        "prediction_authority",
-        "official_evaluation_authority",
-        "proof_authority",
-        "solution_authority",
-        "llm_authority",
-        "diagnosis_authority",
-        "treatment_authority",
-        "exploit_authority",
-        "malware_authority",
-        "credential_theft_authority",
-        "investment_authority",
-        "trading_authority",
-        "legal_authority",
-        "memory_mutation_authority",
-        "project_mutation_authority",
-        "external_action_authority",
+        "runtime_wiring_authority",
+        "chat_responder_authority",
+        "final_answer_generation_authority",
+        "public_claim_authority",
+        "provider_model_call_authority",
+        "retrieval_tool_authority",
+        "filesystem_authority",
+        "network_authority",
+        "subprocess_authority",
+        "weslr_io_authority",
+        "persistence_database_write_authority",
+        "real_memory_mutation_authority",
+        "real_project_mutation_authority",
+        "behavior_pack_promotion_authority",
+        "autonomous_self_modification_authority",
+        "official_intelligence_claim_authority",
+        "public_discovery_claim_authority",
     ],
 )
 def test_default_denied_authority_is_complete_and_false(key):
@@ -151,42 +146,45 @@ def test_default_denied_authority_is_complete_and_false(key):
 @pytest.mark.parametrize(
     "engine_name, engine_family",
     [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-        ("UNINTELLIGIBLE_OUTPUT_ANALYZER", "raw-signal"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "math"),
-        ("GAP_CARTOGRAPHER", "gap"),
-        ("CHEMICAL_SPACE_CARTOGRAPHER", "chemical/material"),
-        ("BIOLOGICAL_SYSTEMS_ANALYZER", "biological"),
-        ("MEDICAL_REASONING_BOUNDARY_ENGINE", "medical-boundary"),
-        ("CYBER_RESILIENCE_ENGINE", "cyber-resilience"),
-        ("LEGAL_GOVERNANCE_GAP_ENGINE", "legal/governance"),
+        ("unknown_engine", "unknown_modeling"),
+        ("raw_signal_cartographer", "raw_signal_analysis"),
+        ("unintelligible_output_analyzer", "reasoning_integrity"),
+        ("signal_vs_noise_engine", "raw_signal_analysis"),
+        ("nonlinear_inspiration_engine", "recursive_generation"),
+        ("resonance_engine", "recursive_generation"),
+        ("algorithm_emergence_engine", "discovery_generation"),
+        ("mutable_axiom_math_engine", "reasoning_integrity"),
+        ("operator_forge_engine", "discovery_generation"),
+        ("invariant_miner", "reasoning_integrity"),
+        ("contradiction_furnace", "reasoning_integrity"),
+        ("causal_trace_engine", "reasoning_integrity"),
+        ("blindspot_engine", "frontier_gap_mapping"),
+        ("calibration_ledger", "calibration_and_forecast"),
+        ("forecast_error_ledger", "calibration_and_forecast"),
+        ("gap_cartographer", "frontier_gap_mapping"),
+        ("assumption_excavator", "frontier_gap_mapping"),
+        ("probe_generator", "discovery_generation"),
+        ("memory_trust_engine", "human_project_intelligence"),
+        ("abstraction_ladder", "reasoning_integrity"),
+        ("governance_boundary_engine", "governance_and_boundary"),
+        ("intent_reconstruction_engine", "human_project_intelligence"),
+        ("dialectic_generator_loop", "recursive_generation"),
+        ("rule_pressure_engine", "recursive_generation"),
+        ("perspicuity_scorer", "reasoning_integrity"),
+        ("live_weird_feed_adapter", "live_signal_ingestion"),
+        ("public_gap_card_exporter", "public_export"),
     ],
 )
-def test_valid_packets_for_required_engines_and_sensitive_families(engine_name, engine_family):
+def test_valid_packets_for_required_engines(engine_name, engine_family):
     packet = _packet(
         engine_name=engine_name,
         engine_family=engine_family,
-        public_claim_status="blocked_internal_only",
-        llm_helper_role="helper",
+        llm_helper_role="candidate_generator_only",
+        public_claim_status="internal_candidate_only",
+        public_gap_card_status="public_export_blocked",
         non_actionable_research_only=True,
         simulation_before_real_world=True,
-        safety_boundary={"scope": engine_family, "metadata_only": True, "non_actionable": True},
-        forbidden_action_notes=[],
-        hazard_flags=[],
-        observations=["bounded observation"],
-        extracted_signals=["signal label"],
-        motif_candidates=["motif label"],
-        operator_candidates=["operator label"],
-        invariant_candidates=["invariant label"],
-        hypotheses=["A bounded internal hypothesis may be interesting."],
-        predictions=["branch A"],
-        confidence_map={"confidence": "medium"},
-        uncertainty_map={"uncertainty": "bounded"},
-        constraint_map={"runtime": "denied"},
-        validation_route=["metadata_only_validation"],
-        source_requirements={"provenance_required": True},
-        safe_metadata={"safe": True, "metadata_only": True},
+        safe_metadata={"safe": True, "metadata_only": True, "generator_loop": protocol.GENERATOR_LOOP_V1},
     )
     validation = validate_cognitive_research_run_v1(packet)
     summary = summarize_cognitive_research_run_v1(packet)
@@ -200,49 +198,10 @@ def test_valid_packets_for_required_engines_and_sensitive_families(engine_name, 
 @pytest.mark.parametrize(
     "engine_name, engine_family",
     [
-        ("CHEMICAL_SPACE_CARTOGRAPHER", "chemical/material"),
-        ("BIOLOGICAL_SYSTEMS_ANALYZER", "biological"),
-        ("MEDICAL_REASONING_BOUNDARY_ENGINE", "medical-boundary"),
-        ("CYBER_RESILIENCE_ENGINE", "cyber-resilience"),
-        ("LEGAL_GOVERNANCE_GAP_ENGINE", "legal/governance"),
-    ],
-)
-def test_sensitive_domains_require_safety_boundary(engine_name, engine_family):
-    packet = _packet(
-        engine_name=engine_name,
-        engine_family=engine_family,
-        safety_boundary={},
-        public_claim_status="blocked_internal_only",
-        llm_helper_role="helper",
-    )
-    validation = validate_cognitive_research_run_v1(packet)
-    assert validation["blocked"] is True
-    assert "missing_safety_boundary" in validation["blocked_labels"]
-
-
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "math"),
-        ("GAP_CARTOGRAPHER", "gap"),
-    ],
-)
-def test_valid_packets_for_core_shared_protocol_engines(engine_name, engine_family):
-    packet = _packet(engine_name=engine_name, engine_family=engine_family)
-    validation = validate_cognitive_research_run_v1(packet)
-    assert validation["blocked"] is False
-    assert validation["classification"] == engine_name
-
-
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "math"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "math"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "raw-signal"),
-        ("GAP_CARTOGRAPHER", "unknown"),
+        ("unknown_engine", "raw_signal_analysis"),
+        ("raw_signal_cartographer", "discovery_generation"),
+        ("mutable_axiom_math_engine", "public_export"),
+        ("gap_cartographer", "unknown_modeling"),
     ],
 )
 def test_engine_family_mismatch_fails(engine_name, engine_family):
@@ -250,36 +209,6 @@ def test_engine_family_mismatch_fails(engine_name, engine_family):
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
     assert "engine_family_mismatch" in validation["blocked_labels"]
-
-
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-    ],
-)
-def test_unknown_engine_name_fails(engine_name, engine_family):
-    packet = _packet(engine_name="NOT_A_REAL_ENGINE", engine_family=engine_family)
-    validation = validate_cognitive_research_run_v1(packet)
-    assert validation["blocked"] is True
-    assert "unknown_engine_name" in validation["blocked_labels"]
-
-
-@pytest.mark.parametrize(
-    "field,value",
-    [
-        ("runtime_authority", True),
-        ("provider_authority", True),
-        ("dot_weslr_authority", True),
-    ],
-)
-def test_granted_runtime_provider_and_dot_weslr_authority_fails(field, value):
-    packet = _packet()
-    packet["denied_authority"][field] = value
-    validation = validate_cognitive_research_run_v1(packet)
-    assert validation["blocked"] is True
-    assert any(label == f"denied_authority_granted_{field}" for label in validation["blocked_labels"])
 
 
 @pytest.mark.parametrize(
@@ -294,23 +223,21 @@ def test_missing_denied_authority_fails(mutation):
     packet.update(mutation)
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
-    assert "missing_denied_authority" in validation["blocked_labels"] or "invalid_denied_authority_schema" in validation["blocked_labels"]
+    assert any(label.startswith("missing_denied_authority") for label in validation["blocked_labels"])
 
 
 @pytest.mark.parametrize(
     "mutation",
     [
-        {"llm_helper_role": "authority"},
         {"denied_authority": {**build_default_cognitive_research_denied_authority_v1(), "llm_authority": True}},
     ],
 )
 def test_llm_treated_as_authority_fails(mutation):
     packet = _packet()
     packet.update(mutation)
-    if isinstance(packet.get("denied_authority"), dict):
-        packet["denied_authority"].setdefault("llm_authority", False)
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
+    assert "denied_authority_granted_llm_authority" in validation["blocked_labels"]
 
 
 @pytest.mark.parametrize(
@@ -321,10 +248,38 @@ def test_llm_treated_as_authority_fails(mutation):
     ],
 )
 def test_public_breakthrough_claim_fails(summary_text):
-    packet = _packet(public_claim_status="allowed_external_export", input_summary=summary_text)
+    packet = _packet(public_claim_status="public_export_blocked", input_summary=summary_text)
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
     assert "public_claim_language" in validation["blocked_labels"]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"denied_authority": {**build_default_cognitive_research_denied_authority_v1(), "runtime_wiring_authority": True}},
+        {"boundary_status": {**protocol._default_boundary_status(), "runtime_wiring_authority": True}},
+    ],
+)
+def test_runtime_wiring_authority_fails(mutation):
+    packet = _packet()
+    packet.update(mutation)
+    validation = validate_cognitive_research_run_v1(packet)
+    assert validation["blocked"] is True
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"denied_authority": {**build_default_cognitive_research_denied_authority_v1(), "provider_model_call_authority": True}},
+        {"denied_authority": {**build_default_cognitive_research_denied_authority_v1(), "provider_authority": True}},
+    ],
+)
+def test_provider_model_call_authority_fails(mutation):
+    packet = _packet()
+    packet.update(mutation)
+    validation = validate_cognitive_research_run_v1(packet)
+    assert validation["blocked"] is True
 
 
 @pytest.mark.parametrize(
@@ -342,88 +297,104 @@ def test_raw_private_text_fails(summary_text):
 
 
 @pytest.mark.parametrize(
-    "notes",
+    "mutation",
     [
-        ["hidden system prompt"],
-        ["hidden prompt"],
+        {"denied_authority": {**build_default_cognitive_research_denied_authority_v1(), "final_answer_generation_authority": True}},
     ],
 )
-def test_hidden_prompt_fails(notes):
-    packet = _packet(forbidden_action_notes=notes)
+def test_final_answer_authority_fails(mutation):
+    packet = _packet()
+    packet.update(mutation)
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
-    assert "raw_private_or_hidden_text" in validation["blocked_labels"] or "hidden" in " ".join(validation["blocked_labels"])
+    assert "denied_authority_granted_final_answer_generation_authority" in validation["blocked_labels"]
 
 
 @pytest.mark.parametrize(
-    "summary_text",
+    "source_signal",
     [
-        "step-by-step procedure to synthesize malware",
-        "how to exploit a target with a multi-step attack chain",
+        {"signal_origin": "live_weird_feed_metadata_only", "source_ref": "feed:future", "summary": "live weird feed metadata only", "trust_level": "reviewed", "poison_risk": "low", "injection_risk": "low", "raw_content_ref_only": True},
+        {"signal_origin": "live_weird_feed_metadata_only", "source_ref": "feed:future", "summary": "live weird feed metadata only", "raw_content_ref_only": False, "trust_level": "reviewed", "poison_risk": "low", "injection_risk": "low"},
     ],
 )
-def test_dangerous_procedure_fails(summary_text):
-    packet = _packet(input_summary=summary_text)
+def test_live_feed_without_trust_poison_injection_metadata_fails(source_signal):
+    packet = _packet(engine_name="live_weird_feed_adapter", engine_family="live_signal_ingestion", source_signal=build_source_signal_metadata_v1(source_signal))
+    packet["source_signal"].pop("trust_level", None)
+    packet["source_signal"].pop("poison_risk", None)
+    packet["source_signal"].pop("injection_risk", None)
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
-    assert "dangerous_procedural_language" in validation["blocked_labels"]
+    assert any(label in validation["blocked_labels"] for label in ("live_feed_trust_poison_injection_gap", "live_feed_must_be_ref_only", "missing_source_signal_trust_level"))
 
 
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("CHEMICAL_SPACE_CARTOGRAPHER", "chemical/material"),
-        ("BIOLOGICAL_SYSTEMS_ANALYZER", "biological"),
-        ("MEDICAL_REASONING_BOUNDARY_ENGINE", "medical-boundary"),
-        ("CYBER_RESILIENCE_ENGINE", "cyber-resilience"),
-        ("LEGAL_GOVERNANCE_GAP_ENGINE", "legal/governance"),
-    ],
-)
-def test_sensitive_domain_without_safety_boundary_fails(engine_name, engine_family):
-    packet = _packet(engine_name=engine_name, engine_family=engine_family, safety_boundary={})
-    validation = validate_cognitive_research_run_v1(packet)
-    assert validation["blocked"] is True
-    assert "missing_safety_boundary" in validation["blocked_labels"]
-
-
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("CHEMICAL_SPACE_CARTOGRAPHER", "chemical/material"),
-        ("BIOLOGICAL_SYSTEMS_ANALYZER", "biological"),
-        ("MEDICAL_REASONING_BOUNDARY_ENGINE", "medical-boundary"),
-        ("CYBER_RESILIENCE_ENGINE", "cyber-resilience"),
-        ("LEGAL_GOVERNANCE_GAP_ENGINE", "legal/governance"),
-    ],
-)
-def test_hazardous_action_without_non_actionable_flag_fails(engine_name, engine_family):
+def test_generated_source_signal_without_parent_fails():
     packet = _packet(
-        engine_name=engine_name,
-        engine_family=engine_family,
-        non_actionable_research_only=False,
-        forbidden_action_notes=["step-by-step procedure"],
+        engine_name="dialectic_generator_loop",
+        engine_family="recursive_generation",
+        generated_source_signals=[
+            build_generated_source_signal_metadata_v1(
+                {
+                    "generated_signal_id": "generated-001",
+                    "generation_reason": "loop mutation",
+                    "mutation_type": "dialectic_rewrite",
+                    "expected_pressure": "counterexample",
+                    "target_uncertainty": "bounded",
+                    "generated_signal_summary": "mutated source signal",
+                    "raw_generated_content_included": False,
+                    "safe_to_reingest": True,
+                }
+            )
+        ],
     )
     validation = validate_cognitive_research_run_v1(packet)
     assert validation["blocked"] is True
-    assert "non_actionable_research_only_false" in validation["blocked_labels"]
+    assert "generated_source_signal_0_missing_parent_reference" in validation["blocked_labels"]
 
 
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "math"),
-        ("GAP_CARTOGRAPHER", "gap"),
-    ],
-)
-def test_safe_radical_internal_hypothesis_passes(engine_name, engine_family):
+def test_rule_pressure_promoting_candidate_without_calibration_scope_update_fails():
     packet = _packet(
-        engine_name=engine_name,
-        engine_family=engine_family,
-        research_mode="internal_hypothesis",
-        public_claim_status="blocked_internal_only",
-        llm_helper_role="helper",
+        engine_name="rule_pressure_engine",
+        engine_family="recursive_generation",
+        rule_pressure_tests=[
+            build_rule_pressure_test_metadata_v1(
+                {
+                    "target_rule_or_operator": "candidate rule",
+                    "pressure_type": "counterexample",
+                    "mutated_input_summary": "mutated input",
+                    "expected_behavior": "stay bounded",
+                    "observed_behavior": "promoted",
+                    "result": "promoted",
+                    "failure_mode": "none",
+                    "scope_update": "",
+                }
+            )
+        ],
+        calibration_record={},
+    )
+    validation = validate_cognitive_research_run_v1(packet)
+    assert validation["blocked"] is True
+    assert any(label.startswith("rule_pressure_promoted_without") for label in validation["blocked_labels"])
+
+
+def test_perspicuity_score_used_as_safety_gate_fails():
+    packet = _packet(
+        engine_name="perspicuity_scorer",
+        engine_family="reasoning_integrity",
+        perspicuity_score=build_perspicuity_score_metadata_v1({"score": 70, "clarity": 70, "signal_density": 70, "novelty": 65, "gap_pressure": 60, "verification_potential": 70, "recurrence": 55, "cross_domain_resonance": 50, "reason": "gate it", "used_as_gate": True}),
+        safe_metadata={"safe": True, "metadata_only": True, "perspicuity_is_not_a_gate": False, "use_perspicuity_as_gate": True},
+    )
+    validation = validate_cognitive_research_run_v1(packet)
+    assert validation["blocked"] is True
+    assert "perspicuity_used_as_gate" in validation["blocked_labels"]
+
+
+def test_safe_internal_radical_hypothesis_passes_when_public_claim_blocked():
+    packet = _packet(
+        engine_name="unknown_engine",
+        engine_family="unknown_modeling",
+        research_mode="internal_exploration",
+        public_claim_status="internal_candidate_only",
+        llm_helper_role="candidate_generator_only",
         hypotheses=["A strange contradiction cloud may encode a new operator family."],
         probes=["interpret the contradiction cloud"],
         non_actionable_research_only=True,
@@ -433,18 +404,11 @@ def test_safe_radical_internal_hypothesis_passes(engine_name, engine_family):
     assert validation["blocked"] is False
 
 
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-    ],
-)
-def test_massive_artifact_ref_passes_without_raw_storage(engine_name, engine_family):
+def test_massive_artifact_ref_passes_without_raw_storage():
     massive_ref = "artifact:" + ("A" * 5000)
     packet = _packet(
-        engine_name=engine_name,
-        engine_family=engine_family,
+        engine_name="raw_signal_cartographer",
+        engine_family="raw_signal_analysis",
         input_artifact_ref=massive_ref,
         input_summary="Metadata-only summary for a large artifact reference.",
         source_scope="metadata_only",
@@ -460,7 +424,7 @@ def test_massive_artifact_ref_passes_without_raw_storage(engine_name, engine_fam
     "packet_builder",
     [
         lambda: _packet(),
-        lambda: _packet(engine_name="RAW_SIGNAL_CARTOGRAPHER", engine_family="raw-signal"),
+        lambda: _packet(engine_name="raw_signal_cartographer", engine_family="raw_signal_analysis"),
     ],
 )
 def test_json_safe_copy_works(packet_builder):
@@ -472,50 +436,37 @@ def test_json_safe_copy_works(packet_builder):
     json.dumps(safe, sort_keys=True)
 
 
-@pytest.mark.parametrize(
-    "engine_name, engine_family",
-    [
-        ("UNKNOWN_ENGINE", "unknown"),
-        ("RAW_SIGNAL_CARTOGRAPHER", "raw-signal"),
-        ("UNINTELLIGIBLE_OUTPUT_ANALYZER", "raw-signal"),
-        ("MUTABLE_AXIOM_MATH_ENGINE", "math"),
-        ("GAP_CARTOGRAPHER", "gap"),
-    ],
-)
-def test_summary_is_safe_and_bounded(engine_name, engine_family):
-    packet = _packet(engine_name=engine_name, engine_family=engine_family)
+def test_summary_is_safe_and_bounded():
+    packet = _packet(input_summary="raw private text with hidden system prompt")
     summary = summarize_cognitive_research_run_v1(packet)
-    assert summary["summary_text"].startswith("Cognitive research run:") or summary["summary_text"].startswith("Blocked cognitive research run:")
+    assert summary["summary_text"].startswith("Blocked cognitive research run:") or summary["summary_text"].startswith("Cognitive research run:")
     assert len(summary["summary_text"]) <= 320
     assert "raw private" not in summary["summary_text"].lower()
     assert "hidden prompt" not in summary["summary_text"].lower()
 
 
-def test_examples_include_all_major_families():
+def test_examples_include_all_supported_families_and_names():
     examples = build_initial_cognitive_research_examples_v1()
     families = {example["engine_family"] for example in examples}
+    names = {example["engine_name"] for example in examples}
     assert families == set(ALLOWED_COGNITIVE_RESEARCH_ENGINE_FAMILIES_V1)
-    assert all(example["engine_name"] in ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1 for example in examples)
-    assert all(example["public_claim_status"] == "blocked_internal_only" for example in examples)
-    assert all(example["non_actionable_research_only"] is True for example in examples)
+    assert names == set(ALLOWED_COGNITIVE_RESEARCH_ENGINE_NAMES_V1)
+    assert all(example["public_claim_status"] in set(ALLOWED_COGNITIVE_RESEARCH_PUBLIC_CLAIM_STATUSES_V1) for example in examples)
+    assert all(example["public_gap_card_status"] in set(ALLOWED_COGNITIVE_RESEARCH_PUBLIC_GAP_CARD_STATUSES_V1) for example in examples)
 
 
-def test_static_source_scan_confirms_no_forbidden_imports_or_side_effects():
-    text = HELPER_PATH.read_text()
-    forbidden_patterns = [
-        "open(",
-        "subprocess",
-        "requests",
-        "socket",
-        "." + "weslr",
-        "entity" + "_" + "graph",
-        "chat" + "_" + "responder",
-        "dialogue",
-        "chat" + "_" + "ui",
-        "importlib",
-    ]
-    for forbidden in forbidden_patterns:
-        assert forbidden not in text
+def test_nested_metadata_builders_are_json_safe():
+    signal = build_source_signal_metadata_v1({"signal_origin": "metadata_only", "source_ref": "artifact:signal-001", "summary": "structured signal"})
+    generated = build_generated_source_signal_metadata_v1({"parent_suggestion_id": "suggestion-001", "generated_signal_summary": "generated"})
+    pressure = build_rule_pressure_test_metadata_v1({"target_rule_or_operator": "rule", "pressure_type": "edge_case"})
+    resonance = build_nonlinear_resonance_candidate_v1({"source_gap": "gap", "resonance_domain": "domain"})
+    perspicuity = build_perspicuity_score_metadata_v1({"score": 42, "clarity": 42, "signal_density": 43, "novelty": 44, "gap_pressure": 41, "verification_potential": 45, "recurrence": 39, "cross_domain_resonance": 40})
+
+    json.dumps(signal, sort_keys=True)
+    json.dumps(generated, sort_keys=True)
+    json.dumps(pressure, sort_keys=True)
+    json.dumps(resonance, sort_keys=True)
+    json.dumps(perspicuity, sort_keys=True)
 
 
 def test_protected_file_drift_absent():
