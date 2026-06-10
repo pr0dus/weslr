@@ -42,6 +42,7 @@ ALLOWED_NEW_FILES = {
     "weslr/tests/test_cognitive_research_protocol_v1.py",
     "weslr/tests/test_raw_signal_cartographer_v1.py",
     "weslr/tests/release_gate_v1.py",
+    "docs/WESLR_FORECAST_CALIBRATION_BRIDGE_REVIEW_V1.md",
 }
 
 PROTECTED_FILES = {
