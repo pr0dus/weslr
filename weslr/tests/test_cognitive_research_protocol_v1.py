@@ -37,7 +37,9 @@ ALLOWED_NEW_FILES = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "docs/WESLR_RECURSIVE_COGNITIVE_RESEARCH_PROTOCOL_AND_GENERATOR_LOOP_V1.md",
     "weslr/cognitive_research_protocol.py",
+    "weslr/raw_signal_cartographer.py",
     "weslr/tests/test_cognitive_research_protocol_v1.py",
+    "weslr/tests/test_raw_signal_cartographer_v1.py",
     "weslr/tests/release_gate_v1.py",
 }
 
