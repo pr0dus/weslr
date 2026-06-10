@@ -138,6 +138,11 @@ _perspicuity_scorer_allowed_paths = {
     _perspicuity_scorer_test_path,
 }
 
+_perspicuity_scorer_review_doc = "docs/WESLR_PERSPICUITY_SCORER_REVIEW_V1.md"
+_perspicuity_scorer_review_allowed_paths = {
+    _perspicuity_scorer_review_doc,
+}
+
 _workflow_integrity_red_zone_helper_path = "weslr/workflow_integrity_red_zone.py"
 _workflow_integrity_red_zone_test_path = "weslr/tests/test_workflow_integrity_red_zone_v1.py"
 _workflow_integrity_red_zone_report_doc = (
@@ -15097,6 +15102,8 @@ def _check_git_scope():
         if path in _dialectic_generator_loop_allowed_paths:
             allowed = True
         if path in _perspicuity_scorer_allowed_paths:
+            allowed = True
+        if path in _perspicuity_scorer_review_allowed_paths:
             allowed = True
         if path in _cognitive_research_protocol_helpers_allowed_paths:
             allowed = True
