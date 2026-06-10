@@ -595,7 +595,7 @@ def build_unknown_engine_world_packet_v1(payload: Any = None, **overrides: Any) 
     data = _safe_packet_base("world_packet", payload, **overrides)
     family = _seed_world_family(data.get("world_family"))
     world = _world_template(family, data.get("world_id"))
-    world.update({k: v for k, v in data.items() if k not in {"world_family"}})
+    world.update({k: v for k, v in data.items() if k not in {"world_family"} and v is not None})
     world["world_family"] = family
     world["hidden_rule_content_included"] = bool(world.get("hidden_rule_content_included", False))
     world["observation_surface"] = _clean_prediction_like_text(world.get("observation_surface"), _lookup_world_defaults(family)["observation_surface"])
