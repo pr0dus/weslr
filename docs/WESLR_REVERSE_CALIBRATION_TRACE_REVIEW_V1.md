@@ -4,7 +4,7 @@
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `7911a9193d289e6042cf9538907d5cb2575f498c`
-- End HEAD: `7911a9193d289e6042cf9538907d5cb2575f498c` (review snapshot)
+- End HEAD: `81b7e676a2f604f5b9a6c116f2fc544aec3e3340`
 - File reviewed: `docs/WESLR_REVERSE_CALIBRATION_TRACE_V1.md`
 
 ## 2. Design-only assessment

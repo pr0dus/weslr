@@ -195,6 +195,13 @@ _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths = 
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_REVIEW_V1.md",
 }
 
+_reverse_calibration_trace_helper_path = "weslr/reverse_calibration_trace.py"
+_reverse_calibration_trace_test_path = "weslr/tests/test_reverse_calibration_trace_v1.py"
+_reverse_calibration_trace_allowed_paths = {
+    _reverse_calibration_trace_helper_path,
+    _reverse_calibration_trace_test_path,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15263,6 +15270,8 @@ def _check_git_scope():
         if path in _known_science_replay_selector_calibration_bridge_allowed_paths:
             allowed = True
         if path in _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths:
+            allowed = True
+        if path in _reverse_calibration_trace_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
