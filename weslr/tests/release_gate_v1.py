@@ -369,6 +369,13 @@ _known_science_replay_cases_design_allowed_paths = {
     _known_science_replay_cases_design_doc,
 }
 
+_known_science_replay_cases_review_doc = (
+    "docs/WESLR_KNOWN_SCIENCE_REPLAY_CASES_REVIEW_V1.md"
+)
+_known_science_replay_cases_review_allowed_paths = {
+    _known_science_replay_cases_review_doc,
+}
+
 _signal_vs_noise_design_doc = (
     "docs/WESLR_SIGNAL_VS_NOISE_ENGINE_BOUNDARY_V1.md"
 )
@@ -15265,6 +15272,8 @@ def _check_git_scope():
         if path in _unintelligible_output_analyzer_scope_reconciliation_allowed_paths:
             allowed = True
         if path in _known_science_replay_cases_design_allowed_paths:
+            allowed = True
+        if path in _known_science_replay_cases_review_allowed_paths:
             allowed = True
         if path in _signal_vs_noise_design_allowed_paths:
             allowed = True
