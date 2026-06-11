@@ -192,6 +192,7 @@ _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths = 
     "docs/WESLR_RECURSIVE_LOOP_SELECTOR_BRIDGE_COMPARATIVE_ARTIFACT_V1.md",
     "docs/WESLR_RECURSIVE_LOOP_SELECTOR_BRIDGE_COMPARATIVE_ARTIFACT_REVIEW_V1.md",
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_V1.md",
+    "docs/WESLR_REVERSE_CALIBRATION_TRACE_REVIEW_V1.md",
 }
 
 _workflow_boundary_bootstrap_allowed_paths = {
