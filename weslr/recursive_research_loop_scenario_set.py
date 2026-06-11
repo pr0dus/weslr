@@ -192,6 +192,34 @@ def _json_safe(value: Any) -> Any:
     return deepcopy(value)
 
 
+def _first_non_json_safe_path(value: Any, path: str = "result") -> str | None:
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return None
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return path
+    if isinstance(value, tuple):
+        return path
+    if isinstance(value, (set, frozenset)):
+        return path
+    if callable(value):
+        return path
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                return f"{path}.[non-string-key:{type(key).__name__}]"
+            issue = _first_non_json_safe_path(item, f"{path}.{key}")
+            if issue is not None:
+                return issue
+        return None
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            issue = _first_non_json_safe_path(item, f"{path}[{index}]")
+            if issue is not None:
+                return issue
+        return None
+    return path
+
+
 def _contains_forbidden_text(value: Any) -> bool:
     if isinstance(value, Mapping):
         return any(_contains_forbidden_text(item) for item in value.values())
@@ -603,6 +631,10 @@ def validate_recursive_research_loop_scenario_set_result_v1(result: Any) -> dict
 
     if _contains_forbidden_text(raw):
         blocked_labels.append("forbidden_result_text")
+
+    json_issue = _first_non_json_safe_path(raw)
+    if json_issue is not None:
+        blocked_labels.append("non_json_safe_result_structure")
 
     scenario_validation_labels: list[str] = []
     dry_run_validation_labels: list[str] = []

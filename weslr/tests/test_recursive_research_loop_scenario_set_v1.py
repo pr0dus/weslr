@@ -69,9 +69,11 @@ def test_run_recursive_research_loop_scenario_set_v1_validates_and_summarizes() 
 def test_recursive_research_loop_scenario_set_json_safe_redacts_unsafe_raw_fields() -> None:
     result = run_recursive_research_loop_scenario_set_v1()
     result["scenario_results"][0]["dry_run_result"]["raw_private_text"] = "hidden prompt secret provider call .weslr"
+    result["scenario_results"][0]["dry_run_result"]["extra"] = {2, 1}
     safe = to_recursive_research_loop_scenario_set_json_safe_v1(result)
 
     assert safe["scenario_results"][0]["dry_run_result"]["raw_private_text"] == "[redacted]"
+    assert safe["scenario_results"][0]["dry_run_result"]["extra"] == [1, 2]
     assert "hidden prompt" not in repr(safe).lower()
     assert ".weslr" not in repr(safe).lower()
 
@@ -153,3 +155,12 @@ def test_recursive_research_loop_scenario_set_result_fail_closed_on_missing_dist
 
     assert not validation["valid"]
     assert "missing_next_step_distribution" in validation["blocked_labels"]
+
+
+def test_recursive_research_loop_scenario_set_result_fail_closed_on_nested_non_json_safe_values() -> None:
+    result = run_recursive_research_loop_scenario_set_v1()
+    result["scenario_results"][0]["dry_run_result"]["extra"] = {1, 2}
+    validation = validate_recursive_research_loop_scenario_set_result_v1(result)
+
+    assert not validation["valid"]
+    assert "non_json_safe_result_structure" in validation["blocked_labels"]
