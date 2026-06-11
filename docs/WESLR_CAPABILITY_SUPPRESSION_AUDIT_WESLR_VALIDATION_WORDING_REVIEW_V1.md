@@ -4,7 +4,7 @@
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `2c5a557906988f51b8933d4e985185229e94efcd`
-- End HEAD: `2c5a557906988f51b8933d4e985185229e94efcd` (review snapshot)
+- End HEAD: `b303ec63a65dc7fb649c00e301bf892e4a819cf7`
 - File reviewed: `docs/WESLR_CAPABILITY_SUPPRESSION_AUDIT_V1.md`
 
 ## 2. Wording repair assessment
