@@ -47,6 +47,7 @@ ALLOWED_NEW_FILES = {
     "weslr/tests/test_minimal_recursive_research_loop_dry_run_executor_v1.py",
     "docs/WESLR_FORECAST_CALIBRATION_BRIDGE_REVIEW_V1.md",
     "docs/WESLR_KNOWN_SCIENCE_REPLAY_SELECTOR_CALIBRATION_BRIDGE_SAMPLE_OUTPUT_REVIEW_V1.md",
+    "docs/WESLR_CAPABILITY_SUPPRESSION_AUDIT_V1.md",
     "docs/WESLR_CAPABILITY_SUPPRESSION_AUDIT_REVIEW_V1.md",
     "entity_graph.py",
     "weslr/nonlinear_inspiration_resonance_engine.py",

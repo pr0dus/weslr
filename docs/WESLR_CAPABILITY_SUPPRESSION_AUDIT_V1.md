@@ -148,6 +148,7 @@ A future helper must fail closed on:
 - runtime action authorization
 - persistence/memory/project mutation authorization
 - provider/model/tool/retrieval/web implication
+- `.weslr` implication
 - hidden/private/protected markers
 - non-JSON-safe output
 
