@@ -381,12 +381,14 @@ _known_science_replay_helpers_test_path = "weslr/tests/test_known_science_replay
 _known_science_replay_helpers_review_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_HELPERS_REVIEW_V1.md"
 _known_science_replay_helpers_sample_review_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_SAMPLE_OUTPUT_REVIEW_V1.md"
 _known_science_replay_helpers_selector_bridge_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_SELECTOR_CALIBRATION_BRIDGE_V1.md"
+_known_science_replay_helpers_selector_bridge_review_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_SELECTOR_CALIBRATION_BRIDGE_REVIEW_V1.md"
 _known_science_replay_helpers_allowed_paths = {
     _known_science_replay_helpers_path,
     _known_science_replay_helpers_test_path,
     _known_science_replay_helpers_review_doc,
     _known_science_replay_helpers_sample_review_doc,
     _known_science_replay_helpers_selector_bridge_doc,
+    _known_science_replay_helpers_selector_bridge_review_doc,
 }
 
 _signal_vs_noise_design_doc = (
