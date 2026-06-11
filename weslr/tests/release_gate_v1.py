@@ -157,6 +157,13 @@ _recursive_research_loop_findings_digest_review_allowed_paths = {
     _recursive_research_loop_findings_digest_review_doc,
 }
 
+_scenario_sensitive_next_step_selector_helper_path = "weslr/scenario_sensitive_next_step_selector.py"
+_scenario_sensitive_next_step_selector_test_path = "weslr/tests/test_scenario_sensitive_next_step_selector_v1.py"
+_scenario_sensitive_next_step_selector_allowed_paths = {
+    _scenario_sensitive_next_step_selector_helper_path,
+    _scenario_sensitive_next_step_selector_test_path,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15188,6 +15195,8 @@ def _check_git_scope():
         if path in _recursive_research_loop_findings_digest_allowed_paths:
             allowed = True
         if path in _recursive_research_loop_findings_digest_review_allowed_paths:
+            allowed = True
+        if path in _scenario_sensitive_next_step_selector_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
