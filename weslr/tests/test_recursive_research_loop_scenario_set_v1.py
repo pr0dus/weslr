@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 
 import pytest
 
@@ -67,13 +68,28 @@ def test_run_recursive_research_loop_scenario_set_v1_validates_and_summarizes() 
 
 
 def test_recursive_research_loop_scenario_set_json_safe_redacts_unsafe_raw_fields() -> None:
+    class _Opaque:
+        pass
+
+    def _callable_marker():
+        return "not used"
+
     result = run_recursive_research_loop_scenario_set_v1()
+    result["scenario_results"][0]["dry_run_result"][1] = "numeric key value"
     result["scenario_results"][0]["dry_run_result"]["raw_private_text"] = "hidden prompt secret provider call .weslr"
     result["scenario_results"][0]["dry_run_result"]["extra"] = {2, 1}
+    result["scenario_results"][0]["dry_run_result"]["bytes_value"] = b"abc"
+    result["scenario_results"][0]["dry_run_result"]["opaque_value"] = _Opaque()
+    result["scenario_results"][0]["dry_run_result"]["callable_value"] = _callable_marker
     safe = to_recursive_research_loop_scenario_set_json_safe_v1(result)
 
+    assert safe["scenario_results"][0]["dry_run_result"]["1"] == "numeric key value"
     assert safe["scenario_results"][0]["dry_run_result"]["raw_private_text"] == "[redacted]"
     assert safe["scenario_results"][0]["dry_run_result"]["extra"] == [1, 2]
+    assert safe["scenario_results"][0]["dry_run_result"]["bytes_value"] == "[redacted:bytes]"
+    assert safe["scenario_results"][0]["dry_run_result"]["opaque_value"] == "[redacted:_Opaque]"
+    assert safe["scenario_results"][0]["dry_run_result"]["callable_value"].startswith("[redacted:")
+    assert json.dumps(safe)
     assert "hidden prompt" not in repr(safe).lower()
     assert ".weslr" not in repr(safe).lower()
 

@@ -185,11 +185,18 @@ def _json_safe(value: Any) -> Any:
         return [_json_safe(item) for item in value]
     if isinstance(value, set):
         return [_json_safe(item) for item in sorted(value, key=repr)]
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return f"[redacted:{type(value).__name__}]"
+    if callable(value):
+        return f"[redacted:{type(value).__name__}]"
     if isinstance(value, str):
         lowered = value.lower()
         if any(marker in lowered for marker in _FORBIDDEN_TEXT_MARKERS_V1):
             return "[redacted]"
-    return deepcopy(value)
+        return value
+    if isinstance(value, (bool, int, float)) or value is None:
+        return value
+    return f"[redacted:{type(value).__name__}]"
 
 
 def _first_non_json_safe_path(value: Any, path: str = "result") -> str | None:
