@@ -4,7 +4,7 @@
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `f04c6787690f2a77b6037a81c45c1ab8cba89de4`
-- End HEAD: `f04c6787690f2a77b6037a81c45c1ab8cba89de4` (review snapshot)
+- End HEAD: `c57763732115f85ab645753b6367addec2d6ae2d`
 - Files reviewed:
   - `weslr/known_science_replay_selector_calibration_bridge.py`
   - `weslr/tests/test_known_science_replay_selector_calibration_bridge_v1.py`
