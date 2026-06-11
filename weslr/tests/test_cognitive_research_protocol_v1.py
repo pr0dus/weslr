@@ -59,6 +59,7 @@ ALLOWED_NEW_FILES = {
     "docs/WESLR_THEORETICAL_CALIBRATION_AXES_V1.md",
     "docs/WESLR_THEORETICAL_CALIBRATION_AXES_REVIEW_V1.md",
     "docs/WESLR_THEORETICAL_CALIBRATION_AXES_SAMPLE_OUTPUT_REVIEW_V1.md",
+    "docs/WESLR_CALIBRATED_PROPOSED_DIRECTIONS_V1.md",
     "weslr/theoretical_calibration_axes.py",
     "weslr/tests/test_theoretical_calibration_axes_v1.py",
     "weslr/reverse_calibration_trace.py",
