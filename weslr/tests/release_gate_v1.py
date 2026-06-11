@@ -376,6 +376,13 @@ _known_science_replay_cases_review_allowed_paths = {
     _known_science_replay_cases_review_doc,
 }
 
+_known_science_replay_helpers_path = "weslr/known_science_replay_helpers.py"
+_known_science_replay_helpers_test_path = "weslr/tests/test_known_science_replay_helpers_v1.py"
+_known_science_replay_helpers_allowed_paths = {
+    _known_science_replay_helpers_path,
+    _known_science_replay_helpers_test_path,
+}
+
 _signal_vs_noise_design_doc = (
     "docs/WESLR_SIGNAL_VS_NOISE_ENGINE_BOUNDARY_V1.md"
 )
@@ -15274,6 +15281,8 @@ def _check_git_scope():
         if path in _known_science_replay_cases_design_allowed_paths:
             allowed = True
         if path in _known_science_replay_cases_review_allowed_paths:
+            allowed = True
+        if path in _known_science_replay_helpers_allowed_paths:
             allowed = True
         if path in _signal_vs_noise_design_allowed_paths:
             allowed = True
