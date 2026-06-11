@@ -205,6 +205,18 @@ _reverse_calibration_trace_allowed_paths = {
     _reverse_calibration_trace_test_path,
 }
 
+_theoretical_calibration_axes_helper_path = "weslr/theoretical_calibration_axes.py"
+_theoretical_calibration_axes_test_path = "weslr/tests/test_theoretical_calibration_axes_v1.py"
+_theoretical_calibration_axes_allowed_paths = {
+    _theoretical_calibration_axes_helper_path,
+    _theoretical_calibration_axes_test_path,
+}
+
+_theoretical_calibration_axes_review_doc = "docs/WESLR_THEORETICAL_CALIBRATION_AXES_REVIEW_V1.md"
+_theoretical_calibration_axes_review_allowed_paths = {
+    _theoretical_calibration_axes_review_doc,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15275,6 +15287,10 @@ def _check_git_scope():
         if path in _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths:
             allowed = True
         if path in _reverse_calibration_trace_allowed_paths:
+            allowed = True
+        if path in _theoretical_calibration_axes_allowed_paths:
+            allowed = True
+        if path in _theoretical_calibration_axes_review_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)

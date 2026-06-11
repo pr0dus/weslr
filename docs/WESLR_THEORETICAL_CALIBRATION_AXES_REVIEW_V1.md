@@ -4,7 +4,7 @@
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `fdb2cbfb1c977ab79f436a70086f932918eed706`
-- End HEAD: `fdb2cbfb1c977ab79f436a70086f932918eed706`
+- End HEAD: `f6100a119c39fecfb4ab892b554693b6ef9c8ea3`
 - File reviewed: `docs/WESLR_THEORETICAL_CALIBRATION_AXES_V1.md`
 
 ## 2. Design-only assessment
