@@ -4,7 +4,7 @@
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
 - Start HEAD: `82fe4450eaa664c6477aace30a6c3ae737a69eba`
-- End HEAD: `82fe4450eaa664c6477aace30a6c3ae737a69eba` (review-only snapshot)
+- End HEAD: `546d7492f8a11155887ddd3daa10822ab3c85dda`
 - File reviewed: `docs/WESLR_KNOWN_SCIENCE_REPLAY_SELECTOR_CALIBRATION_BRIDGE_V1.md`
 - Exact inline command used: review-only inline inspection; no temporary runner
 
