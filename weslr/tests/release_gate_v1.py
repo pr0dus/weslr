@@ -130,6 +130,11 @@ _recursive_research_loop_scenario_set_review_allowed_paths = {
     _recursive_research_loop_scenario_set_review_doc,
 }
 
+_recursive_research_loop_scenario_set_json_safety_review_doc = "docs/WESLR_RECURSIVE_RESEARCH_LOOP_SCENARIO_SET_JSON_SAFETY_REPAIR_REVIEW_V1.md"
+_recursive_research_loop_scenario_set_json_safety_review_allowed_paths = {
+    _recursive_research_loop_scenario_set_json_safety_review_doc,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15151,6 +15156,8 @@ def _check_git_scope():
         if path in _recursive_research_loop_scenario_set_allowed_paths:
             allowed = True
         if path in _recursive_research_loop_scenario_set_review_allowed_paths:
+            allowed = True
+        if path in _recursive_research_loop_scenario_set_json_safety_review_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
