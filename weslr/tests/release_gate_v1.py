@@ -184,6 +184,7 @@ _known_science_replay_selector_calibration_bridge_helper_review_doc = (
 )
 _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths = {
     _known_science_replay_selector_calibration_bridge_helper_review_doc,
+    "docs/WESLR_KNOWN_SCIENCE_REPLAY_SELECTOR_CALIBRATION_BRIDGE_CLAIM_LANGUAGE_REPAIR_REVIEW_V1.md",
 }
 
 _workflow_boundary_bootstrap_allowed_paths = {
