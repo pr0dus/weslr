@@ -47,6 +47,7 @@ ALLOWED_SELECTOR_OUTCOMES_V1 = (
 )
 FORBIDDEN_CLAIM_MARKERS_V1 = (
     "discovery",
+    "discovered",
     "proof",
     "breakthrough",
     "scientific result",
@@ -585,6 +586,8 @@ def validate_known_science_replay_selector_bridge_packet_v1(packet: Any) -> dict
         blocked_labels.append("invalid_selector_selected_next_step")
     if not _compact_text(raw.get("selector_selection_reason")):
         blocked_labels.append("missing_selector_selection_reason")
+    if not isinstance(raw.get("alignment_notes"), list) or not raw.get("alignment_notes"):
+        blocked_labels.append("missing_alignment_notes")
     if _compact_text(raw.get("alignment_status")) not in ALLOWED_ALIGNMENT_STATUSES_V1:
         blocked_labels.append("invalid_alignment_status")
     if _compact_text(raw.get("mismatch_type")) not in ALLOWED_MISMATCH_TYPES_V1:
@@ -598,20 +601,17 @@ def validate_known_science_replay_selector_bridge_packet_v1(packet: Any) -> dict
     _validate_authority_status(raw.get("authority_status"), blocked_labels)
     _validate_safe_metadata(raw.get("safe_metadata"), blocked_labels)
 
-    sensitive_text_fields = (
-        raw.get("source_known_outcome"),
-        raw.get("replay_phase_summary"),
-        raw.get("selector_input_metadata"),
-        raw.get("selector_selected_next_step"),
+    claim_language_fields = (
         raw.get("selector_selection_reason"),
+        raw.get("alignment_notes"),
         raw.get("calibration_observation"),
         raw.get("recommended_followup"),
     )
-    if any(_contains_markers(value, FORBIDDEN_PRIVATE_MARKERS_V1) for value in sensitive_text_fields):
+    if _contains_markers(raw, FORBIDDEN_PRIVATE_MARKERS_V1):
         blocked_labels.append("forbidden_private_text")
-    if any(_contains_markers(value, FORBIDDEN_RUNTIME_MARKERS_V1) for value in sensitive_text_fields):
+    if _contains_markers(raw, FORBIDDEN_RUNTIME_MARKERS_V1):
         blocked_labels.append("forbidden_runtime_or_tool_language")
-    if any(_contains_markers(value, FORBIDDEN_CLAIM_MARKERS_V1) for value in sensitive_text_fields):
+    if any(_contains_markers(value, FORBIDDEN_CLAIM_MARKERS_V1) for value in claim_language_fields):
         blocked_labels.append("forbidden_claim_language")
 
     non_json_safe_path = _first_non_json_safe_path(raw)

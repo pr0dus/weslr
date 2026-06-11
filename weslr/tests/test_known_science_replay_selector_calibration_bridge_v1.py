@@ -137,6 +137,49 @@ def test_alignment_and_mismatch_logic(phase_name, selected, expected_status, exp
     assert bridge.validate_known_science_replay_selector_bridge_packet_v1(packet)["valid"]
 
 
+@pytest.mark.parametrize(
+    "metadata_value",
+    [
+        {"case_title": "historical discovery replay"},
+        {"case_title": "pulsar discovery replay"},
+    ],
+)
+def test_neutral_selector_input_metadata_with_discovery_validates(metadata_value) -> None:
+    packet = _packet("pulsar_discovery_replay", "initial_strange_signal", selector_selected_next_step="probe")
+    packet["selector_input_metadata"] = metadata_value
+
+    validation = bridge.validate_known_science_replay_selector_bridge_packet_v1(packet)
+
+    assert validation["valid"]
+    assert json.dumps(bridge.to_known_science_replay_selector_bridge_json_safe_v1(packet))
+
+
+def test_forbidden_interpretations_with_discovery_claim_remain_a_warning_boundary() -> None:
+    packet = _packet("pulsar_discovery_replay", "initial_strange_signal", selector_selected_next_step="probe")
+    packet["forbidden_interpretations"] = ["discovery claim"]
+
+    validation = bridge.validate_known_science_replay_selector_bridge_packet_v1(packet)
+
+    assert validation["valid"]
+
+
+@pytest.mark.parametrize(
+    ("bad_text", "expected_label"),
+    [
+        ("WESLR discovered pulsars", "forbidden_claim_language"),
+        ("proof of discovery", "forbidden_claim_language"),
+        ("validated scientific result", "forbidden_claim_language"),
+    ],
+)
+def test_validation_fail_closed_on_live_claim_language(bad_text, expected_label) -> None:
+    packet = _packet("pulsar_discovery_replay", "initial_strange_signal", selector_selected_next_step="probe")
+    packet["selector_selection_reason"] = bad_text
+    validation = bridge.validate_known_science_replay_selector_bridge_packet_v1(packet)
+
+    assert not validation["valid"]
+    assert expected_label in validation["blocked_labels"]
+
+
 def test_unsafe_public_claim_attempt_blocks_safely() -> None:
     packet = _packet("pulsar_discovery_replay", "unsafe_public_claim_attempt", selector_selected_next_step="blocked")
 
@@ -184,6 +227,7 @@ def test_summarize_and_json_safe_export() -> None:
         ("source_replay_case_id", "", "missing_replay_case_id"),
         ("expected_internal_next_step", "", "missing_expected_internal_next_step"),
         ("selector_selected_next_step", "", "missing_selector_selected_next_step"),
+        ("alignment_notes", [], "missing_alignment_notes"),
         ("alignment_status", "not-a-status", "invalid_alignment_status"),
         ("mismatch_type", "not-a-mismatch", "invalid_mismatch_type"),
     ],
