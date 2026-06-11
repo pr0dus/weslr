@@ -195,6 +195,7 @@ _known_science_replay_selector_calibration_bridge_helper_review_allowed_paths = 
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_REVIEW_V1.md",
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_HELPER_REVIEW_V1.md",
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_SAMPLE_OUTPUT_REVIEW_V1.md",
+    "docs/WESLR_THEORETICAL_CALIBRATION_AXES_V1.md",
 }
 
 _reverse_calibration_trace_helper_path = "weslr/reverse_calibration_trace.py"

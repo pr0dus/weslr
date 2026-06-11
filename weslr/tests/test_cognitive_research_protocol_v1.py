@@ -56,6 +56,7 @@ ALLOWED_NEW_FILES = {
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_REVIEW_V1.md",
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_HELPER_REVIEW_V1.md",
     "docs/WESLR_REVERSE_CALIBRATION_TRACE_SAMPLE_OUTPUT_REVIEW_V1.md",
+    "docs/WESLR_THEORETICAL_CALIBRATION_AXES_V1.md",
     "weslr/reverse_calibration_trace.py",
     "weslr/tests/test_reverse_calibration_trace_v1.py",
     "entity_graph.py",
