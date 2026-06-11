@@ -379,10 +379,12 @@ _known_science_replay_cases_review_allowed_paths = {
 _known_science_replay_helpers_path = "weslr/known_science_replay_helpers.py"
 _known_science_replay_helpers_test_path = "weslr/tests/test_known_science_replay_helpers_v1.py"
 _known_science_replay_helpers_review_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_HELPERS_REVIEW_V1.md"
+_known_science_replay_helpers_sample_review_doc = "docs/WESLR_KNOWN_SCIENCE_REPLAY_SAMPLE_OUTPUT_REVIEW_V1.md"
 _known_science_replay_helpers_allowed_paths = {
     _known_science_replay_helpers_path,
     _known_science_replay_helpers_test_path,
     _known_science_replay_helpers_review_doc,
+    _known_science_replay_helpers_sample_review_doc,
 }
 
 _signal_vs_noise_design_doc = (
