@@ -157,6 +157,11 @@ _recursive_research_loop_findings_digest_review_allowed_paths = {
     _recursive_research_loop_findings_digest_review_doc,
 }
 
+_scenario_sensitive_next_step_selector_review_doc = "docs/WESLR_SCENARIO_SENSITIVE_NEXT_STEP_SELECTOR_REVIEW_V1.md"
+_scenario_sensitive_next_step_selector_review_allowed_paths = {
+    _scenario_sensitive_next_step_selector_review_doc,
+}
+
 _scenario_sensitive_next_step_selector_helper_path = "weslr/scenario_sensitive_next_step_selector.py"
 _scenario_sensitive_next_step_selector_test_path = "weslr/tests/test_scenario_sensitive_next_step_selector_v1.py"
 _scenario_sensitive_next_step_selector_allowed_paths = {
@@ -15195,6 +15200,8 @@ def _check_git_scope():
         if path in _recursive_research_loop_findings_digest_allowed_paths:
             allowed = True
         if path in _recursive_research_loop_findings_digest_review_allowed_paths:
+            allowed = True
+        if path in _scenario_sensitive_next_step_selector_review_allowed_paths:
             allowed = True
         if path in _scenario_sensitive_next_step_selector_allowed_paths:
             allowed = True
