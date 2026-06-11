@@ -51,6 +51,7 @@ ALLOWED_NEW_FILES = {
     "docs/WESLR_CAPABILITY_SUPPRESSION_AUDIT_REVIEW_V1.md",
     "docs/WESLR_CAPABILITY_SUPPRESSION_AUDIT_WESLR_VALIDATION_WORDING_REVIEW_V1.md",
     "docs/WESLR_RECURSIVE_LOOP_SELECTOR_BRIDGE_COMPARATIVE_ARTIFACT_V1.md",
+    "docs/WESLR_RECURSIVE_LOOP_SELECTOR_BRIDGE_COMPARATIVE_ARTIFACT_REVIEW_V1.md",
     "entity_graph.py",
     "weslr/nonlinear_inspiration_resonance_engine.py",
     "weslr/tests/test_nonlinear_inspiration_resonance_engine_v1.py",
