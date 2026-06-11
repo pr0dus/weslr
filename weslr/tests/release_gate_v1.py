@@ -227,6 +227,11 @@ _calibrated_proposed_directions_design_allowed_paths = {
     _calibrated_proposed_directions_design_doc,
 }
 
+_calibrated_proposed_directions_review_doc = "docs/WESLR_CALIBRATED_PROPOSED_DIRECTIONS_REVIEW_V1.md"
+_calibrated_proposed_directions_review_allowed_paths = {
+    _calibrated_proposed_directions_review_doc,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15305,6 +15310,8 @@ def _check_git_scope():
         if path in _theoretical_calibration_axes_sample_output_review_allowed_paths:
             allowed = True
         if path in _calibrated_proposed_directions_design_allowed_paths:
+            allowed = True
+        if path in _calibrated_proposed_directions_review_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
