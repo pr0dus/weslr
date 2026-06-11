@@ -169,6 +169,17 @@ _scenario_sensitive_next_step_selector_allowed_paths = {
     _scenario_sensitive_next_step_selector_test_path,
 }
 
+_known_science_replay_selector_calibration_bridge_helper_path = (
+    "weslr/known_science_replay_selector_calibration_bridge.py"
+)
+_known_science_replay_selector_calibration_bridge_test_path = (
+    "weslr/tests/test_known_science_replay_selector_calibration_bridge_v1.py"
+)
+_known_science_replay_selector_calibration_bridge_allowed_paths = {
+    _known_science_replay_selector_calibration_bridge_helper_path,
+    _known_science_replay_selector_calibration_bridge_test_path,
+}
+
 _workflow_boundary_bootstrap_allowed_paths = {
     "docs/PROJECT_BOUNDARIES_v1.md",
     "BUILD_STANDARD.md",
@@ -15233,6 +15244,8 @@ def _check_git_scope():
         if path in _scenario_sensitive_next_step_selector_review_allowed_paths:
             allowed = True
         if path in _scenario_sensitive_next_step_selector_allowed_paths:
+            allowed = True
+        if path in _known_science_replay_selector_calibration_bridge_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
