@@ -70,6 +70,7 @@ ALLOWED_NEW_FILES = {
     "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_V1.md",
     "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_REVIEW_V1.md",
     "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_HELPER_REVIEW_V1.md",
+    "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_SAMPLE_OUTPUT_REVIEW_V1.md",
     "weslr/authorized_ingestion_boundary.py",
     "weslr/tests/test_authorized_ingestion_boundary_v1.py",
     "weslr/real_findings_evidence_intake.py",

@@ -248,6 +248,7 @@ _authorized_ingestion_boundary_design_allowed_paths = {
     _authorized_ingestion_boundary_helper_path,
     _authorized_ingestion_boundary_test_path,
     "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_HELPER_REVIEW_V1.md",
+    "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_SAMPLE_OUTPUT_REVIEW_V1.md",
 }
 
 _real_findings_evidence_intake_helper_path = "weslr/real_findings_evidence_intake.py"
