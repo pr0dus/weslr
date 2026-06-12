@@ -269,6 +269,17 @@ _mlcf_controlled_information_ingestion_candidate_allowed_paths = {
     _mlcf_controlled_information_ingestion_candidate_test_path,
 }
 
+_mlcf_cross_domain_science_direction_candidate_helper_path = (
+    "weslr/mlcf_cross_domain_science_direction_candidate.py"
+)
+_mlcf_cross_domain_science_direction_candidate_test_path = (
+    "weslr/tests/test_mlcf_cross_domain_science_direction_candidate_v1.py"
+)
+_mlcf_cross_domain_science_direction_candidate_allowed_paths = {
+    _mlcf_cross_domain_science_direction_candidate_helper_path,
+    _mlcf_cross_domain_science_direction_candidate_test_path,
+}
+
 _calibrated_proposed_directions_helper_path = "weslr/calibrated_proposed_directions.py"
 _calibrated_proposed_directions_test_path = "weslr/tests/test_calibrated_proposed_directions_v1.py"
 _calibrated_proposed_directions_allowed_paths = {
@@ -15360,6 +15371,8 @@ def _check_git_scope():
         if path in _calibrated_proposed_directions_allowed_paths:
             allowed = True
         if path in _mlcf_controlled_information_ingestion_candidate_allowed_paths:
+            allowed = True
+        if path in _mlcf_cross_domain_science_direction_candidate_allowed_paths:
             allowed = True
         if path in _authorized_ingestion_boundary_design_allowed_paths:
             allowed = True
