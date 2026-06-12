@@ -3,8 +3,8 @@
 ## 1. Repo / run context
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
-- Start HEAD: `6bde1dbedd1dadf97b878287751567a354f5427a`
-- End HEAD: `6bde1dbedd1dadf97b878287751567a354f5427a`
+- Start HEAD: `8b6a205dad09cb15ecbca3a00704e2d17035188b`
+- End HEAD: `8b6a205dad09cb15ecbca3a00704e2d17035188b`
 - Helper review artifact committed: yes
 
 ## 2. Exact inline command used
