@@ -236,6 +236,13 @@ _calibrated_proposed_directions_review_allowed_paths = {
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_REVIEW_V1.md",
 }
 
+_real_findings_evidence_intake_helper_path = "weslr/real_findings_evidence_intake.py"
+_real_findings_evidence_intake_test_path = "weslr/tests/test_real_findings_evidence_intake_v1.py"
+_real_findings_evidence_intake_allowed_paths = {
+    _real_findings_evidence_intake_helper_path,
+    _real_findings_evidence_intake_test_path,
+}
+
 _calibrated_proposed_directions_helper_path = "weslr/calibrated_proposed_directions.py"
 _calibrated_proposed_directions_test_path = "weslr/tests/test_calibrated_proposed_directions_v1.py"
 _calibrated_proposed_directions_allowed_paths = {
