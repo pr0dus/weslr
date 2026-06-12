@@ -65,6 +65,7 @@ ALLOWED_NEW_FILES = {
     "docs/WESLR_CALIBRATED_PROPOSED_DIRECTIONS_SAMPLE_OUTPUT_REVIEW_V1.md",
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_V1.md",
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_REVIEW_V1.md",
+    "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_HELPER_REVIEW_V1.md",
     "weslr/real_findings_evidence_intake.py",
     "weslr/tests/test_real_findings_evidence_intake_v1.py",
     "weslr/calibrated_proposed_directions.py",
