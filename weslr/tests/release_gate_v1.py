@@ -238,6 +238,11 @@ _calibrated_proposed_directions_review_allowed_paths = {
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_SAMPLE_OUTPUT_REVIEW_V1.md",
 }
 
+_authorized_ingestion_boundary_design_doc = "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_V1.md"
+_authorized_ingestion_boundary_design_allowed_paths = {
+    _authorized_ingestion_boundary_design_doc,
+}
+
 _real_findings_evidence_intake_helper_path = "weslr/real_findings_evidence_intake.py"
 _real_findings_evidence_intake_test_path = "weslr/tests/test_real_findings_evidence_intake_v1.py"
 _real_findings_evidence_intake_allowed_paths = {
@@ -15334,6 +15339,8 @@ def _check_git_scope():
         if path in _calibrated_proposed_directions_review_allowed_paths:
             allowed = True
         if path in _calibrated_proposed_directions_allowed_paths:
+            allowed = True
+        if path in _authorized_ingestion_boundary_design_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
