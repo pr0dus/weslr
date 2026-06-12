@@ -235,6 +235,7 @@ _calibrated_proposed_directions_review_allowed_paths = {
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_V1.md",
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_REVIEW_V1.md",
     "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_HELPER_REVIEW_V1.md",
+    "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_SAMPLE_OUTPUT_REVIEW_V1.md",
 }
 
 _real_findings_evidence_intake_helper_path = "weslr/real_findings_evidence_intake.py"
