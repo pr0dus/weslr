@@ -240,9 +240,13 @@ _calibrated_proposed_directions_review_allowed_paths = {
 
 _authorized_ingestion_boundary_design_doc = "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_V1.md"
 _authorized_ingestion_boundary_design_review_doc = "docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_REVIEW_V1.md"
+_authorized_ingestion_boundary_helper_path = "weslr/authorized_ingestion_boundary.py"
+_authorized_ingestion_boundary_test_path = "weslr/tests/test_authorized_ingestion_boundary_v1.py"
 _authorized_ingestion_boundary_design_allowed_paths = {
     _authorized_ingestion_boundary_design_doc,
     _authorized_ingestion_boundary_design_review_doc,
+    _authorized_ingestion_boundary_helper_path,
+    _authorized_ingestion_boundary_test_path,
 }
 
 _real_findings_evidence_intake_helper_path = "weslr/real_findings_evidence_intake.py"
