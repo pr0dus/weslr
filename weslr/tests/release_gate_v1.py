@@ -232,6 +232,7 @@ _calibrated_proposed_directions_review_allowed_paths = {
     _calibrated_proposed_directions_review_doc,
     "docs/WESLR_CALIBRATED_PROPOSED_DIRECTIONS_HELPER_REVIEW_V1.md",
     "docs/WESLR_CALIBRATED_PROPOSED_DIRECTIONS_SAMPLE_OUTPUT_REVIEW_V1.md",
+    "docs/WESLR_REAL_FINDINGS_EVIDENCE_INTAKE_V1.md",
 }
 
 _calibrated_proposed_directions_helper_path = "weslr/calibrated_proposed_directions.py"
