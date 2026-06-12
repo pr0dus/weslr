@@ -3,8 +3,8 @@
 ## 1. Repo / run context
 - Repo root: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `master`
-- Start HEAD: `df68aa6cf25f5065a79b7daa499074517a1b755d`
-- End HEAD: `df68aa6cf25f5065a79b7daa499074517a1b755d`
+- Start HEAD: `8178e43bf9eae84e99ec2bac0812dc7137fa14d1`
+- End HEAD: `8178e43bf9eae84e99ec2bac0812dc7137fa14d1`
 - File reviewed: `docs/WESLR_AUTHORIZED_INGESTION_BOUNDARY_V1.md`
 
 ## 2. Files changed by review
@@ -155,7 +155,14 @@
 - `git diff --check` ✅
 - protected-file checks ✅
 
-## 17. Release gate status
+## 17. Discovery-preservation addendum assessment
+- Confirmed the addendum preserves broad search-direction imagination while keeping ingestion, retention, evidence conversion, trust, and authority constrained.
+- Confirmed the boundary does not collapse broad, interdisciplinary, speculative, novel, or early-stage directions into a false block.
+- Confirmed the design distinguishes search-direction proposal from permission to inspect, authorized source access, ingestion/source handling, raw retention, evidence-intake conversion, proposed-direction construction, and public/final-answer/proof/discovery claims.
+- Confirmed the new helper-implication fields are directionally correct: `search_direction_allowed`, `ingestion_authorized`, `raw_retention_allowed`, `evidence_intake_link_allowed`, `public_claim_allowed`, and `final_answer_authority`.
+- Confirmed the addendum is narrow and does not weaken the unsafe-source boundary.
+
+## 18. Release gate status
 - PASS
 
 ## 18. Protected files unchanged status

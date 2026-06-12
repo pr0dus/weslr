@@ -170,5 +170,51 @@ A future helper must fail closed on:
 - cross-user leakage
 - non-JSON-safe output
 
-## 13. Final design statement
+## 13. Discovery-Preservation Requirement
+The boundary must not reduce WESLR’s ability to propose broad evidence-seeking or search directions.
+The boundary controls authorization, source handling, raw retention, evidence conversion, trust, and authority.
+The boundary does not decide what topics are worth exploring.
+“Not authorized to ingest” must not mean “not allowed to propose what to investigate.”
+Safe curiosity remains allowed; unsafe ingestion remains blocked.
+
+The design must distinguish:
+- search direction proposal
+- permission request to inspect
+- authorized source access
+- ingestion or source handling
+- raw retention
+- conversion into evidence-intake packet
+- proposed-direction construction
+- public/final-answer/proof/discovery claim
+
+Broad discovery domains that must remain eligible for future search-direction proposals include:
+- science
+- engineering
+- materials
+- energy
+- medicine/life sciences metadata-only
+- mathematics
+- communications
+- physics
+- AI architectures
+- patents/public technical literature
+- owner-supplied observations
+- internal project artifacts
+- anomalous signals
+- cross-domain analogies
+
+The boundary must not reject a direction merely because it is broad, interdisciplinary, speculative, novel, or early-stage.
+It may only block or defer unsafe source access, unsafe retention, unsafe evidence conversion, unsafe authority, or unsafe claims.
+
+Future helper validation must include fields or checks that distinguish:
+- `search_direction_allowed`
+- `ingestion_authorized`
+- `raw_retention_allowed`
+- `evidence_intake_link_allowed`
+- `public_claim_allowed`
+- `final_answer_authority`
+
+A packet may allow broad search-direction proposal while keeping ingestion, raw retention, public claim, and final-answer authority false.
+
+## 14. Final design statement
 Authorized ingestion is a strictly controlled boundary layer for future source handling: it can authorize only bounded metadata/summaries for evidence-intake construction, never raw public truth, discovery, proof, or runtime authority.
