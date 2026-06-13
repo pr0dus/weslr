@@ -945,6 +945,18 @@ _first_live_slice_process_canon_required_markers = {
     "No runtime change in this task",
 }
 
+_first_controlled_live_searxng_metadata_only_sample_design_doc = (
+    "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_V1.md"
+)
+_first_controlled_live_searxng_metadata_only_sample_design_required_markers = {
+    "WESLR First Controlled Live SearXNG Metadata-Only Sample",
+    "No MLCF routing",
+    "no raw response",
+    "no evidence claims",
+    "no live HTTP in this lane",
+    "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md",
+}
+
 _cognition_target_model_doc = "docs/WESLR_COGNITION_TARGET_MODEL_V1.md"
 _cognition_target_model_required_markers = {
     "WESLR Cognition Target Model V1",
@@ -11531,6 +11543,12 @@ def _first_owner_approved_live_demotion_slice_design_doc_is_valid():
 def _first_live_slice_process_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_first_live_slice_process_canon_doc, _first_live_slice_process_canon_required_markers)
 
+def _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _first_controlled_live_searxng_metadata_only_sample_design_doc,
+        _first_controlled_live_searxng_metadata_only_sample_design_required_markers,
+    )
+
 
 def _cognition_target_model_doc_is_valid():
     return _doc_with_markers_is_valid(_cognition_target_model_doc, _cognition_target_model_required_markers)
@@ -13736,6 +13754,10 @@ def _check_git_scope():
     first_canned_helper_demotion_design_doc_valid = _first_canned_helper_demotion_design_doc_is_valid()
     first_owner_approved_live_demotion_slice_design_doc_valid = _first_owner_approved_live_demotion_slice_design_doc_is_valid()
     first_live_slice_process_canon_doc_valid = _first_live_slice_process_canon_doc_is_valid()
+
+    _first_controlled_live_searxng_metadata_only_sample_design_doc_valid = (
+        _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid()
+    )
     cognition_target_model_doc_valid = _cognition_target_model_doc_is_valid()
     ranked_state_grounded_response_formation_doc_valid = _ranked_state_grounded_response_formation_doc_is_valid()
     ranked_state_grounded_response_shadow_helpers_review_doc_valid = _ranked_state_grounded_response_shadow_helpers_review_doc_is_valid()
@@ -14036,7 +14058,15 @@ def _check_git_scope():
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_IMPLEMENTATION_REVIEW_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_QUERY_ENCODING_REPAIR_REVIEW_V1.md"
+
+            or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_V1.md"
         )
+        if path == _first_controlled_live_searxng_metadata_only_sample_design_doc:
+            allowed = _first_controlled_live_searxng_metadata_only_sample_design_doc_valid
+            if not _first_controlled_live_searxng_metadata_only_sample_design_doc_valid:
+                violations.append(
+                    f"  design doc missing required markers: {path}"
+                )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
             if not approval_doc_valid:
