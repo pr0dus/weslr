@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -129,10 +130,32 @@ def test_get_request_shape_is_correct_and_no_real_http_needed():
     assert packet["ok"] is True
     assert len(spy.calls) == 1
     url, timeout = spy.calls[0]
-    assert url.startswith("http://127.0.0.1:8888/search?")
-    assert "format=json" in url
-    assert "language=en" in url
+    parsed = urlparse(url)
+    assert parsed.scheme == "http"
+    assert parsed.netloc == "127.0.0.1:8888"
+    assert parsed.path == "/search"
+    params = parse_qs(parsed.query)
+    assert params["q"] == ["weslr boundary"]
+    assert params["format"] == ["json"]
+    assert params["language"] == ["en"]
+    assert "%25" not in url
     assert timeout == 5
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["weslr boundary design v1", "C++ RF sensing?", "naïve boundary — test"],
+)
+def test_query_is_encoded_once(query):
+    url = boundary.build_controlled_live_searxng_request_url_v1(
+        boundary.build_controlled_live_searxng_query_v1(query),
+        _enabled_config(),
+    )
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    assert params["q"] == [query]
+    assert "%25" not in url
+    assert "q=" in url
 
 
 def test_raw_response_body_not_retained_and_unknown_fields_dropped():

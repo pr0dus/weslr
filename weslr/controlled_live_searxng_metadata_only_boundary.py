@@ -270,8 +270,7 @@ def validate_controlled_live_searxng_query_v1(query_packet: Mapping[str, Any] | 
 
 def build_controlled_live_searxng_request_url_v1(query_packet: Mapping[str, Any], config: Mapping[str, Any]) -> str:
     base_url = _normalize_base_url(config.get("base_url", DEFAULT_URL_V1))
-    encoded_query = urllib.parse.quote(_compact_text(query_packet.get("query")), safe="")
-    params = urllib.parse.urlencode({"q": encoded_query, "format": "json", "language": "en"})
+    params = urllib.parse.urlencode({"q": _compact_text(query_packet.get("query")), "format": "json", "language": "en"})
     return f"{base_url}/search?{params}"
 
 
