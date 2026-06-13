@@ -983,6 +983,18 @@ _mlcf_routing_from_live_searxng_metadata_result_helper_required_markers = {
     "fail-closed validation rules",
 }
 
+_mlcf_routing_from_live_searxng_metadata_result_helper_review_doc = (
+    "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_REVIEW_V1.md"
+)
+_mlcf_routing_from_live_searxng_metadata_result_helper_review_required_markers = {
+    "WESLR MLCF Routing From Live SearXNG Metadata Result Helper Review V1",
+    "design-only assessment",
+    "input-contract assessment",
+    "allowed/forbidden field assessment",
+    "release-gate exact-allowance assessment",
+    "mlcf_routing_from_live_searxng_metadata_result_helper_design_review_valid_ready_for_branch_push",
+}
+
 _mlcf_routing_for_first_live_searxng_metadata_only_result_doc = (
     "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_V1.md"
 )
@@ -11627,6 +11639,13 @@ def _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid():
     )
 
 
+def _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc,
+        _mlcf_routing_from_live_searxng_metadata_result_helper_review_required_markers,
+    )
+
+
 def _mlcf_routing_for_first_live_searxng_metadata_only_result_doc_is_valid():
     return _doc_with_markers_is_valid(
         _mlcf_routing_for_first_live_searxng_metadata_only_result_doc,
@@ -13863,6 +13882,9 @@ def _check_git_scope():
     _mlcf_routing_from_live_searxng_metadata_result_helper_doc_valid = (
         _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid()
     )
+    _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc_valid = (
+        _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc_is_valid()
+    )
     _mlcf_routing_for_first_live_searxng_metadata_only_result_doc_valid = (
         _mlcf_routing_for_first_live_searxng_metadata_only_result_doc_is_valid()
     )
@@ -14178,6 +14200,7 @@ def _check_git_scope():
             or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
+            or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_REVIEW_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_REVIEW_V1.md"
         )
@@ -14192,6 +14215,12 @@ def _check_git_scope():
             if not _mlcf_routing_from_live_searxng_metadata_result_helper_doc_valid:
                 violations.append(
                     f"  helper design doc missing required markers: {path}"
+                )
+        if path == _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc:
+            allowed = _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc_valid
+            if not _mlcf_routing_from_live_searxng_metadata_result_helper_review_doc_valid:
+                violations.append(
+                    f"  helper review doc missing required markers: {path}"
                 )
         if path == _mlcf_routing_for_first_live_searxng_metadata_only_result_doc:
             allowed = _mlcf_routing_for_first_live_searxng_metadata_only_result_doc_valid
