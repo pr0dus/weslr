@@ -126,7 +126,7 @@ def test_github_mapping_result():
 def test_blocked_private_hidden_mapping_result():
     packet = _example("searxng_private_hidden_result_blocked_packet")
     record = packet["locator_records"][0]
-    assert record["source_class"] == "blocked_sensitive_source"
+    assert record["source_class"] == "blocked_private_or_hidden_source"
     assert record["allowed_next_step"] == "blocked_by_safety"
     assert record["authority_level_guess"] == "blocked"
 
@@ -201,7 +201,7 @@ def test_credential_token_cookie_api_key_markers_fail_closed(field, value, expec
     )
     validation = validate_mlcf_searxng_source_locator_adapter_packet_v1(packet)
     assert validation["valid"] is True
-    assert packet["locator_records"][0]["source_class"] == "blocked_sensitive_source"
+    assert packet["locator_records"][0]["source_class"] == "blocked_private_or_hidden_source"
     assert packet["allowed_next_step"] == "blocked_by_safety"
 
 

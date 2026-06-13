@@ -72,7 +72,7 @@ _AUTHORITY_FALSE_FLAGS_V1 = (
     "memory_mutation_authorized",
     "project_mutation_authorized",
     "cross_user_leakage_authorized",
-    "sensitive_source_authorized",
+    "hidden_private_protected_authorized",
 )
 
 _AUTHORITY_TEXT_MARKERS_V1 = (
@@ -370,7 +370,7 @@ def _infer_source_class(result: Mapping[str, Any], query_family: str) -> str:
     combined = f"{hint} {title} {domain} {url} {query_family}".lower()
 
     if _contains_any_marker(combined, _ALLOWED_BLOCKED_SOURCE_HINTS_V1):
-        return "blocked_sensitive_source"
+        return "blocked_private_or_hidden_source"
     if "github.com" in combined or "githubusercontent.com" in combined:
         return "github_repository"
     if any(marker in combined for marker in (".gov", ".mil", "government", "agency")):
@@ -401,7 +401,7 @@ def _infer_authority_level(source_class: str) -> str:
         return "implementation_evidence"
     if source_class in {"public_lab_or_university_artifact", "public_benchmark_or_test_suite"}:
         return "public_secondary"
-    if source_class == "blocked_sensitive_source":
+    if source_class == "blocked_private_or_hidden_source":
         return "blocked"
     return "unknown_authority"
 
@@ -423,7 +423,7 @@ def _infer_evidence_role(source_class: str) -> str:
         return "replication_target"
     if source_class == "public_benchmark_or_test_suite":
         return "counterexample_source"
-    if source_class == "blocked_sensitive_source":
+    if source_class == "blocked_private_or_hidden_source":
         return "not_authoritative_context"
     return "candidate_signal"
 
@@ -478,7 +478,7 @@ def _blocked_conditions_for_result(source_class: str, blocked_reason: str | None
     conditions = ["metadata-only result", "operator review required"]
     if source_class == "github_repository":
         conditions.append("GitHub is implementation evidence only")
-    if source_class == "blocked_sensitive_source":
+    if source_class == "blocked_private_or_hidden_source":
         conditions.append("safety block")
     if blocked_reason:
         conditions.append(blocked_reason)
@@ -518,14 +518,14 @@ def build_mlcf_locator_record_from_searxng_result_v1(
         raise ValueError("missing_domain")
 
     source_class = _infer_source_class(result, query_family)
-    blocked = source_class == "blocked_sensitive_source" or _result_has_unsafe_markers(result)
+    blocked = source_class == "blocked_private_or_hidden_source" or _result_has_unsafe_markers(result)
     if blocked:
-        source_class = "blocked_sensitive_source"
+        source_class = "blocked_private_or_hidden_source"
 
     authority_level = _infer_authority_level(source_class)
     evidence_role = _infer_evidence_role(source_class)
     freshness_status = _infer_freshness_status(result.get("published_date"))
-    if source_class == "blocked_sensitive_source":
+    if source_class == "blocked_private_or_hidden_source":
         freshness_status = freshness_status if freshness_status != "unknown" else "unknown"
     score = result.get("score")
     try:
@@ -535,7 +535,7 @@ def build_mlcf_locator_record_from_searxng_result_v1(
     relevance_reason = _bounded_reason(title, result.get("snippet"))
     if source_class == "github_repository":
         relevance_reason = (relevance_reason + " GitHub is implementation evidence only, not official science evidence alone.")[:220]
-    if source_class == "blocked_sensitive_source":
+    if source_class == "blocked_private_or_hidden_source":
         relevance_reason = "Blocked by safety."
         title = "Blocked source locator record"
         url = "blocked://source"
@@ -925,9 +925,9 @@ def validate_mlcf_searxng_source_locator_adapter_packet_v1(packet: Any) -> dict[
             if isinstance(record, Mapping) and _compact_text(record.get("source_class")) == "github_repository":
                 if _compact_text(record.get("authority_level_guess")) != "implementation_evidence":
                     labels.append("github_locator_claims_official_science_authority")
-            if isinstance(record, Mapping) and _compact_text(record.get("source_class")) == "blocked_sensitive_source":
+            if isinstance(record, Mapping) and _compact_text(record.get("source_class")) == "blocked_private_or_hidden_source":
                 if _compact_text(record.get("allowed_next_step")) != "blocked_by_safety":
-                    labels.append("blocked_sensitive_source_bad_next_step")
+                    labels.append("blocked_private_or_hidden_source_bad_next_step")
 
     blocked_results = packet.get("blocked_results", [])
     rejected_results = packet.get("rejected_results", [])
@@ -1111,7 +1111,7 @@ def build_initial_mlcf_searxng_source_locator_adapter_examples_v1() -> list[dict
                     "engine": "searxng",
                     "published_date": "2025-01-01",
                     "score": 0.1,
-                    "source_class_hint": "blocked_sensitive_source",
+                    "source_class_hint": "blocked_private_or_hidden_source",
                     "query_family": "blocked sensitive result family",
                 }
             ],

@@ -25,7 +25,6 @@ _ALLOWED_SOURCE_CLASSES_V1 = (
     "public_lab_or_university_artifact",
     "public_benchmark_or_test_suite",
     "blocked_private_or_hidden_source",
-    "blocked_sensitive_source",
 )
 
 _ALLOWED_AUTHORITY_LEVELS_V1 = (
@@ -85,7 +84,7 @@ _AUTHORITY_FALSE_FLAGS_V1 = (
     "memory_mutation_authorized",
     "project_mutation_authorized",
     "cross_user_leakage_authorized",
-    "sensitive_source_authorized",
+    "hidden_private_protected_authorized",
 )
 
 _AUTHORITY_TEXT_MARKERS_V1 = (
@@ -336,7 +335,7 @@ _SOURCE_CLASS_RULES_V1 = {
         "authority_levels": {"blocked"},
         "evidence_roles": {"not_authoritative_context", "safety_boundary_context"},
     },
-    "blocked_sensitive_source": {
+    "blocked_private_or_hidden_source": {
         "authority_levels": {"blocked"},
         "evidence_roles": {"not_authoritative_context", "safety_boundary_context"},
     },
