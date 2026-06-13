@@ -957,6 +957,18 @@ _first_controlled_live_searxng_metadata_only_sample_design_required_markers = {
     "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md",
 }
 
+_controlled_live_searxng_boundary_real_timestamp_repair_review_doc = (
+    "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
+)
+_controlled_live_searxng_boundary_real_timestamp_repair_review_required_markers = {
+    "WESLR Controlled Live SearXNG Boundary Real Timestamp Repair V1",
+    "Defect A",
+    "Defect B",
+    "2024-01-01T00:00:00",
+    "boundary_internal_error",
+    "mocked/injected HTTP only",
+}
+
 _cognition_target_model_doc = "docs/WESLR_COGNITION_TARGET_MODEL_V1.md"
 _cognition_target_model_required_markers = {
     "WESLR Cognition Target Model V1",
@@ -11543,10 +11555,18 @@ def _first_owner_approved_live_demotion_slice_design_doc_is_valid():
 def _first_live_slice_process_canon_doc_is_valid():
     return _doc_with_markers_is_valid(_first_live_slice_process_canon_doc, _first_live_slice_process_canon_required_markers)
 
+
 def _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid():
     return _doc_with_markers_is_valid(
         _first_controlled_live_searxng_metadata_only_sample_design_doc,
         _first_controlled_live_searxng_metadata_only_sample_design_required_markers,
+    )
+
+
+def _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_live_searxng_boundary_real_timestamp_repair_review_doc,
+        _controlled_live_searxng_boundary_real_timestamp_repair_review_required_markers,
     )
 
 
@@ -13758,6 +13778,9 @@ def _check_git_scope():
     _first_controlled_live_searxng_metadata_only_sample_design_doc_valid = (
         _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid()
     )
+    _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_valid = (
+        _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_is_valid()
+    )
     cognition_target_model_doc_valid = _cognition_target_model_doc_is_valid()
     ranked_state_grounded_response_formation_doc_valid = _ranked_state_grounded_response_formation_doc_is_valid()
     ranked_state_grounded_response_shadow_helpers_review_doc_valid = _ranked_state_grounded_response_shadow_helpers_review_doc_is_valid()
@@ -14060,12 +14083,19 @@ def _check_git_scope():
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_QUERY_ENCODING_REPAIR_REVIEW_V1.md"
 
             or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_V1.md"
+            or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
         )
         if path == _first_controlled_live_searxng_metadata_only_sample_design_doc:
             allowed = _first_controlled_live_searxng_metadata_only_sample_design_doc_valid
             if not _first_controlled_live_searxng_metadata_only_sample_design_doc_valid:
                 violations.append(
                     f"  design doc missing required markers: {path}"
+                )
+        if path == _controlled_live_searxng_boundary_real_timestamp_repair_review_doc:
+            allowed = _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_valid
+            if not _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_valid:
+                violations.append(
+                    f"  review doc missing required markers: {path}"
                 )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
