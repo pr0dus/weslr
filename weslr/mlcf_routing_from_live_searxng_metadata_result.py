@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 from typing import Any, Iterable, Mapping
 
 SCHEMA_VERSION_V1 = "mlcf_routing_from_live_searxng_metadata_result_helper_v1"
@@ -285,6 +286,8 @@ def _json_safe(value: Any) -> Any:
 
 def _first_non_json_safe_path(value: Any, path: str = "$") -> str | None:
     if value is None or isinstance(value, (str, int, float, bool)):
+        if isinstance(value, float) and not math.isfinite(value):
+            return path
         return None
     if isinstance(value, (bytes, bytearray, memoryview, tuple, set)):
         return path
@@ -332,6 +335,10 @@ def _compact_text_list(value: Any) -> list[str]:
         if text:
             result.append(text)
     return result
+
+
+def _is_finite_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and math.isfinite(value)
 
 
 def _stable_id(prefix: str, payload: Mapping[str, Any]) -> str:
@@ -487,10 +494,10 @@ def _validate_entry_fields(entry: Any, *, allow_blocked_overflow: bool = False) 
     access_status = _compact_text(entry.get("access_license_status_guess"), "unknown")
     privacy_status = _compact_text(entry.get("privacy_status_guess"), "unknown")
     rank = entry.get("rank")
-    if rank is not None and not isinstance(rank, (int, float)):
+    if rank is not None and not _is_finite_number(rank):
         issues.append("invalid_rank")
     score = entry.get("score")
-    if score is not None and not isinstance(score, (int, float)):
+    if score is not None and not _is_finite_number(score):
         issues.append("invalid_score")
     published_date = entry.get("published_date")
     if published_date is not None and not _compact_text(published_date):

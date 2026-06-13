@@ -321,6 +321,16 @@ def test_json_safe_serialization_converts_sets_and_tuples():
     assert json.dumps(safe)
 
 
+def test_non_finite_rank_or_score_fails_validation():
+    packet = _valid_packet()
+    packet["results"][0]["rank"] = float("nan")
+    packet["results"][1]["score"] = float("inf")
+    validation = helper.validate_mlcf_route_from_live_searxng_metadata_result_request_v1(packet)
+    assert validation["blocked"] is True
+    assert "invalid_rank" in validation["blocked_labels"]
+    assert "invalid_score" in validation["blocked_labels"]
+
+
 def test_denied_authority_flags_remain_false():
     route = helper.build_mlcf_route_from_live_searxng_metadata_result_v1(_valid_packet(), operator_role="owner")
     denied = route["denied_authority_flags"]
