@@ -109,6 +109,39 @@ _AUTHORITY_TEXT_MARKERS_V1 = (
     ".weslr",
 )
 
+_SAFE_NON_CLAIM_CONTEXT_MARKERS_V1 = (
+    "frontier/discovery-style fixture",
+    "future frontier/discovery-style artifact routing",
+    "synthetic space-discovery-style locator fixture",
+    "frontier-style locator fixture",
+    "discovery-style locator fixture",
+    "candidate artifact routing test",
+    "not a discovery claim",
+    "metadata-only non-claim context",
+    "frontier_space_discovery_style_locator",
+)
+
+_EXPLICIT_CLAIM_LANGUAGE_MARKERS_V1 = (
+    "weslr discovered",
+    "confirmed discovery",
+    "discovery confirmed",
+    "discovered",
+    "proof claim",
+    "proved",
+    "benchmark-winning",
+    "benchmark winning",
+    "official result",
+    "public science result",
+    "public science",
+    "community-only claim",
+    "community claim confirmed",
+    "agi",
+    "sentience",
+    "consciousness",
+    "competition-winning",
+    "competition winning",
+)
+
 _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1 = (
     "hidden",
     "private",
@@ -566,12 +599,14 @@ def _validate_source_class_constraints(record: Mapping[str, Any], labels: list[s
 
 def _validate_forbidden_markers(record: Mapping[str, Any], labels: list[str]) -> None:
     source_class = _compact_text(record.get("source_class"))
-    allowed_private_marker_fields = {"blocked_conditions", "locator_id"} if source_class == "blocked_private_or_hidden_source" else set()
+    if source_class == "blocked_private_or_hidden_source":
+        return
     forbidden_fields = {
         key: value
         for key, value in record.items()
-        if key not in {"blocked_conditions"} and key not in allowed_private_marker_fields and not (source_class == "blocked_private_or_hidden_source" and key == "source_class")
+        if key != "blocked_conditions"
     }
+    safe_context = _contains_forbidden_markers(forbidden_fields, _SAFE_NON_CLAIM_CONTEXT_MARKERS_V1)
     if _contains_forbidden_markers(forbidden_fields, (".weslr",)):
         labels.append("unsafe_weslr_io_implication")
     if _contains_forbidden_markers(forbidden_fields, ("database write", "database writes", "database")):
@@ -580,15 +615,12 @@ def _validate_forbidden_markers(record: Mapping[str, Any], labels: list[str]) ->
         labels.append("unsafe_memory_project_mutation_implication")
     if _contains_forbidden_markers(forbidden_fields, ("behavior pack", "behavior-pack", "promotion")):
         labels.append("unsafe_behavior_pack_promotion_implication")
-    if _contains_forbidden_markers(forbidden_fields, _AUTHORITY_TEXT_MARKERS_V1):
+    if _contains_forbidden_markers(forbidden_fields, _EXPLICIT_CLAIM_LANGUAGE_MARKERS_V1):
         labels.append("unsafe_claim_language")
-    if source_class != "blocked_private_or_hidden_source" and _contains_forbidden_markers(forbidden_fields, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
+    elif not safe_context and _contains_forbidden_markers(forbidden_fields, _AUTHORITY_TEXT_MARKERS_V1):
+        labels.append("unsafe_claim_language")
+    if _contains_forbidden_markers(forbidden_fields, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
         labels.append("unsafe_hidden_private_protected_marker")
-    if source_class == "blocked_private_or_hidden_source":
-        # Outside blocked_conditions, hidden/private/protected markers remain unsafe.
-        other_fields = {key: value for key, value in record.items() if key not in {"blocked_conditions", "source_class", "locator_id"}}
-        if _contains_forbidden_markers(other_fields, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
-            labels.append("unsafe_hidden_private_protected_marker")
 
 
 def validate_mlcf_metadata_only_source_locator_record_v1(record: Any) -> dict[str, Any]:

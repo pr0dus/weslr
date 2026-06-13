@@ -285,6 +285,128 @@ def test_hidden_private_protected_markers_fail_closed():
     assert "unsafe_hidden_private_protected_marker" in validation["blocked_labels"]
 
 
+def test_safe_frontier_fixture_language_passes_only_in_metadata_only_non_claim_context():
+    packet = build_mlcf_searxng_source_locator_adapter_packet_v1(
+        adapter_packet_id="frontier_fixture_safe_context_packet",
+        science_direction_id="frontier_space_discovery_style_locator_fixture",
+        science_direction_summary="Synthetic space-discovery-style locator fixture in metadata-only non-claim context for future frontier/discovery-style artifact routing.",
+        query_used="space telescope unusual object candidate artifact routing test not a discovery claim",
+        query_family="frontier_space_discovery_style_locator",
+        source_class_hint="mixed_public_official_locator",
+        searxng_results=[
+            {
+                "title": "[MOCK] Space Agency Notice About Candidate Unusual Object",
+                "url": "https://example.invalid/agency/candidate-object",
+                "domain": "example.invalid",
+                "snippet": "Mock agency announcement metadata for a candidate object.",
+                "engine": "searxng",
+                "published_date": "2024-02-01",
+                "score": 0.97,
+                "source_class_hint": "official_government_or_agency_data",
+                "query_family": "frontier_space_discovery_style_locator",
+            },
+            {
+                "title": "[MOCK BLOCKED] Forum Claim of Confirmed Discovery Without Primary Source",
+                "url": "https://example.invalid/forum/confirmed-discovery",
+                "domain": "example.invalid",
+                "snippet": "Community-only claim with no primary source.",
+                "engine": "searxng",
+                "published_date": "2024-04-10",
+                "score": 0.01,
+                "source_class_hint": "blocked_private_or_hidden_source",
+                "query_family": "frontier_space_discovery_style_locator",
+            },
+        ],
+    )
+    validation = validate_mlcf_searxng_source_locator_adapter_packet_v1(packet)
+    assert validation["valid"] is True
+    assert packet["allowed_next_step"] == "blocked_by_safety"
+    assert packet["locator_records"]
+    assert any(record["source_class"] == "blocked_private_or_hidden_source" for record in packet["locator_records"])
+
+
+def test_actual_discovery_claim_fails_closed():
+    packet = build_mlcf_searxng_source_locator_adapter_packet_v1(
+        adapter_packet_id="actual_discovery_claim_packet",
+        science_direction_id="frontier_space_discovery_style_locator_fixture",
+        science_direction_summary="WESLR discovered a candidate object in this sample.",
+        query_used="space telescope unusual object candidate artifact routing test",
+        query_family="frontier_space_discovery_style_locator",
+        source_class_hint="mixed_public_official_locator",
+        searxng_results=[
+            {
+                "title": "[MOCK] Space Agency Notice About Candidate Unusual Object",
+                "url": "https://example.invalid/agency/candidate-object",
+                "domain": "example.invalid",
+                "snippet": "Mock agency announcement metadata for a candidate object.",
+                "engine": "searxng",
+                "published_date": "2024-02-01",
+                "score": 0.97,
+                "source_class_hint": "official_government_or_agency_data",
+                "query_family": "frontier_space_discovery_style_locator",
+            },
+        ],
+    )
+    validation = validate_mlcf_searxng_source_locator_adapter_packet_v1(packet)
+    assert validation["blocked"] is True
+    assert "unsafe_claim_language" in validation["blocked_labels"]
+
+
+def test_actual_proof_and_public_science_claims_fail_closed():
+    packet = build_mlcf_searxng_source_locator_adapter_packet_v1(
+        adapter_packet_id="actual_proof_claim_packet",
+        science_direction_id="frontier_space_discovery_style_locator_fixture",
+        science_direction_summary="This is a proof claim and public science result sample.",
+        query_used="space telescope unusual object candidate artifact routing test",
+        query_family="frontier_space_discovery_style_locator",
+        source_class_hint="mixed_public_official_locator",
+        searxng_results=[
+            {
+                "title": "[MOCK] Public Research Paper on Candidate Astronomical Object",
+                "url": "https://example.invalid/paper/candidate-astronomical-object",
+                "domain": "example.invalid",
+                "snippet": "Mock paper metadata describing a candidate astronomical object.",
+                "engine": "searxng",
+                "published_date": "2024-02-15",
+                "score": 0.93,
+                "source_class_hint": "public_research_paper",
+                "query_family": "frontier_space_discovery_style_locator",
+            },
+        ],
+    )
+    validation = validate_mlcf_searxng_source_locator_adapter_packet_v1(packet)
+    assert validation["blocked"] is True
+    assert "unsafe_claim_language" in validation["blocked_labels"]
+
+
+def test_community_only_confirmed_discovery_result_remains_blocked():
+    packet = build_mlcf_searxng_source_locator_adapter_packet_v1(
+        adapter_packet_id="community_confirmed_discovery_packet",
+        science_direction_id="frontier_space_discovery_style_locator_fixture",
+        science_direction_summary="Synthetic space-discovery-style locator fixture in metadata-only non-claim context.",
+        query_used="space telescope unusual object candidate artifact routing test",
+        query_family="frontier_space_discovery_style_locator",
+        source_class_hint="mixed_public_official_locator",
+        searxng_results=[
+            {
+                "title": "[MOCK BLOCKED] Forum Claim of Confirmed Discovery Without Primary Source",
+                "url": "https://example.invalid/forum/confirmed-discovery",
+                "domain": "example.invalid",
+                "snippet": "Community-only claim with no primary source.",
+                "engine": "searxng",
+                "published_date": "2024-04-10",
+                "score": 0.01,
+                "source_class_hint": "blocked_private_or_hidden_source",
+                "query_family": "frontier_space_discovery_style_locator",
+            },
+        ],
+    )
+    validation = validate_mlcf_searxng_source_locator_adapter_packet_v1(packet)
+    assert validation["valid"] is True
+    assert packet["allowed_next_step"] == "blocked_by_safety"
+    assert packet["locator_records"][0]["source_class"] == "blocked_private_or_hidden_source"
+
+
 def test_json_safe_copy_preserves_locator_metadata_and_blocks_unsafe_structures():
     packet = _example("searxng_rf_wifi_standard_result_packet")
     packet["locator_records"][0]["authority_status"]["nested"] = {1, 2}

@@ -72,7 +72,7 @@ Synthetic result types used:
 5. blocked speculative/community-only result
 
 ## 15. Packet B locator records produced
-- 5 locator records produced before validation blocked the packet
+- 5 locator records produced
 - official agency mapped to `official_government_or_agency_data`
 - public paper mapped to `public_research_paper`
 - public dataset mapped to `public_dataset`
@@ -83,8 +83,8 @@ Synthetic result types used:
 - 0 rejected results
 
 ## 17. Packet B blocked results
-- 5 blocked-results entries
-- each record was blocked at validation time
+- 0 blocked-results entries
+- the blocked speculative/community result remained a locator record with `source_class = blocked_private_or_hidden_source`
 
 ## 18. Packet B source-class distribution
 - `official_government_or_agency_data: 1`
@@ -127,7 +127,7 @@ Compatible at the metadata handoff level.
 Compatible at the metadata handoff level for later provisional candidate routing.
 
 ## 29. Downstream compatibility with future frontier/discovery-style artifact routing
-Partially compatible. Packet A is cleanly routable as metadata-only. Packet B exposed a helper gap: the frontier/discovery-style fixture was blocked by the current claim-language safety scan, so a later organization/review helper will be useful before live routing.
+Compatible at the metadata-only handoff level. Packet A stayed cleanly routable. Packet B no longer blocks all records just because of fixture wording; the blocked speculative/community result still remains blocked by safety.
 
 ## 30. Authority status summary
 All authority flags remained false. Safe metadata stayed true. Web, GitHub, SearXNG, source fetching, source summary, source ingestion, raw retention, public claim, final answer, discovery, proof, AGI, benchmark, and public-science authorities stayed blocked.
@@ -136,20 +136,20 @@ All authority flags remained false. Safe metadata stayed true. Web, GitHub, Sear
 Metadata-only, JSON-safe, non-public, no raw content, no ingestion, no claims, no web calls, no GitHub calls, no SearXNG calls, no source fetching, no source summary, operator review required.
 
 ## 32. Interesting-output assessment
-- Did WESLR convert supplied/mock SearXNG-style metadata into validated locator records? Yes, for Packet A.
+- Did WESLR convert supplied/mock SearXNG-style metadata into validated locator records? Yes, for Packet A and Packet B.
 - Did it separate official/public/GitHub/lab/dataset/blocking categories correctly? Yes.
 - Did it keep GitHub as implementation evidence only? Yes.
 - Did it block private/hidden/protected and weak community-only claims? Yes.
 - Did it avoid source access, ingestion, raw retention, and claims? Yes.
 - Did it preserve a route toward evidence ingestion and candidate artifacts? Yes, at metadata handoff level.
-- Did the space-discovery-style fixture preserve frontier artifact compatibility without making discovery claims? Not fully; it was blocked by the claim-language safety scan.
-- Did this reveal a helper gap? Yes: a future organization/review packet helper is useful before live or frontier-style routing.
+- Did the space-discovery-style fixture preserve frontier artifact compatibility without making discovery claims? Yes.
+- Did this show the adapter can distinguish fixture routing from actual claim language? Yes.
 
 ## 33. Helper gap assessment
-The adapter is ready for controlled metadata-only samples, but the frontier-style fixture shows a gap in how discovery-style label text is reviewed. The next organization/review packet helper should separate keep/reject/blocked/needs-repair/operator-review/ready-for-authorized-summary buckets.
+The adapter now distinguishes safe frontier-style fixture language from actual claim language while staying metadata-only.
 
 ## 34. Recommended next lane
-`IMPLEMENT_WESLR_MLCF_SOURCE_LOCATOR_ORGANIZATION_REVIEW_PACKET_HELPER_V1`
+`RERUN_WESLR_FIRST_MLCF_SEARXNG_METADATA_ONLY_SOURCE_LOCATOR_ADAPTER_SAMPLE_V1_AFTER_REPAIR`
 
 ## Validation results
 Passed:

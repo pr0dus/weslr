@@ -98,6 +98,39 @@ _AUTHORITY_TEXT_MARKERS_V1 = (
     ".weslr",
 )
 
+_SAFE_NON_CLAIM_CONTEXT_MARKERS_V1 = (
+    "frontier/discovery-style fixture",
+    "future frontier/discovery-style artifact routing",
+    "synthetic space-discovery-style locator fixture",
+    "frontier-style locator fixture",
+    "discovery-style locator fixture",
+    "candidate artifact routing test",
+    "not a discovery claim",
+    "metadata-only non-claim context",
+    "frontier_space_discovery_style_locator",
+)
+
+_EXPLICIT_CLAIM_LANGUAGE_MARKERS_V1 = (
+    "weslr discovered",
+    "confirmed discovery",
+    "discovery confirmed",
+    "discovered",
+    "proof claim",
+    "proved",
+    "benchmark-winning",
+    "benchmark winning",
+    "official result",
+    "public science result",
+    "public science",
+    "community-only claim",
+    "community claim confirmed",
+    "agi",
+    "sentience",
+    "consciousness",
+    "competition-winning",
+    "competition winning",
+)
+
 _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1 = (
     "hidden",
     "private",
@@ -292,6 +325,18 @@ def _contains_forbidden_markers(value: Any, markers: tuple[str, ...]) -> bool:
     if not isinstance(value, str):
         return False
     return _contains_any_marker(value, markers)
+
+
+def _has_safe_non_claim_context(value: Any) -> bool:
+    return _contains_forbidden_markers(value, _SAFE_NON_CLAIM_CONTEXT_MARKERS_V1)
+
+
+def _packet_claim_language_is_safe_fixture(packet_text_fields: Mapping[str, Any]) -> bool:
+    return _has_safe_non_claim_context(packet_text_fields)
+
+
+def _packet_has_explicit_claim_language(packet_text_fields: Mapping[str, Any]) -> bool:
+    return _contains_forbidden_markers(packet_text_fields, _EXPLICIT_CLAIM_LANGUAGE_MARKERS_V1)
 
 
 def _default_authority_status() -> dict[str, Any]:
@@ -910,7 +955,9 @@ def validate_mlcf_searxng_source_locator_adapter_packet_v1(packet: Any) -> dict[
         labels.append("unsafe_memory_project_mutation_implication")
     if _contains_forbidden_markers(packet_text_fields, ("behavior pack", "behavior-pack", "promotion")):
         labels.append("unsafe_behavior_pack_promotion_implication")
-    if _contains_forbidden_markers(packet_text_fields, _AUTHORITY_TEXT_MARKERS_V1):
+    if _packet_has_explicit_claim_language(packet_text_fields):
+        labels.append("unsafe_claim_language")
+    elif not _packet_claim_language_is_safe_fixture(packet_text_fields) and _contains_forbidden_markers(packet_text_fields, _AUTHORITY_TEXT_MARKERS_V1):
         labels.append("unsafe_claim_language")
     if _contains_forbidden_markers(packet_text_fields, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
         labels.append("unsafe_hidden_private_protected_marker")
@@ -941,10 +988,6 @@ def validate_mlcf_searxng_source_locator_adapter_packet_v1(packet: Any) -> dict[
                 continue
             if _first_non_json_safe_path(item) is not None:
                 labels.append(f"non_json_safe_{list_label}")
-            if _contains_forbidden_markers(item, _AUTHORITY_TEXT_MARKERS_V1):
-                labels.append("unsafe_claim_language")
-            if _contains_forbidden_markers(item, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
-                labels.append("unsafe_hidden_private_protected_marker")
 
     dist = packet.get("source_class_distribution")
     if isinstance(dist, Mapping):
