@@ -957,6 +957,18 @@ _first_controlled_live_searxng_metadata_only_sample_design_required_markers = {
     "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md",
 }
 
+_first_controlled_live_searxng_metadata_only_sample_result_doc = (
+    "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md"
+)
+_first_controlled_live_searxng_metadata_only_sample_result_required_markers = {
+    "WESLR First Controlled Live SearXNG Metadata-Only Sample Result V1",
+    "Run by: operator (manual hand-issued)",
+    "metadata_only_locator_candidates",
+    "external_evidence_unverified",
+    "No MLCF routing was performed",
+    "No raw response body",
+}
+
 _controlled_live_searxng_boundary_real_timestamp_repair_review_doc = (
     "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
 )
@@ -11562,6 +11574,12 @@ def _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid():
         _first_controlled_live_searxng_metadata_only_sample_design_required_markers,
     )
 
+def _first_controlled_live_searxng_metadata_only_sample_result_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _first_controlled_live_searxng_metadata_only_sample_result_doc,
+        _first_controlled_live_searxng_metadata_only_sample_result_required_markers,
+    )
+
 
 def _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -13778,6 +13796,10 @@ def _check_git_scope():
     _first_controlled_live_searxng_metadata_only_sample_design_doc_valid = (
         _first_controlled_live_searxng_metadata_only_sample_design_doc_is_valid()
     )
+
+    _first_controlled_live_searxng_metadata_only_sample_result_doc_valid = (
+        _first_controlled_live_searxng_metadata_only_sample_result_doc_is_valid()
+    )
     _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_valid = (
         _controlled_live_searxng_boundary_real_timestamp_repair_review_doc_is_valid()
     )
@@ -14083,8 +14105,16 @@ def _check_git_scope():
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_QUERY_ENCODING_REPAIR_REVIEW_V1.md"
 
             or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_V1.md"
+
+            or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
         )
+        if path == _first_controlled_live_searxng_metadata_only_sample_result_doc:
+            allowed = _first_controlled_live_searxng_metadata_only_sample_result_doc_valid
+            if not _first_controlled_live_searxng_metadata_only_sample_result_doc_valid:
+                violations.append(
+                    f"  result doc missing required markers: {path}"
+                )
         if path == _first_controlled_live_searxng_metadata_only_sample_design_doc:
             allowed = _first_controlled_live_searxng_metadata_only_sample_design_doc_valid
             if not _first_controlled_live_searxng_metadata_only_sample_design_doc_valid:
