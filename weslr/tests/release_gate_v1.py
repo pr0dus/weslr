@@ -14035,6 +14035,7 @@ def _check_git_scope():
             or path == "docs/WESLR_OPERATOR_DASHBOARD_METADATA_REPORT_IMPLEMENTATION_REPORT_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_IMPLEMENTATION_REVIEW_V1.md"
+            or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_BOUNDARY_QUERY_ENCODING_REPAIR_REVIEW_V1.md"
         )
         if path == _atomic_helper_approval_doc:
             allowed = approval_doc_valid
