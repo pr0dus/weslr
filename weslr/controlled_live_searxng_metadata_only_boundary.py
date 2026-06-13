@@ -368,7 +368,9 @@ def _derive_freshness_status(published_date: Any) -> str:
     cleaned = text.replace("Z", "+00:00")
     try:
         parsed = datetime.fromisoformat(cleaned) if not cleaned.isdigit() else datetime(int(cleaned), 1, 1, tzinfo=timezone.utc)
-    except ValueError:
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError, OverflowError):
         return "unknown"
     now = datetime.now(timezone.utc)
     if parsed > now:
@@ -559,31 +561,34 @@ def run_controlled_live_searxng_metadata_only_boundary_v1(
     if not isinstance(raw_results, list):
         return _empty_packet(query_packet["query"], built_config, "searxng_results_incomplete", status=status, latency_ms=latency_ms)
 
-    kept: list[dict[str, Any]] = []
-    blocked: list[dict[str, str]] = []
-    for idx, item in enumerate(raw_results[: max(len(raw_results), built_config["max_results"])]):
-        if not isinstance(item, Mapping):
-            continue
-        result, blocked_item = _result_from_raw(item, query_packet, idx + 1, built_config["snippet_policy"] == "enabled")
-        if blocked_item is not None:
-            blocked.append(blocked_item)
-            continue
-        if result is not None:
-            kept.append({key: result.get(key) for key in ALLOWED_RESULT_FIELDS_V1})
-        if len(kept) >= built_config["max_results"]:
-            break
-    if len(raw_results) > built_config["max_results"]:
-        for overflow in raw_results[built_config["max_results"]:]:
-            if isinstance(overflow, Mapping):
-                blocked.append(_blocked_packet(_compact_text(overflow.get("url")), _compact_text(overflow.get("title")), "result_cap_exceeded"))
-    packet = _empty_packet(query_packet["query"], built_config, "ok" if kept else "no_results", status=status, latency_ms=latency_ms)
-    packet["ok"] = bool(kept)
-    packet["results"] = kept
-    packet["blocked"] = blocked
-    packet["results_count_kept"] = len(kept)
-    packet["results_count_blocked"] = len(blocked)
-    packet["reason"] = "ok" if kept else "no_results"
-    return packet
+    try:
+        kept: list[dict[str, Any]] = []
+        blocked: list[dict[str, str]] = []
+        for idx, item in enumerate(raw_results[: max(len(raw_results), built_config["max_results"])]):
+            if not isinstance(item, Mapping):
+                continue
+            result, blocked_item = _result_from_raw(item, query_packet, idx + 1, built_config["snippet_policy"] == "enabled")
+            if blocked_item is not None:
+                blocked.append(blocked_item)
+                continue
+            if result is not None:
+                kept.append({key: result.get(key) for key in ALLOWED_RESULT_FIELDS_V1})
+            if len(kept) >= built_config["max_results"]:
+                break
+        if len(raw_results) > built_config["max_results"]:
+            for overflow in raw_results[built_config["max_results"]:]:
+                if isinstance(overflow, Mapping):
+                    blocked.append(_blocked_packet(_compact_text(overflow.get("url")), _compact_text(overflow.get("title")), "result_cap_exceeded"))
+        packet = _empty_packet(query_packet["query"], built_config, "ok" if kept else "no_results", status=status, latency_ms=latency_ms)
+        packet["ok"] = bool(kept)
+        packet["results"] = kept
+        packet["blocked"] = blocked
+        packet["results_count_kept"] = len(kept)
+        packet["results_count_blocked"] = len(blocked)
+        packet["reason"] = "ok" if kept else "no_results"
+        return packet
+    except Exception:
+        return _empty_packet(query_packet["query"], built_config, "boundary_internal_error", status=status, latency_ms=latency_ms)
 
 
 def validate_controlled_live_searxng_metadata_only_result_packet_v1(packet: Mapping[str, Any] | None) -> dict[str, Any]:

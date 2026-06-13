@@ -240,6 +240,59 @@ def test_freshness_access_and_privacy_guesses_bounded():
     assert result["access_license_status_guess"] in {"open_access", "registration_required", "paywalled", "unknown"}
     assert result["privacy_status_guess"] in {"public_non_personal", "mixed_personal_signals", "personal_data_present"}
 
+@pytest.mark.parametrize(
+    "published_date",
+    [
+        "2024-01-01T00:00:00",
+        "2024-01-01T00:00:00+00:00",
+        "2024-01-01T00:00:00Z",
+    ],
+)
+def test_timestamp_formats_process_without_error(published_date):
+    spy = GetterSpy({"results": [_result(publishedDate=published_date)]})
+    packet = run_controlled_live_searxng_metadata_only_boundary_v1("weslr boundary", config=_enabled_config(), http_getter=spy)
+    validation = validate_controlled_live_searxng_metadata_only_result_packet_v1(packet)
+    assert validation["valid"] is True
+    assert packet["ok"] is True
+    assert packet["reason"] == "ok"
+    assert packet["results"][0]["freshness_status_guess"] != "unknown"
+    assert packet["raw_content_retained"] is False
+    assert packet["authority_status"]["all_authority_flags_false"] is True
+
+
+def test_malformed_and_future_naive_timestamps_fail_closed_on_freshness():
+    cases = [
+        ("not-a-date", "unknown"),
+        ("2999-01-01T00:00:00", "unknown"),
+    ]
+    for published_date, expected in cases:
+        spy = GetterSpy({"results": [_result(publishedDate=published_date)]})
+        packet = run_controlled_live_searxng_metadata_only_boundary_v1("weslr boundary", config=_enabled_config(), http_getter=spy)
+        validation = validate_controlled_live_searxng_metadata_only_result_packet_v1(packet)
+        assert validation["valid"] is True
+        assert packet["ok"] is True
+        assert packet["results"][0]["freshness_status_guess"] == expected
+        assert packet["raw_content_retained"] is False
+
+
+def test_internal_error_envelope_on_per_result_processing_exception(monkeypatch):
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(boundary, "_result_from_raw", boom)
+    spy = GetterSpy({"results": [_result()]})
+    packet = run_controlled_live_searxng_metadata_only_boundary_v1("weslr boundary", config=_enabled_config(), http_getter=spy)
+    validation = validate_controlled_live_searxng_metadata_only_result_packet_v1(packet)
+    assert validation["valid"] is True
+    assert packet["ok"] is False
+    assert packet["reason"] == "boundary_internal_error"
+    assert packet["results"] == []
+    assert packet["blocked"] == []
+    assert packet["searxng_call_status"] == 200
+    assert packet["searxng_call_latency_ms"] is not None
+    assert "boom" not in json.dumps(packet)
+    assert "Traceback" not in json.dumps(packet)
+
 
 def test_no_authority_flag_true_and_json_safe_conversion_and_summary():
     spy = GetterSpy({"results": [_result()]})
