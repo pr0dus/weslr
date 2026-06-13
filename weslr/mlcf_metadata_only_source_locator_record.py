@@ -25,6 +25,7 @@ _ALLOWED_SOURCE_CLASSES_V1 = (
     "public_lab_or_university_artifact",
     "public_benchmark_or_test_suite",
     "blocked_private_or_hidden_source",
+    "blocked_sensitive_source",
 )
 
 _ALLOWED_AUTHORITY_LEVELS_V1 = (
@@ -84,7 +85,7 @@ _AUTHORITY_FALSE_FLAGS_V1 = (
     "memory_mutation_authorized",
     "project_mutation_authorized",
     "cross_user_leakage_authorized",
-    "hidden_private_protected_authorized",
+    "sensitive_source_authorized",
 )
 
 _AUTHORITY_TEXT_MARKERS_V1 = (
@@ -335,6 +336,10 @@ _SOURCE_CLASS_RULES_V1 = {
         "authority_levels": {"blocked"},
         "evidence_roles": {"not_authoritative_context", "safety_boundary_context"},
     },
+    "blocked_sensitive_source": {
+        "authority_levels": {"blocked"},
+        "evidence_roles": {"not_authoritative_context", "safety_boundary_context"},
+    },
 }
 
 
@@ -378,7 +383,7 @@ def _default_safe_metadata() -> dict[str, Any]:
         "no_benchmark_claims": True,
         "no_agi_claims": True,
         "no_public_science_claims": True,
-        "no_hidden_private_protected_markers": True,
+        "no_sensitive_source_markers": True,
         "source_ingestion_authorized": False,
         "raw_retention_authorized": False,
         "web_call_authority": False,
@@ -556,8 +561,8 @@ def _validate_source_class_constraints(record: Mapping[str, Any], labels: list[s
         if _compact_text(record.get("privacy_status")) != "high":
             labels.append("blocked_private_or_hidden_source_bad_privacy_status")
         blocked_conditions = _normalize_text_list(record.get("blocked_conditions"))
-        if not any(_contains_any_marker(item, ("private", "hidden", "protected")) for item in blocked_conditions):
-            labels.append("blocked_private_or_hidden_source_missing_private_hidden_protected_block")
+        if not blocked_conditions:
+            labels.append("blocked_private_or_hidden_source_missing_blocked_conditions")
 
 
 def _validate_forbidden_markers(record: Mapping[str, Any], labels: list[str]) -> None:
