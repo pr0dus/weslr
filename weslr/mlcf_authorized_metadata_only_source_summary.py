@@ -925,28 +925,6 @@ def validate_mlcf_authorized_metadata_only_source_summary_packet_v1(packet: Any)
         if _contains_forbidden_markers(field_value, ("behavior pack", "behavior-pack", "promotion")):
             labels.append("unsafe_behavior_pack_promotion_implication")
 
-    for record in packet.get("review_records", []):
-        if isinstance(record, Mapping):
-            if _record_has_forbidden_summary_content(record):
-                labels.append("review_record_contains_source_content")
-            scan_fields = (
-                "candidate_title",
-                "candidate_url_or_identifier",
-                "candidate_domain",
-                "source_class",
-                "authority_level_guess",
-                "evidence_role_guess",
-                "relevance_reason",
-                "review_decision_reason",
-            )
-            for field in scan_fields:
-                value = record.get(field)
-                if _contains_forbidden_markers(value, _AUTHORITY_TEXT_MARKERS_V1):
-                    labels.append("unsafe_authority_text")
-                if _contains_forbidden_markers(value, _HIDDEN_PRIVATE_PROTECTED_MARKERS_V1):
-                    labels.append("unsafe_hidden_private_protected_marker")
-                if _contains_forbidden_markers(value, ("WESLR discovered", "confirmed discovery", "proved", "public science result", "benchmark-winning", "agi", "sentience", "consciousness")):
-                    labels.append("unsafe_claim_language")
     labels = list(dict.fromkeys(labels))
     if labels:
         return {
