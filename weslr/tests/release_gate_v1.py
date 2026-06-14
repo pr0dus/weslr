@@ -1017,6 +1017,18 @@ _weslr_discovery_doctrine_addendum_required_markers = {
     "metadata-only",
 }
 
+_weslr_discovery_doctrine_addendum_update_review_doc = (
+    "docs/WESLR_DISCOVERY_DOCTRINE_ADDENDUM_UPDATE_FOR_GENERAL_UNFINISHED_RESEARCH_SIGNAL_ONTOLOGY_REVIEW_V1.md"
+)
+_weslr_discovery_doctrine_addendum_update_review_required_markers = {
+    "WESLR Discovery Doctrine Addendum Update",
+    "Review V1",
+    "Review-only",
+    "discovery_doctrine_addendum_update_review_valid_ready_for_implementation_sequence_planning",
+    "governed discovery engine for unfinished possibilities",
+    "metadata-only",
+}
+
 _mlcf_routing_from_live_searxng_metadata_result_helper_doc = (
     "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
 )
@@ -11703,6 +11715,12 @@ def _weslr_discovery_doctrine_addendum_doc_is_valid():
         _weslr_discovery_doctrine_addendum_required_markers,
     )
 
+def _weslr_discovery_doctrine_addendum_update_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _weslr_discovery_doctrine_addendum_update_review_doc,
+        _weslr_discovery_doctrine_addendum_update_review_required_markers,
+    )
+
 
 def _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -13967,6 +13985,10 @@ def _check_git_scope():
     _weslr_discovery_doctrine_addendum_doc_valid = (
         _weslr_discovery_doctrine_addendum_doc_is_valid()
     )
+
+    _weslr_discovery_doctrine_addendum_update_review_doc_valid = (
+        _weslr_discovery_doctrine_addendum_update_review_doc_is_valid()
+    )
     _mlcf_routing_from_live_searxng_metadata_result_helper_doc_valid = (
         _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid()
     )
@@ -14294,6 +14316,8 @@ def _check_git_scope():
             or path == "docs/WESLR_GENERAL_UNFINISHED_RESEARCH_DIRECTION_SIGNAL_ONTOLOGY_AND_SCOUT_HINT_REPAIR_V1.md"
 
             or path == "docs/WESLR_DISCOVERY_DOCTRINE_ADDENDUM_FOR_GENERAL_UNFINISHED_RESEARCH_SIGNAL_ONTOLOGY_V1.md"
+
+            or path == "docs/WESLR_DISCOVERY_DOCTRINE_ADDENDUM_UPDATE_FOR_GENERAL_UNFINISHED_RESEARCH_SIGNAL_ONTOLOGY_REVIEW_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_REVIEW_V1.md"
@@ -14301,6 +14325,12 @@ def _check_git_scope():
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_REVIEW_V1.md"
         )
+        if path == _weslr_discovery_doctrine_addendum_update_review_doc:
+            allowed = _weslr_discovery_doctrine_addendum_update_review_doc_valid
+            if not _weslr_discovery_doctrine_addendum_update_review_doc_valid:
+                violations.append(
+                    f"  discovery doctrine addendum update review doc missing required markers: {path}"
+                )
         if path == _weslr_discovery_doctrine_addendum_doc:
             allowed = _weslr_discovery_doctrine_addendum_doc_valid
             if not _weslr_discovery_doctrine_addendum_doc_valid:
