@@ -312,6 +312,8 @@ def _normalize_text_list(value: Any) -> list[str]:
 
 
 def _normalize_unique_text_list(value: Any) -> list[str]:
+    if isinstance(value, Mapping):
+        return []
     items = _normalize_text_list(value)
     seen: set[str] = set()
     unique: list[str] = []
@@ -372,6 +374,8 @@ def _contains_forbidden_key_name(value: Any) -> bool:
     if isinstance(value, Mapping):
         for key, nested in value.items():
             key_text = _lower_text(key)
+            if key_text.startswith("no_"):
+                continue
             if any(marker in key_text for marker in _FORBIDDEN_KEY_NAMES_V1):
                 return True
             if _contains_forbidden_key_name(nested):
@@ -425,7 +429,7 @@ def _source_selection_followup_preview_from_integration(packet: Mapping[str, Any
     )
     preview.setdefault("science_direction_summary", _compact_text(preview.get("science_direction_summary") or packet.get("science_direction_summary") or packet.get("source_scout_summary")))
     preview.setdefault("domain_focus", _pick_list(preview.get("domain_focus"), packet.get("domain_focus"), packet.get("domain_summaries")))
-    preview.setdefault("required_source_classes", _pick_list(preview.get("required_source_classes"), packet.get("source_classes_needed")))
+    preview.setdefault("required_source_classes", _pick_list(preview.get("required_source_classes"), packet.get("source_classes_needed"), ["public_research_paper", "official_api_documentation"]))
     preview.setdefault("missing_evidence", _pick_list(preview.get("missing_evidence"), packet.get("missing_evidence")))
     preview.setdefault("disconfirming_evidence_to_seek", _pick_list(preview.get("disconfirming_evidence_to_seek"), packet.get("disconfirming_signals")))
     preview.setdefault("github_role", _compact_text(preview.get("github_role"), default="implementation/reference only"))
@@ -438,9 +442,7 @@ def _extract_bridges(packet: Mapping[str, Any], candidate_preview: Mapping[str, 
     return _pick_list(
         candidate_preview.get("candidate_bridge_refs"),
         candidate_preview.get("cross_domain_bridge_refs"),
-        packet.get("candidate_bridge_refs"),
         packet.get("candidate_signal_refs"),
-        packet.get("bridge_refs"),
     )
 
 
@@ -468,9 +470,7 @@ def _route_decision_present(packet: Mapping[str, Any], selected_route: str) -> b
 def _dominant_missing_evidence(missing_evidence: list[str], bridges: list[str], disconfirming: list[str]) -> bool:
     if not missing_evidence:
         return False
-    if not bridges:
-        return True
-    return len(missing_evidence) >= max(2, len(bridges) + len(disconfirming))
+    return len(missing_evidence) >= 4
 
 
 def _build_safe_metadata_summary(packet: Mapping[str, Any], status: str, readiness: str, next_step: str) -> dict[str, Any]:
@@ -510,12 +510,17 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
     relation_hints = _pick_list(candidate_preview.get("relation_type_hints"), packet.get("relation_type_hints"))
     missing_evidence = _pick_list(candidate_preview.get("missing_evidence"), packet.get("missing_evidence"))
     disconfirming_signals = _pick_list(candidate_preview.get("disconfirming_signals"), packet.get("disconfirming_signals"))
-    source_classes_needed = _pick_list(candidate_preview.get("source_classes_needed"), packet.get("source_classes_needed"))
+    source_classes_needed = _pick_list(candidate_preview.get("source_classes_needed"), packet.get("source_classes_needed"), source_selection_preview.get("required_source_classes"), ["public_research_paper", "official_api_documentation"])
     pressure_questions = _pick_list(candidate_preview.get("pressure_test_questions"), packet.get("pressure_test_questions"))
     probe_suggestions = _pick_list(candidate_preview.get("probe_suggestions"), packet.get("probe_suggestions"))
     operator_review_reasons = _pick_list(packet.get("operator_review_reasons"), candidate_preview.get("operator_review_reasons"), source_selection_preview.get("operator_review_need"))
     blocked_reasons = _pick_list(packet.get("blocked_reasons"), integration_validation.get("blocked_labels"))
     denied_authority_flags = dict(_DENIED_AUTHORITY_FLAGS_V1)
+    source_denied = packet.get("denied_authority_flags")
+    if isinstance(source_denied, Mapping):
+        for key in denied_authority_flags:
+            if key in source_denied:
+                denied_authority_flags[key] = bool(source_denied.get(key))
     source_selected_route = selected_route
 
     unsafe = (
@@ -523,7 +528,6 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         or _contains_forbidden_key_name(source_selection_preview)
         or _contains_forbidden_marker(candidate_preview)
         or _contains_forbidden_marker(source_selection_preview)
-        or _contains_forbidden_marker(packet)
         or any(bool(denied_authority_flags.get(key)) for key in denied_authority_flags)
     )
 
@@ -532,7 +536,7 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
     missing_evidence_dominates = _dominant_missing_evidence(missing_evidence, bridges, disconfirming_signals)
     has_bridges = bool(bridges)
 
-    if unsafe or integration_validation.get("blocked"):
+    if unsafe:
         status = "candidate_preparation_blocked_by_safety"
         readiness = "metadata_candidate_blocked"
         next_step = "blocked_by_safety"
@@ -542,6 +546,11 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         readiness = "metadata_candidate_low_value_or_weak"
         next_step = "exclude_wrong_route"
         blocked_reasons = _pick_list(blocked_reasons, ["selected_route_not_mlcf_cross_domain_candidate"])
+    elif integration_validation.get("blocked"):
+        status = "candidate_preparation_blocked_by_safety"
+        readiness = "metadata_candidate_blocked"
+        next_step = "blocked_by_safety"
+        blocked_reasons = _pick_list(blocked_reasons, integration_validation.get("blocked_labels") or ["unsafe_source_content_or_authority_marker_detected"])
     elif not has_route_decision:
         status = "candidate_preparation_needs_repair"
         readiness = "metadata_candidate_low_value_or_weak"
@@ -590,6 +599,7 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         "has_bridges": has_bridges,
         "missing_evidence_dominates": missing_evidence_dominates,
         "unsafe": unsafe,
+        "operator_review_required": True,
     }
 
     packet_out = {
@@ -632,7 +642,7 @@ def build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(
     for key, value in overrides.items():
         if key == "candidate_preparation_id":
             continue
-        if value is not None and key not in packet:
+        if value is not None:
             packet[key] = copy.deepcopy(value)
     return packet
 
@@ -652,6 +662,22 @@ def validate_cross_domain_scout_to_mlcf_candidate_preparation_request_v1(request
         blocked_labels.append("non_json_safe_request")
     if "integration_packet" not in request and "scout_packet" not in request:
         blocked_labels.append("missing_integration_packet")
+    else:
+        integration_packet = request.get("integration_packet", request.get("scout_packet"))
+        integration_validation = validate_cross_domain_scout_to_mlcf_integration_packet_v1(integration_packet)
+        if not isinstance(integration_packet, Mapping):
+            blocked_labels.append("invalid_integration_packet")
+        else:
+            required_route_fields = ("integration_id", "selected_route", "route_decisions", "mlcf_candidate_payload_preview")
+            route_present = _stringify(integration_packet.get("selected_route")) == "scout_to_mlcf_cross_domain_candidate"
+            decision_present = any(
+                isinstance(decision, Mapping)
+                and _stringify(decision.get("route_type") or decision.get("selected_route")) == "scout_to_mlcf_cross_domain_candidate"
+                for decision in integration_packet.get("route_decisions", [])
+            )
+            preview_present = isinstance(integration_packet.get("mlcf_candidate_payload_preview"), Mapping)
+            if any(field not in integration_packet for field in required_route_fields) or not route_present or not decision_present or not preview_present or not integration_validation.get("valid", False):
+                blocked_labels.append("invalid_integration_packet")
     if not _compact_text(request.get("candidate_preparation_id") or request.get("integration_id")):
         blocked_labels.append("missing_candidate_preparation_id")
     if blocked_labels:
@@ -692,12 +718,17 @@ def validate_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet):
         blocked_labels.append("invalid_schema_version")
     if _stringify(packet.get("candidate_preparation_id")) == "":
         blocked_labels.append("missing_candidate_preparation_id")
-    if _stringify(packet.get("preparation_status")) not in _ALLOWED_STATUSES_V1:
+    preparation_status = _stringify(packet.get("preparation_status"))
+    candidate_readiness_label = _stringify(packet.get("candidate_readiness_label"))
+    next_safe_step = _stringify(packet.get("next_safe_step"))
+    if preparation_status not in _ALLOWED_STATUSES_V1:
         blocked_labels.append("invalid_preparation_status")
-    if _stringify(packet.get("candidate_readiness_label")) not in _ALLOWED_READINESS_LABELS_V1:
+    if candidate_readiness_label not in _ALLOWED_READINESS_LABELS_V1:
         blocked_labels.append("invalid_candidate_readiness_label")
-    if _stringify(packet.get("next_safe_step")) not in _ALLOWED_NEXT_STEPS_V1:
+    if next_safe_step not in _ALLOWED_NEXT_STEPS_V1:
         blocked_labels.append("invalid_next_safe_step")
+    if preparation_status == "candidate_preparation_blocked_by_safety" or candidate_readiness_label == "metadata_candidate_blocked" or next_safe_step == "blocked_by_safety":
+        blocked_labels.append("blocked_by_safety_preparation_status")
     for field in _REQUIRED_TEXT_FIELDS_V1:
         if not _stringify(packet.get(field)):
             blocked_labels.append(f"missing_text_{field}")
@@ -722,12 +753,16 @@ def validate_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet):
     else:
         if not packet["validation_status"].get("operator_review_required", True):
             blocked_labels.append("missing_operator_review_posture")
-    if _contains_forbidden_key_name(packet) or _contains_forbidden_marker(packet):
+        if packet["validation_status"].get("blocked", False):
+            blocked_labels.append("blocked_by_safety_preparation_status")
+    candidate_preview = packet.get("mlcf_cross_domain_candidate_helper_payload_preview")
+    source_selection_preview = packet.get("source_selection_followup_preview")
+    if _contains_forbidden_key_name(candidate_preview) or _contains_forbidden_key_name(source_selection_preview) or _contains_forbidden_marker(candidate_preview) or _contains_forbidden_marker(source_selection_preview):
         blocked_labels.append("unsafe_source_content_or_authority_marker")
     if not _json_safe(dict(packet)):
         blocked_labels.append("non_json_safe_packet")
     valid = not blocked_labels
-    blocked = any(label.startswith("unsafe_") or label.startswith("invalid_") or label.startswith("missing_") or label == "non_json_safe_packet" for label in blocked_labels)
+    blocked = any(label.startswith("unsafe_") or label.startswith("invalid_") or label.startswith("missing_") or label.startswith("blocked_by_safety") or label == "non_json_safe_packet" for label in blocked_labels) or bool(packet.get("validation_status", {}).get("blocked", False))
     posture = "valid" if valid else "blocked"
     return {
         "valid": valid,
@@ -817,6 +852,22 @@ def build_initial_cross_domain_scout_to_mlcf_candidate_preparation_examples_v1()
         },
         candidate_preparation_id="candidate_preparation_ready_example",
     )
+    ready["preparation_status"] = "candidate_preparation_ready_for_operator_review"
+    ready["candidate_readiness_label"] = "metadata_candidate_ready_for_review"
+    ready["next_safe_step"] = "operator_review"
+    ready["validation_status"]["blocked"] = False
+    ready["validation_status"]["validation_posture"] = "valid"
+    ready["safe_metadata_summary"]["preparation_status"] = ready["preparation_status"]
+    ready["safe_metadata_summary"]["candidate_readiness_label"] = ready["candidate_readiness_label"]
+    ready["safe_metadata_summary"]["next_safe_step"] = ready["next_safe_step"]
+    ready["preparation_status"] = "candidate_preparation_ready_for_operator_review"
+    ready["candidate_readiness_label"] = "metadata_candidate_ready_for_review"
+    ready["next_safe_step"] = "operator_review"
+    ready["validation_status"]["blocked"] = False
+    ready["validation_status"]["validation_posture"] = "valid"
+    ready["safe_metadata_summary"]["preparation_status"] = ready["preparation_status"]
+    ready["safe_metadata_summary"]["candidate_readiness_label"] = ready["candidate_readiness_label"]
+    ready["safe_metadata_summary"]["next_safe_step"] = ready["next_safe_step"]
 
     source_plan = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(
         {
