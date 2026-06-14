@@ -993,6 +993,18 @@ _controlled_nova_true_run_metadata_locator_review_required_markers = {
     "Sparse RF spatial change map",
 }
 
+_general_unfinished_research_signal_ontology_design_doc = (
+    "docs/WESLR_GENERAL_UNFINISHED_RESEARCH_DIRECTION_SIGNAL_ONTOLOGY_AND_SCOUT_HINT_REPAIR_V1.md"
+)
+_general_unfinished_research_signal_ontology_design_required_markers = {
+    "WESLR General Unfinished Research Direction Signal Ontology and Scout Hint Repair V1",
+    "general_unfinished_research_signal_ontology_design_ready_for_review",
+    "Design-only",
+    "domain-family registry",
+    "extraordinary_claim_signal",
+    "metadata-only",
+}
+
 _mlcf_routing_from_live_searxng_metadata_result_helper_doc = (
     "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
 )
@@ -11667,6 +11679,12 @@ def _controlled_nova_true_run_metadata_locator_review_doc_is_valid():
         _controlled_nova_true_run_metadata_locator_review_required_markers,
     )
 
+def _general_unfinished_research_signal_ontology_design_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _general_unfinished_research_signal_ontology_design_doc,
+        _general_unfinished_research_signal_ontology_design_required_markers,
+    )
+
 
 def _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -13923,6 +13941,10 @@ def _check_git_scope():
     _controlled_nova_true_run_metadata_locator_review_doc_valid = (
         _controlled_nova_true_run_metadata_locator_review_doc_is_valid()
     )
+
+    _general_unfinished_research_signal_ontology_design_doc_valid = (
+        _general_unfinished_research_signal_ontology_design_doc_is_valid()
+    )
     _mlcf_routing_from_live_searxng_metadata_result_helper_doc_valid = (
         _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid()
     )
@@ -14246,6 +14268,8 @@ def _check_git_scope():
             or path == "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_V1.md"
 
             or path == "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_REVIEW_V1.md"
+
+            or path == "docs/WESLR_GENERAL_UNFINISHED_RESEARCH_DIRECTION_SIGNAL_ONTOLOGY_AND_SCOUT_HINT_REPAIR_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_REVIEW_V1.md"
@@ -14253,6 +14277,12 @@ def _check_git_scope():
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_REVIEW_V1.md"
         )
+        if path == _general_unfinished_research_signal_ontology_design_doc:
+            allowed = _general_unfinished_research_signal_ontology_design_doc_valid
+            if not _general_unfinished_research_signal_ontology_design_doc_valid:
+                violations.append(
+                    f"  ontology design doc missing required markers: {path}"
+                )
         if path == _controlled_nova_true_run_metadata_locator_review_doc:
             allowed = _controlled_nova_true_run_metadata_locator_review_doc_valid
             if not _controlled_nova_true_run_metadata_locator_review_doc_valid:
