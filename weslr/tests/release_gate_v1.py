@@ -1027,6 +1027,14 @@ _third_controlled_true_run_on_non_materials_domain_plan_allowed_paths = {
     "weslr/tests/release_gate_v1.py",
 }
 
+_unexplained_signal_artifact_pipeline_design_doc = (
+    "docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md"
+)
+_unexplained_signal_artifact_pipeline_design_allowed_paths = {
+    _unexplained_signal_artifact_pipeline_design_doc,
+    "weslr/tests/release_gate_v1.py",
+}
+
 _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc = (
     "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_V1.md"
 )
@@ -15840,6 +15848,8 @@ def _check_git_scope():
         if path in _authorized_ingestion_boundary_design_allowed_paths:
             allowed = True
         if path in _third_controlled_true_run_on_non_materials_domain_plan_allowed_paths:
+            allowed = True
+        if path in _unexplained_signal_artifact_pipeline_design_allowed_paths:
             allowed = True
         if path == _cognitive_research_protocol_helpers_implementation_report_doc:
             allowed = _cognitive_research_protocol_helpers_lane_is_valid(staged)
