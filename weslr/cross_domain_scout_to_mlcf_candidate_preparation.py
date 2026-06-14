@@ -266,6 +266,45 @@ _ALLOWED_MARKER_FIELDS_V1 = (
     "safe_metadata_summary",
 )
 
+_BLOCKED_OR_REVIEW_ONLY_ROUTE_TYPES_V1 = {
+    "blocked_by_safety",
+    "route_to_blocked_by_safety",
+    "scout_blocked_by_safety",
+    "route_to_ontology_expansion_request",
+}
+
+_ONTOLOGY_EXPANSION_HANOFF_FIELDS_V1 = (
+    "ontology_expansion_request_handoff",
+    "ontology_expansion_request_validation",
+)
+
+_ONTOLOGY_EXPANSION_TEXT_MARKERS_V1 = (
+    "ontology insufficient",
+    "insufficient ontology",
+    "ontology gap",
+    "missing ontology",
+    "route_to_ontology_expansion_request",
+    "ontology expansion request",
+    "ontology_expansion_request",
+)
+
+_REVIEW_ONLY_TEXT_MARKERS_V1 = (
+    "extraordinary claim",
+    "fringe edge science",
+    "edge science",
+    "future work",
+    "future workforce",
+    "job transformation",
+    "job replacement",
+    "language protocol",
+    "universal language",
+    "understands all communication",
+    "artifact proposal",
+    "proposal payload",
+    "proposal submission",
+    "proposal application",
+)
+
 
 def allowed_cross_domain_scout_to_mlcf_candidate_preparation_statuses_v1() -> tuple[str, ...]:
     return _ALLOWED_STATUSES_V1
@@ -400,6 +439,36 @@ def _pick_list(*values: Any) -> list[str]:
         if items:
             return items
     return []
+
+
+def _combined_text_blobs(*values: Any) -> str:
+    return " ".join(_iter_text_values(values)).lower()
+
+
+def _candidate_natural_language_blob(mapping: Mapping[str, Any]) -> str:
+    if not isinstance(mapping, Mapping):
+        return ""
+    selected_keys = (
+        "science_direction_summary",
+        "domain_focus",
+        "owner_review_posture",
+        "operator_review_need",
+        "official_public_source_requirement",
+        "source_classes_needed",
+        "missing_evidence",
+        "disconfirming_evidence",
+        "pressure_test_questions",
+        "probe_suggestions",
+    )
+    values: list[Any] = []
+    for key in selected_keys:
+        if key in mapping:
+            values.append(mapping.get(key))
+    return " ".join(_iter_text_values(values)).lower()
+
+
+def _contains_any_marker(text_blob: str, markers: tuple[str, ...]) -> bool:
+    return any(marker in text_blob for marker in markers)
 
 
 def _safe_preview_from_integration(packet: Mapping[str, Any]) -> dict[str, Any]:
@@ -583,6 +652,17 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
             disconfirming_signals=disconfirming_signals,
         )
 
+    candidate_text_blob = _candidate_natural_language_blob(candidate_preview)
+    source_selection_text_blob = _candidate_natural_language_blob(source_selection_preview)
+    review_text_blob = " ".join([candidate_text_blob, source_selection_text_blob]).strip()
+    ontology_expansion_requested = (
+        selected_route == "route_to_ontology_expansion_request"
+        or any(_compact_text(packet.get(field)) for field in _ONTOLOGY_EXPANSION_HANOFF_FIELDS_V1)
+        or bool(isinstance(packet.get("safe_metadata_summary"), Mapping) and packet["safe_metadata_summary"].get("sufficient_power") is False)
+        or _contains_any_marker(review_text_blob, _ONTOLOGY_EXPANSION_TEXT_MARKERS_V1)
+    )
+    review_only_marker_present = _contains_any_marker(review_text_blob, _REVIEW_ONLY_TEXT_MARKERS_V1)
+
     unsafe = (
         _contains_forbidden_key_name(candidate_preview)
         or _contains_forbidden_key_name(source_selection_preview)
@@ -591,6 +671,7 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         or any(bool(denied_authority_flags.get(key)) for key in denied_authority_flags)
     )
 
+    blocked_route = selected_route in _BLOCKED_OR_REVIEW_ONLY_ROUTE_TYPES_V1
     wrong_route = source_selected_route != "scout_to_mlcf_cross_domain_candidate"
     has_route_decision = route_present or bool(source_selected_route)
     missing_evidence_dominates = _dominant_missing_evidence(missing_evidence, bridges, disconfirming_signals)
@@ -601,16 +682,47 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         readiness = "metadata_candidate_blocked"
         next_step = "blocked_by_safety"
         blocked_reasons = _pick_list(blocked_reasons, ["unsafe_source_content_or_authority_marker_detected"])
+    elif ontology_expansion_requested:
+        status = "candidate_preparation_blocked_by_safety"
+        readiness = "metadata_candidate_blocked"
+        next_step = "blocked_by_safety"
+        blocked_reasons = _pick_list(
+            blocked_reasons,
+            [
+                "ontology_expansion_request_not_candidate_preparation_eligible",
+                "operator_review_required",
+                "sufficient_power_false",
+                "candidate_preparation_not_allowed",
+            ],
+        )
+    elif blocked_route or integration_validation.get("blocked"):
+        status = "candidate_preparation_blocked_by_safety"
+        readiness = "metadata_candidate_blocked"
+        next_step = "blocked_by_safety"
+        blocked_reasons = _pick_list(
+            blocked_reasons,
+            integration_validation.get("blocked_labels") or ["source_scout_packet_not_candidate_preparation_eligible", "blocked_by_safety"],
+        )
+        for label in ("source_scout_packet_not_candidate_preparation_eligible", "blocked_by_safety", "operator_review_required"):
+            if label not in blocked_reasons:
+                blocked_reasons.append(label)
+    elif review_only_marker_present:
+        status = "candidate_preparation_blocked_by_safety"
+        readiness = "metadata_candidate_blocked"
+        next_step = "blocked_by_safety"
+        blocked_reasons = _pick_list(
+            blocked_reasons,
+            [
+                "candidate_preparation_not_allowed",
+                "operator_review_required",
+                "review_only_signal_not_candidate_preparation_eligible",
+            ],
+        )
     elif wrong_route:
         status = "candidate_preparation_excluded_wrong_route"
         readiness = "metadata_candidate_low_value_or_weak"
         next_step = "exclude_wrong_route"
         blocked_reasons = _pick_list(blocked_reasons, ["selected_route_not_mlcf_cross_domain_candidate"])
-    elif integration_validation.get("blocked"):
-        status = "candidate_preparation_blocked_by_safety"
-        readiness = "metadata_candidate_blocked"
-        next_step = "blocked_by_safety"
-        blocked_reasons = _pick_list(blocked_reasons, integration_validation.get("blocked_labels") or ["unsafe_source_content_or_authority_marker_detected"])
     elif not has_route_decision:
         status = "candidate_preparation_needs_repair"
         readiness = "metadata_candidate_low_value_or_weak"
@@ -659,6 +771,8 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
         "has_bridges": has_bridges,
         "missing_evidence_dominates": missing_evidence_dominates,
         "unsafe": unsafe,
+        "ontology_expansion_requested": ontology_expansion_requested,
+        "review_only_marker_present": review_only_marker_present,
         "operator_review_required": True,
     }
 

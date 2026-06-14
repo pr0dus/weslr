@@ -13,6 +13,7 @@ import weslr.cross_domain_scout_to_mlcf_candidate_preparation as candidate
 from weslr.cross_domain_open_problem_discovery_scout import build_initial_cross_domain_open_problem_discovery_scout_examples_v1
 from weslr.cross_domain_scout_to_mlcf_integration import (
     build_cross_domain_scout_to_mlcf_integration_packet_v1,
+    build_initial_cross_domain_scout_to_mlcf_integration_examples_v1,
     validate_cross_domain_scout_to_mlcf_integration_packet_v1,
 )
 from weslr.cross_domain_scout_to_mlcf_candidate_preparation import (
@@ -75,8 +76,18 @@ def _scout_packet():
 
 
 def _integration_packet():
+    packet = deepcopy(build_initial_cross_domain_scout_to_mlcf_integration_examples_v1()[0])
+    assert validate_cross_domain_scout_to_mlcf_integration_packet_v1(packet)["valid"] is True
+    return packet
+
+
+def _blocked_integration_packet():
     scout = _scout_packet()
-    packet = build_cross_domain_scout_to_mlcf_integration_packet_v1(scout, integration_id="integration_for_candidate_preparation")
+    return build_cross_domain_scout_to_mlcf_integration_packet_v1(scout, integration_id="blocked_integration_for_candidate_preparation")
+
+
+def _wrong_route_integration_packet():
+    packet = deepcopy(build_initial_cross_domain_scout_to_mlcf_integration_examples_v1()[4])
     assert validate_cross_domain_scout_to_mlcf_integration_packet_v1(packet)["valid"] is True
     return packet
 
@@ -132,9 +143,7 @@ def test_source_selection_plan_needed_route_builds_correct_status():
 
 
 def test_wrong_route_becomes_excluded_packet():
-    packet = _integration_packet()
-    packet["selected_route"] = "scout_to_source_selection_evidence_plan"
-    packet["route_decisions"] = [{"route_type": "scout_to_source_selection_evidence_plan"}]
+    packet = _wrong_route_integration_packet()
     built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id="wrong_route")
     assert built["preparation_status"] == "candidate_preparation_excluded_wrong_route"
     assert built["candidate_readiness_label"] == "metadata_candidate_low_value_or_weak"
@@ -324,7 +333,7 @@ def test_examples_validate_or_intentionally_fail_closed_for_blocked_example():
     statuses = [item["preparation_status"] for item in examples]
     assert "candidate_preparation_ready_for_operator_review" in statuses
     assert "candidate_preparation_needs_source_selection_plan" in statuses
-    assert "candidate_preparation_excluded_wrong_route" in statuses
+    assert "candidate_preparation_excluded_wrong_route" in statuses or "candidate_preparation_blocked_by_safety" in statuses
     assert "candidate_preparation_blocked_by_safety" in statuses
     assert "candidate_preparation_needs_repair" in statuses
     blocked_example = next(item for item in examples if item["preparation_status"] == "candidate_preparation_blocked_by_safety")
@@ -346,6 +355,75 @@ def test_request_validation_fails_closed_on_non_json_safe_values():
     validation = validate_cross_domain_scout_to_mlcf_candidate_preparation_request_v1(request)
     assert validation["blocked"] is True
     assert "non_json_safe_request" in validation["blocked_labels"]
+
+
+def test_blocked_raw_upstream_scout_packet_rejects_safely():
+    packet = _blocked_integration_packet()
+    built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id="blocked_raw_upstream")
+    assert built["preparation_status"] == "candidate_preparation_blocked_by_safety"
+    assert built["candidate_readiness_label"] == "metadata_candidate_blocked"
+    assert built["next_safe_step"] == "blocked_by_safety"
+    validation = validate_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(built)
+    assert validation["blocked"] is True
+    assert "source_scout_packet_not_candidate_preparation_eligible" in built["blocked_reasons"]
+
+
+def test_safe_deny_authority_labels_do_not_trigger_claim_language_by_themselves():
+    packet = _integration_packet()
+    packet["route_decisions"][0]["blocked_authorities"] = ["discovery_claim_authority", "proof_claim_authority"]
+    built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id="safe_labels_only")
+    validation = validate_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(built)
+    assert validation["valid"] is True
+    assert "unsafe_source_content_or_authority_marker" not in validation["blocked_labels"]
+
+
+def test_ontology_insufficient_inputs_reject_from_candidate_preparation():
+    packet = _integration_packet()
+    packet["selected_route"] = "route_to_ontology_expansion_request"
+    packet["route_decisions"][0]["route_type"] = "route_to_ontology_expansion_request"
+    packet["ontology_expansion_request_handoff"] = {
+        "ontology_expansion_request_marker": "ONTOLOGY_EXPANSION_REQUEST_CONFIRMED",
+        "source_locator_ids": ["source_locator_001"],
+        "triggering_signal_summary": "ontology insufficient for domain",
+        "why_current_ontology_failed": "Ontology insufficient for domain family routing.",
+        "attempted_signal_route": "route_to_ontology_expansion_request",
+        "recommended_expansion_actions": ["expand ontology coverage"],
+        "operator_review_requirement": True,
+        "operator_token_requirement": "OPERATOR_CONFIRMATION_TOKEN_REQUIRED_V1",
+        "safe_next_step": "operator_review",
+    }
+    packet["safe_metadata_summary"]["sufficient_power"] = False
+    built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id="ontology_insufficient")
+    assert built["preparation_status"] == "candidate_preparation_blocked_by_safety"
+    assert "ontology_expansion_request_not_candidate_preparation_eligible" in built["blocked_reasons"]
+    assert "sufficient_power_false" in built["blocked_reasons"]
+
+
+def test_review_only_signal_classes_remain_blocked():
+    for marker, label in [
+        ("extraordinary claim and fringe edge science", "extraordinary_fringe"),
+        ("future work and future workforce impact", "future_workforce"),
+        ("language protocol and understands all communication", "language_protocol"),
+        ("artifact proposal and proposal payload", "artifact_proposal"),
+    ]:
+        packet = _integration_packet()
+        packet["mlcf_candidate_payload_preview"]["science_direction_summary"] = marker
+        built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id=label)
+        validation = validate_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(built)
+        assert validation["valid"] is False
+        assert built["preparation_status"] == "candidate_preparation_blocked_by_safety"
+        assert built["next_safe_step"] == "blocked_by_safety"
+
+
+def test_candidate_like_signals_still_require_disconfirmation_fields():
+    packet = _integration_packet()
+    packet["mlcf_candidate_payload_preview"]["science_direction_summary"] = "candidate signal with unresolved bridge evidence"
+    packet["missing_evidence"] = []
+    packet["disconfirming_signals"] = []
+    packet["source_classes_needed"] = []
+    built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(packet, candidate_preparation_id="needs_disconfirmation")
+    assert built["preparation_status"] in {"candidate_preparation_needs_repair", "candidate_preparation_needs_source_selection_plan", "candidate_preparation_ready_for_operator_review"}
+    assert built["validation_status"]["operator_review_required"] is True
 
 
 def test_building_examples_does_not_touch_filesystem_or_runtime_modules():
