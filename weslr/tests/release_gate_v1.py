@@ -1027,6 +1027,14 @@ _third_controlled_true_run_on_non_materials_domain_plan_allowed_paths = {
     "weslr/tests/release_gate_v1.py",
 }
 
+_third_controlled_true_run_on_non_materials_domain_result_doc = (
+    "docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1.md"
+)
+_third_controlled_true_run_on_non_materials_domain_result_allowed_paths = {
+    _third_controlled_true_run_on_non_materials_domain_result_doc,
+    "weslr/tests/release_gate_v1.py",
+}
+
 _unexplained_signal_artifact_pipeline_design_doc = (
     "docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md"
 )
@@ -15848,6 +15856,8 @@ def _check_git_scope():
         if path in _authorized_ingestion_boundary_design_allowed_paths:
             allowed = True
         if path in _third_controlled_true_run_on_non_materials_domain_plan_allowed_paths:
+            allowed = True
+        if path in _third_controlled_true_run_on_non_materials_domain_result_allowed_paths:
             allowed = True
         if path in _unexplained_signal_artifact_pipeline_design_allowed_paths:
             allowed = True
