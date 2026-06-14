@@ -969,6 +969,18 @@ _first_controlled_live_searxng_metadata_only_sample_result_required_markers = {
     "No raw response body",
 }
 
+_controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc = (
+    "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_V1.md"
+)
+_controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_required_markers = {
+    "WESLR Controlled Nova True Run",
+    "Run by: operator (manual hand-issued)",
+    "metadata_only_locator_candidates",
+    "external_evidence_unverified",
+    "Sparse RF spatial change map",
+    "no follow-up `urllib.request.urlopen`",
+}
+
 _mlcf_routing_from_live_searxng_metadata_result_helper_doc = (
     "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
 )
@@ -11631,6 +11643,12 @@ def _first_controlled_live_searxng_metadata_only_sample_result_doc_is_valid():
         _first_controlled_live_searxng_metadata_only_sample_result_required_markers,
     )
 
+def _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc,
+        _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_required_markers,
+    )
+
 
 def _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid():
     return _doc_with_markers_is_valid(
@@ -13879,6 +13897,10 @@ def _check_git_scope():
     _first_controlled_live_searxng_metadata_only_sample_result_doc_valid = (
         _first_controlled_live_searxng_metadata_only_sample_result_doc_is_valid()
     )
+
+    _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_valid = (
+        _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_is_valid()
+    )
     _mlcf_routing_from_live_searxng_metadata_result_helper_doc_valid = (
         _mlcf_routing_from_live_searxng_metadata_result_helper_doc_is_valid()
     )
@@ -14198,6 +14220,8 @@ def _check_git_scope():
             or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_V1.md"
 
             or path == "docs/WESLR_FIRST_CONTROLLED_LIVE_SEARXNG_METADATA_ONLY_SAMPLE_RESULT_V1.md"
+
+            or path == "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_V1.md"
             or path == "docs/WESLR_CONTROLLED_LIVE_SEARXNG_BOUNDARY_REAL_TIMESTAMP_REPAIR_REVIEW_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FROM_LIVE_SEARXNG_METADATA_RESULT_HELPER_REVIEW_V1.md"
@@ -14205,6 +14229,12 @@ def _check_git_scope():
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_V1.md"
             or path == "docs/WESLR_MLCF_ROUTING_FOR_FIRST_LIVE_SEARXNG_METADATA_ONLY_RESULT_REVIEW_V1.md"
         )
+        if path == _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc:
+            allowed = _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_valid
+            if not _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_valid:
+                violations.append(
+                    f"  nova true-run doc missing required markers: {path}"
+                )
         if path == _first_controlled_live_searxng_metadata_only_sample_result_doc:
             allowed = _first_controlled_live_searxng_metadata_only_sample_result_doc_valid
             if not _first_controlled_live_searxng_metadata_only_sample_result_doc_valid:
