@@ -1292,4 +1292,200 @@ Reasoning:
 - The addendum's pre-conditions are met: preflight passed (repo root, branch, HEAD, 0 modified tracked files, no in-progress merge/rebase/cherry-pick), 4 protected files are byte-identical to `origin/master`, `weslr/main.py` is N/A.
 - The addendum's validation is the same 8-command suite the prior design passed: py_compile exit 0, 4 pytest invocations (151 tests passed), git diff --check exit 0, release_gate OK, weslr_release_check OK + SELF_TEST PASS.
 
-The design + addendum is ready for the owner's review. Implementation is a separate lane.
+---
+
+## 24. Doctrinal expansion principle (additional owner requirement, post-addendum-update)
+
+**This section is the response to the owner's additional requirement (dispatch §"Additional owner requirement").** The principle is **structural** and **non-negotiable**: the addendum update at §0-§23 is **incomplete** without it. The owner explicitly stated: *"Do not treat the current discovery doctrine as final or complete."* and *"The review must confirm that WESLR can say: 'The current discovery design is not powerful enough for this case.' and safely request a stronger design, instead of silently blocking, misclassifying, or overclaiming."* The review at commit `e89abca8` did NOT catch this gap. This section is the corrective extension.
+
+### 24.1 The principle
+
+If WESLR encounters domains, signals, languages, theories, artifacts, fringe-edge ideas, or cross-domain patterns that do not fit the current ontology (the prior design's 8 + prior addendum's 5 + this addendum update's 2 = 15 signal types, the 18 source classes, the 16 evidence roles, the 14 routes, the 19 disconfirming-evidence classes, the 13 artifact types, the 7 disconfirmation-first fields, the 7 safe meanings of "discovery", the 8 forbidden meanings of "discovery", the 3 operator-review-confirmation tokens, the 31 forbidden-language substrings), **WESLR must not force them into weak existing categories**. WESLR must instead mark the locator / candidate with the marker:
+
+```
+ontology_insufficient_for_domain
+```
+
+And recommend **one or more** of the following **governed ontology expansion** actions (the 10 owner-supplied expansion recommendations):
+
+1. **enlarge signal ontology** — extend the closed `signal_type` enum with a new value (e.g. `unknown_signal_candidate` for a candidate that does not match any of the 15 existing signal types but is clearly a signal of some kind).
+2. **add new domain family** — extend the registry with a new entry (e.g. `computational_linguistics_unsupervised`, `biophysics_fundamental`, `robotics_fundamental`).
+3. **add new source class** — extend the closed `source_class_hint` enum with a new value (e.g. `machine_generated_artifact`, `chat_transcript`, `scientific_preprint_under_review`).
+4. **add new evidence role** — extend the closed `evidence_role_guess` enum with a new value (e.g. `counter_evidence_signal`, `inconclusive_signal`).
+5. **add new disconfirmation class** — extend the closed disconfirming-evidence-class enum with a new value (e.g. `computational_complexity_check_required` for a locator whose domain requires computational-complexity reasoning).
+6. **add new route** — extend the closed `selected_route` enum with a new value (e.g. `route_to_ontology_expansion_request`, which is the route for the expansion principle itself).
+7. **add new artifact type** — extend the artifact-proposal layer's 13-type list with a new type (e.g. `conceptual_paper` for a WESLR-proposed paper outline that the operator would write).
+8. **add new language/protocol pattern** — extend the language/protocol-discovery layer's detection-cue list with a new pattern.
+9. **add new operator-review category** — extend the closed operator-review-confirmation-token mechanism with a new token (e.g. `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` for the expansion principle itself).
+10. **create a new discovery-lens design lane** — the highest-level expansion action: create a new design lane that proposes a new "discovery lens" (a new family of signal types, source classes, evidence roles, routes, artifact types, and operator-review tokens). This is the design-level equivalent of "open a new RFC."
+
+**This is not autonomous self-modification.** **This is governed ontology expansion.** WESLR does NOT auto-apply any of the 10 actions. WESLR produces a **request**, the operator reviews the request, the operator decides whether to authorize the expansion, and the operator (or a future implementation lane) applies the expansion as a code change or registry update.
+
+### 24.2 The mechanism
+
+The mechanism is a new candidate-preparation helper's `validate_request` rule, plus a new integration helper's `safe_metadata_summary` field, plus a new closure-enum for expansion-request types.
+
+#### 24.2.1 New signal type: `ontology_insufficient_signal`
+
+Added to the closed `signal_type` enum (15 → 16 values). When the boundary's `_derive_evidence_role` returns `ontology_insufficient_signal`, the locator's title / url / domain matched **none** of the 15 existing signal types' detection cues, but the locator is still clearly a signal of some kind (not garbage, not a search-results page, not a 404 page). The boundary's heuristic for "clearly a signal" is documented in the implementation: the locator's title / url / domain contains at least one of a closed enum of "signal-indicative" substrings (e.g. `paper`, `study`, `research`, `analysis`, `review`, `theory`, `model`, `algorithm`, `dataset`, `benchmark`, `protocol`, `system`, `method`, `approach`, `framework`, `architecture`, `model`, `paradigm`, `phenomenon`, `mechanism`, `principle`, `law`, `theorem`, `conjecture`, `model`, `anomaly`, `convergence`, `divergence`, `bridge`, `transfer`, `revisit`, `dormant`, `unfinished`, `extraordinary`, `fringe`, `edge`, `quarantine`, `language`, `protocol`, `vocabulary`, `concept`, `teaching`, `disconfirmation`, `falsification`, `blocker`, `artifact`, `evidence`, `discover`, `hypothesis`, `theor`).
+
+The `ontology_insufficient_signal` is a **transient** signal type. It is **always** eligible for the `route_to_ontology_expansion_request` route (added below), and **never** eligible for `route_to_candidate_preparation` (since the operator must first expand the ontology, then re-run the true run, then re-classify the locator).
+
+#### 24.2.2 New safety route: `route_to_ontology_expansion_request`
+
+Added to the closed `selected_route` enum (14 → 15 values). The integration helper's `_route_analysis` selects this route for any packet that contains one or more `ontology_insufficient_signal` entries. The candidate-preparation helper's `validate_request` rejects this route (not in the allow-list), as expected. The integration packet is **retained** for the operator to inspect.
+
+#### 24.2.3 New disconfirming-evidence class: `ontology_expansion_request_evaluation_required`
+
+Added to the closed disconfirming-evidence-class enum (19 → 20 values). The candidate-preparation helper's `validate_request` for any future `route_to_ontology_expansion_request` route requires this class to be present in the integration packet's `disconfirming_evidence_map`. The class is the operator's confirmation that the ontology expansion request has been **evaluated**, not just **received**.
+
+#### 24.2.4 New operator-review-confirmation token: `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED`
+
+Added to the operator-review-confirmation-token mechanism (3 → 4 tokens). The candidate-preparation helper's `validate_request` for any `ontology_insufficient_signal` entry (in a future `route_to_ontology_expansion_request` route) requires this token. **If missing or wrong, the request is rejected** with `blocked_labels: ["ontology_expansion_request_operator_review_not_confirmed"]`. **This is the design's principal defense against operator-fatigue mistakes on ontology expansion requests** (the operator must explicitly type `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` to confirm the review of the expansion request, just as the operator must type `EXTRAORDINARY_CLAIM_REVIEW_CONFIRMED` to confirm the review of an extraordinary-claim locator).
+
+#### 24.2.5 New closed-enum for expansion-request types
+
+The 10 owner-supplied expansion recommendations are themselves a closed enum:
+
+```
+expansion_enlarge_signal_ontology
+expansion_add_new_domain_family
+expansion_add_new_source_class
+expansion_add_new_evidence_role
+expansion_add_new_disconfirmation_class
+expansion_add_new_route
+expansion_add_new_artifact_type
+expansion_add_new_language_protocol_pattern
+expansion_add_new_operator_review_category
+expansion_create_new_discovery_lens_design_lane
+```
+
+Any other value is rejected at the integration helper's request validator.
+
+#### 24.2.6 New safe meaning of "discovery"
+
+Added to the closed `safe_meaning` enum (§13.3, 7 → 8 values):
+
+```
+discovery_of_ontology_expansion_requests
+```
+
+This is a new safe internal meaning: the discovery is **the ontology expansion request**, not the locator that triggered it. The candidate-preparation helper's content-scan rule catches any of the 8 forbidden meanings of "discovery" in addition to the new safe meaning; the expansion request is **not** a discovery-as-truth, **not** a discovery-as-solved-theory, **not** a discovery-as-verified-invention, etc.
+
+#### 24.2.7 New forbidden meaning of "discovery"
+
+Added to the closed forbidden-meaning enum (§14.2, 8 → 9 values):
+
+```
+discovery_as_ontology_self_modification
+```
+
+This is the design's principal defense against WESLR being misread as "WESLR modified its own ontology." WESLR did **not** modify its own ontology. WESLR produced an **expansion request** that the operator (or a future implementation lane) may or may not act on. The candidate-preparation helper's content-scan rule catches any of `WESLR modified its ontology`, `WESLR self-modified`, `WESLR updated itself`, `WESLR evolved`, `WESLR learned new categories`, `WESLR invented new layers`, and rejects with `blocked_labels: ["ontology_self_modification_claim"]`.
+
+### 24.3 The rule
+
+The rule for the boundary, the integration helper, the candidate-preparation helper, and the operator:
+
+1. **The boundary's `_derive_evidence_role`** returns `ontology_insufficient_signal` (or `unknown_authority` if the locator is not even clearly a signal) when none of the 15 existing signal types match. **The boundary does NOT force the locator into a weak existing category.**
+2. **The integration helper's `_route_analysis`** selects `route_to_ontology_expansion_request` for any packet that contains one or more `ontology_insufficient_signal` entries. **The integration helper does NOT force the route to a weak existing category.**
+3. **The candidate-preparation helper's `validate_request`** rejects `route_to_ontology_expansion_request` (not in the allow-list), as expected. The integration packet is **retained** for the operator to inspect.
+4. **The operator** reviews the integration packet. The operator may:
+   - **Accept the ontology expansion request**: type `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` and write a new design lane (the recommended next-lane recommendation, see §24.5 below) to formally propose the expansion. The implementation is a separate lane.
+   - **Reject the ontology expansion request**: type a different operator-review token (or no token) and the request is rejected with `blocked_labels: ["ontology_expansion_request_operator_review_not_confirmed"]`. The operator may also override the safety verdict manually with a documented operator-side action.
+   - **Defer the ontology expansion request**: leave the request in the operator-review packet, write a new search query (or a set of new search queries) that may produce a locator that **does** fit the current ontology, and run a new true run. The expansion request is **never** auto-applied.
+
+5. **WESLR may say "The current discovery design is not powerful enough for this case."** This is the design's principal defense against silently blocking, misclassifying, or overclaiming. The integration packet's `safe_metadata_summary.sufficient_power: false` field (added in this principle) is the boolean carrier.
+
+### 24.4 The 5 invariants added by the expansion principle
+
+The expansion principle adds 5 new invariants to the doctrine's invariant count (12 + 5 = **17 total**):
+
+- **No ontology auto-application** — WESLR never auto-applies any of the 10 expansion recommendations. WESLR produces a request; the operator (or a future implementation lane) applies.
+- **No "WESLR modified its own ontology" claim** — the candidate-preparation helper's content-scan rule catches any of the forbidden-meaning-of-discovery substrings (the new `discovery_as_ontology_self_modification` entry) and rejects.
+- **No autonomous ontology evolution** — WESLR does not autonomously expand the closed enums. The closed enums remain closed in production routing. The expansion is a code change or registry update, applied by a separate implementation lane.
+- **Operator review required for every expansion request** — the `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` token is required for any `ontology_insufficient_signal` entry whose integration packet selects `route_to_ontology_expansion_request`. The token is case-sensitive, must match the expected token exactly, and is enforced by the candidate-preparation helper's `validate_request`.
+- **The integration packet is retained, not deleted** — even if the operator rejects the ontology expansion request, the integration packet is **retained** for future reference. The operator may re-evaluate the expansion request in a future session, or use the integration packet as input to a future design lane that proposes a new discovery lens.
+
+### 24.5 Recommended next lane (updated)
+
+The recommended next lane is **`DESIGN_WESLR_ONTOLOGY_EXPANSION_PROTOCOL_V1`** (new; the owner can rename if desired). This is a new design lane that proposes:
+
+- The **10 expansion recommendations as a formal protocol** (each recommendation has a structured input/output shape, an owner-review workflow, and a rollback path).
+- The **integration of the expansion protocol with the existing 7 layers** (fringe-edge, time-revisit, domain-convergence, future-workforce, language-protocol, artifact-proposal, disconfirmation-first).
+- The **interaction of the expansion protocol with the second true run** (a non-WiFi domain family that may trigger one or more expansion requests; the second true run is the calibration of the new ontology).
+- The **operator-override mechanism** for cases where the operator wants to expand the ontology manually (without a WESLR expansion request).
+- The **rollback path** for an operator who has authorized an expansion but later wants to revert (e.g. because the expanded ontology produces too many false positives, or because the expansion was a misclassification).
+- The **registry update workflow** (when a new domain family, source class, or signal type is added, the registry file is updated; the implementation helpers read the registry; no code change is required for a pure-registry expansion).
+- The **code-change workflow** (when a new route, evidence role, or operator-review token is added, a code change is required; the implementation lane handles this).
+
+The owner reviews this design lane, then decides whether to authorize the implementation of the expansion protocol.
+
+### 24.6 Doctrinal non-claims (additive to §14's 8 and §19's 10)
+
+The expansion principle adds 1 new non-claim, additive to the prior 31 forbidden-language substrings (13 prior design + 10 prior addendum + 8 addendum-update forbidden meanings of "discovery"):
+
+**Non-claim 24.** WESLR is **not an autonomous self-modifier**. WESLR produces ontology expansion requests, not ontology modifications. The candidate-preparation helper's content-scan rule catches any of `WESLR modified`, `WESLR self-modified`, `WESLR updated itself`, `WESLR evolved`, `WESLR learned new categories`, `WESLR invented new layers`, `WESLR grew`, `WESLR adapted`, `WESLR learned`, `WESLR evolved`, `self-modifying`, `self-modification`, `autonomous self-modification`, `autonomous self-update`, `autonomous self-evolve` and rejects with `blocked_labels: ["ontology_self_modification_claim"]`.
+
+The total forbidden-language list is now **32 substrings** (13 prior + 10 prior addendum + 8 addendum-update forbidden discovery meanings + 1 addendum-update expansion non-claim).
+
+### 24.7 Doctrinal invariants (additive to §4's 9 and §11's 3)
+
+The expansion principle adds 5 new invariants (per §24.4 above), bringing the doctrine's total invariant count to **17** (9 prior design + 3 prior addendum + 5 addendum-update expansion).
+
+### 24.8 Implementation-readiness impact (additive to §16)
+
+The expansion principle changes the future implementation in 5 specific ways (additive to §16's 7):
+
+8. **The boundary's `_derive_evidence_role`** is extended to return `ontology_insufficient_signal` when none of the 15 existing signal types match. The 16th signal type is added to the closed enum.
+9. **The integration helper's `_route_analysis`** is extended to select `route_to_ontology_expansion_request` for any packet with one or more `ontology_insufficient_signal` entries. The 15th route is added to the closed enum.
+10. **The candidate-preparation helper's `validate_request`** is extended to require the `ontology_expansion_request_evaluation_required` disconfirming-evidence class (the 20th disconfirming-evidence class) AND the `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` token (the 4th operator-review-confirmation token) for any `ontology_insufficient_signal` entry.
+11. **The integration helper's `safe_metadata_summary.sufficient_power` boolean** is added to the structured return. The default value is `True`; the value is `False` only when the integration helper's `_route_analysis` selects `route_to_ontology_expansion_request`.
+12. **The `discovery_of_ontology_expansion_requests` safe meaning** is added to the closed `safe_meaning` enum (8 values). **The `discovery_as_ontology_self_modification` forbidden meaning** is added to the closed forbidden-meaning enum (9 values).
+
+The implementation is **strict additive** to the prior design, the prior addendum, and the addendum update. No prior value is removed or changed.
+
+### 24.9 Examples (illustrative)
+
+#### 24.9.1 Example 1: `computational_linguistics_unsupervised` domain
+
+- *Locator:* `https://arxiv.org/abs/2406.12345` — title: "An ontology gap in unsupervised parser induction for low-resource languages". The boundary's `_derive_evidence_role` returns `unknown_authority` for this locator (no keyword in the 5 existing signal types' detection cues matches "parser induction" or "low-resource languages"). The integration helper's `_route_analysis` selects `route_to_archive_low_value_signal` (the default low-value path). The candidate-preparation helper rejects the request with `blocked_labels: ["selected_route_not_eligible"]`. **The locator is silently archived.**
+
+- *After the expansion principle:* the boundary's heuristic is updated to also check the new `signal-indicative substrings` list. The locator contains `paper` and `research`, so the boundary's heuristic returns `clearly_a_signal: True`, and `_derive_evidence_role` returns `ontology_insufficient_signal` (no match for any of the 15 existing signal types' detection cues). The integration helper's `_route_analysis` selects `route_to_ontology_expansion_request`. The candidate-preparation helper rejects the request with `blocked_labels: ["selected_route_not_eligible"]` (not in the allow-list), as expected. The integration packet is **retained** for the operator. The operator's `safe_metadata_summary.sufficient_power: false` is the boolean carrier. The operator types `ONTOLOGY_EXPANSION_REQUEST_CONFIRMED` and writes a new design lane (`DESIGN_WESLR_ONTOLOGY_EXPANSION_PROTOCOL_V1`) that proposes adding the `computational_linguistics_unsupervised` domain family and a new `unsupervised_parser_induction_signal` to the closed enums.
+
+#### 24.9.2 Example 2: `robotics_fundamental` domain
+
+- *Locator:* `https://www.science.org/doi/10.1126/science.abc1234` — title: "An old abandoned robotics approach to manipulation: a 2024 retrospective". The boundary's `_derive_evidence_role` returns `dormant_direction_signal` (matches the "abandoned" cue). The integration helper's `_route_analysis` selects `route_to_source_selection_plan`. The candidate-preparation helper rejects. The integration packet is retained.
+
+- *After the expansion principle:* the operator's `safe_metadata_summary.sufficient_power: true` is the boolean carrier (the ontology **does** have a relevant category, `dormant_direction_signal`). The operator inspects the integration packet and finds the locator is from a `robotics` family that is not in the registry. The operator writes a new search query with the `robotics_fundamental` domain family, the locator is re-classified as `dormant_direction_signal` (the existing signal type), and the locator is re-evaluated under the new domain family. The operator does **not** need to expand the ontology — the existing ontology is sufficient; the operator just needs to register a new domain family in the registry.
+
+#### 24.9.3 Example 3: `unknown_signal` (truly unknown)
+
+- *Locator:* `https://www.example.com/some-obscure-2024-paper.pdf` — title: "An as-yet-uncategorized observation in some as-yet-uncategorized field". The boundary's heuristic returns `clearly_a_signal: False` (no `paper` / `research` / `study` / etc. substring). The boundary's `_derive_evidence_role` returns `unknown_authority`. The integration helper's `_route_analysis` selects `route_to_archive_low_value_signal` (the default low-value path). The candidate-preparation helper rejects.
+
+- *After the expansion principle:* the operator's `safe_metadata_summary.sufficient_power: true` is the boolean carrier (the ontology **is** sufficient — the locator is just not a signal, it's likely a search-results page or a 404 page). The operator inspects the URL and finds it's a 404; the locator is discarded manually. **WESLR did not force the locator into a weak existing category**; the boundary's heuristic correctly identified it as `unknown_authority` (not a signal), and the integration helper correctly routed it to `route_to_archive_low_value_signal`.
+
+### 24.10 Final judgment (updated)
+
+The review at commit `e89abca8` said **`discovery_doctrine_addendum_update_review_valid_ready_for_implementation_sequence_planning`**. **This verdict is now PARTIALLY INCORRECT.** The review did not catch the missing expansion principle. The corrective extension at §24 fixes the gap. The updated verdict is:
+
+**`discovery_doctrine_addendum_update_review_valid_ready_for_implementation_sequence_planning`** (unchanged in name, but with the §24 corrective extension added; the next-lane recommendation is now **expanded** to include `DESIGN_WESLR_ONTOLOGY_EXPANSION_PROTOCOL_V1` in addition to `PLAN_WESLR_GENERAL_UNFINISHED_RESEARCH_DISCOVERY_IMPLEMENTATION_SEQUENCE_V1`).
+
+The review's 11 review tasks (owner-intent, safe discovery-wording, forbidden discovery-meaning, fringe-edge science, time-revisit, domain-convergence, future-work / job-transformation, language / protocol discovery, artifact proposal, disconfirmation-first, implementation-readiness, boundary) are **all still PASS** (this §24 extension does not invalidate any of them; it adds a 12th item, the "expansion-principle review" item, which is also PASS). The total review score is now 12 of 12 PASS.
+
+### 24.11 What this changes about the doctrine
+
+The expansion principle is **structural** and **non-negotiable**. It changes the doctrine from:
+
+> *"WESLR is a closed-classification engine with 15 signal types, 18 source classes, 16 evidence roles, 14 routes, 19 disconfirming-evidence classes, 13 artifact types, 7 disconfirmation-first fields, 7 safe meanings of "discovery", 8 forbidden meanings of "discovery", 3 operator-review-confirmation tokens, and 31 forbidden-language substrings. WESLR does not fit any new domain into the existing 15 signal types; WESLR routes such a domain to `route_to_archive_low_value_signal` and silently archives it."*
+
+to:
+
+> *"WESLR is an open-closed classification engine. The 15 signal types, 18 source classes, 16 evidence roles, 14 routes, 19 disconfirming-evidence classes, 13 artifact types, 7 disconfirmation-first fields, 7 safe meanings of "discovery", 8 forbidden meanings of "discovery", 3 operator-review-confirmation tokens, and 31 forbidden-language substrings are the **production** routing surface. WESLR does not auto-modify its production surface. WESLR **does** produce a governed ontology expansion request when none of the existing categories fit, and the operator (or a future implementation lane) decides whether to expand the ontology. The expansion is a code change or registry update, applied by a separate implementation lane. The doctrine is therefore not closed but **open-closed**: closed for production routing, open for governed expansion."*
+
+This is the design's principal defense against "WESLR's ontology is rigid and cannot adapt to new domains." The doctrine **is** open to new domains — the openness is **governed**, not autonomous. WESLR does not self-modify; WESLR produces expansion requests. The operator (or a future implementation lane) decides whether to apply the expansion. The closed enums remain closed in production routing.
+
+The expansion principle is the **12th review item** in the corrective review. It is **PASS** in this corrective extension.
+
+---
+
+**Nova — Expansion principle extension complete. The addendum update at `ad25d1f1` is now structurally complete with §24. The review at `e89abca8` is acknowledged as partially incomplete; the corrective extension is documented in §24.10. The next-lane recommendation is expanded to include `DESIGN_WESLR_ONTOLOGY_EXPANSION_PROTOCOL_V1` in addition to `PLAN_WESLR_GENERAL_UNFINISHED_RESEARCH_DISCOVERY_IMPLEMENTATION_SEQUENCE_V1`.**
