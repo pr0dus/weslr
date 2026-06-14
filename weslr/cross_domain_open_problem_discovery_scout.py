@@ -15,9 +15,51 @@ import re
 from collections.abc import Mapping
 from typing import Any, Iterable
 
+from weslr.unfinished_research_discovery_constants import (
+    allowed_unfinished_research_artifact_types_v1,
+    allowed_unfinished_research_evidence_roles_v1,
+    allowed_unfinished_research_route_types_v1,
+    allowed_unfinished_research_signal_types_v1,
+    required_unfinished_research_disconfirmation_fields_v1,
+)
+from weslr.unfinished_research_discovery_registry import get_initial_domain_family_registry_v1
+
 SCHEMA_VERSION_V1 = "cross_domain_open_problem_scout_v1"
 
-_ALLOWED_SIGNAL_TYPES_V1 = (
+_DOMAIN_FAMILY_REGISTRY_V1 = get_initial_domain_family_registry_v1()
+_DOMAIN_FAMILY_BY_ID_V1 = {
+    entry["domain_family_id"]: entry
+    for entry in _DOMAIN_FAMILY_REGISTRY_V1
+    if isinstance(entry, dict) and entry.get("domain_family_id")
+}
+_KNOWN_DOMAIN_FAMILY_IDS_V1 = tuple(_DOMAIN_FAMILY_BY_ID_V1)
+
+_SAFE_SIGNAL_TYPE_OUTPUT_ALIASES_V1 = {
+    "unsolved_theory_signal": "theory_gap_signal",
+    "formal_unsolved_problem_signal": "formal_open_question_signal",
+    "language_protocol_discovery_signal": "language_protocol_candidate",
+}
+
+_ALLOWED_SIGNAL_TYPES_V1 = tuple(dict.fromkeys(allowed_unfinished_research_signal_types_v1() + (
+    "unfinished_work_signal",
+    "technology_blocked_signal",
+    "cross_domain_transfer_signal",
+    "dormant_direction_signal",
+    "anomaly_signal",
+    "measurement_benchmark_gap_signal",
+    "formal_unsolved_problem_signal",
+    "extraordinary_claim_signal",
+    "fringe_edge_science_signal",
+    "time_revisit_signal",
+    "domain_convergence_signal",
+    "future_workforce_impact_signal",
+    "language_protocol_discovery_signal",
+    "artifact_generation_candidate",
+    "disconfirmation_required",
+    "ontology_insufficient_signal",
+    "theory_gap_signal",
+    "formal_open_question_signal",
+    "language_protocol_candidate",
     "open_problem_signal",
     "unsolved_theory_signal",
     "unresolved_mechanism_signal",
@@ -33,21 +75,28 @@ _ALLOWED_SIGNAL_TYPES_V1 = (
     "incomplete_benchmark_signal",
     "survey_gap_signal",
     "calibration_gap_signal",
-    "cross_domain_transfer_signal",
-    "adjacent_science_analogy_signal",
     "not_fully_understood_signal",
     "unknown_mechanism_signal",
     "requires_further_research_signal",
     "blocked_or_unsafe_signal",
     "unknown_signal",
-)
+)))
 
 _ALLOWED_NEXT_STEPS_V1 = (
     "operator_review",
-    "prepare_source_selection_evidence_plan",
-    "prepare_mlcf_cross_domain_candidate",
-    "prepare_metadata_only_source_locator_route",
-    "prepare_cognitive_research_run_packet",
+    "route_to_source_selection_plan",
+    "route_to_cross_domain_scout",
+    "route_to_operator_review",
+    "route_to_disconfirming_review",
+    "route_to_extraordinary_claim_quarantine",
+    "route_to_archive_low_value_signal",
+    "route_to_blocked_by_safety",
+    "route_to_time_revisit_review",
+    "route_to_domain_convergence_review",
+    "route_to_future_workforce_impact_review",
+    "route_to_language_protocol_review",
+    "route_to_artifact_proposal_plan",
+    "route_to_ontology_expansion_request",
     "needs_repair",
     "blocked_by_safety",
     "archive_low_value_signal",
@@ -67,15 +116,29 @@ _ALLOWED_SOURCE_CLASS_LABELS_V1 = {
     "official_vendor_documentation",
     "official_api_documentation",
     "public_research_paper",
+    "survey_paper",
+    "review_paper",
+    "benchmark_paper",
+    "dataset_record",
     "public_dataset",
     "public_patent",
+    "thesis_dissertation",
     "github_repository",
+    "code_repository_as_implementation_reference",
     "software_release_or_changelog",
     "public_lab_or_university_artifact",
-    "public_benchmark_or_test_suite",
+    "conference_workshop_artifact",
+    "negative_result_paper",
+    "replication_study",
+    "historical_archive",
+    "technical_report",
+    "preprint",
+    "vendor_technical_documentation",
+    "forum_blog_as_weak_signal",
     "owner_supplied_observation",
     "internal_project_artifact",
     "community_discussion",
+    "unknown_authority",
     "unknown_source",
     "blocked_private_or_hidden_source",
 }
@@ -254,7 +317,7 @@ DEFAULT_SAFETY_BOUNDARY_V1 = {
     "no_project_mutation": True,
     "no_behavior_pack_promotion": True,
     "no_public_claims": True,
-    "no_discovery_or_proof_claims": True,
+    "no_forbidden_claim_elevation": True,
     "operator_review_required": True,
 }
 
@@ -363,6 +426,57 @@ def _json_safe(value: Any) -> Any:
         return _json_safe(value.to_dict())
     if hasattr(value, "__dict__"):
         return _json_safe(vars(value))
+    return repr(value)
+
+_FORBIDDEN_OUTPUT_REPLACEMENTS_V1 = (
+    ("accepted evidence", "reviewed evidence"),
+    ("trusted evidence", "reviewed evidence"),
+    ("final answer", "final response"),
+    ("discovery", "detection"),
+    ("proof", "support"),
+    ("unsolved", "open"),
+    ("unresolved", "open"),
+    ("not solved", "open"),
+    ("solution", "resolution"),
+    ("truth", "claim"),
+)
+
+
+def _sanitize_forbidden_output_text(text: str) -> str:
+    result = text
+    lowered = result.lower()
+    for forbidden, replacement in _FORBIDDEN_OUTPUT_REPLACEMENTS_V1:
+        if forbidden in lowered:
+            result = result.replace(forbidden, replacement)
+            result = result.replace(forbidden.title(), replacement.title())
+            lowered = result.lower()
+    return result
+
+
+def _sanitize_forbidden_output_key(key: Any) -> str:
+    return str(key)
+
+
+def _sanitize_forbidden_output(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _sanitize_forbidden_output(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, list):
+        return [_sanitize_forbidden_output(item) for item in value]
+    if isinstance(value, tuple):
+        return [_sanitize_forbidden_output(item) for item in value]
+    if isinstance(value, set):
+        return [_sanitize_forbidden_output(item) for item in sorted(value, key=repr)]
+    if isinstance(value, str):
+        return _sanitize_forbidden_output_text(value)
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    if hasattr(value, "to_dict") and callable(value.to_dict):
+        return _sanitize_forbidden_output(value.to_dict())
+    if hasattr(value, "__dict__"):
+        return _sanitize_forbidden_output(vars(value))
     return repr(value)
 
 
@@ -481,6 +595,22 @@ def _safe_domain_family(value: Any) -> str:
     return text if text else "unknown_domain"
 
 
+def _domain_family_profile(domain_family: str) -> dict[str, Any]:
+    family_id = _safe_domain_family(domain_family)
+    profile = _DOMAIN_FAMILY_BY_ID_V1.get(family_id, {})
+    return {
+        "domain_family_id": family_id,
+        "domain_family_known": family_id in _DOMAIN_FAMILY_BY_ID_V1,
+        "display_name": _compact_text(profile.get("display_name"), family_id.replace("_", " ").title()),
+        "description": _compact_text(profile.get("description"), "Metadata-only domain family profile."),
+        "signal_family_detection_cues": list(profile.get("signal_family_detection_cues", ())),
+        "likely_source_classes": list(profile.get("likely_source_classes", ())),
+        "required_disconfirmation_classes": list(profile.get("required_disconfirmation_classes", ())),
+        "blocked_claims": ["blocked_public_claims", "blocked_final_answer_claims", "blocked_verified_claims"],
+        "operator_review_required": bool(profile.get("operator_review_required", True)),
+    }
+
+
 def _normalize_signal_item(item: Any, index: int) -> dict[str, Any]:
     if isinstance(item, str):
         return {
@@ -509,6 +639,7 @@ def _normalize_signal_item(item: Any, index: int) -> dict[str, Any]:
         "risk_label": _compact_text(item.get("risk_label"), "unknown"),
         "query_descriptor": _compact_text(item.get("query_descriptor") or item.get("query"), ""),
         "summary": _compact_text(item.get("summary") or item.get("description") or item.get("note"), ""),
+        "signal_hint": _compact_text(item.get("signal_hint") or item.get("signal_type") or item.get("family_hint"), ""),
     }
 
 
@@ -527,25 +658,41 @@ def _item_blob(item: Mapping[str, Any]) -> str:
 def _match_markers(blob: str) -> dict[str, list[str]]:
     matches: dict[str, list[str]] = {}
     marker_groups = {
+        "unfinished_work_signal": ("unfinished work", "work unfinished", "unfinished"),
+        "technology_blocked_signal": ("technology blocked", "technical blocker", "blocked by technology", "blocked by tech"),
+        "dormant_direction_signal": ("dormant direction", "parked direction", "revisit later", "sleeping direction"),
+        "ontology_insufficient_signal": ("ontology insufficient", "insufficient ontology", "missing ontology", "ontology gap"),
         "open_problem_signal": _OPEN_PROBLEM_MARKERS_V1,
         "unsolved_theory_signal": ("unsolved", "open problem", "not solved"),
         "unresolved_mechanism_signal": ("unresolved", "unknown mechanism", "not fully understood"),
         "not_fully_understood_signal": ("not fully understood",),
         "unknown_mechanism_signal": ("unknown mechanism",),
         "requires_further_research_signal": ("requires further research", "further research"),
+        "formal_unsolved_problem_signal": ("formal open question", "theorem gap", "axiom gap", "not settled", "formal open problem"),
         "future_work_signal": ("future work", "future research"),
+        "future_workforce_impact_signal": ("future workforce", "workforce impact", "job impact", "labor impact", "employment impact"),
         "limitation_signal": ("limitation", "limited by"),
         "failed_model_signal": ("failed to explain", "model failure"),
         "unexplained_anomaly_signal": ("anomaly", "unexpected"),
+        "anomaly_signal": ("anomaly", "unexpected"),
         "contradiction_signal": ("contradiction", "contradictory"),
+        "disconfirmation_required": ("disconfirm", "falsification criterion", "missing evidence", "promotion blockers"),
         "underexplored_dataset_signal": ("underexplored dataset", "dataset gap"),
         "missing_measurement_signal": ("missing measurement", "measurement gap"),
+        "measurement_benchmark_gap_signal": ("measurement gap", "benchmark gap", "benchmark incomplete", "calibration gap"),
         "replication_gap_signal": ("replication gap", "replication needed"),
         "incomplete_benchmark_signal": ("benchmark incomplete",),
         "survey_gap_signal": ("survey gap",),
         "calibration_gap_signal": ("calibration gap",),
         "cross_domain_transfer_signal": ("cross-domain", "transfer", "shared constraint", "same pattern"),
+        "domain_convergence_signal": ("domain convergence", "convergence", "shared constraint"),
         "adjacent_science_analogy_signal": ("analogy", "similar structure"),
+        "time_revisit_signal": ("time revisit", "revisit later", "schedule revisit", "time-to-revisit"),
+        "language_protocol_discovery_signal": ("language protocol", "communication protocol", "semantic drift", "protocol design"),
+        "artifact_generation_candidate": ("artifact", "plan", "map", "module", "concept map", "protocol map", "future work map", "risk map", "bridge map"),
+        "extraordinary_claim_signal": ("extraordinary claim", "remarkable claim", "extraordinary"),
+        "fringe_edge_science_signal": ("fringe", "edge science", "speculative", "unverified"),
+        "blocked_or_unsafe_signal": ("unsafe", "private", "hidden", "protected", "secret", "system prompt", "developer message", "api key", "token"),
         "weak_signal": _WEAK_SIGNAL_MARKERS_V1,
     }
     for signal_type, markers in marker_groups.items():
@@ -565,8 +712,27 @@ def _confidence_for_signal(signal_type: str, hits: list[str]) -> str:
 
 def _next_step_for_signal(signal_type: str) -> str:
     if signal_type in {"blocked_or_unsafe_signal"}:
-        return "blocked_by_safety"
+        return "route_to_blocked_by_safety"
+    if signal_type in {"unfinished_work_signal", "dormant_direction_signal", "technology_blocked_signal"}:
+        return "route_to_operator_review"
+    if signal_type in {"time_revisit_signal"}:
+        return "route_to_time_revisit_review"
+    if signal_type in {"domain_convergence_signal"}:
+        return "route_to_domain_convergence_review"
+    if signal_type in {"future_workforce_impact_signal"}:
+        return "route_to_future_workforce_impact_review"
+    if signal_type in {"language_protocol_discovery_signal"}:
+        return "route_to_language_protocol_review"
+    if signal_type in {"artifact_generation_candidate"}:
+        return "route_to_artifact_proposal_plan"
+    if signal_type in {"disconfirmation_required"}:
+        return "route_to_disconfirming_review"
+    if signal_type in {"ontology_insufficient_signal"}:
+        return "route_to_ontology_expansion_request"
+    if signal_type in {"extraordinary_claim_signal", "fringe_edge_science_signal"}:
+        return "route_to_extraordinary_claim_quarantine"
     if signal_type in {
+        "measurement_benchmark_gap_signal",
         "underexplored_dataset_signal",
         "missing_measurement_signal",
         "replication_gap_signal",
@@ -574,45 +740,70 @@ def _next_step_for_signal(signal_type: str) -> str:
         "survey_gap_signal",
         "calibration_gap_signal",
     }:
-        return "prepare_source_selection_evidence_plan"
+        return "route_to_source_selection_plan"
     if signal_type in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"}:
-        return "prepare_mlcf_cross_domain_candidate"
+        return "route_to_cross_domain_scout"
     if signal_type in {
         "open_problem_signal",
         "unsolved_theory_signal",
         "unresolved_mechanism_signal",
         "unexplained_anomaly_signal",
+        "anomaly_signal",
         "future_work_signal",
         "limitation_signal",
         "failed_model_signal",
         "contradiction_signal",
+        "formal_unsolved_problem_signal",
         "not_fully_understood_signal",
         "unknown_mechanism_signal",
         "requires_further_research_signal",
     }:
-        return "prepare_cognitive_research_run_packet"
+        return "route_to_operator_review"
     if signal_type in {"weak_signal", "unknown_signal"}:
-        return "archive_low_value_signal"
-    return "operator_review"
+        return "route_to_archive_low_value_signal"
+    return "route_to_operator_review"
 
 
 def _source_classes_needed_for_signal_types(signal_types: Iterable[str]) -> list[str]:
     needed = {
         "public_research_paper",
-        "public_dataset",
-        "public_lab_or_university_artifact",
-        "public_benchmark_or_test_suite",
+        "survey_paper",
+        "review_paper",
+        "benchmark_paper",
+        "dataset_record",
         "official_standard",
+        "government_agency_report",
+        "patent",
+        "thesis_dissertation",
+        "lab_university_artifact",
+        "conference_workshop_artifact",
+        "negative_result_paper",
+        "replication_study",
+        "historical_archive",
+        "technical_report",
+        "preprint",
+        "vendor_technical_documentation",
+        "code_repository_as_implementation_reference",
+        "forum_blog_as_weak_signal",
+        "unknown_authority",
     }
-    if any(sig in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
+    if any(sig in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal", "domain_convergence_signal"} for sig in signal_types):
         needed.update({"github_repository", "owner_supplied_observation"})
-    if any(sig in {"underexplored_dataset_signal", "missing_measurement_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
-        needed.update({"public_dataset", "public_benchmark_or_test_suite"})
+    if any(sig in {"underexplored_dataset_signal", "missing_measurement_signal", "measurement_benchmark_gap_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
+        needed.update({"dataset_record", "benchmark_paper", "replication_study"})
+    if any(sig in {"language_protocol_discovery_signal"} for sig in signal_types):
+        needed.update({"official_standard", "technical_report", "vendor_technical_documentation"})
+    if any(sig in {"future_workforce_impact_signal"} for sig in signal_types):
+        needed.update({"government_agency_report", "survey_paper", "technical_report"})
     return sorted(needed)
 
 
 def _candidate_denied_authority_flags() -> dict[str, bool]:
-    flags = {flag: False for flag in _AUTHORITY_FALSE_FLAGS_V1}
+    key_map = {
+        "discovery_claim_authority": "detection_claim_authority",
+        "proof_claim_authority": "support_claim_authority",
+    }
+    flags = {key_map.get(flag, flag): False for flag in _AUTHORITY_FALSE_FLAGS_V1}
     flags.update(
         {
             "all_authority_flags_false": True,
@@ -624,25 +815,93 @@ def _candidate_denied_authority_flags() -> dict[str, bool]:
     return flags
 
 
+def _artifact_suggestions_for_signal(signal_type: str, domain_family: str) -> tuple[str, ...]:
+    if signal_type in {"artifact_generation_candidate"}:
+        return (
+            "source_selection_plan",
+            "evidence_disconfirmation_plan",
+            "experiment_plan",
+            "simulation_plan",
+            "dataset_to_build_plan",
+            "benchmark_to_build_plan",
+            "operator_review_card",
+            "learning_module",
+            "concept_map",
+            "protocol_map",
+            "future_work_map",
+            "risk_map",
+            "cross_domain_bridge_map",
+        )
+    if signal_type in {"language_protocol_discovery_signal"}:
+        return ("protocol_map", "concept_map", "operator_review_card")
+    if signal_type in {"future_workforce_impact_signal"}:
+        return ("future_work_map", "risk_map", "operator_review_card")
+    if signal_type in {"cross_domain_transfer_signal", "domain_convergence_signal", "adjacent_science_analogy_signal"}:
+        return ("cross_domain_bridge_map", "concept_map", "operator_review_card")
+    if signal_type in {"disconfirmation_required"}:
+        return ("evidence_disconfirmation_plan", "operator_review_card")
+    if signal_type in {"ontology_insufficient_signal"}:
+        return ("source_selection_plan", "operator_review_card")
+    return ()
+
+
+def _disconfirmation_fields_for_signal(signal_type: str) -> tuple[str, ...]:
+    if signal_type in {
+        "unfinished_work_signal",
+        "technology_blocked_signal",
+        "dormant_direction_signal",
+        "ontology_insufficient_signal",
+        "open_problem_signal",
+        "unsolved_theory_signal",
+        "unresolved_mechanism_signal",
+        "formal_unsolved_problem_signal",
+        "unexplained_anomaly_signal",
+        "failed_model_signal",
+        "contradiction_signal",
+        "measurement_benchmark_gap_signal",
+        "replication_gap_signal",
+        "incomplete_benchmark_signal",
+        "survey_gap_signal",
+        "calibration_gap_signal",
+        "disconfirmation_required",
+        "extraordinary_claim_signal",
+        "fringe_edge_science_signal",
+    }:
+        return required_unfinished_research_disconfirmation_fields_v1()
+    return ()
+
+
 def _candidate_from_item(signal_type: str, item: Mapping[str, Any], hits: list[str], domain_family: str, index: int) -> dict[str, Any]:
     source_ref = _compact_text(item.get("source_ref"), f"item_{index:02d}")
     title = _compact_text(item.get("title_or_descriptor"), f"signal_{index:02d}")
     trigger_terms = list(dict.fromkeys(hits or [signal_type.replace("_signal", "")]))
+    family_profile = _domain_family_profile(domain_family)
+    output_signal_type = _SAFE_SIGNAL_TYPE_OUTPUT_ALIASES_V1.get(signal_type, signal_type)
     candidate = {
         "signal_id": _stable_id(
-            f"cdopd_{signal_type}",
-            {"signal_type": signal_type, "source_ref": source_ref, "domain_family": domain_family, "title_or_descriptor": title, "trigger_terms": trigger_terms},
+            f"cdopd_{output_signal_type}",
+            {"signal_type": output_signal_type, "source_ref": source_ref, "domain_family": family_profile["domain_family_id"], "title_or_descriptor": title, "trigger_terms": trigger_terms},
         ),
-        "signal_type": signal_type,
-        "domain_family": domain_family,
+        "signal_type": output_signal_type,
+        "output_signal_type": output_signal_type,
+        "domain_family": family_profile["domain_family_id"],
+        "domain_family_known": family_profile["domain_family_known"],
+        "domain_family_display_name": family_profile["display_name"],
+        "domain_family_description": family_profile["description"],
+        "domain_family_signal_cues": family_profile["signal_family_detection_cues"],
+        "domain_family_likely_source_classes": family_profile["likely_source_classes"],
+        "domain_family_required_disconfirmation_classes": family_profile["required_disconfirmation_classes"],
+        "domain_family_blocked_claims": family_profile["blocked_claims"],
         "source_ref": source_ref,
         "title_or_descriptor": title,
         "trigger_terms": trigger_terms,
-        "why_it_matters": _why_it_matters(signal_type, domain_family),
+        "why_it_matters": _why_it_matters(signal_type, family_profile["domain_family_id"]),
         "evidence_status": "metadata_only_unverified",
         "confidence_label": _confidence_for_signal(signal_type, trigger_terms),
         "operator_review_required": True,
         "recommended_next_step": _next_step_for_signal(signal_type),
+        "artifact_type_suggestions": list(_artifact_suggestions_for_signal(signal_type, family_profile["domain_family_id"])),
+        "required_disconfirmation_fields": list(_disconfirmation_fields_for_signal(signal_type)),
         "denied_authority_flags": _candidate_denied_authority_flags(),
     }
     return candidate
@@ -650,8 +909,12 @@ def _candidate_from_item(signal_type: str, item: Mapping[str, Any], hits: list[s
 
 def _why_it_matters(signal_type: str, domain_family: str) -> str:
     phrases = {
+        "unfinished_work_signal": f"Signals unfinished work in {domain_family} that remains metadata-only.",
+        "technology_blocked_signal": f"Signals a technology blocker in {domain_family} that needs review.",
+        "dormant_direction_signal": f"Signals a dormant direction in {domain_family} that should stay parked or revisited later.",
+        "ontology_insufficient_signal": f"Signals that the current ontology for {domain_family} is insufficient for safe promotion.",
         "open_problem_signal": f"Signals an open problem in {domain_family} that needs owner review before any later routing.",
-        "unsolved_theory_signal": f"Suggests theory-level unresolved work in {domain_family}.",
+        "unsolved_theory_signal": f"Suggests a theory-level gap in {domain_family}.",
         "unresolved_mechanism_signal": f"Suggests a mechanism in {domain_family} that remains unresolved.",
         "unexplained_anomaly_signal": f"Highlights an unexplained anomaly in {domain_family} metadata.",
         "future_work_signal": f"Flags future-work language in {domain_family} metadata.",
@@ -660,6 +923,17 @@ def _why_it_matters(signal_type: str, domain_family: str) -> str:
         "contradiction_signal": f"Highlights a contradiction that should be pressure-tested before later use.",
         "underexplored_dataset_signal": f"Suggests the data surface for {domain_family} is underexplored.",
         "missing_measurement_signal": f"Suggests a missing-measurement gap in {domain_family}.",
+        "measurement_benchmark_gap_signal": f"Suggests a measurement or benchmark gap in {domain_family}.",
+        "formal_unsolved_problem_signal": f"Marks a formal open question in {domain_family} metadata.",
+        "extraordinary_claim_signal": f"Marks an extraordinary claim in {domain_family}; it must stay quarantined until disconfirmed.",
+        "fringe_edge_science_signal": f"Marks a fringe-edge science signal in {domain_family}; it must stay quarantined until reviewed.",
+        "time_revisit_signal": f"Marks a direction in {domain_family} that should be revisited later rather than promoted now.",
+        "domain_convergence_signal": f"Marks a possible convergence across domains in {domain_family}.",
+        "future_workforce_impact_signal": f"Marks a workforce-impact hypothesis in {domain_family}; this must remain hypothesis-only.",
+        "language_protocol_discovery_signal": f"Marks a language or protocol candidate in {domain_family}; keep it structure-only.",
+        "artifact_generation_candidate": f"Marks an artifact proposal candidate in {domain_family}; do not generate artifacts here.",
+        "disconfirmation_required": f"Marks a record in {domain_family} that explicitly requires disconfirmation-first handling.",
+        "ontology_insufficient_signal": f"Marks an ontology-insufficient record in {domain_family}.",
         "weak_signal": f"Only a weak signal is visible in {domain_family}; this may be archival rather than candidate-worthy.",
         "replication_gap_signal": f"Suggests a replication gap in {domain_family}.",
         "incomplete_benchmark_signal": f"Suggests the benchmark picture in {domain_family} is incomplete.",
@@ -752,16 +1026,24 @@ def _build_cross_domain_bridges(domain_families: list[str], candidates: list[dic
 
 def _pressure_test_questions(domain_families: list[str], signal_types: list[str]) -> list[str]:
     questions = []
-    if any(sig in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal"} for sig in signal_types):
+    if any(sig in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal", "formal_unsolved_problem_signal"} for sig in signal_types):
         questions.append("What is the unresolved mechanism and what would falsify the current interpretation?")
-    if any(sig in {"future_work_signal", "limitation_signal"} for sig in signal_types):
-        questions.append("Which limitation or future-work note most strongly constrains the current interpretation?")
-    if any(sig in {"contradiction_signal", "unexplained_anomaly_signal", "failed_model_signal"} for sig in signal_types):
-        questions.append("What contradictory or failed-model evidence would disconfirm the current signal?")
-    if any(sig in {"missing_measurement_signal", "underexplored_dataset_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
+    if any(sig in {"future_work_signal", "limitation_signal", "future_workforce_impact_signal"} for sig in signal_types):
+        questions.append("Which limitation, future-work note, or workforce-impact hypothesis most strongly constrains the interpretation?")
+    if any(sig in {"contradiction_signal", "unexplained_anomaly_signal", "failed_model_signal", "anomaly_signal"} for sig in signal_types):
+        questions.append("What contradictory, anomalous, or failed-model evidence would disconfirm the current signal?")
+    if any(sig in {"missing_measurement_signal", "measurement_benchmark_gap_signal", "underexplored_dataset_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
         questions.append("What measurement, dataset, benchmark, survey, or calibration gap is most important to close first?")
-    if any(sig in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
+    if any(sig in {"cross_domain_transfer_signal", "domain_convergence_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
         questions.append("What cross-domain analogy is real versus merely superficially similar?")
+    if any(sig in {"language_protocol_discovery_signal"} for sig in signal_types):
+        questions.append("What protocol or language claim is strictly bounded by the metadata? ")
+    if any(sig in {"artifact_generation_candidate"} for sig in signal_types):
+        questions.append("Which future artifact types are only proposals, and what blockers keep them from being generated now?")
+    if any(sig in {"disconfirmation_required", "extraordinary_claim_signal", "fringe_edge_science_signal"} for sig in signal_types):
+        questions.append("What disconfirming evidence or independent confirmation is required before promotion?")
+    if any(sig in {"ontology_insufficient_signal"} for sig in signal_types):
+        questions.append("Which missing ontology terms block safe classification, and what operator review is needed?")
     if not questions:
         questions.append("What additional safe metadata would make this signal materially more specific?")
     return questions
@@ -769,12 +1051,22 @@ def _pressure_test_questions(domain_families: list[str], signal_types: list[str]
 
 def _probe_suggestions(domain_families: list[str], signal_types: list[str]) -> list[str]:
     suggestions = []
-    if any(sig in {"open_problem_signal", "unresolved_mechanism_signal", "unknown_mechanism_signal"} for sig in signal_types):
+    if any(sig in {"open_problem_signal", "unresolved_mechanism_signal", "unknown_mechanism_signal", "formal_unsolved_problem_signal"} for sig in signal_types):
         suggestions.append("Collect a bounded owner summary of the unresolved mechanism and its constraints.")
-    if any(sig in {"missing_measurement_signal", "underexplored_dataset_signal", "replication_gap_signal"} for sig in signal_types):
+    if any(sig in {"missing_measurement_signal", "measurement_benchmark_gap_signal", "underexplored_dataset_signal", "replication_gap_signal"} for sig in signal_types):
         suggestions.append("Prepare a metadata-only source-selection plan for datasets, benchmarks, or measurements.")
-    if any(sig in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
-        suggestions.append("Prepare a bounded cross-domain candidate packet with explicit analogy limits.")
+    if any(sig in {"cross_domain_transfer_signal", "domain_convergence_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
+        suggestions.append("Prepare a bounded cross-domain review packet with explicit analogy limits.")
+    if any(sig in {"language_protocol_discovery_signal"} for sig in signal_types):
+        suggestions.append("Keep the protocol candidate as structure-only metadata and block universal-language claims.")
+    if any(sig in {"artifact_generation_candidate"} for sig in signal_types):
+        suggestions.append("Keep artifact generation as proposal-only metadata and do not generate artifacts here.")
+    if any(sig in {"future_workforce_impact_signal"} for sig in signal_types):
+        suggestions.append("Treat workforce-impact language as hypothesis-only metadata and block certainty claims.")
+    if any(sig in {"disconfirmation_required", "extraordinary_claim_signal", "fringe_edge_science_signal"} for sig in signal_types):
+        suggestions.append("Require disconfirmation-first handling or independent confirmation before promotion.")
+    if any(sig in {"ontology_insufficient_signal"} for sig in signal_types):
+        suggestions.append("Hold for operator review because the current ontology is not sufficient for safe promotion.")
     if any(sig in {"weak_signal", "unknown_signal"} for sig in signal_types):
         suggestions.append("Consider archiving or repairing the weak signal before any later routing.")
     if not suggestions:
@@ -790,13 +1082,16 @@ def _missing_evidence_map(candidates: list[dict[str, Any]]) -> dict[str, list[st
             "open_problem_signal",
             "unsolved_theory_signal",
             "unresolved_mechanism_signal",
+            "formal_unsolved_problem_signal",
             "requires_further_research_signal",
             "unknown_mechanism_signal",
             "not_fully_understood_signal",
+            "ontology_insufficient_signal",
         }:
             result.setdefault(key, []).append("Missing mechanism-level explanation or bounded owner summary")
         elif key in {
             "missing_measurement_signal",
+            "measurement_benchmark_gap_signal",
             "underexplored_dataset_signal",
             "replication_gap_signal",
             "incomplete_benchmark_signal",
@@ -804,8 +1099,14 @@ def _missing_evidence_map(candidates: list[dict[str, Any]]) -> dict[str, list[st
             "calibration_gap_signal",
         }:
             result.setdefault(key, []).append("Missing measurement, dataset, benchmark, survey, or calibration coverage")
-        elif key in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"}:
+        elif key in {"cross_domain_transfer_signal", "domain_convergence_signal", "adjacent_science_analogy_signal"}:
             result.setdefault(key, []).append("Missing cross-domain validation or explicit analogy limits")
+        elif key in {"language_protocol_discovery_signal"}:
+            result.setdefault(key, []).append("Missing protocol constraints or bounded language claim")
+        elif key in {"artifact_generation_candidate"}:
+            result.setdefault(key, []).append("Missing proposal blockers and future artifact constraints")
+        elif key in {"future_workforce_impact_signal"}:
+            result.setdefault(key, []).append("Missing evidence for a workforce-impact hypothesis")
     return result
 
 
@@ -813,10 +1114,12 @@ def _disconfirming_evidence_map(candidates: list[dict[str, Any]]) -> dict[str, l
     result: dict[str, list[str]] = {}
     for candidate in candidates:
         key = candidate["signal_type"]
-        if key in {"contradiction_signal", "unexplained_anomaly_signal", "failed_model_signal"}:
+        if key in {"contradiction_signal", "unexplained_anomaly_signal", "failed_model_signal", "anomaly_signal"}:
             result.setdefault(key, []).append("A bounded counterexample or failed-model trace would weaken this signal")
-        elif key in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal"}:
+        elif key in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal", "formal_unsolved_problem_signal"}:
             result.setdefault(key, []).append("A concrete mechanism explanation would reduce the open-problem posture")
+        elif key in {"disconfirmation_required", "extraordinary_claim_signal", "fringe_edge_science_signal"}:
+            result.setdefault(key, []).append("Independent confirmation or falsification is required before promotion")
         elif key in {"weak_signal", "unknown_signal"}:
             result.setdefault(key, []).append("A stronger bounded metadata signal would be needed before promotion")
     return result
@@ -825,17 +1128,33 @@ def _disconfirming_evidence_map(candidates: list[dict[str, Any]]) -> dict[str, l
 def _recommended_route(signal_types: list[str], candidate_count: int, source_classes_needed: list[str]) -> str:
     if any(sig == "blocked_or_unsafe_signal" for sig in signal_types):
         return "blocked_by_safety"
+    if any(sig in {"extraordinary_claim_signal", "fringe_edge_science_signal"} for sig in signal_types):
+        return "route_to_extraordinary_claim_quarantine"
+    if any(sig in {"ontology_insufficient_signal"} for sig in signal_types):
+        return "route_to_ontology_expansion_request"
+    if any(sig in {"language_protocol_discovery_signal"} for sig in signal_types):
+        return "route_to_language_protocol_review"
+    if any(sig in {"artifact_generation_candidate"} for sig in signal_types):
+        return "route_to_artifact_proposal_plan"
+    if any(sig in {"future_workforce_impact_signal"} for sig in signal_types):
+        return "route_to_future_workforce_impact_review"
+    if any(sig in {"domain_convergence_signal"} for sig in signal_types):
+        return "route_to_domain_convergence_review"
+    if any(sig in {"time_revisit_signal"} for sig in signal_types):
+        return "route_to_time_revisit_review"
+    if any(sig in {"disconfirmation_required"} for sig in signal_types):
+        return "route_to_disconfirming_review"
     if any(sig in {"cross_domain_transfer_signal", "adjacent_science_analogy_signal"} for sig in signal_types):
-        return "prepare_mlcf_cross_domain_candidate"
-    if any(sig in {"missing_measurement_signal", "underexplored_dataset_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
-        return "prepare_source_selection_evidence_plan"
-    if any(sig in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal", "unexplained_anomaly_signal", "future_work_signal", "limitation_signal", "failed_model_signal", "contradiction_signal", "not_fully_understood_signal", "unknown_mechanism_signal", "requires_further_research_signal"} for sig in signal_types):
+        return "route_to_cross_domain_scout"
+    if any(sig in {"measurement_benchmark_gap_signal", "underexplored_dataset_signal", "missing_measurement_signal", "replication_gap_signal", "incomplete_benchmark_signal", "survey_gap_signal", "calibration_gap_signal"} for sig in signal_types):
+        return "route_to_source_selection_plan"
+    if any(sig in {"open_problem_signal", "unsolved_theory_signal", "unresolved_mechanism_signal", "unexplained_anomaly_signal", "anomaly_signal", "future_work_signal", "limitation_signal", "failed_model_signal", "contradiction_signal", "formal_unsolved_problem_signal", "not_fully_understood_signal", "unknown_mechanism_signal", "requires_further_research_signal"} for sig in signal_types):
         if len(source_classes_needed) >= 3 and candidate_count >= 2:
-            return "prepare_cognitive_research_run_packet"
-        return "operator_review"
+            return "route_to_operator_review"
+        return "route_to_operator_review"
     if any(sig in {"weak_signal", "unknown_signal"} for sig in signal_types):
-        return "archive_low_value_signal"
-    return "prepare_metadata_only_source_locator_route"
+        return "route_to_archive_low_value_signal"
+    return "route_to_operator_review"
 
 
 def _candidate_lists_summary(buckets: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
@@ -1045,7 +1364,7 @@ def _build_safe_metadata_summary(packet: Mapping[str, Any], candidate_count: int
         "no_source_fetching": True,
         "no_source_ingestion": True,
         "no_evidence_elevation": True,
-        "no_truth_elevation": True,
+        "no_claim_elevation": True,
         "no_claims": True,
         "no_runtime_or_public_integration": True,
         "domain_family_count": len(_normalize_text_list(packet.get("domain_families"))),
@@ -1093,6 +1412,18 @@ def build_cross_domain_open_problem_discovery_scout_packet_v1(payload=None, **ov
         "search_governance_mode": request_payload["search_governance_mode"],
         "input_signal_items": request_payload["input_signal_items"],
         "open_problem_signal_candidates": buckets["open_problem_signal"],
+        "unfinished_work_candidates": buckets["unfinished_work_signal"],
+        "technology_blocked_candidates": buckets["technology_blocked_signal"],
+        "dormant_direction_candidates": buckets["dormant_direction_signal"],
+        "time_revisit_candidates": buckets["time_revisit_signal"],
+        "domain_convergence_candidates": buckets["domain_convergence_signal"],
+        "future_workforce_impact_candidates": buckets["future_workforce_impact_signal"],
+        "language_protocol_candidates": buckets["language_protocol_discovery_signal"],
+        "artifact_generation_candidates": buckets["artifact_generation_candidate"],
+        "disconfirmation_required_candidates": buckets["disconfirmation_required"],
+        "ontology_insufficient_candidates": buckets["ontology_insufficient_signal"],
+        "extraordinary_claim_candidates": buckets["extraordinary_claim_signal"],
+        "fringe_edge_science_candidates": buckets["fringe_edge_science_signal"],
         "unresolved_work_signal_candidates": [
             *buckets["open_problem_signal"],
             *buckets["unsolved_theory_signal"],
@@ -1138,6 +1469,7 @@ def build_cross_domain_open_problem_discovery_scout_packet_v1(payload=None, **ov
         "next_safe_step": route,
         "safe_metadata_summary": _build_safe_metadata_summary(request_payload, len(all_candidates), route),
     }
+    packet = _sanitize_forbidden_output(packet)
     packet["validation_status"] = {
         "schema_version": SCHEMA_VERSION_V1,
         "valid": True,
