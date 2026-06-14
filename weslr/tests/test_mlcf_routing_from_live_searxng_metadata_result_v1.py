@@ -175,6 +175,22 @@ def _private_packet() -> dict[str, object]:
     return packet
 
 
+def _route_for_first_result(*, source_class_hint: str | None = None, authority_guess: str | None = None, evidence_role_guess: str | None = None, relevance_reason: str | None = None, title: str | None = None) -> dict[str, object]:
+    packet = deepcopy(_valid_packet())
+    entry = packet["results"][0]
+    if source_class_hint is not None:
+        entry["source_class_hint"] = source_class_hint
+    if authority_guess is not None:
+        entry["authority_guess"] = authority_guess
+    if evidence_role_guess is not None:
+        entry["evidence_role_guess"] = evidence_role_guess
+    if relevance_reason is not None:
+        entry["relevance_reason"] = relevance_reason
+    if title is not None:
+        entry["title"] = title
+    return helper.build_mlcf_route_from_live_searxng_metadata_result_v1(packet, operator_role="owner")
+
+
 def test_required_apis_exist():
     names = [
         "allowed_mlcf_live_searxng_metadata_route_actions_v1",
@@ -194,6 +210,19 @@ def test_required_apis_exist():
 
 def test_allowed_enums_are_exact_and_stable():
     assert helper.allowed_mlcf_live_searxng_metadata_route_actions_v1() == (
+        "route_to_source_selection_plan",
+        "route_to_cross_domain_scout",
+        "route_to_operator_review",
+        "route_to_disconfirming_review",
+        "route_to_extraordinary_claim_quarantine",
+        "route_to_archive_low_value_signal",
+        "route_to_blocked_by_safety",
+        "route_to_time_revisit_review",
+        "route_to_domain_convergence_review",
+        "route_to_future_workforce_impact_review",
+        "route_to_language_protocol_review",
+        "route_to_artifact_proposal_plan",
+        "route_to_ontology_expansion_request",
         "route_to_locator_metadata_candidate",
         "hold_for_operator_review",
         "block_from_routing",
@@ -260,6 +289,97 @@ def test_unknown_authority_holds_for_operator_review():
     assert entry["route_action"] == "hold_for_operator_review"
     assert entry["source_class_posture"] == "operator_review"
     assert entry["authority_posture"] == "unknown_authority"
+
+
+def test_shared_registry_source_classes_are_accepted_where_safe():
+    cases = [
+        ("public_research_paper", "public_primary", "prior_art", "route_to_locator_metadata_candidate"),
+        ("survey_paper", "public_primary", "prior_art", "route_to_locator_metadata_candidate"),
+        ("review_paper", "public_primary", "prior_art", "route_to_locator_metadata_candidate"),
+        ("benchmark_paper", "public_primary", "benchmark_gap_signal", "route_to_locator_metadata_candidate"),
+        ("dataset_record", "public_secondary", "measurement_gap_signal", "route_to_locator_metadata_candidate"),
+        ("official_standard", "official_primary", "official_constraint_signal", "route_to_locator_metadata_candidate"),
+        ("government_agency_report", "official_primary", "official_constraint_signal", "route_to_locator_metadata_candidate"),
+        ("patent", "public_primary", "prior_art", "route_to_locator_metadata_candidate"),
+        ("thesis_dissertation", "public_secondary", "prior_art", "route_to_locator_metadata_candidate"),
+        ("lab_university_artifact", "public_secondary", "source_selection_needed", "route_to_source_selection_plan"),
+        ("conference_workshop_artifact", "public_secondary", "candidate_signal", "route_to_locator_metadata_candidate"),
+        ("negative_result_paper", "public_primary", "disconfirming_signal", "route_to_disconfirming_review"),
+        ("replication_study", "public_primary", "replication_gap_signal", "route_to_locator_metadata_candidate"),
+        ("historical_archive", "public_secondary", "prior_art", "route_to_archive_low_value_signal"),
+        ("technical_report", "public_primary", "unfinished_work_signal", "route_to_locator_metadata_candidate"),
+        ("preprint", "public_primary", "dormant_direction_signal", "route_to_archive_low_value_signal"),
+        ("vendor_technical_documentation", "official_primary", "implementation_reference_only", "route_to_locator_metadata_candidate"),
+        ("code_repository_as_implementation_reference", "community_signal", "implementation_reference_only", "route_to_locator_metadata_candidate"),
+        ("forum_blog_as_weak_signal", "community_signal", "candidate_signal", "hold_for_operator_review"),
+        ("unknown_authority", "unknown_authority", "candidate_signal", "hold_for_operator_review"),
+    ]
+    for source_class_hint, authority_guess, evidence_role_guess, expected_route_action in cases:
+        route = _route_for_first_result(
+            source_class_hint=source_class_hint,
+            authority_guess=authority_guess,
+            evidence_role_guess=evidence_role_guess,
+            relevance_reason=f"{source_class_hint} safe metadata-only test",
+        )
+        entry = route["kept_locator_route_entries"][0]
+        assert route["validation_status"]["valid"] is True
+        assert entry["route_action"] == expected_route_action
+        assert entry["source_class_hint"] == source_class_hint
+        assert entry["evidence_role_guess"] == evidence_role_guess
+        assert entry["route_action"] != "route_to_candidate_preparation"
+        assert entry["blocked_status"] != "result_cap_exceeded"
+
+
+def test_shared_registry_evidence_roles_are_accepted_where_safe():
+    cases = [
+        ("candidate_signal", "public_research_paper", "public_primary", "route_to_locator_metadata_candidate"),
+        ("unfinished_work_signal", "technical_report", "public_primary", "route_to_locator_metadata_candidate"),
+        ("dormant_direction_signal", "preprint", "public_primary", "route_to_archive_low_value_signal"),
+        ("cross_domain_transfer_signal", "review_paper", "public_primary", "route_to_cross_domain_scout"),
+        ("technology_blocked_signal", "vendor_technical_documentation", "official_primary", "route_to_blocked_by_safety"),
+        ("anomaly_signal", "dataset_record", "public_secondary", "route_to_locator_metadata_candidate"),
+        ("contradiction_signal", "negative_result_paper", "public_primary", "route_to_disconfirming_review"),
+        ("replication_gap_signal", "replication_study", "public_primary", "route_to_locator_metadata_candidate"),
+        ("benchmark_gap_signal", "benchmark_paper", "public_primary", "route_to_locator_metadata_candidate"),
+        ("measurement_gap_signal", "dataset_record", "public_secondary", "route_to_locator_metadata_candidate"),
+        ("extraordinary_claim_signal", "public_research_paper", "public_primary", "route_to_extraordinary_claim_quarantine"),
+        ("implementation_reference_only", "code_repository_as_implementation_reference", "community_signal", "route_to_locator_metadata_candidate"),
+        ("disconfirming_signal", "negative_result_paper", "public_primary", "route_to_disconfirming_review"),
+        ("official_constraint_signal", "official_standard", "official_primary", "route_to_locator_metadata_candidate"),
+        ("source_selection_needed", "survey_paper", "public_primary", "route_to_source_selection_plan"),
+        ("prior_art", "patent", "public_primary", "route_to_locator_metadata_candidate"),
+    ]
+    for evidence_role_guess, source_class_hint, authority_guess, expected_route_action in cases:
+        route = _route_for_first_result(
+            source_class_hint=source_class_hint,
+            authority_guess=authority_guess,
+            evidence_role_guess=evidence_role_guess,
+            relevance_reason=f"{evidence_role_guess} safe metadata-only test",
+        )
+        entry = route["kept_locator_route_entries"][0]
+        assert route["validation_status"]["valid"] is True
+        assert entry["route_action"] == expected_route_action
+        assert entry["evidence_role_guess"] == evidence_role_guess
+        assert entry["route_action"] != "route_to_candidate_preparation"
+        assert route["blocked_overflow_summary"]["count_only"] is True
+
+
+def test_ontology_insufficient_signal_routes_to_expansion_request_and_not_candidate_preparation():
+    route = _route_for_first_result(
+        source_class_hint="public_research_paper",
+        authority_guess="public_primary",
+        evidence_role_guess="ontology_insufficient_signal",
+        relevance_reason="ontology_insufficient_for_domain; metadata-only operator review required",
+    )
+    entry = route["kept_locator_route_entries"][0]
+    assert route["validation_status"]["valid"] is True
+    assert entry["route_action"] == "route_to_ontology_expansion_request"
+    assert entry["allowed_next_MLCF_stage"] == "operator_review"
+    assert entry["source_class_posture"] == "operator_review"
+    assert entry["authority_posture"] == "unknown_authority"
+    assert entry["evidence_role_posture"] == "ontology_insufficient_signal"
+    assert entry["route_action"] != "route_to_candidate_preparation"
+    assert all(item["route_action"] != "route_to_candidate_preparation" for item in route["kept_locator_route_entries"])
 
 
 def test_overflow_rows_stay_blocked_and_count_only():

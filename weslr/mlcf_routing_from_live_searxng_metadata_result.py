@@ -14,9 +14,19 @@ import json
 import math
 from typing import Any, Iterable, Mapping
 
+from weslr.unfinished_research_discovery_constants import (
+    allowed_unfinished_research_evidence_roles_v1,
+    allowed_unfinished_research_route_types_v1,
+    allowed_unfinished_research_source_classes_v1,
+)
+
 SCHEMA_VERSION_V1 = "mlcf_routing_from_live_searxng_metadata_result_helper_v1"
 
-_ALLOWED_ROUTE_ACTIONS_V1 = (
+_ALLOWED_ROUTE_ACTIONS_V1 = tuple(
+    route_type
+    for route_type in allowed_unfinished_research_route_types_v1()
+    if route_type != "route_to_candidate_preparation"
+) + (
     "route_to_locator_metadata_candidate",
     "hold_for_operator_review",
     "block_from_routing",
@@ -47,17 +57,11 @@ _ALLOWED_BLOCKED_STATUS_V1 = (
     "blocked_by_safety",
 )
 
-_ALLOWED_SOURCE_CLASS_HINTS_V1 = (
+_ALLOWED_SOURCE_CLASS_HINTS_V1 = allowed_unfinished_research_source_classes_v1() + (
     "github_repository",
     "public_lab_or_university_artifact",
     "unknown_authority",
     "candidate_signal",
-    "official_standard",
-    "public_research_paper",
-    "public_dataset",
-    "public_benchmark_or_test_suite",
-    "official_vendor_documentation",
-    "official_government_or_agency_data",
     "blocked_private_or_hidden_source",
 )
 
@@ -73,7 +77,7 @@ _ALLOWED_AUTHORITY_GUESSES_V1 = (
     "blocked",
 )
 
-_ALLOWED_EVIDENCE_ROLE_GUESSES_V1 = (
+_ALLOWED_EVIDENCE_ROLE_GUESSES_V1 = allowed_unfinished_research_evidence_roles_v1() + (
     "definition_or_standard",
     "measurement_data",
     "implementation_reference",
@@ -85,6 +89,11 @@ _ALLOWED_EVIDENCE_ROLE_GUESSES_V1 = (
     "domain_context",
     "safety_boundary_context",
     "not_authoritative_context",
+)
+
+_ONTOLOGY_INSUFFICIENT_MARKERS_V1 = (
+    "ontology_insufficient_signal",
+    "ontology_insufficient_for_domain",
 )
 
 _AUTHORITY_FALSE_FLAGS_V1 = (
@@ -444,6 +453,10 @@ def _map_source_class_posture(source_class_hint: str, authority_guess: str, evid
         return "blocked", "blocked", "not_authoritative_context", "blocked_by_safety", False
     if source_class_hint == "github_repository":
         return "community_signal", "community_signal", "implementation_reference", "operator_review", True
+    if source_class_hint == "code_repository_as_implementation_reference":
+        return "implementation_evidence", "community_signal", "implementation_reference_only", "operator_review", True
+    if source_class_hint == "forum_blog_as_weak_signal":
+        return "community_signal", "community_signal", "candidate_signal", "operator_review", True
     if source_class_hint == "public_lab_or_university_artifact":
         return "secondary_public_metadata", "public_secondary", evidence_role_guess or "candidate_signal", "operator_review", True
     if source_class_hint == "unknown_authority" or authority_guess == "unknown_authority":
@@ -451,6 +464,18 @@ def _map_source_class_posture(source_class_hint: str, authority_guess: str, evid
     if source_class_hint == "candidate_signal":
         return "candidate_signal", "candidate_signal", "candidate_signal", "operator_review", True
     return "operator_review", authority_guess, evidence_role_guess or "candidate_signal", "operator_review", True
+
+
+def _should_route_to_ontology_expansion_request(entry: Mapping[str, Any], source_class_hint: str, evidence_role_guess: str) -> bool:
+    combined = " ".join(
+        _compact_text(entry.get(field))
+        for field in ("title", "relevance_reason", "query", "source_class_hint", "evidence_role_guess")
+    ).lower()
+    return (
+        evidence_role_guess == "ontology_insufficient_signal"
+        or _compact_text(source_class_hint) == "ontology_insufficient_signal"
+        or any(marker in combined for marker in _ONTOLOGY_INSUFFICIENT_MARKERS_V1)
+    )
 
 
 def _validate_entry_fields(entry: Any, *, allow_blocked_overflow: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
@@ -528,14 +553,37 @@ def _validate_entry_fields(entry: Any, *, allow_blocked_overflow: bool = False) 
         route_action = "block_from_routing"
         operator_review_required = False
         allowed_next_stage = "blocked_by_safety"
+    elif source_class_posture == "blocked":
+        route_action = "route_to_blocked_by_safety"
+        operator_review_required = False
+        allowed_next_stage = "blocked_by_safety"
+        authority_posture = "blocked"
+        evidence_role_posture = "not_authoritative_context"
+    elif _should_route_to_ontology_expansion_request(entry, source_class_hint, evidence_role_guess):
+        route_action = "route_to_ontology_expansion_request"
+        operator_review_required = True
+        allowed_next_stage = "operator_review"
+        source_class_posture = "operator_review"
+        authority_posture = "unknown_authority"
+        evidence_role_posture = "ontology_insufficient_signal"
+    elif evidence_role_guess == "technology_blocked_signal":
+        route_action = "route_to_blocked_by_safety"
+    elif evidence_role_guess in {"disconfirming_signal", "contradiction_signal"}:
+        route_action = "route_to_disconfirming_review"
+    elif evidence_role_guess == "source_selection_needed":
+        route_action = "route_to_source_selection_plan"
+    elif evidence_role_guess == "cross_domain_transfer_signal":
+        route_action = "route_to_cross_domain_scout"
+    elif evidence_role_guess == "extraordinary_claim_signal":
+        route_action = "route_to_extraordinary_claim_quarantine"
+    elif source_class_hint == "historical_archive" or evidence_role_guess == "dormant_direction_signal":
+        route_action = "route_to_archive_low_value_signal"
     elif source_class_hint == "github_repository":
         route_action = "route_to_locator_metadata_candidate"
     elif source_class_hint in {"public_lab_or_university_artifact", "unknown_authority", "candidate_signal"} or authority_guess == "unknown_authority":
         route_action = "hold_for_operator_review"
-    elif source_class_posture == "blocked":
-        route_action = "block_from_routing"
-        operator_review_required = True
-        allowed_next_stage = "blocked_by_safety"
+    elif source_class_hint == "forum_blog_as_weak_signal":
+        route_action = "hold_for_operator_review"
     else:
         route_action = "route_to_locator_metadata_candidate"
 
