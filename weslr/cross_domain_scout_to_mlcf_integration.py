@@ -20,6 +20,17 @@ from weslr.cross_domain_open_problem_discovery_scout import (
     to_cross_domain_open_problem_discovery_scout_json_safe_v1,
     validate_cross_domain_open_problem_discovery_scout_packet_v1,
 )
+from weslr.ontology_expansion_request_builder import (
+    ONTOLOGY_MARKER_V1,
+    OPERATOR_CONFIRMATION_TOKEN_REQUIRED_V1,
+    build_ontology_expansion_request_v1,
+    validate_ontology_expansion_request_v1,
+)
+from weslr.unfinished_research_discovery_constants import (
+    allowed_unfinished_research_expansion_recommendations_v1,
+    denied_unfinished_research_authority_flags_v1,
+    required_unfinished_research_disconfirmation_fields_v1,
+)
 
 SCHEMA_VERSION_V1 = "weslr_cross_domain_scout_to_mlcf_integration_v1"
 
@@ -30,6 +41,7 @@ _ALLOWED_ROUTE_TYPES_V1 = (
     "scout_to_cognitive_research_run_packet",
     "scout_to_operator_review",
     "scout_to_archive_low_value_signal",
+    "route_to_ontology_expansion_request",
     "scout_blocked_by_safety",
 )
 
@@ -84,6 +96,8 @@ _ALLOWED_METADATA_FIELDS_V1 = (
     "operator_review_reasons",
     "blocked_reasons",
     "denied_authority_flags",
+    "ontology_expansion_request_handoff",
+    "ontology_expansion_request_validation",
     "next_safe_step",
     "validation_status",
     "safe_metadata_summary",
@@ -322,6 +336,7 @@ def _route_next_step(route_type: str) -> str:
         "scout_to_cognitive_research_run_packet": "prepare_cognitive_research_run_packet",
         "scout_to_operator_review": "operator_review",
         "scout_to_archive_low_value_signal": "archive_low_value_signal",
+        "route_to_ontology_expansion_request": "operator_review",
         "scout_blocked_by_safety": "blocked_by_safety",
     }[route_type]
 
@@ -334,6 +349,7 @@ def _collect_candidate_signal_refs(packet: Mapping[str, Any]) -> list[str]:
         "anomaly_signal_candidates",
         "limitation_future_work_candidates",
         "contradiction_candidates",
+        "ontology_insufficient_candidates",
     ):
         for item in _normalize_mapping_list(packet.get(field)):
             ref = _compact_text(item.get("signal_id")) or _compact_text(item.get("source_ref")) or _compact_text(item.get("title_or_descriptor"))
@@ -395,6 +411,128 @@ def _has_cognitive_research_need(packet: Mapping[str, Any]) -> bool:
     return openish >= 1 and pressure >= 2 and not _has_bridge_signals(packet) and not _has_strong_missing_evidence(packet) and not _has_locator_need(packet)
 
 
+def _has_ontology_insufficient_need(packet: Mapping[str, Any]) -> bool:
+    if _signal_list_count(packet, "ontology_insufficient_candidates") > 0:
+        return True
+    safe_metadata_summary = packet.get("safe_metadata_summary")
+    if isinstance(safe_metadata_summary, Mapping) and safe_metadata_summary.get("sufficient_power") is False:
+        return True
+    for item in _normalize_mapping_list(packet.get("input_signal_items")):
+        signal_type = _compact_text(item.get("signal_type"))
+        evidence_role = _compact_text(item.get("evidence_role_guess"))
+        source_class = _compact_text(item.get("source_class_hint"))
+        summary = _compact_text(item.get("summary"))
+        if signal_type in {"ontology_insufficient_signal", "ontology_insufficient_for_domain"}:
+            return True
+        if evidence_role in {"ontology_insufficient_signal", "ontology_insufficient_for_domain"}:
+            return True
+        if source_class in {"ontology_insufficient_signal", "ontology_insufficient_for_domain"}:
+            return True
+        if any(marker in summary.lower() for marker in ("ontology insufficient", "insufficient ontology", "ontology gap", "missing ontology", "no current ontology fit")):
+            return True
+    combined = " ".join(_compact_text(blob) for blob in _iter_text_blobs(packet)).lower()
+    return any(marker in combined for marker in ("ontology insufficient", "insufficient ontology", "ontology gap", "missing ontology", "ontology_insufficient_signal", "ontology_insufficient_for_domain"))
+
+
+def _build_ontology_expansion_request_handoff(packet: Mapping[str, Any], *, route_reason: str, selected_route: str, source_summary: Mapping[str, Any]) -> dict[str, Any]:
+    source_locator_ids = _collect_candidate_signal_refs(packet)
+    if not source_locator_ids:
+        source_locator_ids = [_compact_text(packet.get("scout_id")) or _compact_text(packet.get("source_scout_packet_ref")) or "missing_scout_packet"]
+
+    current_signal_type = "ontology_insufficient_signal" if _signal_list_count(packet, "ontology_insufficient_candidates") > 0 else "ontology_insufficient_for_domain"
+    ontology_marker = ONTOLOGY_MARKER_V1
+    domain_families = _normalize_text_list(packet.get("domain_families"))
+    triggering_signal_summary = _compact_text(source_summary.get("summary_text")) or route_reason
+    why_current_ontology_failed = _compact_text(packet.get("operator_review_need")) or route_reason
+    required_disconfirming_evidence = {
+        field: value
+        for field, value in zip(
+            required_unfinished_research_disconfirmation_fields_v1(),
+            (
+                why_current_ontology_failed or "Current ontology cannot safely promote without disconfirmation.",
+                _compact_text(packet.get("disconfirming_evidence_map")) or "Metadata-only disconfirmation summary required.",
+                ", ".join(_normalize_text_list(packet.get("source_classes_needed"))) or ", ".join(domain_families) or "unknown",
+                "metadata-only review of ontology sufficiency and disconfirmation constraints",
+                "bounded ontology expansion request with operator review",
+                "no source fetching, no ingestion, no runtime wiring, no candidate preparation",
+                "ontology insufficiency, no candidate-preparation authority, no final-answer authority",
+            ),
+        )
+    }
+    recommended_actions = list(allowed_unfinished_research_expansion_recommendations_v1())
+    text_blobs = " ".join(_compact_text(blob) for blob in _iter_text_blobs(packet)).lower()
+    if _signal_list_count(packet, "extraordinary_claim_candidates") > 0 or _signal_list_count(packet, "fringe_edge_science_candidates") > 0 or any(marker in text_blobs for marker in ("extraordinary claim", "fringe", "edge science")):
+        for action in ("expansion_add_new_disconfirmation_class", "expansion_add_new_artifact_type"):
+            if action not in recommended_actions:
+                recommended_actions.append(action)
+    if _signal_list_count(packet, "language_protocol_candidates") > 0 or any(marker in text_blobs for marker in ("language protocol", "universal language", "new language", "protocol")):
+        for action in ("expansion_add_new_language_protocol_pattern", "expansion_add_new_operator_review_category"):
+            if action not in recommended_actions:
+                recommended_actions.append(action)
+    if _signal_list_count(packet, "limitation_future_work_candidates") > 0 or any(marker in text_blobs for marker in ("future work", "job transformation", "job replacement", "workforce impact")):
+        for action in ("expansion_create_new_discovery_lens_design_lane", "expansion_add_new_operator_review_category"):
+            if action not in recommended_actions:
+                recommended_actions.append(action)
+
+    builder_packet = build_ontology_expansion_request_v1(
+        source_locator_ids=source_locator_ids,
+        triggering_signal_summary=triggering_signal_summary,
+        why_current_ontology_failed=why_current_ontology_failed,
+        current_signal_type_attempted=current_signal_type,
+        current_route_attempted=selected_route,
+        recommended_expansion_actions=tuple(recommended_actions),
+        required_disconfirming_evidence=required_disconfirming_evidence,
+        rollback_plan={
+            "prior_registry_snapshot_required": True,
+            "changed_fields_required": True,
+            "affected_modules_required": True,
+            "affected_tests_required": True,
+            "revert_commit_required": True,
+            "post_rollback_validation_required": True,
+            "no_memory_mutation_required": True,
+            "no_weslr_io_required": True,
+        },
+        blocked_authorities={flag: False for flag in denied_unfinished_research_authority_flags_v1()},
+        safe_next_step="operator_review",
+        status="pending_operator_review",
+        operator_review_required=True,
+        ontology_marker=ontology_marker,
+        safe_metadata_summary={
+            "metadata_only": True,
+            "source_content_stored": False,
+            "raw_text_stored": False,
+            "source_ingestion_performed": False,
+            "provider_call_performed": False,
+            "runtime_wiring_performed": False,
+            "accepted_evidence_created": False,
+            "accepted_candidate_created": False,
+            "public_claim_created": False,
+            "final_answer_created": False,
+            "ontology_auto_applied": False,
+            "sufficient_power": False,
+        },
+    )
+    builder_validation = validate_ontology_expansion_request_v1(builder_packet)
+    preserved_postures = {
+        "extraordinary_or_fringe": bool(_signal_list_count(packet, "extraordinary_claim_candidates") > 0 or _signal_list_count(packet, "fringe_edge_science_candidates") > 0),
+        "language_protocol": bool(_signal_list_count(packet, "language_protocol_candidates") > 0),
+        "future_work": bool(_signal_list_count(packet, "limitation_future_work_candidates") > 0),
+        "disconfirmation_first": True,
+        "quarantine_or_disconfirmation_required": bool(_signal_list_count(packet, "extraordinary_claim_candidates") > 0 or _signal_list_count(packet, "fringe_edge_science_candidates") > 0),
+        "hypothesis_only": bool(_signal_list_count(packet, "limitation_future_work_candidates") > 0),
+        "claim_blocks_preserved": bool(_signal_list_count(packet, "language_protocol_candidates") > 0),
+    }
+    return {
+        "ontology_expansion_request": builder_packet,
+        "ontology_expansion_request_validation": builder_validation,
+        "ontology_insufficient_signal": True,
+        "ontology_insufficient_for_domain": bool(_signal_list_count(packet, "ontology_insufficient_candidates") > 0),
+        "candidate_preparation_eligible": False,
+        "safe_next_step": "operator_review",
+        "preserved_postures": preserved_postures,
+    }
+
+
 def _has_weak_only_need(packet: Mapping[str, Any]) -> bool:
     weakish = _signal_list_count(packet, "weak_signal_candidates") + _signal_list_count(packet, "unknown_signal_candidates")
     if weakish == 0:
@@ -445,6 +583,23 @@ def _build_mlcf_candidate_preview(packet: Mapping[str, Any]) -> dict[str, Any]:
         "probe_suggestions": _normalize_text_list(packet.get("probe_suggestions")),
         "no_claim_authority": True,
     }
+
+
+def _sanitize_source_scout_packet_for_integration(packet: Mapping[str, Any]) -> dict[str, Any]:
+    sanitized = copy.deepcopy(dict(packet))
+    if not _compact_text(sanitized.get("signal_type")):
+        sanitized["signal_type"] = "open_problem_signal"
+    for field_name, fallback_signal_type in (
+        ("open_problem_signal_candidates", "open_problem_signal"),
+        ("unresolved_work_signal_candidates", "open_problem_signal"),
+        ("anomaly_signal_candidates", "anomaly_signal"),
+        ("limitation_future_work_candidates", "future_work_signal"),
+        ("contradiction_candidates", "contradiction_signal"),
+    ):
+        for item in sanitized.get(field_name, []):
+            if isinstance(item, dict) and not _compact_text(item.get("signal_type")):
+                item["signal_type"] = fallback_signal_type
+    return sanitized
 
 
 def _build_metadata_locator_preview(packet: Mapping[str, Any]) -> dict[str, Any]:
@@ -623,6 +778,36 @@ def _route_analysis(packet: Mapping[str, Any]) -> dict[str, Any]:
             )
         )
 
+    ontology_insufficient = _has_ontology_insufficient_need(packet)
+    if ontology_insufficient:
+        handoff = _build_ontology_expansion_request_handoff(
+            packet,
+            route_reason="Ontology-insufficient scout metadata requires a bounded ontology expansion request.",
+            selected_route="route_to_ontology_expansion_request",
+            source_summary={"summary_text": _compact_text(packet.get("search_governance_mode")) or _compact_text(packet.get("operator_review_need"))},
+        )
+        return {
+            "selected_route": "route_to_ontology_expansion_request",
+            "route_reason": "Ontology-insufficient scout metadata requires a bounded ontology expansion request.",
+            "route_decisions": [
+                _decision(
+                    "route_to_ontology_expansion_request",
+                    signal_refs,
+                    "high",
+                    "Ontology-insufficient scout metadata requires a bounded ontology expansion request and operator review.",
+                    True,
+                    _route_next_step("route_to_ontology_expansion_request"),
+                    handoff,
+                    blocked_authorities=list(_DENIED_AUTHORITY_FLAGS_V1.keys()),
+                )
+            ],
+            "operator_review_reasons": ["Ontology insufficiency requires operator review and an ontology expansion request handoff."],
+            "blocked_reasons": blocked_reasons,
+            "next_safe_step": "operator_review",
+            "ontology_expansion_request_handoff": handoff,
+            "ontology_expansion_request_validation": handoff.get("ontology_expansion_request_validation"),
+        }
+
     if bridge:
         selected_route = "scout_to_mlcf_cross_domain_candidate"
         route_reason = "Cross-domain bridge candidates are strong and unresolved-work signals are sufficient for MLCF candidate routing."
@@ -694,6 +879,9 @@ def build_cross_domain_scout_to_mlcf_integration_packet_v1(scout_packet=None, *,
     if source_scout_packet is None and isinstance(request.get("source_scout_packet"), Mapping):
         source_scout_packet = request["source_scout_packet"]
 
+    if isinstance(source_scout_packet, Mapping):
+        source_scout_packet = _sanitize_source_scout_packet_for_integration(source_scout_packet)
+
     source_validation = validate_cross_domain_open_problem_discovery_scout_packet_v1(source_scout_packet)
     source_summary = summarize_cross_domain_open_problem_discovery_scout_packet_v1(source_scout_packet) if isinstance(source_scout_packet, Mapping) else {
         "schema_version": "cross_domain_open_problem_scout_v1",
@@ -725,6 +913,8 @@ def build_cross_domain_scout_to_mlcf_integration_packet_v1(scout_packet=None, *,
         "operator_review_reasons": route_analysis["operator_review_reasons"],
         "blocked_reasons": route_analysis["blocked_reasons"],
         "denied_authority_flags": dict(_DENIED_AUTHORITY_FLAGS_V1),
+        "ontology_expansion_request_handoff": route_analysis.get("ontology_expansion_request_handoff"),
+        "ontology_expansion_request_validation": route_analysis.get("ontology_expansion_request_validation"),
         "next_safe_step": route_analysis["next_safe_step"],
         "validation_status": {
             "schema_version": SCHEMA_VERSION_V1,
@@ -755,6 +945,7 @@ def build_cross_domain_scout_to_mlcf_integration_packet_v1(scout_packet=None, *,
             "operator_review_required": True,
             "source_scout_validation_posture": source_validation.get("validation_posture", "blocked"),
             "selected_route": route_analysis["selected_route"],
+            **({"sufficient_power": False} if route_analysis["selected_route"] == "route_to_ontology_expansion_request" else {}),
         },
     }
     return to_cross_domain_scout_to_mlcf_integration_json_safe_v1(integration_payload)
@@ -847,6 +1038,22 @@ def validate_cross_domain_scout_to_mlcf_integration_packet_v1(packet):
     if packet.get("source_scout_summary") is None:
         blocked_labels.append("missing_source_scout_summary")
 
+    ontology_handoff = packet.get("ontology_expansion_request_handoff")
+    if ontology_handoff is not None and not isinstance(ontology_handoff, Mapping):
+        blocked_labels.append("invalid_ontology_expansion_request_handoff")
+    ontology_validation = packet.get("ontology_expansion_request_validation")
+    if ontology_validation is not None and not isinstance(ontology_validation, Mapping):
+        blocked_labels.append("invalid_ontology_expansion_request_validation")
+    if isinstance(ontology_handoff, Mapping):
+        inner_request = ontology_handoff.get("ontology_expansion_request")
+        if isinstance(inner_request, Mapping):
+            inner_validation = validate_ontology_expansion_request_v1(inner_request)
+            if inner_validation.get("blocked"):
+                blocked_labels.append("invalid_ontology_expansion_request_payload")
+        inner_handoff_validation = ontology_handoff.get("ontology_expansion_request_validation")
+        if inner_handoff_validation is not None and isinstance(inner_handoff_validation, Mapping) and inner_handoff_validation.get("blocked"):
+            blocked_labels.append("invalid_ontology_expansion_request_validation_payload")
+
     route_decisions = packet.get("route_decisions")
     if not isinstance(route_decisions, list) or not route_decisions:
         blocked_labels.append("missing_route_decisions")
@@ -896,6 +1103,8 @@ def validate_cross_domain_scout_to_mlcf_integration_packet_v1(packet):
     safe_metadata_summary = packet.get("safe_metadata_summary")
     if not isinstance(safe_metadata_summary, Mapping):
         blocked_labels.append("invalid_safe_metadata_summary")
+    elif packet.get("selected_route") == "route_to_ontology_expansion_request" and safe_metadata_summary.get("sufficient_power") is not False:
+        blocked_labels.append("ontology_expansion_request_must_have_sufficient_power_false")
     validation_status = packet.get("validation_status")
     if not isinstance(validation_status, Mapping):
         blocked_labels.append("invalid_validation_status")
@@ -907,6 +1116,14 @@ def validate_cross_domain_scout_to_mlcf_integration_packet_v1(packet):
     source_scout_summary = packet.get("source_scout_summary")
     if isinstance(source_scout_summary, Mapping):
         scanned_texts.append(source_scout_summary.get("summary_text"))
+    if isinstance(ontology_handoff, Mapping):
+        scanned_texts.append(ontology_handoff.get("safe_next_step"))
+        inner_request = ontology_handoff.get("ontology_expansion_request")
+        if isinstance(inner_request, Mapping):
+            scanned_texts.extend(inner_request.values())
+            inner_validation = ontology_handoff.get("ontology_expansion_request_validation")
+            if isinstance(inner_validation, Mapping):
+                scanned_texts.extend(inner_validation.values())
     scanned_texts.extend(packet.get("operator_review_reasons") or [])
     scanned_texts.extend(packet.get("blocked_reasons") or [])
     for decision in route_decisions if isinstance(route_decisions, list) else []:
@@ -954,6 +1171,7 @@ def summarize_cross_domain_scout_to_mlcf_integration_packet_v1(packet):
         "selected_route": _compact_text(packet_map.get("selected_route")),
         "next_safe_step": _compact_text(packet_map.get("next_safe_step")),
         "route_decision_count": len(packet_map.get("route_decisions", [])) if isinstance(packet_map.get("route_decisions"), list) else 0,
+        "ontology_expansion_request_present": isinstance(packet_map.get("ontology_expansion_request_handoff"), Mapping),
         "validation_posture": validation.get("validation_posture", "blocked"),
         "summary_text": summary_text[:240],
     }
@@ -967,27 +1185,64 @@ def build_initial_cross_domain_scout_to_mlcf_integration_examples_v1() -> list[d
     scout_examples = build_initial_cross_domain_open_problem_discovery_scout_examples_v1()
     examples: list[dict[str, Any]] = []
 
+    candidate_scout = copy.deepcopy(scout_examples[0])
+    candidate_scout["scout_id"] = "cross_domain_open_problem_scout_candidate_example"
+    candidate_scout["signal_type"] = "open_problem_signal"
+    for candidate in candidate_scout.get("open_problem_signal_candidates", []):
+        if isinstance(candidate, dict):
+            candidate["signal_type"] = "open_problem_signal"
+    for candidate in candidate_scout.get("unresolved_work_signal_candidates", []):
+        if isinstance(candidate, dict):
+            candidate["signal_type"] = "open_problem_signal"
+    for candidate in candidate_scout.get("anomaly_signal_candidates", []):
+        if isinstance(candidate, dict):
+            candidate["signal_type"] = "anomaly_signal"
+    for candidate in candidate_scout.get("limitation_future_work_candidates", []):
+        if isinstance(candidate, dict):
+            candidate["signal_type"] = "future_work_signal"
+    for candidate in candidate_scout.get("contradiction_candidates", []):
+        if isinstance(candidate, dict):
+            candidate["signal_type"] = "contradiction_signal"
+    candidate_scout["missing_evidence_map"] = {"source_class_gap": ["metadata-only candidate path"]}
+    candidate_scout["disconfirming_evidence_map"] = {"blocked_source_boundary": ["no raw content", "no assertion authority"]}
     examples.append(
         build_cross_domain_scout_to_mlcf_integration_packet_v1(
-            scout_examples[0],
+            candidate_scout,
             integration_id="cross_domain_scout_to_mlcf_candidate_example_a",
         )
     )
 
+    source_selection_scout = copy.deepcopy(candidate_scout)
+    source_selection_scout["scout_id"] = "cross_domain_open_problem_scout_source_selection_example"
+    source_selection_scout["candidate_cross_domain_bridges"] = []
+    source_selection_scout["missing_evidence_map"] = {
+        "source_class_gap": ["metadata-only source selection needed"],
+        "required_source_classes": ["public_secondary", "implementation_reference"],
+        "evidence_role_gap": ["need stronger metadata-only evidence plan"],
+        "coverage_gap": ["need extra source coverage"],
+    }
+    source_selection_scout["disconfirming_evidence_map"] = {
+        "blocked_source_boundary": ["no raw content", "no assertion authority"],
+        "no_source_ingestion": ["keep metadata-only"],
+    }
+    source_selection_scout["source_classes_needed"] = ["public_secondary", "implementation_reference"]
+    source_selection_scout["pressure_test_questions"] = []
+    source_selection_scout["probe_suggestions"] = []
     examples.append(
         build_cross_domain_scout_to_mlcf_integration_packet_v1(
-            scout_examples[1],
+            source_selection_scout,
             integration_id="cross_domain_scout_to_mlcf_source_selection_example_b",
         )
     )
 
-    locator_scout = copy.deepcopy(scout_examples[1])
+    locator_scout = copy.deepcopy(candidate_scout)
     locator_scout["scout_id"] = "cross_domain_open_problem_scout_locator_example"
     locator_scout["candidate_cross_domain_bridges"] = []
     locator_scout["missing_evidence_map"] = {"source_class_gap": ["metadata-only locator needed"]}
-    locator_scout["disconfirming_evidence_map"] = {"blocked_private_or_hidden_source": ["no raw content", "no claim authority"]}
-    locator_scout["recommended_mlcf_route"] = "prepare_metadata_only_source_locator_route"
-    locator_scout["next_safe_step"] = "prepare_metadata_only_source_locator_route"
+    locator_scout["disconfirming_evidence_map"] = {"blocked_source_boundary": ["no raw content", "no assertion authority"]}
+    locator_scout["source_classes_needed"] = ["metadata_only_source_locator"]
+    locator_scout["pressure_test_questions"] = []
+    locator_scout["probe_suggestions"] = []
     examples.append(
         build_cross_domain_scout_to_mlcf_integration_packet_v1(
             locator_scout,
@@ -1005,15 +1260,9 @@ def build_initial_cross_domain_scout_to_mlcf_integration_examples_v1() -> list[d
     weak_scout = copy.deepcopy(scout_examples[3])
     weak_scout["scout_id"] = "cross_domain_open_problem_scout_weak_example"
     weak_scout["candidate_cross_domain_bridges"] = []
-    weak_scout["open_problem_signal_candidates"] = []
-    weak_scout["unresolved_work_signal_candidates"] = []
-    weak_scout["anomaly_signal_candidates"] = []
-    weak_scout["limitation_future_work_candidates"] = []
-    weak_scout["contradiction_candidates"] = []
     weak_scout["missing_evidence_map"] = {}
     weak_scout["disconfirming_evidence_map"] = {}
     weak_scout["source_classes_needed"] = []
-    weak_scout["candidate_cross_domain_bridges"] = []
     weak_scout["pressure_test_questions"] = ["Is this only a vague analogy?"]
     weak_scout["probe_suggestions"] = ["Archive unless a stronger signal appears."]
     weak_scout["recommended_mlcf_route"] = "archive_low_value_signal"
@@ -1025,20 +1274,44 @@ def build_initial_cross_domain_scout_to_mlcf_integration_examples_v1() -> list[d
         )
     )
 
-    cognitive_scout = copy.deepcopy(scout_examples[0])
+    cognitive_scout = copy.deepcopy(candidate_scout)
     cognitive_scout["scout_id"] = "cross_domain_open_problem_scout_cognitive_example"
     cognitive_scout["candidate_cross_domain_bridges"] = []
-    cognitive_scout["missing_evidence_map"] = {}
-    cognitive_scout["disconfirming_evidence_map"] = {}
     cognitive_scout["anomaly_signal_candidates"] = []
     cognitive_scout["contradiction_candidates"] = []
+    cognitive_scout["missing_evidence_map"] = {}
+    cognitive_scout["disconfirming_evidence_map"] = {}
     cognitive_scout["source_classes_needed"] = []
-    cognitive_scout["recommended_mlcf_route"] = "prepare_cognitive_research_run_packet"
-    cognitive_scout["next_safe_step"] = "prepare_cognitive_research_run_packet"
+    cognitive_scout["pressure_test_questions"] = ["What mechanism is missing?", "What disconfirms it?"]
+    cognitive_scout["probe_suggestions"] = ["Run bounded follow-up."]
     examples.append(
         build_cross_domain_scout_to_mlcf_integration_packet_v1(
             cognitive_scout,
             integration_id="cross_domain_scout_to_mlcf_cognitive_example_f",
+        )
+    )
+
+    ontology_scout = copy.deepcopy(candidate_scout)
+    ontology_scout["scout_id"] = "cross_domain_open_problem_scout_ontology_example"
+    ontology_scout["candidate_cross_domain_bridges"] = []
+    ontology_scout["source_classes_needed"] = []
+    ontology_scout["pressure_test_questions"] = []
+    ontology_scout["probe_suggestions"] = []
+    ontology_scout["ontology_insufficient_candidates"] = [
+        {
+            "signal_id": "ontology_insufficient_signal_domain_family_001",
+            "source_ref": "ontology_domain_family_gap_001",
+            "title_or_descriptor": "ontology insufficient for domain family routing",
+        }
+    ]
+    ontology_scout["safe_metadata_summary"] = {
+        **ontology_scout["safe_metadata_summary"],
+        "sufficient_power": False,
+    }
+    examples.append(
+        build_cross_domain_scout_to_mlcf_integration_packet_v1(
+            ontology_scout,
+            integration_id="cross_domain_scout_to_mlcf_ontology_expansion_example_g",
         )
     )
 
