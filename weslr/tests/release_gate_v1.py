@@ -995,6 +995,30 @@ _second_controlled_true_run_after_discovery_registry_repair_result_allowed_paths
     "weslr/tests/release_gate_v1.py",
 }
 
+# Narrow, exact-path allowance for the second controlled true run result review doc.
+# This is intentionally not a broad docs/ allowlist.
+_second_controlled_true_run_after_discovery_registry_repair_result_review_doc = (
+    "docs/WESLR_SECOND_CONTROLLED_TRUE_RUN_AFTER_DISCOVERY_REGISTRY_REPAIR_RESULT_REVIEW_V1.md"
+)
+_second_controlled_true_run_after_discovery_registry_repair_result_review_required_markers = {
+    "WESLR Second Controlled True Run After Discovery Registry Repair Result Review V1",
+    "Run by: operator (manual hand-issued)",
+    "review-only",
+    "valid_ready_for_third_controlled_true_run_plan",
+    "valid_with_oer_noop_followup",
+    "needs_wording_repair",
+    "needs_pipeline_repair",
+    "validation_incomplete",
+    "metadata-only",
+    "no source ingestion",
+    "no public claim",
+    "no final answer",
+}
+_second_controlled_true_run_after_discovery_registry_repair_result_review_allowed_paths = {
+    _second_controlled_true_run_after_discovery_registry_repair_result_review_doc,
+    "weslr/tests/release_gate_v1.py",
+}
+
 _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc = (
     "docs/WESLR_CONTROLLED_NOVA_TRUE_RUN_METADATA_SOURCE_LOCATOR_TO_MLCF_CANDIDATE_PREPARATION_V1.md"
 )
@@ -11735,6 +11759,12 @@ def _second_controlled_true_run_after_discovery_registry_repair_result_doc_is_va
         _second_controlled_true_run_after_discovery_registry_repair_result_required_markers,
     )
 
+def _second_controlled_true_run_after_discovery_registry_repair_result_review_doc_is_valid():
+    return _doc_with_markers_is_valid(
+        _second_controlled_true_run_after_discovery_registry_repair_result_review_doc,
+        _second_controlled_true_run_after_discovery_registry_repair_result_review_required_markers,
+    )
+
 def _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc_is_valid():
     return _doc_with_markers_is_valid(
         _controlled_nova_true_run_metadata_locator_to_mlcf_candidate_preparation_doc,
@@ -15922,6 +15952,10 @@ def _check_git_scope():
             allowed = True
             if path == _second_controlled_true_run_after_discovery_registry_repair_result_doc:
                 allowed = _second_controlled_true_run_after_discovery_registry_repair_result_doc_is_valid()
+        if path in _second_controlled_true_run_after_discovery_registry_repair_result_review_allowed_paths:
+            allowed = True
+            if path == _second_controlled_true_run_after_discovery_registry_repair_result_review_doc:
+                allowed = _second_controlled_true_run_after_discovery_registry_repair_result_review_doc_is_valid()
 
         if not allowed:
             violations.append(f"  outside allowed scope: {path}")
