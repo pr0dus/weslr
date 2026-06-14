@@ -3,6 +3,9 @@
 ## 1. purpose
 Read-only inventory of docs/artifacts that are implemented, missing, blocked, or pending review.
 
+## Repair note
+V1 was repaired because the initial classification under-counted completed review chains and left some reviewed artifacts in pending lanes.
+
 ## 2. repo/branch/head
 - Repo: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `occ-discovery-doctrine-implementation-20260613`
@@ -30,42 +33,47 @@ Read-only inventory of docs/artifacts that are implemented, missing, blocked, or
 ## 8. classification table
 | artifact/doc path | category | detected status markers | expected implementation file | expected test file | implementation status | review status | blocker | recommended next lane | confidence |
 |---|---|---|---|---|---|---|---|---|---|
-| docs/WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_REVIEW_V1.md | review doc | - | weslr/artifact_forward_work_plan.py | weslr/tests/test_artifact_forward_work_plan_v1.py | implemented_source_and_tests_found | review missing | review missing | REVIEW_WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_V1 | high |
-| docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md | design doc | blocked | weslr/unexplained_signal_artifact.py | weslr/tests/test_unexplained_signal_artifact_v1.py | implemented_source_and_tests_found | review_found | none | REVIEW_WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1 | high |
+| docs/WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_REVIEW_V1.md | review doc | - | weslr/artifact_forward_work_plan.py | weslr/tests/test_artifact_forward_work_plan_v1.py | implemented_but_review_missing | review missing | none | REVIEW_WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_V1 | high |
+| docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md | design doc | blocked | weslr/unexplained_signal_artifact.py | weslr/tests/test_unexplained_signal_artifact_v1.py | design_reviewed_but_not_implemented | review_found | none | REVIEW_WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1 | high |
 | docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_REVIEW_V1.md | review doc | blocked, IMPLEMENT_ | weslr/unexplained_signal_artifact.py | weslr/tests/test_unexplained_signal_artifact_v1.py | review_found | review_found | none | REVIEW_WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1 | high |
-| docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_HELPERS_REVIEW_V1.md | review doc | blocked, IMPLEMENT_, RUN_ | weslr/unexplained_signal_artifact.py | weslr/tests/test_unexplained_signal_artifact_v1.py | review_found | review_found | none | REVIEW_WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1 | high |
+| docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_HELPERS_REVIEW_V1.md | review doc | blocked, IMPLEMENT_, RUN_ | weslr/unexplained_signal_artifact.py | weslr/tests/test_unexplained_signal_artifact_v1.py | implemented_and_reviewed | review_found | none | REVIEW_WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1 | high |
 | docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_PLAN_V1.md | implementation plan | blocked, REVIEW_, RUN_, REPAIR_ | - | - | blocked_result | review_found | local metadata locator unavailable | REPAIR_WESLR_LOCAL_METADATA_LOCATOR_AVAILABILITY_V1 | high |
 | docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1.md | result doc | blocked, REVIEW_, RUN_ | - | - | blocked_result | review_found | local metadata locator unavailable | REVIEW_WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1 | high |
 
 
-## 9. design docs with implementation found
-- `docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md` → `weslr/unexplained_signal_artifact.py` + `weslr/tests/test_unexplained_signal_artifact_v1.py`
-- `docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_PLAN_V1.md` is linked to a blocked run result rather than a missing helper
+## 9. design docs with implementation or review found
+- `docs/WESLR_UNEXPLAINED_SIGNAL_ARTIFACT_PIPELINE_V1.md` → reviewed design; implementation exists in `weslr/unexplained_signal_artifact.py` + `weslr/tests/test_unexplained_signal_artifact_v1.py`
+- `docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_PLAN_V1.md` → blocked result path, not a missing helper
 
 ## 10. design docs missing implementation
-- `docs/WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_REVIEW_V1.md` is missing as a review artifact, not an implementation doc
+- `design_missing` remains relevant for untracked future shapes such as richer metadata-only signal item shape
 
 ## 11. implementations missing review
-- `weslr/artifact_forward_work_plan.py` + `weslr/tests/test_artifact_forward_work_plan_v1.py` appear implemented, but `docs/WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_REVIEW_V1.md` is absent
+- `weslr/artifact_forward_work_plan.py` + `weslr/tests/test_artifact_forward_work_plan_v1.py` → review doc missing
 
 ## 12. blocked result docs
-- `docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1.md` → blocked by local metadata locator unavailability
+- `docs/WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1.md` → `blocked_result`
 
 ## 13. environment repair needs
-- `REPAIR_WESLR_LOCAL_METADATA_LOCATOR_AVAILABILITY_V1`
+- `environment_repair_needed`: `REPAIR_WESLR_LOCAL_METADATA_LOCATOR_AVAILABILITY_V1`
 
 ## 14. untracked docs needing classification
-- pre-existing untracked docs under `docs/` remain unclassified and untouched
+- pre-existing untracked docs under `docs/` remain `untracked_needs_classification`
 
 ## 15. current critical gaps
-- blocked local metadata locator
-- missing artifact-forward-work-plan helper review doc
-- broader untracked docs classification backlog
+- `blocked_result`: local metadata locator unavailable
+- `implemented_but_review_missing`: artifact-forward-work-plan helpers review doc missing
+- `design_missing`: richer metadata-only signal item shape not yet defined
+- `implementation_missing`: OER no-op record builder not found
+- `untracked_needs_classification`: backlog remains
 
-## 16. recommended next lanes
-- `REVIEW_WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1`
-- `REPAIR_WESLR_LOCAL_METADATA_LOCATOR_AVAILABILITY_V1`
-- `REVIEW_WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_V1`
+## 16. current priority queue
+1. `REVIEW_WESLR_THIRD_CONTROLLED_TRUE_RUN_ON_NON_MATERIALS_DOMAIN_RESULT_V1`
+2. `REPAIR_WESLR_LOCAL_METADATA_LOCATOR_AVAILABILITY_V1`
+3. `REVIEW_WESLR_ARTIFACT_FORWARD_WORK_PLAN_HELPERS_V1`
+4. `IMPLEMENT_WESLR_OER_NO_OP_RECORD_BUILDER_V1`
+5. `DESIGN_WESLR_RICHER_METADATA_ONLY_SIGNAL_ITEM_SHAPE_V1`
+6. classify remaining untracked docs under `docs/`
 
 ## 17. final judgment
-docs_implementation_gap_inventory_needs_repair
+docs_implementation_gap_inventory_repaired_ready_for_owner_review
