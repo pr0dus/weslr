@@ -473,6 +473,58 @@ def _dominant_missing_evidence(missing_evidence: list[str], bridges: list[str], 
     return len(missing_evidence) >= 4
 
 
+def _derive_missing_evidence_items(
+    *,
+    packet: Mapping[str, Any],
+    candidate_preview: Mapping[str, Any],
+    source_selection_preview: Mapping[str, Any],
+    disconfirming_signals: list[str],
+) -> list[str]:
+    derived: list[str] = []
+
+    def add(item: str) -> None:
+        item = _compact_text(item)
+        if item and item not in derived:
+            derived.append(item)
+
+    combined_text = " \n".join(
+        _iter_text_values({
+            "source_scout_summary": packet.get("source_scout_summary"),
+            "science_direction_summary": candidate_preview.get("science_direction_summary"),
+            "source_selection_summary": source_selection_preview.get("science_direction_summary"),
+            "domain_summaries": candidate_preview.get("domain_summaries"),
+            "relation_type_hints": candidate_preview.get("relation_type_hints"),
+            "pressure_test_questions": candidate_preview.get("pressure_test_questions"),
+            "probe_suggestions": candidate_preview.get("probe_suggestions"),
+            "disconfirming_signals": disconfirming_signals,
+            "operator_review_reasons": packet.get("operator_review_reasons"),
+        })
+    ).lower()
+
+    checks: list[tuple[tuple[str, ...], str]] = [
+        (("missing measurement", "missing measurements", "measurement coverage", "insufficient measurement", "uncertain measurement"), "missing measurement coverage needs controlled validation"),
+        (("future validation", "needs validation", "future work", "future research", "further research", "controlled validation"), "future validation still needed"),
+        (("unknown mechanism", "not fully understood", "unresolved mechanism", "mechanism is not fully understood", "mechanism remains unresolved"), "mechanism remains unresolved"),
+        (("replication gap", "replication gaps", "replication target", "replication evidence", "replication needed"), "replication evidence still needed"),
+        (("insufficient controlled evidence", "insufficient evidence", "controlled evidence", "validation before any stronger method", "before any stronger method is trusted"), "insufficient controlled evidence for stronger acceptance"),
+        (("weak analogy", "pressure testing", "pressure-test", "pressure test", "weak route"), "additional pressure-testing evidence needed"),
+        (("disconfirming", "counterexample", "contradiction", "anomaly", "model failure", "failed model"), "disconfirming evidence still needed"),
+        (("source classes needed", "required_source_classes", "source class", "public_research_paper", "official_api_documentation", "official_standard"), "source classes still needed for review"),
+    ]
+
+    # Keep the derived list intentionally small so operator-review posture stays intact
+    # for valid bridge candidates while still carrying unresolved-work metadata forward.
+    for markers, item in checks:
+        if any(marker in combined_text for marker in markers):
+            add(item)
+        if len(derived) >= 3:
+            break
+
+    if not derived and disconfirming_signals:
+        add("disconfirming evidence still needed")
+    return derived
+
+
 def _build_safe_metadata_summary(packet: Mapping[str, Any], status: str, readiness: str, next_step: str) -> dict[str, Any]:
     return {
         "metadata_only": True,
@@ -522,6 +574,14 @@ def _normalize_packet(packet: Mapping[str, Any], *, candidate_preparation_id: st
             if key in source_denied:
                 denied_authority_flags[key] = bool(source_denied.get(key))
     source_selected_route = selected_route
+
+    if not missing_evidence:
+        missing_evidence = _derive_missing_evidence_items(
+            packet=packet,
+            candidate_preview=candidate_preview,
+            source_selection_preview=source_selection_preview,
+            disconfirming_signals=disconfirming_signals,
+        )
 
     unsafe = (
         _contains_forbidden_key_name(candidate_preview)

@@ -180,6 +180,30 @@ def test_source_selection_followup_preview_is_metadata_only():
     assert "proof" not in lowered
 
 
+def test_unresolved_sample_like_input_carries_forward_missing_evidence():
+    packet = _integration_packet()
+    packet["mlcf_candidate_payload_preview"]["missing_evidence"] = []
+    packet["source_selection_plan_payload_preview"]["missing_evidence"] = []
+    packet["source_scout_summary"] = (
+        "cross-domain bridge signals remain unresolved; missing measurements, future validation, "
+        "and not fully understood mechanism questions remain."
+    )
+    built = build_cross_domain_scout_to_mlcf_candidate_preparation_packet_v1(
+        packet,
+        candidate_preparation_id="sample_like_missing_evidence",
+    )
+    assert built["preparation_status"] == "candidate_preparation_ready_for_operator_review"
+    assert built["candidate_readiness_label"] == "metadata_candidate_ready_for_review"
+    assert built["next_safe_step"] == "operator_review"
+    assert built["missing_evidence"]
+    lowered = json.dumps(built["missing_evidence"]).lower()
+    assert "raw" not in lowered
+    assert "html" not in lowered
+    assert "snippet" not in lowered
+    assert "full text" not in lowered
+    assert "url" not in lowered
+
+
 def test_github_role_remains_implementation_reference_only():
     assert _candidate_packet()["source_selection_followup_preview"]["github_role"] == "implementation/reference only"
 
