@@ -100,6 +100,17 @@ _chat_weslr_de_customer_grade_wiring_plan_allowed_paths = {
     _chat_weslr_de_customer_grade_wiring_plan_doc,
 }
 
+# Narrow, exact-path allowance for the chat.weslr.de customer-grade wiring plan
+# review artifact only. Same narrow intent as the plan allowance above: a single
+# exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken
+# any protected-file rule.
+_chat_weslr_de_customer_grade_wiring_plan_review_doc = (
+    "docs/WESLR_CHAT_WESLR_DE_CUSTOMER_GRADE_WIRING_PLAN_REVIEW_V1.md"
+)
+_chat_weslr_de_customer_grade_wiring_plan_review_allowed_paths = {
+    _chat_weslr_de_customer_grade_wiring_plan_review_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15778,6 +15789,8 @@ def _check_git_scope():
         if path in _cognitive_research_doc_family_allowed_paths:
             allowed = True
         if path in _chat_weslr_de_customer_grade_wiring_plan_allowed_paths:
+            allowed = True
+        if path in _chat_weslr_de_customer_grade_wiring_plan_review_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
