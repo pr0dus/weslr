@@ -90,6 +90,16 @@ _cognitive_research_doc_family_allowed_paths = {
     "weslr/tests/release_gate_v1.py",
 }
 
+# Narrow, exact-path allowance for the chat.weslr.de customer-grade wiring plan
+# artifact only. This is intentionally a single-file allowance, NOT a broad
+# docs/ allowlist, NOT a wildcard, and does NOT weaken any protected-file rule.
+_chat_weslr_de_customer_grade_wiring_plan_doc = (
+    "docs/WESLR_CHAT_WESLR_DE_CUSTOMER_GRADE_WIRING_PLAN_V1.md"
+)
+_chat_weslr_de_customer_grade_wiring_plan_allowed_paths = {
+    _chat_weslr_de_customer_grade_wiring_plan_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15766,6 +15776,8 @@ def _check_git_scope():
                 violations.append(f"  Tier 0-2 math challenge readiness review doc missing required markers: {path}")
 
         if path in _cognitive_research_doc_family_allowed_paths:
+            allowed = True
+        if path in _chat_weslr_de_customer_grade_wiring_plan_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
