@@ -111,6 +111,17 @@ _chat_weslr_de_customer_grade_wiring_plan_review_allowed_paths = {
     _chat_weslr_de_customer_grade_wiring_plan_review_doc,
 }
 
+# Narrow, exact-path allowance for the chat.weslr.de Slice 1 read-only health
+# check script only. Same narrow intent as the plan/review allowances above: a
+# single exact path, NOT a broad scripts/ allowlist, NOT a wildcard, and does
+# NOT weaken any protected-file rule.
+_chat_weslr_de_slice1_health_check_script = (
+    "scripts/chat_weslr_de_health_check.sh"
+)
+_chat_weslr_de_slice1_health_check_allowed_paths = {
+    _chat_weslr_de_slice1_health_check_script,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15831,6 +15842,8 @@ def _check_git_scope():
         if path in _chat_weslr_de_customer_grade_wiring_plan_allowed_paths:
             allowed = True
         if path in _chat_weslr_de_customer_grade_wiring_plan_review_allowed_paths:
+            allowed = True
+        if path in _chat_weslr_de_slice1_health_check_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
