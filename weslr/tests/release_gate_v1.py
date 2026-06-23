@@ -122,6 +122,17 @@ _chat_weslr_de_slice1_health_check_allowed_paths = {
     _chat_weslr_de_slice1_health_check_script,
 }
 
+# Narrow, exact-path allowance for the customer control plane and
+# entitlements design doc only. Same narrow intent as the prior allowances:
+# a single exact path, NOT a broad docs/ allowlist, NOT a wildcard, and
+# does NOT weaken any protected-file rule.
+_customer_control_plane_and_entitlements_design_doc = (
+    "docs/WESLR_CUSTOMER_CONTROL_PLANE_AND_ENTITLEMENTS_V1.md"
+)
+_customer_control_plane_and_entitlements_design_allowed_paths = {
+    _customer_control_plane_and_entitlements_design_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15844,6 +15855,8 @@ def _check_git_scope():
         if path in _chat_weslr_de_customer_grade_wiring_plan_review_allowed_paths:
             allowed = True
         if path in _chat_weslr_de_slice1_health_check_allowed_paths:
+            allowed = True
+        if path in _customer_control_plane_and_entitlements_design_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
