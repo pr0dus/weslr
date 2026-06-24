@@ -9,7 +9,6 @@ transition graph. It does NOT:
     backend server files, provider/model code, or any protected
     runtime module
   - perform subprocess, network, or filesystem write operations
-  - write to "/home/pr0/weslr_state/" (no real persistence)
   - wire itself to the entitlement helper, runtime wrapper, session
     manager, audit log, audit persistence, or ChatResponder
   - retain raw prompt text, raw reply text, credentials, PII,
@@ -282,8 +281,8 @@ def validate_account_status_record_v1(record: Any) -> Tuple[bool, List[str]]:
         errors.append("raw_content_retained_must_be_false")
     if "account_status_pii_visible_to_operator" in record and not isinstance(record["account_status_pii_visible_to_operator"], bool):
         errors.append("account_status_pii_visible_to_operator_must_be_bool")
-    if "account_status_reason_labels" in record and not isinstance(record["account_status_reason_labels"], list):
-        errors.append("account_status_reason_labels_not_list")
+    if "reason_labels" in record and not isinstance(record["reason_labels"], list):
+        errors.append("reason_labels_not_list")
 
     # Recursive scan for forbidden keys.
     forbidden_hits = _find_forbidden_keys(record)
@@ -480,7 +479,16 @@ def apply_account_status_transition_v1(
             "summary": f"apply denied: from_status and to_status are both '{from_status}'",
         }
 
-    # 6. Default-deny: any transition not in ALLOWED_TRANSITIONS_V1 is rejected.
+    # 6. Destructive transitions require explicit operator approval.
+    destructive_targets = {"banned", "deletion_requested", "deleted_or_revoked", "manual_disabled"}
+    if to_status in destructive_targets and not bool(request.get("operator_approved", False)):
+        return {
+            **base,
+            "reason_labels": ["destructive_transition_requires_operator_approval"],
+            "summary": f"apply denied: transition to '{to_status}' requires operator approval",
+        }
+
+    # 7. Default-deny: any transition not in ALLOWED_TRANSITIONS_V1 is rejected.
     allowed_next = ALLOWED_TRANSITIONS_V1.get(from_status, frozenset())
     if to_status not in allowed_next:
         # Distinguish between "from is terminal" and "transition is
@@ -503,24 +511,26 @@ def apply_account_status_transition_v1(
             "summary": f"apply denied: transition '{from_status} -> {to_status}' is not allowed",
         }
 
-    # 7. Apply the transition: build a new record with the updated
+    # 8. Apply the transition: build a new record with the updated
     # status and metadata from the request. Do NOT mutate the input
     # record; return a defensive copy.
     new_record = dict(record)
+    new_record["previous_account_status"] = record["account_status"]
     new_record["account_status"] = to_status
-    new_record["account_status_changed_at"] = request.get("transition_requested_at", "") or record.get("account_status_changed_at", "")
-    new_record["account_status_changed_by"] = request.get("transition_operator_ref", "") or record.get("account_status_changed_by", "")
-    new_record["account_status_reason_label"] = request.get("transition_reason_label", "") or record.get("account_status_reason_label", "")
-    new_record["account_status_audit_log_ref"] = request.get("transition_audit_log_ref", "") or record.get("account_status_audit_log_ref", "")
+    new_record["status_updated_at"] = request.get("requested_at", "") or record.get("status_updated_at", "")
+    new_record["status_updated_by"] = request.get("requested_by", "") or record.get("status_updated_by", "")
+    new_record["status_reason_label"] = request.get("reason_label", "") or record.get("status_reason_label", "")
+    new_record["status_transition_ref"] = request.get("transition_request_id", "") or record.get("status_transition_ref", "")
+    new_record["audit_log_ref"] = request.get("audit_log_ref", "") or record.get("audit_log_ref", "")
     # Append the transition reason label to the record's reason labels
     # (deduplicated).
-    record_labels = list(new_record.get("account_status_reason_labels", []) or [])
-    label = new_record["account_status_reason_label"]
+    record_labels = list(new_record.get("reason_labels", []) or [])
+    label = new_record["status_reason_label"]
     if label and label not in record_labels:
         record_labels.append(label)
-    new_record["account_status_reason_labels"] = record_labels
+    new_record["reason_labels"] = record_labels
 
-    # 8. Validate the new record.
+    # 9. Validate the new record.
     ok, errs = validate_account_status_record_v1(new_record)
     if not ok:
         return {
@@ -529,11 +539,24 @@ def apply_account_status_transition_v1(
             "summary": "apply denied: new record validation failed",
         }
 
+    suggested_audit_metadata = {
+        "audit_action_type": "user_status_changed",
+        "audit_target_account_id": record["account_id"],
+        "audit_before_state": dict(record),
+        "audit_after_state": dict(new_record),
+        "audit_transition_request_id": request.get("transition_request_id", ""),
+        "audit_requested_by": request.get("requested_by", ""),
+        "audit_requested_at": request.get("requested_at", ""),
+        "audit_reason_label": request.get("reason_label", ""),
+        "audit_operator_approved": bool(request.get("operator_approved", False)),
+    }
+
     return {
         **base,
         "ok": True,
         "reason_labels": [REASON_OK],
         "new_record": new_record,
+        "suggested_audit_metadata": suggested_audit_metadata,
         "summary": f"transition applied: '{from_status}' -> '{to_status}'",
     }
 

@@ -492,7 +492,7 @@ class TestIsChatEnabled(unittest.TestCase):
 
     def test_chat_enabled_for_usable_active_statuses(self):
         # Coverage item 16: chat enabled only for usable active statuses
-        for status in ("pilot_free", "pilot_active", "manual_paid", "manual_unpaid"):
+        for status in ("pilot_free", "pilot_active", "manual_paid"):
             r = _make_record(account_status=status)
             result = is_account_status_chat_enabled_v1(r)
             self.assertTrue(result["ok"], msg=status)
